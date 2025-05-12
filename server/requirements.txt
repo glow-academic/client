@@ -1,0 +1,11 @@
+# requirements.txt
+
+# FastAPI core framework, plus all the "standard" extras
+# (email-validator, httpx TestClient, template support, form parsing, and Uvicorn)
+fastapi[standard]
+
+# Uvicorn ASGI server with its "standard" performance extras
+# (uvloop, httptools, etc.)
+uvicorn[standard]
+
+python-dotenv

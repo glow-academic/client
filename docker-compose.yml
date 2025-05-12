@@ -1,0 +1,27 @@
+# docker-compose.yml
+
+version: '3.8'
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: fastapi_server
+    ports:
+      - "8000:8000"
+    environment:
+      # e.g., DATABASE_URL, SECRET_KEY, etc.
+      - DATABASE_URL=sqlite:///./test.db
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: nextjs_client
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    environment:
+      # Tell Next.js where the API lives
+      - NEXT_PUBLIC_API_URL=http://server:8000
