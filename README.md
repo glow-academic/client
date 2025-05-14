@@ -11,28 +11,28 @@ GLOW provides AI student profiles to assist graduate teaching assistants in thei
 ### Docker Deployment
 All components are deployable via Docker containers using the docker-compose file:
 
-bash
+```bash
 docker compose up --build -d
+```
 
 ### Local Development
 
 For local testing, you can run each component separately:
 
 **Frontend:**
-bash
-
+```bash
 yarn run dev
-
+```
 
 **Backend:**
-bash
-
+```bash
 make run
+```
 
 **Database:**
-bash
-
+```bash
 psql postgresql://myuser:mypassword@localhost:5432/mydb -f db/init.sql
+```
 
 ## Tech Stack
 
