@@ -42,15 +42,17 @@ services:
       - DATABASE_URL=postgresql://myuser:mypassword@db:5432/mydb
     ports:
       - "3000:3000"
-
-    labels: # TEMPORARY, for deployment
+    networks:
+      - web
+    labels:
       - "traefik.enable=true"
       - "traefik.docker.network=web"
       - "traefik.http.routers.glow.rule=Host(`api.ashoksaravanan.com`) && PathPrefix(`/glow`)"
-      - "traefik.http.routers.glow.entrypoints=web"
-      - "traefik.http.routers.glow.middlewares=strip-glow"
-      - "traefik.http.services.glow-client.loadbalancer.server.port=3000"
+      - "traefik.http.routers.glow.entrypoints=websecure"
+      - "traefik.http.routers.glow.tls.certresolver=letsencrypt"
       - "traefik.http.middlewares.strip-glow.stripprefix.prefixes=/glow"
+      - "traefik.http.routers.glow.middlewares=strip-glow"
+      - "traefik.http.services.glow.loadbalancer.server.port=3000"
 
 volumes:
   pgdata:
