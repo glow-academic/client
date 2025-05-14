@@ -1,39 +1,59 @@
-# GLOW
-Graduate Learning Orientation Workshop
+# GLOW - Graduate Learning Orientation Workshop
+
+AI student profiles to help graduate teaching assistants learn.
+
+## Overview
+
+GLOW provides AI student profiles to assist graduate teaching assistants in their learning journey.
+
+## Getting Started
+
+### Docker Deployment
+All components are deployable via Docker containers using the docker-compose file:
+
+bash
+docker compose up --build -d
+
+### Local Development
+
+For local testing, you can run each component separately:
+
+**Frontend:**
+bash
+
+yarn run dev
 
 
-AI student profiles, to help graduate teaching assistants learn.
+**Backend:**
+bash
 
+make run
 
-Tech Stack
-All deployable via docker containers, via docker-compose file. 
+**Database:**
+bash
 
-Run 'docker compose up --build -d' to start all.
-For pure local testing,
+psql postgresql://myuser:mypassword@localhost:5432/mydb -f db/init.sql
 
-Client: 'yarn run dev'
-Server: 'make run'
-Database: 'psql postgresql://myuser:mypassword@localhost:5432/mydb -f db/init.sql'
+## Tech Stack
 
-Frontend
-Hooks -- React, https://react.dev/
-Caching -- React Query, https://tanstack.com/query/latest
-Routing -- Next.js, https://nextjs.org/
-UI Library -- Shadcn, https://ui.shadcn.com/
-Styling -- TailwindCSS, https://tailwindcss.com/
-Databse connection -- Drizzle ORM, https://orm.drizzle.team/docs/overview
-Linter -- ESLint, https://eslint.org/
-Unit tests -- Jest, https://jestjs.io/
-Integration tests -- Cypress, https://www.cypress.io/
+### Frontend
+- **Hooks:** [React](https://react.dev/)
+- **Caching:** [React Query](https://tanstack.com/query/latest)
+- **Routing:** [Next.js](https://nextjs.org/)
+- **UI Library:** [Shadcn](https://ui.shadcn.com/)
+- **Styling:** [TailwindCSS](https://tailwindcss.com/)
+- **Database Connection:** [Drizzle ORM](https://orm.drizzle.team/docs/overview)
+- **Linter:** [ESLint](https://eslint.org/)
+- **Unit Tests:** [Jest](https://jestjs.io/)
+- **Integration Tests:** [Cypress](https://www.cypress.io/)
 
-Backend
-Server -- FastAPI, https://fastapi.tiangolo.com/
-Database connection -- SQLModel, https://sqlmodel.tiangolo.com/
-LLM -- OpenAI Agents SDK, https://openai.github.io/openai-agents-python/
-Unit tests -- pytest, https://docs.pytest.org/en/stable/
-Typechecker -- MyPy, https://mypy-lang.org/
-Linter -- ruff, https://docs.astral.sh/ruff/
+### Backend
+- **Server:** [FastAPI](https://fastapi.tiangolo.com/)
+- **Database Connection:** [SQLModel](https://sqlmodel.tiangolo.com/)
+- **LLM:** [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/)
+- **Unit Tests:** [pytest](https://docs.pytest.org/en/stable/)
+- **Typechecker:** [MyPy](https://mypy-lang.org/)
+- **Linter:** [ruff](https://docs.astral.sh/ruff/)
 
-Database
-SQL -- PostgreSQL, https://www.postgresql.org/
-
+### Database
+- **SQL:** [PostgreSQL](https://www.postgresql.org/)
