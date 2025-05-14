@@ -10,6 +10,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+# Install development dependencies for testing, linting, and type checking
+RUN pip install pytest pytest-asyncio respx coverage ruff mypy
+
+# Run linter checks
+RUN echo "Running linter..." && ruff check .
+
+# Run type checking
+RUN echo "Type checking..." && mypy app/
+
+# Run tests before deployment
+RUN echo "Running tests..." && pytest -q --disable-warnings
+
+# Generate models if needed
+RUN python scripts/generate_models.py
+
 # Expose the FastAPI port
 EXPOSE 8000
 

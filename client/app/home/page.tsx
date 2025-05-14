@@ -1,95 +1,84 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+/**
+ * app/home/page.tsx
+ * This is the home page to open new chats and look at existing chats
+ * @AshokSaravanan222 & @siladiea
+ * 05/14/2025
+ */
+"use client";
 
-function GTADashboard() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('new'); // 'new', 'passed', 'failed', 'rubric'
-  
-  // Student personality types with their status
-  const allStudentTypes = [
-    { 
-      id: 1, 
-      type: 'happy',
-      name: 'Happy Student', 
-      description: 'A student approaches you with a big smile, excited about the course material and asking for additional resources to learn more beyond what was covered in class.',
-      imageUrl: '/images/happy-student.svg',
-      bgColor: 'bg-green-100',
-      borderColor: 'border-green-300',
-      status: 'new', // This student type hasn't been attempted yet
-      attemptCount: 0,
-    },
-    { 
-      id: 2, 
-      type: 'sad', 
-      name: 'Distressed Student', 
-      description: 'A student comes to your office hours visibly upset, explaining that personal issues have affected their performance and they have missed multiple deadlines.',
-      imageUrl: '/images/sad-student.svg',
-      bgColor: 'bg-blue-100',
-      borderColor: 'border-blue-300',
-      status: 'passed', // This student type was passed
-      attemptCount: 2,
-      lastAttempt: '2023-10-15',
-      score: 85,
-    },
-    { 
-      id: 3, 
-      type: 'aggressive', 
-      name: 'Aggressive Student', 
-      description: 'An agitated student approaches you, raising their voice about receiving a low grade. They insist their answers were correct and demand an immediate grade change.',
-      imageUrl: '/images/aggressive-student.svg',
-      bgColor: 'bg-red-100',
-      borderColor: 'border-red-300',
-      status: 'failed', // This student type was failed
-      attemptCount: 1,
-      lastAttempt: '2023-10-12',
-      score: 45,
-    },
-    { 
-      id: 4, 
-      type: 'distracted', 
-      name: 'Distracted Student', 
-      description: 'During your explanation of an important concept, you notice a student checking their phone repeatedly and missing key information. They later ask questions you just answered.',
-      imageUrl: '/images/distracted-student.svg',
-      bgColor: 'bg-yellow-100',
-      borderColor: 'border-yellow-300',
-      status: 'new',
-      attemptCount: 0,
-    },
-    { 
-      id: 5, 
-      type: 'anxious', 
-      name: 'Anxious Student', 
-      description: 'A student emails you in a panic about the upcoming exam, expressing extreme worry about failing the course despite having decent grades. They are requesting constant reassurance.',
-      imageUrl: '/images/anxious-student.svg',
-      bgColor: 'bg-purple-100',
-      borderColor: 'border-purple-300',
-      status: 'passed',
-      attemptCount: 3,
-      lastAttempt: '2023-10-18',
-      score: 92,
-    },
-    { 
-      id: 6, 
-      type: 'overachiever', 
-      name: 'Overachiever', 
-      description: 'A student with a 96% in the course visits your office hours repeatedly, concerned about minor point deductions and arguing for perfect scores on every assignment.',
-      imageUrl: '/images/overachiever-student.svg',
-      bgColor: 'bg-indigo-100',
-      borderColor: 'border-indigo-300',
-      status: 'failed',
-      attemptCount: 2,
-      lastAttempt: '2023-10-10',
-      score: 60,
+import { chatProfile } from "@/drizzle/schema";
+import { borderColors, profileDescriptions, profileIcons } from "@/utils/profiles";
+import { backgroundColors } from "@/utils/profiles";
+import { logout } from "@/utils/mutations/logout";
+import { getChats } from "@/utils/queries/get-chats";
+import { getRubrics } from "@/utils/queries/get-rubrics";
+import { getUser } from "@/utils/queries/get-user";
+import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { createChat } from "@/utils/mutations/create-chat";
+
+export default function HomePage() {
+  const [activeTab, setActiveTab] = useState('new');
+  const [loading, setLoading] = useState(false);
+
+  const router = useRouter();
+
+  const handleLogout = async () => {
+    setLoading(true);
+    try {
+      const { success, error } = await logout();
+      if (success) {
+        router.push('/');
+      } else {
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error('Error logging out:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }
 
-  // Filter student types based on active tab
-  const filteredStudentTypes = allStudentTypes.filter(student => student.status === activeTab);
-  
-  // Get counts for tab badges
-  const newCount = allStudentTypes.filter(s => s.status === 'new').length;
-  const passedCount = allStudentTypes.filter(s => s.status === 'passed').length;
-  const failedCount = allStudentTypes.filter(s => s.status === 'failed').length;
+  const { data: user } = useQuery({
+    queryKey: ['user'],
+    queryFn: () => getUser(),
+  });
+
+
+  const { data: chats } = useQuery({
+    queryKey: ['chats', user?.id],
+    queryFn: () => getChats(user!.id),
+    enabled: !!user,
+  });
+
+  const { data: rubrics } = useQuery({
+    queryKey: ['rubrics', chats?.map((chat) => chat.id)],
+    queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
+    enabled: !!chats,
+  });
+
+  const newCount = chatProfile.enumValues.length
+  const passedCount = rubrics?.filter((rubric) => rubric.passed).length;
+  const failedCount = rubrics?.filter((rubric) => !rubric.passed).length;
+
+  const handleStartChat = async (profile: typeof chatProfile.enumValues[number]) => {
+    try {
+      if (!user) {
+        throw new Error("User not found");
+      }
+      // TODO: will need to call the API in practice, having the inital agent and message getting setup
+      const { success, error, chatId } = await createChat(profile, user.id);
+      if (success) {
+        router.push(`/chat/${chatId}`);
+      } else {
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -97,11 +86,12 @@ function GTADashboard() {
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">GLOW - GTA Training</h1>
           <div>
-            <button 
-              onClick={() => navigate('/login')}
+            <button
+              onClick={handleLogout}
               className="px-3 py-1 bg-secondary/50 text-secondary-foreground rounded-md"
+              disabled={loading}
             >
-              Logout
+              {loading ? 'Logging out...' : 'Logout'}
             </button>
           </div>
         </div>
@@ -111,84 +101,88 @@ function GTADashboard() {
         {/* Tab Navigation */}
         <div className="border-b border-border mb-6">
           <nav className="-mb-px flex" aria-label="Tabs">
-            <button 
-              onClick={() => setActiveTab('new')} 
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'new' 
-                  ? 'border-primary text-primary' 
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
+            <button
+              onClick={() => setActiveTab('new')}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'new'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
             >
               New
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'new' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'new' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+                }`}>
                 {newCount}
               </span>
             </button>
-            
-            <button 
-              onClick={() => setActiveTab('passed')} 
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'passed' 
-                  ? 'border-green-500 text-green-600' 
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
+
+            <button
+              onClick={() => setActiveTab('passed')}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'passed'
+                ? 'border-green-500 text-green-600'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
             >
               Passed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'passed' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'
-              }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'passed' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'
+                }`}>
                 {passedCount}
               </span>
             </button>
-            
-            <button 
-              onClick={() => setActiveTab('failed')} 
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'failed' 
-                  ? 'border-red-500 text-red-600' 
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
+
+            <button
+              onClick={() => setActiveTab('failed')}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'failed'
+                ? 'border-red-500 text-red-600'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
             >
               Failed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'failed' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-800'
-              }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'failed' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-800'
+                }`}>
                 {failedCount}
               </span>
             </button>
-            
-            <button 
-              onClick={() => setActiveTab('rubric')} 
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'rubric' 
-                  ? 'border-blue-500 text-blue-600' 
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
+
+            <button
+              onClick={() => setActiveTab('rubric')}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'rubric'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+                }`}
             >
               Rubric
             </button>
           </nav>
         </div>
-        
+
         {/* Tab Content */}
         <div>
           {activeTab === 'new' && (
-            <div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {chatProfile.enumValues.map((profile) => (
+                <div key={profile}
+                  className={`p-6 rounded-lg shadow-md ${backgroundColors[profile]} ${borderColors[profile]} border-2 transition-transform hover:scale-105 cursor-pointer`}
+                  onClick={() => handleStartChat(profile)}
+                >
+                  <div className="flex flex-col items-center">
+                    <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
+                      <span className="text-4xl">
+                        {profileIcons[profile]}
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-bold mb-2">{profile}</h3>
+                    <p className="text-center text-sm mb-3">{profileDescriptions[profile]}</p>
+
+                    <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
+                      Start Practice
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
-          
-          {activeTab === 'passed' && (
-            <div>
-            </div>
-          )}
-          
-          {activeTab === 'failed' && (
-            <div>
-            </div>
-          )}
-          
+
           {activeTab === 'rubric' && (
             <div>
               <h3 className="text-xl font-medium mb-4 text-blue-600">Assessment Rubric</h3>
@@ -267,67 +261,60 @@ function GTADashboard() {
               </div>
             </div>
           )}
-          
-          {(activeTab === 'new' || activeTab === 'passed' || activeTab === 'failed') && (
-            filteredStudentTypes.length > 0 ? (
+
+          {(activeTab === 'passed' || activeTab === 'failed') && (
+            chats && chats.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredStudentTypes.map((student) => (
-                  <Link 
-                    to={`/gta/conversation/${student.type}`} 
-                    key={student.id}
-                    className={`p-6 rounded-lg shadow-md ${student.bgColor} ${student.borderColor} border-2 transition-transform hover:scale-105`}
+                {chats.map((chat) => (
+                  <Link
+                    href={`/chat/${chat.id}`}
+                    key={chat.id}
+                    className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
                   >
                     <div className="flex flex-col items-center">
                       <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
                         <span className="text-4xl">
-                          {student.type === 'happy' ? '😊' : 
-                           student.type === 'sad' ? '😢' : 
-                           student.type === 'aggressive' ? '😠' : 
-                           student.type === 'distracted' ? '🤔' : 
-                           student.type === 'anxious' ? '😰' : 
-                           '🤓'}
+                          {profileIcons[chat.profile]}
                         </span>
-                        
-                        {student.status === 'passed' && (
+
+                        {rubrics?.find((rubric) => rubric.chatId === chat.id)?.passed && (
                           <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-full border-2 border-white">
                             ✓
                           </span>
                         )}
-                        
-                        {student.status === 'failed' && (
+
+                        {!rubrics?.find((rubric) => rubric.chatId === chat.id)?.passed && (
                           <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full border-2 border-white">
                             ✗
                           </span>
                         )}
                       </div>
-                      
-                      <h3 className="text-xl font-bold mb-2">{student.name}</h3>
-                      <p className="text-center text-sm mb-3">{student.description}</p>
-                      
-                      {student.status !== 'new' && (
+
+                      <h3 className="text-xl font-bold mb-2">{chat.title}</h3>
+
+                      {chat.completed && (
                         <div className="w-full mt-2 text-sm">
                           <div className="flex justify-between text-muted-foreground">
                             <span>Last attempt:</span>
-                            <span>{student.lastAttempt}</span>
+                            <span>{rubrics?.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.createdAt}</span>
                           </div>
                           <div className="flex justify-between">
                             <span>Score:</span>
-                            <span className={student.status === 'passed' ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                              {student.score}/100
+                            <span className={rubrics?.find((rubric) => rubric.chatId === chat.id && rubric.passed) ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
+                              {rubrics?.find((rubric) => rubric.chatId === chat.id)?.score}/100
                             </span>
                           </div>
                           <div className="flex justify-between text-muted-foreground">
                             <span>Attempts:</span>
-                            <span>{student.attemptCount}</span>
+                            <span>{rubrics?.filter((rubric) => rubric.chatId === chat.id).length}</span>
                           </div>
                         </div>
                       )}
-                      
-                      <div className={`mt-4 w-full py-2 text-center rounded-md ${
-                        student.status === 'new' ? 'bg-primary text-primary-foreground' :
-                        student.status === 'passed' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                      }`}>
-                        {student.status === 'new' ? 'Start Practice' : 'Practice Again'}
+
+                      <div className={`mt-4 w-full py-2 text-center rounded-md ${!chat.completed ? 'bg-primary text-primary-foreground' :
+                        rubrics?.find((rubric) => rubric.chatId === chat.id && rubric.passed) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                        }`}>
+                        {chat.completed ? 'Practice Again' : 'Continue'}
                       </div>
                     </div>
                   </Link>
@@ -344,5 +331,3 @@ function GTADashboard() {
     </div>
   );
 }
-
-export default GTADashboard;

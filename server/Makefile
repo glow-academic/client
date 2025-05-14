@@ -1,4 +1,4 @@
-.PHONY: venv dev-tools sync format lint typecheck tests coverage run prod
+.PHONY: venv dev-tools sync format lint typecheck tests coverage run prod generate-models
 
 # 1. Ensure the virtual environment exists
 venv:
@@ -40,10 +40,15 @@ coverage: dev-tools
 	@uvx coverage xml -o coverage.xml
 	@uvx coverage report -m --fail-under=75
 
+# Generate SQLModel classes from database schema
+generate-models: venv
+	@echo "Generating SQLModel classes from database schema..."
+	@uv run python scripts/generate_models.py
+
 # 9. Start FastAPI via Uvicorn
-run: sync
+run: sync generate-models
 	@echo "Starting FastAPI server..."
-	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
 prod: sync

@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from sqlmodel import Session, select
 
 from app.db import init_db, get_session
-from app.models import Chat, Message
+from app.models import Chats, Messages
 
 app = FastAPI(title="GLOW Chat API", on_startup=[init_db])
 
@@ -83,7 +83,7 @@ async def chat_endpoint(
     try:
         # Check if chat exists
         logger.debug(f"Looking for chat with ID: {chat_id}")
-        chat = session.exec(select(Chat).where(Chat.id == chat_id)).first()
+        chat = session.exec(select(Chats).where(Chats.id == chat_id)).first()
         if not chat:
             logger.error(f"Chat not found with ID: {chat_id}")
             raise HTTPException(status_code=404, detail="Chat not found")
@@ -94,7 +94,7 @@ async def chat_endpoint(
         
         # Create a new message in the database
         logger.debug("Saving message to database")
-        db_message = Message(
+        db_message = Messages(
             query=message,
             response=full_response,
             completed=True,
@@ -141,7 +141,7 @@ async def test_db_connection(session: Session = Depends(get_session)):
     """Test database connection"""
     try:
         # Try a simple query
-        result = session.exec(select(Chat)).first()
+        result = session.exec(select(Chats)).first()
         return {"status": "Database connection successful"}
     except Exception as e:
         logger.exception(f"Database connection error: {str(e)}")

@@ -17,22 +17,28 @@ docker compose up --build -d
 
 ### Local Development
 
-For local testing, you can run each component separately:
+For local testing, you can run each component separately. Run the database command first to avoid any issues with types.:
+
+**Database:**
+```bash
+cd database
+bash run.sh --clean # fresh build
+bash run.sh # use latest in history
+```
 
 **Frontend:**
 ```bash
+cd client
 yarn run dev
 ```
 
 **Backend:**
 ```bash
+cd server
 make run
 ```
 
-**Database:**
-```bash
-psql postgresql://myuser:mypassword@localhost:5432/mydb -f db/init.sql
-```
+
 
 ## Tech Stack
 

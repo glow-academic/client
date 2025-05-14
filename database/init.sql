@@ -2,12 +2,13 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- custom enum for chat "profiles"
-CREATE TYPE chat_profile AS ENUM ('aggressive', 'shy', 'happy');
+CREATE TYPE chat_profile AS ENUM ('aggressive', 'happy', 'confused');
 
 -- 1) users table
 CREATE TABLE users (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  admin      BOOLEAN     NOT NULL           DEFAULT FALSE,
   username   TEXT        NOT NULL UNIQUE,
   password   TEXT        NOT NULL
 );
@@ -16,7 +17,9 @@ CREATE TABLE users (
 CREATE TABLE chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
+  completed_at TIMESTAMPTZ  NULL,
   title      TEXT         NOT NULL,
+  scenario_description TEXT         NOT NULL,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
   user_id    UUID         NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
   profile    chat_profile NOT NULL
@@ -35,12 +38,20 @@ CREATE TABLE messages (
 -- 4) rubrics table
 -- (use chat's id as the primary key / foreign key)
 CREATE TABLE rubrics (
-  id         UUID        PRIMARY KEY REFERENCES chats(id)  ON DELETE CASCADE,
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  chat_id    UUID        NOT NULL REFERENCES chats(id)  ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   passed     BOOLEAN     NOT NULL,
-  support    NUMERIC     NOT NULL,
-  elaborated NUMERIC     NOT NULL,
-  time       INTEGER     NOT NULL
+  score      INTEGER     NOT NULL,
+  time_taken INTEGER     NOT NULL,
+  adaptability INTEGER     NOT NULL, -- 0-4
+  active_listening INTEGER     NOT NULL, -- 0-4
+  empathy INTEGER     NOT NULL, -- 0-4
+  communication INTEGER     NOT NULL, -- 0-4
+  nonverbal INTEGER     NOT NULL, -- 0-4
+  problem_solving INTEGER     NOT NULL, -- 0-4
+  resource_utilization INTEGER     NOT NULL, -- 0-4
+  time_management INTEGER     NOT NULL -- 0-4
 );
 
 -- Insert two users with hardcoded UUIDs
@@ -49,6 +60,6 @@ INSERT INTO users (id, username, password) VALUES
   ('22222222-2222-2222-2222-222222222222', 'alex', 'siladie');
 
 -- Insert a chat for each user with hardcoded UUIDs
-INSERT INTO chats (id, title, user_id, profile) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Ashok''s Chat', '11111111-1111-1111-1111-111111111111', 'happy'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Alex''s Chat', '22222222-2222-2222-2222-222222222222', 'aggressive');
+INSERT INTO chats (id, title, scenario_description, user_id, profile) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Ashok''s Chat', 'You are a happy person', '11111111-1111-1111-1111-111111111111', 'happy'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Alex''s Chat', 'You are an aggressive person', '22222222-2222-2222-2222-222222222222', 'aggressive');

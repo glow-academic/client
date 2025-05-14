@@ -7,6 +7,6 @@ import { messages } from '@/drizzle/schema';
 export async function getMessages(chatId: string) {
     const db = drizzle(process.env.DATABASE_URL!);
 
-    const chatMessages = await db.select().from(messages).where(eq(messages.chat_id, chatId));
+    const chatMessages = await db.select().from(messages).where(eq(messages.chatId, chatId));
     return chatMessages;
 }
