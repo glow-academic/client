@@ -9,3 +9,12 @@ fastapi[standard]
 uvicorn[standard]
 
 python-dotenv
+
+sqlmodel 
+
+# Add psycopg2-binary for SQLAlchemy compatibility
+psycopg2-binary
+
+# Keep psycopg for newer code if needed
+psycopg[binary]
+gunicorn

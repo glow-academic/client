@@ -1,4 +1,4 @@
-.PHONY: venv dev-tools sync format lint typecheck tests coverage run
+.PHONY: venv dev-tools sync format lint typecheck tests coverage run prod
 
 # 1. Ensure the virtual environment exists
 venv:
@@ -43,4 +43,9 @@ coverage: dev-tools
 # 9. Start FastAPI via Uvicorn
 run: sync
 	@echo "Starting FastAPI server..."
-	@uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
+	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 10. Start FastAPI via Gunicorn+Uvicorn for production
+prod: sync
+	@echo "Starting FastAPI server in production mode..."
+	@uv run gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000
