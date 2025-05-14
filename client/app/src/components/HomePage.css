@@ -1,0 +1,255 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: 40px;
+  background-color: #f4f7f6;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.home-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: hsl(var(--background));
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.home-nav {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-link {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius);
+  background-color: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.nav-link:hover {
+  opacity: 0.9;
+}
+
+.home-content {
+  flex: 1;
+  padding: 2rem;
+}
+
+.welcome-section {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.card-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+.card {
+  display: block;
+  padding: 1.5rem;
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: hsl(var(--foreground));
+}
+
+.card p {
+  color: hsl(var(--muted-foreground));
+  line-height: 1.5;
+}
+
+.admin-card {
+  background-color: hsl(var(--secondary));
+}
+
+.home-footer {
+  padding: 1.5rem 2rem;
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+}
+
+.student-category-section {
+  margin-bottom: 50px; /* Space between sections */
+}
+
+.student-category-section h2 {
+  font-size: 2em; /* Slightly smaller than main header */
+  color: #444;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #eee; /* Subtle separator for section titles */
+  text-align: left; /* Align section titles to the left */
+}
+
+.student-grid {
+  display: grid; /* Reverted to grid */
+  grid-template-columns: repeat(3, 1fr); /* Three columns per row */
+  gap: 20px; /* Gap between cards */
+}
+
+/* Carousel styling */
+.carousel-container {
+  position: relative;
+  margin: 20px 0;
+  padding: 0 40px;
+}
+
+.carousel-button {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  color: #667eea;
+  cursor: pointer;
+  padding: 0;
+  width: 30px;
+  text-align: center;
+  z-index: 10;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.carousel-button:hover {
+  color: #764ba2;
+  transform: translateY(-50%) scale(1.2);
+}
+
+.carousel-button:focus {
+  outline: none;
+}
+
+.carousel-button.prev {
+  left: 0;
+}
+
+.carousel-button.next {
+  right: 0;
+}
+
+.carousel-indicators {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.carousel-dot {
+  width: 10px;
+  height: 10px;
+  background-color: #ccc;
+  border-radius: 50%;
+  margin: 0 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.carousel-dot.active {
+  background-color: #667eea;
+}
+
+.carousel-grid {
+  transition: transform 0.3s ease;
+}
+
+.student-card-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.student-card {
+  background-color: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
+  cursor: pointer;
+  width: auto; /* Let the grid handle the width based on 1fr */
+  height: auto; /* Or a fixed height if preferred */
+}
+
+.student-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.student-emoji {
+  font-size: 3.5em;
+  display: block;
+  margin-bottom: 15px;
+}
+
+.student-card h3 {
+  font-size: 1.6em;
+  color: #444;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.student-card p {
+  font-size: 0.95em;
+  color: #777;
+  line-height: 1.6;
+}
+
+.no-students-message {
+  font-size: 1.1em;
+  color: #777;
+  text-align: center;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+/* Table styling */
+.table-container {
+  overflow-x: auto;
+  margin-top: 20px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: white;
+  border-radius: 8px;
+  overflow: hidden;
+  table-layout: fixed; /* Add fixed table layout */
+}
+
+.data-table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+  transition: background-color 0.2s;
+  width: 16.66%; /* Set all columns to equal width (100% ÷ 6) */
+}
+
+.data-table tr:nth-child(even) {
+  background-color: #f7f9fc;
+}
+
+.data-table tr:hover td {
+  background-color: rgba(102, 126, 234, 0.08);
+}
