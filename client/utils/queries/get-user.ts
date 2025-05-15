@@ -2,13 +2,11 @@
 "use server"
 import { eq } from 'drizzle-orm';
 import { users } from '@/drizzle/schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { db } from '@/utils/drizzle/database';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 
 export async function getUser() {
-    const db = drizzle(process.env.DATABASE_URL!);
-    
     // Get the token from cookies
     const token = (await cookies()).get('auth_token')?.value;
     

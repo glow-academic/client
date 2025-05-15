@@ -1,19 +1,26 @@
-version: '3.8'
-
 networks:
   web:
     external: true
+  internal:
+    # Add an internal network for container-to-container communication
 
 services:
   database:
     image: postgres:15-alpine
-    container_name: postgres_db
+    container_name: glow-database
     restart: always
     env_file:
       - .env
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+      - CLEAN_DB=${CLEAN_DB:-false}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/init.sql
+      - ./database/custom-entrypoint.sh:/custom-entrypoint.sh
+    command: ["/custom-entrypoint.sh"]
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -26,12 +33,14 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: fastapi_server
+    container_name: glow-server
     depends_on:
       database:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      - DB_HOST=database
     ports:
       - "${SERVER_PORT}:8000"
 
@@ -39,11 +48,13 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: nextjs_client
+    container_name: glow-client
     depends_on:
       - server
     env_file:
       - .env
+    environment:
+      - DB_HOST=database
     ports:
       - "${CLIENT_PORT}:3000"
     # networks:
@@ -57,6 +68,13 @@ services:
     #   - "traefik.http.middlewares.strip-glow.stripprefix.prefixes=/glow"
     #   - "traefik.http.routers.glow.middlewares=strip-glow"
     #   - "traefik.http.services.glow.loadbalancer.server.port=3000"
+    #   - "traefik.http.routers.glow-static.rule=Host(`api.ashoksaravanan.com`) && PathPrefix(`/_next`)"
+    #   - "traefik.http.routers.glow-static.priority=11"
+    #   # add what’s still missing
+    #   - "traefik.http.routers.glow-static.entrypoints=websecure"
+    #   - "traefik.http.routers.glow-static.tls.certresolver=letsencrypt"
+    #   # (optional but explicit)
+    #   - "traefik.http.routers.glow-static.service=glow"
 
 volumes:
   pgdata:

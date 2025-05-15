@@ -60,7 +60,18 @@ pg_isready -q || {
       createuser -s postgres
     fi
   else 
-    sudo systemctl start postgresql || sudo service postgresql start
+    # In Docker, we don't need to start PostgreSQL as a service
+    # The container already has PostgreSQL running
+    if [[ -f /.dockerenv ]]; then
+      # Wait for PostgreSQL to be ready
+      until pg_isready -q; do
+        echo "Waiting for PostgreSQL to start..."
+        sleep 1
+      done
+    else
+      # For non-Docker Linux environments
+      command -v systemctl >/dev/null && systemctl start postgresql || service postgresql start
+    fi
   fi
   sleep 5
 }
@@ -69,7 +80,7 @@ pg_isready -q || {
 as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
-__backup() {   # <‑­‑‑ NEW
+__backup() {
   ts=$(date +%Y%m%d_%H%M%S)
   pg_dump "$USER_CONN" > "$__DATA_DIR/backup_${ts}.sql"
   echo "Backup saved → $__DATA_DIR/backup_${ts}.sql"
@@ -84,7 +95,7 @@ fi
 # --- DATABASE (clean / create / restore) -------------------------------------
 if $CLEAN_DB && db_exists; then
   echo "Clean requested - backing up then dropping $DB_NAME..."
-  __backup                      # <‑­‑‑ NEW
+  __backup
   
   # Terminate all connections to the database before dropping it
   as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();"
@@ -103,7 +114,7 @@ TABLES=$(psql "$USER_CONN" -qtA -c \
 
 if [[ $TABLES -eq 0 ]]; then
   LATEST=$(ls -t $__DATA_DIR/backup_*.sql 2>/dev/null | head -n1)
-  if [[ -n $LATEST && $CLEAN_DB = false ]]; then          # <‑­‑‑ NEW
+  if [[ -n $LATEST && $CLEAN_DB = false ]]; then
     echo "Restoring $LATEST …"
     psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$LATEST"
   elif [[ -f $INIT_SQL ]]; then
@@ -114,9 +125,16 @@ if [[ $TABLES -eq 0 ]]; then
   fi
 fi
 
-# --- READY: open psql, then dump a fresh backup ------------------------------
-echo "Database ready - opening psql (type '\q' to quit)."
-psql "$USER_CONN"
+# In Docker environment, keep PostgreSQL running
+if [[ -f /.dockerenv ]]; then
+  echo "Database initialized. Keeping PostgreSQL running..."
+  # This will keep the container running
+  tail -f /dev/null
+else
+  # --- READY: open psql, then dump a fresh backup ------------------------------
+  echo "Database ready - opening psql (type '\q' to quit)."
+  psql "$USER_CONN"
 
-echo "Session ended - writing fresh backup…"
-__backup                                         # <‑­‑‑ NEW
+  echo "Session ended - writing fresh backup…"
+  __backup
+fi

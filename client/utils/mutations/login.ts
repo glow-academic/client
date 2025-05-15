@@ -1,14 +1,12 @@
 "use server"
 import { eq } from 'drizzle-orm';
 import { users } from '@/drizzle/schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
 import { cookies } from 'next/headers';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { db } from '@/utils/drizzle/database';
 
 export async function login(username: string, password: string, admin: boolean) {
-    const db = drizzle(process.env.DATABASE_URL!);
-    
     try {
         // Find the user by username
         const user = await db.select().from(users).where(eq(users.username, username)).limit(1);
