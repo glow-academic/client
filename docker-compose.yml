@@ -1,16 +1,18 @@
+# Define networks for isolation
 networks:
-  web:
-    external: true
   internal:
-    # Add an internal network for container-to-container communication
+    driver: bridge
+    internal: true
+  web:
+    external: ${WEB_EXTERNAL:-false}
 
 services:
+  # --------------------
+  # Database Service
+  # --------------------
   database:
     image: postgres:15-alpine
-    container_name: glow-database
-    restart: always
-    env_file:
-      - .env
+    env_file: .env
     environment:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
@@ -28,53 +30,69 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
+    profiles:
+      - dev  # exposed on dev only
 
+  # --------------------
+  # API Server
+  # --------------------
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: glow-server
+    env_file: .env
+    environment:
+      - DB_HOST=database
     depends_on:
       database:
         condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      - DB_HOST=database
+    networks:
+      - internal
+      - web
+    # In prod, we let Traefik route /api → server
+    labels:
+      - "traefik.enable=${COMPOSE_PROFILES:-false}"  
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.${SUBDOMAIN}-api.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${SUBDOMAIN}-api.entrypoints=websecure"
+      - "traefik.http.services.${SUBDOMAIN}-api.loadbalancer.server.port=8000"
+    profiles:
+      - prod
+      - dev
     ports:
-      - "${SERVER_PORT}:8000"
+      - "${SERVER_PORT:-8000}:8000"
 
+  # --------------------
+  # Next.js Client
+  # --------------------
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: glow-client
-    depends_on:
-      - server
-    env_file:
-      - .env
+    env_file: .env
     environment:
       - DB_HOST=database
+    depends_on:
+      - server
+      - database
+    networks:
+      - internal
+      - web
+    # In prod, Traefik serves the client at root,
+    # ensuring /api goes to server instead of Next.js
+    labels:
+      - "traefik.enable=${COMPOSE_PROFILES:-false}"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)"
+      - "traefik.http.routers.${SUBDOMAIN}-app.entrypoints=websecure"
+      - "traefik.http.services.${SUBDOMAIN}-app.loadbalancer.server.port=3000"
+    profiles:
+      - prod
+      - dev
     ports:
-      - "${CLIENT_PORT}:3000"
-    # networks:
-    #   - web
-    # labels:
-    #   - "traefik.enable=true"
-    #   - "traefik.docker.network=web"
-    #   - "traefik.http.routers.glow.rule=Host(`api.ashoksaravanan.com`) && PathPrefix(`/glow`)"
-    #   - "traefik.http.routers.glow.entrypoints=websecure"
-    #   - "traefik.http.routers.glow.tls.certresolver=letsencrypt"
-    #   - "traefik.http.middlewares.strip-glow.stripprefix.prefixes=/glow"
-    #   - "traefik.http.routers.glow.middlewares=strip-glow"
-    #   - "traefik.http.services.glow.loadbalancer.server.port=3000"
-    #   - "traefik.http.routers.glow-static.rule=Host(`api.ashoksaravanan.com`) && PathPrefix(`/_next`)"
-    #   - "traefik.http.routers.glow-static.priority=11"
-    #   # add what’s still missing
-    #   - "traefik.http.routers.glow-static.entrypoints=websecure"
-    #   - "traefik.http.routers.glow-static.tls.certresolver=letsencrypt"
-    #   # (optional but explicit)
-    #   - "traefik.http.routers.glow-static.service=glow"
+      - "${CLIENT_PORT:-3000}:3000"
 
 volumes:
   pgdata:
