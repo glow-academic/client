@@ -23,4 +23,8 @@ COPY . .
 EXPOSE 8000
 
 # Modified CMD to generate models before starting the server
-CMD ["sh", "-c", "python scripts/generate_models.py && gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"]
+ENV PYTHONUNBUFFERED=1
+CMD ["sh","-c","python -u scripts/generate_models.py && \
+    gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker \
+    --access-logfile - --error-logfile - \
+    -b 0.0.0.0:8000"]
