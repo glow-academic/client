@@ -33,3 +33,7 @@ pytest
 pytest-asyncio
 respx
 coverage
+
+google-generativeai
+
+python-multipart
