@@ -4,7 +4,7 @@ networks:
     driver: bridge
     internal: true
   web:
-    external: ${WEB_EXTERNAL:-false}
+    external: ${PROD:-false}
 
 services:
   # --------------------
@@ -54,7 +54,7 @@ services:
       - web
     # In prod, we let Traefik route /api → server
     labels:
-      - "traefik.enable=${COMPOSE_PROFILES:-false}"
+      - "traefik.enable=${PROD:-false}"
       - "traefik.docker.network=web"
 
       # Public router → container
@@ -64,6 +64,9 @@ services:
 
       # Back-end service
       - "traefik.http.services.${SUBDOMAIN}-api.loadbalancer.server.port=8000"
+
+      - "traefik.http.middlewares.${SUBDOMAIN}-strip-api.stripprefix.prefixes=/api"
+      - "traefik.http.routers.${SUBDOMAIN}-api.middlewares=${SUBDOMAIN}-strip-api"
     profiles:
       - prod
       - dev
@@ -89,7 +92,7 @@ services:
     # In prod, Traefik serves the client at root,
     # ensuring /api goes to server instead of Next.js
     labels:
-      - "traefik.enable=${COMPOSE_PROFILES:-false}"
+      - "traefik.enable=${PROD:-false}"
       - "traefik.docker.network=web"
 
       # Main site (everything except /api)

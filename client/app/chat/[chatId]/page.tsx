@@ -8,7 +8,6 @@
 
 import { backgroundColors } from '@/utils/profiles';
 import { borderColors } from '@/utils/profiles';
-import { endChat } from '@/utils/mutations/end-chat';
 import { getChat } from '@/utils/queries/get-chat';
 import { getMessages } from '@/utils/queries/get-messages';
 import { getRubric } from '@/utils/queries/get-rubric';
@@ -17,7 +16,7 @@ import { useRouter } from 'next/navigation';
 import React, { useState, useRef, use } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
@@ -158,7 +157,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 ),
             );
         } finally {
-            streaming && ctrl.abort(); // ensure closure if unmount during stream
+            if (streaming) {
+                ctrl.abort(); // ensure closure if unmount during stream
+            }
         }
     };
 

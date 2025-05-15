@@ -60,7 +60,7 @@ export default function Markdown({
                     ,
                     h3: ({ children }) => <h3 className="prose-h3">{children}</h3>, // Added for completeness
                     h4: ({ children }) => <h4 className="prose-h4">{children}</h4>, // Added for completeness
-                    a: ({ node, ...props }) => <a className="prose-a" {...props} />, // Basic styling for links
+                    a: ({ ...props }) => <a className="prose-a" {...props} />, // Basic styling for links
                     blockquote: ({ children }) => <blockquote className="prose-blockquote">{children}</blockquote>,
                     ul: ({ children }) => <ul className="prose-ul">{children}</ul>,
                     ol: ({ children }) => <ol className="prose-ol">{children}</ol>,
@@ -72,7 +72,7 @@ export default function Markdown({
                     th: ({ children }) => <th className="prose-th">{children}</th>,
                     td: ({ children }) => <td className="prose-td">{children}</td>,
                     pre: ({ children }) => <pre className="prose-pre not-prose">{children}</pre>, // Apply not-prose to pre for custom highlight.js styling
-                    code: ({ node, className, children, ...props }) => {
+                    code: ({ className, children, ...props }) => {
                         const match = /language-(\w+)/.exec(className || '')
                         return match ? (
                            // For highlighted code blocks, rehypeHighlight will handle it.
