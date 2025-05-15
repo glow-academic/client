@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
+import Markdown from '@/components/Markdown';
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
     const { chatId } = use(params);
@@ -40,8 +41,6 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         queryKey: ["rubric", chatId],
         queryFn: () => getRubric(chatId),
     });
-
-    console.log(rubric);
 
     // Fetch messages
     const { data: messages = [] } = useQuery({
@@ -219,12 +218,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                         <div className="grid gap-1 text-right">
                                                             <p className="font-medium">You</p>
                                                             <div className="rounded-lg bg-muted p-3">
-                                                                {message.query}
+                                                                <Markdown>{message.query}</Markdown>
                                                             </div>
                                                         </div>
                                                         <Avatar>
                                                             <AvatarFallback>U</AvatarFallback>
-                                                            <AvatarImage src="/user-avatar.png" />
                                                         </Avatar>
                                                     </div>
                                                 )}
@@ -232,12 +230,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                     <div className="flex items-start gap-3 text-sm">
                                                         <Avatar>
                                                             <AvatarFallback>AI</AvatarFallback>
-                                                            <AvatarImage src="/ai-avatar.png" />
                                                         </Avatar>
                                                         <div className="grid gap-1">
                                                             <p className="font-medium">AI Assistant</p>
                                                             <div className="rounded-lg bg-primary/10 p-3">
-                                                                {message.response}
+                                                                <Markdown>{message.response}</Markdown>
                                                             </div>
                                                         </div>
                                                     </div>
