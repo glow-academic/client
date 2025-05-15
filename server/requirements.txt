@@ -12,9 +12,24 @@ python-dotenv
 
 sqlmodel 
 
+openai-agents[litellm]==0.0.14
+
 # Add psycopg2-binary for SQLAlchemy compatibility
 psycopg2-binary
 
 # Keep psycopg for newer code if needed
 psycopg[binary]
+
+# Database
+sqlacodegen
+
+# Production server
 gunicorn
+
+# Development tools
+ruff
+mypy
+pytest
+pytest-asyncio
+respx
+coverage

@@ -3,13 +3,12 @@ from typing import List, Optional
 
 from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, Text, UUID, UniqueConstraint, Uuid, text
 from sqlmodel import Field, Relationship, SQLModel
-from pydantic import ConfigDict
 
 
 
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = {"arbitrary_types_allowed": True}
 class Users(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='users_pkey'),

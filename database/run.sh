@@ -33,7 +33,14 @@ INIT_SQL=${INIT_SQL:-init.sql}
 if ! command -v psql &>/dev/null; then
   echo "PostgreSQL client not found - installing…"
   case "$(uname)" in
-    Darwin)  brew install postgresql@15 ;;
+    Darwin)  
+      brew install postgresql@15
+      # Create postgres superuser if it doesn't exist
+      if ! psql -U postgres -c '\q' 2>/dev/null; then
+        echo "Creating postgres superuser for Homebrew installation..."
+        createuser -s postgres
+      fi
+      ;;
     Linux)
       if   command -v apt-get &>/dev/null; then sudo apt-get update && sudo apt-get -y install postgresql
       elif command -v yum     &>/dev/null; then sudo yum       -y install postgresql-server postgresql-contrib
@@ -45,8 +52,16 @@ fi
 # Ensure server is running -----------------------------------------------------
 pg_isready -q || {
   echo "Starting PostgreSQL service…"
-  if [[ "$(uname)" == Darwin ]]; then brew services start postgresql@15
-  else sudo systemctl start postgresql || sudo service postgresql start; fi
+  if [[ "$(uname)" == Darwin ]]; then 
+    brew services start postgresql@15
+    # Create postgres superuser if it doesn't exist (after service start)
+    if ! psql -U postgres -c '\q' 2>/dev/null; then
+      echo "Creating postgres superuser for Homebrew installation..."
+      createuser -s postgres
+    fi
+  else 
+    sudo systemctl start postgresql || sudo service postgresql start
+  fi
   sleep 5
 }
 
@@ -70,6 +85,10 @@ fi
 if $CLEAN_DB && db_exists; then
   echo "Clean requested - backing up then dropping $DB_NAME..."
   __backup                      # <‑­‑‑ NEW
+  
+  # Terminate all connections to the database before dropping it
+  as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();"
+  
   as_admin -c "DROP DATABASE $DB_NAME;"
 fi
 

@@ -7,6 +7,7 @@ from sqlmodel.pool import StaticPool
 from app.main import app
 from app.db import get_session
 
+
 # Create an in-memory SQLite database for testing
 @pytest.fixture(name="session")
 def session_fixture():
@@ -27,7 +28,14 @@ def client_fixture(session: Session):
     yield client
     app.dependency_overrides.clear()
 
+
 def test_health_check(client: TestClient):
     response = client.get("/health")
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok"}
+
+
+def test_db_test(client: TestClient):
+    response = client.get("/db-test")
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}

@@ -6,9 +6,7 @@
  */
 "use client";
 import { useState } from "react";
-import { redirect, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { getUser } from "@/utils/queries/get-user";
+import { useRouter } from "next/navigation";
 import { login } from "@/utils/mutations/login";
 
 export default function Home() {

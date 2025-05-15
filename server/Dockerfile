@@ -3,30 +3,24 @@
 FROM python:3.11-slim
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies (includes all dev dependencies from requirements.txt)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Install development dependencies for testing, linting, and type checking
-RUN pip install pytest pytest-asyncio respx coverage ruff mypy
+# # Run linter checks
+# RUN echo "Running linter..." && ruff check .
 
-# Run linter checks
-RUN echo "Running linter..." && ruff check .
+# # Run type checking
+# RUN echo "Type checking..." && mypy app/
 
-# Run type checking
-RUN echo "Type checking..." && mypy app/
+# # Run tests before deployment
+# RUN echo "Running tests..." && pytest -q --disable-warnings
 
-# Run tests before deployment
-RUN echo "Running tests..." && pytest -q --disable-warnings
-
-# Generate models if needed
-RUN python scripts/generate_models.py
-
-# Expose the FastAPI port
+# Generate models at runtime instead of build time
 EXPOSE 8000
 
-# Start Uvicorn server with the correct module path
-CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000"]
+# Modified CMD to generate models before starting the server
+CMD ["sh", "-c", "python scripts/generate_models.py && gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000"]

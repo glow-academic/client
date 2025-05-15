@@ -14,7 +14,7 @@ import { getMessages } from '@/utils/queries/get-messages';
 import { getRubric } from '@/utils/queries/get-rubric';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useRef, use } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -130,7 +130,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             <CardContent className="p-0 h-full">
                                 <ScrollArea className="h-[calc(100vh-280px)]">
                                     <div className="space-y-4 p-4">
-                                        {messages.map((message, index) => (
+                                        {messages.map((message) => (
                                             <div key={message.id} className="space-y-4">
                                                 {message.query && (
                                                     <div className="flex items-start gap-3 text-sm justify-end">

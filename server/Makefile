@@ -1,40 +1,43 @@
 .PHONY: venv dev-tools sync format lint typecheck tests coverage run prod generate-models
 
+# Check if venv exists
+VENV_EXISTS := $(shell test -d .venv && echo 1 || echo 0)
+
 # 1. Ensure the virtual environment exists
 venv:
-	@uv venv
+	@if [ $(VENV_EXISTS) -eq 0 ]; then uv venv; fi
 
 # 2. Install development tools into the venv
 dev-tools: venv
 	@uv pip install --upgrade pip
-	@uv pip install uv ruff mypy pytest pytest-asyncio respx coverage
+	@uv pip install uv
 
 # 3. Sync runtime dependencies
 sync: dev-tools
 	@uv pip install -r requirements.txt
 
 # 4. Format code with Ruff and auto-fix issues
-format: dev-tools
+format: venv
 	@uvx ruff format
 	@uvx ruff check --fix
 
 # 5. Run linter checks
-lint: dev-tools
+lint: venv
 	@echo "Running linter..."
 	@uvx ruff check .
 
 # 6. Run MyPy for static type checking
-typecheck: dev-tools
+typecheck: venv
 	@echo "Type checking..."
 	@uv run mypy app/
 
 # 7. Run pytest, with RESPX for HTTPX mocking
-tests: dev-tools
+tests: venv
 	@echo "Running tests..."
 	@uvx pytest -q --disable-warnings
 
 # 8. Generate coverage report (fail if <75% covered)
-coverage: dev-tools
+coverage: venv
 	@echo "Generating coverage report..."
 	@uvx coverage run -m pytest -q
 	@uvx coverage xml -o coverage.xml
