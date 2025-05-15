@@ -33,7 +33,8 @@ services:
     networks:
       - internal
     profiles:
-      - dev  # exposed on dev only
+      - dev
+      - prod
 
   # --------------------
   # API Server
@@ -53,10 +54,15 @@ services:
       - web
     # In prod, we let Traefik route /api → server
     labels:
-      - "traefik.enable=${COMPOSE_PROFILES:-false}"  
+      - "traefik.enable=${COMPOSE_PROFILES:-false}"
       - "traefik.docker.network=web"
+
+      # Public router → container
       - "traefik.http.routers.${SUBDOMAIN}-api.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/api`)"
       - "traefik.http.routers.${SUBDOMAIN}-api.entrypoints=websecure"
+      - "traefik.http.routers.${SUBDOMAIN}-api.tls.certresolver=letsencrypt"
+
+      # Back-end service
       - "traefik.http.services.${SUBDOMAIN}-api.loadbalancer.server.port=8000"
     profiles:
       - prod
@@ -85,9 +91,19 @@ services:
     labels:
       - "traefik.enable=${COMPOSE_PROFILES:-false}"
       - "traefik.docker.network=web"
+
+      # Main site (everything except /api)
       - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.${SUBDOMAIN}-app.entrypoints=websecure"
+      - "traefik.http.routers.${SUBDOMAIN}-app.tls.certresolver=letsencrypt"
       - "traefik.http.services.${SUBDOMAIN}-app.loadbalancer.server.port=3000"
+
+      # Higher-priority router just for Next.js static assets
+      - "traefik.http.routers.${SUBDOMAIN}-static.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/_next`)"
+      - "traefik.http.routers.${SUBDOMAIN}-static.priority=11"
+      - "traefik.http.routers.${SUBDOMAIN}-static.entrypoints=websecure"
+      - "traefik.http.routers.${SUBDOMAIN}-static.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${SUBDOMAIN}-static.service=${SUBDOMAIN}-app"
     profiles:
       - prod
       - dev
