@@ -1,12 +1,11 @@
 // utils/mutations/end-chat.ts
 "use server"
 import { chatProfile, chats } from '@/drizzle/schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { db } from '@/utils/drizzle/database';
 import { chatTitles } from '../profiles';
 import { chatScenarios } from '../profiles';
 
 export async function createChat(profile: typeof chatProfile.enumValues[number], userId: string) {
-    const db = drizzle(process.env.DATABASE_URL!);
     try {
         const title = chatTitles[profile];
         const scenarioDescription = chatScenarios[profile];

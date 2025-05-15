@@ -13,12 +13,21 @@ def generate_sqlmodel_from_sql():
     # Get the Python executable from the virtual environment
     python_executable = sys.executable
 
-    # Database connection string
-    db_url = os.getenv("DATABASE_URL")
+    # Get database connection parameters
+    db_user = os.getenv("DB_USER")
+    db_password = os.getenv("DB_PASSWORD")
+    db_name = os.getenv("DB_NAME")
+    db_port = os.getenv("DB_PORT")
+    db_host = os.getenv("DB_HOST")
+    
+    # Construct the database URL
+    db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
-    if not db_url:
-        print("Error: DATABASE_URL environment variable is not set")
+    if not all([db_user, db_password, db_name, db_host, db_port]):
+        print("Error: Database environment variables are not properly set")
         sys.exit(1)
+    
+    print(f"Using database URL: {db_url}")
 
     # Run sqlacodegen directly as a command-line tool
     cmd = [python_executable, "-m", "sqlacodegen", "--generator=sqlmodels", db_url]
@@ -57,6 +66,19 @@ def generate_sqlmodel_from_sql():
                 f"class {model_class}(SQLModel, table=True):",
                 f"class {model_class}(_Base, table=True):",
             )
+            
+        # Fix inheritance issues - convert any class that inherits from another model to use composition instead
+        inheritance_pattern = r"class (\w+)\((\w+), table=True\):"
+        for match in re.finditer(inheritance_pattern, generated_code):
+            child_class = match.group(1)
+            parent_class = match.group(2)
+            if parent_class != "_Base" and parent_class != "SQLModel":
+                # Replace inheritance with composition
+                generated_code = generated_code.replace(
+                    f"class {child_class}({parent_class}, table=True):",
+                    f"class {child_class}(_Base, table=True):"
+                )
+                print(f"Fixed inheritance: {child_class} now uses composition instead of inheriting from {parent_class}")
 
         # Write the modified output to the models.py file
         output_path = "app/models.py"

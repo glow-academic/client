@@ -2,10 +2,9 @@
 "use server"
 import { eq } from 'drizzle-orm';
 import { chats } from '@/drizzle/schema';
-import { drizzle } from 'drizzle-orm/postgres-js';
+import { db } from '@/utils/drizzle/database';
 
 export async function endChat(chatId: string) {
-    const db = drizzle(process.env.DATABASE_URL!);
     try {
         const chat = await db.update(chats).set({ completed: true }).where(eq(chats.id, chatId));
         if (!chat[0]) {
