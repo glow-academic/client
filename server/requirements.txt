@@ -12,7 +12,8 @@ python-dotenv
 
 sqlmodel 
 
-openai-agents[litellm]==0.0.14
+openai
+openai-agents[litellm]
 
 # Add psycopg2-binary for SQLAlchemy compatibility
 psycopg2-binary
@@ -33,7 +34,3 @@ pytest
 pytest-asyncio
 respx
 coverage
-
-google-generativeai
-
-python-multipart

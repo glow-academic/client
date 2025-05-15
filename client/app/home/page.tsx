@@ -17,7 +17,6 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createChat } from "@/utils/mutations/create-chat";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('new');
@@ -62,23 +61,23 @@ export default function HomePage() {
   const newCount = chatProfile.enumValues.length
   const passedCount = rubrics?.filter((rubric) => rubric.passed).length;
   const failedCount = rubrics?.filter((rubric) => !rubric.passed).length;
+  const inProgressCount = chats?.filter((chat) => !chat.completed).length;
 
   const handleStartChat = async (profile: typeof chatProfile.enumValues[number]) => {
     try {
       if (!user) {
         throw new Error("User not found");
       }
-      // TODO: will need to call the API in practice, having the inital agent and message getting setup
       const formData = new FormData();
       formData.append("profile", profile);
-      formData.append("userId", user.id);
+      formData.append("user_id", user.id);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/new`, {
         method: "POST",
         body: formData,
       });
       if (response.ok) {
         const data = await response.json();
-        router.push(`/chat/${data.chatId}`);
+        router.push(`/chat/${data.chat_id}`);
       } else {
         throw new Error(response.statusText);
       }
@@ -110,43 +109,65 @@ export default function HomePage() {
           <nav className="-mb-px flex" aria-label="Tabs">
             <button
               onClick={() => setActiveTab('new')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'new'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
+                activeTab === 'new'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
             >
               New
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'new' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-                }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
+                activeTab === 'new' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+              }`}>
                 {newCount}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('passed')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'passed'
-                ? 'border-green-500 text-green-600'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
+                activeTab === 'passed'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
             >
               Passed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'passed' ? 'bg-green-500 text-white' : 'bg-green-100 text-green-800'
-                }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
+                activeTab === 'passed' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+              }`}>
                 {passedCount}
               </span>
             </button>
 
             <button
               onClick={() => setActiveTab('failed')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'failed'
-                ? 'border-red-500 text-red-600'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
+                activeTab === 'failed'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
             >
               Failed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${activeTab === 'failed' ? 'bg-red-500 text-white' : 'bg-red-100 text-red-800'
-                }`}>
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
+                activeTab === 'failed' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+              }`}>
                 {failedCount}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('in-progress')}
+              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
+                activeTab === 'in-progress'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
+              }`}
+            >
+              In Progress
+              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
+                activeTab === 'in-progress' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
+              }`}>
+                {inProgressCount}
               </span>
             </button>
 
@@ -269,69 +290,142 @@ export default function HomePage() {
             </div>
           )}
 
-          {(activeTab === 'passed' || activeTab === 'failed') && (
-            chats && chats.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {chats.map((chat) => (
-                  <Link
-                    href={`/chat/${chat.id}`}
-                    key={chat.id}
-                    className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
-                  >
-                    <div className="flex flex-col items-center">
-                      <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
-                        <span className="text-4xl">
-                          {profileIcons[chat.profile]}
-                        </span>
-
-                        {rubrics?.find((rubric) => rubric.chatId === chat.id)?.passed && (
-                          <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-green-500 text-white rounded-full border-2 border-white">
-                            ✓
-                          </span>
-                        )}
-
-                        {!rubrics?.find((rubric) => rubric.chatId === chat.id)?.passed && (
-                          <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-red-500 text-white rounded-full border-2 border-white">
-                            ✗
-                          </span>
-                        )}
-                      </div>
-
-                      <h3 className="text-xl font-bold mb-2">{chat.title}</h3>
-
-                      {chat.completed && (
-                        <div className="w-full mt-2 text-sm">
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Last attempt:</span>
-                            <span>{rubrics?.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())[0]?.createdAt}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Score:</span>
-                            <span className={rubrics?.find((rubric) => rubric.chatId === chat.id && rubric.passed) ? 'text-green-600 font-semibold' : 'text-red-600 font-semibold'}>
-                              {rubrics?.find((rubric) => rubric.chatId === chat.id)?.score}/100
+          {activeTab === 'in-progress' && (
+            <>
+              {chats ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {chats
+                    .filter(chat => !chat.completed)
+                    .map((chat) => (
+                      <Link
+                        href={`/chat/${chat.id}`}
+                        key={chat.id}
+                        className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
+                      >
+                        <div className="flex flex-col items-center">
+                          <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
+                            <span className="text-4xl">
+                              {profileIcons[chat.profile]}
+                            </span>
+                            <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
+                              ⋯
                             </span>
                           </div>
-                          <div className="flex justify-between text-muted-foreground">
-                            <span>Attempts:</span>
-                            <span>{rubrics?.filter((rubric) => rubric.chatId === chat.id).length}</span>
+
+                          <h3 className="text-xl font-bold mb-2 text-foreground">{chat.profile}</h3>
+                          
+                          <div className="w-full mt-2 text-sm">
+                            <div className="flex justify-between">
+                              <span>Started:</span>
+                              <span>{new Date(chat.createdAt).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
+                            Continue
                           </div>
                         </div>
-                      )}
+                      </Link>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-secondary/30 rounded-lg">
+                  <p className="text-muted-foreground">Loading...</p>
+                </div>
+              )}
+              
+              {chats && chats.filter(chat => !chat.completed).length === 0 && (
+                <div className="text-center py-12 bg-secondary/30 rounded-lg">
+                  <p className="text-muted-foreground">No in-progress student types found.</p>
+                </div>
+              )}
+            </>
+          )}
 
-                      <div className={`mt-4 w-full py-2 text-center rounded-md ${!chat.completed ? 'bg-primary text-primary-foreground' :
-                        rubrics?.find((rubric) => rubric.chatId === chat.id && rubric.passed) ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
-                        }`}>
-                        {chat.completed ? 'Practice Again' : 'Continue'}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-secondary/30 rounded-lg">
-                <p className="text-muted-foreground">No student types in this category.</p>
-              </div>
-            )
+          {(activeTab === 'passed' || activeTab === 'failed') && (
+            <>
+              {chats && rubrics ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {chats
+                    .filter(chat => {
+                      const chatRubric = rubrics.find(r => r.chatId === chat.id);
+                      if (activeTab === 'passed') return chatRubric?.passed;
+                      if (activeTab === 'failed') return chatRubric && !chatRubric.passed;
+                      return false;
+                    })
+                    .map((chat) => {
+                      const chatRubric = rubrics.find(r => r.chatId === chat.id);
+                      return (
+                        <Link
+                          href={`/chat/${chat.id}`}
+                          key={chat.id}
+                          className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
+                        >
+                          <div className="flex flex-col items-center">
+                            <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
+                              <span className="text-4xl">
+                                {profileIcons[chat.profile]}
+                              </span>
+
+                              {chatRubric?.passed && (
+                                <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
+                                  ✓
+                                </span>
+                              )}
+
+                              {chatRubric && !chatRubric.passed && (
+                                <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
+                                  ✗
+                                </span>
+                              )}
+                            </div>
+
+                            <h3 className="text-xl font-bold mb-2 text-foreground">{chat.profile}</h3>
+
+                            {chat.completed && chatRubric && (
+                              <div className="w-full mt-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span>Last attempt:</span>
+                                  <span>{new Date(chatRubric.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex justify-between text-foreground">
+                                  <span>Score:</span>
+                                  <span className="font-semibold">
+                                    {chatRubric.score}/28
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span>Attempts:</span>
+                                  <span>{rubrics.filter((r) => r.chatId === chat.id).length}</span>
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
+                              Practice Again
+                            </div>
+                          </div>
+                        </Link>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-12 bg-secondary/30 rounded-lg">
+                  <p className="text-muted-foreground">Loading...</p>
+                </div>
+              )}
+              
+              {chats && rubrics && chats.filter(chat => {
+                const chatRubric = rubrics.find(r => r.chatId === chat.id);
+                if (activeTab === 'passed') return chatRubric?.passed;
+                if (activeTab === 'failed') return chatRubric && !chatRubric.passed;
+                return false;
+              }).length === 0 && (
+                <div className="text-center py-12 bg-secondary/30 rounded-lg">
+                  <p className="text-muted-foreground">No {activeTab} student types found.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </main>

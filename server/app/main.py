@@ -26,8 +26,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging - change this section
+logging.basicConfig(
+    level=logging.INFO,  # Change from DEBUG to INFO
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -82,4 +85,7 @@ async def test_db_connection(session: Session = Depends(get_session)):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="debug")
+
+    uvicorn.run(
+        "app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
+    )

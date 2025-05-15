@@ -19,14 +19,14 @@ def generate_sqlmodel_from_sql():
     db_name = os.getenv("DB_NAME")
     db_port = os.getenv("DB_PORT")
     db_host = os.getenv("DB_HOST")
-    
+
     # Construct the database URL
     db_url = f"postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 
     if not all([db_user, db_password, db_name, db_host, db_port]):
         print("Error: Database environment variables are not properly set")
         sys.exit(1)
-    
+
     print(f"Using database URL: {db_url}")
 
     # Run sqlacodegen directly as a command-line tool
@@ -66,7 +66,7 @@ def generate_sqlmodel_from_sql():
                 f"class {model_class}(SQLModel, table=True):",
                 f"class {model_class}(_Base, table=True):",
             )
-            
+
         # Fix inheritance issues - convert any class that inherits from another model to use composition instead
         inheritance_pattern = r"class (\w+)\((\w+), table=True\):"
         for match in re.finditer(inheritance_pattern, generated_code):
@@ -76,9 +76,11 @@ def generate_sqlmodel_from_sql():
                 # Replace inheritance with composition
                 generated_code = generated_code.replace(
                     f"class {child_class}({parent_class}, table=True):",
-                    f"class {child_class}(_Base, table=True):"
+                    f"class {child_class}(_Base, table=True):",
                 )
-                print(f"Fixed inheritance: {child_class} now uses composition instead of inheriting from {parent_class}")
+                print(
+                    f"Fixed inheritance: {child_class} now uses composition instead of inheriting from {parent_class}"
+                )
 
         # Write the modified output to the models.py file
         output_path = "app/models.py"

@@ -5,6 +5,6 @@ import { rubrics } from '@/drizzle/schema';
 import { db } from '@/utils/drizzle/database';
 
 export async function getRubrics(chatIds: string[]) {
-    const chatRubrics = await db.select().from(rubrics).where(inArray(rubrics.id, chatIds));
+    const chatRubrics = await db.select().from(rubrics).where(inArray(rubrics.chatId, chatIds));
     return chatRubrics;
 }

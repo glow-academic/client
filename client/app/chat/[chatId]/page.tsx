@@ -41,6 +41,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         queryFn: () => getRubric(chatId),
     });
 
+    console.log(rubric);
+
     // Fetch messages
     const { data: messages = [] } = useQuery({
         queryKey: ["messages", chatId],
@@ -56,40 +58,128 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     };
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!newMessage.trim()) return;
+
+        /* ---------------- optimistic user bubble ---------------- */
+        const userMsg: (typeof messages)[0] = {
+            id: `temp-${Date.now()}`,
+            query: newMessage,
+            response: "",
+            createdAt: new Date().toISOString(),
+            chatId: chatId,
+            completed: false,
+        };
+
+        const aiMsg: (typeof messages)[0] = {
+            id: `temp-ai-${Date.now()}`,
+            query: "",
+            response: "",
+            createdAt: new Date().toISOString(),
+            chatId: chatId,
+            completed: false,
+        };
+
+        queryClient.setQueryData(["messages", chatId], (old: (typeof messages)[0][] = []) => [
+            ...old,
+            userMsg,
+            aiMsg,
+        ]);
+
+        setNewMessage("");                                    // clear input
+        let accumulated = "";                                 // running buffer
+        let streaming = true;                                 // gate for re-entry
+        const ctrl = new AbortController();
+
         try {
-            e.preventDefault();
-            const formData = new FormData(e.target as HTMLFormElement);
-            formData.append("message", newMessage);
+            /* --------------- kick off POST + SSE ------------------ */
+            const formData = new FormData();
             formData.append("chat_id", chatId);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/message`, {
-                method: "POST",
-                body: formData,
-            });
-            const data = await response.json();
-            console.log(data);
-        } catch (error) {
-            console.error(error);
+            formData.append("message", userMsg.query);
+
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/chat/message`,
+                {
+                    method: "POST",
+                    headers: { Accept: "text/event-stream" },
+                    cache: "no-cache",
+                    body: formData,
+                    signal: ctrl.signal,
+                },
+            );
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const reader = res.body!.getReader();
+            const decoder = new TextDecoder();
+            let buffer = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                buffer += decoder.decode(value, { stream: true });
+
+                /* consume complete SSE frames */
+                const parts = buffer.split("\n\n");
+                buffer = parts.pop()!;                    // keep partial chunk
+
+                for (const part of parts) {
+                    if (!part.startsWith("data:")) continue;
+
+                    const data = JSON.parse(part.slice(5)); // strip "data: "
+
+                    if (data.text) {
+                        accumulated += data.text;
+
+                        /* immutable cache update */
+                        queryClient.setQueryData(["messages", chatId], (old: (typeof messages)[0][] = []) =>
+                            old.map((m) =>
+                                m.id === aiMsg.id ? { ...m, response: accumulated } : m,
+                            ),
+                        );
+                    }
+
+                    if (data.done || data.error) {
+                        streaming = false;
+                        await queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("sendMessage error:", err);
+            queryClient.setQueryData(["messages", chatId], (old: (typeof messages)[0][] = []) =>
+                old.map((m) =>
+                    m.id === aiMsg.id
+                        ? {
+                            ...m,
+                            response: "⚠️ Error - please try again.",
+                        }
+                        : m,
+                ),
+            );
         } finally {
-            queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
-            queryClient.invalidateQueries({ queryKey: ["messages", chatId] });
-            setNewMessage("");
+            streaming && ctrl.abort(); // ensure closure if unmount during stream
         }
     };
 
     const handleEndSession = async () => {
         setLoading(true);
         try {
-            // TODO: will need to call the API in practice, making the rubric pass/fail
-            const { success, error } = await endChat(chatId);
-            if (success) {
-                router.push('/home');
-            } else {
-                throw new Error(error);
+            const formData = new FormData();
+            formData.append("chat_id", chatId);
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/end`, {
+                method: "POST",
+                body: formData,
+            });
+            if (!response.ok) {
+                throw new Error(response.statusText);
             }
         } catch (error) {
             console.error(error);
         } finally {
             queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
+            queryClient.invalidateQueries({ queryKey: ["rubric", chatId] });
             setLoading(false);
         }
     };
@@ -99,14 +189,6 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             <header className="bg-primary text-primary-foreground p-4">
                 <div className="container mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => router.push('/home')}
-                            className="p-1 rounded-full bg-secondary/20 hover:bg-secondary/40"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                            </svg>
-                        </button>
                         <h1 className="text-xl font-semibold">Conversation Practice</h1>
                     </div>
 

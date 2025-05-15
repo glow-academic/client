@@ -1,7 +1,8 @@
 # tests/test_chat.py
 from fastapi.testclient import TestClient
 from sqlmodel import Session
-from app.models import Chat, Message
+from app.models import Chat
+
 
 def test_new_chat_endpoint(client: TestClient, session: Session):
     # Create a test chat
@@ -11,6 +12,7 @@ def test_new_chat_endpoint(client: TestClient, session: Session):
 
     chat_id = str(test_chat.id)
 
+
 def test_end_chat_endpoint(client: TestClient, session: Session):
     # Create a test chat
     test_chat = Chat(title="Test Chat", profile="default", user_id="test-user")
@@ -18,6 +20,7 @@ def test_end_chat_endpoint(client: TestClient, session: Session):
     session.commit()
 
     chat_id = str(test_chat.id)
+
 
 def test_message_endpoint(client: TestClient, session: Session):
     # Create a test chat
