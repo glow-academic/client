@@ -35,4 +35,3 @@ async def run_confused_agent(chat_id: str, input_text: str = "") -> AsyncGenerat
 
     async for chunk in generate_text_async(prompt_parts=prompt_parts, system_instruction=system_prompt):
         yield chunk
-

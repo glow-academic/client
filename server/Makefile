@@ -51,7 +51,7 @@ generate-models: venv
 # 9. Start FastAPI via Uvicorn
 run: sync generate-models
 	@echo "Starting FastAPI server..."
-	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
+	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
 prod: sync

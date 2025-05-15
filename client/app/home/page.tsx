@@ -69,11 +69,18 @@ export default function HomePage() {
         throw new Error("User not found");
       }
       // TODO: will need to call the API in practice, having the inital agent and message getting setup
-      const { success, error, chatId } = await createChat(profile, user.id);
-      if (success) {
-        router.push(`/chat/${chatId}`);
+      const formData = new FormData();
+      formData.append("profile", profile);
+      formData.append("userId", user.id);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/new`, {
+        method: "POST",
+        body: formData,
+      });
+      if (response.ok) {
+        const data = await response.json();
+        router.push(`/chat/${data.chatId}`);
       } else {
-        throw new Error(error);
+        throw new Error(response.statusText);
       }
     } catch (error) {
       console.error('Error creating chat:', error);

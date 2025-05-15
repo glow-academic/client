@@ -42,11 +42,4 @@ async def generate_scenario(profile: str, chat_id: str) -> str:
     
     # Use the non-streaming version for scenario generation as it's a single block of text.
     description = await generate_text_non_stream_async(prompt_parts=[prompt_instruction])
-    
-    if description.startswith("Error:"):
-        logger.error(f"Failed to generate scenario from Gemini: {description}")
-        # Fallback to a simpler description
-        return f"You are about to interact with an agent who has a '{profile}' personality. Prepare for an interesting conversation! (Chat ID: {chat_id})"
-        
-    logger.info(f"Generated scenario for profile {profile} (chat_id: {chat_id}): {description}")
     return description

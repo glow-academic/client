@@ -61,7 +61,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             const formData = new FormData(e.target as HTMLFormElement);
             formData.append("message", newMessage);
             formData.append("chat_id", chatId);
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/message`, {
                 method: "POST",
                 body: formData,
             });
