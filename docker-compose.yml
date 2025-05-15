@@ -1,8 +1,8 @@
-version: '3.8'
-
 networks:
   web:
     external: true
+  internal:
+    # Add an internal network for container-to-container communication
 
 services:
   database:
@@ -15,9 +15,12 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
+      - CLEAN_DB=${CLEAN_DB:-false}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./database/init.sql:/init.sql
+      - ./database/custom-entrypoint.sh:/custom-entrypoint.sh
+    command: ["/custom-entrypoint.sh"]
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -38,6 +41,8 @@ services:
       - .env
     environment:
       - DB_HOST=database
+    ports:
+      - "${SERVER_PORT}:8000"
 
   client:
     build:
@@ -50,6 +55,8 @@ services:
       - .env
     environment:
       - DB_HOST=database
+    ports:
+      - "${CLIENT_PORT}:3000"
     # networks:
     #   - web
     # labels:
@@ -61,6 +68,13 @@ services:
     #   - "traefik.http.middlewares.strip-glow.stripprefix.prefixes=/glow"
     #   - "traefik.http.routers.glow.middlewares=strip-glow"
     #   - "traefik.http.services.glow.loadbalancer.server.port=3000"
+    #   - "traefik.http.routers.glow-static.rule=Host(`api.ashoksaravanan.com`) && PathPrefix(`/_next`)"
+    #   - "traefik.http.routers.glow-static.priority=11"
+    #   # add what’s still missing
+    #   - "traefik.http.routers.glow-static.entrypoints=websecure"
+    #   - "traefik.http.routers.glow-static.tls.certresolver=letsencrypt"
+    #   # (optional but explicit)
+    #   - "traefik.http.routers.glow-static.service=glow"
 
 volumes:
   pgdata:
