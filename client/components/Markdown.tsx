@@ -98,6 +98,11 @@ export default function Markdown({
                 .latex-container { /* Consider renaming to .markdown-container or similar */
                     font-size: 1rem;
                     line-height: 1.75;
+                    width: 100%; /* Ensure container takes full width of parent */
+                    max-width: 100%; /* Prevent overflow */
+                    overflow-wrap: break-word; /* Allow long words to break */
+                    word-wrap: break-word; /* Legacy support */
+                    word-break: break-word; /* Less aggressive than break-all */
                 }
                 
                 .prose-p {
@@ -173,9 +178,15 @@ export default function Markdown({
                     padding: 1em;
                     overflow-x: auto;
                     border-radius: 0.375rem; /* Tailwind rounded-md */
-                    /* background-color provided by highlight.js theme */
+                    max-width: 100%; /* Ensure code blocks don't overflow */
+                    white-space: pre-wrap; /* Allow code to wrap */
                 }
 
+                /* Ensure inline elements don't overflow */
+                .prose-code, .prose-a {
+                    word-break: break-word;
+                    overflow-wrap: break-word;
+                }
 
                 .prose-ul, .prose-ol {
                     margin: 1.25em 0;
@@ -191,6 +202,7 @@ export default function Markdown({
                     margin: 1em 0 !important;
                     overflow-x: auto;
                     overflow-y: hidden;
+                    max-width: 100%; /* Ensure math doesn't overflow */
                 }
 
                 .katex {
@@ -283,6 +295,12 @@ export default function Markdown({
                     padding: 0.5em;
                     /* background: #f8f8f8; /* Example background, theme will provide this */
                     /* color: #333; /* Example text color, theme will provide this */
+                }
+
+                /* Ensure images are responsive */
+                img {
+                    max-width: 100%;
+                    height: auto;
                 }
             `}</style>
         </div>
