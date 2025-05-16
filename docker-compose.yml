@@ -61,15 +61,17 @@ services:
       - "traefik.docker.network=web"
 
       # Public router → container
-      - "traefik.http.routers.${SUBDOMAIN}-api.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${SUBDOMAIN}-api.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/documents`))"
       - "traefik.http.routers.${SUBDOMAIN}-api.entrypoints=websecure"
       - "traefik.http.routers.${SUBDOMAIN}-api.tls.certresolver=letsencrypt"
 
       # Back-end service
       - "traefik.http.services.${SUBDOMAIN}-api.loadbalancer.server.port=8000"
 
+      # Strip prefix middleware - only strip /api, not /documents
       - "traefik.http.middlewares.${SUBDOMAIN}-strip-api.stripprefix.prefixes=/api"
-      - "traefik.http.routers.${SUBDOMAIN}-api.middlewares=${SUBDOMAIN}-strip-api"
+      - "traefik.http.middlewares.${SUBDOMAIN}-strip-api.stripprefix.forceSlash=false"
+      - "traefik.http.routers.${SUBDOMAIN}-api.middlewares=${SUBDOMAIN}-strip-api@docker"
     profiles:
       - prod
       - dev
