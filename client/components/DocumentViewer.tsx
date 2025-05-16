@@ -70,10 +70,6 @@ export default function DocumentViewer({ profile }: DocumentViewerProps) {
         setLoading(false);
       }
     })();
-    /* revoke blobs on change */
-    return () => {
-      if (content && type && !type.startsWith("text/")) URL.revokeObjectURL(content);
-    };
   }, [docId]);
 
   /* ------------------------------------------------------------------ */
