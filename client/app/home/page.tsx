@@ -16,11 +16,12 @@ import { getUser } from "@/utils/queries/get-user";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('new');
   const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(true);
 
   const router = useRouter();
 
@@ -86,8 +87,30 @@ export default function HomePage() {
     }
   }
 
+  useEffect(() => {
+    setShowModal(true);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
+            <h2 className="text-lg font-semibold mb-4">Orientation Workshop</h2>
+            <p className="mb-4">
+              This is an orientation workshop that will prepare you for dealing
+              with different types of student during office hours.
+            </p>
+            <button
+              onClick={() => setShowModal(false)}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="bg-primary text-primary-foreground p-4">
         <div className="container mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold">GLOW - GTA Training</h1>

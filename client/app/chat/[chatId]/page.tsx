@@ -8,26 +8,27 @@
 
 import { backgroundColors } from '@/utils/profiles';
 import { borderColors } from '@/utils/profiles';
-import { endChat } from '@/utils/mutations/end-chat';
 import { getChat } from '@/utils/queries/get-chat';
 import { getMessages } from '@/utils/queries/get-messages';
 import { getRubric } from '@/utils/queries/get-rubric';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import React, { useState, useRef, use } from 'react';
+import React, { useState, useRef, use, useEffect } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import Markdown from '@/components/Markdown';
+import DocumentViewer from '@/components/DocumentViewer';
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
     const { chatId } = use(params);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
     const [loading, setLoading] = useState(false);
+    const [isFirstMessage, setIsFirstMessage] = useState(true);
     const queryClient = useQueryClient();
 
     const router = useRouter();
@@ -48,6 +49,13 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         queryFn: () => getMessages(chatId),
     });
 
+    // Check if there are already messages to determine if it's the first interaction
+    useEffect(() => {
+        if (messages.length > 0) {
+            setIsFirstMessage(false);
+        }
+    }, [messages]);
+
     const renderScoreIcon = (score: number) => {
         if (score >= 3) {
             return <span className="text-green-500 text-xl">✓</span>;
@@ -56,14 +64,19 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         }
     };
 
-    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        if (!newMessage.trim()) return;
+    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement> | null, initialMessage?: string) => {
+        if (e) e.preventDefault();
+        
+        const messageToSend = initialMessage || newMessage;
+        if (!messageToSend.trim()) return;
+
+        // Set first message flag to false when a message is sent
+        setIsFirstMessage(false);
 
         /* ---------------- optimistic user bubble ---------------- */
         const userMsg: (typeof messages)[0] = {
             id: `temp-${Date.now()}`,
-            query: newMessage,
+            query: messageToSend,
             response: "",
             createdAt: new Date().toISOString(),
             chatId: chatId,
@@ -158,7 +171,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 ),
             );
         } finally {
-            streaming && ctrl.abort(); // ensure closure if unmount during stream
+            if (streaming) ctrl.abort(); // ensure closure if unmount during stream
         }
     };
 
@@ -183,6 +196,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         }
     };
 
+    // Handler for initial message button clicks
+    const handleInitialMessageClick = (message: string) => {
+        handleSendMessage(null, message);
+    };
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <header className="bg-primary text-primary-foreground p-4">
@@ -205,8 +223,15 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 </div>
 
                 <div className="flex flex-1 gap-4">
-                    {/* Chat area - takes full width or 2/3 width depending on rubric display */}
-                    <div className={`${chat?.completed ? 'w-2/3' : 'w-full'} flex flex-col`}>
+                    {/* Document viewer - shown on left when chat is completed */}
+                    {chat?.completed ? (
+                        <div className="w-1/3">
+                            <DocumentViewer profile={chat?.profile || 'aggressive'} />
+                        </div>
+                    ) : null}
+
+                    {/* Chat area */}
+                    <div className={`${chat?.completed ? 'w-1/2' : 'w-2/3'} flex flex-col`}>
                         <Card className="flex-1 mb-4">
                             <CardContent className="p-0 h-full">
                                 <ScrollArea className="h-[calc(100vh-280px)]">
@@ -249,128 +274,139 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             {/* Only show input area if rubric is not shown */}
                             {!chat?.completed && (
                                 <CardFooter className="p-3">
-                                    <form onSubmit={handleSendMessage} className="flex w-full gap-2">
-                                        <Input
-                                            type="text"
-                                            value={newMessage}
-                                            onChange={(e) => setNewMessage(e.target.value)}
-                                            placeholder="Type your response..."
-                                            className="flex-1"
-                                        />
-                                        <Button type="submit" disabled={!newMessage.trim()} size="icon">
-                                            <Send className="h-4 w-4" />
-                                            <span className="sr-only">Send</span>
-                                        </Button>
-                                        <Button
-                                            onClick={handleEndSession}
-                                            variant="destructive"
-                                            disabled={loading}
-                                        >
-                                            {loading ? 'Ending...' : 'End Session'}
-                                        </Button>
-                                    </form>
+                                    {isFirstMessage ? (
+                                        <div className="w-full flex flex-row gap-3">
+                                            <Button 
+                                                onClick={() => handleInitialMessageClick("Hi, how are you?")}
+                                                variant="outline"
+                                                className="flex-1 h-auto py-3 text-center"
+                                            >
+                                                Hi, how are you?
+                                            </Button>
+                                            <Button 
+                                                onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
+                                                variant="outline"
+                                                className="flex-1 h-auto py-3 text-center"
+                                            >
+                                                Hi, what can I help you with?
+                                            </Button>
+                                            <Button 
+                                                onClick={() => handleInitialMessageClick("Hi, are you here for CS 253?")}
+                                                variant="outline"
+                                                className="flex-1 h-auto py-3 text-center"
+                                            >
+                                                Hi, are you here for CS 253?
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <form onSubmit={handleSendMessage} className="flex w-full gap-2">
+                                            <Input
+                                                type="text"
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                                placeholder="Type your response..."
+                                                className="flex-1"
+                                                autoFocus
+                                            />
+                                            <Button type="submit" disabled={!newMessage.trim()} size="icon">
+                                                <Send className="h-4 w-4" />
+                                                <span className="sr-only">Send</span>
+                                            </Button>
+                                            <Button
+                                                onClick={handleEndSession}
+                                                variant="destructive"
+                                                disabled={loading}
+                                            >
+                                                {loading ? 'Ending...' : 'End Session'}
+                                            </Button>
+                                        </form>
+                                    )}
                                 </CardFooter>
                             )}
                         </Card>
                     </div>
 
-                    {/* Rubric area - shown only for pass/fail students */}
-                    {chat?.completed && (
-                        <Card className="w-1/3">
+                    {/* Rubric area when completed, otherwise document viewer */}
+                    {chat?.completed ? (
+                        <Card className="w-1/6">
                             <CardHeader>
-                                <CardTitle className="text-center">Assessment Rubric</CardTitle>
+                                <CardTitle className="text-center text-sm">Assessment</CardTitle>
                             </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="border-b pb-2">
+                            <CardContent className="p-2 text-sm">
+                                <div className="space-y-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Active Listening</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.activeListening || 0)}
-                                                <span className="ml-1">{rubric?.activeListening}/4</span>
-                                            </span>
+                                            <span>{rubric?.activeListening}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Empathy</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.empathy || 0)}
-                                                <span className="ml-1">{rubric?.empathy}/4</span>
-                                            </span>
+                                            <span>{rubric?.empathy}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Problem Solving</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.problemSolving || 0)}
-                                                <span className="ml-1">{rubric?.problemSolving}/4</span>
-                                            </span>
+                                            <span>{rubric?.problemSolving}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Communication</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.communication || 0)}
-                                                <span className="ml-1">{rubric?.communication}/4</span>
-                                            </span>
+                                            <span>{rubric?.communication}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-medium">Resource Utilization</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.resourceUtilization || 0)}
-                                                <span className="ml-1">{rubric?.resourceUtilization}/4</span>
-                                            </span>
+                                            <span className="font-medium">Resource Use</span>
+                                            <span>{rubric?.resourceUtilization}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Time Management</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.timeManagement || 0)}
-                                                <span className="ml-1">{rubric?.timeManagement}/4</span>
-                                            </span>
+                                            <span>{rubric?.timeManagement}/4</span>
                                         </div>
                                     </div>
 
-                                    <div className="border-b pb-2">
+                                    <div className="border-b pb-1">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Adaptability</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.adaptability || 0)}
-                                                <span className="ml-1">{rubric?.adaptability}/4</span>
-                                            </span>
+                                            <span>{rubric?.adaptability}/4</span>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6">
-                                    <div className={`p-3 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                <div className="mt-4">
+                                    <div className={`p-2 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
-                                        <div className="text-xl mb-1">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
-                                        <div className="text-sm">
-                                            Total Score: {rubric?.score}/28
+                                        <div className="text-lg">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
+                                        <div className="text-xs">
+                                            Score: {rubric?.score}/28
                                         </div>
                                     </div>
 
                                     <Button
                                         onClick={() => router.push('/home')}
-                                        className="mt-4 w-full"
+                                        className="mt-4 w-full text-xs py-1 h-auto"
                                     >
                                         Return to Dashboard
                                     </Button>
                                 </div>
                             </CardContent>
                         </Card>
+                    ) : (
+                        // Document viewer - shown on right when chat is active
+                        <div className="w-1/3">
+                            <DocumentViewer profile={chat?.profile || 'aggressive'} />
+                        </div>
                     )}
                 </div>
             </div>

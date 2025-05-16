@@ -54,6 +54,16 @@ CREATE TABLE rubrics (
   time_management INTEGER     NOT NULL -- 0-4
 );
 
+-- 5) documents table - for reference materials
+CREATE TABLE documents (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  content    TEXT        NOT NULL, -- Base64 encoded content
+  mime_type  TEXT        NOT NULL,
+  profile    chat_profile NOT NULL -- Associated profile type
+);
+
 -- Insert two users with hardcoded UUIDs
 INSERT INTO users (id, username, password) VALUES
   ('11111111-1111-1111-1111-111111111111', 'ashok', 'saravanan'),

@@ -68,3 +68,12 @@ export const rubrics = pgTable("rubrics", {
 			name: "rubrics_chat_id_fkey"
 		}).onDelete("cascade"),
 ]);
+
+export const documents = pgTable("documents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	content: text().notNull(), // Base64 encoded content
+	mimeType: text("mime_type").notNull(),
+	profile: chatProfile().notNull(), // Associated profile type
+});

@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { users, chats, messages, rubrics } from "./schema";
+import { users, chats, messages, rubrics, documents } from "./schema";
 
 export const chatsRelations = relations(chats, ({one, many}) => ({
 	user: one(users, {
@@ -26,4 +26,8 @@ export const rubricsRelations = relations(rubrics, ({one}) => ({
 		fields: [rubrics.chatId],
 		references: [chats.id]
 	}),
+}));
+
+export const documentsRelations = relations(documents, ({}) => ({
+  // No direct relation to other tables, as documents are linked via profile type
 }));
