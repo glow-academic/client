@@ -19,34 +19,43 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send } from "lucide-react";
+import { Send, ChevronDown } from "lucide-react";
 import Markdown from '@/components/Markdown';
 import DocumentViewer from '@/components/DocumentViewer';
+import { getDocuments } from '@/utils/queries/get-documents';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
     const { chatId } = use(params);
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
-    const [loading, setLoading] = useState(false);
+    const [endSessionLoading, setEndSessionLoading] = useState(false);
     const [isFirstMessage, setIsFirstMessage] = useState(true);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
 
     const router = useRouter();
 
-    const { data: chat } = useQuery({
+    const { data: chat, isLoading: chatLoading } = useQuery({
         queryKey: ["chat", chatId],
         queryFn: () => getChat(chatId),
     });
 
-    const { data: rubric } = useQuery({
+    const { data: rubric, isLoading: rubricLoading } = useQuery({
         queryKey: ["rubric", chatId],
         queryFn: () => getRubric(chatId),
     });
 
     // Fetch messages
-    const { data: messages = [] } = useQuery({
+    const { data: messages = [], isLoading: messagesLoading } = useQuery({
         queryKey: ["messages", chatId],
         queryFn: () => getMessages(chatId),
+    });
+
+    const { data: documents = [], isLoading: documentsLoading } = useQuery({
+        queryKey: ["documents"],
+        queryFn: () => getDocuments(),
     });
 
     // Check if there are already messages to determine if it's the first interaction
@@ -56,17 +65,37 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         }
     }, [messages]);
 
-    const renderScoreIcon = (score: number) => {
-        if (score >= 3) {
-            return <span className="text-green-500 text-xl">✓</span>;
-        } else {
-            return <span className="text-red-500 text-xl">✗</span>;
-        }
+    // Scroll to bottom function
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        setShowScrollButton(false);      // guarantee it disappears
     };
+
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const el = e.target as HTMLDivElement;        // this is now the viewport
+        const atBottom =
+            Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 2; // 2-px tolerance
+        setShowScrollButton(!atBottom);
+    };
+    // Scroll to bottom when new messages arrive - removing auto-scroll behavior
+    useEffect(() => {
+        // Only scroll to bottom for new messages if user is already at the bottom
+        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollArea) {
+            const isAtBottom = scrollArea.scrollTop >= scrollArea.scrollHeight - scrollArea.clientHeight - 100;
+            if (messages.length > 0 && isAtBottom) {
+                scrollToBottom();
+            } else if (messages.length > 0) {
+                // Show scroll button when new messages arrive and we're not at bottom
+                // Only show if there's actually more content to scroll to
+                setShowScrollButton(scrollArea.scrollHeight > scrollArea.clientHeight);
+            }
+        }
+    }, [messages]);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement> | null, initialMessage?: string) => {
         if (e) e.preventDefault();
-        
+
         const messageToSend = initialMessage || newMessage;
         if (!messageToSend.trim()) return;
 
@@ -176,7 +205,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     };
 
     const handleEndSession = async () => {
-        setLoading(true);
+        setEndSessionLoading(true);
         try {
             const formData = new FormData();
             formData.append("chat_id", chatId);
@@ -192,13 +221,24 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         } finally {
             queryClient.invalidateQueries({ queryKey: ["chat", chatId] });
             queryClient.invalidateQueries({ queryKey: ["rubric", chatId] });
-            setLoading(false);
+            setEndSessionLoading(false);
         }
     };
 
     // Handler for initial message button clicks
     const handleInitialMessageClick = (message: string) => {
         handleSendMessage(null, message);
+    };
+
+    // Add this new component for the loading animation
+    const LoadingDots = () => {
+        return (
+            <div className="flex items-center space-x-1">
+                <span className="animate-pulse">.</span>
+                <span className="animate-pulse delay-200">.</span>
+                <span className="animate-pulse delay-400">.</span>
+            </div>
+        );
     };
 
     return (
@@ -218,73 +258,121 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             </header>
 
             <div className="container mx-auto flex-1 p-4 flex flex-col">
-                <div className={`mb-6 p-4 rounded-lg ${backgroundColors[chat?.profile || 'aggressive']} ${borderColors[chat?.profile || 'aggressive']} border`}>
-                    <p className="text-base">{chat?.scenarioDescription}</p>
-                </div>
+                {chatLoading ? (
+                    <Skeleton className="mb-6 p-4 h-24 rounded-lg w-full" />
+                ) : (
+                    <div className={`mb-6 p-4 rounded-lg ${backgroundColors[chat?.profile || 'aggressive']} ${borderColors[chat?.profile || 'aggressive']} border`}>
+                        <p className="text-base">{chat?.scenarioDescription}</p>
+                    </div>
+                )}
 
                 <div className="flex flex-1 min-h-0 gap-4">
 
                     {/* CHAT column */}
                     <div className="flex flex-col flex-1 min-h-0">
                         <Card className="flex flex-col flex-1 min-h-0">
-                            <CardContent className="flex-1 min-h-0 p-0">
-                                <ScrollArea className="flex-1 overflow-auto h-[calc(100vh-280px)] pb-0">
+                            <CardContent className="flex-1 min-h-0 p-0 relative">
+                                <ScrollArea
+                                    className="flex-1 overflow-auto h-[calc(100vh-280px)] pb-0"
+                                    ref={scrollAreaRef}
+                                    onScrollCapture={handleScroll}
+                                >
                                     <div className="space-y-4 p-4 pb-0">
-                                        {messages.map((message) => (
-                                            <div key={message.id} className="space-y-4">
-                                                {message.query && (
-                                                    <div className="flex items-start gap-3 text-sm justify-end">
-                                                        <div className="grid gap-1 text-right">
-                                                            <p className="font-medium">You</p>
-                                                            <div className="rounded-lg bg-muted p-3">
-                                                                <Markdown>{message.query}</Markdown>
+                                        {messagesLoading ? (
+                                            <>
+                                                <div className="flex items-start gap-3 text-sm">
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                    <div className="grid gap-1 w-full max-w-[80%]">
+                                                        <Skeleton className="h-4 w-20" />
+                                                        <Skeleton className="h-20 w-full rounded-lg" />
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-start gap-3 text-sm justify-end">
+                                                    <div className="grid gap-1 text-right w-full max-w-[80%]">
+                                                        <Skeleton className="h-4 w-20 ml-auto" />
+                                                        <Skeleton className="h-20 w-full rounded-lg" />
+                                                    </div>
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            messages.map((message) => (
+                                                <div key={message.id} className="space-y-4">
+                                                    {message.query && (
+                                                        <div className="flex items-start gap-3 text-sm justify-end">
+                                                            <div className="grid gap-1 text-right">
+                                                                <p className="font-medium">You</p>
+                                                                <div className="rounded-lg bg-muted p-3">
+                                                                    <Markdown>{message.query}</Markdown>
+                                                                </div>
+                                                            </div>
+                                                            <Avatar>
+                                                                <AvatarFallback>U</AvatarFallback>
+                                                            </Avatar>
+                                                        </div>
+                                                    )}
+                                                    {message.response !== undefined && (message.query !== "") && (
+                                                        <div className="flex items-start gap-3 text-sm">
+                                                            <Avatar>
+                                                                <AvatarFallback>AI</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="grid gap-1">
+                                                                <p className="font-medium">AI Assistant</p>
+                                                                <div className="rounded-lg bg-primary/10 p-3">
+                                                                    {message.response === "" ? (
+                                                                        <div className="flex items-center">
+                                                                            <span className="text-gray-500">Analyzing</span>
+                                                                            <LoadingDots />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <Markdown>{message.response}</Markdown>
+                                                                    )}
+                                                                </div>
                                                             </div>
                                                         </div>
-                                                        <Avatar>
-                                                            <AvatarFallback>U</AvatarFallback>
-                                                        </Avatar>
-                                                    </div>
-                                                )}
-                                                {message.response && (
-                                                    <div className="flex items-start gap-3 text-sm">
-                                                        <Avatar>
-                                                            <AvatarFallback>AI</AvatarFallback>
-                                                        </Avatar>
-                                                        <div className="grid gap-1">
-                                                            <p className="font-medium">AI Assistant</p>
-                                                            <div className="rounded-lg bg-primary/10 p-3">
-                                                                <Markdown>{message.response}</Markdown>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        ))}
+                                                    )}
+                                                </div>
+                                            ))
+                                        )}
                                         <div ref={messagesEndRef} className="h-2" />
                                     </div>
                                 </ScrollArea>
+
+                                {showScrollButton && (
+                                    <Button
+                                        className="absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full w-10 h-10 p-0 shadow-md z-10"
+                                        onClick={scrollToBottom}
+                                        size="icon"
+                                        variant="secondary"
+                                    >
+                                        <ChevronDown className="h-5 w-5" />
+                                        <span className="sr-only">Scroll to bottom</span>
+                                    </Button>
+                                )}
                             </CardContent>
 
                             {/* Only show input area if rubric is not shown */}
                             {!chat?.completed && (
                                 <CardFooter className="p-3">
-                                    {isFirstMessage ? (
+                                    {chatLoading ? (
+                                        <Skeleton className="w-full h-12 rounded-md" />
+                                    ) : isFirstMessage ? (
                                         <div className="w-full flex flex-row gap-3">
-                                            <Button 
+                                            <Button
                                                 onClick={() => handleInitialMessageClick("Hi, how are you?")}
                                                 variant="outline"
                                                 className="flex-1 h-auto py-3 text-center"
                                             >
                                                 Hi, how are you?
                                             </Button>
-                                            <Button 
+                                            <Button
                                                 onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
                                                 variant="outline"
                                                 className="flex-1 h-auto py-3 text-center"
                                             >
                                                 Hi, what can I help you with?
                                             </Button>
-                                            <Button 
+                                            <Button
                                                 onClick={() => handleInitialMessageClick("Hi, are you here for CS 253?")}
                                                 variant="outline"
                                                 className="flex-1 h-auto py-3 text-center"
@@ -309,9 +397,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             <Button
                                                 onClick={handleEndSession}
                                                 variant="destructive"
-                                                disabled={loading}
+                                                disabled={endSessionLoading}
                                             >
-                                                {loading ? 'Ending...' : 'End Session'}
+                                                {endSessionLoading ? 'Ending...' : 'End Session'}
                                             </Button>
                                         </form>
                                     )}
@@ -327,62 +415,98 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                 <CardTitle className="text-center text-sm">Assessment</CardTitle>
                             </CardHeader>
                             <CardContent className="p-2 text-sm">
-                                <div className="space-y-4">
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Active Listening</span>
-                                            <span>{rubric?.listening}/5</span>
-                                        </div>
-                                        <p className="text-xs mt-1 text-gray-600">{rubric?.listeningFeedback || "No feedback provided"}</p>
+                                {rubricLoading ? (
+                                    <div className="space-y-4">
+                                        {[...Array(4)].map((_, i) => (
+                                            <div key={i} className="border-b pb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <Skeleton className="h-4 w-32" />
+                                                    <Skeleton className="h-4 w-8" />
+                                                </div>
+                                                <Skeleton className="h-12 w-full mt-1" />
+                                            </div>
+                                        ))}
+                                        <Skeleton className="h-20 w-full mt-6 rounded-lg" />
+                                        <Skeleton className="h-10 w-full mt-6 rounded-md" />
                                     </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="border-b pb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium">Active Listening</span>
+                                                <span>{rubric?.listening}/5</span>
+                                            </div>
+                                            <p className="text-xs mt-1 text-gray-600">{rubric?.listeningFeedback || "No feedback provided"}</p>
+                                        </div>
 
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Objectives</span>
-                                            <span>{rubric?.objectives}/5</span>
+                                        <div className="border-b pb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium">Objectives</span>
+                                                <span>{rubric?.objectives}/5</span>
+                                            </div>
+                                            <p className="text-xs mt-1 text-gray-600">{rubric?.objectivesFeedback || "No feedback provided"}</p>
                                         </div>
-                                        <p className="text-xs mt-1 text-gray-600">{rubric?.objectivesFeedback || "No feedback provided"}</p>
-                                    </div>
 
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Time Management</span>
-                                            <span>{rubric?.timeManagement}/5</span>
+                                        <div className="border-b pb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium">Time Management</span>
+                                                <span>{rubric?.timeManagement}/5</span>
+                                            </div>
+                                            <p className="text-xs mt-1 text-gray-600">{rubric?.timeManagementFeedback || "No feedback provided"}</p>
                                         </div>
-                                        <p className="text-xs mt-1 text-gray-600">{rubric?.timeManagementFeedback || "No feedback provided"}</p>
-                                    </div>
 
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Adaptability</span>
-                                            <span>{rubric?.adaptability}/5</span>
+                                        <div className="border-b pb-2">
+                                            <div className="flex justify-between items-center">
+                                                <span className="font-medium">Adaptability</span>
+                                                <span>{rubric?.adaptability}/5</span>
+                                            </div>
+                                            <p className="text-xs mt-1 text-gray-600">{rubric?.adaptabilityFeedback || "No feedback provided"}</p>
                                         </div>
-                                        <p className="text-xs mt-1 text-gray-600">{rubric?.adaptabilityFeedback || "No feedback provided"}</p>
                                     </div>
-                                </div>
+                                )}
 
                                 <div className="mt-6">
-                                    <div className={`p-3 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                        }`}>
-                                        <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
-                                        <div className="text-sm mt-1">
-                                            Score: {rubric?.score}/20
-                                        </div>
-                                    </div>
+                                    {rubricLoading ? (
+                                        <>
+                                            <Skeleton className="h-16 w-full rounded-lg" />
+                                            <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className={`p-3 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
+                                                <div className="text-sm mt-1">
+                                                    Score: {rubric?.score}/20
+                                                </div>
+                                            </div>
 
-                                    <Button
-                                        onClick={() => router.push('/home')}
-                                        className="mt-6 w-full text-sm py-2 h-auto font-medium"
-                                        size="lg"
-                                    >
-                                        Return to Dashboard
-                                    </Button>
+                                            <Button
+                                                onClick={() => router.push('/home')}
+                                                className="mt-6 w-full text-sm py-2 h-auto font-medium"
+                                                size="lg"
+                                            >
+                                                Return to Dashboard
+                                            </Button>
+                                        </>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className="hidden lg:flex w-1/3 shrink-0">
-                            <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
+                        <div className={`hidden lg:flex w-${documents.filter(d => d.profile === chat?.profile).length > 0 ? '1/3' : '0'} shrink-0`}>
+                            {documentsLoading ? (
+                                <Card className="w-full">
+                                    <CardHeader>
+                                        <Skeleton className="h-6 w-32 mx-auto" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Skeleton className="h-[60vh] w-full rounded-md" />
+                                    </CardContent>
+                                </Card>
+                            ) : (
+                                <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
+                            )}
                         </div>
                     )}
                 </div>

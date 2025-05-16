@@ -3,7 +3,6 @@ import * as tus from 'tus-js-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from "sonner"
 
-import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
