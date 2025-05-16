@@ -6,28 +6,23 @@ if [ "$CLEAN_DB" = "true" ]; then
   echo "CLEAN_DB is set to true. Cleaning database..."
   rm -rf /var/lib/postgresql/data/*
   echo "Database data directory cleaned."
-  
-  # Set a flag to indicate we need to initialize
-  export POSTGRES_INITDB_ARGS="--auth-host=trust"
 fi
 
-# Start PostgreSQL with the original entrypoint
-# This will run initialization scripts in /docker-entrypoint-initdb.d/
-docker-entrypoint.sh postgres "$@" &
-PG_PID=$!
-
-# If we're cleaning the DB, make sure init.sql is executed
-if [ "$CLEAN_DB" = "true" ]; then
-  # Wait for PostgreSQL to start
-  until pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
-    echo "Waiting for PostgreSQL to start..."
-    sleep 1
-  done
-  
-  echo "PostgreSQL started. Running initialization script..."
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f /init.sql
-  echo "Initialization script executed successfully."
+# Create a flag file to indicate we need to run init.sql
+# This is needed because the docker-entrypoint.sh will run as PID 1
+# and we can't background it properly
+if [ "$CLEAN_DB" = "true" ] || [ ! -f "/var/lib/postgresql/data/PG_VERSION" ]; then
+  touch /tmp/run_init_sql
 fi
 
-# Wait for the PostgreSQL process to finish
-wait $PG_PID
+# Copy init.sql to the standard initialization directory
+# This ensures it runs during the standard PostgreSQL initialization process
+if [ -f "/init.sql" ] && [ -d "/docker-entrypoint-initdb.d" ]; then
+  cp /init.sql /docker-entrypoint-initdb.d/
+  chmod 755 /docker-entrypoint-initdb.d/init.sql
+  echo "Copied init.sql to standard initialization directory"
+fi
+
+# Execute the original entrypoint script
+# This will handle database initialization and run scripts in /docker-entrypoint-initdb.d/
+exec docker-entrypoint.sh postgres "$@"

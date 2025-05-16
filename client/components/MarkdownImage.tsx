@@ -12,10 +12,7 @@ export default function MarkdownImage(
   { src = '', alt = '', ...rest }: { src?: string; alt?: string } & Omit<ImageProps, 'src' | 'alt'>,
 ) {
   if (!src) return null;  // guard against missing URLs
-
-  // Check if the image is an SVG to apply dark mode styling
-  const isSvg = src.toLowerCase().endsWith('.svg');
-
+  
   return (
     <Image
       src={src}
