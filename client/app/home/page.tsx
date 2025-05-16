@@ -219,61 +219,45 @@ export default function HomePage() {
                   <thead className="bg-primary text-primary-foreground text-left">
                     <tr>
                       <th className="py-3 px-4 font-semibold">{"Criteria"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Excellent (4)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Proficient (3)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Developing (2)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Needs Improvement (1)"}</th>
+                      <th className="py-3 px-4 font-semibold">{"Excellent (5)"}</th>
+                      <th className="py-3 px-4 font-semibold">{"Good (4)"}</th>
+                      <th className="py-3 px-4 font-semibold">{"Acceptable (3)"}</th>
+                      <th className="py-3 px-4 font-semibold">{"Marginal (2)"}</th>
+                      <th className="py-3 px-4 font-semibold">{"Poor (1)"}</th>
                     </tr>
                   </thead>
                   <tbody>
                     <tr className="border-b border-border">
                       <td className="py-3 px-4 font-medium">{"Active Listening"}</td>
-                      <td className="py-3 px-4">{"Demonstrates exceptional attention to student's concerns, repeats and rephrases to confirm understanding"}</td>
-                      <td className="py-3 px-4">{"Shows consistent engagement with student's concerns, confirms understanding most of the time"}</td>
-                      <td className="py-3 px-4">{"Some evidence of listening but misses key points, limited confirmation of understanding"}</td>
-                      <td className="py-3 px-4">{"Minimal attention to student's concerns, frequently interrupts or misunderstands"}</td>
+                      <td className="py-3 px-4">{"Consistently employs open-ended questions that empower students to discover solutions independently."}</td>
+                      <td className="py-3 px-4">{"Regularly uses guided questioning, encouraging student reasoning with occasional prompts."}</td>
+                      <td className="py-3 px-4">{"Occasionally guides students with questions but sometimes provides direct answers."}</td>
+                      <td className="py-3 px-4">{"Rarely uses questioning techniques, often resorting to hints or partial solutions."}</td>
+                      <td className="py-3 px-4">{"Directly provided the answer"}</td>
                     </tr>
                     <tr className="border-b border-border bg-secondary/30">
-                      <td className="py-3 px-4 font-medium">{"Empathy"}</td>
-                      <td className="py-3 px-4">{"Consistently acknowledges emotions, shows genuine concern and understanding of student's perspective"}</td>
-                      <td className="py-3 px-4">{"Often recognizes emotions, attempts to understand student's perspective"}</td>
-                      <td className="py-3 px-4">{"Occasionally acknowledges emotions, limited attempts to understand perspective"}</td>
-                      <td className="py-3 px-4">{"Rarely acknowledges emotions or dismisses student's concerns"}</td>
+                      <td className="py-3 px-4 font-medium">{"Course Objectives"}</td>
+                      <td className="py-3 px-4">{"Clearly articulates course objectives and aligns explanations with learning goals, ensuring conceptual clarity."}</td>
+                      <td className="py-3 px-4">{"Explains course objectives accurately and relates examples to key learning outcomes."}</td>
+                      <td className="py-3 px-4">{"Provides a basic overview of objectives but with occasional inaccuracies or lack of depth."}</td>
+                      <td className="py-3 px-4">{"Demonstrates limited awareness of course goals and offers explanations with minor misconceptions."}</td>
+                      <td className="py-3 px-4">{"Didn't know the course material, had to ask students, or clear demonstration of not knowing"}</td>
                     </tr>
                     <tr className="border-b border-border">
-                      <td className="py-3 px-4 font-medium">{"Problem Solving"}</td>
-                      <td className="py-3 px-4">{"Identifies core issues quickly, offers multiple effective solutions, involves student in decision-making"}</td>
-                      <td className="py-3 px-4">{"Identifies main issues, provides workable solutions, considers student input"}</td>
-                      <td className="py-3 px-4">{"Partially identifies issues, limited solution options, minimal student involvement"}</td>
-                      <td className="py-3 px-4">{"Misidentifies issues or provides inappropriate solutions without student input"}</td>
-                    </tr>
-                    <tr className="border-b border-border bg-secondary/30">
-                      <td className="py-3 px-4 font-medium">{"Communication Clarity"}</td>
-                      <td className="py-3 px-4">{"Consistently clear explanations, adapts language to student level, checks comprehension"}</td>
-                      <td className="py-3 px-4">{"Generally clear explanations, appropriate language for student, occasional comprehension checks"}</td>
-                      <td className="py-3 px-4">{"Sometimes unclear explanations, inconsistent language level, rare comprehension checks"}</td>
-                      <td className="py-3 px-4">{"Confusing explanations, inappropriate language level, no comprehension checks"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 font-medium">{"Resource Utilization"}</td>
-                      <td className="py-3 px-4">{"Comprehensive knowledge of resources, provides specific referrals with details"}</td>
-                      <td className="py-3 px-4">{"Good knowledge of resources, provides general referral information"}</td>
-                      <td className="py-3 px-4">{"Limited knowledge of resources, vague referral information"}</td>
-                      <td className="py-3 px-4">{"Minimal knowledge of resources, incorrect or no referral information"}</td>
-                    </tr>
-                    <tr className="border-b border-border bg-secondary/30">
                       <td className="py-3 px-4 font-medium">{"Time Management"}</td>
-                      <td className="py-3 px-4">{"Efficiently uses time, addresses all concerns, provides closure within appropriate timeframe"}</td>
-                      <td className="py-3 px-4">{"Good use of time, addresses main concerns, reasonable pacing throughout interaction"}</td>
-                      <td className="py-3 px-4">{"Inconsistent pacing, spends too much time on minor issues, rushes important topics"}</td>
-                      <td className="py-3 px-4">{"Poor time management, conversation either too rushed or unnecessarily lengthy"}</td>
+                      <td className="py-3 px-4">{"Begins and concludes sessions within scheduled times, maximizing productivity and respecting student availability."}</td>
+                      <td className="py-3 px-4">{"Generally adheres to time allocations with minor deviations that do not impact session quality."}</td>
+                      <td className="py-3 px-4">{"Sometimes exceeds or finishes early, slightly affecting pacing yet maintaining core engagement."}</td>
+                      <td className="py-3 px-4">{"Frequently mismanages time, leading to rushed explanations or unnecessary prolongation."}</td>
+                      <td className="py-3 px-4">{"Ended the conversation really early, or made it last longer than needed"}</td>
                     </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 font-medium">{"Adjusted to Student Type"}</td>
-                      <td className="py-3 px-4">{"Perfectly adapts approach to match student's personality and needs, uses appropriate strategies"}</td>
-                      <td className="py-3 px-4">{"Generally adjusts communication style to student type, employs suitable techniques"}</td>
-                      <td className="py-3 px-4">{"Some attempts to adjust to student type, but inconsistent application of strategies"}</td>
-                      <td className="py-3 px-4">{"Uses same approach regardless of student type, ignores or misreads personality cues"}</td>
+                    <tr className="border-b border-border bg-secondary/30">
+                      <td className="py-3 px-4 font-medium">{"Adaptability"}</td>
+                      <td className="py-3 px-4">{"Perfectly adapts approach to diverse student emotional and attitude types"}</td>
+                      <td className="py-3 px-4">{"Mostly seamlessly adjusted communication and teaching style to effectively engage students across a wide range of emotional"}</td>
+                      <td className="py-3 px-4">{"Demonstrates thoughtful adjustments to support most student types, maintaining a supportive and responsive demeanor."}</td>
+                      <td className="py-3 px-4">{"Shows minimal ability to adjust to varied student behaviors, occasionally missing cues or responding inappropriately."}</td>
+                      <td className="py-3 px-4">{"Fails to adapt to different student types, responding uniformly without consideration of individual emotional or behavioral needs."}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -282,9 +266,9 @@ export default function HomePage() {
                 <h4 className="font-semibold text-blue-800 mb-2">{"Scoring System"}</h4>
                 <p className="text-sm mb-2">{"Your interactions with each student type are scored based on the criteria above:"}</p>
                 <ul className="list-disc list-inside text-sm space-y-1">
-                  <li><span className="font-medium">{"Pass:"}</span> {"Score of 21-28 points (75%+)"}</li>
-                  <li><span className="font-medium">{"Fail:"}</span> {"Score below 21 points"}</li>
-                  <li>{"Each interaction must score at least 2 points in every criterion to pass"}</li>
+                  <li><span className="font-medium">{"Pass:"}</span> {"Score of 17-20 points (85%+)"}</li>
+                  <li><span className="font-medium">{"Fail:"}</span> {"Score below 17 points"}</li>
+                  <li>{"Each interaction must score at least 3 points in every criterion to pass"}</li>
                 </ul>
               </div>
             </div>

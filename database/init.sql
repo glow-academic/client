@@ -44,22 +44,8 @@ CREATE TABLE rubrics (
   passed     BOOLEAN     NOT NULL,
   score      INTEGER     NOT NULL,
   time_taken INTEGER     NOT NULL,
-  adaptability INTEGER     NOT NULL, -- 0-4
-  active_listening INTEGER     NOT NULL, -- 0-4
-  empathy INTEGER     NOT NULL, -- 0-4
-  communication INTEGER     NOT NULL, -- 0-4
-  nonverbal INTEGER     NOT NULL, -- 0-4
-  problem_solving INTEGER     NOT NULL, -- 0-4
-  resource_utilization INTEGER     NOT NULL, -- 0-4
-  time_management INTEGER     NOT NULL -- 0-4
+  adaptability INTEGER     NOT NULL, -- 0-5
+  listening INTEGER     NOT NULL, -- 0-5
+  objectives INTEGER     NOT NULL, -- 0-5
+  time_management INTEGER     NOT NULL -- 0-5
 );
-
--- Insert two users with hardcoded UUIDs
-INSERT INTO users (id, username, password) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'ashok', 'saravanan'),
-  ('22222222-2222-2222-2222-222222222222', 'alex', 'siladie');
-
--- Insert a chat for each user with hardcoded UUIDs
-INSERT INTO chats (id, title, scenario_description, user_id, profile) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Ashok''s Chat', 'You are a happy person', '11111111-1111-1111-1111-111111111111', 'happy'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Alex''s Chat', 'You are an aggressive person', '22222222-2222-2222-2222-222222222222', 'aggressive');

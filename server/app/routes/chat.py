@@ -24,6 +24,7 @@ AGENT_DISPATCH = {
     "happy": run_happy_agent,
 }
 
+
 @router.post("/new")
 async def new_chat(
     profile: str = Form(...),
@@ -75,7 +76,7 @@ async def message(
             ):
                 yield f"data: {json.dumps({'text': token})}\n\n"
 
-            yield "data: {\"done\": true}\n\n"
+            yield 'data: {"done": true}\n\n'
         except Exception as exc:
             err_msg = str(exc)
             logger.exception("Streaming error: %s", err_msg)

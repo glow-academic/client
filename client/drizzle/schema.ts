@@ -54,12 +54,8 @@ export const rubrics = pgTable("rubrics", {
 	score: integer().notNull(),
 	timeTaken: integer("time_taken").notNull(),
 	adaptability: integer().notNull(),
-	activeListening: integer("active_listening").notNull(),
-	empathy: integer().notNull(),
-	communication: integer().notNull(),
-	nonverbal: integer().notNull(),
-	problemSolving: integer("problem_solving").notNull(),
-	resourceUtilization: integer("resource_utilization").notNull(),
+	listening: integer().notNull(),
+	objectives: integer().notNull(),
 	timeManagement: integer("time_management").notNull(),
 }, (table) => [
 	foreignKey({

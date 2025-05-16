@@ -285,50 +285,20 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                 <div className="space-y-4">
                                     <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-medium">Active Listening</span>
+                                            <span className="font-medium">Listening</span>
                                             <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.activeListening || 0)}
-                                                <span className="ml-1">{rubric?.activeListening}/4</span>
+                                                {renderScoreIcon(rubric?.listening || 0)}
+                                                <span className="ml-1">{rubric?.listening}/5</span>
                                             </span>
                                         </div>
                                     </div>
 
                                     <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-medium">Empathy</span>
+                                            <span className="font-medium">Objectives</span>
                                             <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.empathy || 0)}
-                                                <span className="ml-1">{rubric?.empathy}/4</span>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Problem Solving</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.problemSolving || 0)}
-                                                <span className="ml-1">{rubric?.problemSolving}/4</span>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Communication</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.communication || 0)}
-                                                <span className="ml-1">{rubric?.communication}/4</span>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-2">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Resource Utilization</span>
-                                            <span className="flex items-center gap-1">
-                                                {renderScoreIcon(rubric?.resourceUtilization || 0)}
-                                                <span className="ml-1">{rubric?.resourceUtilization}/4</span>
+                                                {renderScoreIcon(rubric?.objectives || 0)}
+                                                <span className="ml-1">{rubric?.objectives}/5</span>
                                             </span>
                                         </div>
                                     </div>
@@ -338,7 +308,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             <span className="font-medium">Time Management</span>
                                             <span className="flex items-center gap-1">
                                                 {renderScoreIcon(rubric?.timeManagement || 0)}
-                                                <span className="ml-1">{rubric?.timeManagement}/4</span>
+                                                <span className="ml-1">{rubric?.timeManagement}/5</span>
                                             </span>
                                         </div>
                                     </div>
@@ -348,7 +318,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             <span className="font-medium">Adaptability</span>
                                             <span className="flex items-center gap-1">
                                                 {renderScoreIcon(rubric?.adaptability || 0)}
-                                                <span className="ml-1">{rubric?.adaptability}/4</span>
+                                                <span className="ml-1">{rubric?.adaptability}/5</span>
                                             </span>
                                         </div>
                                     </div>
@@ -359,7 +329,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         }`}>
                                         <div className="text-xl mb-1">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
                                         <div className="text-sm">
-                                            Total Score: {rubric?.score}/28
+                                            Total Score: {rubric?.score}/20
                                         </div>
                                     </div>
 

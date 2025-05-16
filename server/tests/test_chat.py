@@ -10,8 +10,6 @@ def test_new_chat_endpoint(client: TestClient, session: Session):
     session.add(test_chat)
     session.commit()
 
-    chat_id = str(test_chat.id)
-
 
 def test_end_chat_endpoint(client: TestClient, session: Session):
     # Create a test chat
@@ -19,13 +17,9 @@ def test_end_chat_endpoint(client: TestClient, session: Session):
     session.add(test_chat)
     session.commit()
 
-    chat_id = str(test_chat.id)
-
 
 def test_message_endpoint(client: TestClient, session: Session):
     # Create a test chat
     test_chat = Chat(title="Test Chat", profile="default", user_id="test-user")
     session.add(test_chat)
     session.commit()
-
-    chat_id = str(test_chat.id)
