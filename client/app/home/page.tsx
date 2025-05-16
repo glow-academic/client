@@ -13,15 +13,20 @@ import { logout } from "@/utils/mutations/logout";
 import { getChats } from "@/utils/queries/get-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { getUser } from "@/utils/queries/get-user";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { updateViewedIntro } from "@/utils/mutations/update-viewed-intro";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState('new');
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+
+  const [gotItLoading, setGotItLoading] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const router = useRouter();
 
@@ -87,9 +92,31 @@ export default function HomePage() {
     }
   }
 
+  const handleSawModal = async () => {
+    setGotItLoading(true);
+    try {
+      if (!user) {
+        throw new Error("User not found");
+      }
+    const { success, error } = await updateViewedIntro(user.id);
+    if (success) {
+      setShowModal(false);
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      } else {
+        throw new Error(error);
+      }
+    } catch (error) {
+      console.error('Error updating viewed intro:', error);
+    } finally {
+      setGotItLoading(false);
+    }
+  }
+
   useEffect(() => {
-    setShowModal(true);
-  }, []);
+    if (user && !user.viewedIntro) {
+      setShowModal(true);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -102,10 +129,10 @@ export default function HomePage() {
               with different types of student during office hours.
             </p>
             <button
-              onClick={() => setShowModal(false)}
+              onClick={handleSawModal}
               className="px-4 py-2 bg-primary text-primary-foreground rounded"
             >
-              Got it
+              {gotItLoading ? 'Loading...' : 'Got it'}
             </button>
           </div>
         </div>
@@ -398,7 +425,7 @@ export default function HomePage() {
                                 <div className="flex justify-between text-foreground">
                                   <span>Score:</span>
                                   <span className="font-semibold">
-                                    {chatRubric.score}/28
+                                    {chatRubric.score}/20
                                   </span>
                                 </div>
                                 <div className="flex justify-between">

@@ -222,20 +222,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                     <p className="text-base">{chat?.scenarioDescription}</p>
                 </div>
 
-                <div className="flex flex-1 gap-4">
-                    {/* Document viewer - shown on left when chat is completed */}
-                    {chat?.completed ? (
-                        <div className="w-1/3">
-                            <DocumentViewer profile={chat?.profile || 'aggressive'} />
-                        </div>
-                    ) : null}
+                <div className="flex flex-1 min-h-0 gap-4">
 
-                    {/* Chat area */}
-                    <div className={`${chat?.completed ? 'w-1/2' : 'w-2/3'} flex flex-col`}>
-                        <Card className="flex-1 mb-4">
-                            <CardContent className="p-0 h-full">
-                                <ScrollArea className="h-[calc(100vh-280px)]">
-                                    <div className="space-y-4 p-4">
+                    {/* CHAT column */}
+                    <div className="flex flex-col flex-1 min-h-0">
+                        <Card className="flex flex-col flex-1 min-h-0">
+                            <CardContent className="flex-1 min-h-0 p-0">
+                                <ScrollArea className="flex-1 overflow-auto h-[calc(100vh-280px)] pb-0">
+                                    <div className="space-y-4 p-4 pb-0">
                                         {messages.map((message) => (
                                             <div key={message.id} className="space-y-4">
                                                 {message.query && (
@@ -266,7 +260,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                 )}
                                             </div>
                                         ))}
-                                        <div ref={messagesEndRef} />
+                                        <div ref={messagesEndRef} className="h-2" />
                                     </div>
                                 </ScrollArea>
                             </CardContent>
@@ -326,76 +320,60 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         </Card>
                     </div>
 
-                    {/* Rubric area when completed, otherwise document viewer */}
+                    {/* RIGHT column - rubric when completed, otherwise document viewer */}
                     {chat?.completed ? (
-                        <Card className="w-1/6">
+                        <Card className="hidden lg:flex w-1/3 shrink-0 flex-col">
                             <CardHeader>
                                 <CardTitle className="text-center text-sm">Assessment</CardTitle>
                             </CardHeader>
                             <CardContent className="p-2 text-sm">
-                                <div className="space-y-2">
-                                    <div className="border-b pb-1">
+                                <div className="space-y-4">
+                                    <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Active Listening</span>
-                                            <span>{rubric?.activeListening}/4</span>
+                                            <span>{rubric?.listening}/5</span>
                                         </div>
+                                        <p className="text-xs mt-1 text-gray-600">{rubric?.listeningFeedback || "No feedback provided"}</p>
                                     </div>
 
-                                    <div className="border-b pb-1">
+                                    <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
-                                            <span className="font-medium">Empathy</span>
-                                            <span>{rubric?.empathy}/4</span>
+                                            <span className="font-medium">Objectives</span>
+                                            <span>{rubric?.objectives}/5</span>
                                         </div>
+                                        <p className="text-xs mt-1 text-gray-600">{rubric?.objectivesFeedback || "No feedback provided"}</p>
                                     </div>
 
-                                    <div className="border-b pb-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Problem Solving</span>
-                                            <span>{rubric?.problemSolving}/4</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Communication</span>
-                                            <span>{rubric?.communication}/4</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-1">
-                                        <div className="flex justify-between items-center">
-                                            <span className="font-medium">Resource Use</span>
-                                            <span>{rubric?.resourceUtilization}/4</span>
-                                        </div>
-                                    </div>
-
-                                    <div className="border-b pb-1">
+                                    <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Time Management</span>
-                                            <span>{rubric?.timeManagement}/4</span>
+                                            <span>{rubric?.timeManagement}/5</span>
                                         </div>
+                                        <p className="text-xs mt-1 text-gray-600">{rubric?.timeManagementFeedback || "No feedback provided"}</p>
                                     </div>
 
-                                    <div className="border-b pb-1">
+                                    <div className="border-b pb-2">
                                         <div className="flex justify-between items-center">
                                             <span className="font-medium">Adaptability</span>
-                                            <span>{rubric?.adaptability}/4</span>
+                                            <span>{rubric?.adaptability}/5</span>
                                         </div>
+                                        <p className="text-xs mt-1 text-gray-600">{rubric?.adaptabilityFeedback || "No feedback provided"}</p>
                                     </div>
                                 </div>
 
-                                <div className="mt-4">
-                                    <div className={`p-2 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                <div className="mt-6">
+                                    <div className={`p-3 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                                         }`}>
-                                        <div className="text-lg">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
-                                        <div className="text-xs">
-                                            Score: {rubric?.score}/28
+                                        <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
+                                        <div className="text-sm mt-1">
+                                            Score: {rubric?.score}/20
                                         </div>
                                     </div>
 
                                     <Button
                                         onClick={() => router.push('/home')}
-                                        className="mt-4 w-full text-xs py-1 h-auto"
+                                        className="mt-6 w-full text-sm py-2 h-auto font-medium"
+                                        size="lg"
                                     >
                                         Return to Dashboard
                                     </Button>
@@ -403,9 +381,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             </CardContent>
                         </Card>
                     ) : (
-                        // Document viewer - shown on right when chat is active
-                        <div className="w-1/3">
-                            <DocumentViewer profile={chat?.profile || 'aggressive'} />
+                        <div className="hidden lg:flex w-1/3 shrink-0">
+                            <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
                         </div>
                     )}
                 </div>

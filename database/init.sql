@@ -7,6 +7,7 @@ CREATE TYPE chat_profile AS ENUM ('aggressive', 'happy', 'confused');
 -- 1) users table
 CREATE TABLE users (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  viewed_intro BOOLEAN     NOT NULL           DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   admin      BOOLEAN     NOT NULL           DEFAULT FALSE,
   username   TEXT        NOT NULL UNIQUE,
@@ -44,14 +45,14 @@ CREATE TABLE rubrics (
   passed     BOOLEAN     NOT NULL,
   score      INTEGER     NOT NULL,
   time_taken INTEGER     NOT NULL,
-  adaptability INTEGER     NOT NULL, -- 0-4
-  active_listening INTEGER     NOT NULL, -- 0-4
-  empathy INTEGER     NOT NULL, -- 0-4
-  communication INTEGER     NOT NULL, -- 0-4
-  nonverbal INTEGER     NOT NULL, -- 0-4
-  problem_solving INTEGER     NOT NULL, -- 0-4
-  resource_utilization INTEGER     NOT NULL, -- 0-4
-  time_management INTEGER     NOT NULL -- 0-4
+  adaptability INTEGER     NOT NULL, -- 0-5
+  adaptability_feedback TEXT,
+  listening INTEGER     NOT NULL, -- 0-5
+  listening_feedback TEXT,
+  objectives INTEGER     NOT NULL, -- 0-5
+  objectives_feedback TEXT,
+  time_management INTEGER     NOT NULL, -- 0-5
+  time_management_feedback TEXT
 );
 
 -- 5) documents table - for reference materials
@@ -59,17 +60,7 @@ CREATE TABLE documents (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
-  content    TEXT        NOT NULL, -- Base64 encoded content
+  file_path  TEXT        NOT NULL, -- Path to file in the filesystem
   mime_type  TEXT        NOT NULL,
   profile    chat_profile NOT NULL -- Associated profile type
 );
-
--- Insert two users with hardcoded UUIDs
-INSERT INTO users (id, username, password) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'ashok', 'saravanan'),
-  ('22222222-2222-2222-2222-222222222222', 'alex', 'siladie');
-
--- Insert a chat for each user with hardcoded UUIDs
-INSERT INTO chats (id, title, scenario_description, user_id, profile) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Ashok''s Chat', 'You are a happy person', '11111111-1111-1111-1111-111111111111', 'happy'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Alex''s Chat', 'You are an aggressive person', '22222222-2222-2222-2222-222222222222', 'aggressive');

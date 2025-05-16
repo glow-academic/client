@@ -51,9 +51,13 @@ async def run_evaluate_agent(
     rubric = result.final_output_as(Rubric)
 
     active_listening = rubric.listen
+    active_listening_feedback = rubric.listen_fb
     course_objectives = rubric.obj
+    course_objectives_feedback = rubric.obj_fb
     time_management = rubric.time
+    time_management_feedback = rubric.time_fb
     adaptability = rubric.adapt
+    adaptability_feedback = rubric.adapt_fb
     score = adaptability + active_listening + course_objectives + time_management
     passed = (
         score >= 17
@@ -83,8 +87,12 @@ async def run_evaluate_agent(
         time_taken=time_taken,
         adaptability=adaptability,
         listening=active_listening,
+        listening_feedback=active_listening_feedback,
         objectives=course_objectives,
+        objectives_feedback=course_objectives_feedback,
         time_management=time_management,
+        time_management_feedback=time_management_feedback,
+        adaptability_feedback=adaptability_feedback,
     )
 
     session.add(rubric)
@@ -101,15 +109,19 @@ async def run_evaluate_agent(
 
 class Rubric(BaseModel):
     listen: int  # listening
+    listen_fb: str
     obj: int  # course objectives
+    obj_fb: str
     time: int  # time management
+    time_fb: str
     adapt: int  # adaptability
+    adapt_fb: str
 
 
 class EvaluateAgent:
     def __init__(self):
         self.gemini_client = get_gemini()
-        self.system_prompt = "Your purpose is to evaluate a conversation between a student and a GTA, grading them on the following metrics (from 1-5): listening, course objectives, time management, and adaptability. A rubric will be provided to you to help guide the responses. Output a JSON object with the following fields: listen, obj, time, adapt."
+        self.system_prompt = "Your purpose is to evaluate a conversation between a student and a GTA, grading them on the following metrics (from 1-5): listening, course objectives, time management, and adaptability. A rubric will be provided to you to help guide the responses. Output a JSON object with the following fields: listen, obj, time, adapt. You should also provide feedback for each metric to let the GTA know how to improve. Please keep this feedback concise, not more than 1-2 sentences. The feedback should be specific and measureable, like 'Recursion was explained incorrectly' or 'Ask more questions about min heaps, don't just give the definition'. You can use listen_fb, obj_fb, time_fb, and adapt_fb to provide feedback for each metric."
 
     def agent(self):
         return Agent(

@@ -9,6 +9,19 @@ from sqlmodel import Field, Relationship, SQLModel
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
+class Documents(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='documents_pkey'),
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    file_path: str = Field(sa_column=Column('file_path', Text))
+    mime_type: str = Field(sa_column=Column('mime_type', Text))
+    profile: str = Field(sa_column=Column('profile', Enum('aggressive', 'happy', 'confused', name='chat_profile')))
+
+
 class Users(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='users_pkey'),
@@ -16,6 +29,7 @@ class Users(_Base, table=True):
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, server_default=text('false')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     admin: bool = Field(sa_column=Column('admin', Boolean, server_default=text('false')))
     username: str = Field(sa_column=Column('username', Text))
@@ -76,5 +90,9 @@ class Rubrics(_Base, table=True):
     listening: int = Field(sa_column=Column('listening', Integer))
     objectives: int = Field(sa_column=Column('objectives', Integer))
     time_management: int = Field(sa_column=Column('time_management', Integer))
+    adaptability_feedback: Optional[str] = Field(default=None, sa_column=Column('adaptability_feedback', Text))
+    listening_feedback: Optional[str] = Field(default=None, sa_column=Column('listening_feedback', Text))
+    objectives_feedback: Optional[str] = Field(default=None, sa_column=Column('objectives_feedback', Text))
+    time_management_feedback: Optional[str] = Field(default=None, sa_column=Column('time_management_feedback', Text))
 
     chat: Optional['Chats'] = Relationship(back_populates='rubrics')

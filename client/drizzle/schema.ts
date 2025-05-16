@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, timestamp, boolean, text, foreignKey, integer, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, boolean, timestamp, text, foreignKey, integer, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const chatProfile = pgEnum("chat_profile", ['aggressive', 'happy', 'confused'])
@@ -6,6 +6,7 @@ export const chatProfile = pgEnum("chat_profile", ['aggressive', 'happy', 'confu
 
 export const users = pgTable("users", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
+	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	admin: boolean().default(false).notNull(),
 	username: text().notNull(),
@@ -54,9 +55,13 @@ export const rubrics = pgTable("rubrics", {
 	score: integer().notNull(),
 	timeTaken: integer("time_taken").notNull(),
 	adaptability: integer().notNull(),
+	adaptabilityFeedback: text("adaptability_feedback"),
 	listening: integer().notNull(),
+	listeningFeedback: text("listening_feedback"),
 	objectives: integer().notNull(),
+	objectivesFeedback: text("objectives_feedback"),
 	timeManagement: integer("time_management").notNull(),
+	timeManagementFeedback: text("time_management_feedback"),
 }, (table) => [
 	foreignKey({
 			columns: [table.chatId],
@@ -69,7 +74,7 @@ export const documents = pgTable("documents", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
-	content: text().notNull(), // Base64 encoded content
+	filePath: text("file_path").notNull(),
 	mimeType: text("mime_type").notNull(),
-	profile: chatProfile().notNull(), // Associated profile type
+	profile: chatProfile().notNull(),
 });
