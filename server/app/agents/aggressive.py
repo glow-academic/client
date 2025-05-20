@@ -2,11 +2,12 @@ from typing import AsyncGenerator
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
 from openai.types import Reasoning
 from app.extensions import get_gemini
-from app.utils.chat import get_conversation_history
+from app.utils.chat import get_conversation_history, get_chat_scenario
 from app.db import get_session
 from sqlmodel import Session, select
 from app.models import Messages, Chats
 from fastapi import Depends
+from app.utils.classes import get_class_info
 from openai.types.responses import (
     ResponseTextDeltaEvent,
 )
@@ -43,13 +44,17 @@ async def run_aggressive_agent(
 
     # prepare conversation history from chat_id
     conversation_history = get_conversation_history(messages)
+    chat_scenario = get_chat_scenario(chat)
+    class_info = get_class_info(chat.class_id, session)
+
+    input_items = [chat_scenario, class_info] + conversation_history
 
     # define the agent
     agressive_agent = AggressiveAgent()
 
     result = Runner.run_streamed(
         agressive_agent.agent(),
-        input=conversation_history,
+        input=input_items,
         run_config=RunConfig(workflow_name=chat.title),
     )
 

@@ -9,3 +9,13 @@ chat_titles = {
     "happy": "Happy Student",
     "confused": "Confused Student",
 }
+
+
+def get_profile_info(profile: str) -> dict:
+    """
+    Get the profile information for a given profile.
+    """
+    return {
+        "role": "assistant",
+        "content": f"This is the profile of the student: {profile}",
+    }

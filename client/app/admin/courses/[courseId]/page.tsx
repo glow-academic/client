@@ -15,17 +15,14 @@ import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { 
   Avatar, 
-  AvatarFallback, 
-  AvatarImage 
+  AvatarFallback
 } from "@/components/ui/avatar";
 import { 
-  ArrowLeft, 
-  Users, 
+  ArrowLeft,  
   UserCheck, 
   Smile, 
   HelpCircle, 
   AlertCircle,
-  BarChart,
   Download
 } from "lucide-react";
 // Import Recharts components
@@ -38,10 +35,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer
 } from "recharts";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 
 // Mock course data

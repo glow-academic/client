@@ -69,15 +69,17 @@ async def run_evaluate_agent(
 
     # get the time taken in seconds. Subtract the created_at of the chat from the current time
     current_time = datetime.now()
-    # Make both datetimes timezone-naive for comparison
-    if chat.created_at.tzinfo is not None:
-        # If chat.created_at is timezone-aware, convert current_time to be aware too
-        current_time = current_time.replace(tzinfo=chat.created_at.tzinfo)
-    else:
-        # If chat.created_at is timezone-naive, ensure current_time is naive too
-        current_time = current_time.replace(tzinfo=None)
+    chat_created_at = chat.created_at
     
-    time_taken = (current_time - chat.created_at).total_seconds()
+    # Ensure both times have the same timezone information
+    if chat_created_at.tzinfo is not None:
+        # If chat_created_at has timezone info, make current_time aware
+        current_time = current_time.replace(tzinfo=chat_created_at.tzinfo)
+    elif current_time.tzinfo is not None:
+        # If current_time has timezone and chat_created_at doesn't, make chat_created_at aware
+        chat_created_at = chat_created_at.replace(tzinfo=current_time.tzinfo)
+    
+    time_taken = max(0, (current_time - chat_created_at).total_seconds())
 
     # create a rubric
     rubric = Rubrics(

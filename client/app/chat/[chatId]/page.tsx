@@ -24,6 +24,7 @@ import Markdown from '@/components/Markdown';
 import DocumentViewer from '@/components/DocumentViewer';
 import { getDocuments } from '@/utils/queries/get-documents';
 import { Skeleton } from "@/components/ui/skeleton";
+import { getClasses } from '@/utils/queries/get-classes';
 
 const hoverStyles = `
 .hover\\:scale-102:hover {
@@ -63,6 +64,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     const { data: documents = [], isLoading: documentsLoading } = useQuery({
         queryKey: ["documents"],
         queryFn: () => getDocuments(),
+    });
+
+    const { data: classes, isLoading: classesLoading } = useQuery({
+        queryKey: ["classes"],
+        queryFn: () => getClasses(),
     });
 
     // Check if there are already messages to determine if it's the first interaction
@@ -111,39 +117,39 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     // Timer logic based on chat creation time
     useEffect(() => {
         if (!chat || !chat.createdAt) return;
-        
+
         const calculateElapsedTime = () => {
             // If the chat is completed and rubric has timeTaken, show that instead
             if (chat.completed && rubric?.timeTaken) {
                 setElapsedTime(formatTime(rubric.timeTaken));
                 return;
             }
-            
+
             const startTime = new Date(chat.createdAt).getTime();
             const now = new Date().getTime();
             const elapsed = Math.floor((now - startTime) / 1000); // in seconds
-            
+
             const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
             const seconds = (elapsed % 60).toString().padStart(2, '0');
-            
+
             setElapsedTime(`${minutes}:${seconds}`);
         };
-        
+
         // Helper function to format time in seconds to MM:SS
         const formatTime = (timeInSeconds: number) => {
             const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
             const seconds = (timeInSeconds % 60).toString().padStart(2, '0');
             return `${minutes}:${seconds}`;
         };
-        
+
         calculateElapsedTime(); // Initial calculation
-        
+
         // Only set up timer if chat is not completed
         let timer: NodeJS.Timeout | null = null;
         if (!chat.completed) {
             timer = setInterval(calculateElapsedTime, 1000);
         }
-        
+
         return () => {
             if (timer) clearInterval(timer);
         };
@@ -308,9 +314,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             <header className="bg-primary text-primary-foreground p-4">
                 <div className="container mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-4">
-                        <Button 
-                            variant="ghost" 
-                            onClick={handleBack} 
+                        <Button
+                            variant="ghost"
+                            onClick={handleBack}
                             className="p-1 h-auto text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
                             size="sm"
                         >
@@ -333,51 +339,75 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 {chatLoading ? (
                     <Skeleton className="mb-4 p-3 h-16 rounded-lg w-full" />
                 ) : (
-                <Card className="mb-4 shadow-sm border bg-card">
-                  <CardContent className="px-4">
-                    <p className="text-sm text-card-foreground">{chat?.scenarioDescription}</p>
-                  </CardContent>
-                </Card>
+                    <Card className="mb-4 shadow-sm border bg-card">
+                        <CardContent className="px-4">
+                            <p className="text-sm text-card-foreground">{chat?.scenarioDescription}</p>
+                        </CardContent>
+                    </Card>
                 )}
 
                 <div className="flex flex-1 min-h-0 gap-4">
                     {/* CHAT column - taking exactly 2/3 width */}
                     <div className={`flex flex-col w-${documents.length > 0 ? '2/3' : 'full'} min-h-0`}>
-                        <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                            <CardContent className="flex-1 p-0 relative overflow-hidden min-h-0">
+                        <Card className="flex flex-col flex-1 min-h-0">
+                            <CardContent className="flex-1 p-0 relative min-h-0">
                                 <ScrollArea
-                                    className="h-[calc(100vh-250px)] pb-0 overflow-y-auto"
+                                    className="flex-1 h-[calc(100vh-280px)] pb-0"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
-                                    <div className="py-4 px-4 space-y-4">
+                                    <div className="space-y-4 p-4 pb-0">
                                         {messagesLoading ? (
                                             <>
-                                                <div className="w-max max-w-[75%] rounded-lg">
-                                                    <Skeleton className="h-16 w-64 rounded-lg" />
+                                                <div className="flex items-start gap-3 text-sm">
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                    <div className="grid gap-1 w-full max-w-[80%]">
+                                                        <Skeleton className="h-4 w-20" />
+                                                        <Skeleton className="h-20 w-full rounded-lg" />
+                                                    </div>
                                                 </div>
-                                                <div className="w-max max-w-[75%] ml-auto rounded-lg">
-                                                    <Skeleton className="h-16 w-64 rounded-lg" />
+                                                <div className="flex items-start gap-3 text-sm justify-end">
+                                                    <div className="grid gap-1 text-right w-full max-w-[80%]">
+                                                        <Skeleton className="h-4 w-20 ml-auto" />
+                                                        <Skeleton className="h-20 w-full rounded-lg" />
+                                                    </div>
+                                                    <Skeleton className="h-10 w-10 rounded-full" />
                                                 </div>
                                             </>
                                         ) : (
-                                            messages.map((message, index) => (
-                                                <div key={message.id}>
+                                            messages.map((message) => (
+                                                <div key={message.id} className="space-y-4">
                                                     {message.query && (
-                                                        <div className="w-max max-w-[75%] ml-auto rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm">
-                                                            <Markdown>{message.query}</Markdown>
+                                                        <div className="flex items-start gap-3 text-sm justify-end">
+                                                            <div className="grid gap-1 text-right">
+                                                                <p className="font-medium">You</p>
+                                                                <div className="rounded-lg bg-muted p-3">
+                                                                    <Markdown>{message.query}</Markdown>
+                                                                </div>
+                                                            </div>
+                                                            <Avatar>
+                                                                <AvatarFallback>U</AvatarFallback>
+                                                            </Avatar>
                                                         </div>
                                                     )}
                                                     {message.response !== undefined && (message.query !== "") && (
-                                                        <div className="w-max max-w-[75%] rounded-lg bg-muted px-3 py-2 text-sm mt-2">
-                                                            {message.response === "" ? (
-                                                                <div className="flex items-center">
-                                                                    <span className="text-gray-500">Analyzing</span>
-                                                                    <LoadingDots />
+                                                        <div className="flex items-start gap-3 text-sm">
+                                                            <Avatar>
+                                                                <AvatarFallback>AI</AvatarFallback>
+                                                            </Avatar>
+                                                            <div className="grid gap-1">
+                                                                <p className="font-medium">Student</p>
+                                                                <div className="rounded-lg bg-primary/10 p-3">
+                                                                    {message.response === "" ? (
+                                                                        <div className="flex items-center">
+                                                                            <span className="text-gray-500">Analyzing</span>
+                                                                            <LoadingDots />
+                                                                        </div>
+                                                                    ) : (
+                                                                        <Markdown>{message.response}</Markdown>
+                                                                    )}
                                                                 </div>
-                                                            ) : (
-                                                                <Markdown>{message.response}</Markdown>
-                                                            )}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -398,15 +428,15 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         <span className="sr-only">Scroll to bottom</span>
                                     </Button>
                                 )}
-                                
+
                                 {/* Show initial messages in the center of the chat area when in first message mode */}
                                 {!chat?.completed && isFirstMessage && !chatLoading && (
                                     <div className="absolute inset-0 flex items-center justify-center">
                                         <div className="w-full max-w-4xl p-6 flex flex-col gap-4">
                                             <p className="text-sm text-center text-muted-foreground">Choose an opening message:</p>
                                             <div className="flex flex-col sm:flex-row gap-4">
-                                                <Card 
-                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
+                                                <Card
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
                                                     onClick={() => handleInitialMessageClick("Hi, how are you?")}
                                                     tabIndex={0}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, how are you?")}
@@ -415,8 +445,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                         <p className="text-base font-medium">Hi, how are you?</p>
                                                     </CardContent>
                                                 </Card>
-                                                <Card 
-                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
+                                                <Card
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
                                                     onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
                                                     tabIndex={0}
                                                     onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, what can I help you with?")}
@@ -425,14 +455,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                         <p className="text-base font-medium">Hi, what can I help you with?</p>
                                                     </CardContent>
                                                 </Card>
-                                                <Card 
-                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
-                                                    onClick={() => handleInitialMessageClick("Hi, are you here for CS 253?")}
+                                                <Card
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
+                                                    onClick={() => handleInitialMessageClick(`Hi, are you here for ${classes?.find(c => c.id === chat?.classId)?.classCode}?`)}
                                                     tabIndex={0}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, are you here for CS 253?")}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick(`Hi, are you here for ${classes?.find(c => c.id === chat?.classId)?.classCode}?`)}
                                                 >
                                                     <CardContent className="p-5 text-center flex items-center justify-center h-full">
-                                                        <p className="text-base font-medium">Hi, are you here for CS 253?</p>
+                                                        <p className="text-base font-medium">Hi, are you here for {classes?.find(c => c.id === chat?.classId)?.classCode}?</p>
                                                     </CardContent>
                                                 </Card>
                                             </div>
@@ -457,13 +487,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                     className="pr-10 py-2 text-sm"
                                                     autoFocus
                                                 />
-                                                <Button 
-                                                    type="submit" 
-                                                    disabled={!newMessage.trim()} 
-                                                    size="icon" 
+                                                <Button
+                                                    type="submit"
+                                                    disabled={!newMessage.trim()}
+                                                    size="icon"
+                                                    variant="ghost"
                                                     className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
                                                 >
-                                                    <Send className="h-4 w-4" />
+                                                    <Send className="h-4 w-4 text-foreground" />
                                                     <span className="sr-only">Send</span>
                                                 </Button>
                                             </div>
@@ -569,29 +600,29 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         </Card>
                     ) : (
                         <>
-                        {(documents.filter(d => d.profile === chat?.profile).length > 0 || documentsLoading) && (
-                            <div className="hidden lg:block w-1/3 shrink-0 min-h-0">
-                                {documentsLoading ? (
-                                    <Card className="w-full flex flex-col min-h-0">
-                                        <CardHeader className="pb-2">
-                                            <CardTitle className="text-center text-sm">Documents</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="flex-1 min-h-0">
-                                            <Skeleton className="h-full w-full rounded-md" />
-                                        </CardContent>
-                                    </Card>
-                                ) : (
-                                    <Card className="w-full overflow-hidden flex flex-col min-h-0">
-                                        <CardHeader className="pb-2 border-b">
-                                            <CardTitle className="text-center text-sm">Documents</CardTitle>
-                                        </CardHeader>
-                                        <CardContent className="p-0 flex-1 min-h-0">
-                                            <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
-                                        </CardContent>
-                                    </Card>
-                                )}
-                            </div>
-                        )}
+                            {(documents.filter(d => d.profile === chat?.profile).length > 0 || documentsLoading) && (
+                                <div className="hidden lg:block w-1/3 shrink-0 min-h-0">
+                                    {documentsLoading ? (
+                                        <Card className="w-full flex flex-col min-h-0">
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-center text-sm">Documents</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="flex-1 min-h-0">
+                                                <Skeleton className="h-full w-full rounded-md" />
+                                            </CardContent>
+                                        </Card>
+                                    ) : (
+                                        <Card className="w-full overflow-hidden flex flex-col min-h-0">
+                                            <CardHeader className="pb-2 border-b">
+                                                <CardTitle className="text-center text-sm">Documents</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="p-0 flex-1 min-h-0">
+                                                <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </div>
+                            )}
                         </>
                     )}
                 </div>
