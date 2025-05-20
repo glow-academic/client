@@ -67,9 +67,9 @@ export function DataTableToolbar<TData>({
             options={userOptions}
           />
         )}
-        {table.getColumn("class") && (
+        {table.getColumn("classId") && (
           <DataTableFacetedFilter
-            column={table.getColumn("class")}
+            column={table.getColumn("classId")}
             title="Class"
             options={classOptions}
           />
@@ -100,8 +100,7 @@ export function DataTableToolbar<TData>({
             className="h-8" 
             onClick={handleCreateReport}
           >
-            <FilePlus className="mr-2 h-4 w-4" />
-            Create Report for {selectedRows} Chat{selectedRows === 1 ? "" : "s"}
+            <FilePlus className="mr-2 h-4 w-4" />Export {selectedRows} Chat{selectedRows === 1 ? "" : "s"}
           </Button>
         )}
         <DataTableViewOptions table={table} isAdmin={isAdmin} />

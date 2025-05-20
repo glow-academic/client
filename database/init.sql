@@ -34,7 +34,7 @@ CREATE TABLE chats (
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
   user_id    UUID         NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
   profile    chat_profile NOT NULL,
-  class      UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
+  class_id   UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
 );
 
 -- 3) messages table
@@ -97,7 +97,7 @@ INSERT INTO users (id, viewed_intro, admin, name, username, password, classes) V
   ('abcd1234-efab-cdef-abcd-123456abcdef', false, false, 'Jennifer White', 'jennifer_white', 'hashed_password_11', ARRAY['22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444']::UUID[]),
   ('a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', true, false, 'William Johnson', 'william_johnson', 'hashed_password_12', ARRAY['11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333']::UUID[]);
 
-INSERT INTO chats (id, created_at, completed_at, title, scenario_description, completed, user_id, profile, class) VALUES
+INSERT INTO chats (id, created_at, completed_at, title, scenario_description, completed, user_id, profile, class_id) VALUES
   -- CS 180 (Problem Solving And Object-Oriented Programming)
   ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', NULL, 'NullPointer Exception', 'A student storms in holding their Java console output, annoyed by a runtime error they can''t trace in their GUI project.', false, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aggressive', '11111111-1111-1111-1111-111111111111'),
   ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'File I/O Issues', 'A student timidly approaches, worried they''ve overwritten their data file while implementing file read/write methods.', true, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '11111111-1111-1111-1111-111111111111'),

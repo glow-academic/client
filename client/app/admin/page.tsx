@@ -22,6 +22,25 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { CalendarDays, BarChart3, Users, ArrowUpRight, ArrowDownRight, Activity, Brain, ChevronRight, ChevronUp, ChevronDown, X } from "lucide-react"; // Added X icon for close button
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { getUser } from "@/utils/queries/get-user";
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import Rubric from "@/components/Rubric";
 
 // Define an interface for the document structure
 interface UploadedDocument {
@@ -124,9 +143,17 @@ export default function AdminPage() {
   const [showTotalTAsModal, setShowTotalTAsModal] = useState(false);
   const [showAvgScoreModal, setShowAvgScoreModal] = useState(false);
   const [showTotalInteractionsModal, setShowTotalInteractionsModal] = useState(false);
-  
+
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const [showRubric, setShowRubric] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const { data: user } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => getUser()
+  });
 
   const { data: documents } = useQuery<UploadedDocument[]>({ // Specify the expected data type
     queryKey: ['documents'],
@@ -138,55 +165,81 @@ export default function AdminPage() {
     queryFn: () => getUsers(),
   });
 
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      const { success, error } = await logout();
-      if (success) {
-        router.push('/');
-      } else {
-        throw new Error(error);
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-    } finally {
-      setLoading(false);
+  // Function to generate initials
+  const getInitials = (name?: string) => {
+    if (!name) return '';
+
+    if (name.includes(' ')) {
+      // If name has space, get first char of first and last name
+      const nameParts = name.split(' ');
+      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+    } else {
+      // Otherwise get first two chars of name
+      return name.substring(0, 2).toUpperCase();
     }
+  };
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+
+    toast.promise(
+      async () => {
+        try {
+          const { success, error } = await logout();
+          if (success) {
+            router.push('/');
+            return "Logged out successfully";
+          } else {
+            throw new Error(error);
+          }
+        } catch (error) {
+          console.error('Error logging out:', error);
+          throw new Error(typeof error === 'string' ? error : 'Failed to log out');
+        } finally {
+          setIsLoggingOut(false);
+        }
+      },
+      {
+        loading: 'Logging out...',
+        success: (message) => message,
+        error: (error) => error.message || 'Failed to log out'
+      }
+    );
   }
 
   const handleDeleteFile = async (documentId: string) => {
     try {
-        setLoading(true);
-        
-        // Show confirmation dialog
-        if (!confirm("Are you sure you want to delete this document?")) {
-            setLoading(false);
-            return;
-        }
-        
-        // Call the delete function
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to delete document');
-        }
-        
-        
-        // Sho  w success notification
-        toast.success("Document deleted successfully");
-        
-        // Invalidate document queries to refresh the list
-        queryClient.invalidateQueries({ queryKey: ['documents'] });
-    } catch (error) {
-        console.error("Error deleting file:", error);
-        toast.error("An error occurred while deleting the document");
-    } finally {
+      setLoading(true);
+
+      // Show confirmation dialog
+      if (!confirm("Are you sure you want to delete this document?")) {
         setLoading(false);
+        return;
+      }
+
+      // Call the delete function
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete document');
+      }
+
+
+      // Sho  w success notification
+      toast.success("Document deleted successfully");
+
+      // Invalidate document queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    } catch (error) {
+      console.error("Error deleting file:", error);
+      toast.error("An error occurred while deleting the document");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -227,7 +280,7 @@ export default function AdminPage() {
     }
     return sortableItems;
   }, [mockPerformance.recentInteractions, sortColumn, sortDirection]);
-  
+
   const totalInteractions = sortedInteractions.length;
   const totalPages = Math.ceil(totalInteractions / itemsPerPage);
 
@@ -263,10 +316,10 @@ export default function AdminPage() {
   // Modal component for displaying TAs needing improvement
   const NeedAttentionModal = () => {
     if (!showNeedAttentionModal) return null;
-    
+
     return (
-      <div 
-        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" 
+      <div
+        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={() => setShowNeedAttentionModal(false)}
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -276,7 +329,7 @@ export default function AdminPage() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="space-y-4">
             {mockPerformance.needImprovement.map((ta, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
@@ -292,7 +345,7 @@ export default function AdminPage() {
               </div>
             ))}
           </div>
-          
+
           <div className="mt-6">
             <Button className="w-full" onClick={() => setShowNeedAttentionModal(false)}>Close</Button>
           </div>
@@ -304,10 +357,10 @@ export default function AdminPage() {
   // Modal component for "Add New Course"
   const AddCourseModal = () => {
     if (!showAddCourseModal) return null;
-    
+
     return (
-      <div 
-        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" 
+      <div
+        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={() => setShowAddCourseModal(false)}
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -317,13 +370,13 @@ export default function AdminPage() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="py-8 text-center">
             <Activity className="h-12 w-12 mx-auto text-primary/60 mb-4" />
             <p className="text-xl font-medium text-muted-foreground">Work in Progress...</p>
             <p className="mt-2 text-muted-foreground">This feature is coming soon.</p>
           </div>
-          
+
           <div className="mt-6">
             <Button className="w-full" onClick={() => setShowAddCourseModal(false)}>Close</Button>
           </div>
@@ -335,10 +388,10 @@ export default function AdminPage() {
   // New modal component for Total TAs
   const TotalTAsModal = () => {
     if (!showTotalTAsModal) return null;
-    
+
     return (
-      <div 
-        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" 
+      <div
+        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={() => setShowTotalTAsModal(false)}
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -348,13 +401,13 @@ export default function AdminPage() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="py-8 text-center">
             <Users className="h-12 w-12 mx-auto text-primary/60 mb-4" />
             <p className="text-xl font-medium text-muted-foreground">Work in Progress...</p>
             <p className="mt-2 text-muted-foreground">Detailed TA information coming soon.</p>
           </div>
-          
+
           <div className="mt-6">
             <Button className="w-full" onClick={() => setShowTotalTAsModal(false)}>Close</Button>
           </div>
@@ -366,10 +419,10 @@ export default function AdminPage() {
   // New modal component for Average Score
   const AvgScoreModal = () => {
     if (!showAvgScoreModal) return null;
-    
+
     return (
-      <div 
-        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" 
+      <div
+        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={() => setShowAvgScoreModal(false)}
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -379,13 +432,13 @@ export default function AdminPage() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="py-8 text-center">
             <BarChart3 className="h-12 w-12 mx-auto text-primary/60 mb-4" />
             <p className="text-xl font-medium text-muted-foreground">Work in Progress...</p>
             <p className="mt-2 text-muted-foreground">Detailed scoring analytics coming soon.</p>
           </div>
-          
+
           <div className="mt-6">
             <Button className="w-full" onClick={() => setShowAvgScoreModal(false)}>Close</Button>
           </div>
@@ -397,10 +450,10 @@ export default function AdminPage() {
   // New modal component for Total Interactions
   const TotalInteractionsModal = () => {
     if (!showTotalInteractionsModal) return null;
-    
+
     return (
-      <div 
-        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50" 
+      <div
+        className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50"
         onClick={() => setShowTotalInteractionsModal(false)}
       >
         <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6 shadow-lg" onClick={(e) => e.stopPropagation()}>
@@ -410,13 +463,13 @@ export default function AdminPage() {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          
+
           <div className="py-8 text-center">
             <Activity className="h-12 w-12 mx-auto text-primary/60 mb-4" />
             <p className="text-xl font-medium text-muted-foreground">Work in Progress...</p>
             <p className="mt-2 text-muted-foreground">Detailed interaction statistics coming soon.</p>
           </div>
-          
+
           <div className="mt-6">
             <Button className="w-full" onClick={() => setShowTotalInteractionsModal(false)}>Close</Button>
           </div>
@@ -433,20 +486,49 @@ export default function AdminPage() {
       <TotalTAsModal />
       <AvgScoreModal />
       <TotalInteractionsModal />
-      
+
       {/* Rest of the content */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground mt-1">Track GTA performance with AI student interactions</p>
         </div>
-        <Button variant="outline" onClick={handleLogout} disabled={loading}>
-          {loading ? "Logging out..." : "Logout"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-medium leading-none">{user?.name}</p>
+                <p className="text-xs leading-none text-muted-foreground">
+                  {user?.username}@purdue.edu
+                </p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuGroup>
+              <DropdownMenuItem onClick={() => setShowRubric(true)}>
+                Rubric
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className={isLoggingOut ? "opacity-70 cursor-not-allowed" : ""}
+            >
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 bg-transparent p-0">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="courses">Courses</TabsTrigger>
@@ -455,8 +537,8 @@ export default function AdminPage() {
         <TabsContent value="analytics" className="space-y-4">
           {/* Overview Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card 
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50" 
+            <Card
+              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
               onClick={() => setShowTotalTAsModal(true)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -468,9 +550,9 @@ export default function AdminPage() {
                 <p className="text-xs text-muted-foreground">Active teaching assistants</p>
               </CardContent>
             </Card>
-            
-            <Card 
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50" 
+
+            <Card
+              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
               onClick={() => setShowAvgScoreModal(true)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -488,9 +570,9 @@ export default function AdminPage() {
                 <p className="text-xs text-muted-foreground">From all interactions</p>
               </CardContent>
             </Card>
-            
-            <Card 
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50" 
+
+            <Card
+              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
               onClick={() => setShowTotalInteractionsModal(true)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -508,9 +590,9 @@ export default function AdminPage() {
                 <p className="text-xs text-muted-foreground">Today</p>
               </CardContent>
             </Card>
-            
-            <Card 
-              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50" 
+
+            <Card
+              className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50"
               onClick={() => setShowNeedAttentionModal(true)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -529,7 +611,7 @@ export default function AdminPage() {
               </CardContent>
             </Card>
           </div>
-          
+
           {/* Performance by Student Type */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
@@ -551,7 +633,7 @@ export default function AdminPage() {
                       <div className="h-full bg-green-500 rounded-full" style={{ width: `${mockPerformance.typePerformance.Happy}%` }}></div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -564,7 +646,7 @@ export default function AdminPage() {
                       <div className="h-full bg-amber-500 rounded-full" style={{ width: `${mockPerformance.typePerformance.Confused}%` }}></div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
@@ -585,7 +667,7 @@ export default function AdminPage() {
                 </div>
               </CardContent>
             </Card>
-            
+
             <Card className="col-span-3">
               <CardHeader>
                 <CardTitle>TA Performance</CardTitle>
@@ -609,7 +691,7 @@ export default function AdminPage() {
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h4 className="text-sm font-medium text-muted-foreground mb-2">Need Improvement</h4>
                     <div className="space-y-2">
@@ -651,7 +733,7 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center">
                               Teaching Assistant
-                              {sortColumn === 'ta' ? 
+                              {sortColumn === 'ta' ?
                                 (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
                                 <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
                               }
@@ -665,7 +747,7 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center">
                               Class
-                              {sortColumn === 'class' ? 
+                              {sortColumn === 'class' ?
                                 (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
                                 <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
                               }
@@ -678,7 +760,7 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center">
                               Student Type
-                              {sortColumn === 'studentType' ? 
+                              {sortColumn === 'studentType' ?
                                 (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
                                 <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
                               }
@@ -691,7 +773,7 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center">
                               Score
-                              {sortColumn === 'score' ? 
+                              {sortColumn === 'score' ?
                                 (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
                                 <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
                               }
@@ -704,7 +786,7 @@ export default function AdminPage() {
                           >
                             <div className="flex items-center">
                               Date
-                              {sortColumn === 'date' ? 
+                              {sortColumn === 'date' ?
                                 (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
                                 <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
                               }
@@ -729,9 +811,9 @@ export default function AdminPage() {
                               <Badge
                                 variant="outline"
                                 className={`text-xs font-semibold
-                                  ${interaction.score >= 80 ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' : 
-                                  interaction.score >= 70 ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200' : 
-                                  'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
+                                  ${interaction.score >= 80 ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' :
+                                    interaction.score >= 70 ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200' :
+                                      'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
                               >
                                 {interaction.score}%
                               </Badge>
@@ -776,10 +858,10 @@ export default function AdminPage() {
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
-          <DocumentUploader 
+          <DocumentUploader
             onUploadComplete={() => queryClient.invalidateQueries({ queryKey: ['documents'] })}
           />
-          
+
           <Card>
             <CardHeader>
               <CardTitle>Uploaded Documents</CardTitle>
@@ -830,8 +912,8 @@ export default function AdminPage() {
         <TabsContent value="courses" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {mockCourses.map((course) => (
-              <Card 
-                key={course.id} 
+              <Card
+                key={course.id}
                 className="transition-all hover:shadow-md cursor-pointer hover:border-primary/50"
                 onClick={() => handleCourseClick(course.id)}
               >
@@ -877,8 +959,8 @@ export default function AdminPage() {
                   </span>
                 </div>
                 <div className="pt-4">
-                  <Button 
-                    className="w-full" 
+                  <Button
+                    className="w-full"
                     onClick={() => setShowAddCourseModal(true)} // Add click handler
                   >
                     Add New Course
@@ -889,6 +971,15 @@ export default function AdminPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={showRubric} onOpenChange={setShowRubric}>
+        <DialogContent className="sm:max-w-5xl max-h-[95vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle>Rubric</DialogTitle>
+          </DialogHeader>
+          <Rubric />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    profile: str, user_id: str, session: Session = Depends(get_session)
+    profile: str, user_id: str, class_id: str, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the scenario agent.
@@ -31,7 +31,7 @@ async def run_scenario_agent(
     # Ensure the profile value is one of the Enum values if your DB enforces it strictly.
     # For now, assuming the string matches.
     chat = Chats(
-        profile=profile, user_id=user_id, scenario_description=scenario, title=title
+        profile=profile, user_id=user_id, scenario_description=scenario, title=title, class_id=class_id
     )
 
     # save the chat to the database

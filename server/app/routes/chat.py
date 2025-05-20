@@ -28,13 +28,14 @@ AGENT_DISPATCH = {
 @router.post("/new")
 async def new_chat(
     profile: str = Form(...),
+    class_id: str = Form(...),
     user_id: str = Form(...),
     session: Session = Depends(get_session),
 ):  # Added session dependency
     """
     This endpoint is used to create a new chat.
     """
-    chat_id = await run_scenario_agent(profile, user_id, session)
+    chat_id = await run_scenario_agent(profile, user_id, class_id, session)
     return {"message": "Chat started", "chat_id": chat_id}
 
 

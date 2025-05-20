@@ -219,13 +219,13 @@ export function useTaskColumns({ isAdmin = false }: { isAdmin?: boolean } = {}) 
         },
       },
       {
-        accessorKey: "class",
+        accessorKey: "classId",
         header: ({ column }) => (
           <DataTableColumnHeader column={column} title="Class" isAdmin={isAdmin} />
         ),
         cell: ({ row }) => {
           const classOption = classOptions.find(
-            (cls) => cls.value === row.getValue("class")
+            (cls) => cls.value === row.getValue("classId")
           )
 
           if (!classOption) {

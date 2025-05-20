@@ -20,7 +20,7 @@ class Classes(_Base, table=True):
     class_code: str = Field(sa_column=Column('class_code', Text))
     description: str = Field(sa_column=Column('description', Text))
 
-    chats: List['Chats'] = Relationship(back_populates='classes')
+    chats: List['Chats'] = Relationship(back_populates='class_')
 
 
 class Documents(_Base, table=True):
@@ -56,7 +56,7 @@ class Users(_Base, table=True):
 
 class Chats(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class'], ['classes.id'], ondelete='CASCADE', name='chats_class_fkey'),
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='chats_class_id_fkey'),
         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='chats_user_id_fkey'),
         PrimaryKeyConstraint('id', name='chats_pkey')
     )
@@ -68,10 +68,10 @@ class Chats(_Base, table=True):
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     user_id: UUID = Field(sa_column=Column('user_id', Uuid))
     profile: str = Field(sa_column=Column('profile', Enum('aggressive', 'happy', 'confused', name='chat_profile')))
-    class_: UUID = Field(sa_column=Column('class', Uuid))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
-    classes: Optional['Classes'] = Relationship(back_populates='chats')
+    class_: Optional['Classes'] = Relationship(back_populates='chats')
     user: Optional['Users'] = Relationship(back_populates='chats')
     messages: List['Messages'] = Relationship(back_populates='chat')
     rubrics: List['Rubrics'] = Relationship(back_populates='chat')

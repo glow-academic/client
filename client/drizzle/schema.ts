@@ -26,7 +26,7 @@ export const chats = pgTable("chats", {
 	completed: boolean().default(false).notNull(),
 	userId: uuid("user_id").notNull(),
 	profile: chatProfile().notNull(),
-	class: uuid().notNull(),
+	classId: uuid("class_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
@@ -34,9 +34,9 @@ export const chats = pgTable("chats", {
 			name: "chats_user_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.class],
+			columns: [table.classId],
 			foreignColumns: [classes.id],
-			name: "chats_class_fkey"
+			name: "chats_class_id_fkey"
 		}).onDelete("cascade"),
 ]);
 

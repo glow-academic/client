@@ -27,9 +27,10 @@ import { chatProfile } from "@/drizzle/schema";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
+import { getClasses } from "@/utils/queries/get-classes";
 
 export default function Home() {
-  const isAdmin = true;
+  const isAdmin = false;
   const { columns, data, isLoading, userOptions, classOptions } = useTaskColumns({ isAdmin: isAdmin });
   const router = useRouter();
   const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
@@ -51,10 +52,20 @@ export default function Home() {
     enabled: !!chats
   });
 
+  const { data: classes } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getClasses()
+  });
+
   const handleStartChat = async (profile: typeof chatProfile.enumValues[number] | 'shuffle') => {
     try {
       if (!user) {
         toast.error("User not found. Please log in again.");
+        return;
+      }
+
+      if (!classes) {
+        toast.error("No classes found. Please contact an administrator.");
         return;
       }
 
@@ -67,9 +78,14 @@ export default function Home() {
         selectedProfile = selectProfileNeedingMostHelp() as typeof chatProfile.enumValues[number];
       }
 
+      // randomly select a class from the user's classes if they have any, otherwise pick from classes
+      const classId = user.classes.length > 0 ? user.classes[Math.floor(Math.random() * user.classes.length)] : classes[Math.floor(Math.random() * classes.length)].id;
+
       const formData = new FormData();
       formData.append("profile", selectedProfile);
       formData.append("user_id", user.id);
+      formData.append("class_id", classId);
+
 
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/new`, {
         method: "POST",

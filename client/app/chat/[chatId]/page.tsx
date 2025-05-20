@@ -14,16 +14,22 @@ import { getRubric } from '@/utils/queries/get-rubric';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import React, { useState, useRef, use, useEffect } from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronDown } from "lucide-react";
+import { Send, ChevronDown, ArrowLeft } from "lucide-react";
 import Markdown from '@/components/Markdown';
 import DocumentViewer from '@/components/DocumentViewer';
 import { getDocuments } from '@/utils/queries/get-documents';
 import { Skeleton } from "@/components/ui/skeleton";
+
+const hoverStyles = `
+.hover\\:scale-102:hover {
+  transform: scale(1.02);
+}
+`;
 
 export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
     const { chatId } = use(params);
@@ -241,12 +247,18 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         );
     };
 
+    const handleBack = () => {
+        queryClient.invalidateQueries({ queryKey: ["chats"] });
+        router.push('/home');
+    };
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
+            <style jsx global>{hoverStyles}</style>
             <header className="bg-primary text-primary-foreground p-4">
                 <div className="container mx-auto flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-semibold">Conversation Practice</h1>
+                        <h1 className="text-xl font-semibold">{chat?.title}</h1>
                     </div>
 
                     {chat?.completed && (
@@ -261,9 +273,19 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 {chatLoading ? (
                     <Skeleton className="mb-6 p-4 h-24 rounded-lg w-full" />
                 ) : (
-                    <div className={`mb-6 p-4 rounded-lg ${backgroundColors[chat?.profile || 'aggressive']} ${borderColors[chat?.profile || 'aggressive']} border`}>
-                        <p className="text-base">{chat?.scenarioDescription}</p>
+                <Card className="mb-6 bg-transparent border-0 shadow-none">
+                  <CardContent className="p-0">
+                    <div className="flex items-center">
+                        <Button variant="ghost" onClick={handleBack} className="mr-4">
+                          <ArrowLeft className="h-4 w-4 mr-2" />
+                          Back
+                        </Button>
+                        <div>
+                          <CardDescription className="mt-1">{chat?.scenarioDescription}</CardDescription>
+                        </div>
                     </div>
+                  </CardContent>
+                </Card>
                 )}
 
                 <div className="flex flex-1 min-h-0 gap-4">
@@ -317,7 +339,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                                 <AvatarFallback>AI</AvatarFallback>
                                                             </Avatar>
                                                             <div className="grid gap-1">
-                                                                <p className="font-medium">AI Assistant</p>
+                                                                <p className="font-medium">Student</p>
                                                                 <div className="rounded-lg bg-primary/10 p-3">
                                                                     {message.response === "" ? (
                                                                         <div className="flex items-center">
@@ -357,28 +379,40 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                     {chatLoading ? (
                                         <Skeleton className="w-full h-12 rounded-md" />
                                     ) : isFirstMessage ? (
-                                        <div className="w-full flex flex-row gap-3">
-                                            <Button
-                                                onClick={() => handleInitialMessageClick("Hi, how are you?")}
-                                                variant="outline"
-                                                className="flex-1 h-auto py-3 text-center"
-                                            >
-                                                Hi, how are you?
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
-                                                variant="outline"
-                                                className="flex-1 h-auto py-3 text-center"
-                                            >
-                                                Hi, what can I help you with?
-                                            </Button>
-                                            <Button
-                                                onClick={() => handleInitialMessageClick("Hi, are you here for CS 253?")}
-                                                variant="outline"
-                                                className="flex-1 h-auto py-3 text-center"
-                                            >
-                                                Hi, are you here for CS 253?
-                                            </Button>
+                                        <div className="w-full flex flex-col gap-4">
+                                            <p className="text-sm text-center text-muted-foreground">Choose an opening message:</p>
+                                            <div className="flex flex-col sm:flex-row gap-4">
+                                                <Card 
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
+                                                    onClick={() => handleInitialMessageClick("Hi, how are you?")}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, how are you?")}
+                                                >
+                                                    <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                                                        <p className="text-base font-medium">Hi, how are you?</p>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card 
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
+                                                    onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, what can I help you with?")}
+                                                >
+                                                    <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                                                        <p className="text-base font-medium">Hi, what can I help you with?</p>
+                                                    </CardContent>
+                                                </Card>
+                                                <Card 
+                                                    className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary" 
+                                                    onClick={() => handleInitialMessageClick("Hi, are you here for CS 253?")}
+                                                    tabIndex={0}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleInitialMessageClick("Hi, are you here for CS 253?")}
+                                                >
+                                                    <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                                                        <p className="text-base font-medium">Hi, are you here for CS 253?</p>
+                                                    </CardContent>
+                                                </Card>
+                                            </div>
                                         </div>
                                     ) : (
                                         <form onSubmit={handleSendMessage} className="flex w-full gap-2">
@@ -430,7 +464,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         <Skeleton className="h-10 w-full mt-6 rounded-md" />
                                     </div>
                                 ) : (
-                                    <div className="space-y-4">
+                                    <div className="flex flex-col gap-4">
                                         <div className="border-b pb-2">
                                             <div className="flex justify-between items-center">
                                                 <span className="font-medium">Active Listening</span>
@@ -473,13 +507,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         </>
                                     ) : (
                                         <>
-                                            <div className={`p-3 rounded-lg text-center font-semibold ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
-                                                <div className="text-sm mt-1">
-                                                    Score: {rubric?.score}/20
-                                                </div>
-                                            </div>
+                                            <Card className={`border-0 ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                <CardContent className="p-3 rounded-lg text-center font-semibold">
+                                                    <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
+                                                    <div className="text-sm mt-1">
+                                                        Score: {rubric?.score}/20
+                                                    </div>
+                                                </CardContent>
+                                            </Card>
 
                                             <Button
                                                 onClick={() => router.push('/home')}
@@ -498,7 +533,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             {documentsLoading ? (
                                 <Card className="w-full">
                                     <CardHeader>
-                                        <Skeleton className="h-6 w-32 mx-auto" />
+                                        <CardTitle className="text-center">Documents</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <Skeleton className="h-[60vh] w-full rounded-md" />

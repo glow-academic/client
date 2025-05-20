@@ -489,7 +489,7 @@ export default function CourseDetailsPage({ params }: { params: { courseId: stri
                 <ResponsiveContainer width="100%" height="90%">
                   <LineChart data={mockTrendData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" axisLine={true} tickLine={true} label={null} />
+                    <XAxis dataKey="date" axisLine={true} tickLine={true} />
                     <YAxis domain={[60, 100]} />
                     <Tooltip />
                     <Line 
@@ -543,7 +543,7 @@ export default function CourseDetailsPage({ params }: { params: { courseId: stri
                       barGap={0} 
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" axisLine={true} tickLine={true} label={null} />
+                      <XAxis dataKey="name" axisLine={true} tickLine={true} />
                       <YAxis domain={[0, 100]} />
                       <Tooltip />
                       {activeEmotion === "happy" && (

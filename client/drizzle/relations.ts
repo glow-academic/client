@@ -7,7 +7,7 @@ export const chatsRelations = relations(chats, ({one, many}) => ({
 		references: [users.id]
 	}),
 	class: one(classes, {
-		fields: [chats.class],
+		fields: [chats.classId],
 		references: [classes.id]
 	}),
 	messages: many(messages),
