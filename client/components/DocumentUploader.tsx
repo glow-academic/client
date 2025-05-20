@@ -15,14 +15,15 @@ interface DocumentUploaderProps {
 
 export default function DocumentUploader({ onUploadComplete }: DocumentUploaderProps) {
     const [selectedProfileType, setSelectedProfileType] = useState<string>('');
+    const [selectedClass, setSelectedClass] = useState<string>(''); // Added state for selected class
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [isUploading, setIsUploading] = useState<boolean>(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (!e.target.files || !selectedProfileType) {
-            toast.error('Please select a file and profile type');
+        if (!e.target.files || !selectedProfileType || !selectedClass) { // Added selectedClass check
+            toast.error('Please select a file, profile type, and class');
             return;
         }
 
@@ -50,6 +51,7 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                     filename: file.name,
                     filetype: file.type,
                     profile: selectedProfileType,
+                    class: selectedClass, // Ensure class is correctly set in metadata
                     fileId: fileId
                 },
                 onError: (error) => {
@@ -77,7 +79,8 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                             },
                             body: JSON.stringify({ 
                                 fileId,
-                                profile: selectedProfileType
+                                profile: selectedProfileType,
+                                class: selectedClass // Ensure class is included in the finalize request
                             }),
                         });
 
@@ -93,6 +96,8 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                         if (fileInputRef.current) {
                             fileInputRef.current.value = '';
                         }
+                        setSelectedProfileType(''); // Reset profile type
+                        setSelectedClass(''); // Reset class
                         
                         // Invalidate queries to refresh data
                         queryClient.invalidateQueries({ queryKey: ['documents'] });
@@ -146,6 +151,26 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                     </Select>
                 </div>
 
+                {/* New Class Dropdown */}
+                <div className="space-y-2">
+                    <Label htmlFor="class-type">Class</Label>
+                    <Select
+                        value={selectedClass}
+                        onValueChange={(value) => setSelectedClass(value)}
+                        disabled={isUploading}
+                    >
+                        <SelectTrigger id="class-type">
+                            <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="CS 182">CS 182</SelectItem>
+                            <SelectItem value="CS 253">CS 253</SelectItem>
+                            <SelectItem value="CS 381">CS 381</SelectItem>
+                            <SelectItem value="CS XYZ">CS XYZ (General)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
                 <div className="space-y-2">
                     <Label htmlFor="document-file">Document File</Label>
                     <Input
@@ -153,13 +178,13 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                         ref={fileInputRef}
                         type="file"
                         onChange={handleFileUpload}
-                        disabled={!selectedProfileType || isUploading}
+                        disabled={!selectedProfileType || !selectedClass || isUploading} // Updated disabled condition
                         accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                         className="cursor-pointer"
                     />
-                    {!selectedProfileType && (
+                    {(!selectedProfileType || !selectedClass) && ( // Updated conditional message
                         <p className="text-sm text-muted-foreground mt-1">
-                            Please select a student profile type first
+                            Please select a student profile type and class first
                         </p>
                     )}
                 </div>
