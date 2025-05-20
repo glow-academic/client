@@ -4,9 +4,17 @@ import uuid
 import json
 import shutil
 import logging
-from typing import AsyncIterator, Optional
-from fastapi import APIRouter, Request, Response, Form, HTTPException, Depends, Query, UploadFile, File
-from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
+from fastapi import (
+    APIRouter,
+    Request,
+    Response,
+    Form,
+    HTTPException,
+    Depends,
+    UploadFile,
+    File,
+)
+from fastapi.responses import JSONResponse, FileResponse
 from sqlmodel import Session, select
 from app.models import Documents
 from app.db import get_session
@@ -23,6 +31,7 @@ os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+
 # Regular file upload endpoint (alternative to TUS for simple uploads)
 @router.post("/upload")
 async def upload_document(
@@ -36,37 +45,38 @@ async def upload_document(
     # Validate profile
     if profile not in ["aggressive", "happy", "confused"]:
         raise HTTPException(status_code=400, detail="Invalid profile type")
-    
+
     # Generate a unique ID for the document
     document_id = str(uuid.uuid4())
-    
+
     # Get file extension from filename
     _, ext = os.path.splitext(file.filename)
     if not ext:
         ext = ".bin"  # Default extension if none is provided
-    
+
     # Create the file path
     file_path = f"{document_id}{ext}"
     full_path = os.path.join(UPLOAD_FOLDER, file_path)
-    
+
     # Save the file
     with open(full_path, "wb") as f:
         content = await file.read()
         f.write(content)
-    
+
     # Create document record in database
     document = Documents(
         id=document_id,
         name=file.filename,
         file_path=file_path,
         mime_type=file.content_type,
-        profile=profile
+        profile=profile,
     )
-    
+
     session.add(document)
     session.commit()
-    
+
     return {"message": "Document uploaded successfully", "document_id": document_id}
+
 
 # Get document by ID
 @router.get("/id/{document_id}")
@@ -80,23 +90,22 @@ async def get_document(
     # Query the document
     query = select(Documents).where(Documents.id == document_id)
     result = session.exec(query).first()
-    
+
     if not result:
         raise HTTPException(status_code=404, detail="Document not found")
-    
+
     # Construct the full file path
     file_path = os.path.join(UPLOAD_FOLDER, result.file_path)
-    
+
     # Check if file exists
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Document file not found")
-    
+
     # Return the file as a response
     return FileResponse(
-        path=file_path,
-        filename=result.name,
-        media_type=result.mime_type
+        path=file_path, filename=result.name, media_type=result.mime_type
     )
+
 
 # TUS Protocol Implementation
 @router.options("/tus")
@@ -115,6 +124,7 @@ async def tus_options(request: Request):
             "Access-Control-Max-Age": "86400",
         }
     )
+
 
 @router.post("/tus")
 async def tus_creation(request: Request):
@@ -135,6 +145,7 @@ async def tus_creation(request: Request):
             if " " in kv:
                 k, v = kv.strip().split(" ", 1)
                 import base64
+
                 metadata[k] = base64.b64decode(v).decode("utf-8")
 
     # Generate upload ID
@@ -158,9 +169,11 @@ async def tus_creation(request: Request):
 
     # Get base URL from request
     forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
-    forwarded_host = request.headers.get("X-Forwarded-Host", request.headers.get("Host", "localhost:8000"))
+    forwarded_host = request.headers.get(
+        "X-Forwarded-Host", request.headers.get("Host", "localhost:8000")
+    )
     base_url = f"{forwarded_proto}://{forwarded_host}"
-    
+
     location = f"{base_url}/documents/tus/{upload_id}"
 
     # Handle creation-with-upload if Content-Length > 0
@@ -198,6 +211,7 @@ async def tus_creation(request: Request):
         },
     )
 
+
 @router.head("/tus/{upload_id}")
 async def tus_head(upload_id: str, request: Request):
     """Handle HEAD request for tus protocol - get upload info"""
@@ -223,6 +237,7 @@ async def tus_head(upload_id: str, request: Request):
     }
 
     return Response(headers=headers)
+
 
 @router.patch("/tus/{upload_id}")
 async def tus_patch(upload_id: str, request: Request):
@@ -272,6 +287,7 @@ async def tus_patch(upload_id: str, request: Request):
         }
     )
 
+
 @router.options("/tus/{upload_id}")
 async def tus_options_upload_id(upload_id: str, request: Request):
     """Handle OPTIONS request for specific upload"""
@@ -288,6 +304,7 @@ async def tus_options_upload_id(upload_id: str, request: Request):
         }
     )
 
+
 @router.post("/tus/finalize")
 async def finalize_upload(request: Request, session: Session = Depends(get_session)):
     """Finalize an upload and process the file"""
@@ -302,13 +319,13 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                 status_code=400,
                 content={"status": "error", "message": "Missing fileId parameter"},
             )
-            
+
         if not profile:
             return JSONResponse(
                 status_code=400,
                 content={"status": "error", "message": "Missing profile parameter"},
             )
-            
+
         # Validate profile
         if profile not in ["aggressive", "happy", "confused"]:
             return JSONResponse(
@@ -338,12 +355,15 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
 
         # Get the uploaded file path
         file_path = os.path.join(upload_dir, "file")
-        
+
         # Check if file exists and has content
         if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
             return JSONResponse(
                 status_code=400,
-                content={"status": "error", "message": "Upload file is missing or empty"},
+                content={
+                    "status": "error",
+                    "message": "Upload file is missing or empty",
+                },
             )
 
         # Read metadata
@@ -352,61 +372,65 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
 
         # Extract filename from metadata
         filename = metadata.get("filename", f"file-{file_id}")
-        
+
         # Determine file extension
         _, ext = os.path.splitext(filename)
         if not ext:
             # Try to detect MIME type and assign extension
             mime_type = metadata.get("filetype", "application/octet-stream")
             ext = mimetypes.guess_extension(mime_type) or ".bin"
-        
+
         # Generate document ID
         document_id = str(uuid.uuid4())
-        
+
         # Create final file path
         final_file_path = f"{document_id}{ext}"
         final_full_path = os.path.join(UPLOAD_FOLDER, final_file_path)
-        
+
         # Move the file to its final location
         shutil.copy2(file_path, final_full_path)
-        
+
         # Create document record in database
         document = Documents(
             id=document_id,
             name=filename,
             file_path=final_file_path,
             mime_type=metadata.get("filetype", "application/octet-stream"),
-            profile=profile
+            profile=profile,
         )
-        
+
         session.add(document)
         session.commit()
-        
+
         # Clean up the TUS upload directory
         try:
             shutil.rmtree(upload_dir)
             logger.info(f"Cleaned up TUS upload directory: {upload_dir}")
         except Exception as cleanup_error:
-            logger.warning(f"Failed to clean up TUS upload directory: {str(cleanup_error)}")
+            logger.warning(
+                f"Failed to clean up TUS upload directory: {str(cleanup_error)}"
+            )
 
         return JSONResponse(
             status_code=200,
             content={
-                "status": "success", 
-                "message": "Document uploaded successfully", 
-                "document_id": document_id
+                "status": "success",
+                "message": "Document uploaded successfully",
+                "document_id": document_id,
             },
         )
 
     except Exception as e:
         logger.error(f"Error finalizing upload: {str(e)}")
         import traceback
+
         logger.error(traceback.format_exc())
 
         return JSONResponse(
             status_code=500,
             content={"status": "error", "message": f"Failed to process file: {str(e)}"},
         )
+
 
 @router.delete("/id/{document_id}")
 async def delete_document(
@@ -420,24 +444,27 @@ async def delete_document(
         # Query the document
         query = select(Documents).where(Documents.id == document_id)
         document = session.exec(query).first()
-        
+
         if not document:
             return JSONResponse(
                 status_code=404,
-                content={"status": "error", "message": f"Document with ID {document_id} not found"}
+                content={
+                    "status": "error",
+                    "message": f"Document with ID {document_id} not found",
+                },
             )
-        
+
         # Get the file path and ensure it's the full path
         db_file_path = document.file_path
         upload_folder_str = str(UPLOAD_FOLDER)
-        
+
         # If the path doesn't start with the UPLOAD_FOLDER, prepend it
         full_file_path = db_file_path
         if not str(db_file_path).startswith(upload_folder_str):
             full_file_path = os.path.join(upload_folder_str, db_file_path)
-        
+
         logger.info(f"Attempting to delete file: {full_file_path}")
-        
+
         # Delete the file from the filesystem if it exists
         if os.path.exists(full_file_path):
             try:
@@ -447,22 +474,29 @@ async def delete_document(
                 logger.error(f"Error deleting file {full_file_path}: {str(e)}")
         else:
             logger.warning(f"File not found in filesystem: {full_file_path}")
-        
+
         # Delete the document from the database
         session.delete(document)
         session.commit()
-        
+
         return JSONResponse(
             status_code=200,
-            content={"status": "success", "message": f"Document {document_id} deleted successfully"}
+            content={
+                "status": "success",
+                "message": f"Document {document_id} deleted successfully",
+            },
         )
-        
+
     except Exception as e:
         logger.error(f"Error deleting document: {str(e)}")
         import traceback
+
         logger.error(traceback.format_exc())
-        
+
         return JSONResponse(
             status_code=500,
-            content={"status": "error", "message": f"Failed to delete document: {str(e)}"}
+            content={
+                "status": "error",
+                "message": f"Failed to delete document: {str(e)}",
+            },
         )

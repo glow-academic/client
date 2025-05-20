@@ -10,6 +10,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
+RUN apt-get install -y --no-install-recommends \
+    texlive-latex-base
+
 # # Run linter checks
 # RUN echo "Running linter..." && ruff check .
 

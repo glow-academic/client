@@ -3,21 +3,12 @@ from sqlmodel import Session
 from app.models import Chats
 from fastapi import Depends
 import logging
-from app.utils.profiles import scenario_descriptions, chat_titles, get_profile_info
+from app.utils.profiles import get_profile_info
 from app.utils.classes import get_class_info
-from sqlmodel import Session
-from app.models import Chats, Rubrics
-from fastapi import Depends
-import logging
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
 from openai.types import Reasoning
 from app.extensions import get_gemini
-from app.utils.chat import get_conversation_history
-from sqlmodel import select
-from app.models import Messages
-from app.utils.rubric import get_rubric
 from pydantic import BaseModel
-from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +47,11 @@ async def run_scenario_agent(
     # Ensure the profile value is one of the Enum values if your DB enforces it strictly.
     # For now, assuming the string matches.
     chat = Chats(
-        profile=profile, user_id=user_id, scenario_description=scenario_description, title=title, class_id=class_id
+        profile=profile,
+        user_id=user_id,
+        scenario_description=scenario_description,
+        title=title,
+        class_id=class_id,
     )
 
     # save the chat to the database
@@ -72,6 +67,7 @@ async def run_scenario_agent(
 class Scenario(BaseModel):
     title: str  # title
     scenario: str  # scenario
+
 
 class ScenarioAgent:
     def __init__(self):

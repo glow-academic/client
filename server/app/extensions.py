@@ -1,5 +1,6 @@
 from pathlib import Path
-import os, logging
+import os
+import logging
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
 
@@ -9,13 +10,14 @@ load_dotenv()
 IN_DOCKER = os.getenv("DOCKER_ENV") == "1"
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-BASE_FOLDER  = Path("/app") if IN_DOCKER else PROJECT_ROOT
+BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
 UPLOAD_FOLDER = BASE_FOLDER / "uploads"
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)      # idempotent & safe
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)  # idempotent & safe
 
 # ---- Gemini ---------------------------------------------------------
 logger = logging.getLogger(__name__)
 _gemini: AsyncOpenAI | None = None
+
 
 def _init_gemini() -> None:
     global _gemini
@@ -27,6 +29,7 @@ def _init_gemini() -> None:
         )
     elif _gemini is None:
         logger.warning("GOOGLE_API_KEY missing – Gemini features disabled")
+
 
 def get_gemini() -> AsyncOpenAI | None:
     if _gemini is None:

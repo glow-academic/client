@@ -15,6 +15,10 @@ sqlmodel
 openai
 openai-agents[litellm]
 
+pylatex
+matplotlib
+numpy
+
 # Add psycopg2-binary for SQLAlchemy compatibility
 psycopg2-binary
 
