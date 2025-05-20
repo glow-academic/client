@@ -60,7 +60,7 @@ export function DataTableRowActions<TData>({
         </Link>
       )
     }
-  } else if (hasRubric) {
+  } else {
     return (
       <Link href={`/chat/${chat.id}`}>
         <Button variant="outline" size="sm" className="h-8">
@@ -68,7 +68,5 @@ export function DataTableRowActions<TData>({
         </Button>
       </Link>
     )
-  } else {
-    return null
   }
 }

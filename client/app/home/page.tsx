@@ -225,6 +225,7 @@ export default function Home() {
     Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
       if (profileChats.length === 0) return;
 
+      let maxScore = 0;
       let totalScore = 0;
       let chatCount = 0;
 
@@ -237,6 +238,9 @@ export default function Home() {
       profileChats.forEach(chat => {
         const chatRubric = rubrics.find(r => r.chatId === chat.id);
         if (chatRubric) {
+          // Keep track of max score for this profile
+          maxScore = Math.max(maxScore, chatRubric.score);
+          // Still calculate total for shuffle average
           totalScore += chatRubric.score;
           adaptabilitySum += chatRubric.adaptability;
           listeningSum += chatRubric.listening;
@@ -247,13 +251,11 @@ export default function Home() {
       });
 
       if (chatCount > 0) {
-        // Calculate average score (out of 20)
-        const avgScore = totalScore / chatCount;
-        // Calculate progress toward passing (17/20 is passing)
-        const progress = Math.min(100, Math.round((avgScore / 17) * 100));
+        // Use maximum score for individual profiles (out of 20)
+        const progress = Math.min(100, Math.round((maxScore / 17) * 100));
 
         profileMetrics[profile as keyof typeof profileMetrics] = {
-          score: Math.round(avgScore * 10) / 10, // Round to 1 decimal place
+          score: Math.round(maxScore * 10) / 10, // Round to 1 decimal place
           progress
         };
       }
@@ -265,20 +267,29 @@ export default function Home() {
       .length;
 
     if (activeProfiles > 0) {
-      const totalProgress = profileMetrics.aggressive.progress +
-        profileMetrics.happy.progress +
-        profileMetrics.confused.progress;
-      const avgProgress = Math.round(totalProgress / activeProfiles);
+      // For shuffle, we still use average across all chats
+      let totalScoreAll = 0;
+      let totalCountAll = 0;
 
-      const totalScore = profileMetrics.aggressive.score +
-        profileMetrics.happy.score +
-        profileMetrics.confused.score;
-      const avgScore = Math.round((totalScore / activeProfiles) * 10) / 10;
+      Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+        profileChats.forEach(chat => {
+          const chatRubric = rubrics.find(r => r.chatId === chat.id);
+          if (chatRubric) {
+            totalScoreAll += chatRubric.score;
+            totalCountAll++;
+          }
+        });
+      });
 
-      profileMetrics.shuffle = {
-        score: avgScore,
-        progress: avgProgress
-      };
+      if (totalCountAll > 0) {
+        const avgScore = totalScoreAll / totalCountAll;
+        const avgProgress = Math.min(100, Math.round((avgScore / 17) * 100));
+
+        profileMetrics.shuffle = {
+          score: Math.round(avgScore * 10) / 10,
+          progress: avgProgress
+        };
+      }
     }
   }
 

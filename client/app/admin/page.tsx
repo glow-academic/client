@@ -41,6 +41,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import Rubric from "@/components/Rubric";
+import { useTaskColumns } from "@/components/tasks/columns";
+import { DataTable } from "@/components/tasks/data-table";
+import { Separator } from "@/components/ui/separator";
 
 // Define an interface for the document structure
 interface UploadedDocument {
@@ -132,6 +135,9 @@ const mockCourses = [
 ];
 
 export default function AdminPage() {
+  const isAdmin = true;
+  const { columns, data, isLoading, userOptions, classOptions } = useTaskColumns({ isAdmin: isAdmin });
+
   const [activeTab, setActiveTab] = useState('analytics');
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -528,8 +534,9 @@ export default function AdminPage() {
       </div>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="courses">Courses</TabsTrigger>
         </TabsList>
@@ -659,11 +666,6 @@ export default function AdminPage() {
                       <div className="h-full bg-red-500 rounded-full" style={{ width: `${mockPerformance.typePerformance.Angry}%` }}></div>
                     </div>
                   </div>
-
-                  {/* Coming Soon Placeholder - Modified */}
-                  <div className="pt-2 text-center"> {/* Removed border, adjusted padding/margin */}
-                    <p className="text-sm text-muted-foreground">More Student Types Coming Soon...</p>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -713,150 +715,18 @@ export default function AdminPage() {
             </Card>
           </div>
 
-          {/* Recent Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Interactions</CardTitle>
-              <CardDescription>Latest TA sessions with AI students</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {mockPerformance.recentInteractions.length > 0 ? (
-                <>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-border">
-                      <thead className="bg-background"> {/* Changed background class */}
-                        <tr>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted"
-                            onClick={() => handleSort('ta')}
-                          >
-                            <div className="flex items-center">
-                              Teaching Assistant
-                              {sortColumn === 'ta' ?
-                                (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
-                                <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
-                              }
-                            </div>
-                          </th>
-                          {/* Swapped Class and Student Type columns */}
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted"
-                            onClick={() => handleSort('class')}
-                          >
-                            <div className="flex items-center">
-                              Class
-                              {sortColumn === 'class' ?
-                                (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
-                                <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
-                              }
-                            </div>
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted"
-                            onClick={() => handleSort('studentType')}
-                          >
-                            <div className="flex items-center">
-                              Student Type
-                              {sortColumn === 'studentType' ?
-                                (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
-                                <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
-                              }
-                            </div>
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted"
-                            onClick={() => handleSort('score')}
-                          >
-                            <div className="flex items-center">
-                              Score
-                              {sortColumn === 'score' ?
-                                (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
-                                <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
-                              }
-                            </div>
-                          </th>
-                          <th
-                            scope="col"
-                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider cursor-pointer hover:bg-muted"
-                            onClick={() => handleSort('date')}
-                          >
-                            <div className="flex items-center">
-                              Date
-                              {sortColumn === 'date' ?
-                                (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4 ml-1" /> : <ChevronDown className="h-4 w-4 ml-1" />) :
-                                <ChevronDown className="h-4 w-4 ml-1 text-muted-foreground/50" />
-                              }
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {paginatedInteractions.map((interaction) => (
-                          <tr key={interaction.id}>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="text-sm font-medium text-foreground">{interaction.ta}</div>
-                            </td>
-                            {/* Swapped Class and Student Type cells */}
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="text-sm text-muted-foreground">{interaction.class}</div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <div className="text-sm text-muted-foreground">{interaction.studentType}</div>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap">
-                              <Badge
-                                variant="outline"
-                                className={`text-xs font-semibold
-                                  ${interaction.score >= 80 ? 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200' :
-                                    interaction.score >= 70 ? 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200' :
-                                      'bg-red-100 text-red-800 border-red-300 hover:bg-red-200'}`}
-                              >
-                                {interaction.score}%
-                              </Badge>
-                            </td>
-                            <td className="px-4 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                              {formatDate(interaction.date)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between pt-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handlePrevPage}
-                        disabled={currentPage === 1}
-                      >
-                        Previous
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Page {currentPage} of {totalPages}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleNextPage}
-                        disabled={currentPage === totalPages}
-                      >
-                        Next
-                      </Button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <p className="text-center text-sm text-muted-foreground py-4">No recent interactions to display.</p>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
+        <TabsContent value="history" className="space-y-4">
+          {/* Recent Activity */}
+          <DataTable
+            data={data || []}
+            columns={columns}
+            userOptions={userOptions}
+            classOptions={classOptions}
+            isAdmin={isAdmin}
+          />
+        </TabsContent>
         <TabsContent value="documents" className="space-y-4">
           <DocumentUploader
             onUploadComplete={() => queryClient.invalidateQueries({ queryKey: ['documents'] })}

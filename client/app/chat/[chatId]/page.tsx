@@ -305,7 +305,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
     const handleBack = () => {
         queryClient.invalidateQueries({ queryKey: ["chats"] });
-        router.push('/home');
+        router.back();
     };
 
     return (

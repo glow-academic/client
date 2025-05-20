@@ -15,6 +15,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { DateRange } from "react-day-picker"
 
 import {
   Table,
@@ -50,6 +51,7 @@ export function DataTable<TData, TValue>({
     []
   )
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [dateRange, setDateRange] = React.useState<DateRange | undefined>()
 
   const table = useReactTable({
     data,
@@ -73,6 +75,28 @@ export function DataTable<TData, TValue>({
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
 
+  // Effect to update date filter when dateRange changes - only apply filter when user selects a date
+  React.useEffect(() => {
+    // Get the createdAt column reference
+    const createdAtColumn = table.getColumn("createdAt")
+    if (!createdAtColumn) return;
+    
+    // Only set filter if there's a valid date range with both from and to dates
+    if (dateRange?.from && dateRange?.to) {
+      const fromDate = new Date(dateRange.from)
+      fromDate.setHours(0, 0, 0, 0)
+      
+      const toDate = new Date(dateRange.to)
+      toDate.setHours(23, 59, 59, 999)
+      
+      // Apply the date filter
+      createdAtColumn.setFilterValue([fromDate, toDate])
+    } else {
+      // Clear the filter if date range is missing or incomplete
+      createdAtColumn.setFilterValue(undefined)
+    }
+  }, [dateRange, table])
+
   return (
     <div className="space-y-4">
       <DataTableToolbar 
@@ -80,6 +104,8 @@ export function DataTable<TData, TValue>({
         userOptions={userOptions}
         classOptions={classOptions}
         isAdmin={isAdmin}
+        dateRange={dateRange}
+        setDateRange={setDateRange}
       />
       <div className="rounded-md border">
         <Table>

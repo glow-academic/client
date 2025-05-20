@@ -13,6 +13,12 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 
+const columnMap = {
+  "createdAt": "Date",
+  "classId": "Class",
+  "userId": "Name",
+}
+
 interface DataTableViewOptionsProps<TData> {
   table: Table<TData>
   isAdmin?: boolean
@@ -22,10 +28,6 @@ export function DataTableViewOptions<TData>({
   table,
   isAdmin = false,
 }: DataTableViewOptionsProps<TData>) {
-  // Only show view options dropdown for admin users
-  if (!isAdmin) {
-    return null
-  }
 
   return (
     <DropdownMenu>
@@ -56,7 +58,7 @@ export function DataTableViewOptions<TData>({
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id}
+                {columnMap[column.id as keyof typeof columnMap] || column.id}
               </DropdownMenuCheckboxItem>
             )
           })}
