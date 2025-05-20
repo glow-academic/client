@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Card, 
@@ -116,8 +116,8 @@ const mockTrendData = [
   { date: "05-19", avgScore: 90 },
 ];
 
-export default function CourseDetailsPage({ params }: { params: { courseId: string } }) {
-  const { courseId } = params;
+export default function CourseDetailsPage({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = use(params);
   const router = useRouter();
   
   const [course, setCourse] = useState<any>(null);
