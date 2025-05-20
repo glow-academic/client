@@ -317,11 +317,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
             <div className="container mx-auto flex-1 p-4 flex flex-col">
                 {chatLoading ? (
-                    <Skeleton className="mb-6 p-4 h-24 rounded-lg w-full" />
+                    <Skeleton className="mb-4 p-3 h-16 rounded-lg w-full" />
                 ) : (
-                <Card className="mb-6 shadow-sm border bg-card">
+                <Card className="mb-4 shadow-sm border bg-card">
                   <CardContent className="px-4">
-                    <p className="text-md text-card-foreground">{chat?.scenarioDescription}</p>
+                    <p className="text-sm text-card-foreground">{chat?.scenarioDescription}</p>
                   </CardContent>
                 </Card>
                 )}
@@ -333,62 +333,38 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
                             <CardContent className="flex-1 p-0 relative overflow-hidden">
                                 <ScrollArea
-                                    className="h-[calc(100vh-240px)] pb-0 overflow-y-auto"
+                                    className="h-[calc(100vh-320px)] pb-0 overflow-y-auto"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
-                                    <div className="py-4 px-4">
+                                    <div className="py-4 px-4 space-y-4">
                                         {messagesLoading ? (
                                             <>
-                                                <div className="flex items-start gap-3 text-sm mb-6">
-                                                    <Skeleton className="h-10 w-10 rounded-full" />
-                                                    <div className="grid gap-1 w-full max-w-[80%]">
-                                                        <Skeleton className="h-4 w-20" />
-                                                        <Skeleton className="h-20 w-full rounded-lg" />
-                                                    </div>
+                                                <div className="w-max max-w-[75%] rounded-lg">
+                                                    <Skeleton className="h-16 w-64 rounded-lg" />
                                                 </div>
-                                                <div className="flex items-start gap-3 text-sm justify-end">
-                                                    <div className="grid gap-1 text-right w-full max-w-[80%]">
-                                                        <Skeleton className="h-4 w-20 ml-auto" />
-                                                        <Skeleton className="h-20 w-full rounded-lg" />
-                                                    </div>
-                                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                                <div className="w-max max-w-[75%] ml-auto rounded-lg">
+                                                    <Skeleton className="h-16 w-64 rounded-lg" />
                                                 </div>
                                             </>
                                         ) : (
                                             messages.map((message, index) => (
-                                                <div key={message.id} className={getMessageSpacing(index, messages.length)}>
+                                                <div key={message.id}>
                                                     {message.query && (
-                                                        <div className="flex items-start gap-3 text-sm justify-end mb-4">
-                                                            <div className="grid gap-1 text-right">
-                                                                <p className="font-medium">You</p>
-                                                                <div className="rounded-lg bg-muted p-3">
-                                                                    <Markdown>{message.query}</Markdown>
-                                                                </div>
-                                                            </div>
-                                                            <Avatar>
-                                                                <AvatarFallback>U</AvatarFallback>
-                                                            </Avatar>
+                                                        <div className="w-max max-w-[75%] ml-auto rounded-lg bg-primary text-primary-foreground px-3 py-2 text-sm">
+                                                            <Markdown>{message.query}</Markdown>
                                                         </div>
                                                     )}
                                                     {message.response !== undefined && (message.query !== "") && (
-                                                        <div className="flex items-start gap-3 text-sm">
-                                                            <Avatar>
-                                                                <AvatarFallback>AI</AvatarFallback>
-                                                            </Avatar>
-                                                            <div className="grid gap-1 flex-1 max-w-[90%]">
-                                                                <p className="font-medium">Student</p>
-                                                                <div className="rounded-lg bg-primary/10 p-3">
-                                                                    {message.response === "" ? (
-                                                                        <div className="flex items-center">
-                                                                            <span className="text-gray-500">Analyzing</span>
-                                                                            <LoadingDots />
-                                                                        </div>
-                                                                    ) : (
-                                                                        <Markdown>{message.response}</Markdown>
-                                                                    )}
+                                                        <div className="w-max max-w-[75%] rounded-lg bg-muted px-3 py-2 text-sm mt-2">
+                                                            {message.response === "" ? (
+                                                                <div className="flex items-center">
+                                                                    <span className="text-gray-500">Analyzing</span>
+                                                                    <LoadingDots />
                                                                 </div>
-                                                            </div>
+                                                            ) : (
+                                                                <Markdown>{message.response}</Markdown>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
@@ -413,7 +389,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
                             {/* Only show input area if rubric is not shown */}
                             {!chat?.completed && (
-                                <CardFooter className="p-4 border-t">
+                                <CardFooter className="p-3 border-t">
                                     {chatLoading ? (
                                         <Skeleton className="w-full h-12 rounded-md" />
                                     ) : isFirstMessage ? (
@@ -460,7 +436,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                     value={newMessage}
                                                     onChange={(e) => setNewMessage(e.target.value)}
                                                     placeholder="Type your response..."
-                                                    className="pr-10 py-6 text-base"
+                                                    className="pr-10 py-2 text-sm"
                                                     autoFocus
                                                 />
                                                 <Button 

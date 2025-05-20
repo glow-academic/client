@@ -34,42 +34,41 @@ export function DataTableRowActions<TData>({
   const hasRubric = chat.completed // Assuming completed status means it has a rubric
 
   // For non-admin view, render a simple button instead of dropdown
-  if (!isAdmin && !hasRubric) {
+  if (!isAdmin) {
+    if (!hasRubric) {
+      return (
+        <Link href={`/chat/${chat.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+          >
+            Continue
+          </Button>
+        </Link>
+      )
+    } else {
+      return (
+        <Link href={`/chat/${chat.id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8"
+          >
+            View
+          </Button>
+        </Link>
+      )
+    }
+  } else if (hasRubric) {
     return (
       <Link href={`/chat/${chat.id}`}>
-        <Button 
-          variant="outline" 
-          size="sm"
-          className="h-8"
-        >
-          Continue
+        <Button variant="outline" size="sm" className="h-8">
+          View
         </Button>
       </Link>
     )
+  } else {
+    return null
   }
-
-  // Admin view gets dropdown with more options
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant="ghost"
-          className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
-        >
-          <MoreHorizontal />
-          <span className="sr-only">Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[160px]">
-        <DropdownMenuItem>
-          <Eye className="mr-2 h-4 w-4" />
-          View
-        </DropdownMenuItem>
-        <DropdownMenuItem>
-          <FileText className="mr-2 h-4 w-4" />
-          Create Report
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
 }
