@@ -341,13 +341,12 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 )}
 
                 <div className="flex flex-1 min-h-0 gap-4">
-
-                    {/* CHAT column - fixing whitespace issues with more precise sizing */}
-                    <div className="flex flex-col flex-1 min-h-0">
+                    {/* CHAT column - taking exactly 2/3 width */}
+                    <div className={`flex flex-col w-${documents.length > 0 ? '2/3' : 'full'} min-h-0`}>
                         <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
                             <CardContent className="flex-1 p-0 relative overflow-hidden min-h-0">
                                 <ScrollArea
-                                    className="flex-1 pb-0 overflow-y-auto"
+                                    className="h-[calc(100vh-250px)] pb-0 overflow-y-auto"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
@@ -483,14 +482,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         </Card>
                     </div>
 
-                    {/* RIGHT column - rubric when completed, otherwise document viewer */}
+                    {/* RIGHT column - taking exactly 1/3 width */}
                     {chat?.completed ? (
                         <Card className="hidden lg:flex w-1/3 shrink-0 flex-col min-h-0">
-                            <CardHeader>
-                                <CardTitle className="text-center text-sm">Assessment</CardTitle>
-                            </CardHeader>
                             <CardContent className="flex-1 p-2 text-sm overflow-hidden">
-                                <ScrollArea className="h-full">
+                                <ScrollArea>
                                     {rubricLoading ? (
                                         <div className="space-y-4">
                                             {[...Array(4)].map((_, i) => (
@@ -550,7 +546,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         ) : (
                                             <>
                                                 <Card className={`border-0 ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    <CardContent className="p-3 rounded-lg text-center font-semibold">
+                                                    <CardContent className="rounded-lg text-center font-semibold">
                                                         <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
                                                         <div className="text-sm mt-1">
                                                             Score: {rubric?.score}/20
@@ -573,9 +569,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         </Card>
                     ) : (
                         <>
-                        {/* Only show document viewer if there are documents for this profile */}
                         {(documents.filter(d => d.profile === chat?.profile).length > 0 || documentsLoading) && (
-                            <div className="hidden lg:block w-1/3 shrink-0 min-h-0 flex flex-col">
+                            <div className="hidden lg:block w-1/3 shrink-0 min-h-0">
                                 {documentsLoading ? (
                                     <Card className="w-full flex flex-col min-h-0">
                                         <CardHeader className="pb-2">
