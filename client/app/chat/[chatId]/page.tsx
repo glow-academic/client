@@ -72,6 +72,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         }
     }, [messages]);
 
+    // Helper function to format message display
+    const getMessageSpacing = (index: number, totalMessages: number) => {
+        // If it's the last message, add less bottom margin
+        if (index === totalMessages - 1) return 'mb-4';
+        // Otherwise add more space between message groups
+        return 'mb-8';
+    };
+
     // Scroll to bottom function
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -279,7 +287,16 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             <style jsx global>{hoverStyles}</style>
             <header className="bg-primary text-primary-foreground p-4">
                 <div className="container mx-auto flex justify-between items-center">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4">
+                        <Button 
+                            variant="ghost" 
+                            onClick={handleBack} 
+                            className="p-1 h-auto text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
+                            size="sm"
+                        >
+                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            Back
+                        </Button>
                         <h1 className="text-xl font-semibold">{chat?.title}</h1>
                     </div>
 
@@ -303,17 +320,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                     <Skeleton className="mb-6 p-4 h-24 rounded-lg w-full" />
                 ) : (
                 <Card className="mb-6 shadow-sm border bg-card">
-                  <CardHeader className="py-3">
-                    <div className="flex items-center justify-between">
-                      <Button variant="ghost" onClick={handleBack} className="p-2 h-auto">
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back
-                      </Button>
-                      <CardTitle className="text-base font-medium">Scenario</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="py-2 px-4">
-                    <p className="text-sm text-card-foreground">{chat?.scenarioDescription}</p>
+                  <CardContent className="px-4">
+                    <p className="text-md text-card-foreground">{chat?.scenarioDescription}</p>
                   </CardContent>
                 </Card>
                 )}
@@ -325,14 +333,14 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
                             <CardContent className="flex-1 p-0 relative overflow-hidden">
                                 <ScrollArea
-                                    className="h-[calc(100vh-300px)] pb-0 overflow-y-auto"
+                                    className="h-[calc(100vh-240px)] pb-0 overflow-y-auto"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
-                                    <div className="space-y-4 p-4">
+                                    <div className="py-4 px-4">
                                         {messagesLoading ? (
                                             <>
-                                                <div className="flex items-start gap-3 text-sm">
+                                                <div className="flex items-start gap-3 text-sm mb-6">
                                                     <Skeleton className="h-10 w-10 rounded-full" />
                                                     <div className="grid gap-1 w-full max-w-[80%]">
                                                         <Skeleton className="h-4 w-20" />
@@ -348,8 +356,8 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                 </div>
                                             </>
                                         ) : (
-                                            messages.map((message) => (
-                                                <div key={message.id} className="mb-6 last:mb-0">
+                                            messages.map((message, index) => (
+                                                <div key={message.id} className={getMessageSpacing(index, messages.length)}>
                                                     {message.query && (
                                                         <div className="flex items-start gap-3 text-sm justify-end mb-4">
                                                             <div className="grid gap-1 text-right">
@@ -577,7 +585,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             <CardTitle className="text-center text-sm">Documents</CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <Skeleton className="h-[calc(100vh-300px)] w-full rounded-md" />
+                                            <Skeleton className="h-[calc(100vh-240px)] w-full rounded-md" />
                                         </CardContent>
                                     </Card>
                                 ) : (
