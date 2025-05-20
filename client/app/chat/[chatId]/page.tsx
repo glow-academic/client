@@ -113,6 +113,12 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
         if (!chat || !chat.createdAt) return;
         
         const calculateElapsedTime = () => {
+            // If the chat is completed and rubric has timeTaken, show that instead
+            if (chat.completed && rubric?.timeTaken) {
+                setElapsedTime(formatTime(rubric.timeTaken));
+                return;
+            }
+            
             const startTime = new Date(chat.createdAt).getTime();
             const now = new Date().getTime();
             const elapsed = Math.floor((now - startTime) / 1000); // in seconds
@@ -123,11 +129,25 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             setElapsedTime(`${minutes}:${seconds}`);
         };
         
-        calculateElapsedTime(); // Initial calculation
-        const timer = setInterval(calculateElapsedTime, 1000);
+        // Helper function to format time in seconds to MM:SS
+        const formatTime = (timeInSeconds: number) => {
+            const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
+            const seconds = (timeInSeconds % 60).toString().padStart(2, '0');
+            return `${minutes}:${seconds}`;
+        };
         
-        return () => clearInterval(timer);
-    }, [chat]);
+        calculateElapsedTime(); // Initial calculation
+        
+        // Only set up timer if chat is not completed
+        let timer: NodeJS.Timeout | null = null;
+        if (!chat.completed) {
+            timer = setInterval(calculateElapsedTime, 1000);
+        }
+        
+        return () => {
+            if (timer) clearInterval(timer);
+        };
+    }, [chat, rubric]);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement> | null, initialMessage?: string) => {
         if (e) e.preventDefault();
@@ -305,17 +325,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             <Clock className="h-4 w-4" />
                             <span className="text-sm font-medium">{elapsedTime}</span>
                         </div>
-                        
-                        {chat?.completed && (
-                            <div className={`px-4 py-1 rounded-full ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                {rubric?.passed ? 'PASSED' : 'FAILED'}
-                            </div>
-                        )}
                     </div>
                 </div>
             </header>
 
-            <div className="container mx-auto flex-1 p-4 flex flex-col">
+            <div className="container mx-auto flex-1 p-4 flex flex-col min-h-0">
                 {chatLoading ? (
                     <Skeleton className="mb-4 p-3 h-16 rounded-lg w-full" />
                 ) : (
@@ -331,9 +345,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                     {/* CHAT column - fixing whitespace issues with more precise sizing */}
                     <div className="flex flex-col flex-1 min-h-0">
                         <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                            <CardContent className="flex-1 p-0 relative overflow-hidden">
+                            <CardContent className="flex-1 p-0 relative overflow-hidden min-h-0">
                                 <ScrollArea
-                                    className="h-[calc(100vh-320px)] pb-0 overflow-y-auto"
+                                    className="flex-1 pb-0 overflow-y-auto"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
@@ -385,15 +399,11 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                         <span className="sr-only">Scroll to bottom</span>
                                     </Button>
                                 )}
-                            </CardContent>
-
-                            {/* Only show input area if rubric is not shown */}
-                            {!chat?.completed && (
-                                <CardFooter className="p-3 border-t">
-                                    {chatLoading ? (
-                                        <Skeleton className="w-full h-12 rounded-md" />
-                                    ) : isFirstMessage ? (
-                                        <div className="w-full flex flex-col gap-4">
+                                
+                                {/* Show initial messages in the center of the chat area when in first message mode */}
+                                {!chat?.completed && isFirstMessage && !chatLoading && (
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <div className="w-full max-w-4xl p-6 flex flex-col gap-4">
                                             <p className="text-sm text-center text-muted-foreground">Choose an opening message:</p>
                                             <div className="flex flex-col sm:flex-row gap-4">
                                                 <Card 
@@ -428,6 +438,15 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                 </Card>
                                             </div>
                                         </div>
+                                    </div>
+                                )}
+                            </CardContent>
+
+                            {/* Only show input area if rubric is not shown and not in first message mode */}
+                            {!chat?.completed && !isFirstMessage && (
+                                <CardFooter className="p-3 border-t">
+                                    {chatLoading ? (
+                                        <Skeleton className="w-full h-12 rounded-md" />
                                     ) : (
                                         <form onSubmit={handleSendMessage} className="flex w-full gap-3">
                                             <div className="relative flex-1">
@@ -466,110 +485,112 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
                     {/* RIGHT column - rubric when completed, otherwise document viewer */}
                     {chat?.completed ? (
-                        <Card className="hidden lg:flex w-1/3 shrink-0 flex-col">
+                        <Card className="hidden lg:flex w-1/3 shrink-0 flex-col min-h-0">
                             <CardHeader>
                                 <CardTitle className="text-center text-sm">Assessment</CardTitle>
                             </CardHeader>
-                            <CardContent className="p-2 text-sm">
-                                {rubricLoading ? (
-                                    <div className="space-y-4">
-                                        {[...Array(4)].map((_, i) => (
-                                            <div key={i} className="border-b pb-2">
-                                                <div className="flex justify-between items-center">
-                                                    <Skeleton className="h-4 w-32" />
-                                                    <Skeleton className="h-4 w-8" />
-                                                </div>
-                                                <Skeleton className="h-12 w-full mt-1" />
-                                            </div>
-                                        ))}
-                                        <Skeleton className="h-20 w-full mt-6 rounded-lg" />
-                                        <Skeleton className="h-10 w-full mt-6 rounded-md" />
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col gap-4">
-                                        <div className="border-b pb-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-medium">Active Listening</span>
-                                                <span>{rubric?.listening}/5</span>
-                                            </div>
-                                            <p className="text-xs mt-1 text-gray-600">{rubric?.listeningFeedback || "No feedback provided"}</p>
-                                        </div>
-
-                                        <div className="border-b pb-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-medium">Objectives</span>
-                                                <span>{rubric?.objectives}/5</span>
-                                            </div>
-                                            <p className="text-xs mt-1 text-gray-600">{rubric?.objectivesFeedback || "No feedback provided"}</p>
-                                        </div>
-
-                                        <div className="border-b pb-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-medium">Time Management</span>
-                                                <span>{rubric?.timeManagement}/5</span>
-                                            </div>
-                                            <p className="text-xs mt-1 text-gray-600">{rubric?.timeManagementFeedback || "No feedback provided"}</p>
-                                        </div>
-
-                                        <div className="border-b pb-2">
-                                            <div className="flex justify-between items-center">
-                                                <span className="font-medium">Adaptability</span>
-                                                <span>{rubric?.adaptability}/5</span>
-                                            </div>
-                                            <p className="text-xs mt-1 text-gray-600">{rubric?.adaptabilityFeedback || "No feedback provided"}</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className="mt-6">
+                            <CardContent className="flex-1 p-2 text-sm overflow-hidden">
+                                <ScrollArea className="h-full">
                                     {rubricLoading ? (
-                                        <>
-                                            <Skeleton className="h-16 w-full rounded-lg" />
-                                            <Skeleton className="h-10 w-full mt-6 rounded-md" />
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Card className={`border-0 ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                <CardContent className="p-3 rounded-lg text-center font-semibold">
-                                                    <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
-                                                    <div className="text-sm mt-1">
-                                                        Score: {rubric?.score}/20
+                                        <div className="space-y-4">
+                                            {[...Array(4)].map((_, i) => (
+                                                <div key={i} className="border-b pb-2">
+                                                    <div className="flex justify-between items-center">
+                                                        <Skeleton className="h-4 w-32" />
+                                                        <Skeleton className="h-4 w-8" />
                                                     </div>
-                                                </CardContent>
-                                            </Card>
+                                                    <Skeleton className="h-12 w-full mt-1" />
+                                                </div>
+                                            ))}
+                                            <Skeleton className="h-20 w-full mt-6 rounded-lg" />
+                                            <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                                        </div>
+                                    ) : (
+                                        <div className="flex flex-col gap-4">
+                                            <div className="border-b pb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-medium">Active Listening</span>
+                                                    <span>{rubric?.listening}/5</span>
+                                                </div>
+                                                <p className="text-xs mt-1 text-gray-600">{rubric?.listeningFeedback || "No feedback provided"}</p>
+                                            </div>
 
-                                            <Button
-                                                onClick={() => router.push('/home')}
-                                                className="mt-6 w-full text-sm py-2 h-auto font-medium"
-                                                size="lg"
-                                            >
-                                                Return to Dashboard
-                                            </Button>
-                                        </>
+                                            <div className="border-b pb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-medium">Objectives</span>
+                                                    <span>{rubric?.objectives}/5</span>
+                                                </div>
+                                                <p className="text-xs mt-1 text-gray-600">{rubric?.objectivesFeedback || "No feedback provided"}</p>
+                                            </div>
+
+                                            <div className="border-b pb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-medium">Time Management</span>
+                                                    <span>{rubric?.timeManagement}/5</span>
+                                                </div>
+                                                <p className="text-xs mt-1 text-gray-600">{rubric?.timeManagementFeedback || "No feedback provided"}</p>
+                                            </div>
+
+                                            <div className="border-b pb-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-medium">Adaptability</span>
+                                                    <span>{rubric?.adaptability}/5</span>
+                                                </div>
+                                                <p className="text-xs mt-1 text-gray-600">{rubric?.adaptabilityFeedback || "No feedback provided"}</p>
+                                            </div>
+                                        </div>
                                     )}
-                                </div>
+
+                                    <div className="mt-6">
+                                        {rubricLoading ? (
+                                            <>
+                                                <Skeleton className="h-16 w-full rounded-lg" />
+                                                <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Card className={`border-0 ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                    <CardContent className="p-3 rounded-lg text-center font-semibold">
+                                                        <div className="text-xl">{rubric?.passed ? 'PASSED' : 'FAILED'}</div>
+                                                        <div className="text-sm mt-1">
+                                                            Score: {rubric?.score}/20
+                                                        </div>
+                                                    </CardContent>
+                                                </Card>
+
+                                                <Button
+                                                    onClick={() => router.push('/home')}
+                                                    className="mt-6 w-full text-sm py-2 h-auto font-medium"
+                                                    size="lg"
+                                                >
+                                                    Return to Dashboard
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </ScrollArea>
                             </CardContent>
                         </Card>
                     ) : (
                         <>
                         {/* Only show document viewer if there are documents for this profile */}
                         {(documents.filter(d => d.profile === chat?.profile).length > 0 || documentsLoading) && (
-                            <div className="hidden lg:block w-1/3 shrink-0">
+                            <div className="hidden lg:block w-1/3 shrink-0 min-h-0 flex flex-col">
                                 {documentsLoading ? (
-                                    <Card className="w-full">
+                                    <Card className="w-full flex flex-col min-h-0">
                                         <CardHeader className="pb-2">
                                             <CardTitle className="text-center text-sm">Documents</CardTitle>
                                         </CardHeader>
-                                        <CardContent>
-                                            <Skeleton className="h-[calc(100vh-240px)] w-full rounded-md" />
+                                        <CardContent className="flex-1 min-h-0">
+                                            <Skeleton className="h-full w-full rounded-md" />
                                         </CardContent>
                                     </Card>
                                 ) : (
-                                    <Card className="w-full overflow-hidden">
+                                    <Card className="w-full overflow-hidden flex flex-col min-h-0">
                                         <CardHeader className="pb-2 border-b">
                                             <CardTitle className="text-center text-sm">Documents</CardTitle>
                                         </CardHeader>
-                                        <CardContent className="p-0">
+                                        <CardContent className="p-0 flex-1 min-h-0">
                                             <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
                                         </CardContent>
                                     </Card>
