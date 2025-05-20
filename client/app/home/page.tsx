@@ -5,464 +5,409 @@
  * 05/14/2025
  */
 "use client";
-
-import { chatProfile } from "@/drizzle/schema";
-import { borderColors, profileDescriptions, profileIcons } from "@/utils/profiles";
-import { backgroundColors } from "@/utils/profiles";
-import { logout } from "@/utils/mutations/logout";
+import { getUser } from "@/utils/queries/get-user";
+import { useTaskColumns } from "@/components/tasks/columns";
+import { DataTable } from "@/components/tasks/data-table";
+import { UserNav } from "@/components/tasks/user-nav";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Shuffle, Zap, SmilePlus, HelpCircle } from "lucide-react";
 import { getChats } from "@/utils/queries/get-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
-import { getUser } from "@/utils/queries/get-user";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { updateViewedIntro } from "@/utils/mutations/update-viewed-intro";
+import { chatProfile } from "@/drizzle/schema";
+import { useState } from "react";
+import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
 
-export default function HomePage() {
-  const [activeTab, setActiveTab] = useState('new');
-  const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-
-  const [gotItLoading, setGotItLoading] = useState(false);
-
-  const queryClient = useQueryClient();
-
+export default function Home() {
+  const isAdmin = true;
+  const { columns, data, isLoading, userOptions, classOptions } = useTaskColumns({ isAdmin: isAdmin });
   const router = useRouter();
-
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      const { success, error } = await logout();
-      if (success) {
-        router.push('/');
-      } else {
-        throw new Error(error);
-      }
-    } catch (error) {
-      console.error('Error logging out:', error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
 
   const { data: user } = useQuery({
-    queryKey: ['user'],
-    queryFn: () => getUser(),
+    queryKey: ["user"],
+    queryFn: () => getUser()
   });
-
 
   const { data: chats } = useQuery({
-    queryKey: ['chats', user?.id],
+    queryKey: ["chats"],
     queryFn: () => getChats(user!.id),
-    enabled: !!user,
+    enabled: !!user
   });
 
-  const { data: rubrics } = useQuery({
-    queryKey: ['rubrics', chats?.map((chat) => chat.id)],
-    queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
-    enabled: !!chats,
+  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
+    queryKey: ["rubrics", chats?.map(chat => chat.id)],
+    queryFn: () => getRubrics(chats!.map(chat => chat.id)),
+    enabled: !!chats
   });
 
-  const newCount = chatProfile.enumValues.length
-  const passedCount = rubrics?.filter((rubric) => rubric.passed).length;
-  const failedCount = rubrics?.filter((rubric) => !rubric.passed).length;
-  const inProgressCount = chats?.filter((chat) => !chat.completed).length;
-
-  const handleStartChat = async (profile: typeof chatProfile.enumValues[number]) => {
+  const handleStartChat = async (profile: typeof chatProfile.enumValues[number] | 'shuffle') => {
     try {
       if (!user) {
-        throw new Error("User not found");
+        toast.error("User not found. Please log in again.");
+        return;
       }
+
+      setLoadingProfile(profile);
+      toast.loading(`Starting ${profile} chat...`);
+
+      // If shuffle is selected, determine which profile needs the most help
+      let selectedProfile = profile;
+      if (profile === 'shuffle' && rubrics && chats) {
+        selectedProfile = selectProfileNeedingMostHelp() as typeof chatProfile.enumValues[number];
+      }
+
       const formData = new FormData();
-      formData.append("profile", profile);
+      formData.append("profile", selectedProfile);
       formData.append("user_id", user.id);
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/new`, {
         method: "POST",
         body: formData,
       });
+
       if (response.ok) {
         const data = await response.json();
+        toast.dismiss();
+        toast.success(`Started ${selectedProfile} chat`);
         router.push(`/chat/${data.chat_id}`);
       } else {
-        throw new Error(response.statusText);
+        throw new Error(response.statusText || "Failed to create chat");
       }
     } catch (error) {
       console.error('Error creating chat:', error);
-    }
-  }
-
-  const handleSawModal = async () => {
-    setGotItLoading(true);
-    try {
-      if (!user) {
-        throw new Error("User not found");
-      }
-    const { success, error } = await updateViewedIntro(user.id);
-    if (success) {
-      setShowModal(false);
-      queryClient.invalidateQueries({ queryKey: ['user'] });
-      } else {
-        throw new Error(error);
-      }
-    } catch (error) {
-      console.error('Error updating viewed intro:', error);
+      toast.dismiss();
+      toast.error(`Failed to start chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
-      setGotItLoading(false);
+      setLoadingProfile(null);
+    }
+  };
+
+  // Function to select the profile that needs the most help based on rubrics
+  const selectProfileNeedingMostHelp = () => {
+    if (!rubrics || !chats) return 'confused'; // Default fallback
+
+    // Calculate average scores for each profile type
+    const profileScores = {
+      aggressive: { totalScore: 0, count: 0 },
+      happy: { totalScore: 0, count: 0 },
+      confused: { totalScore: 0, count: 0 }
+    };
+
+    // Group chats by profile
+    const chatsByProfile = {
+      aggressive: chats.filter(chat => chat.profile === 'aggressive'),
+      happy: chats.filter(chat => chat.profile === 'happy'),
+      confused: chats.filter(chat => chat.profile === 'confused')
+    };
+
+    // Calculate scores for each profile
+    Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+      profileChats.forEach(chat => {
+        const chatRubric = rubrics.find(r => r.chatId === chat.id);
+        if (chatRubric) {
+          profileScores[profile as keyof typeof profileScores].totalScore += chatRubric.score;
+          profileScores[profile as keyof typeof profileScores].count++;
+        }
+      });
+    });
+
+    // Find profiles that haven't passed (score < 17)
+    const failingProfiles = Object.entries(profileScores)
+      .filter(([_, stats]) => stats.count > 0) // Only include profiles with at least one chat
+      .map(([profile, stats]) => {
+        const avgScore = stats.count > 0 ? stats.totalScore / stats.count : 0;
+        return { profile, avgScore };
+      })
+      .filter(p => p.avgScore < 17); // Filter for failing scores
+
+    if (failingProfiles.length === 0) {
+      // If all profiles are passing, pick the lowest scoring one
+      const lowestScoringProfile = Object.entries(profileScores)
+        .filter(([_, stats]) => stats.count > 0)
+        .map(([profile, stats]) => {
+          const avgScore = stats.count > 0 ? stats.totalScore / stats.count : 0;
+          return { profile, avgScore };
+        })
+        .sort((a, b) => a.avgScore - b.avgScore)[0];
+
+      return lowestScoringProfile?.profile || 'confused';
+    }
+
+    // Randomly select from failing profiles
+    const randomIndex = Math.floor(Math.random() * failingProfiles.length);
+    return failingProfiles[randomIndex].profile;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
+        <div className="flex items-center justify-between space-y-2">
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+
+        {/* Skeleton for Chat Profile Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i} className="overflow-hidden">
+              <CardHeader>
+                <Skeleton className="h-6 w-32 mb-1" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-4 w-24" />
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+
+        {/* Skeleton for DataTable */}
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </div>
+    );
+  }
+
+  // Calculate rubric scores and progress for each profile
+  // Each criterion (adaptability, listening, etc.) has a max score of 5
+  // Total passing score is 17/20 (85%)
+  const profileMetrics = {
+    shuffle: { score: 0, progress: 0 },
+    aggressive: { score: 0, progress: 0 },
+    happy: { score: 0, progress: 0 },
+    confused: { score: 0, progress: 0 }
+  };
+
+  if (rubrics && chats) {
+    // Group chats by profile
+    const chatsByProfile = {
+      aggressive: chats.filter(chat => chat.profile === 'aggressive'),
+      happy: chats.filter(chat => chat.profile === 'happy'),
+      confused: chats.filter(chat => chat.profile === 'confused')
+    };
+
+    // Calculate scores for each profile
+    Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+      if (profileChats.length === 0) return;
+
+      let totalScore = 0;
+      let chatCount = 0;
+
+      // Track individual criteria scores to determine proficiency
+      let adaptabilitySum = 0;
+      let listeningSum = 0;
+      let objectivesSum = 0;
+      let timeManagementSum = 0;
+
+      profileChats.forEach(chat => {
+        const chatRubric = rubrics.find(r => r.chatId === chat.id);
+        if (chatRubric) {
+          totalScore += chatRubric.score;
+          adaptabilitySum += chatRubric.adaptability;
+          listeningSum += chatRubric.listening;
+          objectivesSum += chatRubric.objectives;
+          timeManagementSum += chatRubric.timeManagement;
+          chatCount++;
+        }
+      });
+
+      if (chatCount > 0) {
+        // Calculate average score (out of 20)
+        const avgScore = totalScore / chatCount;
+        // Calculate progress toward passing (17/20 is passing)
+        const progress = Math.min(100, Math.round((avgScore / 17) * 100));
+
+        profileMetrics[profile as keyof typeof profileMetrics] = {
+          score: Math.round(avgScore * 10) / 10, // Round to 1 decimal place
+          progress
+        };
+      }
+    });
+
+    // Calculate shuffle metrics (average of all profiles)
+    const activeProfiles = Object.entries(profileMetrics)
+      .filter(([key, _]) => key !== 'shuffle' && profileMetrics[key as keyof typeof profileMetrics].score > 0)
+      .length;
+
+    if (activeProfiles > 0) {
+      const totalProgress = profileMetrics.aggressive.progress +
+        profileMetrics.happy.progress +
+        profileMetrics.confused.progress;
+      const avgProgress = Math.round(totalProgress / activeProfiles);
+
+      const totalScore = profileMetrics.aggressive.score +
+        profileMetrics.happy.score +
+        profileMetrics.confused.score;
+      const avgScore = Math.round((totalScore / activeProfiles) * 10) / 10;
+
+      profileMetrics.shuffle = {
+        score: avgScore,
+        progress: avgProgress
+      };
     }
   }
 
-  useEffect(() => {
-    if (user && !user.viewedIntro) {
-      setShowModal(true);
-    }
-  }, [user]);
-
-  return (
-    <div className="min-h-screen bg-background">
-      {showModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md mx-auto">
-            <h2 className="text-lg font-semibold mb-4">Orientation Workshop</h2>
-            <p className="mb-4">
-              This is an orientation workshop that will prepare you for dealing
-              with different types of student during office hours.
-            </p>
-            <button
-              onClick={handleSawModal}
-              className="px-4 py-2 bg-primary text-primary-foreground rounded"
-            >
-              {gotItLoading ? 'Loading...' : 'Got it'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      <header className="bg-primary text-primary-foreground p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold">GLOW - GTA Training</h1>
-          <div>
-            <button
-              onClick={handleLogout}
-              className="px-3 py-1 bg-secondary/50 text-secondary-foreground rounded-md"
-              disabled={loading}
-            >
-              {loading ? 'Logging out...' : 'Logout'}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="container mx-auto py-8 px-4">
-        {/* Tab Navigation */}
-        <div className="border-b border-border mb-6">
-          <nav className="-mb-px flex" aria-label="Tabs">
-            <button
-              onClick={() => setActiveTab('new')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'new'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
-            >
-              New
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'new' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
-                {newCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('passed')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'passed'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
-            >
-              Passed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'passed' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
-                {passedCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('failed')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'failed'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
-            >
-              Failed
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'failed' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
-                {failedCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('in-progress')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${
-                activeTab === 'in-progress'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-              }`}
-            >
-              In Progress
-              <span className={`ml-2 py-0.5 px-2.5 text-xs font-medium rounded-full ${
-                activeTab === 'in-progress' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'
-              }`}>
-                {inProgressCount}
-              </span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab('rubric')}
-              className={`mr-2 px-4 py-2 font-medium text-sm rounded-t-lg border-b-2 ${activeTab === 'rubric'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-                }`}
-            >
-              Rubric
-            </button>
-          </nav>
-        </div>
-
-        {/* Tab Content */}
-        <div>
-          {activeTab === 'new' && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {chatProfile.enumValues.map((profile) => (
-                <div key={profile}
-                  className={`p-6 rounded-lg shadow-md ${backgroundColors[profile]} ${borderColors[profile]} border-2 transition-transform hover:scale-105 cursor-pointer`}
-                  onClick={() => handleStartChat(profile)}
-                >
-                  <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
-                      <span className="text-4xl">
-                        {profileIcons[profile]}
-                      </span>
-                    </div>
-
-                    <h3 className="text-xl font-bold mb-2">{profile}</h3>
-                    <p className="text-center text-sm mb-3">{profileDescriptions[profile]}</p>
-
-                    <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
-                      Start Practice
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {activeTab === 'rubric' && (
-            <div>
-              <h3 className="text-xl font-medium mb-4 text-blue-600">Assessment Rubric</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white rounded-lg overflow-hidden shadow-md">
-                  <thead className="bg-primary text-primary-foreground text-left">
-                    <tr>
-                      <th className="py-3 px-4 font-semibold">{"Criteria"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Excellent (5)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Good (4)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Acceptable (3)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Marginal (2)"}</th>
-                      <th className="py-3 px-4 font-semibold">{"Poor (1)"}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 font-medium">{"Active Listening"}</td>
-                      <td className="py-3 px-4">{"Consistently employs open-ended questions that empower students to discover solutions independently."}</td>
-                      <td className="py-3 px-4">{"Regularly uses guided questioning, encouraging student reasoning with occasional prompts."}</td>
-                      <td className="py-3 px-4">{"Occasionally guides students with questions but sometimes provides direct answers."}</td>
-                      <td className="py-3 px-4">{"Rarely uses questioning techniques, often resorting to hints or partial solutions."}</td>
-                      <td className="py-3 px-4">{"Directly provided the answer"}</td>
-                    </tr>
-                    <tr className="border-b border-border bg-secondary/30">
-                      <td className="py-3 px-4 font-medium">{"Course Objectives"}</td>
-                      <td className="py-3 px-4">{"Clearly articulates course objectives and aligns explanations with learning goals, ensuring conceptual clarity."}</td>
-                      <td className="py-3 px-4">{"Explains course objectives accurately and relates examples to key learning outcomes."}</td>
-                      <td className="py-3 px-4">{"Provides a basic overview of objectives but with occasional inaccuracies or lack of depth."}</td>
-                      <td className="py-3 px-4">{"Demonstrates limited awareness of course goals and offers explanations with minor misconceptions."}</td>
-                      <td className="py-3 px-4">{"Didn't know the course material, had to ask students, or clear demonstration of not knowing"}</td>
-                    </tr>
-                    <tr className="border-b border-border">
-                      <td className="py-3 px-4 font-medium">{"Time Management"}</td>
-                      <td className="py-3 px-4">{"Begins and concludes sessions within scheduled times, maximizing productivity and respecting student availability."}</td>
-                      <td className="py-3 px-4">{"Generally adheres to time allocations with minor deviations that do not impact session quality."}</td>
-                      <td className="py-3 px-4">{"Sometimes exceeds or finishes early, slightly affecting pacing yet maintaining core engagement."}</td>
-                      <td className="py-3 px-4">{"Frequently mismanages time, leading to rushed explanations or unnecessary prolongation."}</td>
-                      <td className="py-3 px-4">{"Ended the conversation really early, or made it last longer than needed"}</td>
-                    </tr>
-                    <tr className="border-b border-border bg-secondary/30">
-                      <td className="py-3 px-4 font-medium">{"Adaptability"}</td>
-                      <td className="py-3 px-4">{"Perfectly adapts approach to diverse student emotional and attitude types"}</td>
-                      <td className="py-3 px-4">{"Mostly seamlessly adjusted communication and teaching style to effectively engage students across a wide range of emotional"}</td>
-                      <td className="py-3 px-4">{"Demonstrates thoughtful adjustments to support most student types, maintaining a supportive and responsive demeanor."}</td>
-                      <td className="py-3 px-4">{"Shows minimal ability to adjust to varied student behaviors, occasionally missing cues or responding inappropriately."}</td>
-                      <td className="py-3 px-4">{"Fails to adapt to different student types, responding uniformly without consideration of individual emotional or behavioral needs."}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">{"Scoring System"}</h4>
-                <p className="text-sm mb-2">{"Your interactions with each student type are scored based on the criteria above:"}</p>
-                <ul className="list-disc list-inside text-sm space-y-1">
-                  <li><span className="font-medium">{"Pass:"}</span> {"Score of 17-20 points (85%+)"}</li>
-                  <li><span className="font-medium">{"Fail:"}</span> {"Score below 17 points"}</li>
-                  <li>{"Each interaction must score at least 3 points in every criterion to pass"}</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'in-progress' && (
-            <>
-              {chats ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {chats
-                    .filter(chat => !chat.completed)
-                    .map((chat) => (
-                      <Link
-                        href={`/chat/${chat.id}`}
-                        key={chat.id}
-                        className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
-                      >
-                        <div className="flex flex-col items-center">
-                          <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
-                            <span className="text-4xl">
-                              {profileIcons[chat.profile]}
-                            </span>
-                            <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
-                              ⋯
-                            </span>
-                          </div>
-
-                          <h3 className="text-xl font-bold mb-2 text-foreground">{chat.profile}</h3>
-                          
-                          <div className="w-full mt-2 text-sm">
-                            <div className="flex justify-between">
-                              <span>Started:</span>
-                              <span>{new Date(chat.createdAt).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-
-                          <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
-                            Continue
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-secondary/30 rounded-lg">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              )}
-              
-              {chats && chats.filter(chat => !chat.completed).length === 0 && (
-                <div className="text-center py-12 bg-secondary/30 rounded-lg">
-                  <p className="text-muted-foreground">No in-progress student types found.</p>
-                </div>
-              )}
-            </>
-          )}
-
-          {(activeTab === 'passed' || activeTab === 'failed') && (
-            <>
-              {chats && rubrics ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {chats
-                    .filter(chat => {
-                      const chatRubric = rubrics.find(r => r.chatId === chat.id);
-                      if (activeTab === 'passed') return chatRubric?.passed;
-                      if (activeTab === 'failed') return chatRubric && !chatRubric.passed;
-                      return false;
-                    })
-                    .map((chat) => {
-                      const chatRubric = rubrics.find(r => r.chatId === chat.id);
-                      return (
-                        <Link
-                          href={`/chat/${chat.id}`}
-                          key={chat.id}
-                          className={`p-6 rounded-lg shadow-md ${backgroundColors[chat.profile]} ${borderColors[chat.profile]} border-2 transition-transform hover:scale-105`}
-                        >
-                          <div className="flex flex-col items-center">
-                            <div className="w-24 h-24 mb-4 rounded-full bg-white flex items-center justify-center relative">
-                              <span className="text-4xl">
-                                {profileIcons[chat.profile]}
-                              </span>
-
-                              {chatRubric?.passed && (
-                                <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
-                                  ✓
-                                </span>
-                              )}
-
-                              {chatRubric && !chatRubric.passed && (
-                                <span className="absolute -top-2 -right-2 w-8 h-8 flex items-center justify-center bg-primary text-primary-foreground rounded-full border-2 border-white">
-                                  ✗
-                                </span>
-                              )}
-                            </div>
-
-                            <h3 className="text-xl font-bold mb-2 text-foreground">{chat.profile}</h3>
-
-                            {chat.completed && chatRubric && (
-                              <div className="w-full mt-2 text-sm">
-                                <div className="flex justify-between">
-                                  <span>Last attempt:</span>
-                                  <span>{new Date(chatRubric.createdAt).toLocaleDateString()}</span>
-                                </div>
-                                <div className="flex justify-between text-foreground">
-                                  <span>Score:</span>
-                                  <span className="font-semibold">
-                                    {chatRubric.score}/20
-                                  </span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Attempts:</span>
-                                  <span>{rubrics.filter((r) => r.chatId === chat.id).length}</span>
-                                </div>
-                              </div>
-                            )}
-
-                            <div className="mt-4 w-full py-2 text-center rounded-md bg-primary text-primary-foreground">
-                              Practice Again
-                            </div>
-                          </div>
-                        </Link>
-                      );
-                    })}
-                </div>
-              ) : (
-                <div className="text-center py-12 bg-secondary/30 rounded-lg">
-                  <p className="text-muted-foreground">Loading...</p>
-                </div>
-              )}
-              
-              {chats && rubrics && chats.filter(chat => {
-                const chatRubric = rubrics.find(r => r.chatId === chat.id);
-                if (activeTab === 'passed') return chatRubric?.passed;
-                if (activeTab === 'failed') return chatRubric && !chatRubric.passed;
-                return false;
-              }).length === 0 && (
-                <div className="text-center py-12 bg-secondary/30 rounded-lg">
-                  <p className="text-muted-foreground">No {activeTab} student types found.</p>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </main>
+  return <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
+    <div className="flex items-center justify-between space-y-2">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Welcome{user?.viewedIntro ? " back" : ""}, {user?.name}!</h2>
+        <p className="text-muted-foreground">
+          Click the different chat profiles to get started.
+        </p>
+      </div>
+      <div className="flex items-center space-x-2">
+        <UserNav />
+      </div>
     </div>
-  );
+
+    {/* Chat Profile Cards */}
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Shuffle Card */}
+      <Card
+        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+        onClick={() => !loadingProfile && handleStartChat('shuffle')}
+      >
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 opacity-30"
+          style={{ width: `${profileMetrics.shuffle.progress}%` }}
+        ></div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shuffle className={`h-5 w-5 text-violet-500 ${loadingProfile === 'shuffle' ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
+            Shuffle
+          </CardTitle>
+          <CardDescription>Random conversation style</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">Let AI choose a random personality for your conversation.</p>
+        </CardContent>
+        <CardFooter className="text-xs text-muted-foreground flex justify-between">
+          <span>Score: {profileMetrics.shuffle.score}/20</span>
+          <span className={profileMetrics.shuffle.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
+            {profileMetrics.shuffle.score >= 17 ? 'PASS' : `85% to pass`}
+          </span>
+        </CardFooter>
+      </Card>
+
+      {/* Aggressive Card */}
+      <Card
+        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+        onClick={() => !loadingProfile && handleStartChat('aggressive')}
+      >
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 opacity-30"
+          style={{ width: `${profileMetrics.aggressive.progress}%` }}
+        ></div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Zap className={`h-5 w-5 text-red-500 ${loadingProfile === 'aggressive' ? 'animate-spin' : 'group-hover:scale-125 transition-transform duration-300'}`} />
+            Aggressive
+          </CardTitle>
+          <CardDescription>Direct and challenging</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">Pushes back on your ideas and challenges assumptions.</p>
+        </CardContent>
+        <CardFooter className="text-xs text-muted-foreground flex justify-between">
+          <span>Score: {profileMetrics.aggressive.score}/20</span>
+          <span className={profileMetrics.aggressive.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
+            {profileMetrics.aggressive.score >= 17 ? 'PASS' : `85% to pass`}
+          </span>
+        </CardFooter>
+      </Card>
+
+      {/* Happy Card */}
+      <Card
+        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+        onClick={() => !loadingProfile && handleStartChat('happy')}
+      >
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-30"
+          style={{ width: `${profileMetrics.happy.progress}%` }}
+        ></div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SmilePlus className={`h-5 w-5 text-green-500 ${loadingProfile === 'happy' ? 'animate-spin' : 'group-hover:animate-pulse transition-all duration-300'}`} />
+            Happy
+          </CardTitle>
+          <CardDescription>Positive and encouraging</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">Provides uplifting feedback and cheerful responses.</p>
+        </CardContent>
+        <CardFooter className="text-xs text-muted-foreground flex justify-between">
+          <span>Score: {profileMetrics.happy.score}/20</span>
+          <span className={profileMetrics.happy.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
+            {profileMetrics.happy.score >= 17 ? 'PASS' : `85% to pass`}
+          </span>
+        </CardFooter>
+      </Card>
+
+      {/* Confused Card */}
+      <Card
+        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
+        onClick={() => !loadingProfile && handleStartChat('confused')}
+      >
+        <div
+          className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 opacity-30"
+          style={{ width: `${profileMetrics.confused.progress}%` }}
+        ></div>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <HelpCircle className={`h-5 w-5 text-yellow-500 ${loadingProfile === 'confused' ? 'animate-spin' : 'group-hover:rotate-12 transition-transform duration-300'}`} />
+            Confused
+          </CardTitle>
+          <CardDescription>Asks clarifying questions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">Seeks to understand by asking questions and exploring ideas.</p>
+        </CardContent>
+        <CardFooter className="text-xs text-muted-foreground flex justify-between">
+          <span>Score: {profileMetrics.confused.score}/20</span>
+          <span className={profileMetrics.confused.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
+            {profileMetrics.confused.score >= 17 ? 'PASS' : `85% to pass`}
+          </span>
+        </CardFooter>
+      </Card>
+    </div>
+
+    {/* Separator between Profiles and History */}
+    <div className="relative">
+      <div className="absolute inset-0 flex items-center">
+        <Separator className="w-full" />
+      </div>
+      <div className="relative flex justify-center">
+        <div className="bg-background px-4 text-sm text-muted-foreground">
+          Chat History
+        </div>
+      </div>
+    </div>
+
+    <DataTable
+      data={data || []}
+      columns={columns}
+      userOptions={userOptions}
+      classOptions={classOptions}
+      isAdmin={isAdmin}
+    />
+  </div>
 }

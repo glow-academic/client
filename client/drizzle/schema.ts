@@ -9,8 +9,10 @@ export const users = pgTable("users", {
 	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	admin: boolean().default(false).notNull(),
+	name: text().notNull(),
 	username: text().notNull(),
 	password: text().notNull(),
+	classes: uuid().array().default(["RAY"]).notNull(),
 }, (table) => [
 	unique("users_username_key").on(table.username),
 ]);
@@ -24,13 +26,27 @@ export const chats = pgTable("chats", {
 	completed: boolean().default(false).notNull(),
 	userId: uuid("user_id").notNull(),
 	profile: chatProfile().notNull(),
+	class: uuid().notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "chats_user_id_fkey"
 		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.class],
+			foreignColumns: [classes.id],
+			name: "chats_class_fkey"
+		}).onDelete("cascade"),
 ]);
+
+export const classes = pgTable("classes", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	classCode: text("class_code").notNull(),
+	description: text().notNull(),
+});
 
 export const messages = pgTable("messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),

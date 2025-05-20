@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, Text, UUID, UniqueConstraint, Uuid, text
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, Text, UUID, UniqueConstraint, Uuid, text
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -9,6 +9,20 @@ from sqlmodel import Field, Relationship, SQLModel
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
+class Classes(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='classes_pkey'),
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    class_code: str = Field(sa_column=Column('class_code', Text))
+    description: str = Field(sa_column=Column('description', Text))
+
+    chats: List['Chats'] = Relationship(back_populates='classes')
+
+
 class Documents(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='documents_pkey'),
@@ -32,14 +46,17 @@ class Users(_Base, table=True):
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, server_default=text('false')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     admin: bool = Field(sa_column=Column('admin', Boolean, server_default=text('false')))
+    name: str = Field(sa_column=Column('name', Text))
     username: str = Field(sa_column=Column('username', Text))
     password: str = Field(sa_column=Column('password', Text))
+    classes: list = Field(sa_column=Column('classes', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
 
     chats: List['Chats'] = Relationship(back_populates='user')
 
 
 class Chats(_Base, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(['class'], ['classes.id'], ondelete='CASCADE', name='chats_class_fkey'),
         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='chats_user_id_fkey'),
         PrimaryKeyConstraint('id', name='chats_pkey')
     )
@@ -51,8 +68,10 @@ class Chats(_Base, table=True):
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     user_id: UUID = Field(sa_column=Column('user_id', Uuid))
     profile: str = Field(sa_column=Column('profile', Enum('aggressive', 'happy', 'confused', name='chat_profile')))
+    class_: UUID = Field(sa_column=Column('class', Uuid))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
+    classes: Optional['Classes'] = Relationship(back_populates='chats')
     user: Optional['Users'] = Relationship(back_populates='chats')
     messages: List['Messages'] = Relationship(back_populates='chat')
     rubrics: List['Rubrics'] = Relationship(back_populates='chat')

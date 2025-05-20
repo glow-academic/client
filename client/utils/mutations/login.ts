@@ -18,6 +18,7 @@ export async function login(username: string, password: string, admin: boolean) 
             
             // Insert the new user
             const newUser = await db.insert(users).values({
+                name: username,
                 username,
                 password: hashedPassword,
                 admin: admin
