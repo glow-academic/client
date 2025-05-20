@@ -19,7 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronDown, ArrowLeft } from "lucide-react";
+import { Send, ChevronDown, ArrowLeft, Clock } from "lucide-react";
 import Markdown from '@/components/Markdown';
 import DocumentViewer from '@/components/DocumentViewer';
 import { getDocuments } from '@/utils/queries/get-documents';
@@ -40,6 +40,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
     const [showScrollButton, setShowScrollButton] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const queryClient = useQueryClient();
+    const [elapsedTime, setElapsedTime] = useState<string>('00:00');
 
     const router = useRouter();
 
@@ -98,6 +99,27 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
             }
         }
     }, [messages]);
+
+    // Timer logic based on chat creation time
+    useEffect(() => {
+        if (!chat || !chat.createdAt) return;
+        
+        const calculateElapsedTime = () => {
+            const startTime = new Date(chat.createdAt).getTime();
+            const now = new Date().getTime();
+            const elapsed = Math.floor((now - startTime) / 1000); // in seconds
+            
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            
+            setElapsedTime(`${minutes}:${seconds}`);
+        };
+        
+        calculateElapsedTime(); // Initial calculation
+        const timer = setInterval(calculateElapsedTime, 1000);
+        
+        return () => clearInterval(timer);
+    }, [chat]);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement> | null, initialMessage?: string) => {
         if (e) e.preventDefault();
@@ -261,11 +283,18 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                         <h1 className="text-xl font-semibold">{chat?.title}</h1>
                     </div>
 
-                    {chat?.completed && (
-                        <div className={`px-4 py-1 rounded-full ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                            {rubric?.passed ? 'PASSED' : 'FAILED'}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-primary-foreground/10 px-3 py-1 rounded-full">
+                            <Clock className="h-4 w-4" />
+                            <span className="text-sm font-medium">{elapsedTime}</span>
                         </div>
-                    )}
+                        
+                        {chat?.completed && (
+                            <div className={`px-4 py-1 rounded-full ${rubric?.passed ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                {rubric?.passed ? 'PASSED' : 'FAILED'}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 
@@ -273,33 +302,34 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                 {chatLoading ? (
                     <Skeleton className="mb-6 p-4 h-24 rounded-lg w-full" />
                 ) : (
-                <Card className="mb-6 bg-transparent border-0 shadow-none">
-                  <CardContent className="p-0">
-                    <div className="flex items-center">
-                        <Button variant="ghost" onClick={handleBack} className="mr-4">
-                          <ArrowLeft className="h-4 w-4 mr-2" />
-                          Back
-                        </Button>
-                        <div>
-                          <CardDescription className="mt-1">{chat?.scenarioDescription}</CardDescription>
-                        </div>
+                <Card className="mb-6 shadow-sm border bg-card">
+                  <CardHeader className="py-3">
+                    <div className="flex items-center justify-between">
+                      <Button variant="ghost" onClick={handleBack} className="p-2 h-auto">
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back
+                      </Button>
+                      <CardTitle className="text-base font-medium">Scenario</CardTitle>
                     </div>
+                  </CardHeader>
+                  <CardContent className="py-2 px-4">
+                    <p className="text-sm text-card-foreground">{chat?.scenarioDescription}</p>
                   </CardContent>
                 </Card>
                 )}
 
                 <div className="flex flex-1 min-h-0 gap-4">
 
-                    {/* CHAT column */}
+                    {/* CHAT column - fixing whitespace issues with more precise sizing */}
                     <div className="flex flex-col flex-1 min-h-0">
-                        <Card className="flex flex-col flex-1 min-h-0">
-                            <CardContent className="flex-1 min-h-0 p-0 relative">
+                        <Card className="flex flex-col flex-1 min-h-0 overflow-hidden">
+                            <CardContent className="flex-1 p-0 relative overflow-hidden">
                                 <ScrollArea
-                                    className="flex-1 overflow-auto h-[calc(100vh-280px)] pb-0"
+                                    className="h-[calc(100vh-300px)] pb-0 overflow-y-auto"
                                     ref={scrollAreaRef}
                                     onScrollCapture={handleScroll}
                                 >
-                                    <div className="space-y-4 p-4 pb-0">
+                                    <div className="space-y-4 p-4">
                                         {messagesLoading ? (
                                             <>
                                                 <div className="flex items-start gap-3 text-sm">
@@ -319,9 +349,9 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             </>
                                         ) : (
                                             messages.map((message) => (
-                                                <div key={message.id} className="space-y-4">
+                                                <div key={message.id} className="mb-6 last:mb-0">
                                                     {message.query && (
-                                                        <div className="flex items-start gap-3 text-sm justify-end">
+                                                        <div className="flex items-start gap-3 text-sm justify-end mb-4">
                                                             <div className="grid gap-1 text-right">
                                                                 <p className="font-medium">You</p>
                                                                 <div className="rounded-lg bg-muted p-3">
@@ -338,7 +368,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                                             <Avatar>
                                                                 <AvatarFallback>AI</AvatarFallback>
                                                             </Avatar>
-                                                            <div className="grid gap-1">
+                                                            <div className="grid gap-1 flex-1 max-w-[90%]">
                                                                 <p className="font-medium">Student</p>
                                                                 <div className="rounded-lg bg-primary/10 p-3">
                                                                     {message.response === "" ? (
@@ -375,7 +405,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
                             {/* Only show input area if rubric is not shown */}
                             {!chat?.completed && (
-                                <CardFooter className="p-3">
+                                <CardFooter className="p-4 border-t">
                                     {chatLoading ? (
                                         <Skeleton className="w-full h-12 rounded-md" />
                                     ) : isFirstMessage ? (
@@ -415,23 +445,31 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                                             </div>
                                         </div>
                                     ) : (
-                                        <form onSubmit={handleSendMessage} className="flex w-full gap-2">
-                                            <Input
-                                                type="text"
-                                                value={newMessage}
-                                                onChange={(e) => setNewMessage(e.target.value)}
-                                                placeholder="Type your response..."
-                                                className="flex-1"
-                                                autoFocus
-                                            />
-                                            <Button type="submit" disabled={!newMessage.trim()} size="icon">
-                                                <Send className="h-4 w-4" />
-                                                <span className="sr-only">Send</span>
-                                            </Button>
+                                        <form onSubmit={handleSendMessage} className="flex w-full gap-3">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    type="text"
+                                                    value={newMessage}
+                                                    onChange={(e) => setNewMessage(e.target.value)}
+                                                    placeholder="Type your response..."
+                                                    className="pr-10 py-6 text-base"
+                                                    autoFocus
+                                                />
+                                                <Button 
+                                                    type="submit" 
+                                                    disabled={!newMessage.trim()} 
+                                                    size="icon" 
+                                                    className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                                                >
+                                                    <Send className="h-4 w-4" />
+                                                    <span className="sr-only">Send</span>
+                                                </Button>
+                                            </div>
                                             <Button
                                                 onClick={handleEndSession}
                                                 variant="destructive"
                                                 disabled={endSessionLoading}
+                                                className="whitespace-nowrap"
                                             >
                                                 {endSessionLoading ? 'Ending...' : 'End Session'}
                                             </Button>
@@ -529,20 +567,32 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
                             </CardContent>
                         </Card>
                     ) : (
-                        <div className={`hidden lg:flex w-${documents.filter(d => d.profile === chat?.profile).length > 0 ? '1/3' : '0'} shrink-0`}>
-                            {documentsLoading ? (
-                                <Card className="w-full">
-                                    <CardHeader>
-                                        <CardTitle className="text-center">Documents</CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <Skeleton className="h-[60vh] w-full rounded-md" />
-                                    </CardContent>
-                                </Card>
-                            ) : (
-                                <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
-                            )}
-                        </div>
+                        <>
+                        {/* Only show document viewer if there are documents for this profile */}
+                        {(documents.filter(d => d.profile === chat?.profile).length > 0 || documentsLoading) && (
+                            <div className="hidden lg:block w-1/3 shrink-0">
+                                {documentsLoading ? (
+                                    <Card className="w-full">
+                                        <CardHeader className="pb-2">
+                                            <CardTitle className="text-center text-sm">Documents</CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Skeleton className="h-[calc(100vh-300px)] w-full rounded-md" />
+                                        </CardContent>
+                                    </Card>
+                                ) : (
+                                    <Card className="w-full overflow-hidden">
+                                        <CardHeader className="pb-2 border-b">
+                                            <CardTitle className="text-center text-sm">Documents</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <DocumentViewer profile={chat?.profile ?? 'aggressive'} />
+                                        </CardContent>
+                                    </Card>
+                                )}
+                            </div>
+                        )}
+                        </>
                     )}
                 </div>
             </div>
