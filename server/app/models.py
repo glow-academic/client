@@ -19,6 +19,9 @@ class Classes(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
     description: str = Field(sa_column=Column('description', Text))
+    aggressive_threshold: int = Field(sa_column=Column('aggressive_threshold', Integer))
+    happy_threshold: int = Field(sa_column=Column('happy_threshold', Integer))
+    confused_threshold: int = Field(sa_column=Column('confused_threshold', Integer))
 
     chats: List['Chats'] = Relationship(back_populates='class_')
 

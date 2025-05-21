@@ -75,7 +75,8 @@ CREATE TABLE documents (
   name       TEXT        NOT NULL,
   file_path  TEXT        NOT NULL,
   mime_type  TEXT        NOT NULL,
-  profile    chat_profile NOT NULL
+  profile    chat_profile NOT NULL,
+  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
 );
 
 -- Insert Classes

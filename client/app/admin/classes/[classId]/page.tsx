@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Card, 
@@ -23,7 +23,8 @@ import {
   Smile, 
   HelpCircle, 
   AlertCircle,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
 // Import Recharts components
 import {
@@ -37,115 +38,226 @@ import {
   Tooltip,
   ResponsiveContainer
 } from "recharts";
-import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { getClass } from "@/utils/queries/get-class";
+import { useQuery } from "@tanstack/react-query";
+import { getUsers } from "@/utils/queries/get-users";
+import { getAllChats } from "@/utils/queries/get-all-chats";
+import { getRubric } from "@/utils/queries/get-rubric";
+import { getRubrics } from "@/utils/queries/get-rubrics";
+import { format, compareAsc, startOfDay, differenceInDays, subDays } from "date-fns";
+import { updateClassThresholds } from "@/utils/mutations/update-class-thresholds";
+import { toast } from "sonner";
+// Interface for Teaching Assistant with scores
+interface TeachingAssistant {
+  id: string;
+  name: string;
+  username: string;
+  interactions: number;
+  avgScore: number;
+}
 
-// Mock course data
-const mockCourses = {
-  "cs182": {
-    code: "CS 182",
-    name: "Foundations of Computer Science",
-    description: "Introduction to discrete mathematics, logic, and proof techniques for computer science",
-    taCount: 8
-  },
-  "cs253": {
-    code: "CS 253",
-    name: "Data Structures and Algorithms for DS/AI",
-    description: "Specialized data structures and algorithms for data science and artificial intelligence applications",
-    taCount: 6
-  },
-  "cs381": {
-    code: "CS 381",
-    name: "Introduction to the Analysis of Algorithms",
-    description: "Techniques for designing efficient algorithms and analyzing their complexity",
-    taCount: 5
-  },
-  "csxyz": {
-    code: "CS XYZ",
-    name: "General",
-    description: "For TA's who are not assigned to a specific course",
-    taCount: 4
-  }
-};
-
-// Mock TA data for each course
-const mockTAs = {
-  "cs182": [
-    { id: 1, name: "Alex Johnson", avatar: "AJ", avgScore: 82, interactions: 45 },
-    { id: 2, name: "Maria Garcia", avatar: "MG", avgScore: 94, interactions: 38 },
-    { id: 3, name: "James Brown", avatar: "JB", avgScore: 91, interactions: 41 },
-    { id: 4, name: "Emily Davis", avatar: "ED", avgScore: 73, interactions: 29 },
-    { id: 5, name: "David Lee", avatar: "DL", avgScore: 61, interactions: 32 },
-    { id: 6, name: "Sarah Wilson", avatar: "SW", avgScore: 89, interactions: 37 },
-    { id: 7, name: "John Smith", avatar: "JS", avgScore: 65, interactions: 25 },
-    { id: 8, name: "Lisa Taylor", avatar: "LT", avgScore: 85, interactions: 34 },
-  ],
-  "cs253": [
-    { id: 1, name: "Michael Brown", avatar: "MB", avgScore: 88, interactions: 39 },
-    { id: 2, name: "Jennifer Lopez", avatar: "JL", avgScore: 79, interactions: 31 },
-    { id: 3, name: "Robert Chen", avatar: "RC", avgScore: 91, interactions: 42 },
-    { id: 4, name: "Amanda White", avatar: "AW", avgScore: 83, interactions: 35 },
-    { id: 5, name: "Daniel Kim", avatar: "DK", avgScore: 86, interactions: 40 },
-    { id: 6, name: "Jessica Park", avatar: "JP", avgScore: 78, interactions: 28 },
-  ],
-  "cs381": [
-    { id: 1, name: "Thomas Anderson", avatar: "TA", avgScore: 87, interactions: 36 },
-    { id: 2, name: "Olivia Martinez", avatar: "OM", avgScore: 92, interactions: 43 },
-    { id: 3, name: "Kevin Johnson", avatar: "KJ", avgScore: 75, interactions: 30 },
-    { id: 4, name: "Sophia Lee", avatar: "SL", avgScore: 84, interactions: 37 },
-    { id: 5, name: "William Davis", avatar: "WD", avgScore: 79, interactions: 33 },
-  ],
-  "csxyz": [
-    { id: 1, name: "Emma Wilson", avatar: "EW", avgScore: 81, interactions: 34 },
-    { id: 2, name: "Ryan Thompson", avatar: "RT", avgScore: 76, interactions: 27 },
-    { id: 3, name: "Nina Patel", avatar: "NP", avgScore: 89, interactions: 40 },
-    { id: 4, name: "Christopher Moore", avatar: "CM", avgScore: 72, interactions: 29 },
-  ]
-};
-
-// Mock data for charts
-const mockTrendData = [
-  { date: "05-10", avgScore: 72 },
-  { date: "05-11", avgScore: 68 },
-  { date: "05-12", avgScore: 74 },
-  { date: "05-13", avgScore: 79 },
-  { date: "05-14", avgScore: 76 },
-  { date: "05-15", avgScore: 81 },
-  { date: "05-16", avgScore: 80 },
-  { date: "05-17", avgScore: 84 },
-  { date: "05-18", avgScore: 87 },
-  { date: "05-19", avgScore: 90 },
-];
-
-export default function CourseDetailsPage({ params }: { params: Promise<{ courseId: string }> }) {
-  const { courseId } = use(params);
+export default function ClassDetailsPage({ params }: { params: Promise<{ classId: string }> }) {
+  const { classId } = use(params);
   const router = useRouter();
+
+  // Fetch class data
+  const { data: classDataArray, isLoading: isLoadingClass } = useQuery({
+    queryKey: ["class", classId],
+    queryFn: () => getClass(classId),
+  });
+
+  // Ensure classData is a single object
+  const classData = useMemo(() => {
+    return Array.isArray(classDataArray) ? classDataArray[0] : classDataArray;
+  }, [classDataArray]);
+
+  // Fetch users
+  const { data: users, isLoading: isLoadingUsers } = useQuery({
+    queryKey: ["users"],
+    queryFn: () => getUsers(),
+  });
+
+  // Fetch chats
+  const { data: chats, isLoading: isLoadingChats } = useQuery({
+    queryKey: ["all-chats"],
+    queryFn: () => getAllChats(),
+  });
+
+  // Fetch rubrics (after chats are loaded)
+  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
+    queryKey: ["all-rubrics"],
+    queryFn: () => getRubrics(chats!.map(chat => chat.id)),
+    enabled: !!chats && chats.length > 0,
+  });
+
+  // Student behavior controls - initialize with class thresholds if available
+  const [happyLevel, setHappyLevel] = useState<number>(classData?.happyThreshold || 50);
+  const [confusedLevel, setConfusedLevel] = useState<number>(classData?.confusedThreshold || 30);
+  const [angryLevel, setAngryLevel] = useState<number>(classData?.aggressiveThreshold || 20);
   
-  const [course, setCourse] = useState<any>(null);
-  const [tas, setTAs] = useState<any[]>([]);
-  
-  // Student behavior controls
-  const [happyLevel, setHappyLevel] = useState<number>(50);
-  const [confusedLevel, setConfusedLevel] = useState<number>(30);
-  const [angryLevel, setAngryLevel] = useState<number>(20);
+  // Update sliders when class data loads
+  useEffect(() => {
+    if (classData) {
+      setHappyLevel(classData.happyThreshold);
+      setConfusedLevel(classData.confusedThreshold);
+      setAngryLevel(classData.aggressiveThreshold);
+    }
+  }, [classData]);
   
   // For emotion tab state
   const [activeEmotion, setActiveEmotion] = useState<"happy" | "confused" | "angry">("happy");
-  
-  // Load course data
-  useEffect(() => {
-    if (courseId in mockCourses) {
-      setCourse(mockCourses[courseId as keyof typeof mockCourses]);
-      setTAs(mockTAs[courseId as keyof typeof mockTAs] || []);
-    } else {
-      // Handle invalid course ID
-      router.push('/admin');
+
+  // Calculate TAs and their average scores
+  const teachingAssistants = useMemo<TeachingAssistant[]>(() => {
+    if (!users || !chats || !rubrics) return [];
+    
+    // Filter for non-admin users
+    const nonAdminUsers = users.filter(user => !user.admin);
+    
+    // Group chats by user ID
+    const chatsByUser: Record<string, any[]> = {};
+    chats.forEach(chat => {
+      if (!chatsByUser[chat.userId]) {
+        chatsByUser[chat.userId] = [];
+      }
+      chatsByUser[chat.userId].push(chat);
+    });
+    
+    // Calculate average scores for each TA
+    return nonAdminUsers.map(user => {
+      const userChats = chatsByUser[user.id] || [];
+      const userChatIds = userChats.map(chat => chat.id);
+      
+      // Filter rubrics for this user's chats
+      const userRubrics = rubrics.filter(rubric => 
+        userChatIds.includes(rubric.chatId)
+      );
+      
+      // Calculate average score
+      const avgScore = userRubrics.length > 0 
+        ? Math.round(userRubrics.reduce((sum, rubric) => sum + rubric.score, 0) / userRubrics.length)
+        : 0;
+        
+      return {
+        id: user.id,
+        name: user.name,
+        username: user.username,
+        interactions: userChats.length,
+        avgScore
+      };
+    });
+  }, [users, chats, rubrics]);
+
+  // Generate score trend data (last 7 days)
+  const scoreTrendData = useMemo(() => {
+    if (!rubrics) return [];
+    
+    const today = startOfDay(new Date());
+    const dates: Record<string, { date: Date, scores: number[] }> = {};
+    
+    // Initialize last 7 days
+    for (let i = 0; i < 7; i++) {
+      const date = subDays(today, i);
+      const dateStr = format(date, 'yyyy-MM-dd');
+      dates[dateStr] = { date, scores: [] };
     }
-  }, [courseId, router]);
+    
+    // Group scores by date
+    rubrics.forEach(rubric => {
+      const createdAt = new Date(rubric.createdAt);
+      const dateStr = format(createdAt, 'yyyy-MM-dd');
+      
+      if (dates[dateStr]) {
+        dates[dateStr].scores.push(rubric.score);
+      }
+    });
+    
+    // Calculate average score for each day
+    return Object.entries(dates)
+      .map(([dateStr, data]) => {
+        const avgScore = data.scores.length > 0
+          ? Math.round(data.scores.reduce((sum, score) => sum + score, 0) / data.scores.length)
+          : 0;
+          
+        return {
+          date: format(data.date, 'MM-dd'),
+          avgScore
+        };
+      })
+      .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)));
+  }, [rubrics]);
   
-  if (!course) {
+  // Generate emotion data based on chat profiles
+  const taEmotionData = useMemo(() => {
+    if (!teachingAssistants || !chats || !rubrics) return [];
+    
+    return teachingAssistants.map(ta => {
+      // Get all chats for this TA
+      const taChats = chats.filter(chat => chat.userId === ta.id);
+      
+      // Count interactions by profile type
+      const profileCounts: Record<string, number> = {
+        happy: 0,
+        confused: 0,
+        angry: 0
+      };
+      
+      // Group by profile
+      taChats.forEach(chat => {
+        const profile = chat.profile.toLowerCase();
+        // Map 'aggressive' to 'angry' for the UI
+        const uiProfile = profile === 'aggressive' ? 'angry' : profile;
+        
+        if (profileCounts[uiProfile] !== undefined) {
+          profileCounts[uiProfile]++;
+        }
+      });
+      
+      // Calculate percentages
+      const total = taChats.length || 1; // Avoid division by zero
+      const happy = Math.round((profileCounts.happy / total) * 100);
+      const confused = Math.round((profileCounts.confused / total) * 100);
+      const angry = Math.round((profileCounts.angry / total) * 100);
+      
+      return {
+        id: ta.id,
+        name: ta.name.split(' ')[0] + ' ' + (ta.name.split(' ')[1] ? ta.name.split(' ')[1][0] + '.' : ''),
+        happy,
+        confused,
+        angry
+      };
+    });
+  }, [teachingAssistants, chats, rubrics]);
+  
+  // Get initials for avatar
+  const getInitials = (name: string) => {
+    if (!name) return '';
+    
+    if (name.includes(' ')) {
+      const nameParts = name.split(' ');
+      return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+    } else {
+      return name.substring(0, 2).toUpperCase();
+    }
+  };
+  
+  // Add state to track loading downloads
+  const [downloadingReports, setDownloadingReports] = useState<{[key: string]: boolean}>({});
+  
+  // If data is loading, show loading state
+  if (isLoadingClass || isLoadingUsers || isLoadingChats || isLoadingRubrics) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Loading course details...</p>
+      </div>
+    );
+  }
+  
+  // If class data is not found
+  if (!classData) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Course not found</p>
       </div>
     );
   }
@@ -156,166 +268,71 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ course
   };
   
   // Apply behavior changes
-  const handleApplyBehaviorChanges = () => {
-    alert(`Applied behavior settings: Happy (${happyLevel}%), Confused (${confusedLevel}%), Angry (${angryLevel}%)`);
+  const handleApplyBehaviorChanges = async () => {
+    try {
+      const {success, error} = await updateClassThresholds(classId, happyLevel, confusedLevel, angryLevel);
+      if (success) {
+        toast.success(`Applied behavior settings: Happy (${happyLevel}%), Confused (${confusedLevel}%), Angry (${angryLevel}%)`);
+      } else {
+        toast.error(`Error applying behavior changes: ${error}`);
+      }
+    } catch (error) {
+      console.error("Error applying behavior changes:", error);
+    }
   };
   
-  // Generate emotion data based on current TAs
-  const taEmotionData = tas.map(ta => {
-    // Use TA's avgScore to influence emotion distribution
-    // Higher scores = more happy, less angry
-    const happy = Math.min(Math.max(ta.avgScore, 30), 80);
-    const angry = Math.max(Math.min(100 - ta.avgScore, 40), 5);
-    const confused = 100 - happy - angry;
-    
-    return {
-      name: ta.name.split(' ')[0] + ' ' + ta.name.split(' ')[1][0] + '.',
-      happy,
-      confused,
-      angry,
-      id: ta.id
-    };
-  });
-  
-  // Function to handle mock PDF download
-  const handleDownloadReport = async (ta: any) => {
-    const link = document.createElement('a');
-    link.download = `TA_Report_${ta.name.replace(/\s+/g, '_')}.pdf`;
-
-    // Create a new PDFDocument
-    const pdfDoc = await PDFDocument.create();
-
-    // Add a blank page to the document
-    const page = pdfDoc.addPage([612, 792]); // Standard US Letter size
-
-    // Get the Times Roman font
-    const timesRomanFont = await pdfDoc.embedFont(StandardFonts.TimesRoman);
-    const timesRomanBoldFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
-
-    // Get the width and height of the page
-    const { width, height } = page.getSize();
-
-    // Define content
-    const reportTitle = "TA PERFORMANCE REPORT";
-    const taNameLine = `TA Name: ${ta.name}`;
-    const courseLine = `Course: ${course.code} - ${course.name}`;
-    const avgScoreLine = `Average Score: ${ta.avgScore}%`;
-    const breakdownTitle = "STUDENT INTERACTION BREAKDOWN";
-    const angryLine = "Angry Student Trials: 54%, 68%, 60%, 70%, 80%";
-    const happyLine = "Happy Student Trials: 72%, 80%";
-    const confusedLine = "Confused Student Trials: 60%, 74%, 82%";
-
-    // Draw text on the page
-    let yPosition = height - 50; // Start from top
-
-    page.drawText(reportTitle, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanBoldFont,
-      size: 18,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 30; // Move down for next line
-
-    page.drawText(taNameLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 20;
-
-    page.drawText(courseLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 20;
-
-    page.drawText(avgScoreLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 40; // More space before breakdown
-
-    page.drawText(breakdownTitle, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanBoldFont,
-      size: 14,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 25;
-
-    page.drawText(angryLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 20;
-
-    page.drawText(happyLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-    yPosition -= 20;
-
-    page.drawText(confusedLine, {
-      x: 72,
-      y: yPosition,
-      font: timesRomanFont,
-      size: 12,
-      color: rgb(0, 0, 0),
-    });
-
-    // Serialize the PDFDocument to bytes (a Uint8Array)
-    const pdfBytes = await pdfDoc.save();
-
-    // Create a blob from the PDF bytes
-    const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const objectUrl = URL.createObjectURL(pdfBlob);
-
-    link.href = objectUrl;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-
-    setTimeout(() => {
-      document.body.removeChild(link);
-      URL.revokeObjectURL(objectUrl);
-    }, 100);
-
-    // Use a visual toast notification
-    const notification = document.createElement('div');
-    notification.style.position = 'fixed';
-    notification.style.right = '20px';
-    notification.style.bottom = '20px';
-    notification.style.padding = '12px 16px';
-    notification.style.background = '#10b981';
-    notification.style.color = 'white';
-    notification.style.borderRadius = '4px';
-    notification.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
-    notification.style.zIndex = '1000';
-    notification.style.opacity = '0.9';
-    notification.textContent = `Downloading report for ${ta.name}`;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => {
-      notification.style.opacity = '0';
-      notification.style.transition = 'opacity 0.5s ease-out';
-      setTimeout(() => document.body.removeChild(notification), 500);
-    }, 2000);
+  // Function to handle PDF download
+  const handleDownloadReport = async (ta: TeachingAssistant) => {
+    try {
+      // Set loading state for this TA
+      setDownloadingReports(prev => ({ ...prev, [ta.id]: true }));
+      
+      // Show loading toast and get its ID
+      const toastId = toast.loading(`Generating report for ${ta.name}...`);
+      
+      // Request the PDF from the server
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/report/${ta.id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/pdf',
+        },
+      });
+      
+      // Dismiss loading toast
+      toast.dismiss(toastId);
+      
+      if (!response.ok) {
+        toast.error(`Failed to download report: ${response.statusText}`);
+        return;
+      }
+      
+      // Get the blob from the response
+      const pdfBlob = await response.blob();
+      
+      // Create a download link for the blob
+      const url = URL.createObjectURL(pdfBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `TA_Report_${ta.name.replace(/\s+/g, '_')}.pdf`;
+      link.style.display = 'none';
+      
+      // Append to the DOM, click, and clean up
+      document.body.appendChild(link);
+      link.click();
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 100);
+      
+      toast.success(`Report for ${ta.name} downloaded successfully`);
+    } catch (error) {
+      console.error("Error downloading report:", error);
+      toast.error("Failed to download the report");
+    } finally {
+      // Clear loading state
+      setDownloadingReports(prev => ({ ...prev, [ta.id]: false }));
+    }
   };
 
   return (
@@ -328,10 +345,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ course
         </Button>
         <div>
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-medium">{course.code}</Badge>
-            <h1 className="text-2xl font-bold">{course.name}</h1>
+            <Badge variant="outline" className="font-medium">{classData.classCode}</Badge>
+            <h1 className="text-2xl font-bold">{classData.name}</h1>
           </div>
-          <p className="text-muted-foreground mt-1">{course.description}</p>
+          <p className="text-muted-foreground mt-1">{classData.description}</p>
         </div>
       </div>
       
@@ -343,19 +360,19 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ course
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>Teaching Assistants</CardTitle>
-                  <CardDescription>Manage TAs assigned to {course.code}</CardDescription>
+                  <CardDescription>Manage TAs assigned to {classData.classCode}</CardDescription>
                 </div>
                 <span className="font-medium text-sm text-muted-foreground mr-16">Avg. Score</span>
               </div>
             </CardHeader>
             <CardContent className="p-0 flex-grow overflow-hidden">
               <div className="border-t overflow-y-auto h-full">
-                {tas.map((ta) => (
+                {teachingAssistants.map((ta) => (
                   <div key={ta.id} className="flex items-center justify-between p-4 border-b">
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarFallback className={ta.avgScore >= 80 ? "bg-primary/10" : ta.avgScore >= 70 ? "bg-amber-100" : "bg-red-100"}>
-                          {ta.avatar}
+                          {getInitials(ta.name)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
@@ -374,12 +391,26 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ course
                       `}>
                         Score: {ta.avgScore}%
                       </Badge>
-                      <Button variant="ghost" size="sm" onClick={() => handleDownloadReport(ta)}>
-                        <Download className="h-4 w-4" />
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleDownloadReport(ta)}
+                        disabled={downloadingReports[ta.id]}
+                      >
+                        {downloadingReports[ta.id] ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )}
                       </Button>
                     </div>
                   </div>
                 ))}
+                {teachingAssistants.length === 0 && (
+                  <div className="p-6 text-center text-muted-foreground">
+                    No teaching assistants found for this course
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -482,10 +513,10 @@ export default function CourseDetailsPage({ params }: { params: Promise<{ course
               <div className="h-80">
                 <h3 className="text-sm font-medium mb-2">Average Score Trend</h3>
                 <ResponsiveContainer width="100%" height="90%">
-                  <LineChart data={mockTrendData}>
+                  <LineChart data={scoreTrendData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="date" axisLine={true} tickLine={true} />
-                    <YAxis domain={[60, 100]} />
+                    <YAxis domain={[0, 100]} />
                     <Tooltip />
                     <Line 
                       type="monotone" 

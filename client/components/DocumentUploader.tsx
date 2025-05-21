@@ -11,9 +11,17 @@ import { Label } from "@/components/ui/label";
 
 interface DocumentUploaderProps {
     onUploadComplete?: () => void;
+    onProgress?: (progress: number) => void;
+    onError?: (error: Error) => void;
+    inline?: boolean;
 }
 
-export default function DocumentUploader({ onUploadComplete }: DocumentUploaderProps) {
+export default function DocumentUploader({ 
+    onUploadComplete, 
+    onProgress, 
+    onError,
+    inline = false 
+}: DocumentUploaderProps) {
     const [selectedProfileType, setSelectedProfileType] = useState<string>('');
     const [selectedClass, setSelectedClass] = useState<string>(''); // Added state for selected class
     const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -59,10 +67,20 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                     toast.dismiss();
                     toast.error(`Upload failed: ${error.message || 'Unknown error'}`);
                     setIsUploading(false);
+                    
+                    // Call onError callback if provided
+                    if (onError) {
+                        onError(error);
+                    }
                 },
                 onProgress: (bytesUploaded, bytesTotal) => {
                     const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
                     setUploadProgress(percentage);
+                    
+                    // Call onProgress callback if provided
+                    if (onProgress) {
+                        onProgress(percentage);
+                    }
                     
                     // Update toast every 5% to avoid too many updates
                     if (percentage % 5 === 0 || percentage === 100) {
@@ -109,6 +127,11 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                     } catch (error) {
                         console.error('Finalization error:', error);
                         toast.error(`Failed to process upload: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                        
+                        // Call onError callback if provided
+                        if (onError && error instanceof Error) {
+                            onError(error);
+                        }
                     } finally {
                         setIsUploading(false);
                     }
@@ -121,8 +144,85 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
             console.error('Upload error:', error);
             toast.error(`Upload error: ${error instanceof Error ? error.message : 'Unknown error'}`);
             setIsUploading(false);
+            
+            // Call onError callback if provided
+            if (onError && error instanceof Error) {
+                onError(error);
+            }
         }
     };
+
+    // If inline, render just the form controls without card wrapper
+    if (inline) {
+        return (
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor="profile-type">Student Profile Type</Label>
+                    <Select
+                        value={selectedProfileType}
+                        onValueChange={(value) => setSelectedProfileType(value)}
+                        disabled={isUploading}
+                    >
+                        <SelectTrigger id="profile-type">
+                            <SelectValue placeholder="Select profile type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="aggressive">Aggressive</SelectItem>
+                            <SelectItem value="happy">Happy</SelectItem>
+                            <SelectItem value="confused">Confused</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="class-type">Class</Label>
+                    <Select
+                        value={selectedClass}
+                        onValueChange={(value) => setSelectedClass(value)}
+                        disabled={isUploading}
+                    >
+                        <SelectTrigger id="class-type">
+                            <SelectValue placeholder="Select class" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="CS 182">CS 182</SelectItem>
+                            <SelectItem value="CS 253">CS 253</SelectItem>
+                            <SelectItem value="CS 381">CS 381</SelectItem>
+                            <SelectItem value="CS XYZ">CS XYZ (General)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor="document-file">Document File</Label>
+                    <Input
+                        id="document-file"
+                        ref={fileInputRef}
+                        type="file"
+                        onChange={handleFileUpload}
+                        disabled={!selectedProfileType || !selectedClass || isUploading}
+                        accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                        className="cursor-pointer"
+                    />
+                    {(!selectedProfileType || !selectedClass) && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Please select a student profile type and class first
+                        </p>
+                    )}
+                </div>
+
+                {isUploading && !onProgress && (
+                    <div className="space-y-2">
+                        <div className="flex justify-between">
+                            <span className="text-sm text-muted-foreground">Upload Progress</span>
+                            <span className="text-sm font-medium">{uploadProgress}%</span>
+                        </div>
+                        <Progress value={uploadProgress} className="h-2" />
+                    </div>
+                )}
+            </div>
+        );
+    }
 
     return (
         <Card>
@@ -151,7 +251,6 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                     </Select>
                 </div>
 
-                {/* New Class Dropdown */}
                 <div className="space-y-2">
                     <Label htmlFor="class-type">Class</Label>
                     <Select
@@ -178,18 +277,18 @@ export default function DocumentUploader({ onUploadComplete }: DocumentUploaderP
                         ref={fileInputRef}
                         type="file"
                         onChange={handleFileUpload}
-                        disabled={!selectedProfileType || !selectedClass || isUploading} // Updated disabled condition
+                        disabled={!selectedProfileType || !selectedClass || isUploading}
                         accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                         className="cursor-pointer"
                     />
-                    {(!selectedProfileType || !selectedClass) && ( // Updated conditional message
+                    {(!selectedProfileType || !selectedClass) && (
                         <p className="text-sm text-muted-foreground mt-1">
                             Please select a student profile type and class first
                         </p>
                     )}
                 </div>
 
-                {isUploading && (
+                {isUploading && !onProgress && (
                     <div className="space-y-2">
                         <div className="flex justify-between">
                             <span className="text-sm text-muted-foreground">Upload Progress</span>

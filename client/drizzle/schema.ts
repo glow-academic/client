@@ -46,6 +46,9 @@ export const classes = pgTable("classes", {
 	name: text().notNull(),
 	classCode: text("class_code").notNull(),
 	description: text().notNull(),
+	aggressiveThreshold: integer("aggressive_threshold").notNull(),
+	happyThreshold: integer("happy_threshold").notNull(),
+	confusedThreshold: integer("confused_threshold").notNull(),
 });
 
 export const messages = pgTable("messages", {

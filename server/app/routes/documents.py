@@ -37,6 +37,7 @@ router = APIRouter()
 async def upload_document(
     file: UploadFile = File(...),
     profile: str = Form(...),
+    class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
@@ -70,6 +71,7 @@ async def upload_document(
         file_path=file_path,
         mime_type=file.content_type,
         profile=profile,
+        class_id=class_id,
     )
 
     session.add(document)

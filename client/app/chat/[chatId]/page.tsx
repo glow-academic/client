@@ -348,7 +348,7 @@ export default function ChatPage({ params }: { params: Promise<{ chatId: string 
 
                 <div className="flex flex-1 min-h-0 gap-4">
                     {/* CHAT column - taking exactly 2/3 width */}
-                    <div className={`flex flex-col w-${documents.length > 0 ? '2/3' : 'full'} min-h-0`}>
+                    <div className={`flex flex-col w-${documents.length && messages.length > 0 ? '2/3' : 'full'} min-h-0`}>
                         <Card className="flex flex-col flex-1 min-h-0">
                             <CardContent className="flex-1 p-0 relative min-h-0">
                                 <ScrollArea

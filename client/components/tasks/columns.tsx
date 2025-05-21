@@ -64,7 +64,7 @@ export function useTaskColumns({ isAdmin = false }: { isAdmin?: boolean } = {}) 
   })
 
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: ["rubrics", chats?.map(chat => chat.id)],
+    queryKey: isAdmin ? ["all-rubrics"] : ["rubrics", chats?.map(chat => chat.id)],
     queryFn: () => getRubrics(chats!.map(chat => chat.id)),
     enabled: !!chats && chats.length > 0
   })
