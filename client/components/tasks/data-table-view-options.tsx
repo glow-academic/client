@@ -1,34 +1,33 @@
-"use client"
+"use client";
 
-import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu"
-import { Table } from "@tanstack/react-table"
-import { Settings2 } from "lucide-react"
+import { DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { Table } from "@tanstack/react-table";
+import { Settings2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
 const columnMap = {
-  "createdAt": "Date",
-  "classId": "Class",
-  "userId": "Name",
-}
+  createdAt: "Date",
+  classId: "Class",
+  userId: "Name",
+};
 
 interface DataTableViewOptionsProps<TData> {
-  table: Table<TData>
-  isAdmin?: boolean
+  table: Table<TData>;
+  isAdmin?: boolean;
 }
 
 export function DataTableViewOptions<TData>({
   table,
   isAdmin = false,
 }: DataTableViewOptionsProps<TData>) {
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -48,7 +47,7 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== "undefined" && column.getCanHide()
+              typeof column.accessorFn !== "undefined" && column.getCanHide(),
           )
           .map((column) => {
             return (
@@ -60,9 +59,9 @@ export function DataTableViewOptions<TData>({
               >
                 {columnMap[column.id as keyof typeof columnMap] || column.id}
               </DropdownMenuCheckboxItem>
-            )
+            );
           })}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }

@@ -18,16 +18,16 @@ npm install next-themes
 ### Create a theme provider
 
 ```tsx title="components/theme-provider.tsx"
-"use client"
+"use client";
 
-import * as React from "react"
-import { ThemeProvider as NextThemesProvider } from "next-themes"
+import * as React from "react";
+import { ThemeProvider as NextThemesProvider } from "next-themes";
 
 export function ThemeProvider({
   children,
   ...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
-  return <NextThemesProvider {...props}>{children}</NextThemesProvider>
+  return <NextThemesProvider {...props}>{children}</NextThemesProvider>;
 }
 ```
 
@@ -36,7 +36,7 @@ export function ThemeProvider({
 Add the `ThemeProvider` to your root layout and add the `suppressHydrationWarning` prop to the `html` tag.
 
 ```tsx {1,6,9-14,16} title="app/layout.tsx"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         </body>
       </html>
     </>
-  )
+  );
 }
 ```
 

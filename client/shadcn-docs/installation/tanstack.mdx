@@ -28,7 +28,7 @@ export default {
   plugins: {
     "@tailwindcss/postcss": {},
   },
-}
+};
 ```
 
 ### Create `app/styles/app.css`
@@ -42,11 +42,11 @@ Create an `app.css` file in the `app/styles` directory and import `tailwindcss`
 ### Import `app.css`
 
 ```tsx title="app/routes/__root.tsx" showLineNumbers {5,21-26} showLineNumbers
-import type { ReactNode } from "react"
-import { Outlet, createRootRoute } from "@tanstack/react-router"
-import { Meta, Scripts } from "@tanstack/start"
+import type { ReactNode } from "react";
+import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { Meta, Scripts } from "@tanstack/start";
 
-import appCss from "@/styles/app.css?url"
+import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -70,7 +70,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
-})
+});
 ```
 
 ### Edit tsconfig.json file
@@ -115,17 +115,17 @@ npx shadcn@canary add button
 The command above will add the `Button` component to your project. You can then import it like this:
 
 ```tsx title="app/routes/index.tsx" showLineNumbers {1,6}
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 function Home() {
-  const router = useRouter()
-  const state = Route.useLoaderData()
+  const router = useRouter();
+  const state = Route.useLoaderData();
 
   return (
     <div>
       <Button>Click me</Button>
     </div>
-  )
+  );
 }
 ```
 

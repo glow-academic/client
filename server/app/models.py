@@ -24,19 +24,7 @@ class Classes(_Base, table=True):
     confused_threshold: int = Field(sa_column=Column('confused_threshold', Integer))
 
     chats: List['Chats'] = Relationship(back_populates='class_')
-
-
-class Documents(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='documents_pkey'),
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    name: str = Field(sa_column=Column('name', Text))
-    file_path: str = Field(sa_column=Column('file_path', Text))
-    mime_type: str = Field(sa_column=Column('mime_type', Text))
-    profile: str = Field(sa_column=Column('profile', Enum('aggressive', 'happy', 'confused', name='chat_profile')))
+    documents: List['Documents'] = Relationship(back_populates='class_')
 
 
 class Users(_Base, table=True):
@@ -78,6 +66,23 @@ class Chats(_Base, table=True):
     user: Optional['Users'] = Relationship(back_populates='chats')
     messages: List['Messages'] = Relationship(back_populates='chat')
     rubrics: List['Rubrics'] = Relationship(back_populates='chat')
+
+
+class Documents(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='documents_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='documents_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    file_path: str = Field(sa_column=Column('file_path', Text))
+    mime_type: str = Field(sa_column=Column('mime_type', Text))
+    profile: str = Field(sa_column=Column('profile', Enum('aggressive', 'happy', 'confused', name='chat_profile')))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+
+    class_: Optional['Classes'] = Relationship(back_populates='documents')
 
 
 class Messages(_Base, table=True):

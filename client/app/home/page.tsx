@@ -31,33 +31,36 @@ import { getClasses } from "@/utils/queries/get-classes";
 
 export default function Home() {
   const isAdmin = false;
-  const { columns, data, isLoading, userOptions, classOptions } = useTaskColumns({ isAdmin: isAdmin });
+  const { columns, data, isLoading, userOptions, classOptions } =
+    useTaskColumns({ isAdmin: isAdmin });
   const router = useRouter();
   const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
 
   const { data: user } = useQuery({
     queryKey: ["user"],
-    queryFn: () => getUser()
+    queryFn: () => getUser(),
   });
 
   const { data: chats } = useQuery({
     queryKey: ["chats"],
     queryFn: () => getChats(user!.id),
-    enabled: !!user
+    enabled: !!user,
   });
 
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: ["rubrics", chats?.map(chat => chat.id)],
-    queryFn: () => getRubrics(chats!.map(chat => chat.id)),
-    enabled: !!chats
+    queryKey: ["rubrics", chats?.map((chat) => chat.id)],
+    queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
+    enabled: !!chats,
   });
 
   const { data: classes } = useQuery({
     queryKey: ["classes"],
-    queryFn: () => getClasses()
+    queryFn: () => getClasses(),
   });
 
-  const handleStartChat = async (profile: typeof chatProfile.enumValues[number] | 'shuffle') => {
+  const handleStartChat = async (
+    profile: (typeof chatProfile.enumValues)[number] | "shuffle",
+  ) => {
     try {
       if (!user) {
         toast.error("User not found. Please log in again.");
@@ -74,23 +77,29 @@ export default function Home() {
 
       // If shuffle is selected, determine which profile needs the most help
       let selectedProfile = profile;
-      if (profile === 'shuffle' && rubrics && chats) {
-        selectedProfile = selectProfileNeedingMostHelp() as typeof chatProfile.enumValues[number];
+      if (profile === "shuffle" && rubrics && chats) {
+        selectedProfile =
+          selectProfileNeedingMostHelp() as (typeof chatProfile.enumValues)[number];
       }
 
       // randomly select a class from the user's classes if they have any, otherwise pick from classes
-      const classId = user.classes.length > 0 ? user.classes[Math.floor(Math.random() * user.classes.length)] : classes[Math.floor(Math.random() * classes.length)].id;
+      const classId =
+        user.classes.length > 0
+          ? user.classes[Math.floor(Math.random() * user.classes.length)]
+          : classes[Math.floor(Math.random() * classes.length)].id;
 
       const formData = new FormData();
       formData.append("profile", selectedProfile);
       formData.append("user_id", user.id);
       formData.append("class_id", classId);
 
-
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/new`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/chat/new`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -101,9 +110,11 @@ export default function Home() {
         throw new Error(response.statusText || "Failed to create chat");
       }
     } catch (error) {
-      console.error('Error creating chat:', error);
+      console.error("Error creating chat:", error);
       toast.dismiss();
-      toast.error(`Failed to start chat: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to start chat: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     } finally {
       setLoadingProfile(null);
     }
@@ -111,28 +122,29 @@ export default function Home() {
 
   // Function to select the profile that needs the most help based on rubrics
   const selectProfileNeedingMostHelp = () => {
-    if (!rubrics || !chats) return 'confused'; // Default fallback
+    if (!rubrics || !chats) return "confused"; // Default fallback
 
     // Calculate average scores for each profile type
     const profileScores = {
       aggressive: { totalScore: 0, count: 0 },
       happy: { totalScore: 0, count: 0 },
-      confused: { totalScore: 0, count: 0 }
+      confused: { totalScore: 0, count: 0 },
     };
 
     // Group chats by profile
     const chatsByProfile = {
-      aggressive: chats.filter(chat => chat.profile === 'aggressive'),
-      happy: chats.filter(chat => chat.profile === 'happy'),
-      confused: chats.filter(chat => chat.profile === 'confused')
+      aggressive: chats.filter((chat) => chat.profile === "aggressive"),
+      happy: chats.filter((chat) => chat.profile === "happy"),
+      confused: chats.filter((chat) => chat.profile === "confused"),
     };
 
     // Calculate scores for each profile
     Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
-      profileChats.forEach(chat => {
-        const chatRubric = rubrics.find(r => r.chatId === chat.id);
+      profileChats.forEach((chat) => {
+        const chatRubric = rubrics.find((r) => r.chatId === chat.id);
         if (chatRubric) {
-          profileScores[profile as keyof typeof profileScores].totalScore += chatRubric.score;
+          profileScores[profile as keyof typeof profileScores].totalScore +=
+            chatRubric.score;
           profileScores[profile as keyof typeof profileScores].count++;
         }
       });
@@ -145,7 +157,7 @@ export default function Home() {
         const avgScore = stats.count > 0 ? stats.totalScore / stats.count : 0;
         return { profile, avgScore };
       })
-      .filter(p => p.avgScore < 17); // Filter for failing scores
+      .filter((p) => p.avgScore < 17); // Filter for failing scores
 
     if (failingProfiles.length === 0) {
       // If all profiles are passing, pick the lowest scoring one
@@ -157,7 +169,7 @@ export default function Home() {
         })
         .sort((a, b) => a.avgScore - b.avgScore)[0];
 
-      return lowestScoringProfile?.profile || 'confused';
+      return lowestScoringProfile?.profile || "confused";
     }
 
     // Randomly select from failing profiles
@@ -210,15 +222,15 @@ export default function Home() {
     shuffle: { score: 0, progress: 0 },
     aggressive: { score: 0, progress: 0 },
     happy: { score: 0, progress: 0 },
-    confused: { score: 0, progress: 0 }
+    confused: { score: 0, progress: 0 },
   };
 
   if (rubrics && chats) {
     // Group chats by profile
     const chatsByProfile = {
-      aggressive: chats.filter(chat => chat.profile === 'aggressive'),
-      happy: chats.filter(chat => chat.profile === 'happy'),
-      confused: chats.filter(chat => chat.profile === 'confused')
+      aggressive: chats.filter((chat) => chat.profile === "aggressive"),
+      happy: chats.filter((chat) => chat.profile === "happy"),
+      confused: chats.filter((chat) => chat.profile === "confused"),
     };
 
     // Calculate scores for each profile
@@ -235,8 +247,8 @@ export default function Home() {
       let objectivesSum = 0;
       let timeManagementSum = 0;
 
-      profileChats.forEach(chat => {
-        const chatRubric = rubrics.find(r => r.chatId === chat.id);
+      profileChats.forEach((chat) => {
+        const chatRubric = rubrics.find((r) => r.chatId === chat.id);
         if (chatRubric) {
           // Keep track of max score for this profile
           maxScore = Math.max(maxScore, chatRubric.score);
@@ -256,15 +268,17 @@ export default function Home() {
 
         profileMetrics[profile as keyof typeof profileMetrics] = {
           score: Math.round(maxScore * 10) / 10, // Round to 1 decimal place
-          progress
+          progress,
         };
       }
     });
 
     // Calculate shuffle metrics (average of all profiles)
-    const activeProfiles = Object.entries(profileMetrics)
-      .filter(([key, _]) => key !== 'shuffle' && profileMetrics[key as keyof typeof profileMetrics].score > 0)
-      .length;
+    const activeProfiles = Object.entries(profileMetrics).filter(
+      ([key, _]) =>
+        key !== "shuffle" &&
+        profileMetrics[key as keyof typeof profileMetrics].score > 0,
+    ).length;
 
     if (activeProfiles > 0) {
       // For shuffle, we still use average across all chats
@@ -272,8 +286,8 @@ export default function Home() {
       let totalCountAll = 0;
 
       Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
-        profileChats.forEach(chat => {
-          const chatRubric = rubrics.find(r => r.chatId === chat.id);
+        profileChats.forEach((chat) => {
+          const chatRubric = rubrics.find((r) => r.chatId === chat.id);
           if (chatRubric) {
             totalScoreAll += chatRubric.score;
             totalCountAll++;
@@ -287,154 +301,198 @@ export default function Home() {
 
         profileMetrics.shuffle = {
           score: Math.round(avgScore * 10) / 10,
-          progress: avgProgress
+          progress: avgProgress,
         };
       }
     }
   }
 
-  return <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
-    <div className="flex items-center justify-between space-y-2">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Welcome{user?.viewedIntro ? " back" : ""}, {user?.name}!</h2>
-        <p className="text-muted-foreground">
-          Click the different chat profiles to get started.
-        </p>
-      </div>
-      <div className="flex items-center space-x-2">
-        <UserNav />
-      </div>
-    </div>
-
-    {/* Chat Profile Cards */}
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* Shuffle Card */}
-      <Card
-        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-        onClick={() => !loadingProfile && handleStartChat('shuffle')}
-      >
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 opacity-30"
-          style={{ width: `${profileMetrics.shuffle.progress}%` }}
-        ></div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shuffle className={`h-5 w-5 text-violet-500 ${loadingProfile === 'shuffle' ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-300'}`} />
-            Shuffle
-          </CardTitle>
-          <CardDescription>Random conversation style</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">Let AI choose a random personality for your conversation.</p>
-        </CardContent>
-        <CardFooter className="text-xs text-muted-foreground flex justify-between">
-          <span>Score: {profileMetrics.shuffle.score}/20</span>
-          <span className={profileMetrics.shuffle.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
-            {profileMetrics.shuffle.score >= 17 ? 'PASS' : `85% to pass`}
-          </span>
-        </CardFooter>
-      </Card>
-
-      {/* Aggressive Card */}
-      <Card
-        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-        onClick={() => !loadingProfile && handleStartChat('aggressive')}
-      >
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 opacity-30"
-          style={{ width: `${profileMetrics.aggressive.progress}%` }}
-        ></div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Zap className={`h-5 w-5 text-red-500 ${loadingProfile === 'aggressive' ? 'animate-spin' : 'group-hover:scale-125 transition-transform duration-300'}`} />
-            Aggressive
-          </CardTitle>
-          <CardDescription>Direct and challenging</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">Pushes back on your ideas and challenges assumptions.</p>
-        </CardContent>
-        <CardFooter className="text-xs text-muted-foreground flex justify-between">
-          <span>Score: {profileMetrics.aggressive.score}/20</span>
-          <span className={profileMetrics.aggressive.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
-            {profileMetrics.aggressive.score >= 17 ? 'PASS' : `85% to pass`}
-          </span>
-        </CardFooter>
-      </Card>
-
-      {/* Happy Card */}
-      <Card
-        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-        onClick={() => !loadingProfile && handleStartChat('happy')}
-      >
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-30"
-          style={{ width: `${profileMetrics.happy.progress}%` }}
-        ></div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <SmilePlus className={`h-5 w-5 text-green-500 ${loadingProfile === 'happy' ? 'animate-spin' : 'group-hover:animate-pulse transition-all duration-300'}`} />
-            Happy
-          </CardTitle>
-          <CardDescription>Positive and encouraging</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">Provides uplifting feedback and cheerful responses.</p>
-        </CardContent>
-        <CardFooter className="text-xs text-muted-foreground flex justify-between">
-          <span>Score: {profileMetrics.happy.score}/20</span>
-          <span className={profileMetrics.happy.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
-            {profileMetrics.happy.score >= 17 ? 'PASS' : `85% to pass`}
-          </span>
-        </CardFooter>
-      </Card>
-
-      {/* Confused Card */}
-      <Card
-        className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}
-        onClick={() => !loadingProfile && handleStartChat('confused')}
-      >
-        <div
-          className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 opacity-30"
-          style={{ width: `${profileMetrics.confused.progress}%` }}
-        ></div>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <HelpCircle className={`h-5 w-5 text-yellow-500 ${loadingProfile === 'confused' ? 'animate-spin' : 'group-hover:rotate-12 transition-transform duration-300'}`} />
-            Confused
-          </CardTitle>
-          <CardDescription>Asks clarifying questions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">Seeks to understand by asking questions and exploring ideas.</p>
-        </CardContent>
-        <CardFooter className="text-xs text-muted-foreground flex justify-between">
-          <span>Score: {profileMetrics.confused.score}/20</span>
-          <span className={profileMetrics.confused.score >= 17 ? 'text-green-600 font-medium' : 'text-amber-600'}>
-            {profileMetrics.confused.score >= 17 ? 'PASS' : `85% to pass`}
-          </span>
-        </CardFooter>
-      </Card>
-    </div>
-
-    {/* Separator between Profiles and History */}
-    <div className="relative">
-      <div className="absolute inset-0 flex items-center">
-        <Separator className="w-full" />
-      </div>
-      <div className="relative flex justify-center">
-        <div className="bg-background px-4 text-sm text-muted-foreground">
-          Chat History
+  return (
+    <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">
+            Welcome{user?.viewedIntro ? " back" : ""}, {user?.name}!
+          </h2>
+          <p className="text-muted-foreground">
+            Click the different chat profiles to get started.
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <UserNav />
         </div>
       </div>
-    </div>
 
-    <DataTable
-      data={data || []}
-      columns={columns}
-      userOptions={userOptions}
-      classOptions={classOptions}
-      isAdmin={isAdmin}
-    />
-  </div>
+      {/* Chat Profile Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Shuffle Card */}
+        <Card
+          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+          onClick={() => !loadingProfile && handleStartChat("shuffle")}
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 opacity-30"
+            style={{ width: `${profileMetrics.shuffle.progress}%` }}
+          ></div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shuffle
+                className={`h-5 w-5 text-violet-500 ${loadingProfile === "shuffle" ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-300"}`}
+              />
+              Shuffle
+            </CardTitle>
+            <CardDescription>Random conversation style</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Let AI choose a random personality for your conversation.
+            </p>
+          </CardContent>
+          <CardFooter className="text-xs text-muted-foreground flex justify-between">
+            <span>Score: {profileMetrics.shuffle.score}/20</span>
+            <span
+              className={
+                profileMetrics.shuffle.score >= 17
+                  ? "text-green-600 font-medium"
+                  : "text-amber-600"
+              }
+            >
+              {profileMetrics.shuffle.score >= 17 ? "PASS" : `85% to pass`}
+            </span>
+          </CardFooter>
+        </Card>
+
+        {/* Aggressive Card */}
+        <Card
+          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+          onClick={() => !loadingProfile && handleStartChat("aggressive")}
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 opacity-30"
+            style={{ width: `${profileMetrics.aggressive.progress}%` }}
+          ></div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap
+                className={`h-5 w-5 text-red-500 ${loadingProfile === "aggressive" ? "animate-spin" : "group-hover:scale-125 transition-transform duration-300"}`}
+              />
+              Aggressive
+            </CardTitle>
+            <CardDescription>Direct and challenging</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Pushes back on your ideas and challenges assumptions.
+            </p>
+          </CardContent>
+          <CardFooter className="text-xs text-muted-foreground flex justify-between">
+            <span>Score: {profileMetrics.aggressive.score}/20</span>
+            <span
+              className={
+                profileMetrics.aggressive.score >= 17
+                  ? "text-green-600 font-medium"
+                  : "text-amber-600"
+              }
+            >
+              {profileMetrics.aggressive.score >= 17 ? "PASS" : `85% to pass`}
+            </span>
+          </CardFooter>
+        </Card>
+
+        {/* Happy Card */}
+        <Card
+          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+          onClick={() => !loadingProfile && handleStartChat("happy")}
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-30"
+            style={{ width: `${profileMetrics.happy.progress}%` }}
+          ></div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <SmilePlus
+                className={`h-5 w-5 text-green-500 ${loadingProfile === "happy" ? "animate-spin" : "group-hover:animate-pulse transition-all duration-300"}`}
+              />
+              Happy
+            </CardTitle>
+            <CardDescription>Positive and encouraging</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Provides uplifting feedback and cheerful responses.
+            </p>
+          </CardContent>
+          <CardFooter className="text-xs text-muted-foreground flex justify-between">
+            <span>Score: {profileMetrics.happy.score}/20</span>
+            <span
+              className={
+                profileMetrics.happy.score >= 17
+                  ? "text-green-600 font-medium"
+                  : "text-amber-600"
+              }
+            >
+              {profileMetrics.happy.score >= 17 ? "PASS" : `85% to pass`}
+            </span>
+          </CardFooter>
+        </Card>
+
+        {/* Confused Card */}
+        <Card
+          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+          onClick={() => !loadingProfile && handleStartChat("confused")}
+        >
+          <div
+            className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 opacity-30"
+            style={{ width: `${profileMetrics.confused.progress}%` }}
+          ></div>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <HelpCircle
+                className={`h-5 w-5 text-yellow-500 ${loadingProfile === "confused" ? "animate-spin" : "group-hover:rotate-12 transition-transform duration-300"}`}
+              />
+              Confused
+            </CardTitle>
+            <CardDescription>Asks clarifying questions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">
+              Seeks to understand by asking questions and exploring ideas.
+            </p>
+          </CardContent>
+          <CardFooter className="text-xs text-muted-foreground flex justify-between">
+            <span>Score: {profileMetrics.confused.score}/20</span>
+            <span
+              className={
+                profileMetrics.confused.score >= 17
+                  ? "text-green-600 font-medium"
+                  : "text-amber-600"
+              }
+            >
+              {profileMetrics.confused.score >= 17 ? "PASS" : `85% to pass`}
+            </span>
+          </CardFooter>
+        </Card>
+      </div>
+
+      {/* Separator between Profiles and History */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <Separator className="w-full" />
+        </div>
+        <div className="relative flex justify-center">
+          <div className="bg-background px-4 text-sm text-muted-foreground">
+            Chat History
+          </div>
+        </div>
+      </div>
+
+      <DataTable
+        data={data || []}
+        columns={columns}
+        userOptions={userOptions}
+        classOptions={classOptions}
+        isAdmin={isAdmin}
+      />
+    </div>
+  );
 }

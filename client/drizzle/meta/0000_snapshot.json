@@ -40,9 +40,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "users_username_key": {
-          "columns": [
-            "username"
-          ],
+          "columns": ["username"],
           "nullsNotDistinct": false,
           "name": "users_username_key"
         }
@@ -103,12 +101,8 @@
           "tableFrom": "chats",
           "tableTo": "users",
           "schemaTo": "public",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -170,12 +164,8 @@
           "tableFrom": "messages",
           "tableTo": "chats",
           "schemaTo": "public",
-          "columnsFrom": [
-            "chat_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["chat_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -235,12 +225,8 @@
           "tableFrom": "rubrics",
           "tableTo": "chats",
           "schemaTo": "public",
-          "columnsFrom": [
-            "id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -255,20 +241,12 @@
   "enums": {
     "public.chat_profile": {
       "name": "chat_profile",
-      "values": [
-        "aggressive",
-        "shy",
-        "happy"
-      ],
+      "values": ["aggressive", "shy", "happy"],
       "schema": "public"
     },
     "public.chatprofile": {
       "name": "chatprofile",
-      "values": [
-        "AGGRESSIVE",
-        "SHY",
-        "HAPPY"
-      ],
+      "values": ["AGGRESSIVE", "SHY", "HAPPY"],
       "schema": "public"
     }
   },

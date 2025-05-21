@@ -68,30 +68,19 @@ import {
 import DocumentViewer from "@/components/DocumentViewer";
 import DocumentUploader from "@/components/DocumentUploader";
 
-// Document interface from schema
-type ChatProfile = 'aggressive' | 'happy' | 'confused';
-
-interface DocumentItem {
-  id: string;
-  name: string;
-  filePath: string;
-  mimeType: string;
-  profile: ChatProfile;
-  createdAt: string;
-}
-
-interface ClassItem {
-  id: string;
-  name: string;
-  classCode: string;
-  description: string;
-  createdAt: string;
-}
+import {
+  documents as DocumentItem,
+  classes as ClassItem,
+  chatProfile as ChatProfile,
+} from "@/drizzle/schema";
 
 // View modes
 type ViewMode = "grid" | "list";
 // Upload states
 type UploadState = "idle" | "uploading" | "complete" | "error";
+
+// Define a document type for our component
+type DocumentType = typeof DocumentItem.$inferSelect;
 
 export default function Documents() {
   // State
@@ -102,8 +91,15 @@ export default function Documents() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [selectedDocument, setSelectedDocument] = useState<DocumentItem | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(
+    null,
+  );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<DocumentType | null>(
+    null,
+  );
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Query client for mutations
   const queryClient = useQueryClient();
@@ -111,41 +107,43 @@ export default function Documents() {
   // Fetch documents and classes
   const { data: documents = [], isLoading: isDocumentsLoading } = useQuery({
     queryKey: ["documents"],
-    queryFn: () => getDocuments()
+    queryFn: () => getDocuments(),
   });
 
   const { data: classes = [], isLoading: isClassesLoading } = useQuery({
     queryKey: ["classes"],
-    queryFn: () => getClasses()
+    queryFn: () => getClasses(),
   });
 
   // Derived profiles from schema - static as per database enum
-  const profileOptions: {value: ChatProfile, label: string}[] = [
-    { value: 'aggressive', label: 'Aggressive' },
-    { value: 'happy', label: 'Happy' },
-    { value: 'confused', label: 'Confused' }
+  const profileOptions = [
+    { value: "aggressive" as const, label: "Aggressive" },
+    { value: "happy" as const, label: "Happy" },
+    { value: "confused" as const, label: "Confused" },
   ];
 
   // Create class options from fetched classes
-  const classOptions = classes.map((cls: ClassItem) => ({
+  const classOptions = classes.map((cls: typeof ClassItem.$inferSelect) => ({
     value: cls.id,
-    label: `${cls.name} (${cls.classCode})`
+    label: `${cls.classCode}`,
   }));
 
   // Filtered documents
-  const filteredDocuments = documents.filter((doc: DocumentItem) => {
+  const filteredDocuments = documents.filter((doc: DocumentType) => {
     // Apply search filter
     const matchesSearch = searchQuery
       ? doc.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
     // Apply profile filter
-    const matchesProfile = profileFilter === "all" ? true : doc.profile === profileFilter;
+    const matchesProfile =
+      profileFilter === "all" ? true : doc.profile === profileFilter;
 
-    // For now, we're not filtering by class since documents don't have a class field
-    // This would need to be implemented if you add class associations to documents
+    // Apply class filter
+    const matchesClass =
+      classFilter === "all" ? true : doc.classId === classFilter;
 
-    return matchesSearch && matchesProfile;
+    return matchesSearch && matchesProfile && matchesClass;
   });
 
   const isLoading = isDocumentsLoading || isClassesLoading;
@@ -155,7 +153,7 @@ export default function Documents() {
     setUploadState("complete");
     setUploadProgress(100);
     queryClient.invalidateQueries({ queryKey: ["documents"] });
-    
+
     // Reset state after a delay
     setTimeout(() => {
       setShowUploadModal(false);
@@ -179,20 +177,19 @@ export default function Documents() {
   // Handle document deletion
   const handleDeleteDocument = async (documentId: string) => {
     try {
-      // Show confirmation dialog
-      if (!window.confirm("Are you sure you want to delete this document?")) {
-        return;
-      }
-
+      setIsDeleting(true);
       toast.loading("Deleting document...");
 
       // Call API to delete document
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         },
-      });
+      );
 
       if (!response.ok) {
         throw new Error("Failed to delete document");
@@ -200,33 +197,43 @@ export default function Documents() {
 
       // Refresh documents list
       queryClient.invalidateQueries({ queryKey: ["documents"] });
-      
+
       toast.dismiss();
       toast.success("Document deleted successfully");
+      setShowDeleteDialog(false);
+      setDocumentToDelete(null);
     } catch (error) {
       toast.dismiss();
       toast.error(
         `Failed to delete document: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`
+        }`,
       );
+    } finally {
+      setIsDeleting(false);
     }
   };
 
   // Get document type icon
   const getDocumentIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
-    
-    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")) {
+
+    if (
+      ["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")
+    ) {
       return <ImageIcon className="h-10 w-10 text-blue-500" />;
     } else if (["pdf"].includes(extension || "")) {
       return <FileText className="h-10 w-10 text-red-500" />;
     } else if (["doc", "docx", "txt", "md"].includes(extension || "")) {
       return <File className="h-10 w-10 text-green-500" />;
-    } else if (["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(extension || "")) {
+    } else if (
+      ["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(
+        extension || "",
+      )
+    ) {
       return <FileCode className="h-10 w-10 text-yellow-500" />;
     }
-    
+
     return <File className="h-10 w-10 text-gray-500" />;
   };
 
@@ -252,7 +259,7 @@ export default function Documents() {
   };
 
   // View document preview
-  const viewDocument = (document: DocumentItem) => {
+  const viewDocument = (document: DocumentType) => {
     setSelectedDocument(document);
     setShowPreviewModal(true);
   };
@@ -281,7 +288,7 @@ export default function Documents() {
               </Button>
             )}
           </div>
-          
+
           <Select value={profileFilter} onValueChange={setProfileFilter}>
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Profile Type" />
@@ -295,7 +302,7 @@ export default function Documents() {
               ))}
             </SelectContent>
           </Select>
-          
+
           <Select value={classFilter} onValueChange={setClassFilter}>
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue placeholder="Class" />
@@ -309,17 +316,22 @@ export default function Documents() {
               ))}
             </SelectContent>
           </Select>
-          
-          {(searchQuery || profileFilter !== "all" || classFilter !== "all") && (
+
+          {(searchQuery ||
+            profileFilter !== "all" ||
+            classFilter !== "all") && (
             <Button variant="ghost" className="h-9 px-2" onClick={resetFilters}>
               Reset
               <X className="ml-2 h-4 w-4" />
             </Button>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
-          <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as ViewMode)}>
+          <Tabs
+            value={viewMode}
+            onValueChange={(value) => setViewMode(value as ViewMode)}
+          >
             <TabsList className="grid w-[72px] grid-cols-2 h-9">
               <TabsTrigger value="grid" className="p-1.5">
                 <svg
@@ -363,8 +375,8 @@ export default function Documents() {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-          
-          <Button 
+
+          <Button
             onClick={() => setShowUploadModal(true)}
             size="sm"
             className="h-9"
@@ -373,11 +385,6 @@ export default function Documents() {
             Upload
           </Button>
         </div>
-      </div>
-
-      {/* Document count */}
-      <div className="text-sm text-muted-foreground mb-2">
-        Showing {filteredDocuments.length} of {documents.length} documents
       </div>
 
       {/* Documents display */}
@@ -402,9 +409,9 @@ export default function Documents() {
               ? "Try adjusting your filters or search query"
               : "Upload a document to get started"}
           </p>
-          <Button 
-            className="mt-4" 
-            variant="outline" 
+          <Button
+            className="mt-4"
+            variant="outline"
             onClick={() => setShowUploadModal(true)}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -413,102 +420,151 @@ export default function Documents() {
         </div>
       ) : (
         <>
-          {/* Grid View */}
-          <TabsContent value="grid" className="mt-0">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredDocuments.map((doc: DocumentItem) => (
-                <div
-                  key={doc.id}
-                  className="opacity-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md"
-                >
-                  <Card className="overflow-hidden h-full flex flex-col cursor-pointer" onClick={() => viewDocument(doc)}>
-                    <div className="relative h-40 bg-muted flex items-center justify-center">
-                      {getDocumentIcon(doc.name)}
-                      <div className="absolute top-2 left-2">
-                        <div 
-                          className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`} 
-                          title={`${doc.profile.charAt(0).toUpperCase() + doc.profile.slice(1)} Profile`} 
-                        />
-                      </div>
-                    </div>
-                    <CardContent className="p-4 flex-grow">
-                      <h3 className="font-medium line-clamp-1" title={doc.name}>
-                        {doc.name}
-                      </h3>
-                      <div className="flex mt-2 items-center gap-2">
-                        <Badge variant="secondary" className="text-xs capitalize">
-                          {doc.profile}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-3 pt-0 flex justify-end">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="text-destructive hover:text-destructive/80"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteDocument(doc.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </div>
-              ))}
-            </div>
-          </TabsContent>
+          {viewMode === "grid" ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {filteredDocuments.map((doc) => {
+                // Find the class for this document
+                const docClass = classes.find(
+                  (cls: typeof ClassItem.$inferSelect) =>
+                    cls.id === doc.classId,
+                );
 
-          {/* List View */}
-          <TabsContent value="list" className="mt-0">
+                return (
+                  <div
+                    key={doc.id}
+                    className="opacity-100 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-md rounded-xl"
+                  >
+                    <Card
+                      className="overflow-hidden aspect-square flex flex-col cursor-pointer p-0 m-0 gap-0 group"
+                      onClick={() => viewDocument(doc)}
+                    >
+                      <div className="relative flex-1 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+                        {getDocumentIcon(doc.name)}
+                        <div className="absolute top-2 left-2 group">
+                          <div
+                            className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`}
+                          />
+                          <Badge
+                            variant="secondary"
+                            className="absolute left-0 top-5 scale-0 group-hover:scale-100 transition-all origin-top-left capitalize"
+                          >
+                            {doc.profile}
+                          </Badge>
+                        </div>
+                        {docClass && (
+                          <Badge
+                            variant="outline"
+                            className="absolute bottom-2 right-2 bg-white/80 dark:bg-black/50"
+                          >
+                            {docClass.classCode}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="p-2 text-center border-t">
+                        <h3
+                          className="text-xs font-medium line-clamp-1"
+                          title={doc.name}
+                        >
+                          {doc.name}
+                        </h3>
+                        <div className="absolute top-2 right-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 rounded-full bg-background/80 hover:bg-background/90 text-destructive hover:text-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDocumentToDelete(doc);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
             <div className="border rounded-md overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="bg-muted/50 border-b">
-                    <th className="py-3 px-4 text-left font-medium">Document</th>
+                    <th className="py-3 px-4 text-left font-medium">
+                      Document
+                    </th>
                     <th className="py-3 px-4 text-left font-medium">Profile</th>
-                    <th className="py-3 px-4 text-right font-medium">Actions</th>
+                    <th className="py-3 px-4 text-left font-medium">Class</th>
+                    <th className="py-3 px-4 text-right font-medium">
+                      Actions
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDocuments.map((doc: DocumentItem) => (
-                    <tr 
-                      key={doc.id} 
-                      className="border-b hover:bg-muted/20 transition-colors cursor-pointer"
-                      onClick={() => viewDocument(doc)}
-                    >
-                      <td className="py-3 px-4 flex items-center gap-3">
-                        {getDocumentIcon(doc.name)}
-                        <span className="font-medium">{doc.name}</span>
-                      </td>
-                      <td className="py-3 px-4">
-                        <div className="flex items-center gap-2">
-                          <div className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`} />
-                          <span className="capitalize">{doc.profile}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive/80"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteDocument(doc.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
+                  {filteredDocuments.map((doc) => {
+                    // Find the class for this document
+                    const docClass = classes.find(
+                      (cls: typeof ClassItem.$inferSelect) =>
+                        cls.id === doc.classId,
+                    );
+
+                    return (
+                      <tr
+                        key={doc.id}
+                        className="border-b hover:bg-muted/20 transition-colors cursor-pointer group"
+                        onClick={() => viewDocument(doc)}
+                      >
+                        <td className="py-3 px-4 flex items-center gap-3">
+                          {getDocumentIcon(doc.name)}
+                          <span className="font-medium">{doc.name}</span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`}
+                            />
+                            <Badge variant="secondary" className="capitalize">
+                              {doc.profile}
+                            </Badge>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {docClass && (
+                            <Badge variant="outline">
+                              {docClass.classCode}
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDocumentToDelete(doc);
+                              setShowDeleteDialog(true);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
-          </TabsContent>
+          )}
         </>
       )}
+
+      {/* Document count */}
+      <div className="text-sm text-muted-foreground mt-4">
+        Showing {filteredDocuments.length} of {documents.length} documents
+      </div>
 
       {/* Upload Dialog */}
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
@@ -517,13 +573,13 @@ export default function Documents() {
             <DialogTitle>Upload Document</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <DocumentUploader 
+            <DocumentUploader
               onUploadComplete={handleUploadComplete}
               onProgress={handleUploadProgress}
               onError={handleUploadError}
               inline
             />
-            
+
             {uploadState === "uploading" && (
               <div className="mt-4 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -533,20 +589,42 @@ export default function Documents() {
                 <Progress value={uploadProgress} className="h-2" />
               </div>
             )}
-            
+
             {uploadState === "complete" && (
               <div className="mt-4 p-3 bg-green-50 dark:bg-green-950/30 text-green-600 dark:text-green-400 rounded-md text-sm flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
                   <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                   <polyline points="22 4 12 14.01 9 11.01"></polyline>
                 </svg>
                 Upload complete!
               </div>
             )}
-            
+
             {uploadState === "error" && (
               <div className="mt-4 p-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 rounded-md text-sm flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="mr-2"
+                >
                   <circle cx="12" cy="12" r="10"></circle>
                   <line x1="12" y1="8" x2="12" y2="12"></line>
                   <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -565,9 +643,43 @@ export default function Documents() {
             <DialogTitle>{selectedDocument?.name}</DialogTitle>
           </DialogHeader>
           <div className="h-[70vh] overflow-hidden">
-            {selectedDocument && (
-              <DocumentViewer profile={selectedDocument.profile} />
-            )}
+            {selectedDocument && <DocumentViewer document={selectedDocument} />}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Delete Document</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p>
+              Are you sure you want to delete{" "}
+              <strong>{documentToDelete?.name}</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              This action cannot be undone.
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                documentToDelete && handleDeleteDocument(documentToDelete.id)
+              }
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

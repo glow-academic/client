@@ -68,7 +68,7 @@ import {
   CommandList,
   CommandSeparator,
   CommandShortcut,
-} from "@/components/ui/command"
+} from "@/components/ui/command";
 ```
 
 ```tsx
@@ -104,18 +104,18 @@ To show the command menu in a dialog, use the `<CommandDialog />` component.
 
 ```tsx
 export function CommandMenu() {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
 
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((open) => !open)
+        e.preventDefault();
+        setOpen((open) => !open);
       }
-    }
-    document.addEventListener("keydown", down)
-    return () => document.removeEventListener("keydown", down)
-  }, [])
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
 
   return (
     <CommandDialog open={open} onOpenChange={setOpen}>
@@ -129,7 +129,7 @@ export function CommandMenu() {
         </CommandGroup>
       </CommandList>
     </CommandDialog>
-  )
+  );
 }
 ```
 
@@ -154,9 +154,9 @@ const CommandItem = React.forwardRef<
     ref={ref}
     className={cn(
       "... gap-2 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
-      className
+      className,
     )}
     {...props}
   />
-))
+));
 ```

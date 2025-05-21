@@ -45,10 +45,10 @@ This `registry.json` file must conform to the [registry schema specification](/d
 Add your first component. Here's an example of a simple `<HelloWorld />` component:
 
 ```tsx title="registry/new-york/hello-world/hello-world.tsx" showLineNumbers
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 export function HelloWorld() {
-  return <Button>Hello World</Button>
+  return <Button>Hello World</Button>;
 }
 ```
 
@@ -74,7 +74,7 @@ registry
 // tailwind.config.ts
 export default {
   content: ["./registry/**/*.{js,ts,jsx,tsx}"],
-}
+};
 ```
 
 </Callout>

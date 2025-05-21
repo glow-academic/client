@@ -271,8 +271,8 @@ const AccordionItem = React.forwardRef<
     className={cn("border-b last:border-b-0", className)}
     {...props}
   />
-))
-AccordionItem.displayName = "AccordionItem"
+));
+AccordionItem.displayName = "AccordionItem";
 ```
 
 #### After
@@ -288,7 +288,7 @@ function AccordionItem({
       className={cn("border-b last:border-b-0", className)}
       {...props}
     />
-  )
+  );
 }
 ```
 
@@ -346,4 +346,5 @@ Review and re-apply any changes you made to your components.
 </Steps>
 
 [^1]: Upgraded projects are not affected by this change. You can continue using the old dark mode colors.
+
 [^2]: Updating your components will overwrite your existing components.

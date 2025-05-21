@@ -30,7 +30,7 @@ npx shadcn@latest add toast
 <Step>Add the Toaster component</Step>
 
 ```tsx title="app/layout.tsx" {1,9}
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({ children }) {
   return (
@@ -41,7 +41,7 @@ export default function RootLayout({ children }) {
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -78,7 +78,7 @@ npm install @radix-ui/react-toast
 <Step>Add the Toaster component</Step>
 
 ```tsx title="app/layout.tsx" {1,9}
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
 
 export default function RootLayout({ children }) {
   return (
@@ -89,7 +89,7 @@ export default function RootLayout({ children }) {
         <Toaster />
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -104,12 +104,12 @@ export default function RootLayout({ children }) {
 The `useToast` hook returns a `toast` function that you can use to display a toast.
 
 ```tsx
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/hooks/use-toast";
 ```
 
 ```tsx {2,7-10}
 export const ToastDemo = () => {
-  const { toast } = useToast()
+  const { toast } = useToast();
 
   return (
     <Button
@@ -117,13 +117,13 @@ export const ToastDemo = () => {
         toast({
           title: "Scheduled: Catch up",
           description: "Friday, February 10, 2023 at 5:57 PM",
-        })
+        });
       }}
     >
       Show Toast
     </Button>
-  )
-}
+  );
+};
 ```
 
 <Callout>

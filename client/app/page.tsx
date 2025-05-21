@@ -10,9 +10,9 @@ import { useRouter } from "next/navigation";
 import { login } from "@/utils/mutations/login";
 
 export default function Home() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
@@ -21,16 +21,16 @@ export default function Home() {
       const { success, error } = await login(username, password, admin);
       if (success) {
         if (admin) {
-          router.push('/admin');
+          router.push("/admin");
         } else {
-          router.push('/home');
+          router.push("/home");
         }
       } else {
-        setError(error || 'An error occurred during login');
+        setError(error || "An error occurred during login");
         throw new Error(error);
       }
     } catch (error) {
-      console.error('Error logging in:', error);
+      console.error("Error logging in:", error);
     } finally {
       setLoading(false);
     }
@@ -41,7 +41,9 @@ export default function Home() {
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg shadow-lg border border-border">
         <div className="text-center">
           <h1 className="text-3xl font-bold">Glow</h1>
-          <p className="mt-2 text-muted-foreground">Graduate Learning Orientation Workshop</p>
+          <p className="mt-2 text-muted-foreground">
+            Graduate Learning Orientation Workshop
+          </p>
         </div>
 
         <form className="mt-8 space-y-6">
@@ -52,7 +54,10 @@ export default function Home() {
           )}
 
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-foreground">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-foreground"
+            >
               Username
             </label>
             <input
@@ -65,7 +70,10 @@ export default function Home() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-foreground">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-foreground"
+            >
               Password
             </label>
             <input
@@ -86,20 +94,20 @@ export default function Home() {
               <>
                 <button
                   type="button"
-                onClick={() => handleLogin(false)}
-                className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90"
-              >
-                GTA
-              </button>
+                  onClick={() => handleLogin(false)}
+                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90"
+                >
+                  GTA
+                </button>
 
-              <button
-                type="button"
-                onClick={() => handleLogin(true)}
-                className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90"
-              >
-                Admin
-              </button>
-            </>
+                <button
+                  type="button"
+                  onClick={() => handleLogin(true)}
+                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90"
+                >
+                  Admin
+                </button>
+              </>
             )}
           </div>
         </form>

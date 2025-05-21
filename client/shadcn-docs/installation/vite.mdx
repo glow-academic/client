@@ -84,10 +84,10 @@ npm install -D @types/node
 ```
 
 ```typescript title="vite.config.ts" showLineNumbers {1,2,8-13}
-import path from "path"
-import tailwindcss from "@tailwindcss/vite"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import path from "path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -97,7 +97,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-})
+});
 ```
 
 ### Run the CLI
@@ -125,17 +125,17 @@ npx shadcn@latest add button
 The command above will add the `Button` component to your project. You can then import it like this:
 
 ```tsx showLineNumbers title="src/App.tsx"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 function App() {
   return (
     <div className="flex flex-col items-center justify-center min-h-svh">
       <Button>Click me</Button>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
 ```
 
 </Steps>

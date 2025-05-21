@@ -11,10 +11,12 @@ export function getFileExtension(filename: string): string {
 
 export function isMarkdownFile(filename: string): boolean {
   const extension = getFileExtension(filename).toLowerCase();
-  return extension === 'md' || extension === 'markdown';
+  return extension === "md" || extension === "markdown";
 }
 
 export function isTextFile(filename: string): boolean {
   const extension = getFileExtension(filename).toLowerCase();
-  return extension === 'txt' || extension === 'text' || isMarkdownFile(filename);
+  return (
+    extension === "txt" || extension === "text" || isMarkdownFile(filename)
+  );
 }

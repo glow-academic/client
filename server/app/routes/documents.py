@@ -46,6 +46,9 @@ async def upload_document(
     # Validate profile
     if profile not in ["aggressive", "happy", "confused"]:
         raise HTTPException(status_code=400, detail="Invalid profile type")
+    
+    if class_id is None:
+        raise HTTPException(status_code=400, detail="Class ID is required")
 
     # Generate a unique ID for the document
     document_id = str(uuid.uuid4())
@@ -315,6 +318,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
         body = await request.json()
         file_id = body.get("fileId")
         profile = body.get("profile")
+        class_id = body.get("classId")
 
         if not file_id:
             return JSONResponse(
@@ -333,6 +337,12 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
             return JSONResponse(
                 status_code=400,
                 content={"status": "error", "message": "Invalid profile type"},
+            )
+
+        if not class_id:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": "Missing classId parameter"},
             )
 
         # Find the upload directory
@@ -399,6 +409,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
             file_path=final_file_path,
             mime_type=metadata.get("filetype", "application/octet-stream"),
             profile=profile,
+            class_id=class_id,
         )
 
         session.add(document)
