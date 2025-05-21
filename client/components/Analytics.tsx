@@ -26,9 +26,7 @@ import {
   ArrowDownRight,
   Activity,
   Brain,
-  X,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -45,15 +43,8 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Legend,
 } from "recharts";
-import {
-  format,
-  compareAsc,
-  startOfDay,
-  differenceInDays,
-  subDays,
-} from "date-fns";
+import { format, compareAsc, startOfDay, subDays } from "date-fns";
 
 // Interface for Teaching Assistant data
 interface TeachingAssistant {

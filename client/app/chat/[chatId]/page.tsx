@@ -6,8 +6,6 @@
  */
 "use client";
 
-import { backgroundColors } from "@/utils/profiles";
-import { borderColors } from "@/utils/profiles";
 import { getChat } from "@/utils/queries/get-chat";
 import { getMessages } from "@/utils/queries/get-messages";
 import { getRubric } from "@/utils/queries/get-rubric";
@@ -20,7 +18,6 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";

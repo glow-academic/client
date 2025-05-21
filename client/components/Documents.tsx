@@ -11,7 +11,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { getClasses } from "@/utils/queries/get-classes";
 import { toast } from "sonner";
-import Image from "next/image";
 
 // UI Components
 import {
@@ -20,23 +19,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Card, CardContent } from "@/components/ui/card";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -44,22 +31,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 
 // Icons
 import {
-  Filter,
   Upload,
-  Download,
   FileText,
   Image as ImageIcon,
   File,
   FileCode,
-  MoreVertical,
   Trash2,
-  Eye,
   Search,
   X,
   Plus,
@@ -71,7 +53,6 @@ import DocumentUploader from "@/components/DocumentUploader";
 import {
   documents as DocumentItem,
   classes as ClassItem,
-  chatProfile as ChatProfile,
 } from "@/drizzle/schema";
 
 // View modes

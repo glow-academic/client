@@ -6,14 +6,13 @@
  */
 "use client";
 
-import { useState, useMemo } from "react"; // Import useMemo
+import { useState } from "react"; // Import useMemo
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUsers } from "@/utils/queries/get-users";
 import { logout } from "@/utils/mutations/logout";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { toast } from "sonner";
-import DocumentUploader from "@/components/DocumentUploader";
 import Analytics from "@/components/Analytics";
 import Courses from "@/components/Courses";
 import Documents from "@/components/Documents";
@@ -21,28 +20,9 @@ import Documents from "@/components/Documents";
 // Import UI components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  CalendarDays,
-  BarChart3,
-  Users,
-  ArrowUpRight,
-  ArrowDownRight,
-  Activity,
-  Brain,
-  ChevronRight,
-  ChevronUp,
-  ChevronDown,
-  X,
-} from "lucide-react"; // Added X icon for close button
+import { Activity, X } from "lucide-react"; // Added X icon for close button
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +30,6 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getUser } from "@/utils/queries/get-user";
@@ -64,7 +43,6 @@ import {
 import Rubric from "@/components/Rubric";
 import { useTaskColumns } from "@/components/tasks/columns";
 import { DataTable } from "@/components/tasks/data-table";
-import { Separator } from "@/components/ui/separator";
 
 // Define an interface for the document structure
 interface UploadedDocument {

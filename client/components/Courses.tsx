@@ -9,7 +9,7 @@ import { getClasses } from "@/utils/queries/get-classes";
 import { getUsers } from "@/utils/queries/get-users";
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -19,14 +19,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, ChevronRight, BookOpen, PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Users, ChevronRight, BookOpen } from "lucide-react";
 
 interface CourseWithStats {
   id: string;

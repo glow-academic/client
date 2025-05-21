@@ -4,12 +4,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/tasks/data-table-column-header";
 import { DataTableRowActions } from "@/components/tasks/data-table-row-actions";
-import {
-  chats as chatsTable,
-  users as usersTable,
-  classes as classesTable,
-  rubrics as rubricsTable,
-} from "@/drizzle/schema";
+import { chats as chatsTable } from "@/drizzle/schema";
 import { useQuery } from "@tanstack/react-query";
 import { getChats } from "@/utils/queries/get-chats";
 import { getAllChats } from "@/utils/queries/get-all-chats";

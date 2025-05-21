@@ -39,15 +39,8 @@ import { getClass } from "@/utils/queries/get-class";
 import { useQuery } from "@tanstack/react-query";
 import { getUsers } from "@/utils/queries/get-users";
 import { getAllChats } from "@/utils/queries/get-all-chats";
-import { getRubric } from "@/utils/queries/get-rubric";
 import { getRubrics } from "@/utils/queries/get-rubrics";
-import {
-  format,
-  compareAsc,
-  startOfDay,
-  differenceInDays,
-  subDays,
-} from "date-fns";
+import { format, compareAsc, startOfDay, subDays } from "date-fns";
 import { updateClassThresholds } from "@/utils/mutations/update-class-thresholds";
 import { toast } from "sonner";
 // Interface for Teaching Assistant with scores
