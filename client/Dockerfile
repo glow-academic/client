@@ -1,7 +1,7 @@
 # client/Dockerfile
 
-# Use Node.js image without platform specification to match your host architecture
-FROM node:18-alpine AS base
+# Use a more recent Node image with Yarn pre-installed
+FROM node:20-alpine AS base
 WORKDIR /app
 
 # ——— build-arg comes first ———
@@ -11,7 +11,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 # Install dependencies
 RUN apk add --no-cache libc6-compat
 COPY package.json ./
-RUN npm install
+RUN yarn install --frozen-lockfile
 
 # Copy the rest of the application
 COPY . .
@@ -31,10 +31,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 # RUN npx cypress run
 
 # Build the application
-RUN npm run build
+RUN yarn build
 
 # Expose the port
 EXPOSE 3000
 
 # Start the application with drizzle-kit pull first
-CMD ["sh", "-c", "npx drizzle-kit pull && npm start"]
+CMD ["sh", "-c", "npx drizzle-kit pull && yarn start"]

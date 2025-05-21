@@ -28,7 +28,7 @@ def _init_gemini() -> None:
             api_key=key,
         )
     elif _gemini is None:
-        logger.warning("GOOGLE_API_KEY missing – Gemini features disabled")
+        logger.warning("GOOGLE_API_KEY missing - Gemini features disabled")
 
 
 def get_gemini() -> AsyncOpenAI | None:

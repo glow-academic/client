@@ -1,5 +1,4 @@
 # server/Dockerfile
-
 FROM python:3.11-slim
 WORKDIR /app
 
@@ -10,8 +9,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-RUN apt-get install -y --no-install-recommends \
-    texlive-latex-base
+# Install TeX dependencies for PyLaTeX
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    texlive-latex-base \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
+    && rm -rf /var/lib/apt/lists/*
 
 # # Run linter checks
 # RUN echo "Running linter..." && ruff check .
