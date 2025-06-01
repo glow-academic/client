@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Shuffle, Zap, SmilePlus, HelpCircle } from "lucide-react";
+import { Calendar, Shuffle, Zap, SmilePlus, HelpCircle, Timer } from "lucide-react";
 import { getChats } from "@/utils/queries/get-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { useRouter } from "next/navigation";
@@ -28,6 +28,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { getClasses } from "@/utils/queries/get-classes";
+import { getQuizzesForUser } from "@/utils/queries/get-quizzes";
 
 export default function Home() {
   const isAdmin = false;
@@ -35,6 +36,7 @@ export default function Home() {
     useTaskColumns({ isAdmin: isAdmin });
   const router = useRouter();
   const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ["user"],
@@ -56,6 +58,42 @@ export default function Home() {
   const { data: classes } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getClasses(),
+  });
+
+  // Fetch quizzes from database for this user
+  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
+    queryKey: ["quizzes"],
+    queryFn: async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/quiz`, {
+          credentials: "include",
+        });
+        
+        if (!response.ok) {
+          if (response.status === 405) {
+            // Method not allowed, endpoint might not exist yet
+            console.warn("Quiz endpoint not implemented yet");
+            return [];
+          }
+          throw new Error("Failed to fetch quizzes");
+        }
+        
+        const data = await response.json();
+        
+        // Filter quizzes that the user has access to (based on their classes)
+        if (!user?.classes || user.classes.length === 0) {
+          return data; // Show all quizzes if user has no specific classes
+        }
+        
+        return data.filter((quiz: any) => 
+          user.classes.includes(quiz.classId)
+        );
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+        return [];
+      }
+    },
+    enabled: !!user, // Only fetch when user data is available
   });
 
   const handleStartChat = async (
@@ -307,6 +345,32 @@ export default function Home() {
     }
   }
 
+  // Handle starting a quiz
+  const handleStartQuiz = async (quizId: string) => {
+    try {
+      if (!user) {
+        toast.error("User not found. Please log in again.");
+        return;
+      }
+
+      setLoadingQuiz(true);
+      toast.loading("Starting quiz...");
+
+      // Navigate directly to the quiz page
+      toast.dismiss();
+      toast.success("Quiz started");
+      router.push(`/quiz/${quizId}`);
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      toast.dismiss();
+      toast.error(
+        `Failed to start quiz: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setLoadingQuiz(false);
+    }
+  };
+
   return (
     <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
       <div className="flex items-center justify-between space-y-2">
@@ -325,6 +389,57 @@ export default function Home() {
 
       {/* Chat Profile Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Quizzes Cards - Only show if there are quizzes available */}
+        {quizzesLoading ? (
+          // Loading skeletons for quizzes
+          <Card className="overflow-hidden">
+            <CardHeader>
+              <Skeleton className="h-6 w-32 mb-1" />
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-16 w-full" />
+            </CardContent>
+            <CardFooter>
+              <Skeleton className="h-4 w-24" />
+            </CardFooter>
+          </Card>
+        ) : quizzes.length > 0 ? (
+          quizzes.map(quiz => {
+            // Find class for this quiz
+            const quizClass = classes?.find(c => c.id === quiz.classId);
+            
+            return (
+              <Card
+                key={quiz.id}
+                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingQuiz ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                onClick={() => !loadingQuiz && handleStartQuiz(quiz.id)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"></div>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calendar
+                      className={`h-5 w-5 text-blue-500 ${loadingQuiz ? "animate-spin" : "group-hover:scale-110 transition-transform duration-300"}`}
+                    />
+                    Quiz
+                  </CardTitle>
+                  <CardDescription>{quizClass?.classCode || "Unknown"}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm font-medium">{quiz.title}</p>
+                </CardContent>
+                <CardFooter className="text-xs text-muted-foreground flex justify-between items-center">
+                  <div className="flex items-center">
+                    <Timer className="h-3 w-3 mr-1" />
+                    <span>{quiz.timeLimit} min</span>
+                  </div>
+                  <span className="font-medium">Click to start</span>
+                </CardFooter>
+              </Card>
+            );
+          })
+        ) : null}
+        
         {/* Shuffle Card */}
         <Card
           className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}

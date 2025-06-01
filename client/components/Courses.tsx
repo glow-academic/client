@@ -8,6 +8,7 @@
 import { getClasses } from "@/utils/queries/get-classes";
 import { getUsers } from "@/utils/queries/get-users";
 import { getAllChats } from "@/utils/queries/get-all-chats";
+import { getDocuments } from "@/utils/queries/get-documents";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useRouter } from "next/navigation";
@@ -19,7 +20,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, ChevronRight, BookOpen } from "lucide-react";
+import { Users, ChevronRight, BookOpen, FileSpreadsheet } from "lucide-react";
 
 interface CourseWithStats {
   id: string;
@@ -28,6 +29,7 @@ interface CourseWithStats {
   description: string;
   taCount: number;
   chatCount: number;
+  csvStudentCount: number;
   createdAt: string;
 }
 
@@ -52,6 +54,12 @@ export default function Courses() {
     queryFn: () => getAllChats(),
   });
 
+  // Fetch documents to check for CSV files
+  const { data: documents, isLoading: isLoadingDocuments } = useQuery({
+    queryKey: ["documents"],
+    queryFn: () => getDocuments(),
+  });
+
   // Calculate TA count (non-admin users)
   const teachingAssistants = useMemo(() => {
     if (!users) return [];
@@ -62,13 +70,12 @@ export default function Courses() {
     router.push(`/admin/classes/${course.id}`);
   };
 
-  // Calculate course statistics
+  // Calculate course statistics including CSV students
   const coursesWithStats = useMemo<CourseWithStats[]>(() => {
-    if (!classes || !users || !chats) return [];
+    if (!classes || !users || !chats || !documents) return [];
 
     return classes.map((course) => {
       // Count TAs assigned to this course
-      // Check users with this course ID in their classes array
       const assignedTAs = users.filter(
         (user) =>
           !user.admin && user.classes && user.classes.includes(course.id),
@@ -79,6 +86,16 @@ export default function Courses() {
         (chat) => chat.classId === course.id,
       ).length;
 
+      // Count CSV files for this course (student rosters)
+      const csvFiles = documents.filter(
+        (doc) =>
+          doc.classId === course.id &&
+          doc.name.toLowerCase().endsWith(".csv"),
+      );
+
+      // More realistic student count - show number of CSV files uploaded, not estimated students
+      const csvStudentCount = csvFiles.length;
+
       return {
         id: course.id,
         classCode: course.classCode,
@@ -86,13 +103,14 @@ export default function Courses() {
         description: course.description,
         taCount: assignedTAs,
         chatCount: courseChats,
+        csvStudentCount,
         createdAt: course.createdAt,
       };
     });
-  }, [classes, users, chats]);
+  }, [classes, users, chats, documents]);
 
   // Loading state
-  if (isLoadingUsers || isLoadingClasses || isLoadingChats) {
+  if (isLoadingUsers || isLoadingClasses || isLoadingChats || isLoadingDocuments) {
     return (
       <div className="flex justify-center items-center p-10">
         Loading courses...
@@ -121,17 +139,23 @@ export default function Courses() {
               <CardDescription>{course.description}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center text-sm">
                   <Users className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span>
-                    <strong>{course.taCount}</strong> Teaching Assistants
+                    <strong>{course.taCount}</strong> TAs
                   </span>
                 </div>
                 <div className="flex items-center text-sm">
                   <BookOpen className="h-4 w-4 mr-1 text-muted-foreground" />
                   <span>
-                    <strong>{course.chatCount}</strong> Interactions
+                    <strong>{course.chatCount}</strong> Chats
+                  </span>
+                </div>
+                <div className="flex items-center text-sm col-span-2">
+                  <FileSpreadsheet className="h-4 w-4 mr-1 text-muted-foreground" />
+                  <span>
+                    <strong>{course.csvStudentCount}</strong> Student Rosters
                   </span>
                 </div>
               </div>
@@ -170,6 +194,18 @@ export default function Courses() {
                 <span className="font-medium">Total Interactions</span>
               </div>
               <span className="font-bold">{chats?.length || 0}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-4 w-4 rounded-full bg-orange-500"></div>
+                <span className="font-medium">Student Roster Files</span>
+              </div>
+              <span className="font-bold">
+                {coursesWithStats.reduce(
+                  (sum, course) => sum + course.csvStudentCount,
+                  0,
+                )}
+              </span>
             </div>
           </div>
         </CardContent>

@@ -88,7 +88,17 @@ export default function Documents() {
   // Fetch documents and classes
   const { data: documents = [], isLoading: isDocumentsLoading } = useQuery({
     queryKey: ["documents"],
-    queryFn: () => getDocuments(),
+    queryFn: async () => {
+      try {
+        const docs = await getDocuments();
+        // Filter out any mock/system documents if needed
+        // For now, show all documents but we could add a filter here
+        return docs;
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+        return [];
+      }
+    },
   });
 
   const { data: classes = [], isLoading: isClassesLoading } = useQuery({
@@ -109,16 +119,20 @@ export default function Documents() {
     label: `${cls.classCode}`,
   }));
 
-  // Filtered documents
+  // Filtered documents with special handling for CSV files
   const filteredDocuments = documents.filter((doc: DocumentType) => {
     // Apply search filter
     const matchesSearch = searchQuery
       ? doc.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
-    // Apply profile filter
-    const matchesProfile =
-      profileFilter === "all" ? true : doc.profile === profileFilter;
+    // Apply profile filter - for CSV files, treat them as "neutral" profile
+    const isCSV = doc.name.toLowerCase().endsWith('.csv');
+    const matchesProfile = profileFilter === "all" 
+      ? true 
+      : isCSV 
+        ? profileFilter === "neutral" // CSV files can be filtered by "neutral"
+        : doc.profile === profileFilter;
 
     // Apply class filter
     const matchesClass =
@@ -133,6 +147,8 @@ export default function Documents() {
   const handleUploadComplete = () => {
     setUploadState("complete");
     setUploadProgress(100);
+    
+    // Invalidate queries to refresh documents list
     queryClient.invalidateQueries({ queryKey: ["documents"] });
 
     // Reset state after a delay
@@ -155,35 +171,73 @@ export default function Documents() {
     toast.error(`Upload failed: ${error.message}`);
   };
 
-  // Handle document deletion
+  // Handle document deletion with proper error handling
   const handleDeleteDocument = async (documentId: string) => {
     try {
       setIsDeleting(true);
       toast.loading("Deleting document...");
 
+      // First, check if there are any quizzes that reference this document
+      const checkResponse = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/documents/${documentId}/references`,
+        {
+          method: "GET",
+          credentials: "include",
+        }
+      );
+
+      if (checkResponse.ok) {
+        const { references } = await checkResponse.json();
+
+        // If there are quizzes referencing this document, ask for confirmation
+        if (references?.quizzes?.length > 0) {
+          const confirmed = window.confirm(
+            `This document is referenced by ${references.quizzes.length} quiz(es). Deleting it will remove the document reference from these quizzes. Continue?`
+          );
+
+          if (!confirmed) {
+            toast.dismiss();
+            toast.info("Document deletion canceled");
+            setIsDeleting(false);
+            setShowDeleteDialog(false);
+            return;
+          }
+
+          // User confirmed, proceed with deletion including the force option
+          toast.loading("Deleting document and updating references...");
+        }
+      }
+
       // Call API to delete document
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}?force=true`,
         {
           method: "DELETE",
           headers: {
             "Content-Type": "application/json",
           },
-        },
+          credentials: "include",
+        }
       );
 
       if (!response.ok) {
-        throw new Error("Failed to delete document");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          errorData.message ||
+            `Failed to delete document: ${response.status} ${response.statusText}`,
+        );
       }
 
       // Refresh documents list
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ["quizzes"] }); // Also refresh quizzes which might have been updated
 
       toast.dismiss();
       toast.success("Document deleted successfully");
       setShowDeleteDialog(false);
       setDocumentToDelete(null);
     } catch (error) {
+      console.error("Delete document error:", error);
       toast.dismiss();
       toast.error(
         `Failed to delete document: ${
@@ -195,7 +249,7 @@ export default function Documents() {
     }
   };
 
-  // Get document type icon
+  // Get document type icon with special handling for CSV
   const getDocumentIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
 
@@ -205,6 +259,15 @@ export default function Documents() {
       return <ImageIcon className="h-10 w-10 text-blue-500" />;
     } else if (["pdf"].includes(extension || "")) {
       return <FileText className="h-10 w-10 text-red-500" />;
+    } else if (["csv"].includes(extension || "")) {
+      return (
+        <div className="relative">
+          <FileCode className="h-10 w-10 text-orange-500" />
+          <div className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
+            📊
+          </div>
+        </div>
+      );
     } else if (["doc", "docx", "txt", "md"].includes(extension || "")) {
       return <File className="h-10 w-10 text-green-500" />;
     } else if (
@@ -218,8 +281,14 @@ export default function Documents() {
     return <File className="h-10 w-10 text-gray-500" />;
   };
 
-  // Get profile color
-  const getProfileColor = (profile: string) => {
+  // Get profile color with special handling for CSV files
+  const getProfileColor = (profile: string, filename?: string) => {
+    const isCSV = filename?.toLowerCase().endsWith('.csv');
+    
+    if (isCSV) {
+      return "bg-orange-500"; // CSV files get orange color
+    }
+    
     switch (profile.toLowerCase()) {
       case "aggressive":
         return "bg-red-500";
@@ -276,6 +345,7 @@ export default function Documents() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Profiles</SelectItem>
+              <SelectItem value="neutral">CSV Files</SelectItem>
               {profileOptions.map((profile) => (
                 <SelectItem key={profile.value} value={profile.value}>
                   {profile.label}
@@ -423,13 +493,16 @@ export default function Documents() {
                         {getDocumentIcon(doc.name)}
                         <div className="absolute top-2 left-2 group">
                           <div
-                            className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`}
+                            className={`h-3 w-3 rounded-full ${getProfileColor(
+                              doc.profile,
+                              doc.name
+                            )}`}
                           />
                           <Badge
                             variant="secondary"
                             className="absolute left-0 top-5 scale-0 group-hover:scale-100 transition-all origin-top-left capitalize"
                           >
-                            {doc.profile}
+                            {doc.name.toLowerCase().endsWith('.csv') ? 'Student Roster' : doc.profile}
                           </Badge>
                         </div>
                         {docClass && (
@@ -504,10 +577,13 @@ export default function Documents() {
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             <div
-                              className={`h-3 w-3 rounded-full ${getProfileColor(doc.profile)}`}
+                              className={`h-3 w-3 rounded-full ${getProfileColor(
+                                doc.profile,
+                                doc.name
+                              )}`}
                             />
                             <Badge variant="secondary" className="capitalize">
-                              {doc.profile}
+                              {doc.name.toLowerCase().endsWith('.csv') ? 'Student Roster' : doc.profile}
                             </Badge>
                           </div>
                         </td>
@@ -551,7 +627,7 @@ export default function Documents() {
       <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Upload Document</DialogTitle>
+            <DialogTitle>Upload Content</DialogTitle>
           </DialogHeader>
           <div className="py-4">
             <DocumentUploader

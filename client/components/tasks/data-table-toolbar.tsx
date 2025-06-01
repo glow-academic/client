@@ -15,16 +15,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner"; // Confirmed this is the correct import
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 import { DataTableFacetedFilter } from "@/components/tasks/data-table-faceted-filter";
 import { statuses } from "./columns"; // Import statuses from columns.tsx
@@ -322,27 +312,6 @@ export function DataTableToolbar<TData>({
         </div>
       </div>
 
-      {/* Confirmation dialog for large exports */}
-      <AlertDialog open={showExportConfirm} onOpenChange={setShowExportConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-500" />
-              Large Export
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              You are about to export {rowsToExport} rows. This may take some
-              time and could cause your browser to become unresponsive.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleExportToCSV}>
-              Continue Export
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }

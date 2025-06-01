@@ -1,4 +1,4 @@
-import { pgTable, unique, uuid, boolean, timestamp, text, foreignKey, integer, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, unique, uuid, boolean, timestamp, text, foreignKey, integer, jsonb, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const chatProfile = pgEnum("chat_profile", ['aggressive', 'happy', 'confused'])
@@ -50,6 +50,34 @@ export const classes = pgTable("classes", {
 	happyThreshold: integer("happy_threshold").notNull(),
 	confusedThreshold: integer("confused_threshold").notNull(),
 });
+
+export const quizzes = pgTable("quizzes", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	title: text().notNull(),
+	classId: uuid("class_id").notNull(),
+	documentId: uuid("document_id"),
+	timeLimit: integer("time_limit").notNull(),
+	creatorId: uuid("creator_id").notNull(),
+	active: boolean().default(true).notNull(),
+	studentInteractions: jsonb("student_interactions").default({"happy":[],"confused":[],"aggressive":[]}).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.classId],
+			foreignColumns: [classes.id],
+			name: "quizzes_class_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.documentId],
+			foreignColumns: [documents.id],
+			name: "quizzes_document_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.creatorId],
+			foreignColumns: [users.id],
+			name: "quizzes_creator_id_fkey"
+		}).onDelete("cascade"),
+]);
 
 export const messages = pgTable("messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -103,4 +131,27 @@ export const documents = pgTable("documents", {
 			foreignColumns: [classes.id],
 			name: "documents_class_id_fkey"
 		}).onDelete("cascade"),
+]);
+
+export const quizAttempts = pgTable("quiz_attempts", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	quizId: uuid("quiz_id").notNull(),
+	userId: uuid("user_id").notNull(),
+	startedAt: timestamp("started_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+	score: integer(),
+	timeTaken: integer("time_taken"),
+	completed: boolean().default(false).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.quizId],
+			foreignColumns: [quizzes.id],
+			name: "quiz_attempts_quiz_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "quiz_attempts_user_id_fkey"
+		}).onDelete("cascade"),
+	unique("quiz_attempts_quiz_id_user_id_started_at_key").on(table.quizId, table.userId, table.startedAt),
 ]);

@@ -79,6 +79,44 @@ CREATE TABLE documents (
   class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
 );
 
+-- Update Quizzes table to support individual student configurations
+DROP TABLE IF EXISTS quizzes CASCADE;
+CREATE TABLE quizzes (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  title      TEXT        NOT NULL,
+  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+  document_id UUID       REFERENCES documents(id) ON DELETE SET NULL, -- Allow NULL and set to NULL on document deletion
+  time_limit INTEGER     NOT NULL,          -- in minutes
+  creator_id  UUID        NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
+  active      BOOLEAN     NOT NULL           DEFAULT TRUE,
+  -- Store student configurations as JSONB for flexibility
+  student_interactions JSONB NOT NULL DEFAULT '{"aggressive": [], "happy": [], "confused": []}'::jsonb
+);
+
+-- Drop and recreate quiz_attempts table with proper cascade behavior
+DROP TABLE IF EXISTS quiz_attempts CASCADE;
+CREATE TABLE quiz_attempts (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  quiz_id    UUID        NOT NULL REFERENCES quizzes(id)  ON DELETE CASCADE,
+  user_id    UUID        NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  started_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  completed_at TIMESTAMPTZ NULL,
+  score      INTEGER     NULL,              -- null until completed
+  time_taken INTEGER     NULL,              -- in seconds, null until completed
+  completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
+  UNIQUE(quiz_id, user_id, started_at)      -- prevent duplicate attempts at same time
+);
+
+-- Clean up any orphaned quiz attempts that might exist
+DELETE FROM quiz_attempts WHERE quiz_id NOT IN (SELECT id FROM quizzes);
+
+-- Clean up any orphaned quizzes that reference non-existent documents
+UPDATE quizzes SET document_id = NULL WHERE document_id NOT IN (SELECT id FROM documents);
+
+-- Delete any mock documents except the one we want to keep for testing
+DELETE FROM documents WHERE id != 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+
 -- Insert Classes
 INSERT INTO classes (id, name, class_code, description, aggressive_threshold, happy_threshold, confused_threshold) VALUES
   ('11111111-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 50, 50, 50),
@@ -244,3 +282,20 @@ INSERT INTO rubrics (chat_id, passed, score, time_taken, adaptability, adaptabil
   
   -- Recursive Definitions
   ('66666666-aaaa-bbbb-cccc-000000000000', true, 18, 540, 4, 'Good adaptation to student''s interest in optimization', 5, 'Excellent listening, addressed specific questions about tail recursion', 4, 'Successfully explained recursive optimization techniques', 5, 'Excellent pacing, covered all aspects efficiently');
+
+-- Insert sample documents for each class - only one document to test with
+INSERT INTO documents (id, name, file_path, mime_type, profile, class_id) VALUES
+-- Remove all other mock document data and quizzes
+
+-- Add table for CSV-imported students
+CREATE TABLE csv_students (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  first_name TEXT        NOT NULL,
+  last_name  TEXT        NOT NULL,
+  email      TEXT,
+  student_id TEXT,
+  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+  csv_file_id UUID       REFERENCES documents(id) ON DELETE SET NULL,
+  UNIQUE(first_name, last_name, class_id) -- Prevent duplicate students in same class
+);

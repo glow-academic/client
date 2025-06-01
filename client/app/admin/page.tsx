@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import Analytics from "@/components/Analytics";
 import Courses from "@/components/Courses";
 import Documents from "@/components/Documents";
+import Quiz from "@/components/Quiz";
 
 // Import UI components
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -224,7 +225,7 @@ export default function AdminPage() {
         <div>
           <h1 className="text-3xl font-bold">Dashboard</h1>
           <p className="text-muted-foreground mt-1">
-            Track GTA performance with AI student interactions
+            Manage GTA training with AI student interactions
           </p>
         </div>
         <DropdownMenu>
@@ -266,11 +267,12 @@ export default function AdminPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="courses">Courses</TabsTrigger>
+          <TabsTrigger value="quiz">Quiz</TabsTrigger>
         </TabsList>
 
         <TabsContent value="analytics" className="space-y-4">
@@ -293,6 +295,10 @@ export default function AdminPage() {
 
         <TabsContent value="courses" className="space-y-4">
           <Courses />
+        </TabsContent>
+
+        <TabsContent value="quiz" className="space-y-4">
+          <Quiz />
         </TabsContent>
       </Tabs>
 
