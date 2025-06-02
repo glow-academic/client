@@ -10,6 +10,7 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { getClasses } from "@/utils/queries/get-classes";
+import { getProfiles } from "@/utils/queries/get-profiles";
 import { toast } from "sonner";
 
 // UI Components
@@ -49,6 +50,8 @@ import {
 
 import DocumentViewer from "@/components/DocumentViewer";
 import DocumentUploader from "@/components/DocumentUploader";
+import { getProfileConfig } from "@/utils/profiles";
+import DocumentDropzone from "@/components/DocumentDropzone";
 
 import {
   documents as DocumentItem,
@@ -59,15 +62,22 @@ import {
 type ViewMode = "grid" | "list";
 // Upload states
 type UploadState = "idle" | "uploading" | "complete" | "error";
+// Document types enum
+export type DocumentTypeEnum = 'homework' | 'project' | 'quiz' | 'midterm' | 'lab';
 
 // Define a document type for our component
 type DocumentType = typeof DocumentItem.$inferSelect;
 
-export default function Documents() {
+interface DocumentsProps {
+  classId?: string; // Optional class filter
+}
+
+export default function Documents({ classId }: DocumentsProps) {
   // State
   const [searchQuery, setSearchQuery] = useState("");
   const [profileFilter, setProfileFilter] = useState<string>("all");
-  const [classFilter, setClassFilter] = useState<string>("all");
+  const [classFilter, setClassFilter] = useState<string>(classId || "all");
+  const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -106,12 +116,17 @@ export default function Documents() {
     queryFn: () => getClasses(),
   });
 
-  // Derived profiles from schema - static as per database enum
-  const profileOptions = [
-    { value: "aggressive" as const, label: "Aggressive" },
-    { value: "happy" as const, label: "Happy" },
-    { value: "confused" as const, label: "Confused" },
-  ];
+  // Fetch profiles dynamically
+  const { data: profiles = [], isLoading: isProfilesLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getProfiles(),
+  });
+
+  // Create profile options from fetched profiles
+  const profileOptions = profiles.map((profile) => ({
+    value: profile.id,
+    label: profile.name,
+  }));
 
   // Create class options from fetched classes
   const classOptions = classes.map((cls: typeof ClassItem.$inferSelect) => ({
@@ -119,29 +134,34 @@ export default function Documents() {
     label: `${cls.classCode}`,
   }));
 
-  // Filtered documents with special handling for CSV files
+  // Document type options
+  const typeOptions = [
+    { value: "homework", label: "📝 Homework", icon: "📝" },
+    { value: "project", label: "🚀 Project", icon: "🚀" },
+    { value: "quiz", label: "❓ Quiz", icon: "❓" },
+    { value: "midterm", label: "📊 Midterm", icon: "📊" },
+    { value: "lab", label: "🧪 Lab", icon: "🧪" },
+  ];
+
+  // Filtered documents
   const filteredDocuments = documents.filter((doc: DocumentType) => {
     // Apply search filter
     const matchesSearch = searchQuery
       ? doc.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
-    // Apply profile filter - for CSV files, treat them as "neutral" profile
-    const isCSV = doc.name.toLowerCase().endsWith('.csv');
-    const matchesProfile = profileFilter === "all" 
-      ? true 
-      : isCSV 
-        ? profileFilter === "neutral" // CSV files can be filtered by "neutral"
-        : doc.profile === profileFilter;
-
     // Apply class filter
     const matchesClass =
       classFilter === "all" ? true : doc.classId === classFilter;
 
-    return matchesSearch && matchesProfile && matchesClass;
+    // Apply type filter
+    const matchesType =
+      typeFilter === "all" ? true : doc.type === typeFilter;
+
+    return matchesSearch && matchesClass && matchesType;
   });
 
-  const isLoading = isDocumentsLoading || isClassesLoading;
+  const isLoading = isDocumentsLoading || isClassesLoading || isProfilesLoading;
 
   // Handle upload complete
   const handleUploadComplete = () => {
@@ -249,16 +269,36 @@ export default function Documents() {
     }
   };
 
-  // Get document type icon with special handling for CSV
-  const getDocumentIcon = (filename: string) => {
-    const extension = filename.split(".").pop()?.toLowerCase();
+  // Get document type icon and info
+  const getDocumentTypeInfo = (type: string) => {
+    const typeInfo = typeOptions.find(t => t.value === type);
+    return typeInfo || { value: type, label: type, icon: "📄" };
+  };
 
-    if (
-      ["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")
-    ) {
-      return <ImageIcon className="h-10 w-10 text-blue-500" />;
+  // Enhanced document icon function
+  const getDocumentIcon = (filename: string, docType?: string) => {
+    const extension = filename.split(".").pop()?.toLowerCase();
+    const typeInfo = getDocumentTypeInfo(docType || "homework");
+
+    // Create a combined icon with type indicator
+    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")) {
+      return (
+        <div className="relative">
+          <ImageIcon className="h-10 w-10 text-blue-500" />
+          <div className="absolute -top-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-xs border">
+            {typeInfo.icon}
+          </div>
+        </div>
+      );
     } else if (["pdf"].includes(extension || "")) {
-      return <FileText className="h-10 w-10 text-red-500" />;
+      return (
+        <div className="relative">
+          <FileText className="h-10 w-10 text-red-500" />
+          <div className="absolute -top-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-xs border">
+            {typeInfo.icon}
+          </div>
+        </div>
+      );
     } else if (["csv"].includes(extension || "")) {
       return (
         <div className="relative">
@@ -269,35 +309,48 @@ export default function Documents() {
         </div>
       );
     } else if (["doc", "docx", "txt", "md"].includes(extension || "")) {
-      return <File className="h-10 w-10 text-green-500" />;
+      return (
+        <div className="relative">
+          <File className="h-10 w-10 text-green-500" />
+          <div className="absolute -top-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-xs border">
+            {typeInfo.icon}
+          </div>
+        </div>
+      );
     } else if (
       ["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(
         extension || "",
       )
     ) {
-      return <FileCode className="h-10 w-10 text-yellow-500" />;
+      return (
+        <div className="relative">
+          <FileCode className="h-10 w-10 text-yellow-500" />
+          <div className="absolute -top-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-xs border">
+            {typeInfo.icon}
+          </div>
+        </div>
+      );
     }
 
-    return <File className="h-10 w-10 text-gray-500" />;
+    return (
+      <div className="relative">
+        <File className="h-10 w-10 text-gray-500" />
+        <div className="absolute -top-1 -right-1 bg-white rounded-full w-5 h-5 flex items-center justify-center text-xs border">
+          {typeInfo.icon}
+        </div>
+      </div>
+    );
   };
 
-  // Get profile color with special handling for CSV files
-  const getProfileColor = (profile: string, filename?: string) => {
-    const isCSV = filename?.toLowerCase().endsWith('.csv');
-    
-    if (isCSV) {
-      return "bg-orange-500"; // CSV files get orange color
-    }
-    
-    switch (profile.toLowerCase()) {
-      case "aggressive":
-        return "bg-red-500";
-      case "happy":
-        return "bg-green-500";
-      case "confused":
-        return "bg-yellow-500";
-      default:
-        return "bg-gray-500";
+  // Get profile color based on document type
+  const getProfileColor = (docType?: string) => {
+    switch (docType) {
+      case "homework": return "bg-blue-500";
+      case "project": return "bg-purple-500";
+      case "quiz": return "bg-yellow-500";
+      case "midterm": return "bg-red-500";
+      case "lab": return "bg-green-500";
+      default: return "bg-gray-500";
     }
   };
 
@@ -305,7 +358,10 @@ export default function Documents() {
   const resetFilters = () => {
     setSearchQuery("");
     setProfileFilter("all");
-    setClassFilter("all");
+    setTypeFilter("all");
+    if (!classId) { // Only reset class filter if not locked to a specific class
+      setClassFilter("all");
+    }
   };
 
   // View document preview
@@ -316,7 +372,7 @@ export default function Documents() {
 
   return (
     <div className="space-y-4">
-      {/* Simplified Toolbar - similar to data-table-toolbar */}
+      {/* Enhanced Toolbar */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4">
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
           <div className="relative flex-grow max-w-[300px]">
@@ -339,38 +395,42 @@ export default function Documents() {
             )}
           </div>
 
-          <Select value={profileFilter} onValueChange={setProfileFilter}>
+          {/* Document Type Filter */}
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="Profile Type" />
+              <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Profiles</SelectItem>
-              <SelectItem value="neutral">CSV Files</SelectItem>
-              {profileOptions.map((profile) => (
-                <SelectItem key={profile.value} value={profile.value}>
-                  {profile.label}
+              <SelectItem value="all">All Types</SelectItem>
+              {typeOptions.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={classFilter} onValueChange={setClassFilter}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="Class" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Classes</SelectItem>
-              {classOptions.map((cls) => (
-                <SelectItem key={cls.value} value={cls.value}>
-                  {cls.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Only show class filter if not locked to a specific class */}
+          {!classId && (
+            <Select value={classFilter} onValueChange={setClassFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Class" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classOptions.map((cls) => (
+                  <SelectItem key={cls.value} value={cls.value}>
+                    {cls.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
 
           {(searchQuery ||
             profileFilter !== "all" ||
-            classFilter !== "all") && (
+            typeFilter !== "all" ||
+            (!classId && classFilter !== "all")) && (
             <Button variant="ghost" className="h-9 px-2" onClick={resetFilters}>
               Reset
               <X className="ml-2 h-4 w-4" />
@@ -470,7 +530,7 @@ export default function Documents() {
           </Button>
         </div>
       ) : (
-        <>
+        <div className="space-y-6">
           {viewMode === "grid" ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {filteredDocuments.map((doc) => {
@@ -479,6 +539,7 @@ export default function Documents() {
                   (cls: typeof ClassItem.$inferSelect) =>
                     cls.id === doc.classId,
                 );
+                const typeInfo = getDocumentTypeInfo(doc.type);
 
                 return (
                   <div
@@ -490,19 +551,16 @@ export default function Documents() {
                       onClick={() => viewDocument(doc)}
                     >
                       <div className="relative flex-1 bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
-                        {getDocumentIcon(doc.name)}
+                        {getDocumentIcon(doc.name, doc.type)}
                         <div className="absolute top-2 left-2 group">
                           <div
-                            className={`h-3 w-3 rounded-full ${getProfileColor(
-                              doc.profile,
-                              doc.name
-                            )}`}
+                            className={`h-3 w-3 rounded-full ${getProfileColor(doc.type)}`}
                           />
                           <Badge
                             variant="secondary"
                             className="absolute left-0 top-5 scale-0 group-hover:scale-100 transition-all origin-top-left capitalize"
                           >
-                            {doc.name.toLowerCase().endsWith('.csv') ? 'Student Roster' : doc.profile}
+                            {typeInfo.label}
                           </Badge>
                         </div>
                         {docClass && (
@@ -549,8 +607,10 @@ export default function Documents() {
                     <th className="py-3 px-4 text-left font-medium">
                       Document
                     </th>
-                    <th className="py-3 px-4 text-left font-medium">Profile</th>
-                    <th className="py-3 px-4 text-left font-medium">Class</th>
+                    <th className="py-3 px-4 text-left font-medium">Type</th>
+                    {!classId && (
+                      <th className="py-3 px-4 text-left font-medium">Class</th>
+                    )}
                     <th className="py-3 px-4 text-right font-medium">
                       Actions
                     </th>
@@ -563,6 +623,7 @@ export default function Documents() {
                       (cls: typeof ClassItem.$inferSelect) =>
                         cls.id === doc.classId,
                     );
+                    const typeInfo = getDocumentTypeInfo(doc.type);
 
                     return (
                       <tr
@@ -571,29 +632,28 @@ export default function Documents() {
                         onClick={() => viewDocument(doc)}
                       >
                         <td className="py-3 px-4 flex items-center gap-3">
-                          {getDocumentIcon(doc.name)}
+                          {getDocumentIcon(doc.name, doc.type)}
                           <span className="font-medium">{doc.name}</span>
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
                             <div
-                              className={`h-3 w-3 rounded-full ${getProfileColor(
-                                doc.profile,
-                                doc.name
-                              )}`}
+                              className={`h-3 w-3 rounded-full ${getProfileColor(doc.type)}`}
                             />
                             <Badge variant="secondary" className="capitalize">
-                              {doc.name.toLowerCase().endsWith('.csv') ? 'Student Roster' : doc.profile}
+                              {typeInfo.label}
                             </Badge>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
-                          {docClass && (
-                            <Badge variant="outline">
-                              {docClass.classCode}
-                            </Badge>
-                          )}
-                        </td>
+                        {!classId && (
+                          <td className="py-3 px-4">
+                            {docClass && (
+                              <Badge variant="outline">
+                                {docClass.classCode}
+                              </Badge>
+                            )}
+                          </td>
+                        )}
                         <td className="py-3 px-4 text-right">
                           <Button
                             variant="ghost"
@@ -615,12 +675,23 @@ export default function Documents() {
               </table>
             </div>
           )}
-        </>
+
+          {/* Document Upload Dropzone - Always show at bottom when documents exist */}
+          <div className="border-t pt-6">
+            <DocumentDropzone 
+              classId={classId || ""}
+              onUploadComplete={handleUploadComplete}
+              onProgress={handleUploadProgress}
+              onError={handleUploadError}
+            />
+          </div>
+        </div>
       )}
 
       {/* Document count */}
       <div className="text-sm text-muted-foreground mt-4">
         Showing {filteredDocuments.length} of {documents.length} documents
+        {classId && " for this class"}
       </div>
 
       {/* Upload Dialog */}
@@ -635,6 +706,7 @@ export default function Documents() {
               onProgress={handleUploadProgress}
               onError={handleUploadError}
               inline
+              defaultClassId={classId} // Pass the class ID if available
             />
 
             {uploadState === "uploading" && (

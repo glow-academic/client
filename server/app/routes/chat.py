@@ -1,10 +1,9 @@
 # app/routes/chat.py
 from fastapi import APIRouter, Form, HTTPException, Depends
-from app.models import Chats  # Added Messages
+from app.models import Chats, Profiles  # Added Profiles
 from app.db import get_session
-from sqlmodel import Session  # Import Session
+from sqlmodel import Session, select  # Import Session
 import logging  # Import logging
-from sqlmodel import select
 from app.agents.evaluate import run_evaluate_agent
 from app.agents.aggressive import run_aggressive_agent
 from app.agents.confused import run_confused_agent
@@ -27,7 +26,7 @@ AGENT_DISPATCH = {
 
 @router.post("/new")
 async def new_chat(
-    profile: str = Form(...),
+    profile_id: str = Form(...),
     class_id: str = Form(...),
     user_id: str = Form(...),
     session: Session = Depends(get_session),
@@ -35,7 +34,7 @@ async def new_chat(
     """
     This endpoint is used to create a new chat.
     """
-    chat_id = await run_scenario_agent(profile, user_id, class_id, session)
+    chat_id = await run_scenario_agent(profile_id, user_id, class_id, session)
     return {"message": "Chat started", "chat_id": chat_id}
 
 
@@ -63,9 +62,14 @@ async def message(
     if not chat:
         raise HTTPException(status_code=404, detail="Chat not found")
 
-    agent_factory = AGENT_DISPATCH.get(chat.profile)
+    # Get the profile to determine which agent to use
+    profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+
+    agent_factory = AGENT_DISPATCH.get(profile.name.lower())
     if not agent_factory:
-        raise HTTPException(status_code=400, detail="Invalid profile")
+        raise HTTPException(status_code=400, detail=f"Invalid profile: {profile.name}")
 
     async def event_stream() -> AsyncIterator[str]:
         # initial heartbeat so proxies flush headers

@@ -1,6 +1,6 @@
 /**
  * app/home/page.tsx
- * This is the home page to open new chats and look at existing chats
+ * This is the unified home page with role-based access control
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
@@ -8,7 +8,6 @@
 import { getUser } from "@/utils/queries/get-user";
 import { useTaskColumns } from "@/components/tasks/columns";
 import { DataTable } from "@/components/tasks/data-table";
-import { UserNav } from "@/components/tasks/user-nav";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -19,24 +18,110 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Shuffle, Zap, SmilePlus, HelpCircle, Timer } from "lucide-react";
+import { Calendar, Shuffle, Timer } from "lucide-react";
 import { getChats } from "@/utils/queries/get-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { useRouter } from "next/navigation";
-import { chatProfile } from "@/drizzle/schema";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Separator } from "@/components/ui/separator";
 import { getClasses } from "@/utils/queries/get-classes";
-import { getQuizzesForUser } from "@/utils/queries/get-quizzes";
+import { getProfiles } from "@/utils/queries/get-profiles";
+import { getQuizzes } from "@/utils/queries/get-quizzes";
+import { getProfileConfig, getProfileDescription } from "@/utils/profiles";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { UnifiedSidebar } from "@/components/unified-sidebar";
+import Analytics from "@/components/Analytics";
+import Documents from "@/components/Documents";
+import Quiz from "@/components/Quiz";
+
+// Import admin content components
+import { getAllChats } from "@/utils/queries/get-all-chats";
+import { getClass } from "@/utils/queries/get-class";
+import { updateProfile } from "@/utils/mutations/update-profile";
+import { getProfileDefaultThreshold } from "@/utils/profiles";
+import { format, compareAsc, startOfDay, subDays } from "date-fns";
+import {
+  LineChart,
+  Line,
+  BarChart as RechartsBarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { UserCheck, Download, Loader2, Plus, Edit, Trash2, Upload } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Progress } from "@/components/ui/progress";
+import { useRef } from "react";
+
+type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta' | 'guest'
+
+// Helper function to get initials from name
+const getInitials = (name?: string): string => {
+  if (!name) return "??";
+  return name
+    .split(" ")
+    .map((word) => word.charAt(0))
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+};
+
+// Interface for Teaching Assistant with scores
+interface TeachingAssistant {
+  id: string;
+  name: string;
+  username: string;
+  interactions: number;
+  avgScore: number;
+}
 
 export default function Home() {
-  const isAdmin = false;
-  const { columns, data, isLoading, userOptions, classOptions } =
-    useTaskColumns({ isAdmin: isAdmin });
   const router = useRouter();
+  const [activeSection, setActiveSection] = useState("home");
   const [loadingProfile, setLoadingProfile] = useState<string | null>(null);
   const [loadingQuiz, setLoadingQuiz] = useState(false);
+
+  // Get user role simulation
+  const getEffectiveRole = (): UserRole => {
+    const stored = localStorage.getItem('simulatedRole');
+    if (user?.role === 'admin' && stored && ['admin', 'instructional', 'instructor', 'ta', 'guest'].includes(stored)) {
+      return stored as UserRole;
+    }
+    return (user?.role as UserRole) || 'guest';
+  };
+
+  const effectiveRole = getEffectiveRole();
+  const isAdmin = ['admin', 'instructional'].includes(effectiveRole);
+
+  const { columns, data, isLoading, userOptions, classOptions } =
+    useTaskColumns({ isAdmin });
 
   const { data: user } = useQuery({
     queryKey: ["user"],
@@ -44,15 +129,15 @@ export default function Home() {
   });
 
   const { data: chats } = useQuery({
-    queryKey: ["chats"],
+    queryKey: ["chats", user?.id],
     queryFn: () => getChats(user!.id),
-    enabled: !!user,
+    enabled: !!user && effectiveRole !== 'guest',
   });
 
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics", chats?.map((chat) => chat.id)],
     queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
-    enabled: !!chats,
+    enabled: !!chats && effectiveRole !== 'guest',
   });
 
   const { data: classes } = useQuery({
@@ -60,45 +145,46 @@ export default function Home() {
     queryFn: () => getClasses(),
   });
 
-  // Fetch quizzes from database for this user
-  const { data: quizzes = [], isLoading: quizzesLoading } = useQuery({
-    queryKey: ["quizzes"],
-    queryFn: async () => {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/quiz`, {
-          credentials: "include",
-        });
-        
-        if (!response.ok) {
-          if (response.status === 405) {
-            // Method not allowed, endpoint might not exist yet
-            console.warn("Quiz endpoint not implemented yet");
-            return [];
-          }
-          throw new Error("Failed to fetch quizzes");
-        }
-        
-        const data = await response.json();
-        
-        // Filter quizzes that the user has access to (based on their classes)
-        if (!user?.classes || user.classes.length === 0) {
-          return data; // Show all quizzes if user has no specific classes
-        }
-        
-        return data.filter((quiz: any) => 
-          user.classes.includes(quiz.classId)
-        );
-      } catch (error) {
-        console.error("Error fetching quizzes:", error);
-        return [];
-      }
-    },
-    enabled: !!user, // Only fetch when user data is available
+  const { data: profiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getProfiles(),
   });
 
-  const handleStartChat = async (
-    profile: (typeof chatProfile.enumValues)[number] | "shuffle",
-  ) => {
+  const { data: quizzes, isLoading: quizzesLoading } = useQuery({
+    queryKey: ["quizzes", user?.id],
+    queryFn: () => getQuizzes(user?.classIds || []),
+    enabled: !!user && effectiveRole !== 'guest'
+  });
+
+  // Extract class ID from active section if it's a class section
+  const currentClassId = activeSection.startsWith("class-") ? activeSection.replace("class-", "") : null;
+
+  // Fetch specific class data when viewing a class
+  const { data: classDataArray } = useQuery({
+    queryKey: ["class", currentClassId],
+    queryFn: () => getClass(currentClassId!),
+    enabled: !!currentClassId && isAdmin,
+  });
+
+  const classData = useMemo(() => {
+    return Array.isArray(classDataArray) ? classDataArray[0] : classDataArray;
+  }, [classDataArray]);
+
+  // Fetch all chats for admin views
+  const { data: allChats } = useQuery({
+    queryKey: ["all-chats"],
+    queryFn: () => getAllChats(),
+    enabled: !!currentClassId && isAdmin,
+  });
+
+  // Fetch all rubrics for admin views
+  const { data: allRubrics } = useQuery({
+    queryKey: ["all-rubrics"],
+    queryFn: () => getRubrics(allChats!.map((chat) => chat.id)),
+    enabled: !!allChats && allChats.length > 0 && isAdmin,
+  });
+
+  const handleStartQuiz = async (quizId: string, profileId?: string) => {
     try {
       if (!user) {
         toast.error("User not found. Please log in again.");
@@ -110,24 +196,97 @@ export default function Home() {
         return;
       }
 
-      setLoadingProfile(profile);
-      toast.loading(`Starting ${profile} chat...`);
+      setLoadingQuiz(true);
+      toast.loading("Starting quiz...");
 
-      // If shuffle is selected, determine which profile needs the most help
-      let selectedProfile = profile;
-      if (profile === "shuffle" && rubrics && chats) {
-        selectedProfile =
-          selectProfileNeedingMostHelp() as (typeof chatProfile.enumValues)[number];
+      // If no profile specified, randomly select one from available profiles
+      let selectedProfileId = profileId;
+      if (!selectedProfileId && profiles && profiles.length > 0) {
+        selectedProfileId = profiles[Math.floor(Math.random() * profiles.length)].id;
       }
 
       // randomly select a class from the user's classes if they have any, otherwise pick from classes
       const classId =
-        user.classes.length > 0
-          ? user.classes[Math.floor(Math.random() * user.classes.length)]
+        user.classIds.length > 0
+          ? user.classIds[Math.floor(Math.random() * user.classIds.length)]
           : classes[Math.floor(Math.random() * classes.length)].id;
 
       const formData = new FormData();
-      formData.append("profile", selectedProfile);
+      if (selectedProfileId) {
+        formData.append("profile_id", selectedProfileId);
+      }
+      formData.append("user_id", user.id);
+      formData.append("class_id", classId);
+      formData.append("quiz_id", quizId);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/quiz/start`,
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.dismiss();
+        toast.success("Quiz started");
+        router.push(`/quiz/${quizId}`);
+      } else {
+        throw new Error(response.statusText || "Failed to start quiz");
+      }
+    } catch (error) {
+      console.error("Error starting quiz:", error);
+      toast.dismiss();
+      toast.error(
+        `Failed to start quiz: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
+    } finally {
+      setLoadingQuiz(false);
+    }
+  };
+
+  const handleStartChat = async (profileId: string) => {
+    try {
+      if (!user) {
+        toast.error("User not found. Please log in again.");
+        return;
+      }
+
+      if (!classes) {
+        toast.error("No classes found. Please contact an administrator.");
+        return;
+      }
+
+      if (!profiles) {
+        toast.error("No profiles found. Please contact an administrator.");
+        return;
+      }
+
+      setLoadingProfile(profileId);
+      
+      // Find the profile name for the toast message
+      const profile = profiles.find(p => p.id === profileId);
+      const profileName = profile?.name || "Unknown";
+      toast.loading(`Starting ${profileName} chat...`);
+
+      // If shuffle is selected, determine which profile needs the most help
+      let selectedProfileId = profileId;
+      if (profileName.toLowerCase() === "shuffle" && rubrics && chats) {
+        const needsHelpProfile = selectProfileNeedingMostHelp();
+        if (needsHelpProfile) {
+          selectedProfileId = needsHelpProfile;
+        }
+      }
+
+      // randomly select a class from the user's classes if they have any, otherwise pick from classes
+      const classId =
+        user.classIds.length > 0
+          ? user.classIds[Math.floor(Math.random() * user.classIds.length)]
+          : classes[Math.floor(Math.random() * classes.length)].id;
+
+      const formData = new FormData();
+      formData.append("profile_id", selectedProfileId);
       formData.append("user_id", user.id);
       formData.append("class_id", classId);
 
@@ -142,7 +301,7 @@ export default function Home() {
       if (response.ok) {
         const data = await response.json();
         toast.dismiss();
-        toast.success(`Started ${selectedProfile} chat`);
+        toast.success(`Started ${profileName} chat`);
         router.push(`/chat/${data.chat_id}`);
       } else {
         throw new Error(response.statusText || "Failed to create chat");
@@ -159,31 +318,30 @@ export default function Home() {
   };
 
   // Function to select the profile that needs the most help based on rubrics
-  const selectProfileNeedingMostHelp = () => {
-    if (!rubrics || !chats) return "confused"; // Default fallback
+  const selectProfileNeedingMostHelp = (): string | null => {
+    if (!rubrics || !chats || !profiles) return null;
 
     // Calculate average scores for each profile type
-    const profileScores = {
-      aggressive: { totalScore: 0, count: 0 },
-      happy: { totalScore: 0, count: 0 },
-      confused: { totalScore: 0, count: 0 },
-    };
+    const profileScores: Record<string, { totalScore: number; count: number }> = {};
+    
+    // Initialize profile scores
+    profiles.forEach(profile => {
+      profileScores[profile.id] = { totalScore: 0, count: 0 };
+    });
 
     // Group chats by profile
-    const chatsByProfile = {
-      aggressive: chats.filter((chat) => chat.profile === "aggressive"),
-      happy: chats.filter((chat) => chat.profile === "happy"),
-      confused: chats.filter((chat) => chat.profile === "confused"),
-    };
+    const chatsByProfile: Record<string, typeof chats> = {};
+    profiles.forEach(profile => {
+      chatsByProfile[profile.id] = chats.filter((chat) => chat.profileId === profile.id);
+    });
 
     // Calculate scores for each profile
-    Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+    Object.entries(chatsByProfile).forEach(([profileId, profileChats]) => {
       profileChats.forEach((chat) => {
         const chatRubric = rubrics.find((r) => r.chatId === chat.id);
         if (chatRubric) {
-          profileScores[profile as keyof typeof profileScores].totalScore +=
-            chatRubric.score;
-          profileScores[profile as keyof typeof profileScores].count++;
+          profileScores[profileId].totalScore += chatRubric.score;
+          profileScores[profileId].count++;
         }
       });
     });
@@ -191,9 +349,9 @@ export default function Home() {
     // Find profiles that haven't passed (score < 17)
     const failingProfiles = Object.entries(profileScores)
       .filter(([_, stats]) => stats.count > 0) // Only include profiles with at least one chat
-      .map(([profile, stats]) => {
+      .map(([profileId, stats]) => {
         const avgScore = stats.count > 0 ? stats.totalScore / stats.count : 0;
-        return { profile, avgScore };
+        return { profileId, avgScore };
       })
       .filter((p) => p.avgScore < 17); // Filter for failing scores
 
@@ -201,89 +359,64 @@ export default function Home() {
       // If all profiles are passing, pick the lowest scoring one
       const lowestScoringProfile = Object.entries(profileScores)
         .filter(([_, stats]) => stats.count > 0)
-        .map(([profile, stats]) => {
+        .map(([profileId, stats]) => {
           const avgScore = stats.count > 0 ? stats.totalScore / stats.count : 0;
-          return { profile, avgScore };
+          return { profileId, avgScore };
         })
         .sort((a, b) => a.avgScore - b.avgScore)[0];
 
-      return lowestScoringProfile?.profile || "confused";
+      return lowestScoringProfile?.profileId || null;
     }
 
     // Randomly select from failing profiles
     const randomIndex = Math.floor(Math.random() * failingProfiles.length);
-    return failingProfiles[randomIndex].profile;
+    return failingProfiles[randomIndex].profileId;
   };
 
-  if (isLoading) {
-    return (
-      <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
-        <div className="flex items-center justify-between space-y-2">
-          <div>
-            <Skeleton className="h-8 w-48 mb-2" />
-            <Skeleton className="h-4 w-64" />
-          </div>
-          <Skeleton className="h-10 w-10 rounded-full" />
-        </div>
+  // Get page title based on active section
+  const getPageTitle = () => {
+    if (activeSection === "home") return "Home";
+    if (activeSection === "history") return "History";
+    if (activeSection === "quiz-list") return "Quiz Management";
+    if (activeSection === "quiz-create") return "Create Quiz";
+    if (activeSection === "chat-profiles") return "Chat Profiles";
+    if (activeSection === "chat-scenarios") return "Chat Scenarios";
+    if (activeSection === "student-management") return "Student Management";
+    if (activeSection.startsWith("class-") && classData) {
+      return `${classData.classCode} - ${classData.name}`;
+    }
+    return "GLOW";
+  };
 
-        {/* Skeleton for Chat Profile Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <Card key={i} className="overflow-hidden">
-              <CardHeader>
-                <Skeleton className="h-6 w-32 mb-1" />
-                <Skeleton className="h-4 w-48" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-16 w-full" />
-              </CardContent>
-              <CardFooter>
-                <Skeleton className="h-4 w-24" />
-              </CardFooter>
-            </Card>
-          ))}
-        </div>
-
-        {/* Skeleton for DataTable */}
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      </div>
-    );
-  }
-
-  // Calculate rubric scores and progress for each profile
+  // Calculate rubric scores and progress for each profile dynamically
   // Each criterion (adaptability, listening, etc.) has a max score of 5
   // Total passing score is 17/20 (85%)
-  const profileMetrics = {
-    shuffle: { score: 0, progress: 0 },
-    aggressive: { score: 0, progress: 0 },
-    happy: { score: 0, progress: 0 },
-    confused: { score: 0, progress: 0 },
-  };
+  const profileMetrics: Record<string, { score: number; progress: number }> = {};
 
-  if (rubrics && chats) {
+  // Initialize metrics for all profiles
+  if (profiles) {
+    profiles.forEach(profile => {
+      profileMetrics[profile.id] = { score: 0, progress: 0 };
+    });
+
+    // Add shuffle profile if it doesn't exist
+    profileMetrics.shuffle = { score: 0, progress: 0 };
+  }
+
+  if (rubrics && chats && profiles && effectiveRole !== 'guest') {
     // Group chats by profile
-    const chatsByProfile = {
-      aggressive: chats.filter((chat) => chat.profile === "aggressive"),
-      happy: chats.filter((chat) => chat.profile === "happy"),
-      confused: chats.filter((chat) => chat.profile === "confused"),
-    };
+    const chatsByProfile: Record<string, typeof chats> = {};
+    profiles.forEach(profile => {
+      chatsByProfile[profile.id] = chats.filter((chat) => chat.profileId === profile.id);
+    });
 
     // Calculate scores for each profile
-    Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+    Object.entries(chatsByProfile).forEach(([profileId, profileChats]) => {
       if (profileChats.length === 0) return;
 
       let maxScore = 0;
       let totalScore = 0;
       let chatCount = 0;
-
-      // Track individual criteria scores to determine proficiency
-      let adaptabilitySum = 0;
-      let listeningSum = 0;
-      let objectivesSum = 0;
-      let timeManagementSum = 0;
 
       profileChats.forEach((chat) => {
         const chatRubric = rubrics.find((r) => r.chatId === chat.id);
@@ -292,10 +425,6 @@ export default function Home() {
           maxScore = Math.max(maxScore, chatRubric.score);
           // Still calculate total for shuffle average
           totalScore += chatRubric.score;
-          adaptabilitySum += chatRubric.adaptability;
-          listeningSum += chatRubric.listening;
-          objectivesSum += chatRubric.objectives;
-          timeManagementSum += chatRubric.timeManagement;
           chatCount++;
         }
       });
@@ -304,7 +433,7 @@ export default function Home() {
         // Use maximum score for individual profiles (out of 20)
         const progress = Math.min(100, Math.round((maxScore / 17) * 100));
 
-        profileMetrics[profile as keyof typeof profileMetrics] = {
+        profileMetrics[profileId] = {
           score: Math.round(maxScore * 10) / 10, // Round to 1 decimal place
           progress,
         };
@@ -315,7 +444,7 @@ export default function Home() {
     const activeProfiles = Object.entries(profileMetrics).filter(
       ([key, _]) =>
         key !== "shuffle" &&
-        profileMetrics[key as keyof typeof profileMetrics].score > 0,
+        profileMetrics[key].score > 0,
     ).length;
 
     if (activeProfiles > 0) {
@@ -323,7 +452,7 @@ export default function Home() {
       let totalScoreAll = 0;
       let totalCountAll = 0;
 
-      Object.entries(chatsByProfile).forEach(([profile, profileChats]) => {
+      Object.entries(chatsByProfile).forEach(([profileId, profileChats]) => {
         profileChats.forEach((chat) => {
           const chatRubric = rubrics.find((r) => r.chatId === chat.id);
           if (chatRubric) {
@@ -345,269 +474,433 @@ export default function Home() {
     }
   }
 
-  // Handle starting a quiz
-  const handleStartQuiz = async (quizId: string) => {
-    try {
-      if (!user) {
-        toast.error("User not found. Please log in again.");
-        return;
-      }
-
-      setLoadingQuiz(true);
-      toast.loading("Starting quiz...");
-
-      // Navigate directly to the quiz page
-      toast.dismiss();
-      toast.success("Quiz started");
-      router.push(`/quiz/${quizId}`);
-    } catch (error) {
-      console.error("Error starting quiz:", error);
-      toast.dismiss();
-      toast.error(
-        `Failed to start quiz: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-    } finally {
-      setLoadingQuiz(false);
+  // Render content based on active section and role
+  const renderContent = () => {
+    switch (activeSection) {
+      case "home":
+        return renderHomeContent();
+      case "history":
+        return renderHistoryContent();
+      case "quiz-list":
+        return <Quiz mode="list" />;
+      case "quiz-create":
+        return <Quiz mode="create" />;
+      case "chat-profiles":
+        return renderChatProfilesContent();
+      case "chat-scenarios":
+        return renderChatScenariosContent();
+      case "student-management":
+        return renderStudentManagementContent();
+      default:
+        if (activeSection.startsWith("class-") && classData) {
+          return renderClassDetailsContent();
+        }
+        return (
+          <div className="flex items-center justify-center h-64">
+            <p className="text-muted-foreground">Select a section from the sidebar</p>
+          </div>
+        );
     }
   };
 
-  return (
-    <div className="hidden h-full flex-1 flex-col space-y-8 p-8 md:flex">
-      <div className="flex items-center justify-between space-y-2">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">
-            Welcome{user?.viewedIntro ? " back" : ""}, {user?.name}!
-          </h2>
-          <p className="text-muted-foreground">
-            Click the different chat profiles to get started.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <UserNav />
-        </div>
-      </div>
+  const renderHomeContent = () => {
+    if (effectiveRole === 'guest') {
+      // Guest view - only chat profiles
+      return (
+        <div className="space-y-8">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Welcome to GLOW!
+            </h2>
+            <p className="text-muted-foreground">
+              Click a chat profile to get started.
+            </p>
+          </div>
 
-      {/* Chat Profile Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Quizzes Cards - Only show if there are quizzes available */}
-        {quizzesLoading ? (
-          // Loading skeletons for quizzes
-          <Card className="overflow-hidden">
-            <CardHeader>
-              <Skeleton className="h-6 w-32 mb-1" />
-              <Skeleton className="h-4 w-48" />
-            </CardHeader>
-            <CardContent>
-              <Skeleton className="h-16 w-full" />
-            </CardContent>
-            <CardFooter>
-              <Skeleton className="h-4 w-24" />
-            </CardFooter>
-          </Card>
-        ) : quizzes.length > 0 ? (
-          quizzes.map(quiz => {
-            // Find class for this quiz
-            const quizClass = classes?.find(c => c.id === quiz.classId);
-            
-            return (
-              <Card
-                key={quiz.id}
-                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingQuiz ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-                onClick={() => !loadingQuiz && handleStartQuiz(quiz.id)}
-              >
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"></div>
+          {/* Chat Profile Cards for Guest */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Dynamic Profile Cards */}
+            {profiles?.map(profile => {
+              const profileConfig = getProfileConfig(profile.name);
+              const IconComponent = profileConfig.icon;
+              const colors = profileConfig.colors;
+
+              return (
+                <Card
+                  key={profile.id}
+                  className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                  onClick={() => !loadingProfile && handleStartChat(profile.id)}
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} opacity-30`}></div>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <IconComponent
+                        className={`h-5 w-5 ${colors.iconColor} ${loadingProfile === profile.id ? "animate-spin" : "group-hover:scale-125 transition-transform duration-300"}`}
+                      />
+                      {profile.name}
+                    </CardTitle>
+                    <CardDescription>{profile.subtitle}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm">
+                      {getProfileDescription(profile.name)}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
+    // Regular user view
+    if (isLoading) {
+      return (
+        <div className="space-y-8">
+          <div className="flex items-center justify-between space-y-2">
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+
+          {/* Skeleton for Chat Profile Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <Card key={i} className="overflow-hidden">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar
-                      className={`h-5 w-5 text-blue-500 ${loadingQuiz ? "animate-spin" : "group-hover:scale-110 transition-transform duration-300"}`}
-                    />
-                    Quiz
-                  </CardTitle>
-                  <CardDescription>{quizClass?.classCode || "Unknown"}</CardDescription>
+                  <Skeleton className="h-6 w-32 mb-1" />
+                  <Skeleton className="h-4 w-48" />
                 </CardHeader>
                 <CardContent>
-                  <p className="text-sm font-medium">{quiz.title}</p>
+                  <Skeleton className="h-16 w-full" />
                 </CardContent>
-                <CardFooter className="text-xs text-muted-foreground flex justify-between items-center">
-                  <div className="flex items-center">
-                    <Timer className="h-3 w-3 mr-1" />
-                    <span>{quiz.timeLimit} min</span>
-                  </div>
-                  <span className="font-medium">Click to start</span>
+                <CardFooter>
+                  <Skeleton className="h-4 w-24" />
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
+
+          {/* Skeleton for DataTable */}
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-8">
+        {/* Analytics Section for Admin/Instructional */}
+        {isAdmin && (
+          <Analytics />
+        )}
+
+        <div className="flex items-center justify-between space-y-2">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">
+              Welcome{user?.viewedIntro ? " back" : ""}, {user?.name}!
+            </h2>
+            <p className="text-muted-foreground">
+              Click the different chat profiles to get started.
+            </p>
+          </div>
+        </div>
+
+        {/* Chat Profile Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Quizzes Cards - Only show if there are quizzes available */}
+          {quizzesLoading ? (
+            // Loading skeletons for quizzes
+            <Card className="overflow-hidden">
+              <CardHeader>
+                <Skeleton className="h-6 w-32 mb-1" />
+                <Skeleton className="h-4 w-48" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-16 w-full" />
+              </CardContent>
+              <CardFooter>
+                <Skeleton className="h-4 w-24" />
+              </CardFooter>
+            </Card>
+          ) : quizzes && quizzes.length > 0 ? (
+            quizzes.map(quiz => {
+              // Find class for this quiz
+              const quizClass = classes?.find(c => c.id === quiz.classId);
+
+              return (
+                <Card
+                  key={quiz.id}
+                  className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingQuiz ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                  onClick={() => !loadingQuiz && handleStartQuiz(quiz.id)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"></div>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Calendar
+                        className={`h-5 w-5 text-blue-500 ${loadingQuiz ? "animate-spin" : "group-hover:scale-110 transition-transform duration-300"}`}
+                      />
+                      Quiz
+                    </CardTitle>
+                    <CardDescription>{quizClass?.classCode || "Unknown"}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm font-medium">{quiz.title}</p>
+                  </CardContent>
+                  <CardFooter className="text-xs text-muted-foreground flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Timer className="h-3 w-3 mr-1" />
+                      <span>{quiz.timeLimit} min</span>
+                    </div>
+                    <span className="font-medium">Click to start</span>
+                  </CardFooter>
+                </Card>
+              );
+            })
+          ) : null}
+
+          {/* Shuffle Card */}
+          <Card
+            className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+            onClick={() => !loadingProfile && handleStartChat("shuffle")}
+          >
+            <div
+              className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 opacity-30"
+              style={{ width: `${profileMetrics.shuffle?.progress || 0}%` }}
+            ></div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shuffle
+                  className={`h-5 w-5 text-violet-500 ${loadingProfile === "shuffle" ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-300"}`}
+                />
+                Shuffle
+              </CardTitle>
+              <CardDescription>Random conversation style</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm">
+                Let AI choose a random personality for your conversation.
+              </p>
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground flex justify-between">
+              <span>Score: {profileMetrics.shuffle?.score || 0}/20</span>
+              <span
+                className={
+                  (profileMetrics.shuffle?.score || 0) >= 17
+                    ? "text-green-600 font-medium"
+                    : "text-amber-600"
+                }
+              >
+                {(profileMetrics.shuffle?.score || 0) >= 17 ? "PASS" : `85% to pass`}
+              </span>
+            </CardFooter>
+          </Card>
+
+          {/* Dynamic Profile Cards */}
+          {profiles?.map(profile => {
+            const profileConfig = getProfileConfig(profile.name);
+            const IconComponent = profileConfig.icon;
+            const colors = profileConfig.colors;
+            const metrics = profileMetrics[profile.id] || { score: 0, progress: 0 };
+
+            return (
+              <Card
+                key={profile.id}
+                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                onClick={() => !loadingProfile && handleStartChat(profile.id)}
+              >
+                <div
+                  className={`absolute inset-0 bg-gradient-to-r ${colors.gradient} opacity-30`}
+                  style={{ width: `${metrics.progress}%` }}
+                ></div>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <IconComponent
+                      className={`h-5 w-5 ${colors.iconColor} ${loadingProfile === profile.id ? "animate-spin" : "group-hover:scale-125 transition-transform duration-300"}`}
+                    />
+                    {profile.name}
+                  </CardTitle>
+                  <CardDescription>{profile.subtitle}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm">
+                    {getProfileDescription(profile.name)}
+                  </p>
+                </CardContent>
+                <CardFooter className="text-xs text-muted-foreground flex justify-between">
+                  <span>Score: {metrics.score}/20</span>
+                  <span
+                    className={
+                      metrics.score >= 17
+                        ? "text-green-600 font-medium"
+                        : "text-amber-600"
+                    }
+                  >
+                    {metrics.score >= 17 ? "PASS" : `85% to pass`}
+                  </span>
                 </CardFooter>
               </Card>
             );
-          })
-        ) : null}
-        
-        {/* Shuffle Card */}
-        <Card
-          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-          onClick={() => !loadingProfile && handleStartChat("shuffle")}
-        >
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-violet-500 to-blue-500 opacity-30"
-            style={{ width: `${profileMetrics.shuffle.progress}%` }}
-          ></div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shuffle
-                className={`h-5 w-5 text-violet-500 ${loadingProfile === "shuffle" ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-300"}`}
-              />
-              Shuffle
-            </CardTitle>
-            <CardDescription>Random conversation style</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Let AI choose a random personality for your conversation.
-            </p>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground flex justify-between">
-            <span>Score: {profileMetrics.shuffle.score}/20</span>
-            <span
-              className={
-                profileMetrics.shuffle.score >= 17
-                  ? "text-green-600 font-medium"
-                  : "text-amber-600"
-              }
-            >
-              {profileMetrics.shuffle.score >= 17 ? "PASS" : `85% to pass`}
-            </span>
-          </CardFooter>
-        </Card>
-
-        {/* Aggressive Card */}
-        <Card
-          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-          onClick={() => !loadingProfile && handleStartChat("aggressive")}
-        >
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 opacity-30"
-            style={{ width: `${profileMetrics.aggressive.progress}%` }}
-          ></div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Zap
-                className={`h-5 w-5 text-red-500 ${loadingProfile === "aggressive" ? "animate-spin" : "group-hover:scale-125 transition-transform duration-300"}`}
-              />
-              Aggressive
-            </CardTitle>
-            <CardDescription>Direct and challenging</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Pushes back on your ideas and challenges assumptions.
-            </p>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground flex justify-between">
-            <span>Score: {profileMetrics.aggressive.score}/20</span>
-            <span
-              className={
-                profileMetrics.aggressive.score >= 17
-                  ? "text-green-600 font-medium"
-                  : "text-amber-600"
-              }
-            >
-              {profileMetrics.aggressive.score >= 17 ? "PASS" : `85% to pass`}
-            </span>
-          </CardFooter>
-        </Card>
-
-        {/* Happy Card */}
-        <Card
-          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-          onClick={() => !loadingProfile && handleStartChat("happy")}
-        >
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 opacity-30"
-            style={{ width: `${profileMetrics.happy.progress}%` }}
-          ></div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SmilePlus
-                className={`h-5 w-5 text-green-500 ${loadingProfile === "happy" ? "animate-spin" : "group-hover:animate-pulse transition-all duration-300"}`}
-              />
-              Happy
-            </CardTitle>
-            <CardDescription>Positive and encouraging</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Provides uplifting feedback and cheerful responses.
-            </p>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground flex justify-between">
-            <span>Score: {profileMetrics.happy.score}/20</span>
-            <span
-              className={
-                profileMetrics.happy.score >= 17
-                  ? "text-green-600 font-medium"
-                  : "text-amber-600"
-              }
-            >
-              {profileMetrics.happy.score >= 17 ? "PASS" : `85% to pass`}
-            </span>
-          </CardFooter>
-        </Card>
-
-        {/* Confused Card */}
-        <Card
-          className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingProfile ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-          onClick={() => !loadingProfile && handleStartChat("confused")}
-        >
-          <div
-            className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-amber-500 opacity-30"
-            style={{ width: `${profileMetrics.confused.progress}%` }}
-          ></div>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HelpCircle
-                className={`h-5 w-5 text-yellow-500 ${loadingProfile === "confused" ? "animate-spin" : "group-hover:rotate-12 transition-transform duration-300"}`}
-              />
-              Confused
-            </CardTitle>
-            <CardDescription>Asks clarifying questions</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">
-              Seeks to understand by asking questions and exploring ideas.
-            </p>
-          </CardContent>
-          <CardFooter className="text-xs text-muted-foreground flex justify-between">
-            <span>Score: {profileMetrics.confused.score}/20</span>
-            <span
-              className={
-                profileMetrics.confused.score >= 17
-                  ? "text-green-600 font-medium"
-                  : "text-amber-600"
-              }
-            >
-              {profileMetrics.confused.score >= 17 ? "PASS" : `85% to pass`}
-            </span>
-          </CardFooter>
-        </Card>
-      </div>
-
-      {/* Separator between Profiles and History */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <Separator className="w-full" />
+          })}
         </div>
-        <div className="relative flex justify-center">
-          <div className="bg-background px-4 text-sm text-muted-foreground">
-            Chat History
+
+        {/* Separator between Profiles and History */}
+        {effectiveRole !== 'ta' && (
+          <>
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <Separator className="w-full" />
+              </div>
+              <div className="relative flex justify-center">
+                <div className="bg-background px-4 text-sm text-muted-foreground">
+                  Chat History
+                </div>
+              </div>
+            </div>
+
+            <DataTable
+              data={data || []}
+              columns={columns}
+              userOptions={userOptions}
+              classOptions={classOptions}
+              isAdmin={isAdmin}
+            />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderHistoryContent = () => {
+    return (
+      <div className="space-y-6">
+        <DataTable
+          data={data || []}
+          columns={columns}
+          userOptions={userOptions}
+          classOptions={classOptions}
+          isAdmin={isAdmin}
+        />
+      </div>
+    );
+  };
+
+  // Placeholder content components for admin features
+  const renderChatProfilesContent = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Chat Profiles</h2>
+            <p className="text-muted-foreground">Manage AI student personality profiles</p>
           </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Profile
+          </Button>
         </div>
+        {/* Add chat profiles content here */}
       </div>
+    );
+  };
 
-      <DataTable
-        data={data || []}
-        columns={columns}
-        userOptions={userOptions}
-        classOptions={classOptions}
-        isAdmin={isAdmin}
+  const renderChatScenariosContent = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Chat Scenarios</h2>
+            <p className="text-muted-foreground">Manage conversation scenarios for AI students</p>
+          </div>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            Create Scenario
+          </Button>
+        </div>
+        {/* Add chat scenarios content here */}
+      </div>
+    );
+  };
+
+  const renderStudentManagementContent = () => {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-2xl font-bold">Student Management</h2>
+            <p className="text-muted-foreground">Manage student records and generate reports</p>
+          </div>
+          <Button variant="outline">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload CSV
+          </Button>
+        </div>
+        {/* Add student management content here */}
+      </div>
+    );
+  };
+
+  const renderClassDetailsContent = () => {
+    if (!classData) return null;
+
+    return (
+      <div className="space-y-6">
+        {/* Performance Trend Charts */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Performance Trends</CardTitle>
+            <CardDescription>
+              TA performance metrics and student emotional data for {classData.classCode}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Class details content will be implemented here.</p>
+          </CardContent>
+        </Card>
+
+        {/* Documents Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Class Documents</CardTitle>
+            <CardDescription>
+              Upload and manage documents for {classData.classCode}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Documents classId={classData.id} />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <SidebarProvider>
+      <UnifiedSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
       />
-    </div>
+      <SidebarInset>
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <div className="flex flex-1 items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold">{getPageTitle()}</h1>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col gap-4 p-4">
+          {renderContent()}
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

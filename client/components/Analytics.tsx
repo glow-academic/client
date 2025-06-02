@@ -8,6 +8,7 @@
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { getUsers } from "@/utils/queries/get-users";
+import { getProfiles } from "@/utils/queries/get-profiles";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
@@ -45,6 +46,7 @@ import {
   Bar,
 } from "recharts";
 import { format, compareAsc, startOfDay, subDays } from "date-fns";
+import { getProfileConfig } from "@/utils/profiles";
 
 // Interface for Teaching Assistant data
 interface TeachingAssistant {
@@ -124,6 +126,12 @@ export default function Analytics() {
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["all-chats"],
     queryFn: () => getAllChats(),
+  });
+
+  // Fetch Profiles
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getProfiles(),
   });
 
   // Fetch Rubrics (after chats are loaded)
@@ -337,61 +345,42 @@ export default function Analytics() {
     }
   };
 
-  // Get performance by student type
+  // Get performance by student type - now dynamic based on available profiles
   const studentTypePerformance = useMemo(() => {
-    if (!chats || !rubrics)
-      return {
-        happy: 0,
-        confused: 0,
-        aggressive: 0,
-      };
+    if (!chats || !rubrics || !profiles) return {};
 
-    const typeScores: Record<string, number[]> = {
-      happy: [],
-      confused: [],
-      aggressive: [],
-    };
+    // Initialize scores object with dynamic profiles
+    const typeScores: Record<string, number[]> = {};
+    profiles.forEach(profile => {
+      typeScores[profile.id] = [];
+    });
 
     chats.forEach((chat) => {
       const chatRubrics = rubrics.filter((r) => r.chatId === chat.id);
       if (chatRubrics.length > 0) {
-        const profileType = chat.profile.toLowerCase();
+        const profileId = chat.profileId;
 
         chatRubrics.forEach((rubric) => {
-          if (typeScores[profileType]) {
-            typeScores[profileType].push(rubric.score);
+          if (typeScores[profileId]) {
+            typeScores[profileId].push(rubric.score);
           }
         });
       }
     });
 
-    // Calculate average for each type
-    const result = {
-      happy:
-        typeScores.happy.length > 0
-          ? Math.round(
-              typeScores.happy.reduce((sum, score) => sum + score, 0) /
-                typeScores.happy.length,
-            )
-          : 0,
-      confused:
-        typeScores.confused.length > 0
-          ? Math.round(
-              typeScores.confused.reduce((sum, score) => sum + score, 0) /
-                typeScores.confused.length,
-            )
-          : 0,
-      aggressive:
-        typeScores.aggressive.length > 0
-          ? Math.round(
-              typeScores.aggressive.reduce((sum, score) => sum + score, 0) /
-                typeScores.aggressive.length,
-            )
-          : 0,
-    };
+    // Calculate average for each profile type
+    const result: Record<string, number> = {};
+    Object.entries(typeScores).forEach(([profileId, scores]) => {
+      const profile = profiles.find(p => p.id === profileId);
+      if (profile) {
+        result[profile.name.toLowerCase()] = scores.length > 0
+          ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+          : 0;
+      }
+    });
 
     return result;
-  }, [chats, rubrics]);
+  }, [chats, rubrics, profiles]);
 
   // Get top and bottom performers
   const taPerformers = useMemo(() => {
@@ -478,7 +467,7 @@ export default function Analytics() {
   };
 
   // If all data is still loading, show loading state
-  if (isLoadingUsers || isLoadingChats || isLoadingRubrics) {
+  if (isLoadingUsers || isLoadingChats || isLoadingRubrics || isLoadingProfiles) {
     return (
       <div className="flex justify-center items-center p-10">
         Loading analytics...
@@ -623,59 +612,28 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="h-4 w-4 rounded-full bg-green-500 mr-2"></div>
-                    <span className="font-medium">Happy Students</span>
+              {profiles?.map(profile => {
+                const profileConfig = getProfileConfig(profile.name);
+                const score = studentTypePerformance[profile.name.toLowerCase()] || 0;
+                
+                return (
+                  <div key={profile.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className={`h-4 w-4 rounded-full ${profileConfig.colors.bgColor} mr-2`}></div>
+                        <span className="font-medium">{profile.name} Students</span>
+                      </div>
+                      <span className="font-bold">{score}%</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full ${profileConfig.colors.bgColor} rounded-full`}
+                        style={{ width: `${score}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <span className="font-bold">
-                    {studentTypePerformance.happy}%
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-green-500 rounded-full"
-                    style={{ width: `${studentTypePerformance.happy}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="h-4 w-4 rounded-full bg-amber-500 mr-2"></div>
-                    <span className="font-medium">Confused Students</span>
-                  </div>
-                  <span className="font-bold">
-                    {studentTypePerformance.confused}%
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-amber-500 rounded-full"
-                    style={{ width: `${studentTypePerformance.confused}%` }}
-                  ></div>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="h-4 w-4 rounded-full bg-red-500 mr-2"></div>
-                    <span className="font-medium">Aggressive Students</span>
-                  </div>
-                  <span className="font-bold">
-                    {studentTypePerformance.aggressive}%
-                  </span>
-                </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-red-500 rounded-full"
-                    style={{ width: `${studentTypePerformance.aggressive}%` }}
-                  ></div>
-                </div>
-              </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

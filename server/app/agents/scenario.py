@@ -1,6 +1,6 @@
 from app.db import get_session
 from sqlmodel import Session
-from app.models import Chats
+from app.models import Chats, Scenarios, Profiles
 from fastapi import Depends
 import logging
 from app.utils.profiles import get_profile_info
@@ -9,29 +9,36 @@ from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
 from openai.types import Reasoning
 from app.extensions import get_gemini
 from pydantic import BaseModel
+from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    profile: str, user_id: str, class_id: str, session: Session = Depends(get_session)
+    profile_id: str, user_id: str, class_id: str, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the scenario agent.
-    Returns a string of the rubric id.
+    Returns a string of the chat id.
 
     Args:
-        profile: The profile of the agent
+        profile_id: The ID of the profile
         user_id: The ID of the user
+        class_id: The ID of the class
         session: The database session
 
     Returns:
-        A string of the rubric id.
+        A string of the chat id.
     """
+
+    # Get the profile to get its name for the agent
+    profile = session.exec(select(Profiles).where(Profiles.id == profile_id)).one_or_none()
+    if not profile:
+        raise ValueError(f"Profile with ID {profile_id} not found")
 
     scenario_agent = ScenarioAgent()
 
-    profile_info = get_profile_info(profile)
+    profile_info = get_profile_info(profile.name)
     class_info = get_class_info(class_id, session)
 
     input_items = [profile_info, class_info]
@@ -39,28 +46,32 @@ async def run_scenario_agent(
     result = await Runner.run(scenario_agent.agent(), input=input_items)
 
     # call the agents sdk to come up with a scenario description
-    scenario = result.final_output_as(Scenario)
+    scenario_result = result.final_output_as(Scenario)
 
-    scenario_description = scenario.scenario
-    title = scenario.title
+    # Create a scenario record
+    scenario = Scenarios(
+        name=scenario_result.title,
+        description=scenario_result.scenario
+    )
+    session.add(scenario)
+    session.commit()
+    session.refresh(scenario)
+
     # create a new chat
-    # Ensure the profile value is one of the Enum values if your DB enforces it strictly.
-    # For now, assuming the string matches.
     chat = Chats(
-        profile=profile,
+        profile_id=profile_id,
         user_id=user_id,
-        scenario_description=scenario_description,
-        title=title,
+        scenario_id=scenario.id,
+        title=scenario_result.title,
         class_id=class_id,
     )
 
     # save the chat to the database
-    # session = get_session() # get_session is a generator, use Depends
     session.add(chat)
     session.commit()
     session.refresh(chat)  # Refresh to get DB generated values like ID
 
-    logger.info(f"New chat created with ID: {chat.id} for profile: {profile}")
+    logger.info(f"New chat created with ID: {chat.id} for profile: {profile.name}")
     return chat.id
 
 

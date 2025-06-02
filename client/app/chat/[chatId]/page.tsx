@@ -29,6 +29,13 @@ import DocumentViewer from "@/components/DocumentViewer";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getClasses } from "@/utils/queries/get-classes";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { Separator } from "@/components/ui/separator";
 
 const hoverStyles = `
 .hover\\:scale-102:hover {
@@ -50,6 +57,7 @@ export default function ChatPage({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const [elapsedTime, setElapsedTime] = useState<string>("00:00");
+  const [activeSection, setActiveSection] = useState("chat");
 
   const router = useRouter();
 
@@ -332,388 +340,393 @@ export default function ChatPage({
 
   const handleBack = () => {
     queryClient.invalidateQueries({ queryKey: ["chats"] });
-    router.back();
+    router.push("/home");
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <style jsx global>
-        {hoverStyles}
-      </style>
-      <header className="bg-primary text-primary-foreground p-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={handleBack}
-              className="p-1 h-auto text-primary-foreground hover:bg-primary-foreground/20 hover:text-primary-foreground"
-              size="sm"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
-            </Button>
-            <h1 className="text-xl font-semibold">{chat?.title}</h1>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-primary-foreground/10 px-3 py-1 rounded-full">
+    <SidebarProvider>
+      <UnifiedSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
+      />
+      <SidebarInset>
+        <style jsx global>
+          {hoverStyles}
+        </style>
+        
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <div className="flex flex-1 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                onClick={handleBack}
+                className="p-1 h-auto hover:bg-accent"
+                size="sm"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+              <h1 className="text-xl font-semibold">{chat?.title || "Chat"}</h1>
+            </div>
+            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
               <Clock className="h-4 w-4" />
               <span className="text-sm font-medium">{elapsedTime}</span>
             </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div className="container mx-auto flex-1 p-4 flex flex-col min-h-0">
-        {chatLoading ? (
-          <Skeleton className="mb-4 p-3 h-16 rounded-lg w-full" />
-        ) : (
-          <Card className="mb-4 shadow-sm border bg-card">
-            <CardContent className="px-4">
-              <p className="text-sm text-card-foreground">
-                {chat?.scenarioDescription}
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col gap-4 p-4 min-h-0">
+          {chatLoading ? (
+            <Skeleton className="mb-4 p-3 h-16 rounded-lg w-full" />
+          ) : (
+            <Card className="mb-4 shadow-sm border bg-card">
+              <CardContent className="px-4">
+                <p className="text-sm text-card-foreground">
+                  Scenario ID: {chat?.scenarioId}
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
-        <div className="flex flex-1 min-h-0 gap-4">
-          {/* CHAT column - taking exactly 2/3 width */}
-          <div className={`flex flex-col w-full min-h-0`}>
-            <Card className="flex flex-col flex-1 min-h-0">
-              <CardContent className="flex-1 p-0 relative min-h-0">
-                <ScrollArea
-                  className="flex-1 h-[calc(100vh-280px)] pb-0"
-                  ref={scrollAreaRef}
-                  onScrollCapture={handleScroll}
-                >
-                  <div className="space-y-4 p-4 pb-0">
-                    {messagesLoading ? (
-                      <>
-                        <div className="flex items-start gap-3 text-sm">
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                          <div className="grid gap-1 w-full max-w-[80%]">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-20 w-full rounded-lg" />
-                          </div>
-                        </div>
-                        <div className="flex items-start gap-3 text-sm justify-end">
-                          <div className="grid gap-1 text-right w-full max-w-[80%]">
-                            <Skeleton className="h-4 w-20 ml-auto" />
-                            <Skeleton className="h-20 w-full rounded-lg" />
-                          </div>
-                          <Skeleton className="h-10 w-10 rounded-full" />
-                        </div>
-                      </>
-                    ) : (
-                      messages.map((message) => (
-                        <div key={message.id} className="space-y-4">
-                          {message.query && (
-                            <div className="flex items-start gap-3 text-sm justify-end">
-                              <div className="grid gap-1 text-right">
-                                <p className="font-medium">You</p>
-                                <div className="rounded-lg bg-muted p-3">
-                                  <Markdown>{message.query}</Markdown>
-                                </div>
-                              </div>
-                              <Avatar>
-                                <AvatarFallback>U</AvatarFallback>
-                              </Avatar>
+          <div className="flex flex-1 min-h-0 gap-4">
+            {/* CHAT column - taking exactly 2/3 width */}
+            <div className={`flex flex-col w-full min-h-0`}>
+              <Card className="flex flex-col flex-1 min-h-0">
+                <CardContent className="flex-1 p-0 relative min-h-0">
+                  <ScrollArea
+                    className="flex-1 h-[calc(100vh-280px)] pb-0"
+                    ref={scrollAreaRef}
+                    onScrollCapture={handleScroll}
+                  >
+                    <div className="space-y-4 p-4 pb-0">
+                      {messagesLoading ? (
+                        <>
+                          <div className="flex items-start gap-3 text-sm">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="grid gap-1 w-full max-w-[80%]">
+                              <Skeleton className="h-4 w-20" />
+                              <Skeleton className="h-20 w-full rounded-lg" />
                             </div>
-                          )}
-                          {message.response !== undefined &&
-                            message.query !== "" && (
-                              <div className="flex items-start gap-3 text-sm">
-                                <Avatar>
-                                  <AvatarFallback>AI</AvatarFallback>
-                                </Avatar>
-                                <div className="grid gap-1">
-                                  <p className="font-medium">Student</p>
-                                  <div className="rounded-lg bg-primary/10 p-3">
-                                    {message.response === "" ? (
-                                      <div className="flex items-center">
-                                        <span className="text-gray-500">
-                                          Analyzing
-                                        </span>
-                                        <LoadingDots />
-                                      </div>
-                                    ) : (
-                                      <Markdown>{message.response}</Markdown>
-                                    )}
+                          </div>
+                          <div className="flex items-start gap-3 text-sm justify-end">
+                            <div className="grid gap-1 text-right w-full max-w-[80%]">
+                              <Skeleton className="h-4 w-20 ml-auto" />
+                              <Skeleton className="h-20 w-full rounded-lg" />
+                            </div>
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                          </div>
+                        </>
+                      ) : (
+                        messages.map((message) => (
+                          <div key={message.id} className="space-y-4">
+                            {message.query && (
+                              <div className="flex items-start gap-3 text-sm justify-end">
+                                <div className="grid gap-1 text-right">
+                                  <p className="font-medium">You</p>
+                                  <div className="rounded-lg bg-muted p-3">
+                                    <Markdown>{message.query}</Markdown>
                                   </div>
                                 </div>
+                                <Avatar>
+                                  <AvatarFallback>U</AvatarFallback>
+                                </Avatar>
                               </div>
                             )}
-                        </div>
-                      ))
-                    )}
-                    <div ref={messagesEndRef} className="h-2" />
-                  </div>
-                </ScrollArea>
-
-                {showScrollButton && (
-                  <Button
-                    className="absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full w-10 h-10 p-0 shadow-md z-10"
-                    onClick={scrollToBottom}
-                    size="icon"
-                    variant="secondary"
-                  >
-                    <ChevronDown className="h-5 w-5" />
-                    <span className="sr-only">Scroll to bottom</span>
-                  </Button>
-                )}
-
-                {/* Show initial messages in the center of the chat area when in first message mode */}
-                {!chat?.completed && isFirstMessage && !chatLoading && (
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full max-w-4xl p-6 flex flex-col gap-4">
-                      <p className="text-sm text-center text-muted-foreground">
-                        Choose an opening message:
-                      </p>
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <Card
-                          className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
-                          onClick={() =>
-                            handleInitialMessageClick("Hi, how are you?")
-                          }
-                          tabIndex={0}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            handleInitialMessageClick("Hi, how are you?")
-                          }
-                        >
-                          <CardContent className="p-5 text-center flex items-center justify-center h-full">
-                            <p className="text-base font-medium">
-                              Hi, how are you?
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card
-                          className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
-                          onClick={() =>
-                            handleInitialMessageClick(
-                              "Hi, what can I help you with?",
-                            )
-                          }
-                          tabIndex={0}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            handleInitialMessageClick(
-                              "Hi, what can I help you with?",
-                            )
-                          }
-                        >
-                          <CardContent className="p-5 text-center flex items-center justify-center h-full">
-                            <p className="text-base font-medium">
-                              Hi, what can I help you with?
-                            </p>
-                          </CardContent>
-                        </Card>
-                        <Card
-                          className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
-                          onClick={() =>
-                            handleInitialMessageClick(
-                              `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
-                            )
-                          }
-                          tabIndex={0}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" &&
-                            handleInitialMessageClick(
-                              `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
-                            )
-                          }
-                        >
-                          <CardContent className="p-5 text-center flex items-center justify-center h-full">
-                            <p className="text-base font-medium">
-                              Hi, are you here for{" "}
-                              {
-                                classes?.find((c) => c.id === chat?.classId)
-                                  ?.classCode
-                              }
-                              ?
-                            </p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-
-              {/* Only show input area if rubric is not shown and not in first message mode */}
-              {!chat?.completed && !isFirstMessage && (
-                <CardFooter className="p-3 border-t">
-                  {chatLoading ? (
-                    <Skeleton className="w-full h-12 rounded-md" />
-                  ) : (
-                    <form
-                      onSubmit={handleSendMessage}
-                      className="flex w-full gap-3"
-                    >
-                      <div className="relative flex-1">
-                        <Input
-                          type="text"
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Type your response..."
-                          className="pr-10 py-2 text-sm"
-                          autoFocus
-                        />
-                        <Button
-                          type="submit"
-                          disabled={!newMessage.trim()}
-                          size="icon"
-                          variant="ghost"
-                          className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                        >
-                          <Send className="h-4 w-4 text-foreground" />
-                          <span className="sr-only">Send</span>
-                        </Button>
-                      </div>
-                      <Button
-                        onClick={handleEndSession}
-                        variant="destructive"
-                        disabled={endSessionLoading}
-                        className="whitespace-nowrap"
-                      >
-                        {endSessionLoading ? "Ending..." : "End Session"}
-                      </Button>
-                    </form>
-                  )}
-                </CardFooter>
-              )}
-            </Card>
-          </div>
-
-          {/* RIGHT column - taking exactly 1/3 width */}
-          {chat?.completed ? (
-            <Card className="hidden lg:flex w-1/3 shrink-0 flex-col min-h-0">
-              <CardContent className="flex-1 p-2 text-sm overflow-hidden">
-                <ScrollArea>
-                  {rubricLoading ? (
-                    <div className="space-y-4">
-                      {[...Array(4)].map((_, i) => (
-                        <div key={i} className="border-b pb-2">
-                          <div className="flex justify-between items-center">
-                            <Skeleton className="h-4 w-32" />
-                            <Skeleton className="h-4 w-8" />
+                            {message.response !== undefined &&
+                              message.query !== "" && (
+                                <div className="flex items-start gap-3 text-sm">
+                                  <Avatar>
+                                    <AvatarFallback>AI</AvatarFallback>
+                                  </Avatar>
+                                  <div className="grid gap-1">
+                                    <p className="font-medium">Student</p>
+                                    <div className="rounded-lg bg-primary/10 p-3">
+                                      {message.response === "" ? (
+                                        <div className="flex items-center">
+                                          <span className="text-gray-500">
+                                            Analyzing
+                                          </span>
+                                          <LoadingDots />
+                                        </div>
+                                      ) : (
+                                        <Markdown>{message.response}</Markdown>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                           </div>
-                          <Skeleton className="h-12 w-full mt-1" />
-                        </div>
-                      ))}
-                      <Skeleton className="h-20 w-full mt-6 rounded-lg" />
-                      <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                        ))
+                      )}
+                      <div ref={messagesEndRef} className="h-2" />
                     </div>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      <div className="border-b pb-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Active Listening</span>
-                          <span>{rubric?.listening}/5</span>
-                        </div>
-                        <p className="text-xs mt-1 text-gray-600">
-                          {rubric?.listeningFeedback || "No feedback provided"}
-                        </p>
-                      </div>
+                  </ScrollArea>
 
-                      <div className="border-b pb-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Objectives</span>
-                          <span>{rubric?.objectives}/5</span>
-                        </div>
-                        <p className="text-xs mt-1 text-gray-600">
-                          {rubric?.objectivesFeedback || "No feedback provided"}
-                        </p>
-                      </div>
+                  {showScrollButton && (
+                    <Button
+                      className="absolute left-1/2 bottom-4 -translate-x-1/2 rounded-full w-10 h-10 p-0 shadow-md z-10"
+                      onClick={scrollToBottom}
+                      size="icon"
+                      variant="secondary"
+                    >
+                      <ChevronDown className="h-5 w-5" />
+                      <span className="sr-only">Scroll to bottom</span>
+                    </Button>
+                  )}
 
-                      <div className="border-b pb-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Time Management</span>
-                          <span>{rubric?.timeManagement}/5</span>
-                        </div>
-                        <p className="text-xs mt-1 text-gray-600">
-                          {rubric?.timeManagementFeedback ||
-                            "No feedback provided"}
+                  {/* Show initial messages in the center of the chat area when in first message mode */}
+                  {!chat?.completed && isFirstMessage && !chatLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-full max-w-4xl p-6 flex flex-col gap-4">
+                        <p className="text-sm text-center text-muted-foreground">
+                          Choose an opening message:
                         </p>
-                      </div>
-
-                      <div className="border-b pb-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">Adaptability</span>
-                          <span>{rubric?.adaptability}/5</span>
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <Card
+                            className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
+                            onClick={() =>
+                              handleInitialMessageClick("Hi, how are you?")
+                            }
+                            tabIndex={0}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              handleInitialMessageClick("Hi, how are you?")
+                            }
+                          >
+                            <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                              <p className="text-base font-medium">
+                                Hi, how are you?
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card
+                            className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
+                            onClick={() =>
+                              handleInitialMessageClick(
+                                "Hi, what can I help you with?",
+                              )
+                            }
+                            tabIndex={0}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              handleInitialMessageClick(
+                                "Hi, what can I help you with?",
+                              )
+                            }
+                          >
+                            <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                              <p className="text-base font-medium">
+                                Hi, what can I help you with?
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card
+                            className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
+                            onClick={() =>
+                              handleInitialMessageClick(
+                                `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
+                              )
+                            }
+                            tabIndex={0}
+                            onKeyDown={(e) =>
+                              e.key === "Enter" &&
+                              handleInitialMessageClick(
+                                `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
+                              )
+                            }
+                          >
+                            <CardContent className="p-5 text-center flex items-center justify-center h-full">
+                              <p className="text-base font-medium">
+                                Hi, are you here for{" "}
+                                {
+                                  classes?.find((c) => c.id === chat?.classId)
+                                    ?.classCode
+                                }
+                                ?
+                              </p>
+                            </CardContent>
+                          </Card>
                         </div>
-                        <p className="text-xs mt-1 text-gray-600">
-                          {rubric?.adaptabilityFeedback ||
-                            "No feedback provided"}
-                        </p>
                       </div>
                     </div>
                   )}
+                </CardContent>
 
-                  <div className="mt-6">
-                    {rubricLoading ? (
-                      <>
-                        <Skeleton className="h-16 w-full rounded-lg" />
-                        <Skeleton className="h-10 w-full mt-6 rounded-md" />
-                      </>
+                {/* Only show input area if rubric is not shown and not in first message mode */}
+                {!chat?.completed && !isFirstMessage && (
+                  <CardFooter className="p-3 border-t">
+                    {chatLoading ? (
+                      <Skeleton className="w-full h-12 rounded-md" />
                     ) : (
-                      <>
-                        <Card
-                          className={`border-0 ${rubric?.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
-                        >
-                          <CardContent className="rounded-lg text-center font-semibold">
-                            <div className="text-xl">
-                              {rubric?.passed ? "PASSED" : "FAILED"}
-                            </div>
-                            <div className="text-sm mt-1">
-                              Score: {rubric?.score}/20
-                            </div>
-                          </CardContent>
-                        </Card>
-
+                      <form
+                        onSubmit={handleSendMessage}
+                        className="flex w-full gap-3"
+                      >
+                        <div className="relative flex-1">
+                          <Input
+                            type="text"
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type your response..."
+                            className="pr-10 py-2 text-sm"
+                            autoFocus
+                          />
+                          <Button
+                            type="submit"
+                            disabled={!newMessage.trim()}
+                            size="icon"
+                            variant="ghost"
+                            className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+                          >
+                            <Send className="h-4 w-4 text-foreground" />
+                            <span className="sr-only">Send</span>
+                          </Button>
+                        </div>
                         <Button
-                          onClick={() => router.push("/home")}
-                          className="mt-6 w-full text-sm py-2 h-auto font-medium"
-                          size="lg"
+                          onClick={handleEndSession}
+                          variant="destructive"
+                          disabled={endSessionLoading}
+                          className="whitespace-nowrap"
                         >
-                          Return to Dashboard
+                          {endSessionLoading ? "Ending..." : "End Session"}
                         </Button>
-                      </>
+                      </form>
+                    )}
+                  </CardFooter>
+                )}
+              </Card>
+            </div>
+
+            {/* RIGHT column - taking exactly 1/3 width */}
+            {chat?.completed ? (
+              <Card className="hidden lg:flex w-1/3 shrink-0 flex-col min-h-0">
+                <CardContent className="flex-1 p-2 text-sm overflow-hidden">
+                  <ScrollArea>
+                    {rubricLoading ? (
+                      <div className="space-y-4">
+                        {[...Array(4)].map((_, i) => (
+                          <div key={i} className="border-b pb-2">
+                            <div className="flex justify-between items-center">
+                              <Skeleton className="h-4 w-32" />
+                              <Skeleton className="h-4 w-8" />
+                            </div>
+                            <Skeleton className="h-12 w-full mt-1" />
+                          </div>
+                        ))}
+                        <Skeleton className="h-20 w-full mt-6 rounded-lg" />
+                        <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-4">
+                        <div className="border-b pb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Active Listening</span>
+                            <span>{rubric?.listening}/5</span>
+                          </div>
+                          <p className="text-xs mt-1 text-gray-600">
+                            {rubric?.listeningFeedback || "No feedback provided"}
+                          </p>
+                        </div>
+
+                        <div className="border-b pb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Objectives</span>
+                            <span>{rubric?.objectives}/5</span>
+                          </div>
+                          <p className="text-xs mt-1 text-gray-600">
+                            {rubric?.objectivesFeedback || "No feedback provided"}
+                          </p>
+                        </div>
+
+                        <div className="border-b pb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Time Management</span>
+                            <span>{rubric?.timeManagement}/5</span>
+                          </div>
+                          <p className="text-xs mt-1 text-gray-600">
+                            {rubric?.timeManagementFeedback ||
+                              "No feedback provided"}
+                          </p>
+                        </div>
+
+                        <div className="border-b pb-2">
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">Adaptability</span>
+                            <span>{rubric?.adaptability}/5</span>
+                          </div>
+                          <p className="text-xs mt-1 text-gray-600">
+                            {rubric?.adaptabilityFeedback ||
+                              "No feedback provided"}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-6">
+                      {rubricLoading ? (
+                        <>
+                          <Skeleton className="h-16 w-full rounded-lg" />
+                          <Skeleton className="h-10 w-full mt-6 rounded-md" />
+                        </>
+                      ) : (
+                        <>
+                          <Card
+                            className={`border-0 ${rubric?.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+                          >
+                            <CardContent className="rounded-lg text-center font-semibold">
+                              <div className="text-xl">
+                                {rubric?.passed ? "PASSED" : "FAILED"}
+                              </div>
+                              <div className="text-sm mt-1">
+                                Score: {rubric?.score}/20
+                              </div>
+                            </CardContent>
+                          </Card>
+
+                          <Button
+                            onClick={() => router.push("/home")}
+                            className="mt-6 w-full text-sm py-2 h-auto font-medium"
+                            size="lg"
+                          >
+                            Return to Dashboard
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            ) : (
+              <>
+                {(documents.length > 0 || documentsLoading) && (
+                  <div className="hidden lg:block w-1/3 shrink-0 min-h-0">
+                    {documentsLoading ? (
+                      <Card className="w-full flex flex-col min-h-0">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-center text-sm">
+                            Documents
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1 min-h-0">
+                          <Skeleton className="h-full w-full rounded-md" />
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <DocumentViewer
+                        classId={chat?.classId}
+                      />
                     )}
                   </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {(documents.filter((d) => d.profile === chat?.profile).length >
-                0 ||
-                documentsLoading) && (
-                <div className="hidden lg:block w-1/3 shrink-0 min-h-0">
-                  {documentsLoading ? (
-                    <Card className="w-full flex flex-col min-h-0">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-center text-sm">
-                          Documents
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="flex-1 min-h-0">
-                        <Skeleton className="h-full w-full rounded-md" />
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <DocumentViewer
-                      profile={chat?.profile}
-                      classId={chat?.classId}
-                    />
-                  )}
-                </div>
-              )}
-            </>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

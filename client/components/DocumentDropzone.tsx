@@ -1,8 +1,11 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import * as tus from "tus-js-client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
+import { Upload, FileText, X } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -10,28 +13,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { getClasses } from "@/utils/queries/get-classes";
-import { classes as ClassItem } from "@/drizzle/schema";
+import { cn } from "@/lib/utils";
 
 // Add document type enum
 export type DocumentTypeEnum = 'homework' | 'project' | 'quiz' | 'midterm' | 'lab';
 
-interface DocumentUploaderProps {
+interface DocumentDropzoneProps {
+  classId: string;
   onUploadComplete?: () => void;
   onProgress?: (progress: number) => void;
   onError?: (error: Error) => void;
-  inline?: boolean;
-  defaultClassId?: string;
 }
 
 interface FileUploadStatus {
@@ -42,50 +33,30 @@ interface FileUploadStatus {
   error?: string;
 }
 
-export default function DocumentUploader({
+export default function DocumentDropzone({
+  classId,
   onUploadComplete,
   onProgress,
   onError,
-  inline = false,
-  defaultClassId,
-}: DocumentUploaderProps) {
-  const [selectedClass, setSelectedClass] = useState<string>(defaultClassId || "");
-  const [selectedType, setSelectedType] = useState<DocumentTypeEnum>("homework");
-  const [isUploading, setIsUploading] = useState<boolean>(false);
+}: DocumentDropzoneProps) {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
-  const [overallProgress, setOverallProgress] = useState<number>(0);
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [selectedType, setSelectedType] = useState<DocumentTypeEnum>("homework");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
-  // Update selectedClass when defaultClassId changes
-  React.useEffect(() => {
-    if (defaultClassId && !selectedClass) {
-      setSelectedClass(defaultClassId);
-    }
-  }, [defaultClassId, selectedClass]);
+  const handleFiles = useCallback(async (files: FileList) => {
+    if (!files || files.length === 0) return;
 
-  // Fetch classes from the API
-  const { data: classes = [], isLoading: classesLoading } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getClasses(),
-  });
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || !selectedClass) {
-      toast.error(
-        "Please select files and class for document upload.",
-      );
-      return;
-    }
-
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
-
+    const fileArray = Array.from(files);
+    
     try {
       setIsUploading(true);
 
       // Create initial file upload statuses
-      const initialStatuses = files.map((file) => ({
+      const initialStatuses = fileArray.map((file) => ({
         id: crypto.randomUUID(),
         name: file.name,
         progress: 0,
@@ -96,17 +67,17 @@ export default function DocumentUploader({
 
       // Show toast for multiple files
       let toastId: string | number;
-      if (files.length > 1) {
-        toastId = toast.loading(`Uploading ${files.length} files...`);
+      if (fileArray.length > 1) {
+        toastId = toast.loading(`Uploading ${fileArray.length} files...`);
       } else {
-        toastId = toast.loading(`Uploading ${files[0].name}...`);
+        toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
       }
 
       // Get the API URL from environment
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
       // Upload each file in parallel
-      const uploadPromises = files.map((file, index) => {
+      const uploadPromises = fileArray.map((file, index) => {
         return new Promise<void>((resolve, reject) => {
           // Generate a unique file ID
           const fileId = initialStatuses[index].id;
@@ -114,9 +85,9 @@ export default function DocumentUploader({
           const tusMetadata = {
             filename: file.name,
             filetype: file.type,
-            class: selectedClass, // Using class ID
+            class: classId,
             fileId: fileId,
-            documentType: selectedType, // Add document type to metadata
+            documentType: selectedType,
           };
 
           // Create a new tus upload
@@ -174,10 +145,8 @@ export default function DocumentUploader({
               try {
                 const finalizePayload = {
                   fileId,
-                  classId: selectedClass, // Using class ID
+                  classId: classId,
                 };
-
-                console.log("Finalize payload:", finalizePayload); // Debug log
 
                 const response = await fetch(
                   `${apiUrl}/documents/tus/finalize`,
@@ -186,7 +155,7 @@ export default function DocumentUploader({
                     headers: {
                       "Content-Type": "application/json",
                     },
-                    credentials: "include", // Add credentials
+                    credentials: "include",
                     body: JSON.stringify(finalizePayload),
                   },
                 );
@@ -255,22 +224,21 @@ export default function DocumentUploader({
         toast.dismiss(toastId);
 
         // Check if all uploads were successful
-        const allSuccessful = fileUploads.every( // Re-check based on latest state
-            (f) => fileUploads.find(up => up.id === f.id)?.status === "complete"
+        const allSuccessful = fileUploads.every(
+          (f) => fileUploads.find(up => up.id === f.id)?.status === "complete"
         );
 
         // Show final toast
         if (allSuccessful) {
-          if (files.length > 1) {
-            toast.success(`All ${files.length} files uploaded successfully!`);
+          if (fileArray.length > 1) {
+            toast.success(`All ${fileArray.length} files uploaded successfully!`);
           }
-          // Single file success already toasted individually
         } else {
-          const failedCount = fileUploads.filter( // Re-check based on latest state
+          const failedCount = fileUploads.filter(
             (f) => fileUploads.find(up => up.id === f.id)?.status === "error",
           ).length;
           toast.error(
-            `${failedCount} of ${files.length} files failed to upload.`,
+            `${failedCount} of ${fileArray.length} files failed to upload.`,
           );
         }
 
@@ -278,7 +246,6 @@ export default function DocumentUploader({
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-        setSelectedClass(""); 
         setFileUploads([]);
 
         // Invalidate queries to refresh data
@@ -310,7 +277,7 @@ export default function DocumentUploader({
         onError(error);
       }
     }
-  };
+  }, [classId, selectedType, onUploadComplete, onProgress, onError, queryClient]);
 
   // Calculate overall progress across all files
   const updateOverallProgress = () => {
@@ -323,155 +290,176 @@ export default function DocumentUploader({
     const overallPercent = Math.round(totalProgress / fileUploads.length);
 
     setOverallProgress(overallPercent);
-
-    // Update toast every 10% to avoid too many updates for multiple files
-    if (overallPercent % 10 === 0 || overallPercent === 100) {
-      toast.loading(`Uploading files... ${overallPercent}%`);
-    }
   };
 
-  const uploaderFormContent = (
-    <>
-      {!defaultClassId && (
-        <div className="space-y-2">
-          <Label htmlFor="class-type">Class</Label>
-          <Select
-            value={selectedClass}
-            onValueChange={(value) => setSelectedClass(value)}
-            disabled={isUploading || classesLoading}
-          >
-            <SelectTrigger id="class-type">
-              <SelectValue
-                placeholder={
-                  classesLoading ? "Loading classes..." : "Select class"
-                }
-              />
-            </SelectTrigger>
-            <SelectContent>
-              {classes.length === 0 ? (
-                <SelectItem value="no_classes" disabled>
-                  No classes available
-                </SelectItem>
-              ) : (
-                classes.map((cls: typeof ClassItem.$inferSelect) => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    {cls.classCode}
-                    {inline ? "" : ` - ${cls.name}`}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  }, []);
 
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      handleFiles(files);
+    }
+  }, [handleFiles]);
+
+  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files);
+    }
+  }, [handleFiles]);
+
+  const handleClick = useCallback(() => {
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
+  }, [isUploading]);
+
+  const removeFile = useCallback((fileId: string) => {
+    setFileUploads((prev) => prev.filter((file) => file.id !== fileId));
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      {/* Document Type Selection */}
       <div className="space-y-2">
-        <Label htmlFor="document-type">Document Type</Label>
+        <Label htmlFor="dropzone-document-type">Document Type</Label>
         <Select
           value={selectedType}
           onValueChange={(value) => setSelectedType(value as DocumentTypeEnum)}
           disabled={isUploading}
         >
-          <SelectTrigger id="document-type">
+          <SelectTrigger id="dropzone-document-type">
             <SelectValue placeholder="Select document type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="homework">Homework</SelectItem>
-            <SelectItem value="project">Project</SelectItem>
-            <SelectItem value="quiz">Quiz</SelectItem>
-            <SelectItem value="midterm">Midterm</SelectItem>
-            <SelectItem value="lab">Lab</SelectItem>
+            <SelectItem value="homework">📝 Homework</SelectItem>
+            <SelectItem value="project">🚀 Project</SelectItem>
+            <SelectItem value="quiz">❓ Quiz</SelectItem>
+            <SelectItem value="midterm">📊 Midterm</SelectItem>
+            <SelectItem value="lab">🧪 Lab</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="document-file">Document File(s)</Label>
-        <Input
-          id="document-file"
+      {/* Dropzone */}
+      <div
+        className={cn(
+          "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
+          isDragOver
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-muted-foreground/50",
+          isUploading && "pointer-events-none opacity-50"
+        )}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={handleClick}
+      >
+        <input
           ref={fileInputRef}
           type="file"
           multiple
-          onChange={handleFileUpload}
-          disabled={
-            isUploading || (!defaultClassId && !selectedClass)
-          }
+          onChange={handleFileInputChange}
+          disabled={isUploading}
           accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
-          className="cursor-pointer"
+          className="hidden"
         />
-        {!defaultClassId && !selectedClass && (
-          <p className="text-sm text-muted-foreground mt-1">
-            Please select a class first for document upload.
+        
+        <div className="flex flex-col items-center gap-2">
+          <Upload className={cn(
+            "h-10 w-10",
+            isDragOver ? "text-primary" : "text-muted-foreground"
+          )} />
+          <div>
+            <p className="text-lg font-medium">
+              {isDragOver ? "Drop files here" : "Drag & drop files here"}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              or click to browse files
+            </p>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Supports PDF, images, Word documents, and text files
           </p>
-        )}
+        </div>
       </div>
 
-      {isUploading && fileUploads.length > 0 && !onProgress && (
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <span className="text-sm text-muted-foreground">
-              Overall Progress
-            </span>
-            <span className="text-sm font-medium">{overallProgress}%</span>
+      {/* Upload Progress */}
+      {isUploading && fileUploads.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <span className="text-sm font-medium">Overall Progress</span>
+            <span className="text-sm text-muted-foreground">{overallProgress}%</span>
           </div>
           <Progress value={overallProgress} className="h-2" />
 
           {/* Individual file progress */}
-          <div className="mt-4 space-y-3">
+          <div className="space-y-2">
             {fileUploads.map((file) => (
-              <div key={file.id} className="space-y-1">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="truncate max-w-[250px]" title={file.name}>
-                    {file.name}
-                  </span>
-                  <span
-                    className={
-                      file.status === "complete"
-                        ? "text-green-500"
-                        : file.status === "error"
-                          ? "text-red-500"
-                          : ""
-                    }
-                  >
-                    {file.status === "complete"
-                      ? "Complete"
-                      : file.status === "error"
-                        ? "Failed"
-                        : `${file.progress}%`}
-                  </span>
+              <div key={file.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
+                <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="text-sm font-medium truncate" title={file.name}>
+                      {file.name}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "text-xs",
+                        file.status === "complete"
+                          ? "text-green-600"
+                          : file.status === "error"
+                            ? "text-red-600"
+                            : "text-muted-foreground"
+                      )}>
+                        {file.status === "complete"
+                          ? "Complete"
+                          : file.status === "error"
+                            ? "Failed"
+                            : `${file.progress}%`}
+                      </span>
+                      {file.status === "error" && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          onClick={() => removeFile(file.id)}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  <Progress
+                    value={file.progress}
+                    className={cn(
+                      "h-1",
+                      file.status === "complete" && "bg-green-100",
+                      file.status === "error" && "bg-red-100"
+                    )}
+                  />
+                  {file.error && (
+                    <p className="text-xs text-red-600 mt-1">{file.error}</p>
+                  )}
                 </div>
-                <Progress
-                  value={file.progress}
-                  className={`h-1 ${
-                    file.status === "complete"
-                      ? "bg-green-100"
-                      : file.status === "error"
-                        ? "bg-red-100"
-                        : ""
-                  }`}
-                />
               </div>
             ))}
           </div>
         </div>
       )}
-    </>
+    </div>
   );
-
-  // If inline, render just the form controls without card wrapper
-  if (inline) {
-    return <div className="space-y-4">{uploaderFormContent}</div>;
-  }
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Upload Documents</CardTitle>
-        <CardDescription>
-          Upload documents for different classes.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">{uploaderFormContent}</CardContent>
-    </Card>
-  );
-}
+} 

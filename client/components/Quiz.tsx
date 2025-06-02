@@ -1,30 +1,35 @@
 /**
  * Quiz.tsx
- * Quiz creation and management for admins
- * 05/28/2023
+ * Used to create and manage quizzes for the admin dashboard
+ * @AshokSaravanan222 & @siladiea
+ * 05/20/2025
  */
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 // UI Components
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -32,31 +37,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-
-// Icons
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Plus,
   Minus,
-  Zap,
-  SmilePlus,
-  HelpCircle,
-  FileText,
   Trash2,
+  Edit,
+  Eye,
+  FileText,
+  Clock,
+  Users,
   Shuffle,
+  X,
+  Zap,
+  Smile,
+  HelpCircle,
   GripVertical,
 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import DocumentViewer from "@/components/DocumentViewer";
 
 // Queries and mutations
 import { getClasses } from "@/utils/queries/get-classes";
 import { getDocuments } from "@/utils/queries/get-documents";
+import { getProfiles } from "@/utils/queries/get-profiles";
 import { createQuiz, updateQuiz, QuizFormData as MutationQuizFormData } from "@/utils/mutations/create-quiz";
 
 interface StudentCard {
@@ -76,7 +93,7 @@ interface QuizComponentFormData {
   confusedCount: number;
   documentId: string;
   studentConfigs: Record<string, { crowdedness: number; intensity: number }>;
-  cardOrder: StudentCard[]; // New field for maintaining order
+  cardOrder: StudentCard[];
 }
 
 interface FormErrors {
@@ -87,11 +104,13 @@ interface FormErrors {
   studentCount?: string;
 }
 
-export default function Quiz() {
-  const router = useRouter();
+interface QuizProps {
+  mode?: "list" | "create";
+}
+
+export default function Quiz({ mode = "create" }: QuizProps) {
   const queryClient = useQueryClient();
   
-  const [activeTab, setActiveTab] = useState<"create" | "list">("create");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [quizToDelete, setQuizToDelete] = useState<string | null>(null);
@@ -109,11 +128,10 @@ export default function Quiz() {
     confusedCount: 0,
     documentId: "",
     studentConfigs: {},
-    cardOrder: [], // Initialize empty array
+    cardOrder: [],
   };
 
   const [formData, setFormData] = useState<QuizComponentFormData>(initialFormData);
-
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch classes and documents
@@ -127,7 +145,12 @@ export default function Quiz() {
     queryFn: getDocuments,
   });
 
-  // Fetch quizzes for the list tab
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: getProfiles,
+  });
+
+  // Fetch quizzes for the list mode
   const { data: quizzes = [] } = useQuery({
     queryKey: ["quizzes"],
     queryFn: async () => {
@@ -150,7 +173,6 @@ export default function Quiz() {
           ...quiz,
           className: quiz.className || "Unknown Class", 
           classCode: quiz.classCode || "Unknown Code",
-          // Ensure studentInteractions is always an object with expected keys
           studentInteractions: quiz.studentInteractions || { aggressive: [], happy: [], confused: [] }
         }));
       } catch (error) {
@@ -158,11 +180,11 @@ export default function Quiz() {
         return [];
       }
     },
+    enabled: mode === "list",
   });
 
   const handleInputChange = (field: keyof QuizComponentFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when user starts typing
     if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
@@ -211,7 +233,6 @@ export default function Quiz() {
       newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
     }
     
-    // Validate that at least one student is selected
     const totalStudents = formData.aggressiveCount + formData.happyCount + formData.confusedCount;
     if (totalStudents === 0) {
       newErrors.studentCount = "At least one student must be added to the quiz";
@@ -228,19 +249,18 @@ export default function Quiz() {
   };
 
   const handleEditQuizClick = (quizId: string) => {
-    const quizToEdit = quizzes.find(q => q.id === quizId);
+    const quizToEdit = quizzes.find((q: any) => q.id === quizId);
     if (quizToEdit) {
-      setActiveTab("create");
       setEditingQuizId(quizToEdit.id);
 
       const newStudentConfigs: Record<string, { crowdedness: number; intensity: number }> = {};
-      quizToEdit.studentInteractions.aggressive?.forEach((config, i) => {
+      quizToEdit.studentInteractions.aggressive?.forEach((config: any, i: number) => {
         newStudentConfigs[`aggressive-${i}`] = config;
       });
-      quizToEdit.studentInteractions.happy?.forEach((config, i) => {
+      quizToEdit.studentInteractions.happy?.forEach((config: any, i: number) => {
         newStudentConfigs[`happy-${i}`] = config;
       });
-      quizToEdit.studentInteractions.confused?.forEach((config, i) => {
+      quizToEdit.studentInteractions.confused?.forEach((config: any, i: number) => {
         newStudentConfigs[`confused-${i}`] = config;
       });
       
@@ -248,12 +268,12 @@ export default function Quiz() {
         title: quizToEdit.title,
         classId: quizToEdit.classId,
         timeLimit: quizToEdit.timeLimit,
-        documentId: quizToEdit.documentId ? quizToEdit.documentId : "none", // "none" for Select if null/undefined
+        documentId: quizToEdit.documentId ? quizToEdit.documentId : "none",
         aggressiveCount: quizToEdit.studentInteractions.aggressive?.length || 0,
         happyCount: quizToEdit.studentInteractions.happy?.length || 0,
         confusedCount: quizToEdit.studentInteractions.confused?.length || 0,
         studentConfigs: newStudentConfigs,
-        cardOrder: [], // Reset card order on edit
+        cardOrder: [],
       });
       setErrors({});
     }
@@ -261,10 +281,7 @@ export default function Quiz() {
   
   const handleCancelEdit = () => {
     resetFormAndState();
-    // Optionally switch tab or stay on create tab with a blank form
-    // setActiveTab("list"); 
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -324,7 +341,6 @@ export default function Quiz() {
         resetFormAndState();
         queryClient.invalidateQueries({ queryKey: ["quizzes"] });
         toast.success(editingQuizId ? "Quiz updated successfully!" : "Quiz created successfully!");
-        setActiveTab("list");
       } else {
         toast.error(`Failed to ${editingQuizId ? 'update' : 'create'} quiz: ${result.error}`);
       }
@@ -504,7 +520,7 @@ export default function Quiz() {
         intensityColor: "red"
       },
       happy: {
-        icon: <SmilePlus className="h-3 w-3 text-green-500" />,
+        icon: <Smile className="h-3 w-3 text-green-500" />,
         color: "border-green-200",
         intensityLabel: "Happiness (low-high)", 
         intensityScale: ["Content", "Happy", "Cheerful", "Excited", "Ecstatic"],
@@ -605,300 +621,55 @@ export default function Quiz() {
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "create" | "list")}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="create">Create Quiz</TabsTrigger>
-          <TabsTrigger value="list">Quiz List</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="create">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Quiz</CardTitle>
-              <CardDescription>
-                Create a new quiz with student interactions
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 lg:grid-cols-10 gap-2">
-                  {/* Left column: Basic quiz settings - 3/10 width */}
-                  <div className="lg:col-span-3 space-y-4 pr-2">
-                    <div>
-                      <Label className="text-sm font-medium">Quiz Title</Label>
-                      <Input
-                        placeholder="Enter quiz title"
-                        value={formData.title}
-                        onChange={(e) => handleInputChange("title", e.target.value)}
-                      />
-                      {errors.title && <p className="text-sm text-red-500">{errors.title}</p>}
+  if (mode === "list") {
+    return (
+      <div className="space-y-6">
+        <div className="grid gap-4">
+          {quizzes.length === 0 ? (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">No quizzes found</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Create your first quiz to get started with student assessments.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            quizzes.map((quiz: any) => (
+              <Card key={quiz.id} className="hover:shadow-md transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <CardTitle className="text-lg">{quiz.title}</CardTitle>
+                      <CardDescription>
+                        <Badge variant="outline" className="mr-2">
+                          {quiz.classCode}
+                        </Badge>
+                        <span className="inline-flex items-center text-sm text-muted-foreground">
+                          <Clock className="h-4 w-4 mr-1" />
+                          {quiz.timeLimit} minutes
+                        </span>
+                        <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
+                          <Users className="h-4 w-4 mr-1" />
+                          {(quiz.studentInteractions?.aggressive?.length || 0) +
+                           (quiz.studentInteractions?.happy?.length || 0) +
+                           (quiz.studentInteractions?.confused?.length || 0)} students
+                        </span>
+                      </CardDescription>
                     </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Class</Label>
-                      <Select
-                        value={formData.classId}
-                        onValueChange={(value) => handleInputChange("classId", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select class" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classes.map((cls) => (
-                            <SelectItem key={cls.id} value={cls.id}>
-                              {cls.classCode} - {cls.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      {errors.classId && <p className="text-sm text-red-500">{errors.classId}</p>}
-                    </div>
-
-                    <div>
-                      <Label className="text-sm font-medium">Document (Optional)</Label>
-                      <div className="flex space-x-2">
-                        <Select
-                          value={formData.documentId}
-                          onValueChange={(value) => handleInputChange("documentId", value)}
-                        >
-                          <SelectTrigger className="flex-1">
-                            <SelectValue placeholder="Select document (optional)" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">No document</SelectItem>
-                            {documents.map((doc) => (
-                              <SelectItem key={doc.id} value={doc.id}>
-                                {doc.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          onClick={() => {
-                            if (formData.documentId && formData.documentId !== "none") {
-                              const doc = documents.find(d => d.id === formData.documentId);
-                              if (doc) {
-                                setPreviewDocument(doc);
-                                setShowDocumentModal(true);
-                              }
-                            } else {
-                              toast.info("No document selected");
-                            }
-                          }}
-                          disabled={!formData.documentId || formData.documentId === "none"}
-                        >
-                          <FileText className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {errors.documentId && <p className="text-sm text-red-500">{errors.documentId}</p>}
-                    </div>
-
-                    {/* Smaller Time Limit Input */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-sm font-medium">Time Limit</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input
-                            type="number"
-                            min={1}
-                            max={120}
-                            value={formData.timeLimit}
-                            onChange={(e) => handleInputChange("timeLimit", parseInt(e.target.value))}
-                            className="w-20"
-                          />
-                          <span className="text-sm text-muted-foreground">minutes</span>
-                        </div>
-                        {errors.timeLimit && <p className="text-sm text-red-500">{errors.timeLimit}</p>}
-                      </div>
-                    </div>
-
-                    {/* Student Type Counters */}
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium">Student Types</h3>
-                        {errors.studentCount && (
-                          <p className="text-sm text-red-500">{errors.studentCount}</p>
-                        )}
-                      </div>
-                      
-                      {/* Aggressive Students */}
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4 text-red-500" />
-                          <span className="text-sm font-medium">Aggressive</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("aggressiveCount", -1)}
-                            disabled={formData.aggressiveCount <= 0}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{formData.aggressiveCount}</span>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("aggressiveCount", 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Happy Students */}
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <SmilePlus className="h-4 w-4 text-green-500" />
-                          <span className="text-sm font-medium">Happy</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("happyCount", -1)}
-                            disabled={formData.happyCount <= 0}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{formData.happyCount}</span>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("happyCount", 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Confused Students */}
-                      <div className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <HelpCircle className="h-4 w-4 text-yellow-500" />
-                          <span className="text-sm font-medium">Confused</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("confusedCount", -1)}
-                            disabled={formData.confusedCount <= 0}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="w-8 text-center text-sm">{formData.confusedCount}</span>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="outline"
-                            className="h-8 w-8"
-                            onClick={() => adjustCount("confusedCount", 1)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vertical separator - minimal space */}
-                  <div className="hidden lg:flex lg:col-span-1 justify-center pl-1 pr-1">
-                    <Separator orientation="vertical" className="h-full" />
-                  </div>
-
-                  {/* Horizontal separator for mobile */}
-                  <div className="lg:hidden col-span-full">
-                    <Separator className="w-full" />
-                  </div>
-
-                  {/* Right column: Student cards - 6/10 width */}
-                  <div className="lg:col-span-6 pl-2">
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <h3 className="font-medium">Student Order</h3>
-                        {formData.cardOrder.length > 1 && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={randomizeCards}
-                            className="flex items-center gap-2"
-                          >
-                            <Shuffle className="h-4 w-4" />
-                            Randomize
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <ScrollArea className="h-[600px] pr-4">
-                        {renderDraggableCards()}
-                      </ScrollArea>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-2">
-                  {editingQuizId && (
-                    <Button type="button" variant="outline" onClick={handleCancelEdit} disabled={isSubmitting}>
-                      Cancel
-                    </Button>
-                  )}
-                  <Button 
-                    type="submit" 
-                    disabled={isSubmitting || (formData.aggressiveCount + formData.happyCount + formData.confusedCount === 0)}
-                  >
-                    {isSubmitting ? (editingQuizId ? "Saving..." : "Creating...") : (editingQuizId ? "Save Changes" : "Create Quiz")}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="list">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {quizzes.map((quiz) => {
-              // Calculate student counts from studentInteractions
-              const interactions = quiz.studentInteractions || { aggressive: [], happy: [], confused: [] };
-              const aggressiveCount = interactions.aggressive?.length || 0;
-              const happyCount = interactions.happy?.length || 0;
-              const confusedCount = interactions.confused?.length || 0;
-              const totalStudents = aggressiveCount + happyCount + confusedCount;
-              
-              return (
-                <Card key={quiz.id} className="group hover:shadow-md transition-all cursor-pointer">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1" onClick={() => handleEditQuizClick(quiz.id)}>
-                        <CardTitle className="text-lg leading-tight">{quiz.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {quiz.className || "Unknown class"}
-                        </CardDescription>
-                      </div>
+                    <div className="flex gap-2">
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive/80 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditQuizClick(quiz.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
                           setQuizToDelete(quiz.id);
                           setShowDeleteDialog(true);
                         }}
@@ -906,79 +677,326 @@ export default function Quiz() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="pt-0" onClick={() => handleEditQuizClick(quiz.id)}>
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Time Limit:</span>
-                        <span className="font-medium">{quiz.timeLimit} minutes</span>
-                      </div>
-                      
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Total Students:</span>
-                        <span className="font-medium">{totalStudents}</span>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        {aggressiveCount > 0 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="flex items-center">
-                              <Zap className="h-3 w-3 text-red-500 mr-1" /> Aggressive:
-                            </span>
-                            <span>{aggressiveCount}</span>
-                          </div>
-                        )}
-                        {happyCount > 0 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="flex items-center">
-                              <SmilePlus className="h-3 w-3 text-green-500 mr-1" /> Happy:
-                            </span>
-                            <span>{happyCount}</span>
-                          </div>
-                        )}
-                        {confusedCount > 0 && (
-                          <div className="flex justify-between text-xs">
-                            <span className="flex items-center">
-                              <HelpCircle className="h-3 w-3 text-yellow-500 mr-1" /> Confused:
-                            </span>
-                            <span>{confusedCount}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-            
-            {quizzes.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center h-64 border rounded-lg border-dashed">
-                <h3 className="font-medium text-lg mb-2">No quizzes found</h3>
-                <p className="text-muted-foreground mb-4">Create a quiz to get started</p>
-                <Button onClick={() => setActiveTab("create")}>Create Quiz</Button>
+                  </div>
+                </CardHeader>
+              </Card>
+            ))
+          )}
+        </div>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Quiz</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this quiz? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteQuiz}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
+
+  // Create mode - render the full create form
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">
+            {editingQuizId ? "Edit Quiz" : "Create Quiz"}
+          </h2>
+          <p className="text-muted-foreground">
+            {editingQuizId ? "Update quiz settings and student configurations" : "Set up a new quiz with AI student interactions"}
+          </p>
+        </div>
+        {editingQuizId && (
+          <Button variant="outline" onClick={handleCancelEdit}>
+            <X className="h-4 w-4 mr-2" />
+            Cancel Edit
+          </Button>
+        )}
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Basic Quiz Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Quiz Information</CardTitle>
+            <CardDescription>
+              Basic details about your quiz
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Quiz Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => handleInputChange("title", e.target.value)}
+                placeholder="Enter quiz title"
+                className={errors.title ? "border-destructive" : ""}
+              />
+              {errors.title && (
+                <p className="text-sm text-destructive">{errors.title}</p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="class">Class</Label>
+                <Select
+                  value={formData.classId}
+                  onValueChange={(value) => handleInputChange("classId", value)}
+                >
+                  <SelectTrigger className={errors.classId ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls: any) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.classCode} - {cls.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.classId && (
+                  <p className="text-sm text-destructive">{errors.classId}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+                <Input
+                  id="timeLimit"
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={formData.timeLimit}
+                  onChange={(e) => handleInputChange("timeLimit", parseInt(e.target.value) || 0)}
+                  className={errors.timeLimit ? "border-destructive" : ""}
+                />
+                {errors.timeLimit && (
+                  <p className="text-sm text-destructive">{errors.timeLimit}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="document">Reference Document (Optional)</Label>
+              <div className="flex gap-2">
+                <Select
+                  value={formData.documentId}
+                  onValueChange={(value) => handleInputChange("documentId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a document" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No document</SelectItem>
+                    {documents.map((doc: any) => (
+                      <SelectItem key={doc.id} value={doc.id}>
+                        {doc.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {formData.documentId && formData.documentId !== "none" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      const doc = documents.find((d: any) => d.id === formData.documentId);
+                      if (doc) {
+                        setPreviewDocument(doc);
+                        setShowDocumentModal(true);
+                      }
+                    }}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Student Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Student Configuration</CardTitle>
+            <CardDescription>
+              Configure the AI students that will participate in this quiz
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Student Type Counters */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Aggressive Students */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-red-500" />
+                  <Label>Aggressive Students</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("aggressiveCount", -1)}
+                    disabled={formData.aggressiveCount === 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-8 text-center font-medium">
+                    {formData.aggressiveCount}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("aggressiveCount", 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Happy Students */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Smile className="h-4 w-4 text-green-500" />
+                  <Label>Happy Students</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("happyCount", -1)}
+                    disabled={formData.happyCount === 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-8 text-center font-medium">
+                    {formData.happyCount}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("happyCount", 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Confused Students */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4 text-yellow-500" />
+                  <Label>Confused Students</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("confusedCount", -1)}
+                    disabled={formData.confusedCount === 0}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <span className="w-8 text-center font-medium">
+                    {formData.confusedCount}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => adjustCount("confusedCount", 1)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {errors.studentCount && (
+              <p className="text-sm text-destructive">{errors.studentCount}</p>
+            )}
+
+            {/* Student Interaction Order */}
+            {formData.cardOrder.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-medium">Student Interaction Order</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Drag and drop to reorder students, or click randomize
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={randomizeCards}
+                    className="flex items-center gap-2"
+                  >
+                    <Shuffle className="h-4 w-4" />
+                    Randomize
+                  </Button>
+                </div>
+                
+                <Separator />
+                
+                {renderDraggableCards()}
               </div>
             )}
-          </div>
-        </TabsContent>
-      </Tabs>
+          </CardContent>
+        </Card>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent>
+        {/* Submit Button */}
+        <div className="flex justify-end gap-4">
+          <Button
+            type="submit"
+            disabled={isSubmitting}
+            className="min-w-[120px]"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                {editingQuizId ? "Updating..." : "Creating..."}
+              </>
+            ) : (
+              editingQuizId ? "Update Quiz" : "Create Quiz"
+            )}
+          </Button>
+        </div>
+      </form>
+
+      {/* Document Preview Modal */}
+      <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
           <DialogHeader>
-            <DialogTitle>Delete Quiz</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this quiz? This action cannot be undone and will also delete any quiz attempts.
-            </DialogDescription>
+            <DialogTitle>Document Preview: {previewDocument?.name}</DialogTitle>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDeleteDialog(false)} disabled={isDeleting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDeleteQuiz} disabled={isDeleting}>
-              {isDeleting ? "Deleting..." : "Delete Quiz"}
-            </Button>
-          </DialogFooter>
+          <div className="flex-1 overflow-hidden">
+            {previewDocument && (
+              <DocumentViewer document={previewDocument} />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </div>

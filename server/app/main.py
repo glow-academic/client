@@ -13,16 +13,14 @@ from app.models import Chats
 from app.routes.chat import router as chat_router
 from app.routes.documents import router as documents_router
 from app.routes.report import router as report_router
-from app.routes import quiz  # Add the quiz import
+from app.routes.quiz import router as quiz_router
 from app.db import init_db, get_session
 
 app = FastAPI(title="GLOW Chat API", on_startup=[init_db])
 app.include_router(chat_router, prefix="/chat")
 app.include_router(documents_router, prefix="/documents")
 app.include_router(report_router, prefix="/report")
-# Add the quiz router
-app.include_router(quiz.router, prefix="/quiz", tags=["quiz"])
-app.include_router(quiz.router, prefix="/quizzes", tags=["quiz"])  # Alternative plural path
+app.include_router(quiz_router, prefix="/quiz")
 
 # Add CORS middleware
 app.add_middleware(

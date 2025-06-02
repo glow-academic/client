@@ -17,9 +17,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   ArrowLeft,
   UserCheck,
-  Smile,
-  HelpCircle,
-  AlertCircle,
   Download,
   Loader2,
 } from "lucide-react";
@@ -40,9 +37,12 @@ import { useQuery } from "@tanstack/react-query";
 import { getUsers } from "@/utils/queries/get-users";
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
+import { getProfiles } from "@/utils/queries/get-profiles";
 import { format, compareAsc, startOfDay, subDays } from "date-fns";
-import { updateClassThresholds } from "@/utils/mutations/update-class-thresholds";
+import { updateProfile } from "@/utils/mutations/update-profile";
 import { toast } from "sonner";
+import { getProfileConfig, getKnownProfileNames, getProfileDefaultThreshold } from "@/utils/profiles";
+
 // Interface for Teaching Assistant with scores
 interface TeachingAssistant {
   id: string;
@@ -83,6 +83,12 @@ export default function ClassDetailsPage({
     queryFn: () => getAllChats(),
   });
 
+  // Fetch profiles
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getProfiles(),
+  });
+
   // Fetch rubrics (after chats are loaded)
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["all-rubrics"],
@@ -90,37 +96,38 @@ export default function ClassDetailsPage({
     enabled: !!chats && chats.length > 0,
   });
 
-  // Student behavior controls - initialize with class thresholds if available
-  const [happyLevel, setHappyLevel] = useState<number>(
-    classData?.happyThreshold || 50,
-  );
-  const [confusedLevel, setConfusedLevel] = useState<number>(
-    classData?.confusedThreshold || 30,
-  );
-  const [angryLevel, setAngryLevel] = useState<number>(
-    classData?.aggressiveThreshold || 20,
-  );
+  // Dynamic profile thresholds based on available profiles
+  const [profileThresholds, setProfileThresholds] = useState<Record<string, number>>({});
 
-  // Update sliders when class data loads
+  // Initialize profile thresholds when profiles load
   useEffect(() => {
-    if (classData) {
-      setHappyLevel(classData.happyThreshold);
-      setConfusedLevel(classData.confusedThreshold);
-      setAngryLevel(classData.aggressiveThreshold);
+    if (profiles && profiles.length > 0) {
+      const initialThresholds: Record<string, number> = {};
+      profiles.forEach(profile => {
+        initialThresholds[profile.id] = profile.threshold || getProfileDefaultThreshold(profile.name);
+      });
+      setProfileThresholds(initialThresholds);
     }
-  }, [classData]);
+  }, [profiles]);
 
-  // For emotion tab state
-  const [activeEmotion, setActiveEmotion] = useState<
-    "happy" | "confused" | "angry"
-  >("happy");
+  // For emotion tab state - use first available profile as default
+  const [activeEmotion, setActiveEmotion] = useState<string>("happy");
+
+  // Update active emotion when profiles load
+  useEffect(() => {
+    if (profiles && profiles.length > 0) {
+      // Try to find a known profile, otherwise use the first one
+      const knownProfile = profiles.find(p => getKnownProfileNames().includes(p.name.toLowerCase()));
+      setActiveEmotion(knownProfile?.name.toLowerCase() || profiles[0].name.toLowerCase());
+    }
+  }, [profiles]);
 
   // Calculate TAs and their average scores
   const teachingAssistants = useMemo<TeachingAssistant[]>(() => {
     if (!users || !chats || !rubrics) return [];
 
     // Filter for non-admin users
-    const nonAdminUsers = users.filter((user) => !user.admin);
+    const nonAdminUsers = users.filter((user) => user.role !== "admin");
 
     // Group chats by user ID
     const chatsByUser: Record<string, any[]> = {};
@@ -205,48 +212,47 @@ export default function ClassDetailsPage({
 
   // Generate emotion data based on chat profiles
   const taEmotionData = useMemo(() => {
-    if (!teachingAssistants || !chats || !rubrics) return [];
+    if (!teachingAssistants || !chats || !rubrics || !profiles) return [];
 
     return teachingAssistants.map((ta) => {
       // Get all chats for this TA
       const taChats = chats.filter((chat) => chat.userId === ta.id);
 
-      // Count interactions by profile type
-      const profileCounts: Record<string, number> = {
-        happy: 0,
-        confused: 0,
-        angry: 0,
-      };
+      // Count interactions by profile
+      const profileCounts: Record<string, number> = {};
+      
+      // Initialize counts for all profiles
+      profiles.forEach(profile => {
+        profileCounts[profile.name.toLowerCase()] = 0;
+      });
 
       // Group by profile
       taChats.forEach((chat) => {
-        const profile = chat.profile.toLowerCase();
-        // Map 'aggressive' to 'angry' for the UI
-        const uiProfile = profile === "aggressive" ? "angry" : profile;
-
-        if (profileCounts[uiProfile] !== undefined) {
-          profileCounts[uiProfile]++;
+        const profile = profiles.find(p => p.id === chat.profileId);
+        if (profile) {
+          const profileKey = profile.name.toLowerCase();
+          profileCounts[profileKey] = (profileCounts[profileKey] || 0) + 1;
         }
       });
 
       // Calculate percentages
       const total = taChats.length || 1; // Avoid division by zero
-      const happy = Math.round((profileCounts.happy / total) * 100);
-      const confused = Math.round((profileCounts.confused / total) * 100);
-      const angry = Math.round((profileCounts.angry / total) * 100);
-
-      return {
+      const result: any = {
         id: ta.id,
         name:
           ta.name.split(" ")[0] +
           " " +
           (ta.name.split(" ")[1] ? ta.name.split(" ")[1][0] + "." : ""),
-        happy,
-        confused,
-        angry,
       };
+
+      // Add percentage for each profile
+      Object.entries(profileCounts).forEach(([profileName, count]) => {
+        result[profileName] = Math.round((count / total) * 100);
+      });
+
+      return result;
     });
-  }, [teachingAssistants, chats, rubrics]);
+  }, [teachingAssistants, chats, rubrics, profiles]);
 
   // Get initials for avatar
   const getInitials = (name: string) => {
@@ -268,7 +274,7 @@ export default function ClassDetailsPage({
   }>({});
 
   // If data is loading, show loading state
-  if (isLoadingClass || isLoadingUsers || isLoadingChats || isLoadingRubrics) {
+  if (isLoadingClass || isLoadingUsers || isLoadingChats || isLoadingRubrics || isLoadingProfiles) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p>Loading course details...</p>
@@ -293,21 +299,26 @@ export default function ClassDetailsPage({
   // Apply behavior changes
   const handleApplyBehaviorChanges = async () => {
     try {
-      const { success, error } = await updateClassThresholds(
-        classId,
-        happyLevel,
-        confusedLevel,
-        angryLevel,
-      );
-      if (success) {
-        toast.success(
-          `Applied behavior settings: Happy (${happyLevel}%), Confused (${confusedLevel}%), Angry (${angryLevel}%)`,
-        );
+      // Update individual profile thresholds
+      const updatePromises = Object.entries(profileThresholds).map(([profileId, threshold]) => {
+        const profile = profiles?.find(p => p.id === profileId);
+        if (profile) {
+          return updateProfile(profileId, profile.name, profile.subtitle, profile.description, threshold);
+        }
+        return Promise.resolve({ success: true, error: "" });
+      });
+
+      const results = await Promise.all(updatePromises);
+      const failedUpdates = results.filter(result => !result.success);
+
+      if (failedUpdates.length === 0) {
+        toast.success("Applied behavior settings successfully");
       } else {
-        toast.error(`Error applying behavior changes: ${error}`);
+        toast.error(`Error applying some behavior changes`);
       }
     } catch (error) {
       console.error("Error applying behavior changes:", error);
+      toast.error("Failed to apply behavior changes");
     }
   };
 
@@ -482,84 +493,45 @@ export default function ClassDetailsPage({
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow overflow-y-auto">
-              {/* Happy students control */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Smile className="h-4 w-4 mr-2 text-green-500" />
-                    <span className="font-medium">Happy Students</span>
-                  </div>
-                  <span className="text-sm font-semibold">{happyLevel}%</span>
-                </div>
-                <Slider
-                  value={[happyLevel]}
-                  onValueChange={(values) => setHappyLevel(values[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="[&>.data-[value]:bg-green-500]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  These students are engaged, understanding the material well,
-                  and responsive to teaching.
-                </p>
-              </div>
+              {/* Dynamic profile controls */}
+              {profiles?.map(profile => {
+                const profileConfig = getProfileConfig(profile.name);
+                const IconComponent = profileConfig.icon;
+                const threshold = profileThresholds[profile.id] || profile.threshold || profileConfig.defaultThreshold;
 
-              {/* Confused students control */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <HelpCircle className="h-4 w-4 mr-2 text-amber-500" />
-                    <span className="font-medium">Confused Students</span>
+                return (
+                  <div key={profile.id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <IconComponent className={`h-4 w-4 mr-2 ${profileConfig.colors.iconColor}`} />
+                        <span className="font-medium">{profile.name} Students</span>
+                      </div>
+                      <span className="text-sm font-semibold">{threshold}%</span>
+                    </div>
+                    <Slider
+                      value={[threshold]}
+                      onValueChange={(values) => setProfileThresholds(prev => ({
+                        ...prev,
+                        [profile.id]: values[0]
+                      }))}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className={`[&>.data-[value]:${profileConfig.colors.bgColor}]`}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {profileConfig.description}
+                    </p>
                   </div>
-                  <span className="text-sm font-semibold">
-                    {confusedLevel}%
-                  </span>
-                </div>
-                <Slider
-                  value={[confusedLevel]}
-                  onValueChange={(values) => setConfusedLevel(values[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="[&>.data-[value]:bg-amber-500]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  These students struggle to understand concepts and require
-                  additional explanation and patience.
-                </p>
-              </div>
-
-              {/* Angry students control */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <AlertCircle className="h-4 w-4 mr-2 text-red-500" />
-                    <span className="font-medium">Angry Students</span>
-                  </div>
-                  <span className="text-sm font-semibold">{angryLevel}%</span>
-                </div>
-                <Slider
-                  value={[angryLevel]}
-                  onValueChange={(values) => setAngryLevel(values[0])}
-                  min={0}
-                  max={100}
-                  step={5}
-                  className="[&>.data-[value]:bg-red-500]"
-                />
-                <p className="text-xs text-muted-foreground">
-                  These students are frustrated, possibly confrontational, and
-                  need careful handling to resolve issues.
-                </p>
-              </div>
+                );
+              })}
             </CardContent>
             <CardFooter className="flex flex-col gap-2 flex-shrink-0">
               <Button className="w-full" onClick={handleApplyBehaviorChanges}>
                 Apply Behavior Changes
               </Button>
               <p className="text-xs text-center text-muted-foreground">
-                Changes will affect all new interactions with TAs in this
-                course.
+                Changes will affect all new interactions with TAs in this course.
               </p>
             </CardFooter>
           </Card>
@@ -604,36 +576,22 @@ export default function ClassDetailsPage({
                     Student Emotional Response
                   </h3>
                   <div className="flex items-center bg-secondary rounded-md p-0.5">
-                    <button
-                      onClick={() => setActiveEmotion("happy")}
-                      className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${
-                        activeEmotion === "happy"
-                          ? "bg-background shadow"
-                          : "hover:bg-secondary-foreground/10"
-                      }`}
-                    >
-                      Happy
-                    </button>
-                    <button
-                      onClick={() => setActiveEmotion("confused")}
-                      className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${
-                        activeEmotion === "confused"
-                          ? "bg-background shadow"
-                          : "hover:bg-secondary-foreground/10"
-                      }`}
-                    >
-                      Confused
-                    </button>
-                    <button
-                      onClick={() => setActiveEmotion("angry")}
-                      className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${
-                        activeEmotion === "angry"
-                          ? "bg-background shadow"
-                          : "hover:bg-secondary-foreground/10"
-                      }`}
-                    >
-                      Angry
-                    </button>
+                    {profiles?.map(profile => {
+                      const profileName = profile.name.toLowerCase();
+                      return (
+                        <button
+                          key={profile.id}
+                          onClick={() => setActiveEmotion(profileName)}
+                          className={`px-2.5 py-1 text-xs rounded-sm transition-colors ${
+                            activeEmotion === profileName
+                              ? "bg-background shadow"
+                              : "hover:bg-secondary-foreground/10"
+                          }`}
+                        >
+                          {profile.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -648,33 +606,24 @@ export default function ClassDetailsPage({
                       <XAxis dataKey="name" axisLine={true} tickLine={true} />
                       <YAxis domain={[0, 100]} />
                       <Tooltip />
-                      {activeEmotion === "happy" && (
-                        <Bar
-                          dataKey="happy"
-                          name="Happy"
-                          fill="#10b981"
-                          minPointSize={3}
-                          isAnimationActive={true}
-                        />
-                      )}
-                      {activeEmotion === "confused" && (
-                        <Bar
-                          dataKey="confused"
-                          name="Confused"
-                          fill="#f59e0b"
-                          minPointSize={3}
-                          isAnimationActive={true}
-                        />
-                      )}
-                      {activeEmotion === "angry" && (
-                        <Bar
-                          dataKey="angry"
-                          name="Angry"
-                          fill="#ef4444"
-                          minPointSize={3}
-                          isAnimationActive={true}
-                        />
-                      )}
+                      {profiles?.map(profile => {
+                        const profileName = profile.name.toLowerCase();
+                        const profileConfig = getProfileConfig(profile.name);
+                        
+                        if (activeEmotion === profileName) {
+                          return (
+                            <Bar
+                              key={profile.id}
+                              dataKey={profileName}
+                              name={profile.name}
+                              fill={profileConfig.colors.iconColor.replace('text-', '#')}
+                              minPointSize={3}
+                              isAnimationActive={true}
+                            />
+                          );
+                        }
+                        return null;
+                      })}
                     </RechartsBarChart>
                   </ResponsiveContainer>
                 </div>

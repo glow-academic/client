@@ -7,7 +7,7 @@ import os
 import tempfile
 from datetime import datetime
 import statistics
-from app.models import Users, Chats, Rubrics
+from app.models import Users, Chats, Rubrics, Profiles
 from typing import Dict, List, Tuple
 from collections import defaultdict
 
@@ -226,14 +226,20 @@ async def get_report(
         # 1. Student type distribution
         chat_profiles = defaultdict(int)
         for chat in chats:
-            chat_profiles[chat.profile] += 1
+            # Get the profile name from the profile_id
+            profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
+            if profile:
+                chat_profiles[profile.name] += 1
 
         # 2. Performance by student type
         performance_by_type = defaultdict(list)
         for chat in chats:
-            for rubric in rubrics:
-                if rubric.chat_id == chat.id:
-                    performance_by_type[chat.profile].append(rubric.score)
+            # Get the profile name from the profile_id
+            profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
+            if profile:
+                for rubric in rubrics:
+                    if rubric.chat_id == chat.id:
+                        performance_by_type[profile.name].append(rubric.score)
 
         # 3. Average scores for different categories
         avg_scores = {

@@ -36,17 +36,12 @@ router = APIRouter()
 @router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
-    profile: str = Form(...),
     class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
     Upload a document using regular multipart form data
     """
-    # Validate profile
-    if profile not in ["aggressive", "happy", "confused"]:
-        raise HTTPException(status_code=400, detail="Invalid profile type")
-    
     if class_id is None:
         raise HTTPException(status_code=400, detail="Class ID is required")
 
@@ -73,7 +68,6 @@ async def upload_document(
         name=file.filename,
         file_path=file_path,
         mime_type=file.content_type,
-        profile=profile,
         class_id=class_id,
     )
 
@@ -319,6 +313,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
         file_id = body.get("fileId")
         profile = body.get("profile")
         class_id = body.get("classId")
+        is_csv = body.get("csv", False)
 
         if not file_id:
             return JSONResponse(
@@ -326,19 +321,88 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                 content={"status": "error", "message": "Missing fileId parameter"},
             )
 
-        if not profile:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Missing profile parameter"},
-            )
+        # Handle CSV uploads differently
+        if is_csv:
+            # Find the upload directory
+            upload_dir = None
+            for dir_name in os.listdir(TUS_UPLOADS_DIR):
+                metadata_path = os.path.join(TUS_UPLOADS_DIR, dir_name, "metadata.json")
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, "r") as f:
+                        metadata = json.load(f)
+                        if metadata.get("fileId") == file_id:
+                            upload_dir = os.path.join(TUS_UPLOADS_DIR, dir_name)
+                            break
 
-        # Validate profile
-        if profile not in ["aggressive", "happy", "confused"]:
-            return JSONResponse(
-                status_code=400,
-                content={"status": "error", "message": "Invalid profile type"},
-            )
+            if not upload_dir:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "error",
+                        "message": f"Upload with fileId {file_id} not found",
+                    },
+                )
 
+            # Get the uploaded file path
+            file_path = os.path.join(upload_dir, "file")
+
+            # Check if file exists and has content
+            if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Upload file is missing or empty",
+                    },
+                )
+
+            # Process CSV file
+            try:
+                from app.utils.csv import process_csv_file
+                result = process_csv_file(file_path, session)
+                
+                # Clean up the TUS upload directory
+                try:
+                    shutil.rmtree(upload_dir)
+                    logger.info(f"Cleaned up TUS upload directory: {upload_dir}")
+                except Exception as cleanup_error:
+                    logger.warning(
+                        f"Failed to clean up TUS upload directory: {str(cleanup_error)}"
+                    )
+
+                if result["success"]:
+                    return JSONResponse(
+                        status_code=200,
+                        content={
+                            "status": "success",
+                            "message": f"CSV processed successfully. Created {result['users_created']} users, skipped {result['users_skipped']} users.",
+                            "users_created": result["users_created"],
+                            "users_skipped": result["users_skipped"],
+                            "errors": result.get("errors", []),
+                            "created_users": result.get("created_users", []),
+                            "skipped_users": result.get("skipped_users", [])
+                        },
+                    )
+                else:
+                    return JSONResponse(
+                        status_code=400,
+                        content={
+                            "status": "error",
+                            "message": result["error"],
+                        },
+                    )
+                    
+            except Exception as csv_error:
+                logger.error(f"Error processing CSV file: {str(csv_error)}")
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "status": "error",
+                        "message": f"Failed to process CSV file: {str(csv_error)}",
+                    },
+                )
+
+        # Handle regular document uploads
         if not class_id:
             return JSONResponse(
                 status_code=400,
@@ -408,7 +472,6 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
             name=filename,
             file_path=final_file_path,
             mime_type=metadata.get("filetype", "application/octet-stream"),
-            profile=profile,
             class_id=class_id,
         )
 

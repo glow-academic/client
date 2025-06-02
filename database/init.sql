@@ -1,46 +1,98 @@
 -- Enable the gen_random_uuid() function
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
--- custom enum for chat "profiles"
-CREATE TYPE chat_profile AS ENUM ('aggressive', 'happy', 'confused');
+-- ============================================================================
+-- TABLE DEFINITIONS
+-- ============================================================================
+
+CREATE TYPE user_role AS ENUM ('admin', 'instructional', 'instructor', 'ta', 'guest');
+CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus');
+CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophmore', 'junior', 'senior');
+CREATE TYPE class_term AS ENUM ('fall', 'spring', 'summer');
+
+CREATE TABLE profiles (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  subtitle   TEXT        NOT NULL,
+  description TEXT        NOT NULL,
+  threshold INTEGER NOT NULL -- 0-100
+);
+
+CREATE TABLE scenarios (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL
+);
 
 CREATE TABLE classes (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,  
   class_code TEXT        NOT NULL,
+  year       INTEGER     NOT NULL,
+  term class_term        NOT NULL           DEFAULT 'fall',
   description TEXT        NOT NULL,
-  aggressive_threshold INTEGER NOT NULL, -- 0-100
-  happy_threshold INTEGER NOT NULL, -- 0-100
-  confused_threshold INTEGER NOT NULL -- 0-100
+  profile_ids UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[]
 );
 
--- 1) users table
 CREATE TABLE users (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   viewed_intro BOOLEAN     NOT NULL           DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  admin      BOOLEAN     NOT NULL           DEFAULT FALSE,
+  role       user_role   NOT NULL           DEFAULT 'guest',
   name       TEXT        NOT NULL,
   username   TEXT        NOT NULL UNIQUE,
   password   TEXT        NOT NULL,
-  classes    UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[]
+  class_ids    UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[]
 );
 
--- 2) chats table
+CREATE TABLE documents (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  file_path  TEXT        NOT NULL,
+  mime_type  TEXT        NOT NULL,
+  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+  type       document_type   NOT NULL           DEFAULT 'homework'
+);
+
+CREATE TABLE templates (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  profile_id UUID        NOT NULL REFERENCES profiles(id)  ON DELETE CASCADE,
+  crowdedness INTEGER     NOT NULL,
+  intensity INTEGER     NOT NULL,
+  seniority seniority_levels NOT NULL             DEFAULT 'freshman'
+
+);
+
+CREATE TABLE quizzes (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  title      TEXT        NOT NULL,
+  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+  documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
+  time_limit INTEGER     NOT NULL,          -- in minutes
+  user_id  UUID        NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
+  active      BOOLEAN     NOT NULL           DEFAULT TRUE,
+  template_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[]
+);
+
 CREATE TABLE chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   completed_at TIMESTAMPTZ  NULL,
   title      TEXT         NOT NULL,
-  scenario_description TEXT         NOT NULL,
+  scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
   user_id    UUID         NOT NULL REFERENCES users(id)  ON DELETE CASCADE,
-  profile    chat_profile NOT NULL,
-  class_id   UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
+  profile_id UUID         NOT NULL REFERENCES profiles(id)  ON DELETE CASCADE,
+  class_id   UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
+  quiz_id    UUID         NULL REFERENCES quizzes(id)  ON DELETE CASCADE
 );
 
--- 3) messages table
 CREATE TABLE messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -50,7 +102,6 @@ CREATE TABLE messages (
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
--- 4) rubrics table
 CREATE TABLE rubrics (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   chat_id    UUID        NOT NULL REFERENCES chats(id)  ON DELETE CASCADE,
@@ -68,160 +119,108 @@ CREATE TABLE rubrics (
   time_management_feedback TEXT
 );
 
--- 5) documents table
-CREATE TABLE documents (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NOT NULL,
-  file_path  TEXT        NOT NULL,
-  mime_type  TEXT        NOT NULL,
-  profile    chat_profile NOT NULL,
-  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE
-);
+-- ============================================================================
+-- DATA INSERTIONS
+-- ============================================================================
 
--- Update Quizzes table to support individual student configurations
-DROP TABLE IF EXISTS quizzes CASCADE;
-CREATE TABLE quizzes (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  title      TEXT        NOT NULL,
-  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
-  document_id UUID       REFERENCES documents(id) ON DELETE SET NULL, -- Allow NULL and set to NULL on document deletion
-  time_limit INTEGER     NOT NULL,          -- in minutes
-  creator_id  UUID        NOT NULL REFERENCES users(id)   ON DELETE CASCADE,
-  active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-  -- Store student configurations as JSONB for flexibility
-  student_interactions JSONB NOT NULL DEFAULT '{"aggressive": [], "happy": [], "confused": []}'::jsonb
-);
+-- Insert Profiles
+INSERT INTO profiles (id, name, subtitle, description, threshold) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive', 'Direct and Challenging', 'Pushes back on your ideas and challenges assumptions.', 50),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Positive and Encouraging', 'Provides uplifting feedback and cheerful responses.', 50),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Asks clarifying questions', 'Seeks to understand by asking questions and exploring ideas', 50);
 
--- Drop and recreate quiz_attempts table with proper cascade behavior
-DROP TABLE IF EXISTS quiz_attempts CASCADE;
-CREATE TABLE quiz_attempts (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  quiz_id    UUID        NOT NULL REFERENCES quizzes(id)  ON DELETE CASCADE,
-  user_id    UUID        NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
-  started_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  completed_at TIMESTAMPTZ NULL,
-  score      INTEGER     NULL,              -- null until completed
-  time_taken INTEGER     NULL,              -- in seconds, null until completed
-  completed  BOOLEAN     NOT NULL           DEFAULT FALSE,
-  UNIQUE(quiz_id, user_id, started_at)      -- prevent duplicate attempts at same time
-);
-
--- Clean up any orphaned quiz attempts that might exist
-DELETE FROM quiz_attempts WHERE quiz_id NOT IN (SELECT id FROM quizzes);
-
--- Clean up any orphaned quizzes that reference non-existent documents
-UPDATE quizzes SET document_id = NULL WHERE document_id NOT IN (SELECT id FROM documents);
-
--- Delete any mock documents except the one we want to keep for testing
-DELETE FROM documents WHERE id != 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+-- Insert Scenarios
+INSERT INTO scenarios (id, name, description) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'NullPointer Exception', 'A student storms in holding their Java console output, annoyed by a runtime error they can''t trace in their GUI project.'),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'File I/O Issues', 'A student timidly approaches, worried they''ve overwritten their data file while implementing file read/write methods.'),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Subclass Constructors', 'A student beams in excitedly, eager to understand how to call superclass constructors in their subclass design.'),
+  ('44444444-dddd-dddd-dddd-444444444444', 'Proof by Induction', 'A student sits confidently with their proof draft, asking for confirmation on their inductive step for summations.'),
+  ('55555555-eeee-eeee-eeee-555555555555', 'Pigeonhole Principle', 'A student paces back and forth, perplexed about applying the pigeonhole principle to their combinatorics problem.'),
+  ('66666666-ffff-ffff-ffff-666666666666', 'Finite Automata Diagram', 'An enthusiastic student draws state diagrams on the whiteboard, seeking advice on minimizing states in their DFA.'),
+  ('77777777-aaaa-bbbb-cccc-777777777777', 'Hash Table Collision', 'A student looks frustrated at their printed hash table output, unsure why multiple keys map to the same bucket.'),
+  ('88888888-bbbb-cccc-dddd-888888888888', 'Dijkstra Implementation', 'A student proudly shows their weighted graph code, asking if their priority queue usage is optimal.'),
+  ('99999999-cccc-dddd-eeee-999999999999', 'Recursive Tree Traversal', 'A student frowns while tracing recursion on paper, confused by the difference between pre- and post-order.'),
+  ('aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', 'Recurrence Relations', 'A student is eager to verify their Master Theorem application to the recurrence for merge sort.'),
+  ('bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'NP-Completeness', 'A student sits back with their arms crossed, skeptical about why SAT reduces to 3-SAT.'),
+  ('cccccccc-ffff-aaaa-bbbb-cccccccccccc', 'Dynamic Programming', 'A student smiles warmly, proud of their bottom-up DP table for the knapsack problem, seeking edge-case checks.');
 
 -- Insert Classes
-INSERT INTO classes (id, name, class_code, description, aggressive_threshold, happy_threshold, confused_threshold) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 50, 50, 50),
-  ('22222222-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 50, 50, 50),
-  ('33333333-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 50, 50, 50),
-  ('44444444-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 50, 50, 50);
+INSERT INTO classes (id, name, class_code, description, profile_ids) VALUES
+  ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[]),
+  ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[]),
+  ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[]),
+  ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[]);
 
--- Insert Users (15 students + 1 admin)
-INSERT INTO users (id, viewed_intro, admin, name, username, password, classes) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', true, true, 'Admin User', 'admin_user', 'hashed_password_1', ARRAY['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']::UUID[]),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true, false, 'John Doe', 'john_doe', 'hashed_password_2', ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
-  ('cccccccc-cccc-cccc-cccc-cccccccccccc', false, false, 'Jane Smith', 'jane_smith', 'hashed_password_3', ARRAY['33333333-3333-3333-3333-333333333333', '44444444-4444-4444-4444-444444444444']::UUID[]),
-  ('dddddddd-dddd-dddd-dddd-dddddddddddd', true, false, 'Bob Wilson', 'bob_wilson', 'hashed_password_4', ARRAY['22222222-2222-2222-2222-222222222222']::UUID[]),
-  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', false, false, 'Sarah Jones', 'sarah_jones', 'hashed_password_5', ARRAY['11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333']::UUID[]),
-  ('ffffffff-ffff-ffff-ffff-ffffffffffff', true, false, 'Michael Brown', 'michael_brown', 'hashed_password_6', ARRAY['11111111-1111-1111-1111-111111111111', '44444444-4444-4444-4444-444444444444']::UUID[]),
-  ('12345678-abcd-efab-cdef-123456789abc', false, false, 'Emily Davis', 'emily_davis', 'hashed_password_7', ARRAY['22222222-2222-2222-2222-222222222222', '33333333-3333-3333-3333-333333333333']::UUID[]),
-  ('87654321-dcba-fedc-baef-987654321cba', true, false, 'David Miller', 'david_miller', 'hashed_password_8', ARRAY['33333333-3333-3333-3333-333333333333']::UUID[]),
-  ('abcdef12-3456-7890-abcd-ef1234567890', false, false, 'Lisa Anderson', 'lisa_anderson', 'hashed_password_9', ARRAY['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']::UUID[]),
-  ('12ab34cd-56ef-78ab-90cd-12ef34567890', true, false, 'Robert Taylor', 'robert_taylor', 'hashed_password_10', ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
-  ('abcd1234-efab-cdef-abcd-123456abcdef', false, false, 'Jennifer White', 'jennifer_white', 'hashed_password_11', ARRAY['22222222-2222-2222-2222-222222222222', '44444444-4444-4444-4444-444444444444']::UUID[]),
-  ('a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', true, false, 'William Johnson', 'william_johnson', 'hashed_password_12', ARRAY['11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333']::UUID[]);
+-- Insert Users (12 students + 1 admin)
+INSERT INTO users (id, viewed_intro, role, name, username, password, class_ids) VALUES
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', true, 'admin', 'Admin User', 'admin_user', 'hashed_password_1', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true, 'ta', 'John Doe', 'john_doe', 'hashed_password_2', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+  ('cccccccc-cccc-cccc-cccc-cccccccccccc', false, 'ta', 'Jane Smith', 'jane_smith', 'hashed_password_3', ARRAY['66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('dddddddd-dddd-dddd-dddd-dddddddddddd', true, 'ta', 'Bob Wilson', 'bob_wilson', 'hashed_password_4', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', false, 'ta', 'Sarah Jones', 'sarah_jones', 'hashed_password_5', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('ffffffff-ffff-ffff-ffff-ffffffffffff', true, 'ta', 'Michael Brown', 'michael_brown', 'hashed_password_6', ARRAY['44444444-1111-1111-1111-111111111111', '77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('12345678-abcd-efab-cdef-123456789abc', false, 'ta', 'Emily Davis', 'emily_davis', 'hashed_password_7', ARRAY['55555555-2222-2222-2222-222222222222', '66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('87654321-dcba-fedc-baef-987654321cba', true, 'ta', 'David Miller', 'david_miller', 'hashed_password_8', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('abcdef12-3456-7890-abcd-ef1234567890', false, 'ta', 'Lisa Anderson', 'lisa_anderson', 'hashed_password_9', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('12ab34cd-56ef-78ab-90cd-12ef34567890', true, 'ta', 'Robert Taylor', 'robert_taylor', 'hashed_password_10', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('abcd1234-efab-cdef-abcd-123456abcdef', false, 'ta', 'Jennifer White', 'jennifer_white', 'hashed_password_11', ARRAY['55555555-2222-2222-2222-222222222222', '77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', true, 'ta', 'William Johnson', 'william_johnson', 'hashed_password_12', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]);
 
-INSERT INTO chats (id, created_at, completed_at, title, scenario_description, completed, user_id, profile, class_id) VALUES
+-- Insert Chats
+INSERT INTO chats (id, created_at, completed_at, title, scenario_id, completed, user_id, profile_id, class_id) VALUES
   -- CS 180 (Problem Solving And Object-Oriented Programming)
-  ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', NULL, 'NullPointer Exception', 'A student storms in holding their Java console output, annoyed by a runtime error they can''t trace in their GUI project.', false, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'aggressive', '11111111-1111-1111-1111-111111111111'),
-  ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'File I/O Issues', 'A student timidly approaches, worried they''ve overwritten their data file while implementing file read/write methods.', true, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '11111111-1111-1111-1111-111111111111'),
-  ('f1e2d3c4-b5a6-47f8-9e00-333333333333', NOW() - INTERVAL '3 hours', NULL, 'Subclass Constructors', 'A student beams in excitedly, eager to understand how to call superclass constructors in their subclass design.', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'happy', '11111111-1111-1111-1111-111111111111'),
+  ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', NULL, 'NullPointer Exception', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '11111111-aaaa-aaaa-aaaa-111111111111', '44444444-1111-1111-1111-111111111111'),
+  ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'File I/O Issues', '22222222-bbbb-bbbb-bbbb-222222222222', true, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111'),
+  ('f1e2d3c4-b5a6-47f8-9e00-333333333333', NOW() - INTERVAL '3 hours', NULL, 'Subclass Constructors', '33333333-cccc-cccc-cccc-333333333333', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-1111-1111-1111-111111111111'),
 
   -- CS 182 (Foundations Of Computer Science)  
-  ('f1e2d3c4-b5a6-47f8-9e00-444444444444', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', 'Proof by Induction', 'A student sits confidently with their proof draft, asking for confirmation on their inductive step for summations.', true, 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'happy', '22222222-2222-2222-2222-222222222222'),
-  ('f1e2d3c4-b5a6-47f8-9e00-555555555555', NOW() - INTERVAL '6 hours', NULL, 'Pigeonhole Principle', 'A student paces back and forth, perplexed about applying the pigeonhole principle to their combinatorics problem.', false, 'abcdef12-3456-7890-abcd-ef1234567890', 'confused', '22222222-2222-2222-2222-222222222222'),
-  ('f1e2d3c4-b5a6-47f8-9e00-666666666666', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', 'Finite Automata Diagram', 'An enthusiastic student draws state diagrams on the whiteboard, seeking advice on minimizing states in their DFA.', true, 'abcd1234-efab-cdef-abcd-123456abcdef', 'happy', '22222222-2222-2222-2222-222222222222'),
+  ('f1e2d3c4-b5a6-47f8-9e00-444444444444', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', 'Proof by Induction', '44444444-dddd-dddd-dddd-444444444444', true, 'dddddddd-dddd-dddd-dddd-dddddddddddd', '22222222-bbbb-bbbb-bbbb-222222222222', '55555555-2222-2222-2222-222222222222'),
+  ('f1e2d3c4-b5a6-47f8-9e00-555555555555', NOW() - INTERVAL '6 hours', NULL, 'Pigeonhole Principle', '55555555-eeee-eeee-eeee-555555555555', false, 'abcdef12-3456-7890-abcd-ef1234567890', '33333333-cccc-cccc-cccc-333333333333', '55555555-2222-2222-2222-222222222222'),
+  ('f1e2d3c4-b5a6-47f8-9e00-666666666666', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', 'Finite Automata Diagram', '66666666-ffff-ffff-ffff-666666666666', true, 'abcd1234-efab-cdef-abcd-123456abcdef', '22222222-bbbb-bbbb-bbbb-222222222222', '55555555-2222-2222-2222-222222222222'),
 
   -- CS 251 (Data Structures And Algorithms)
-  ('f1e2d3c4-b5a6-47f8-9e00-777777777777', NOW() - INTERVAL '4 hours', NULL, 'Hash Table Collision', 'A student looks frustrated at their printed hash table output, unsure why multiple keys map to the same bucket.', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '33333333-3333-3333-3333-333333333333'),
-  ('f1e2d3c4-b5a6-47f8-9e00-888888888888', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Dijkstra Implementation', 'A student proudly shows their weighted graph code, asking if their priority queue usage is optimal.', true, '87654321-dcba-fedc-baef-987654321cba', 'happy', '33333333-3333-3333-3333-333333333333'),
-  ('f1e2d3c4-b5a6-47f8-9e00-999999999999', NOW() - INTERVAL '1 hour', NULL, 'Recursive Tree Traversal', 'A student frowns while tracing recursion on paper, confused by the difference between pre- and post-order.', false, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', 'confused', '33333333-3333-3333-3333-333333333333'),
+  ('f1e2d3c4-b5a6-47f8-9e00-777777777777', NOW() - INTERVAL '4 hours', NULL, 'Hash Table Collision', '77777777-aaaa-bbbb-cccc-777777777777', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-cccc-cccc-cccc-333333333333', '66666666-3333-3333-3333-333333333333'),
+  ('f1e2d3c4-b5a6-47f8-9e00-888888888888', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Dijkstra Implementation', '88888888-bbbb-cccc-dddd-888888888888', true, '87654321-dcba-fedc-baef-987654321cba', '22222222-bbbb-bbbb-bbbb-222222222222', '66666666-3333-3333-3333-333333333333'),
+  ('f1e2d3c4-b5a6-47f8-9e00-999999999999', NOW() - INTERVAL '1 hour', NULL, 'Recursive Tree Traversal', '99999999-cccc-dddd-eeee-999999999999', false, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', '33333333-cccc-cccc-cccc-333333333333', '66666666-3333-3333-3333-333333333333'),
 
   -- CS 381 (Introduction To The Analysis Of Algorithms)
-  ('f1e2d3c4-b5a6-47f8-9e00-aaaaaaaaaaaa', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours', 'Recurrence Relations', 'A student is eager to verify their Master Theorem application to the recurrence for merge sort.', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'happy', '44444444-4444-4444-4444-444444444444'),
-  ('f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb', NOW() - INTERVAL '5 hours', NULL, 'NP-Completeness', 'A student sits back with their arms crossed, skeptical about why SAT reduces to 3-SAT.', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'aggressive', '44444444-4444-4444-4444-444444444444'),
-  ('f1e2d3c4-b5a6-47f8-9e00-cccccccccccc', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Dynamic Programming', 'A student smiles warmly, proud of their bottom-up DP table for the knapsack problem, seeking edge-case checks.', true, '12ab34cd-56ef-78ab-90cd-12ef34567890', 'happy', '44444444-4444-4444-4444-444444444444'),
+  ('f1e2d3c4-b5a6-47f8-9e00-aaaaaaaaaaaa', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours', 'Recurrence Relations', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
+  ('f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb', NOW() - INTERVAL '5 hours', NULL, 'NP-Completeness', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '11111111-aaaa-aaaa-aaaa-111111111111', '77777777-4444-4444-4444-444444444444'),
+  ('f1e2d3c4-b5a6-47f8-9e00-cccccccccccc', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Dynamic Programming', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', true, '12ab34cd-56ef-78ab-90cd-12ef34567890', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
 
-  -- Sarah Jones (CS 180)
-  ('aaaaaaaa-1111-2222-3333-444444444441', NOW() - INTERVAL '30 minutes', NULL, 'Infinite Loop', 'A student looks exasperated, explaining they can''t exit their while loop even after adding a break.', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '11111111-1111-1111-1111-111111111111'),
-  -- Michael Brown (CS 381)
-  ('aaaaaaaa-1111-2222-3333-444444444442', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', 'Master Theorem Edge Case', 'A student frowns over a whiteboard derivation, unsure how to handle non-polynomial terms.', true, 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'confused', '44444444-4444-4444-4444-444444444444'),
-  -- Emily Davis (CS 251)
-  ('aaaaaaaa-1111-2222-3333-444444444443', NOW() - INTERVAL '3 hours', NULL, 'Balancing BST', 'An eager student sketches rotations on paper, asking why their tree stays unbalanced.', false, '12345678-abcd-efab-cdef-123456789abc', 'happy', '33333333-3333-3333-3333-333333333333'),
-  -- David Miller (CS 251)
-  ('aaaaaaaa-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours', 'Adjacency List', 'A student timidly shows their graph struct, worried about extra memory overhead.', true, '87654321-dcba-fedc-baef-987654321cba', 'confused', '33333333-3333-3333-3333-333333333333'),
-  -- Lisa Anderson (CS 182)
-  ('aaaaaaaa-1111-2222-3333-444444444445', NOW() - INTERVAL '1 day', NULL, 'Set Theory Paradox', 'A student nervously describes Cantor''s diagonal argument, puzzled by cardinality implications.', false, 'abcdef12-3456-7890-abcd-ef1234567890', 'confused', '22222222-2222-2222-2222-222222222222'),
-  -- Robert Taylor (CS 381)
-  ('aaaaaaaa-1111-2222-3333-444444444446', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '5 hours', 'Branch and Bound', 'A student smiles broadly while outlining their branch-and-bound tree for TSP.', true, '12ab34cd-56ef-78ab-90cd-12ef34567890', 'happy', '44444444-4444-4444-4444-444444444444'),
-  -- Jennifer White (CS 182)
-  ('aaaaaaaa-1111-2222-3333-444444444447', NOW() - INTERVAL '4 days', NULL, 'Proof by Contradiction', 'A student sits forward, confident in their plan but wants to verify the negation step.', false, 'abcd1234-efab-cdef-abcd-123456abcdef', 'happy', '22222222-2222-2222-2222-222222222222'),
-  -- William Johnson (CS 180)
-  ('aaaaaaaa-1111-2222-3333-444444444448', NOW() - INTERVAL '12 hours', NOW() - INTERVAL '11 hours', 'Interface Design', 'A student enthusiastically shares UML for their new Shape interface hierarchy.', true, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', 'happy', '11111111-1111-1111-1111-111111111111'),
-  -- Jane Smith (CS 381)
-  ('aaaaaaaa-1111-2222-3333-444444444449', NOW() - INTERVAL '7 days', NULL, 'Polynomial Reduction', 'A student appears skeptical, asking why we reduce 3-SAT to CLIQUE instead of vice versa.', false, 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'aggressive', '44444444-4444-4444-4444-444444444444'),
-  -- Bob Wilson (CS 182)
-  ('aaaaaaaa-1111-2222-3333-444444444450', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', 'Recursion vs Iteration', 'A student leans over their notes, curious whether tail recursion offers any performance gains in Python.', true, 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'confused', '22222222-2222-2222-2222-222222222222'),
-  -- Sarah Jones (CS 180)
-  ('55555555-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 day', NULL, 'Garbage Collection', 'A student nervously describes unexpected object retention in their Java program and worries about memory leaks.', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '11111111-1111-1111-1111-111111111111'),
-  
-  -- Michael Brown (CS 381)
-  ('55555555-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Amortized Analysis', 'A student smiles, proud of their aggregate analysis on dynamic array resizing, and asks for validation.', true, 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'happy', '44444444-4444-4444-4444-444444444444'),
-  
-  -- Emily Davis (CS 251)
-  ('55555555-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '3 days', NULL, 'Graph Traversal', 'A student frowns, struggling to implement BFS with correct visited tracking.', false, '12345678-abcd-efab-cdef-123456789abc', 'confused', '33333333-3333-3333-3333-333333333333'),
-  
-  -- David Miller (CS 251)
-  ('55555555-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', 'Stack Overflow', 'A student looks frustrated at a runtime crash and suspects infinite recursion in their tree walk.', false, '87654321-dcba-fedc-baef-987654321cba', 'aggressive', '33333333-3333-3333-3333-333333333333'),
-  
-  -- Lisa Anderson (CS 182)
-  ('55555555-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Lambda Expressions', 'A student raises a hand, asking how to translate logical quantifiers into lambda calculus notation.', true, 'abcdef12-3456-7890-abcd-ef1234567890', 'happy', '22222222-2222-2222-2222-222222222222'),
-  
-  -- Robert Taylor (CS 381)
-  ('55555555-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '3 days', NULL, 'Deadlock Detection', 'A student sits back in chair, arms folded, challenging the necessity of the banker''s algorithm for their assignment.', false, '12ab34cd-56ef-78ab-90cd-12ef34567890', 'aggressive', '44444444-4444-4444-4444-444444444444'),
-  
-  -- Jennifer White (CS 182)
-  ('55555555-aaaa-bbbb-cccc-777777777777', NOW() - INTERVAL '6 hours', NULL, 'State Minimization', 'A student draws DFA states on paper, puzzled why two states aren''t merging.', false, 'abcd1234-efab-cdef-abcd-123456abcdef', 'confused', '22222222-2222-2222-2222-222222222222'),
-  
-  -- William Johnson (CS 180)
-  ('55555555-aaaa-bbbb-cccc-888888888888', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours', 'Interface Segregation', 'A student excitedly presents their refactored interfaces, eager for feedback on SOLID principles.', true, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', 'happy', '11111111-1111-1111-1111-111111111111'),
-  
-  -- John Doe (CS 180)
-  ('55555555-aaaa-bbbb-cccc-999999999999', NOW() - INTERVAL '2 days', NULL, 'Exception Chaining', 'A student looks weary, asking how to propagate exceptions properly without losing stack traces.', false, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'confused', '11111111-1111-1111-1111-111111111111'),
-  
-  -- Jane Smith (CS 381)
-  ('55555555-aaaa-bbbb-cccc-000000000000', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days', 'Heuristic Search', 'A student leans forward, debating A* heuristics admissibility and consistency in pathfinding.', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'happy', '44444444-4444-4444-4444-444444444444'),
-  
-  ('66666666-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 day', NULL, 'Array Index Out of Bounds', 'A student frowns at their console dump, perplexed why accessing element 10 in a size-10 array crashes their program.', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'confused', '11111111-1111-1111-1111-111111111111'),
-  ('66666666-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours', 'Generics Syntax', 'A student smiles, proud of their List<String> implementation, and asks how to apply multiple bounds.', true, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'happy', '11111111-1111-1111-1111-111111111111'),
-  ('66666666-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '2 days', NULL, 'Graph Isomorphism', 'A student sits back skeptically, questioning if two adjacency lists truly represent the same graph.', false, 'dddddddd-dddd-dddd-dddd-dddddddddddd', 'aggressive', '22222222-2222-2222-2222-222222222222'),
-  ('66666666-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Regular Expressions', 'An eager student presents their regex for matching binary strings and asks why it sometimes overmatches.', true, 'abcdef12-3456-7890-abcd-ef1234567890', 'confused', '22222222-2222-2222-2222-222222222222'),
-  ('66666666-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '5 hours', NULL, 'Priority Queue Interface', 'A student appears puzzled by why their custom PQ doesn''t implement Comparator correctly, causing runtime errors.', false, '12345678-abcd-efab-cdef-123456789abc', 'confused', '33333333-3333-3333-3333-333333333333'),
-  ('66666666-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours', 'Topological Sort', 'A student beams at their DAG implementation, asking if there''s a more efficient way to detect cycles first.', true, '87654321-dcba-fedc-baef-987654321cba', 'happy', '33333333-3333-3333-3333-333333333333'),
-  ('66666666-aaaa-bbbb-cccc-777777777777', NOW() - INTERVAL '3 days', NULL, 'Space Complexity', 'A student leans over their notes, worried their O(n²) solution will exceed memory limits for n = 1e6.', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', 'confused', '44444444-4444-4444-4444-444444444444'),
-  ('66666666-aaaa-bbbb-cccc-888888888888', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Approximation Algorithms', 'A student describes their greedy vertex cover approach and asks how to prove its approximation ratio.', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', 'happy', '44444444-4444-4444-4444-444444444444'),
-  ('66666666-aaaa-bbbb-cccc-999999999999', NOW() - INTERVAL '5 days', NULL, 'Randomized Algorithms', 'A student raises an eyebrow, challenging why quicksort''s randomized pivot yields expected O(n log n) time.', false, '12ab34cd-56ef-78ab-90cd-12ef34567890', 'aggressive', '44444444-4444-4444-4444-444444444444'),
-  ('66666666-aaaa-bbbb-cccc-000000000000', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours', 'Recursive Definitions', 'A student nods while writing down a recurrence for the Fibonacci sequence and asks about tail-recursive optimization.', true, 'abcd1234-efab-cdef-abcd-123456abcdef', 'happy', '22222222-2222-2222-2222-222222222222');
+  -- Additional chats with proper scenario references
+  ('aaaaaaaa-1111-2222-3333-444444444441', NOW() - INTERVAL '30 minutes', NULL, 'Infinite Loop', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-1111-2222-3333-444444444442', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', 'Master Theorem Edge Case', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '33333333-cccc-cccc-cccc-333333333333', '77777777-4444-4444-4444-444444444444'),
+  ('aaaaaaaa-1111-2222-3333-444444444443', NOW() - INTERVAL '3 hours', NULL, 'Balancing BST', '99999999-cccc-dddd-eeee-999999999999', false, '12345678-abcd-efab-cdef-123456789abc', '22222222-bbbb-bbbb-bbbb-222222222222', '66666666-3333-3333-3333-333333333333'),
+  ('aaaaaaaa-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours', 'Adjacency List', '77777777-aaaa-bbbb-cccc-777777777777', true, '87654321-dcba-fedc-baef-987654321cba', '33333333-cccc-cccc-cccc-333333333333', '66666666-3333-3333-3333-333333333333'),
+  ('aaaaaaaa-1111-2222-3333-444444444445', NOW() - INTERVAL '1 day', NULL, 'Set Theory Paradox', '44444444-dddd-dddd-dddd-444444444444', false, 'abcdef12-3456-7890-abcd-ef1234567890', '33333333-cccc-cccc-cccc-333333333333', '55555555-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-1111-2222-3333-444444444446', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '5 hours', 'Branch and Bound', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', true, '12ab34cd-56ef-78ab-90cd-12ef34567890', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
+  ('aaaaaaaa-1111-2222-3333-444444444447', NOW() - INTERVAL '4 days', NULL, 'Proof by Contradiction', '44444444-dddd-dddd-dddd-444444444444', false, 'abcd1234-efab-cdef-abcd-123456abcdef', '22222222-bbbb-bbbb-bbbb-222222222222', '55555555-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-1111-2222-3333-444444444448', NOW() - INTERVAL '12 hours', NOW() - INTERVAL '11 hours', 'Interface Design', '33333333-cccc-cccc-cccc-333333333333', true, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-1111-1111-1111-111111111111'),
+  ('aaaaaaaa-1111-2222-3333-444444444449', NOW() - INTERVAL '7 days', NULL, 'Polynomial Reduction', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '11111111-aaaa-aaaa-aaaa-111111111111', '77777777-4444-4444-4444-444444444444'),
+  ('aaaaaaaa-1111-2222-3333-444444444450', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', 'Recursion vs Iteration', '55555555-eeee-eeee-eeee-555555555555', true, 'dddddddd-dddd-dddd-dddd-dddddddddddd', '33333333-cccc-cccc-cccc-333333333333', '55555555-2222-2222-2222-222222222222'),
+  ('55555555-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 day', NULL, 'Garbage Collection', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111'),
+  ('55555555-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Amortized Analysis', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
+  ('55555555-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '3 days', NULL, 'Graph Traversal', '88888888-bbbb-cccc-dddd-888888888888', false, '12345678-abcd-efab-cdef-123456789abc', '33333333-cccc-cccc-cccc-333333333333', '66666666-3333-3333-3333-333333333333'),
+  ('55555555-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '5 hours', 'Stack Overflow', '99999999-cccc-dddd-eeee-999999999999', false, '87654321-dcba-fedc-baef-987654321cba', '11111111-aaaa-aaaa-aaaa-111111111111', '66666666-3333-3333-3333-333333333333'),
+  ('55555555-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Lambda Expressions', '66666666-ffff-ffff-ffff-666666666666', true, 'abcdef12-3456-7890-abcd-ef1234567890', '22222222-bbbb-bbbb-bbbb-222222222222', '55555555-2222-2222-2222-222222222222'),
+  ('55555555-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '3 days', NULL, 'Deadlock Detection', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, '12ab34cd-56ef-78ab-90cd-12ef34567890', '11111111-aaaa-aaaa-aaaa-111111111111', '77777777-4444-4444-4444-444444444444'),
+  ('55555555-aaaa-bbbb-cccc-777777777777', NOW() - INTERVAL '6 hours', NULL, 'State Minimization', '66666666-ffff-ffff-ffff-666666666666', false, 'abcd1234-efab-cdef-abcd-123456abcdef', '33333333-cccc-cccc-cccc-333333333333', '55555555-2222-2222-2222-222222222222'),
+  ('55555555-aaaa-bbbb-cccc-888888888888', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours', 'Interface Segregation', '33333333-cccc-cccc-cccc-333333333333', true, 'a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-1111-1111-1111-111111111111'),
+  ('55555555-aaaa-bbbb-cccc-999999999999', NOW() - INTERVAL '2 days', NULL, 'Exception Chaining', '22222222-bbbb-bbbb-bbbb-222222222222', false, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111'),
+  ('55555555-aaaa-bbbb-cccc-000000000000', NOW() - INTERVAL '7 days', NOW() - INTERVAL '7 days', 'Heuristic Search', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
+  ('66666666-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 day', NULL, 'Array Index Out of Bounds', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111'),
+  ('66666666-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '3 hours', 'Generics Syntax', '33333333-cccc-cccc-cccc-333333333333', true, 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-1111-1111-1111-111111111111'),
+  ('66666666-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '2 days', NULL, 'Graph Isomorphism', '88888888-bbbb-cccc-dddd-888888888888', false, 'dddddddd-dddd-dddd-dddd-dddddddddddd', '11111111-aaaa-aaaa-aaaa-111111111111', '55555555-2222-2222-2222-222222222222'),
+  ('66666666-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Regular Expressions', '66666666-ffff-ffff-ffff-666666666666', true, 'abcdef12-3456-7890-abcd-ef1234567890', '33333333-cccc-cccc-cccc-333333333333', '55555555-2222-2222-2222-222222222222'),
+  ('66666666-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '5 hours', NULL, 'Priority Queue Interface', '77777777-aaaa-bbbb-cccc-777777777777', false, '12345678-abcd-efab-cdef-123456789abc', '33333333-cccc-cccc-cccc-333333333333', '66666666-3333-3333-3333-333333333333'),
+  ('66666666-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours', 'Topological Sort', '88888888-bbbb-cccc-dddd-888888888888', true, '87654321-dcba-fedc-baef-987654321cba', '22222222-bbbb-bbbb-bbbb-222222222222', '66666666-3333-3333-3333-333333333333'),
+  ('66666666-aaaa-bbbb-cccc-777777777777', NOW() - INTERVAL '3 days', NULL, 'Space Complexity', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', false, 'ffffffff-ffff-ffff-ffff-ffffffffffff', '33333333-cccc-cccc-cccc-333333333333', '77777777-4444-4444-4444-444444444444'),
+  ('66666666-aaaa-bbbb-cccc-888888888888', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Approximation Algorithms', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', true, 'cccccccc-cccc-cccc-cccc-cccccccccccc', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444'),
+  ('66666666-aaaa-bbbb-cccc-999999999999', NOW() - INTERVAL '5 days', NULL, 'Randomized Algorithms', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', false, '12ab34cd-56ef-78ab-90cd-12ef34567890', '11111111-aaaa-aaaa-aaaa-111111111111', '77777777-4444-4444-4444-444444444444'),
+  ('66666666-aaaa-bbbb-cccc-000000000000', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '4 hours', 'Recursive Definitions', '55555555-eeee-eeee-eeee-555555555555', true, 'abcd1234-efab-cdef-abcd-123456abcdef', '22222222-bbbb-bbbb-bbbb-222222222222', '55555555-2222-2222-2222-222222222222');
 
--- Insert Rubrics (for completed chats)
+-- Insert Rubrics (for completed chats only)
 INSERT INTO rubrics (chat_id, passed, score, time_taken, adaptability, adaptability_feedback, listening, listening_feedback, objectives, objectives_feedback, time_management, time_management_feedback) VALUES
   -- File I/O Issues
   ('f1e2d3c4-b5a6-47f8-9e00-222222222222', true, 16, 720, 4, 'Adapted well to the student''s confusion but could have simplified explanations further', 5, 'Excellent active listening, identified the root cause quickly', 4, 'Successfully helped student recover data and implement proper file handling', 3, 'Session ran longer than necessary due to tangential explanations'),
@@ -282,20 +281,3 @@ INSERT INTO rubrics (chat_id, passed, score, time_taken, adaptability, adaptabil
   
   -- Recursive Definitions
   ('66666666-aaaa-bbbb-cccc-000000000000', true, 18, 540, 4, 'Good adaptation to student''s interest in optimization', 5, 'Excellent listening, addressed specific questions about tail recursion', 4, 'Successfully explained recursive optimization techniques', 5, 'Excellent pacing, covered all aspects efficiently');
-
--- Insert sample documents for each class - only one document to test with
-INSERT INTO documents (id, name, file_path, mime_type, profile, class_id) VALUES
--- Remove all other mock document data and quizzes
-
--- Add table for CSV-imported students
-CREATE TABLE csv_students (
-  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  first_name TEXT        NOT NULL,
-  last_name  TEXT        NOT NULL,
-  email      TEXT,
-  student_id TEXT,
-  class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
-  csv_file_id UUID       REFERENCES documents(id) ON DELETE SET NULL,
-  UNIQUE(first_name, last_name, class_id) -- Prevent duplicate students in same class
-);

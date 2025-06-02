@@ -10,11 +10,13 @@ import { getChats } from "@/utils/queries/get-chats";
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getUsers } from "@/utils/queries/get-users";
 import { getClasses } from "@/utils/queries/get-classes";
+import { getProfiles } from "@/utils/queries/get-profiles";
 import { useMemo } from "react";
 import { Check, Clock, Circle } from "lucide-react";
 import { getUser } from "@/utils/queries/get-user";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
+import { getProfileConfig } from "@/utils/profiles";
 
 // Define statuses with proper icon components
 export const statuses = [
@@ -29,13 +31,6 @@ export const scoreMetrics = [
   { value: "listening", label: "Listening", max: 5 },
   { value: "objectives", label: "Objectives", max: 5 },
   { value: "timeManagement", label: "Time Management", max: 5 },
-];
-
-// Define profile types with capitalized labels
-export const profileTypes = [
-  { value: "aggressive", label: "Aggressive" },
-  { value: "happy", label: "Happy" },
-  { value: "confused", label: "Confused" },
 ];
 
 // Component to use the columns with data from queries
@@ -57,6 +52,12 @@ export function useTaskColumns({
     queryFn: () => getClasses(),
   });
 
+  // Fetch profiles dynamically
+  const { data: profiles, isLoading: profilesLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getProfiles(),
+  });
+
   // Use getAllChats if isAdmin, otherwise use getChats with user id
   const { data: chats, isLoading: chatsLoading } = useQuery({
     queryKey: isAdmin ? ["all-chats"] : ["chats", user?.id],
@@ -71,6 +72,16 @@ export function useTaskColumns({
     queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
+
+  // Create dynamic profile types from database profiles
+  const profileTypes = useMemo(() => {
+    if (!profiles) return [];
+    return profiles.map((profile) => ({
+      value: profile.id,
+      label: profile.name,
+      icon: getProfileConfig(profile.name).icon,
+    }));
+  }, [profiles]);
 
   // Create user options for GTA names
   const userOptions = useMemo(() => {
@@ -203,12 +214,12 @@ export function useTaskColumns({
           />
         ),
         cell: ({ row }) => {
-          const profileValue = row.getValue("profile") as string;
-          const profile = profileTypes.find((p) => p.value === profileValue);
+          const profileId = row.getValue("profile") as string;
+          const profile = profiles?.find((p) => p.id === profileId);
 
           return (
             <div className="w-[100px]">
-              {profile ? profile.label : profileValue}
+              {profile ? profile.name : profileId}
             </div>
           );
         },
@@ -475,14 +486,15 @@ export function useTaskColumns({
     }
 
     return baseColumns;
-  }, [userOptions, classOptions, chatRubrics, isAdmin]);
+  }, [userOptions, classOptions, chatRubrics, isAdmin, profiles]);
 
   return {
     columns,
-    isLoading: usersLoading || classesLoading || chatsLoading || rubricsLoading,
+    isLoading: usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading,
     data: chats,
     userOptions,
     classOptions,
+    profileTypes, // Export dynamic profile types
     isAdmin,
   };
 }

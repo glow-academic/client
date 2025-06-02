@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X, Download, AlertCircle } from "lucide-react";
+import { X, Download } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { useState } from "react";
 

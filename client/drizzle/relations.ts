@@ -1,29 +1,29 @@
 import { relations } from "drizzle-orm/relations";
-import { users, chats, classes, quizzes, documents, messages, rubrics, quizAttempts } from "./schema";
+import { classes, documents, profiles, templates, quizzes, users, chats, messages, scenarios, rubrics } from "./schema";
 
-export const chatsRelations = relations(chats, ({one, many}) => ({
-	user: one(users, {
-		fields: [chats.userId],
-		references: [users.id]
-	}),
+export const documentsRelations = relations(documents, ({one}) => ({
 	class: one(classes, {
-		fields: [chats.classId],
+		fields: [documents.classId],
 		references: [classes.id]
 	}),
-	messages: many(messages),
-	rubrics: many(rubrics),
-}));
-
-export const usersRelations = relations(users, ({many}) => ({
-	chats: many(chats),
-	quizzes: many(quizzes),
-	quizAttempts: many(quizAttempts),
 }));
 
 export const classesRelations = relations(classes, ({many}) => ({
-	chats: many(chats),
-	quizzes: many(quizzes),
 	documents: many(documents),
+	quizzes: many(quizzes),
+	chats: many(chats),
+}));
+
+export const templatesRelations = relations(templates, ({one}) => ({
+	profile: one(profiles, {
+		fields: [templates.profileId],
+		references: [profiles.id]
+	}),
+}));
+
+export const profilesRelations = relations(profiles, ({many}) => ({
+	templates: many(templates),
+	chats: many(chats),
 }));
 
 export const quizzesRelations = relations(quizzes, ({one, many}) => ({
@@ -31,23 +31,16 @@ export const quizzesRelations = relations(quizzes, ({one, many}) => ({
 		fields: [quizzes.classId],
 		references: [classes.id]
 	}),
-	document: one(documents, {
-		fields: [quizzes.documentId],
-		references: [documents.id]
-	}),
 	user: one(users, {
-		fields: [quizzes.creatorId],
+		fields: [quizzes.userId],
 		references: [users.id]
 	}),
-	quizAttempts: many(quizAttempts),
+	chats: many(chats),
 }));
 
-export const documentsRelations = relations(documents, ({one, many}) => ({
+export const usersRelations = relations(users, ({many}) => ({
 	quizzes: many(quizzes),
-	class: one(classes, {
-		fields: [documents.classId],
-		references: [classes.id]
-	}),
+	chats: many(chats),
 }));
 
 export const messagesRelations = relations(messages, ({one}) => ({
@@ -57,20 +50,38 @@ export const messagesRelations = relations(messages, ({one}) => ({
 	}),
 }));
 
+export const chatsRelations = relations(chats, ({one, many}) => ({
+	messages: many(messages),
+	scenario: one(scenarios, {
+		fields: [chats.scenarioId],
+		references: [scenarios.id]
+	}),
+	user: one(users, {
+		fields: [chats.userId],
+		references: [users.id]
+	}),
+	profile: one(profiles, {
+		fields: [chats.profileId],
+		references: [profiles.id]
+	}),
+	class: one(classes, {
+		fields: [chats.classId],
+		references: [classes.id]
+	}),
+	quiz: one(quizzes, {
+		fields: [chats.quizId],
+		references: [quizzes.id]
+	}),
+	rubrics: many(rubrics),
+}));
+
+export const scenariosRelations = relations(scenarios, ({many}) => ({
+	chats: many(chats),
+}));
+
 export const rubricsRelations = relations(rubrics, ({one}) => ({
 	chat: one(chats, {
 		fields: [rubrics.chatId],
 		references: [chats.id]
-	}),
-}));
-
-export const quizAttemptsRelations = relations(quizAttempts, ({one}) => ({
-	quiz: one(quizzes, {
-		fields: [quizAttempts.quizId],
-		references: [quizzes.id]
-	}),
-	user: one(users, {
-		fields: [quizAttempts.userId],
-		references: [users.id]
 	}),
 }));
