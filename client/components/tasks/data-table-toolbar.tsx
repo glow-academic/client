@@ -23,11 +23,14 @@ import { statuses } from "./columns"; // Import statuses from columns.tsx
 const columnMap = {
   createdAt: "Date",
   classId: "Class",
+  classCode: "Class",
   userId: "Name",
   profile: "Profile",
   title: "Title",
+  templateTitle: "Template",
   status: "Status",
   score: "Score",
+  chats: "Chats",
 };
 
 // Helper function to determine chat status
@@ -164,6 +167,19 @@ export function DataTableToolbar<TData>({
               return classOption ? `"${classOption.label}"` : `"${cellValue}"`;
             }
 
+            if (column.id === "classCode" && cellValue) {
+              // For attempts view, classCode is already human-readable
+              return `"${cellValue}"`;
+            }
+
+            if (column.id === "chats" && cellValue) {
+              // For attempts view, format chats as "completed/total"
+              const chats = cellValue as any[];
+              const completedChats = chats?.filter(chat => chat.completed).length || 0;
+              const totalChats = chats?.length || 0;
+              return `"${completedChats}/${totalChats}"`;
+            }
+
             if (column.id === "userId" && cellValue) {
               const userOption = userOptions.find(
                 (user) => user.value === cellValue,
@@ -222,10 +238,10 @@ export function DataTableToolbar<TData>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder="Filter chats..."
-            value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
+            placeholder={viewMode === 'chats' ? "Filter chats..." : "Filter templates..."}
+            value={(table.getColumn(viewMode === 'chats' ? "title" : "templateTitle")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("title")?.setFilterValue(event.target.value)
+              table.getColumn(viewMode === 'chats' ? "title" : "templateTitle")?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
@@ -236,21 +252,21 @@ export function DataTableToolbar<TData>({
               options={statuses}
             />
           )}
-          {isAdmin && table.getColumn("userId") && (
+          {isAdmin && viewMode === 'chats' && table.getColumn("userId") && (
             <DataTableFacetedFilter
               column={table.getColumn("userId")}
               title="Name"
               options={userOptions}
             />
           )}
-          {table.getColumn("classId") && (
+          {table.getColumn(viewMode === 'chats' ? "classId" : "classCode") && (
             <DataTableFacetedFilter
-              column={table.getColumn("classId")}
+              column={table.getColumn(viewMode === 'chats' ? "classId" : "classCode")}
               title="Class"
               options={classOptions}
             />
           )}
-          {table.getColumn("score") && ( // This is for the score column which uses id as accessor
+          {viewMode === 'chats' && table.getColumn("score") && ( // This is for the score column which uses id as accessor
             <DataTableFacetedFilter
               column={table.getColumn("score")}
               title="Score"

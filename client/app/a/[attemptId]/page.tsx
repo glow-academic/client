@@ -43,8 +43,6 @@ import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 import { getMessages } from "@/utils/queries/get-messages";
 import { getRubric } from "@/utils/queries/get-rubric";
 import { getDocuments } from "@/utils/queries/get-documents";
-import { getClasses } from "@/utils/queries/get-classes";
-import { getTemplates } from "@/utils/queries/get-templates";
 import {
  SidebarProvider,
  SidebarInset,
@@ -52,6 +50,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Separator } from "@/components/ui/separator";
+import { getTemplate } from "@/utils/queries/get-template";
 
 interface TemplateMessage {
  id: string;
@@ -86,34 +85,26 @@ export default function AttemptPage() {
  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
  // Fetch attempt data
- const { data: attemptData, isLoading: attemptLoading, error: attemptError } = useQuery({
+ const { data: attempt, isLoading: attemptLoading, error: attemptError } = useQuery({
    queryKey: ["attempt", attemptId],
    queryFn: () => getAttempt(attemptId),
    enabled: !!attemptId,
  });
 
- // Get the first attempt (since getAttempt returns an array)
- const attempt = attemptData;
-
- // Fetch template data based on attempt's templateId
- const { data: templatesData, isLoading: templateLoading } = useQuery({
-   queryKey: ["templates"],
-   queryFn: () => getTemplates(),
-   enabled: !!attempt?.templateId,
+ const { data: template, isLoading: templateLoading } = useQuery({
+   queryKey: ["template", attempt?.templateId],
+   queryFn: () => getTemplate(attempt!.templateId),
  });
 
- // Get the template for this attempt
- const templateData = templatesData?.find((t: any) => t.id === attempt?.templateId);
-
  // Fetch chats linked to this attempt
- const { data: attemptChats = [], isLoading: chatsLoading } = useQuery({
-   queryKey: ["attempt-chats", attemptId],
+ const { data: chats = [], isLoading: chatsLoading } = useQuery({
+   queryKey: ["chats", attemptId],
    queryFn: () => getAttemptChats([attemptId]),
-   enabled: !!attemptId,
+
  });
 
  // Fetch messages for current chat
- const currentChat = attemptChats[currentChatIndex];
+ const currentChat = chats[currentChatIndex];
  const { data: messages = [], isLoading: messagesLoading } = useQuery({
    queryKey: ["messages", currentChat?.id],
    queryFn: () => getMessages(currentChat.id),
@@ -128,7 +119,7 @@ export default function AttemptPage() {
  });
 
  // Fetch all rubrics for completed chats (for final results)
- const completedChatIds = attemptChats.filter((chat: any) => chat.completed).map((chat: any) => chat.id);
+ const completedChatIds = chats.filter((chat: any) => chat.completed).map((chat: any) => chat.id);
  const { data: allRubrics = [] } = useQuery({
    queryKey: ["all-rubrics", completedChatIds],
    queryFn: async () => {
@@ -147,12 +138,6 @@ export default function AttemptPage() {
    enabled: !!attempt?.classId,
  });
 
- // Fetch classes to get class info
- const { data: classes } = useQuery({
-   queryKey: ["classes"],
-   queryFn: () => getClasses(),
- });
-
  // Filter documents for the current attempt's class
  const classDocuments = useMemo(() => {
    if (!attempt?.classId || !documents) return [];
@@ -160,15 +145,15 @@ export default function AttemptPage() {
  }, [documents, attempt?.classId]);
 
  // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
- const isSingleChatAttempt = attemptChats.length === 1;
+ const isSingleChatAttempt = chats.length === 1;
 
  // Initialize session timer
  useEffect(() => {
-   if (templateData && !sessionStartTime) {
+   if (template && !sessionStartTime) {
      setSessionStartTime(new Date());
-     setTimeRemaining(templateData.timeLimit * 60); // Convert to seconds
+     setTimeRemaining(template.timeLimit * 60); // Convert to seconds
    }
- }, [templateData, sessionStartTime]);
+ }, [template, sessionStartTime]);
 
  // Timer countdown
  useEffect(() => {
@@ -198,11 +183,11 @@ export default function AttemptPage() {
  // Check if current chat is completed and move to next or show results
  useEffect(() => {
    if (currentChat?.completed && !showResults) {
-     if (!isSingleChatAttempt && currentChatIndex < attemptChats.length - 1) {
+     if (!isSingleChatAttempt && currentChatIndex < chats.length - 1) {
        // Move to next chat after a short delay (only for multi-chat attempts)
        const timer = setTimeout(() => {
          setCurrentChatIndex(prev => prev + 1);
-         toast.success(`Moving to chat ${currentChatIndex + 2} of ${attemptChats.length}`);
+         toast.success(`Moving to chat ${currentChatIndex + 2} of ${chats.length}`);
        }, 2000);
        return () => clearTimeout(timer);
      } else {
@@ -211,7 +196,7 @@ export default function AttemptPage() {
        setIsActive(false);
      }
    }
- }, [currentChat?.completed, currentChatIndex, attemptChats.length, showResults, isSingleChatAttempt]);
+ }, [currentChat?.completed, currentChatIndex, chats.length, showResults, isSingleChatAttempt]);
 
  const handleSessionComplete = async () => {
    setShowResults(true);
@@ -238,7 +223,7 @@ export default function AttemptPage() {
    setIsFirstMessage(false);
 
    try {
-     const response = await fetch("/api/chat", {
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat`, {
        method: "POST",
        headers: { "Content-Type": "application/json" },
        body: JSON.stringify({
@@ -277,7 +262,7 @@ export default function AttemptPage() {
    setEndChatLoading(true);
    
    try {
-     const response = await fetch("/api/chat/end", {
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/end`, {
        method: "POST",
        headers: { "Content-Type": "application/json" },
        body: JSON.stringify({ chatId: currentChat.id }),
@@ -383,7 +368,7 @@ export default function AttemptPage() {
    );
  }
 
- if (attemptError || !attempt || attemptChats.length === 0) {
+ if (attemptError || !attempt || chats.length === 0) {
    return (
      <SidebarProvider>
        <UnifiedSidebar 
@@ -431,7 +416,7 @@ export default function AttemptPage() {
                <Button variant="ghost" size="sm" onClick={handleBack}>
                  <ArrowLeft className="h-4 w-4" />
                </Button>
-               <h1 className="text-xl font-semibold">{templateData?.title || 'Attempt Results'}</h1>
+               <h1 className="text-xl font-semibold">{template?.title || 'Attempt Results'}</h1>
              </div>
              <div className="flex items-center gap-2">
                <div className="text-sm text-muted-foreground flex items-center gap-2">
@@ -483,7 +468,7 @@ export default function AttemptPage() {
                <div className="grid gap-4">
                  <h2 className="text-xl font-semibold">Individual Chat Results</h2>
                  {allRubrics.map((rubric: any, index: number) => {
-                   const chat = attemptChats.find((c: any) => c.id === rubric.chatId);
+                   const chat = chats.find((c: any) => c.id === rubric.chatId);
                    return (
                      <Card key={rubric.id} className="hover:shadow-md transition-shadow">
                        <CardHeader>
@@ -596,7 +581,7 @@ export default function AttemptPage() {
                <ArrowLeft className="h-4 w-4" />
              </Button>
              <div>
-               <h1 className="text-xl font-semibold">{templateData?.title || 'Attempt'}</h1>
+               <h1 className="text-xl font-semibold">{template?.title || 'Attempt'}</h1>
                <div className="text-sm text-muted-foreground flex items-center gap-2">
                  {isSingleChatAttempt ? (
                    <>
@@ -606,7 +591,7 @@ export default function AttemptPage() {
                  ) : (
                    <>
                      <Users className="h-4 w-4" />
-                     <span data-testid="chat-counter">Chat {currentChatIndex + 1} of {attemptChats.length}</span>
+                     <span data-testid="chat-counter">Chat {currentChatIndex + 1} of {chats.length}</span>
                    </>
                  )}
                </div>
