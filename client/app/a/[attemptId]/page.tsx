@@ -34,7 +34,7 @@ import {
   Users,
   CheckCircle,
   Activity,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 
 import DocumentViewer from "@/components/DocumentViewer";
@@ -48,6 +48,7 @@ import { getTemplate } from "@/utils/queries/get-template";
 import { getClass } from "@/utils/queries/get-class";
 import { getScenario } from "@/utils/queries/get-scenario";
 import { getChatTemplate } from "@/utils/queries/get-chat-template";
+import Link from "next/link";
 
 interface TemplateMessage {
   id: string;
@@ -68,6 +69,7 @@ export default function AttemptPage() {
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
+  const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<Set<string>>(new Set());
 
   // Chat state for current chat
   const [newMessage, setNewMessage] = useState("");
@@ -85,7 +87,7 @@ export default function AttemptPage() {
     queryFn: () => getAttempt(attemptId),
     enabled: !!attemptId,
   });
-  
+
   const { data: classData, isLoading: classLoading } = useQuery({
     queryKey: ["class", attempt?.classId],
     queryFn: () => getClass(attempt!.classId),
@@ -105,7 +107,7 @@ export default function AttemptPage() {
   // Determine current chat based on chat template ID position in template
   const currentChat = React.useMemo(() => {
     if (!chats.length || !template?.chatTemplateIds) return chats[0];
-    
+
     // Find the chat that matches the current chat template ID
     const currentChatTemplateId = template.chatTemplateIds[currentChatIndex];
     const chat = chats.find(chat => chat.chatTemplateId === currentChatTemplateId);
@@ -202,26 +204,60 @@ export default function AttemptPage() {
     setShowScrollButton(false);
   }, [currentChatIndex, messages.length]);
 
+  // Initialize to first incomplete chat when data loads
+  useEffect(() => {
+    if (chats.length > 0 && template?.chatTemplateIds && currentChatIndex === 0) {
+      // Find the first incomplete chat
+      const firstIncompleteIndex = template.chatTemplateIds.findIndex((templateId: string) => {
+        const chat = chats.find((c: any) => c.chatTemplateId === templateId);
+        return chat && !chat.completed;
+      });
+      
+      // If we found an incomplete chat, set the index to it
+      if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== currentChatIndex) {
+        setCurrentChatIndex(firstIncompleteIndex);
+      }
+    }
+  }, [chats, template?.chatTemplateIds, currentChatIndex]);
+
   // Check if current chat is completed and move to next or show results
   useEffect(() => {
     if (currentChat?.completed && !showResults) {
-      if (!isSingleChatAttempt && currentChatIndex < (template?.chatTemplateIds?.length || 0) - 1) {
-        // Move to next chat after a short delay (only for multi-chat attempts)
-        const timer = setTimeout(() => {
-          setCurrentChatIndex(prev => {
-            const nextIndex = prev + 1;
-            toast.success(`Moving to chat ${nextIndex + 1} of ${template?.chatTemplateIds?.length || 0}`);
-            return nextIndex;
-          });
-        }, 2000);
-        return () => clearTimeout(timer);
-      } else {
-        // All chats completed or single chat completed, show results
+      // Only auto-advance if this chat was freshly completed in this session
+      const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
+      
+      if (isFreshlyCompleted) {
+        if (!isSingleChatAttempt && currentChatIndex < (template?.chatTemplateIds?.length || 0) - 1) {
+          // Move to next chat after a short delay (only for multi-chat attempts)
+          const timer = setTimeout(() => {
+            setCurrentChatIndex(prev => {
+              const nextIndex = prev + 1;
+              toast.success(`Moving to chat ${nextIndex + 1} of ${template?.chatTemplateIds?.length || 0}`);
+              return nextIndex;
+            });
+          }, 2000);
+          return () => clearTimeout(timer);
+        } else {
+          // All chats completed or single chat completed, show results
+          setShowResults(true);
+          setIsActive(false);
+        }
+      }
+    }
+  }, [currentChat?.completed, currentChat?.id, currentChatIndex, template?.chatTemplateIds?.length, showResults, isSingleChatAttempt, freshlyCompletedChats]);
+
+  // Check if all chats are completed and show results (regardless of freshly completed status)
+  useEffect(() => {
+    if (chats.length > 0 && template?.chatTemplateIds && !showResults) {
+      const totalExpectedChats = template.chatTemplateIds.length;
+      const completedChats = chats.filter((chat: any) => chat.completed).length;
+      
+      if (completedChats === totalExpectedChats) {
         setShowResults(true);
         setIsActive(false);
       }
     }
-  }, [currentChat?.completed, currentChatIndex, template?.chatTemplateIds?.length, showResults, isSingleChatAttempt]);
+  }, [chats, template?.chatTemplateIds, showResults]);
 
   const handleSessionComplete = async () => {
     setShowResults(true);
@@ -238,21 +274,21 @@ export default function AttemptPage() {
   // Helper function to format chat template attributes
   const formatChatTemplateInfo = (template: any) => {
     if (!template) return null;
-    
-    const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" : 
-                           template.crowdedness === 2 ? "Moderate crowdedness" :
-                           template.crowdedness === 3 ? "High crowdedness" :
-                           template.crowdedness === 4 ? "Very high crowdedness" :
-                           template.crowdedness === 5 ? "Extremely crowded" :
-                           `Crowdedness: ${template.crowdedness}`;
-    
+
+    const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" :
+      template.crowdedness === 2 ? "Moderate crowdedness" :
+        template.crowdedness === 3 ? "High crowdedness" :
+          template.crowdedness === 4 ? "Very high crowdedness" :
+            template.crowdedness === 5 ? "Extremely crowded" :
+              `Crowdedness: ${template.crowdedness}`;
+
     const intensityText = template.intensity === 1 ? "Low intensity" :
-                         template.intensity === 2 ? "Moderate intensity" :
-                         template.intensity === 3 ? "High intensity" :
-                         template.intensity === 4 ? "Very high intensity" :
-                         template.intensity === 5 ? "Extremely intense" :
-                         `Intensity: ${template.intensity}`;
-    
+      template.intensity === 2 ? "Moderate intensity" :
+        template.intensity === 3 ? "High intensity" :
+          template.intensity === 4 ? "Very high intensity" :
+            template.intensity === 5 ? "Extremely intense" :
+              `Intensity: ${template.intensity}`;
+
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
@@ -407,6 +443,9 @@ export default function AttemptPage() {
       const result = await response.json();
 
       if (result.success) {
+        // Mark this chat as freshly completed
+        setFreshlyCompletedChats(prev => new Set(prev).add(currentChat.id));
+        
         queryClient.invalidateQueries({ queryKey: ["chats", attemptId] });
         queryClient.invalidateQueries({ queryKey: ["rubric", currentChat.id] });
         toast.success("Chat ended successfully");
@@ -556,36 +595,38 @@ export default function AttemptPage() {
               {allRubrics.map((rubric: any, index: number) => {
                 const chat = chats.find((c: any) => c.id === rubric.chatId);
                 return (
-                  <Card key={rubric.id} className="hover:shadow-md transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="flex items-center justify-between">
-                        <span>Chat {index + 1}: {chat?.title}</span>
-                        <Badge variant={rubric.passed ? "default" : "destructive"}>
-                          {rubric.passed ? "Passed" : "Failed"}
-                        </Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <div className="font-medium">Score</div>
-                          <div>{rubric.score}/20</div>
+                  <Link href={`/c/${rubric.chatId}`} key={rubric.id}>
+                    <Card key={rubric.id} className="hover:shadow-md transition-shadow">
+                      <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                          <span>Chat {index + 1}: {chat?.title}</span>
+                          <Badge variant={rubric.passed ? "default" : "destructive"}>
+                            {rubric.passed ? "Passed" : "Failed"}
+                          </Badge>
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <div className="font-medium">Score</div>
+                            <div>{rubric.score}/20</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Time Taken</div>
+                            <div>{Math.round(rubric.timeTaken / 60)} min</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Adaptability</div>
+                            <div>{rubric.adaptability}/5</div>
+                          </div>
+                          <div>
+                            <div className="font-medium">Listening</div>
+                            <div>{rubric.listening}/5</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-medium">Time Taken</div>
-                          <div>{Math.round(rubric.timeTaken / 60)} min</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Adaptability</div>
-                          <div>{rubric.adaptability}/5</div>
-                        </div>
-                        <div>
-                          <div className="font-medium">Listening</div>
-                          <div>{rubric.listening}/5</div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </Link>
                 );
               })}
             </div>
@@ -638,12 +679,6 @@ export default function AttemptPage() {
               </CardContent>
             </Card>
           )}
-
-          <div className="flex justify-center">
-            <Button onClick={() => router.push("/dashboard/templates")} size="lg">
-              Return to Templates
-            </Button>
-          </div>
         </div>
       </div>
     );

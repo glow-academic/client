@@ -17,7 +17,7 @@ import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
 import { getProfileConfig } from "@/utils/profiles";
 import { getAttempts } from "@/utils/queries/get-attempts";
-import { getEnhancedAttempts } from "@/utils/queries/get-enhanced-attempts";
+import { getEnhancedAttempts, getEnhancedAttemptsByUser } from "@/utils/queries/get-enhanced-attempts";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 
 // Define score metrics
@@ -33,7 +33,7 @@ export function useTaskColumns({
   isAdmin = false,
   viewMode = 'chats',
   effectiveRole = 'student',
-}: { isAdmin?: boolean; viewMode?: 'chats' | 'attempts'; effectiveRole?: 'student' | 'guest' } = {}) {
+}: { isAdmin?: boolean; viewMode?: 'chats' | 'attempts'; effectiveRole?: 'student' | 'guest' | 'ta' } = {}) {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["user"],
     queryFn: () => getUser(),
@@ -67,9 +67,15 @@ export function useTaskColumns({
 
   // Fetch enhanced attempts data (for attempts view)
   const { data: enhancedAttempts, isLoading: attemptsLoading } = useQuery({
-    queryKey: ["enhanced-attempts"],
-    queryFn: () => getEnhancedAttempts(),
-    enabled: viewMode === 'attempts',
+    queryKey: isAdmin ? ["enhanced-attempts"] : ["enhanced-attempts", user?.id],
+    queryFn: () => {
+      if (isAdmin) {
+        return getEnhancedAttempts();
+      } else {
+        return getEnhancedAttemptsByUser(user?.id || '');
+      }
+    },
+    enabled: viewMode === 'attempts' && (isAdmin || !!user?.id),
   });
 
   // Fetch all chats for attempts to get rubrics
@@ -121,6 +127,16 @@ export function useTaskColumns({
     if (!classes) return [];
     return classes.map((cls) => ({
       value: cls.id,
+      label: cls.classCode,
+      icon: null,
+    }));
+  }, [classes]);
+
+  // Create class options for attempts (uses classCode as value since attempts data has classCode directly)
+  const attemptClassOptions = useMemo(() => {
+    if (!classes) return [];
+    return classes.map((cls) => ({
+      value: cls.classCode,
       label: cls.classCode,
       icon: null,
     }));
@@ -453,7 +469,24 @@ export function useTaskColumns({
         // Actions column
         {
           id: "actions",
-          cell: ({ row }: any) => <DataTableRowActions row={row} isAdmin={isAdmin} viewMode={viewMode} />,
+          cell: ({ row }: any) => {
+            const chats = row.original.chats as any[];
+            const chatTemplateIds = row.original.chatTemplateIds as string[];
+            
+            // An attempt is completed if all expected chats are completed
+            const totalExpectedChats = chatTemplateIds?.length || 0;
+            const completedChats = chats?.filter(chat => chat.completed).length || 0;
+            const isAttemptCompleted = totalExpectedChats > 0 && completedChats === totalExpectedChats;
+            
+            return (
+              <DataTableRowActions 
+                id={row.original.id} 
+                completed={isAttemptCompleted} 
+                isAdmin={isAdmin} 
+                viewMode={viewMode} 
+              />
+            );
+          },
         },
       ];
 
@@ -724,15 +757,30 @@ export function useTaskColumns({
       },
       {
         id: "actions",
-        cell: ({ row }) => <DataTableRowActions row={row} isAdmin={isAdmin} viewMode={viewMode} />,
+        cell: ({ row }) => <DataTableRowActions id={row.original.id} completed={row.original.completed} isAdmin={isAdmin} viewMode={viewMode} />,
       },
     ];
 
     return baseColumns;
   }, [userOptions, classOptions, chatRubrics, attemptRubricsByChat, isAdmin, profiles, viewMode]);
 
-  // Determine which data to return based on view mode
-  const data = viewMode === 'attempts' ? enhancedAttempts : chats;
+  // Determine which data to return based on view mode and apply additional filtering for TAs
+  let data: any[] = viewMode === 'attempts' ? (enhancedAttempts || []) : (chats || []);
+  
+  // Apply additional filtering for TAs and non-admin users
+  if (!isAdmin && effectiveRole === 'ta' && user?.id) {
+    if (viewMode === 'chats') {
+      // Filter chats to only show those belonging to the current user
+      data = data.filter((chat: any) => chat.userId === user.id);
+    } else if (viewMode === 'attempts') {
+      // Filter attempts to only show those belonging to the current user
+      data = data.filter((attempt: any) => attempt.userId === user.id);
+    }
+  } else if (!isAdmin && !user?.id) {
+    // If there's no user and not admin, show empty data
+    data = [];
+  }
+
   const isLoading = viewMode === 'attempts' 
     ? (usersLoading || classesLoading || attemptsLoading || profilesLoading || attemptChatsLoading || attemptRubricsLoading)
     : (usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading);
@@ -740,9 +788,9 @@ export function useTaskColumns({
   return {
     columns,
     isLoading,
-    data: data || [],
+    data: data,
     userOptions,
-    classOptions,
+    classOptions: viewMode === 'attempts' ? attemptClassOptions : classOptions,
     profileTypes, // Export dynamic profile types
     isAdmin,
   };

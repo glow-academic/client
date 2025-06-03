@@ -17,6 +17,10 @@ const columnMap = {
   createdAt: "Date",
   classId: "Class",
   userId: "Name",
+  templateTitle: "Template",
+  classCode: "Class",
+  profilesTested: "Profiles",
+  averageScore: "Score",
 };
 
 interface DataTableViewOptionsProps<TData> {
