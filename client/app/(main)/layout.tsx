@@ -78,7 +78,7 @@ export default function MainLayout({
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
-    if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/')) {
+    if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
       return null;
     }
     
@@ -114,6 +114,33 @@ export default function MainLayout({
         <Button onClick={() => router.push('/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Class
+        </Button>
+      );
+    }
+    
+    if (pathname.startsWith('/management/instructional')) {
+      return (
+        <Button onClick={() => router.push('/management/instructional/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Instructional Staff
+        </Button>
+      );
+    }
+    
+    if (pathname.startsWith('/management/instructor')) {
+      return (
+        <Button onClick={() => router.push('/management/instructor/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Instructor
+        </Button>
+      );
+    }
+    
+    if (pathname.startsWith('/management/ta')) {
+      return (
+        <Button onClick={() => router.push('/management/ta/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Teaching Assistant
         </Button>
       );
     }
