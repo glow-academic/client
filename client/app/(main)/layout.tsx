@@ -109,6 +109,15 @@ export default function MainLayout({
       );
     }
     
+    if (pathname.startsWith('/classes/general')) {
+      return (
+        <Button onClick={() => router.push('/classes/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Class
+        </Button>
+      );
+    }
+    
     return null;
   };
 

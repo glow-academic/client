@@ -1,10 +1,9 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { MessageSquare, FileText } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
@@ -95,25 +94,12 @@ export default function DashboardLayout({
 
   // Create view mode toggle for history page
   const viewModeToggle = isHistoryPage ? (
-    <div className="flex border rounded-md">
-      <Button
-        variant={viewMode === 'chats' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setViewMode('chats')}
-        className="rounded-r-none border-r"
-      >
-        <MessageSquare className="h-4 w-4 mr-1" />
-        Chats
-      </Button>
-      <Button
-        variant={viewMode === 'attempts' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => setViewMode('attempts')}
-        className="rounded-l-none"
-      >
-        <FileText className="h-4 w-4 mr-1" />
-        Attempts
-      </Button>
+    <div className="flex items-center space-x-2">
+      <span className="text-sm text-muted-foreground">Show individual chats</span>
+      <Switch
+        checked={viewMode === 'chats'}
+        onCheckedChange={(checked) => setViewMode(checked ? 'chats' : 'attempts')}
+      />
     </div>
   ) : null;
 

@@ -294,7 +294,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
           classData: cls,
         }));
 
-        if (effectiveRole === 'admin' || effectiveRole === 'instructional') {
+        if (effectiveRole === 'admin' || effectiveRole === 'instructional' || effectiveRole === 'instructor') {
           classItems.unshift({
             title: "General",
             url: "#",
