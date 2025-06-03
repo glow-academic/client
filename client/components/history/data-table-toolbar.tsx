@@ -11,7 +11,6 @@ import { ExportButton } from "@/components/history/export-button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 
 import { DataTableFacetedFilter } from "@/components/history/data-table-faceted-filter";
-import { statuses } from "./columns"; // Import statuses from columns.tsx
 
 // Define score options
 const scoreOptions = [
@@ -64,7 +63,8 @@ export function DataTableToolbar<TData>({
               options={statuses}
             />
           )} */}
-          {isAdmin && viewMode === 'chats' && table.getColumn("userId") && (
+          {/* Name filter - show for all users in chat mode, and for attempts mode */}
+          {((viewMode === 'chats') || (viewMode === 'attempts')) && table.getColumn("userId") && (
             <DataTableFacetedFilter
               column={table.getColumn("userId")}
               title="Name"
