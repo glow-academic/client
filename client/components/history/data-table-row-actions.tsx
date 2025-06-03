@@ -10,11 +10,13 @@ import Link from "next/link";
 interface DataTableRowActionsProps<TData> {
   row: Row<TData>;
   isAdmin?: boolean;
+  viewMode?: "chats" | "attempts";
 }
 
 export function DataTableRowActions<TData>({
   row,
   isAdmin = false,
+  viewMode = "chats",
 }: DataTableRowActionsProps<TData>) {
   const chat = row.original as typeof chats.$inferSelect;
   const hasRubric = chat.completed; // Assuming completed status means it has a rubric
@@ -23,7 +25,7 @@ export function DataTableRowActions<TData>({
   if (!isAdmin) {
     if (!hasRubric) {
       return (
-        <Link href={`/chat/${chat.id}`}>
+        <Link href={`/${viewMode === "chats" ? "c" : "a"}/${chat.id}`}>
           <Button variant="outline" size="sm" className="h-8">
             Continue
           </Button>
@@ -31,7 +33,7 @@ export function DataTableRowActions<TData>({
       );
     } else {
       return (
-        <Link href={`/chat/${chat.id}`}>
+        <Link href={`/${viewMode === "chats" ? "c" : "a"}/${chat.id}`}>
           <Button variant="outline" size="sm" className="h-8">
             View
           </Button>
@@ -40,7 +42,7 @@ export function DataTableRowActions<TData>({
     }
   } else {
     return (
-      <Link href={`/chat/${chat.id}`}>
+      <Link href={`/${viewMode === "chats" ? "c" : "a"}/${chat.id}`}>
         <Button variant="outline" size="sm" className="h-8">
           View
         </Button>

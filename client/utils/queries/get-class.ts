@@ -9,5 +9,10 @@ export async function getClass(classId: string) {
     .select()
     .from(classes)
     .where(eq(classes.id, classId));
-  return userClass;
+
+  if (userClass.length === 0) {
+    return null;
+  }
+
+  return userClass[0];
 }

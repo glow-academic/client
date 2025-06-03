@@ -1,6 +1,6 @@
 # app/routes/attempt.py
 from fastapi import APIRouter, Form, HTTPException, Depends
-from app.models import Attempts, Templates, Chats, Profiles, ChatTemplates, Classes
+from app.models import Attempts, Templates, Chats, Profiles, ChatTemplates, Classes, Scenarios
 from app.db import get_session
 from sqlmodel import Session, select
 import logging
@@ -8,15 +8,29 @@ from app.agents.scenario import run_scenario_agent
 from typing import List, Optional
 import random
 
+from app.agents.evaluate import run_evaluate_agent
+from app.agents.aggressive import run_aggressive_agent
+from app.agents.confused import run_confused_agent
+from app.agents.happy import run_happy_agent
+from fastapi.responses import StreamingResponse
+import json
+from typing import AsyncIterator, Optional
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+AGENT_DISPATCH = {
+    "aggressive": run_aggressive_agent,
+    "confused": run_confused_agent,
+    "happy": run_happy_agent,
+}
 
 
 @router.post("/start")
 async def start_attempt(
     template_id: str = Form(...),
-    user_id: Optional[str] = Form(None),  # Optional for guest mode
+    user_id: str = Form(...), 
     class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
@@ -47,49 +61,56 @@ async def start_attempt(
         if not chat_template_ids:
             raise HTTPException(status_code=400, detail="Template has no chat templates configured")
         
-        # Create chats for each chat template
-        chat_ids = []
-        for chat_template_id in chat_template_ids:
-            # Get the chat template to find the profile
-            chat_template = session.exec(
-                select(ChatTemplates).where(ChatTemplates.id == chat_template_id)
-            ).one_or_none()
-            
-            if not chat_template:
-                logger.warning(f"Chat template {chat_template_id} not found, skipping")
-                continue
-            
-            # Create a scenario using the scenario agent
+        # Just create the first chat template
+        chat_template_id = chat_template_ids[0]
+        chat_template = session.exec(
+            select(ChatTemplates).where(ChatTemplates.id == chat_template_id)
+        ).one_or_none()
+        
+        if not chat_template:
+            raise HTTPException(status_code=400, detail=f"Chat template {chat_template_id} not found")
+        
+        # if no scenario_id, create a new one
+        if not chat_template.scenario_id:
             scenario_id, chat_title = await run_scenario_agent(
                 profile_id=chat_template.profile_id,
                 user_id=user_id,  # Pass user_id (can be None for guest)
                 class_id=class_id,
                 session=session
             )
-            
-            # Create the chat with the scenario and link it to this attempt
-            chat = Chats(
-                title=chat_title,
-                scenario_id=scenario_id,
-                attempt_id=new_attempt.id,
-                profile_id=chat_template.profile_id,  # Add profile_id from chat template
-                completed=False
-            )
-            session.add(chat)
-            session.commit()
-            session.refresh(chat)
-            
-            chat_ids.append(str(chat.id))
-            logger.info(f"Created chat {chat.id} for attempt {new_attempt.id}")
-        
-        logger.info(f"Started attempt {new_attempt.id} with {len(chat_ids)} chats: {chat_ids}")
+        else:
+            scenario_id = chat_template.scenario_id
+            chat_title = chat_template.title
+
+        # if no profile_id, select a random profile
+        if not chat_template.profile_id:
+            # get all profiles
+            profiles = session.exec(select(Profiles)).all()
+            if not profiles:
+                raise HTTPException(status_code=400, detail="No profiles found for class")
+            profile_id = random.choice(profiles).id
+        else:
+            profile_id = chat_template.profile_id
+
+        # Create the chat with the scenario and link it to this attempt
+        chat = Chats(
+            title=chat_title,
+            scenario_id=scenario_id,
+            profile_id=profile_id,
+            chat_template_id=chat_template_id,
+            attempt_id=new_attempt.id,
+            completed=False
+        )
+
+        session.add(chat)
+        session.commit()
+        session.refresh(chat)
         
         return {
             "success": True,
             "message": "Attempt started successfully",
             "attempt_id": str(new_attempt.id),
-            "chat_ids": chat_ids,
-            "total_chats": len(chat_ids)
+            "chat_id": str(chat.id)
         }
         
     except Exception as e:
@@ -97,85 +118,159 @@ async def start_attempt(
         logger.error(f"Error starting attempt: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to start attempt: {str(e)}")
 
-
-@router.get("/{attempt_id}")
-async def get_attempt(
-    attempt_id: str,
+@router.post("/message")
+async def message(
+    chat_id: str = Form(...),
+    message: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    Get attempt details with associated template and class information.
+    Streams assistant tokens back to the frontend via Server-Sent Events.
     """
     try:
-        # Get the attempt with joined data
-        query = (
-            select(Attempts, Templates, Classes)
-            .join(Templates, Attempts.template_id == Templates.id)
-            .join(Classes, Attempts.class_id == Classes.id)
-            .where(Attempts.id == attempt_id)
+        chat = session.exec(select(Chats).where(Chats.id == chat_id)).one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        # Check if chat is completed
+        if chat.completed:
+            raise HTTPException(status_code=400, detail="Cannot send messages to completed chat")
+
+        # Get the profile using the profile_id from the chat
+        profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
+        if not profile:
+            raise HTTPException(status_code=404, detail="Profile not found")
+
+        agent_factory = AGENT_DISPATCH.get(profile.name.lower())
+        if not agent_factory:
+            raise HTTPException(status_code=400, detail=f"Invalid profile: {profile.name}")
+
+        async def event_stream() -> AsyncIterator[str]:
+            # initial heartbeat so proxies flush headers
+            yield ":\n\n"
+
+            try:
+                async for token in agent_factory(
+                    chat_id=chat_id, input_text=message, session=session
+                ):
+                    yield f"data: {json.dumps({'text': token})}\n\n"
+
+                yield 'data: {"done": true}\n\n'
+            except Exception as exc:
+                err_msg = str(exc)
+                logger.exception("Streaming error: %s", err_msg)
+                yield f"data: {json.dumps({'error': err_msg})}\n\n"
+                raise
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream; charset=utf-8",
+            headers={"Cache-Control": "no-store"},
         )
         
-        result = session.exec(query).one_or_none()
-        if not result:
-            raise HTTPException(status_code=404, detail="Attempt not found")
-        
-        attempt, template, class_info = result
-        
-        return {
-            "success": True,
-            "attempt": {
-                "id": str(attempt.id),
-                "created_at": attempt.created_at.isoformat(),
-                "user_id": str(attempt.user_id) if attempt.user_id else None,
-                "class_id": str(attempt.class_id),
-                "template_id": str(attempt.template_id),
-                "template_title": template.title,
-                "template_time_limit": template.time_limit,
-                "class_name": class_info.name,
-                "class_code": class_info.class_code,
-            }
-        }
-        
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        raise
     except Exception as e:
-        logger.error(f"Error getting attempt {attempt_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get attempt: {str(e)}")
+        logger.error(f"Error in message endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to process message: {str(e)}")
 
 
-@router.get("/{attempt_id}/chats")
-async def get_attempt_chats(
-    attempt_id: str,
+
+@router.post("/continue")
+async def continue_attempt(
+    attempt_id: str = Form(...),
+    chat_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    Get all chats associated with an attempt.
+    This endpoint is used to continue an attempt, which should be called when a chat is ended.
     """
     try:
-        # Verify attempt exists
+        # get the chat
+        chat = session.exec(select(Chats).where(Chats.id == chat_id)).one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+
+        # Get the attempt
         attempt = session.exec(select(Attempts).where(Attempts.id == attempt_id)).one_or_none()
         if not attempt:
             raise HTTPException(status_code=404, detail="Attempt not found")
         
-        # Get chats for this attempt
-        chats = session.exec(select(Chats).where(Chats.attempt_id == attempt_id)).all()
+        # get the template  
+        template = session.exec(select(Templates).where(Templates.id == attempt.template_id)).one_or_none()
+        if not template:
+            raise HTTPException(status_code=404, detail="Template not found")
         
-        chat_data = []
-        for chat in chats:
-            chat_data.append({
-                "id": str(chat.id),
-                "title": chat.title,
-                "created_at": chat.created_at.isoformat(),
-                "completed": chat.completed,
-                "completed_at": chat.completed_at.isoformat() if chat.completed_at else None,
-                "scenario_id": str(chat.scenario_id),
-                "attempt_id": str(chat.attempt_id),
-            })
+        # get all the chat templates for this template
+        chat_templates = template.chat_template_ids
+        
+        # Find the current chat template index and get the next one
+        current_chat_template_id = chat.chat_template_id
+        if current_chat_template_id not in chat_templates:
+            raise HTTPException(status_code=400, detail="Current chat template not found in template")
+        
+        current_index = chat_templates.index(current_chat_template_id)
+        next_index = current_index + 1
+        
+        # do not continue if we do not have any chat templates left
+        next_chat_id = chat_id
+        if next_index < len(chat_templates):
+            next_chat_template_id = chat_templates[next_index]
+            next_chat_template = session.exec(select(ChatTemplates).where(ChatTemplates.id == next_chat_template_id)).one_or_none()
+            if not next_chat_template:
+                raise HTTPException(status_code=404, detail="Next chat template not found")
+            
+            # if no scenario_id, create a new one
+            if not next_chat_template.scenario_id:
+                scenario_id, chat_title = await run_scenario_agent(
+                    profile_id=next_chat_template.profile_id,
+                    user_id=attempt.user_id, 
+                    class_id=attempt.class_id,
+                    session=session
+                )
+            else:
+                scenario_id = next_chat_template.scenario_id
+                chat_title = next_chat_template.title
+
+            # if no profile_id, select a random profile
+            if not next_chat_template.profile_id:
+                # get all profiles
+                profiles = session.exec(select(Profiles)).all()
+                if not profiles:
+                    raise HTTPException(status_code=400, detail="No profiles found for class")
+                profile_id = random.choice(profiles).id
+            else:
+                profile_id = next_chat_template.profile_id
+
+            # Create the chat with the scenario and link it to this attempt
+            next_chat = Chats(
+                title=chat_title,
+                scenario_id=scenario_id,
+                profile_id=profile_id,
+                chat_template_id=next_chat_template_id,  # Add the missing chat_template_id
+                attempt_id=attempt_id,
+                completed=False
+            )
+            
+            # Add and commit the new chat to the database
+            session.add(next_chat)
+            session.commit()
+            session.refresh(next_chat)
+            next_chat_id = next_chat.id
+
+        # Run logic to end the current chat
+        rubric_id = await run_evaluate_agent(chat_id, session)
         
         return {
             "success": True,
-            "chats": chat_data,
-            "total_chats": len(chat_data)
+            "message": "Chat ended successfully",
+            "chat_id": str(next_chat_id),
+            "rubric_id": rubric_id,
+            "completed": next_chat_id == chat_id
         }
         
     except Exception as e:
-        logger.error(f"Error getting chats for attempt {attempt_id}: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to get attempt chats: {str(e)}")
+        session.rollback()
+        logger.error(f"Error continuing attempt: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to continue attempt: {str(e)}")

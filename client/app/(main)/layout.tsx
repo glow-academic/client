@@ -31,14 +31,20 @@ export default function MainLayout({
 
   const handleSectionChange = (section: string) => {
     // Convert section to route
-    let route = '/dashboard/home';
+    let route = '/dashboard/templates';
     
     switch (section) {
-      case 'home':
-        route = '/dashboard/home';
+      case 'templates':
+        route = '/dashboard/templates';
         break;
       case 'history':
         route = '/dashboard/history';
+        break;
+      case 'analytics':
+        route = '/dashboard/analytics';
+        break;
+      case 'growth':
+        route = '/dashboard/growth';
         break;
       case 'profile':
         route = '/profile';

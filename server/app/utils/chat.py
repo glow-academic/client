@@ -1,6 +1,7 @@
 from typing import List
-from app.models import Messages, Chats
+from app.models import Messages, Chats, Scenarios
 from agents.items import TResponseInputItem
+from sqlmodel import Session, select
 
 
 def get_conversation_history(messages: List[Messages]) -> list[TResponseInputItem]:
@@ -26,11 +27,16 @@ def get_conversation_history(messages: List[Messages]) -> list[TResponseInputIte
     return conversation_history
 
 
-def get_chat_scenario(chat: Chats) -> str:
+def get_chat_scenario(chat: Chats, session: Session) -> str:
     """
     Get the scenario for a given chat.
     """
+
+    scenario = session.exec(select(Scenarios).where(Scenarios.id == chat.scenario_id)).one_or_none()
+    if not scenario:
+        raise ValueError(f"Scenario not found for chat {chat.id}")
+
     return {
         "role": "assistant",
-        "content": f"The following is the scenario for the chat: {chat.scenario_description}",
+        "content": f"The following is the scenario for the chat: {scenario.description}",
     }

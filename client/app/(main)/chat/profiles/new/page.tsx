@@ -59,11 +59,6 @@ export default function NewProfilePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Create Profile</h1>
-        <p className="text-muted-foreground">Create a new AI student profile</p>
-      </div>
-      
       <div className="container mx-auto max-w-2xl">
         <Card>
           <CardHeader>

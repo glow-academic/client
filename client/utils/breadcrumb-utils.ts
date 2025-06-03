@@ -3,6 +3,8 @@ import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";
 import { getProfile } from "@/utils/queries/get-profile";
 import { getTemplate } from "@/utils/queries/get-template";
+import { getChat } from "@/utils/queries/get-chat";
+import { getChatTemplate } from "./queries/get-chat-template";
 
 interface BreadcrumbItem {
   title: string;
@@ -20,12 +22,14 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
     switch (context) {
       case 'class':
         const classData = await getClass(id);
-        return classData?.[0]?.classCode || `Class ${id.substring(0, 8)}...`;
+        return classData?.classCode || `Class ${id.substring(0, 8)}...`;
       
       case 'attempt':
         const attemptData = await getAttempt(id);
+        // get template for attempt
+        const attemptTemplate = await getTemplate(attemptData?.templateId);
         // Attempts don't have a title, so we'll use a generic name with timestamp
-        return attemptData ? `Attempt ${attemptData.createdAt.substring(0, 10)}` : `Attempt ${id.substring(0, 8)}...`;
+        return attemptTemplate ? `${attemptTemplate.title}` : `Attempt ${id.substring(0, 8)}...`;
       
       case 'scenario':
         const scenarioData = await getScenario(id);
@@ -40,9 +44,8 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return templateData?.title || `Template ${id.substring(0, 8)}...`;
       
       case 'chat':
-        // For chat IDs, we might want to fetch from attempts or another table
-        const chatAttempt = await getAttempt(id);
-        return chatAttempt ? `Chat ${chatAttempt.createdAt.substring(0, 10)}` : `Chat ${id.substring(0, 8)}...`;
+        const chatData = await getChat(id);
+        return chatData?.title || `Chat ${id.substring(0, 8)}...`;
       
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -86,6 +89,12 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
           if (prevSegment === 't') context = 'template';
           else if (prevSegment === 'p') context = 'profile';
           else if (prevSegment === 's') context = 'scenario';
+          break;
+        case 'c':
+          context = 'chat';
+          break;
+        case 'a':
+          context = 'attempt';
           break;
       }
       
@@ -169,6 +178,12 @@ const getSectionFromSegments = (segments: string[]) => {
   }
   if (first === 'chat') {
     return `chat-${second}`;
+  }
+  if (first === 'c') {
+    return 'history'; // Chat pages should be under history section
+  }
+  if (first === 'a') {
+    return 'templates'; // Attempt pages should be under templates section
   }
   if (first === 'management') {
     return `manage-${second}`;

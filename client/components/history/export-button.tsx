@@ -143,8 +143,12 @@ export function ExportButton<TData>({
 
             if (column.id === "chats" && cellValue) {
               const chats = cellValue as any[];
+              const original = row.original as any;
+              const chatTemplateIds = original.chatTemplateIds as string[];
+              
               const completedChats = chats?.filter(chat => chat.completed).length || 0;
-              const totalChats = chats?.length || 0;
+              // Use template's chatTemplateIds length for total expected chats
+              const totalChats = chatTemplateIds?.length || chats?.length || 0;
               return `"${completedChats}/${totalChats}"`;
             }
 

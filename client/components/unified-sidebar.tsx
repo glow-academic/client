@@ -235,9 +235,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         icon: Home,
         items: [
           {
-            title: "Home",
+            title: "Templates",
             url: "#",
-            section: "home",
+            section: "templates",
           },
           {
             title: "History",
@@ -247,16 +247,21 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         ],
       });
     } else if (effectiveRole === 'ta') {
-      // TA mode - only dashboard with home and history
+      // TA mode - home, history, and growth
       menu.push({
         title: "Dashboard",
         url: "#",
         icon: Home,
         items: [
           {
-            title: "Home",
+            title: "Templates",
             url: "#",
-            section: "home",
+            section: "templates",
+          },
+          {
+            title: "Growth",
+            url: "#",
+            section: "growth",
           },
           {
             title: "History",
@@ -266,16 +271,21 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         ],
       });
     } else {
-      // Other roles - full dashboard
+      // Other roles - full dashboard with analytics
       menu.push({
         title: "Dashboard",
         url: "#",
         icon: Home,
         items: [
           {
-            title: "Home",
+            title: "Analytics",
             url: "#",
-            section: "home",
+            section: "analytics",
+          },
+          {
+            title: "Templates",
+            url: "#",
+            section: "templates",
           },
           {
             title: "History",
@@ -376,11 +386,17 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
     // Otherwise, handle navigation internally
     // Convert section to route
-    let route = '/dashboard/home';
+    let route = '/dashboard/templates';
     
     switch (section) {
-      case 'home':
-        route = '/dashboard/home';
+      case 'templates':
+        route = '/dashboard/templates';
+        break;
+      case 'analytics':
+        route = '/dashboard/analytics';
+        break;
+      case 'growth':
+        route = '/dashboard/growth';
         break;
       case 'history':
         route = '/dashboard/history';

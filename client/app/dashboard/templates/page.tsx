@@ -1,5 +1,5 @@
 /**
- * app/home/page.tsx
+ * app/dashboard/templates/page.tsx
  * This is the unified home page with role-based access control
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
@@ -13,7 +13,6 @@ import { Timer, Users } from "lucide-react";
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import Analytics from "@/components/Analytics";
 import { getTemplates } from "@/utils/queries/get-templates";
 import { getClasses } from "@/utils/queries/get-classes";
 import { getUser } from "@/utils/queries/get-user";
@@ -38,11 +37,11 @@ export default function DashboardHomePage() {
   // Get user role simulation - only run on client side
   const getEffectiveRole = (): UserRole => {
     if (!isClient) return 'guest'; // Default to guest during SSR
-    
+
     // Check if in guest mode from localStorage
     const isGuestMode = localStorage.getItem('guestMode') === 'true';
     if (isGuestMode && !user) return 'guest';
-    
+
     if (!user) return 'guest';
     const stored = localStorage.getItem('simulatedRole');
     if (user.role === 'admin' && stored && ['admin', 'instructional', 'instructor', 'ta', 'guest'].includes(stored)) {
@@ -80,8 +79,8 @@ export default function DashboardHomePage() {
       toast.loading("Starting template...");
 
       // For guests, use all available classes; for users, use their assigned classes or all if none assigned
-      const availableClasses = effectiveRole === 'guest' 
-        ? classes 
+      const availableClasses = effectiveRole === 'guest'
+        ? classes
         : (user.classIds.length > 0 ? classes.filter(c => user.classIds.includes(c.id)) : classes);
 
       const classId = availableClasses.length > 0
@@ -192,67 +191,51 @@ export default function DashboardHomePage() {
             </Card>
           ))}
         </div>
-
-        {/* Skeleton for Analytics/DataTable */}
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
       </div>
     );
   }
 
-  // Regular user view
+  // Regular user view - now simplified without analytics
   return (
     <div className="space-y-6">
-      {/* Template Section for TAs */}
-      {effectiveRole === 'ta' && (
-        <div data-testid="template-section" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {templates && templates.length > 0 ? (
-            templates.map(template => {
-              return (
-                <Card
-                  key={template.id}
-                  data-testid="template-card"
-                  className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
-                  onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"></div>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users
-                        className={`h-5 w-5 text-blue-500 ${loadingTemplate ? "animate-spin" : "group-hover:scale-110 transition-transform duration-300"}`}
-                      />
-                      Template
-                    </CardTitle>
-                    <CardDescription data-testid="template-class">Practice Session</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p data-testid="template-title" className="text-sm font-medium">{template.title}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {template.chatTemplateIds.length} chat configuration{template.chatTemplateIds.length !== 1 ? 's' : ''}
-                    </p>
-                  </CardContent>
-                  <CardFooter className="text-xs text-muted-foreground flex justify-between items-center">
-                    <div className="flex items-center" data-testid="template-duration">
-                      <Timer className="h-3 w-3 mr-1" />
-                      <span>{template.timeLimit} min</span>
-                    </div>
-                    <span className="font-medium">Click to start</span>
-                  </CardFooter>
-                </Card>
-              );
-            })
-          ) : null}
-        </div>
-      )}
-
-      {/* Analytics Section - Show for non-TA and non-guest users */}
-      {effectiveRole !== 'ta' && (
-        <div className="space-y-4">
-          <Analytics />
-        </div>
-      )}
+      <div data-testid="template-section" className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {templates && templates.length > 0 ? (
+          templates.map(template => {
+            return (
+              <Card
+                key={template.id}
+                data-testid="template-card"
+                className={`group relative overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"}`}
+                onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-purple-500 opacity-30"></div>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users
+                      className={`h-5 w-5 text-blue-500 ${loadingTemplate ? "animate-spin" : "group-hover:scale-110 transition-transform duration-300"}`}
+                    />
+                    Template
+                  </CardTitle>
+                  <CardDescription data-testid="template-class">Practice Session</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p data-testid="template-title" className="text-sm font-medium">{template.title}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {template.chatTemplateIds.length} chat configuration{template.chatTemplateIds.length !== 1 ? 's' : ''}
+                  </p>
+                </CardContent>
+                <CardFooter className="text-xs text-muted-foreground flex justify-between items-center">
+                  <div className="flex items-center" data-testid="template-duration">
+                    <Timer className="h-3 w-3 mr-1" />
+                    <span>{template.timeLimit} min</span>
+                  </div>
+                  <span className="font-medium">Click to start</span>
+                </CardFooter>
+              </Card>
+            );
+          })
+        ) : null}
+      </div>
     </div>
   );
 }

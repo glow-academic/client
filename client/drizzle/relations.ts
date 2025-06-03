@@ -1,15 +1,26 @@
 import { relations } from "drizzle-orm/relations";
-import { profiles, chatTemplates, schedules, classes, prerequisites, topics, deadlines, documents, users, attempts, templates, scenarios, chats, messages, rubrics } from "./schema";
+import { profiles, chatTemplates, scenarios, schedules, classes, prerequisites, topics, deadlines, documents, users, attempts, templates, chats, messages, rubrics } from "./schema";
 
-export const chatTemplatesRelations = relations(chatTemplates, ({one}) => ({
+export const chatTemplatesRelations = relations(chatTemplates, ({one, many}) => ({
 	profile: one(profiles, {
 		fields: [chatTemplates.profileId],
 		references: [profiles.id]
 	}),
+	scenario: one(scenarios, {
+		fields: [chatTemplates.scenarioId],
+		references: [scenarios.id]
+	}),
+	chats: many(chats),
 }));
 
 export const profilesRelations = relations(profiles, ({many}) => ({
 	chatTemplates: many(chatTemplates),
+	chats: many(chats),
+}));
+
+export const scenariosRelations = relations(scenarios, ({many}) => ({
+	chatTemplates: many(chatTemplates),
+	chats: many(chats),
 }));
 
 export const classesRelations = relations(classes, ({one, many}) => ({
@@ -85,16 +96,20 @@ export const chatsRelations = relations(chats, ({one, many}) => ({
 		fields: [chats.scenarioId],
 		references: [scenarios.id]
 	}),
+	profile: one(profiles, {
+		fields: [chats.profileId],
+		references: [profiles.id]
+	}),
+	chatTemplate: one(chatTemplates, {
+		fields: [chats.chatTemplateId],
+		references: [chatTemplates.id]
+	}),
 	attempt: one(attempts, {
 		fields: [chats.attemptId],
 		references: [attempts.id]
 	}),
 	messages: many(messages),
 	rubrics: many(rubrics),
-}));
-
-export const scenariosRelations = relations(scenarios, ({many}) => ({
-	chats: many(chats),
 }));
 
 export const messagesRelations = relations(messages, ({one}) => ({

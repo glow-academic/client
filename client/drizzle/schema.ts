@@ -19,7 +19,8 @@ export const profiles = pgTable("profiles", {
 export const chatTemplates = pgTable("chat_templates", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	profileId: uuid("profile_id").notNull(),
+	profileId: uuid("profile_id"),
+	scenarioId: uuid("scenario_id"),
 	crowdedness: integer().notNull(),
 	intensity: integer().notNull(),
 	seniority: seniorityLevels().default('freshman').notNull(),
@@ -28,7 +29,12 @@ export const chatTemplates = pgTable("chat_templates", {
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
 			name: "chat_templates_profile_id_fkey"
-		}).onDelete("cascade"),
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.scenarioId],
+			foreignColumns: [scenarios.id],
+			name: "chat_templates_scenario_id_fkey"
+		}).onDelete("set null"),
 ]);
 
 export const scenarios = pgTable("scenarios", {
@@ -177,6 +183,8 @@ export const chats = pgTable("chats", {
 	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	title: text().notNull(),
 	scenarioId: uuid("scenario_id").notNull(),
+	profileId: uuid("profile_id").notNull(),
+	chatTemplateId: uuid("chat_template_id").notNull(),
 	completed: boolean().default(false).notNull(),
 	attemptId: uuid("attempt_id").notNull(),
 }, (table) => [
@@ -184,6 +192,16 @@ export const chats = pgTable("chats", {
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
 			name: "chats_scenario_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.profileId],
+			foreignColumns: [profiles.id],
+			name: "chats_profile_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.chatTemplateId],
+			foreignColumns: [chatTemplates.id],
+			name: "chats_chat_template_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.attemptId],

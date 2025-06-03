@@ -1,4 +1,4 @@
-from app.models import Classes
+from app.models import Classes, Attempts, Chats
 from sqlmodel import Session, select
 
 
@@ -6,7 +6,10 @@ def get_class_info(class_id: str, session: Session) -> dict:
     """
     Get the class information for a given class id.
     """
+    
     class_info = session.exec(select(Classes).where(Classes.id == class_id)).first()
+    if not class_info:
+        raise ValueError(f"Class not found for class {class_id}")
 
     class_name = class_info.name
     class_code = class_info.class_code

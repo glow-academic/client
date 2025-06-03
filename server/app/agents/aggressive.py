@@ -5,7 +5,7 @@ from app.extensions import get_gemini
 from app.utils.chat import get_conversation_history, get_chat_scenario
 from app.db import get_session
 from sqlmodel import Session, select
-from app.models import Messages, Chats
+from app.models import Messages, Chats, Attempts
 from fastapi import Depends
 from app.utils.classes import get_class_info
 from openai.types.responses import (
@@ -31,6 +31,11 @@ async def run_aggressive_agent(
     # get the chat from the chat_id
     chat = session.exec(select(Chats).where(Chats.id == chat_id)).one()
 
+        # find attempt from chat_id
+    attempt = session.exec(select(Attempts).where(Attempts.id == chat.attempt_id)).one()
+    if not attempt:
+        raise ValueError(f"Attempt not found for chat {chat_id}")
+
     # add a new message with an empty response
     message = Messages(chat_id=chat_id, query=input_text, response="")
     session.add(message)
@@ -44,8 +49,8 @@ async def run_aggressive_agent(
 
     # prepare conversation history from chat_id
     conversation_history = get_conversation_history(messages)
-    chat_scenario = get_chat_scenario(chat)
-    class_info = get_class_info(chat.class_id, session)
+    chat_scenario = get_chat_scenario(chat, session)
+    class_info = get_class_info(attempt.class_id, session)
 
     input_items = [chat_scenario, class_info] + conversation_history
 

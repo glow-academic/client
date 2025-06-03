@@ -22,6 +22,7 @@ class Profiles(_Base, table=True):
     threshold: int = Field(sa_column=Column('threshold', Integer))
 
     chat_templates: List['ChatTemplates'] = Relationship(back_populates='profile')
+    chats: List['Chats'] = Relationship(back_populates='profile')
 
 
 class Scenarios(_Base, table=True):
@@ -34,6 +35,7 @@ class Scenarios(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
 
+    chat_templates: List['ChatTemplates'] = Relationship(back_populates='scenario')
     chats: List['Chats'] = Relationship(back_populates='scenario')
 
 
@@ -88,18 +90,22 @@ class Users(_Base, table=True):
 class ChatTemplates(_Base, table=True):
     __tablename__ = 'chat_templates'
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='chat_templates_profile_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='SET NULL', name='chat_templates_profile_id_fkey'),
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='SET NULL', name='chat_templates_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='chat_templates_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    profile_id: UUID = Field(sa_column=Column('profile_id', Uuid))
     crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
     intensity: int = Field(sa_column=Column('intensity', Integer))
     seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
+    profile_id: Optional[UUID] = Field(default=None, sa_column=Column('profile_id', Uuid))
+    scenario_id: Optional[UUID] = Field(default=None, sa_column=Column('scenario_id', Uuid))
 
     profile: Optional['Profiles'] = Relationship(back_populates='chat_templates')
+    scenario: Optional['Scenarios'] = Relationship(back_populates='chat_templates')
+    chats: List['Chats'] = Relationship(back_populates='chat_template')
 
 
 class Classes(_Base, table=True):
@@ -213,6 +219,8 @@ class Topics(_Base, table=True):
 class Chats(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE', name='chats_attempt_id_fkey'),
+        ForeignKeyConstraint(['chat_template_id'], ['chat_templates.id'], ondelete='CASCADE', name='chats_chat_template_id_fkey'),
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='chats_profile_id_fkey'),
         ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='chats_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='chats_pkey')
     )
@@ -221,11 +229,15 @@ class Chats(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
+    profile_id: UUID = Field(sa_column=Column('profile_id', Uuid))
+    chat_template_id: UUID = Field(sa_column=Column('chat_template_id', Uuid))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     attempt_id: UUID = Field(sa_column=Column('attempt_id', Uuid))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     attempt: Optional['Attempts'] = Relationship(back_populates='chats')
+    chat_template: Optional['ChatTemplates'] = Relationship(back_populates='chats')
+    profile: Optional['Profiles'] = Relationship(back_populates='chats')
     scenario: Optional['Scenarios'] = Relationship(back_populates='chats')
     messages: List['Messages'] = Relationship(back_populates='chat')
     rubrics: List['Rubrics'] = Relationship(back_populates='chat')

@@ -203,7 +203,7 @@ export function useTaskColumns({
 
             return (
               <div className="font-medium text-sm">
-                <div>{day}-{month}-{year}</div>
+                <div>{month}-{day}-{year}</div>
                 <div className="text-xs text-muted-foreground">
                   {time}
                 </div>
@@ -317,8 +317,11 @@ export function useTaskColumns({
           ),
           cell: ({ row }: any) => {
             const chats = row.getValue("chats") as any[];
+            const chatTemplateIds = row.original.chatTemplateIds as string[];
+            
             const completedChats = chats?.filter(chat => chat.completed).length || 0;
-            const totalChats = chats?.length || 0;
+            // Use template's chatTemplateIds length for total expected chats
+            const totalChats = chatTemplateIds?.length || chats?.length || 0;
             
             return (
               <div className="text-center">
@@ -450,7 +453,7 @@ export function useTaskColumns({
         // Actions column
         {
           id: "actions",
-          cell: ({ row }: any) => <DataTableRowActions row={row} isAdmin={isAdmin} />,
+          cell: ({ row }: any) => <DataTableRowActions row={row} isAdmin={isAdmin} viewMode={viewMode} />,
         },
       ];
 
@@ -503,7 +506,7 @@ export function useTaskColumns({
           // Format the date with compact format
           const dateObj = new Date(date as string);
 
-          // Use compact DD-MM-YY format
+          // Use compact MM-DD-YY format
           const day = dateObj.getDate().toString().padStart(2, '0');
           const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
           const year = dateObj.getFullYear().toString().slice(-2);
@@ -515,7 +518,7 @@ export function useTaskColumns({
 
           return (
             <div className="font-medium text-sm">
-              <div>{day}-{month}-{year}</div>
+              <div>{month}-{day}-{year}</div>
               <div className="text-xs text-muted-foreground">
                 {time}
               </div>
@@ -721,7 +724,7 @@ export function useTaskColumns({
       },
       {
         id: "actions",
-        cell: ({ row }) => <DataTableRowActions row={row} isAdmin={isAdmin} />,
+        cell: ({ row }) => <DataTableRowActions row={row} isAdmin={isAdmin} viewMode={viewMode} />,
       },
     ];
 
