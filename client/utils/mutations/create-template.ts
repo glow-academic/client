@@ -2,22 +2,15 @@
 import { templates } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 
-export interface CreateTemplateData {
-  title: string;
-  timeLimit: number;
-  documents?: string[];
-  chatTemplateIds: string[];
-}
-
-export async function createTemplate(data: CreateTemplateData) {
+export async function createTemplate(title: string, timeLimit: number, documents: string[], chatTemplateIds: string[]) {
   try {
     const newTemplate = await db
       .insert(templates)
       .values({
-        title: data.title,
-        timeLimit: data.timeLimit,
-        documents: data.documents || [],
-        chatTemplateIds: data.chatTemplateIds,
+        title,
+        timeLimit,
+        documents: documents || [],
+        chatTemplateIds,
         active: true,
       })
       .returning();

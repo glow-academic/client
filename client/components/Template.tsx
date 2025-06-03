@@ -75,8 +75,9 @@ import { getClasses } from "@/utils/queries/get-classes";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { getProfiles } from "@/utils/queries/get-profiles";
 import { getTemplates } from "@/utils/queries/get-templates";
-import { createTemplate, CreateTemplateData } from "@/utils/mutations/create-template";
-import { updateTemplate, UpdateTemplateData } from "@/utils/mutations/update-template";
+import { getTemplate } from "@/utils/queries/get-template";
+import { createTemplate } from "@/utils/mutations/create-template";
+import { updateTemplate } from "@/utils/mutations/update-template";
 import { deleteTemplate } from "@/utils/mutations/delete-template";
 
 interface ChatTemplateConfig {
@@ -102,9 +103,10 @@ interface FormErrors {
 
 interface TemplateProps {
   mode?: "list" | "create";
+  templateId?: string;
 }
 
-export default function Template({ mode = "create" }: TemplateProps) {
+export default function Template({ mode = "create", templateId }: TemplateProps) {
   const queryClient = useQueryClient();
   
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -147,6 +149,27 @@ export default function Template({ mode = "create" }: TemplateProps) {
     queryFn: getTemplates,
     enabled: mode === "list",
   });
+
+  // Fetch specific template for editing
+  const { data: templateToEdit } = useQuery({
+    queryKey: ["template", templateId],
+    queryFn: () => getTemplate(templateId!),
+    enabled: !!templateId && mode === "create",
+  });
+
+  // Load template data when editing
+  useEffect(() => {
+    if (templateToEdit && templateId) {
+      setEditingTemplateId(templateToEdit.id);
+      setFormData({
+        title: templateToEdit.title,
+        timeLimit: templateToEdit.timeLimit,
+        documents: templateToEdit.documents || [],
+        chatTemplateConfigs: [], // We'll need to fetch chat templates separately
+      });
+      setErrors({});
+    }
+  }, [templateToEdit, templateId]);
 
   const handleInputChange = (field: keyof TemplateComponentFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -248,7 +271,7 @@ export default function Template({ mode = "create" }: TemplateProps) {
       // In a full implementation, you'd create chat templates first
       const chatTemplateIds = formData.chatTemplateConfigs.map(config => config.id);
 
-      const payload: CreateTemplateData | UpdateTemplateData = {
+        const payload = {
         title: formData.title,
         timeLimit: formData.timeLimit,
         documents: formData.documents,
@@ -257,9 +280,9 @@ export default function Template({ mode = "create" }: TemplateProps) {
 
       let result;
       if (editingTemplateId) {
-        result = await updateTemplate(editingTemplateId, payload);
+        result = await updateTemplate(editingTemplateId, payload.title, payload.timeLimit, payload.documents, payload.chatTemplateIds, true);
       } else {
-        result = await createTemplate(payload);
+        result = await createTemplate(payload.title, payload.timeLimit, payload.documents, payload.chatTemplateIds);
       }
       
       if (result.success) {
@@ -454,14 +477,14 @@ export default function Template({ mode = "create" }: TemplateProps) {
             <div className="space-y-2">
               <Label htmlFor="documents">Reference Documents (Optional)</Label>
               <Select
-                value={formData.documents[0] || ""}
-                onValueChange={(value) => handleInputChange("documents", value ? [value] : [])}
+                value={formData.documents[0] || "none"}
+                onValueChange={(value) => handleInputChange("documents", value === "none" ? [] : [value])}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select documents" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No documents</SelectItem>
+                  <SelectItem value="none">No documents</SelectItem>
                   {documents.map((doc: any) => (
                     <SelectItem key={doc.id} value={doc.id}>
                       {doc.name}

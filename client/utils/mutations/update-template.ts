@@ -3,22 +3,16 @@ import { templates } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 import { eq } from "drizzle-orm";
 
-export interface UpdateTemplateData {
-  title: string;
-  timeLimit: number;
-  documents?: string[];
-  chatTemplateIds: string[];
-}
-
-export async function updateTemplate(id: string, data: UpdateTemplateData) {
+export async function updateTemplate(id: string, title?: string, timeLimit?: number, documents?: string[], chatTemplateIds?: string[], active?: boolean) {
   try {
     const updatedTemplate = await db
       .update(templates)
       .set({
-        title: data.title,
-        timeLimit: data.timeLimit,
-        documents: data.documents || [],
-        chatTemplateIds: data.chatTemplateIds,
+        title,
+        timeLimit,
+        documents: documents || [],
+        chatTemplateIds,
+        active,
       })
       .where(eq(templates.id, id))
       .returning();

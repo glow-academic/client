@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronRight, Home, BookOpen, FileText, HelpCircle, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Eye, Check, ChevronsUpDown, Clock } from "lucide-react"
+import { ChevronRight, Home, BookOpen, FileText, HelpCircle, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Eye, Check, ChevronsUpDown, Clock, Plus } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -51,7 +51,7 @@ type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 
 interface UnifiedSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeSection: string
-  onSectionChange: (section: string) => void
+  onSectionChange?: (section: string) => void
   breadcrumbs?: Array<{ title: string; section?: string }>
 }
 
@@ -295,38 +295,27 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
       });
 
       // Classes section - for admin, instructional, and instructor
-      if (availableClasses.length > 0) {
+      if (availableClasses.length > 0 || effectiveRole === 'instructor') {
+        const classItems: any[] = availableClasses.map((cls: any) => ({
+          title: cls.classCode,
+          url: "#",
+          section: `class-${cls.id}`,
+          classData: cls,
+        }));
+
+        if (effectiveRole === 'admin' || effectiveRole === 'instructional') {
+          classItems.unshift({
+            title: "General",
+            url: "#",
+            section: "add-class",
+          });
+        }
+
         menu.push({
           title: "Classes",
           url: "#",
           icon: GraduationCap,
-          items: availableClasses.map((cls: any) => ({
-            title: cls.classCode,
-            url: "#",
-            section: `class-${cls.id}`,
-            classData: cls,
-          })),
-        });
-      }
-
-      // Templates section - for admin and instructional
-      if (['admin', 'instructional'].includes(effectiveRole)) {
-        menu.push({
-          title: "Templates",
-          url: "#",
-          icon: FileText,
-          items: [
-            {
-              title: "View Templates",
-              url: "#",
-              section: "template-list",
-            },
-            {
-              title: "Create Template",
-              url: "#",
-              section: "template-create",
-            },
-          ],
+          items: classItems,
         });
       }
 
@@ -337,6 +326,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
           url: "#",
           icon: MessageSquare,
           items: [
+            {
+              title: "Templates",
+              url: "#",
+              section: "chat-templates",
+            },
             {
               title: "Profiles",
               url: "#",
@@ -382,13 +376,67 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
     return menu;
   }, [effectiveRole, availableClasses, managementTabs, searchTerm]);
 
+  const handleSectionChange = (section: string) => {
+    // If onSectionChange prop is provided, use it (for layout components)
+    if (onSectionChange) {
+      onSectionChange(section);
+      return;
+    }
+
+    // Otherwise, handle navigation internally
+    // Convert section to route
+    let route = '/dashboard/home';
+    
+    switch (section) {
+      case 'home':
+        route = '/dashboard/home';
+        break;
+      case 'history':
+        route = '/dashboard/history';
+        break;
+      case 'profile':
+        route = '/profile';
+        break;
+      case 'chat-templates':
+        route = '/chat/templates';
+        break;
+      case 'chat-profiles':
+        route = '/chat/profiles';
+        break;
+      case 'chat-scenarios':
+        route = '/chat/scenarios';
+        break;
+      case 'add-class':
+        route = '/classes/general';
+        break;
+      case 'manage-instructional':
+        route = '/management/instructional';
+        break;
+      case 'manage-instructors':
+        route = '/management/instructor';
+        break;
+      case 'manage-tas':
+        route = '/management/ta';
+        break;
+      default:
+        if (section.startsWith('class-')) {
+          const classId = section.replace('class-', '');
+          route = `/classes/c/${classId}`;
+        }
+        break;
+    }
+    
+    // Use Next.js router to navigate
+    router.push(route);
+  };
+
   const handleItemClick = (item: any) => {
     if (item.url && item.url !== "#") {
       // Navigate to the URL (for attempts)
       router.push(item.url);
     } else if (item.section) {
       // Handle section changes
-      onSectionChange(item.section);
+      handleSectionChange(item.section);
     }
   };
 
@@ -416,7 +464,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
 
   const handleBreadcrumbClick = (section?: string) => {
     if (section) {
-      onSectionChange(section);
+      handleSectionChange(section);
     }
   };
 
@@ -574,14 +622,14 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
               <CollapsibleContent>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {item.items?.map((subItem) => (
+                    {item.items?.map((subItem: any) => (
                       <SidebarMenuItem key={subItem.title}>
                         <SidebarMenuButton 
                           isActive={activeSection === subItem.section}
                           onClick={() => handleItemClick(subItem)}
-                          className={(subItem as any).isSubItem ? "pl-8 text-sm" : ""}
+                          className={subItem.isSubItem ? "pl-8 text-sm" : ""}
                         >
-                          {(subItem as any).isSubItem && <FileText className="h-3 w-3 mr-2" />}
+                          {subItem.isSubItem && <FileText className="h-3 w-3 mr-2" />}
                           {subItem.title}
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -646,7 +694,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
                 <DropdownMenuSeparator />
                 {user && effectiveRole !== 'guest' && (
                   <>
-                    <DropdownMenuItem onClick={() => onSectionChange('profile')}>
+                    <DropdownMenuItem onClick={() => handleSectionChange('profile')}>
                       <User className="h-4 w-4 mr-2" />
                       Profile
                     </DropdownMenuItem>
