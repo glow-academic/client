@@ -150,13 +150,6 @@ export default function NewTAPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Add Teaching Assistant</h1>
-        <p className="text-muted-foreground">
-          Create a new teaching assistant account or bulk import from CSV.
-        </p>
-      </div>
-
       <Tabs defaultValue="single" className="space-y-4">
         <TabsList>
           <TabsTrigger value="single">Single User</TabsTrigger>

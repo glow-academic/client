@@ -89,7 +89,7 @@ const getRoleBadgeVariant = (role: string) => {
 export function ManagementSection({ type, className }: ManagementSectionProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const router = useRouter();
-  
+
   // Fetch current user to check permissions
   const { data: currentUser } = useQuery({
     queryKey: ["user"],
@@ -118,7 +118,7 @@ export function ManagementSection({ type, className }: ManagementSectionProps) {
   };
 
   // Check if current user can edit users
-  const canEdit = currentUser?.role === 'admin' || 
+  const canEdit = currentUser?.role === 'admin' ||
     (currentUser?.role === 'instructional' && typeInfo.role !== 'admin' && typeInfo.role !== 'instructional');
 
   if (isLoading) {
@@ -135,115 +135,87 @@ export function ManagementSection({ type, className }: ManagementSectionProps) {
 
   return (
     <div className={className}>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <TypeIcon className="h-6 w-6" />
-            <div>
-              <CardTitle>{typeInfo.title}</CardTitle>
-              <CardDescription>{typeInfo.description}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Search */}
-          <div className="flex items-center gap-2 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={`Search ${typeInfo.title.toLowerCase()}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
+      <div className="flex items-center gap-2 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={`Search ${typeInfo.title.toLowerCase()}...`}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+      </div>
 
-          {/* Users Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Classes</TableHead>
-                  {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-8 text-muted-foreground">
-                      No {typeInfo.title.toLowerCase()} found
+      {/* Users Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>User</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Username</TableHead>
+              <TableHead>Classes</TableHead>
+              {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-8 text-muted-foreground">
+                  No {typeInfo.title.toLowerCase()} found
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">
+                          {getInitials(user.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{user.name}</p>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getRoleBadgeVariant(user.role)}>
+                      {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {user.username}
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {user.classIds?.length || 0} classes
+                  </TableCell>
+                  {canEdit && (
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
+                            Edit User
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-8 w-8">
-                            <AvatarFallback className="text-xs">
-                              {getInitials(user.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <p className="font-medium">{user.name}</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">
-                        {user.username}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {user.classIds?.length || 0} classes
-                      </TableCell>
-                      {canEdit && (
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
-                                Edit User
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          {/* Summary Stats */}
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold">{filteredUsers.length}</p>
-              <p className="text-sm text-muted-foreground">Total {typeInfo.title}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">
-                {filteredUsers.reduce((acc, user) => acc + (user.classIds?.length || 0), 0)}
-              </p>
-              <p className="text-sm text-muted-foreground">Total Class Assignments</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 } 
