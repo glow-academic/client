@@ -505,7 +505,7 @@ export default function QuizPage() {
           </header>
 
           <div className="flex flex-1 flex-col gap-4 p-4">
-            <div className="max-w-4xl mx-auto space-y-6">
+            <div className="max-w-4xl mx-auto space-y-6" data-testid="quiz-results">
               {/* Aggregated Results */}
               {aggregatedResults && (
                 <Card className={`border-0 ${aggregatedResults.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
@@ -514,7 +514,7 @@ export default function QuizPage() {
                       <div className="text-3xl font-bold mb-2">
                         {aggregatedResults.passed ? "PASSED" : "FAILED"}
                       </div>
-                      <div className="text-lg mb-4">
+                      <div className="text-lg mb-4" data-testid="overall-score">
                         Overall Score: {aggregatedResults.avgScore}/20
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -582,7 +582,7 @@ export default function QuizPage() {
               </div>
 
               <div className="text-center">
-                <Button onClick={() => router.push("/home")} size="lg">
+                <Button data-testid="return-home-button" onClick={() => router.push("/home")} size="lg">
                   Return to Dashboard
                 </Button>
               </div>
@@ -602,11 +602,12 @@ export default function QuizPage() {
       <SidebarInset>
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
+          <SidebarTrigger data-testid="sidebar-trigger" className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex flex-1 items-center justify-between">
             <div className="flex items-center gap-4">
               <Button
+                data-testid="back-button"
                 variant="ghost"
                 onClick={handleBack}
                 className="p-1 h-auto hover:bg-accent"
@@ -619,14 +620,14 @@ export default function QuizPage() {
                 <h1 className="text-xl font-semibold">{quizData.title}</h1>
                 <div className="text-sm text-muted-foreground flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  <span>Chat {currentChatIndex + 1} of {quizChats.length}</span>
+                  <span data-testid="chat-counter">Chat {currentChatIndex + 1} of {quizChats.length}</span>
                   {currentChat && (
                     <span>• {currentChat.title}</span>
                   )}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
+            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full" data-testid="timer">
               <Clock className="h-4 w-4" />
               <span className="text-sm font-medium">{formatTime(timeRemaining)}</span>
             </div>
@@ -673,7 +674,7 @@ export default function QuizPage() {
                               <div className="flex items-start gap-3 text-sm justify-end">
                                 <div className="grid gap-1 text-right">
                                   <p className="font-medium">You</p>
-                                  <div className="rounded-lg bg-muted p-3">
+                                  <div data-testid="user-message" className="rounded-lg bg-muted p-3">
                                     <Markdown>{message.query}</Markdown>
                                   </div>
                                 </div>
@@ -689,7 +690,7 @@ export default function QuizPage() {
                                 </Avatar>
                                 <div className="grid gap-1">
                                   <p className="font-medium">Student</p>
-                                  <div className="rounded-lg bg-primary/10 p-3">
+                                  <div data-testid="ai-message" className="rounded-lg bg-primary/10 p-3">
                                     {message.response === "" ? (
                                       <div className="flex items-center">
                                         <span className="text-gray-500">Responding</span>
@@ -730,6 +731,7 @@ export default function QuizPage() {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4">
                           <Card
+                            data-testid="initial-message-card"
                             className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                             onClick={() => handleInitialMessageClick("Hi, how are you?")}
                           >
@@ -738,6 +740,7 @@ export default function QuizPage() {
                             </CardContent>
                           </Card>
                           <Card
+                            data-testid="initial-message-card"
                             className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                             onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
                           >
@@ -746,6 +749,7 @@ export default function QuizPage() {
                             </CardContent>
                           </Card>
                           <Card
+                            data-testid="initial-message-card"
                             className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer"
                             onClick={() => {
                               const currentClass = classes?.find(c => c.id === quizData.classId);
@@ -769,6 +773,7 @@ export default function QuizPage() {
                     <form onSubmit={handleSendMessage} className="flex w-full gap-3">
                       <div className="relative flex-1">
                         <Input
+                          data-testid="message-input"
                           type="text"
                           value={newMessage}
                           onChange={(e) => setNewMessage(e.target.value)}
@@ -777,6 +782,7 @@ export default function QuizPage() {
                           autoFocus
                         />
                         <Button
+                          data-testid="send-button"
                           type="submit"
                           disabled={!newMessage.trim()}
                           size="icon"
@@ -788,6 +794,7 @@ export default function QuizPage() {
                         </Button>
                       </div>
                       <Button
+                        data-testid="end-chat-button"
                         onClick={handleEndChat}
                         variant="destructive"
                         disabled={endChatLoading}

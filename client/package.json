@@ -12,6 +12,13 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "cypress:open": "cypress open",
+    "cypress:run": "cypress run",
+    "cypress:run:headless": "cypress run --headless",
+    "test:e2e": "./cypress/scripts/run-tests.sh",
+    "test:e2e:headless": "./cypress/scripts/run-tests.sh --headless",
+    "services:stop": "./cypress/scripts/stop-services.sh",
+    "services:restart": "./cypress/scripts/restart-services.sh",
+    "test:clean": "./cypress/scripts/clean-test.sh",
     "migrate:dev": "drizzle-kit migrate:dev",
     "db:pull": "drizzle-kit pull"
   },

@@ -17,14 +17,12 @@ export default function Home() {
   const router = useRouter();
 
   const handleLogin = async (admin: boolean) => {
+    setLoading(true);
     try {
       const { success, error } = await login(username, password, admin);
       if (success) {
-        if (admin) {
-          router.push("/admin");
-        } else {
-          router.push("/home");
-        }
+        // Both admin and regular users go to the same home page
+        router.push("/home");
       } else {
         setError(error || "An error occurred during login");
         throw new Error(error);
@@ -34,6 +32,12 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGuestAccess = () => {
+    // Set guest mode in localStorage and redirect
+    localStorage.setItem('guestMode', 'true');
+    router.push("/home");
   };
 
   return (
@@ -85,27 +89,46 @@ export default function Home() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
             {loading ? (
-              <div className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90">
+              <div className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary text-center">
                 Logging in...
               </div>
             ) : (
               <>
-                <button
-                  type="button"
-                  onClick={() => handleLogin(false)}
-                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90"
-                >
-                  GTA
-                </button>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => handleLogin(false)}
+                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90"
+                  >
+                    Login
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleLogin(true)}
+                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90"
+                  >
+                    Admin
+                  </button>
+                </div>
+                
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Or</span>
+                  </div>
+                </div>
 
                 <button
                   type="button"
-                  onClick={() => handleLogin(true)}
-                  className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90"
+                  onClick={handleGuestAccess}
+                  className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
                 >
-                  Admin
+                  Continue as Guest
                 </button>
               </>
             )}

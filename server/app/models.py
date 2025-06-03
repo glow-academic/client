@@ -9,23 +9,6 @@ from sqlmodel import Field, Relationship, SQLModel
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
-class Classes(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='classes_pkey'),
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    name: str = Field(sa_column=Column('name', Text))
-    class_code: str = Field(sa_column=Column('class_code', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    profile_ids: list = Field(sa_column=Column('profile_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-
-    documents: List['Documents'] = Relationship(back_populates='class_')
-    quizzes: List['Quizzes'] = Relationship(back_populates='class_')
-    chats: List['Chats'] = Relationship(back_populates='class_')
-
-
 class Profiles(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='profiles_pkey'),
@@ -55,6 +38,20 @@ class Scenarios(_Base, table=True):
     chats: List['Chats'] = Relationship(back_populates='scenario')
 
 
+class Schedules(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='schedules_pkey'),
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+
+    classes: List['Classes'] = Relationship(back_populates='schedule')
+    deadlines: List['Deadlines'] = Relationship(back_populates='schedule')
+
+
 class Users(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='users_pkey'),
@@ -74,6 +71,64 @@ class Users(_Base, table=True):
     chats: List['Chats'] = Relationship(back_populates='user')
 
 
+class Classes(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='SET NULL', name='classes_schedule_id_fkey'),
+        PrimaryKeyConstraint('id', name='classes_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    class_code: str = Field(sa_column=Column('class_code', Text))
+    year: int = Field(sa_column=Column('year', Integer))
+    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
+    description: str = Field(sa_column=Column('description', Text))
+    profile_ids: list = Field(sa_column=Column('profile_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    syllabus_id: Optional[UUID] = Field(default=None, sa_column=Column('syllabus_id', Uuid))
+    schedule_id: Optional[UUID] = Field(default=None, sa_column=Column('schedule_id', Uuid))
+
+    schedule: Optional['Schedules'] = Relationship(back_populates='classes')
+    documents: List['Documents'] = Relationship(back_populates='class_')
+    prerequisites: List['Prerequisites'] = Relationship(back_populates='class_')
+    quizzes: List['Quizzes'] = Relationship(back_populates='class_')
+    topics: List['Topics'] = Relationship(back_populates='class_')
+    chats: List['Chats'] = Relationship(back_populates='class_')
+
+
+class Deadlines(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE', name='deadlines_schedule_id_fkey'),
+        PrimaryKeyConstraint('id', name='deadlines_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    document_type: str = Field(sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
+    due_time: datetime = Field(sa_column=Column('due_time', DateTime(True)))
+    schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
+
+    schedule: Optional['Schedules'] = Relationship(back_populates='deadlines')
+
+
+class Templates(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='templates_profile_id_fkey'),
+        PrimaryKeyConstraint('id', name='templates_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    profile_id: UUID = Field(sa_column=Column('profile_id', Uuid))
+    crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
+    intensity: int = Field(sa_column=Column('intensity', Integer))
+    seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='templates')
+
+
 class Documents(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='documents_class_id_fkey'),
@@ -86,9 +141,24 @@ class Documents(_Base, table=True):
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
     class_id: UUID = Field(sa_column=Column('class_id', Uuid))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', name='document_type'), server_default=text("'homework'::document_type")))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
 
     class_: Optional['Classes'] = Relationship(back_populates='documents')
+
+
+class Prerequisites(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='prerequisites_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='prerequisites_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+
+    class_: Optional['Classes'] = Relationship(back_populates='prerequisites')
 
 
 class Quizzes(_Base, table=True):
@@ -113,20 +183,19 @@ class Quizzes(_Base, table=True):
     chats: List['Chats'] = Relationship(back_populates='quiz')
 
 
-class Templates(_Base, table=True):
+class Topics(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='templates_profile_id_fkey'),
-        PrimaryKeyConstraint('id', name='templates_pkey')
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='topics_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='topics_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    profile_id: UUID = Field(sa_column=Column('profile_id', Uuid))
-    crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
-    intensity: int = Field(sa_column=Column('intensity', Integer))
-    seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophmore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
 
-    profile: Optional['Profiles'] = Relationship(back_populates='templates')
+    class_: Optional['Classes'] = Relationship(back_populates='topics')
 
 
 class Chats(_Base, table=True):

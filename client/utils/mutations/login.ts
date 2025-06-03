@@ -31,7 +31,7 @@ export async function login(
           name: username,
           username,
           password: hashedPassword,
-          admin: admin,
+          role: admin ? "admin" : "guest",
         })
         .returning();
 
@@ -68,7 +68,7 @@ export async function login(
     if (admin) {
       await db
         .update(users)
-        .set({ admin: true })
+        .set({ role: "admin" })
         .where(eq(users.id, user[0].id));
     }
 

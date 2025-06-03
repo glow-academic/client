@@ -63,11 +63,11 @@ export default function Courses() {
   // Calculate TA count (non-admin users)
   const teachingAssistants = useMemo(() => {
     if (!users) return [];
-    return users.filter((user) => !user.admin);
+    return users.filter((user) => user.role !== "admin");
   }, [users]);
 
   const handleCourseClick = (course: CourseWithStats) => {
-    router.push(`/admin/classes/${course.id}`);
+    router.push(`/home?section=class-${course.id}`);
   };
 
   // Calculate course statistics including CSV students
@@ -78,7 +78,7 @@ export default function Courses() {
       // Count TAs assigned to this course
       const assignedTAs = users.filter(
         (user) =>
-          !user.admin && user.classes && user.classes.includes(course.id),
+          user.role !== "admin" && user.classIds && user.classIds.includes(course.id),
       ).length;
 
       // Count chats for this course

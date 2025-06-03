@@ -249,6 +249,10 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     toast.promise(
       async () => {
         try {
+          // Clear guest mode if it exists
+          localStorage.removeItem('guestMode');
+          localStorage.removeItem('simulatedRole');
+          
           const { success, error } = await logout();
           if (success) {
             router.push("/");
