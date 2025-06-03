@@ -114,11 +114,6 @@ export default function EditScenarioPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Edit Scenario</h1>
-        <p className="text-muted-foreground">Modify an existing conversation scenario</p>
-      </div>
-      
       <div className="container mx-auto max-w-2xl">
         <Card>
           <CardHeader>

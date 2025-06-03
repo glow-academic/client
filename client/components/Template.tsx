@@ -413,17 +413,6 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
   // Create mode - render the full create form
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">
-            {editingTemplateId ? "Edit Template" : "Create Template"}
-          </h2>
-          <p className="text-muted-foreground">
-            {editingTemplateId ? "Update template settings and chat configurations" : "Set up a new template with AI student interactions"}
-          </p>
-        </div>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Template Information */}
         <Card>

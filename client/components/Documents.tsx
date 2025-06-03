@@ -486,15 +486,6 @@ export default function Documents({ classId }: DocumentsProps) {
               </TabsTrigger>
             </TabsList>
           </Tabs>
-
-          <Button
-            onClick={() => setShowUploadModal(true)}
-            size="sm"
-            className="h-9"
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Upload
-          </Button>
         </div>
       </div>
 
@@ -522,7 +513,7 @@ export default function Documents({ classId }: DocumentsProps) {
           </p>
           <Button
             className="mt-4"
-            variant="outline"
+            variant="default"
             onClick={() => setShowUploadModal(true)}
           >
             <Plus className="mr-2 h-4 w-4" />

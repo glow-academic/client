@@ -106,12 +106,6 @@ export default function ClassesGeneralPage() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Classes Overview</h1>
-        <p className="text-muted-foreground mt-2">
-          Aggregated performance metrics across all classes
-        </p>
-      </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
