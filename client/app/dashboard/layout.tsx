@@ -1,11 +1,27 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { MessageSquare, FileText } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+
+// Create context for view mode
+const ViewModeContext = React.createContext<{
+  viewMode: 'chats' | 'attempts';
+  setViewMode: (mode: 'chats' | 'attempts') => void;
+} | null>(null);
+
+export const useViewMode = () => {
+  const context = React.useContext(ViewModeContext);
+  if (!context) {
+    throw new Error('useViewMode must be used within ViewModeProvider');
+  }
+  return context;
+};
 
 export default function DashboardLayout({
   children,
@@ -16,6 +32,10 @@ export default function DashboardLayout({
   const router = useRouter();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+  const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
+
+  // Check if we're on the history page
+  const isHistoryPage = pathname === '/dashboard/history';
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -73,7 +93,31 @@ export default function DashboardLayout({
     router.push(route);
   };
 
-  return (
+  // Create view mode toggle for history page
+  const viewModeToggle = isHistoryPage ? (
+    <div className="flex border rounded-md">
+      <Button
+        variant={viewMode === 'chats' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => setViewMode('chats')}
+        className="rounded-r-none border-r"
+      >
+        <MessageSquare className="h-4 w-4 mr-1" />
+        Chats
+      </Button>
+      <Button
+        variant={viewMode === 'attempts' ? 'default' : 'ghost'}
+        size="sm"
+        onClick={() => setViewMode('attempts')}
+        className="rounded-l-none"
+      >
+        <FileText className="h-4 w-4 mr-1" />
+        Attempts
+      </Button>
+    </div>
+  ) : null;
+
+  const content = (
     <SidebarProvider>
       <UnifiedSidebar
         activeSection={activeSection}
@@ -81,12 +125,13 @@ export default function DashboardLayout({
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2 px-4 w-full">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <NavigationBreadcrumbs 
               breadcrumbs={breadcrumbs}
               onSectionChange={handleSectionChange}
+              rightContent={viewModeToggle}
             />
           </div>
         </header>
@@ -96,4 +141,15 @@ export default function DashboardLayout({
       </SidebarInset>
     </SidebarProvider>
   );
+
+  // Only provide context for history page
+  if (isHistoryPage) {
+    return (
+      <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
+        {content}
+      </ViewModeContext.Provider>
+    );
+  }
+
+  return content;
 } 

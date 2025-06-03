@@ -36,8 +36,19 @@ export function DataTableFacetedFilter<TData, TValue>({
   title,
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
-  const facets = column?.getFacetedUniqueValues();
-  const selectedValues = new Set(column?.getFilterValue() as string[]);
+  // Early return if column doesn't exist
+  if (!column) {
+    return null;
+  }
+
+  // Get faceted values with defensive check
+  const facets = column.getFacetedUniqueValues();
+  if (!facets) {
+    return null; // Table not fully initialized yet
+  }
+
+  const filterValue = column.getFilterValue();
+  const selectedValues = new Set(Array.isArray(filterValue) ? filterValue : []);
 
   return (
     <Popover>
@@ -98,7 +109,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                         selectedValues.add(option.value);
                       }
                       const filterValues = Array.from(selectedValues);
-                      column?.setFilterValue(
+                      column.setFilterValue(
                         filterValues.length ? filterValues : undefined,
                       );
                     }}
@@ -131,7 +142,7 @@ export function DataTableFacetedFilter<TData, TValue>({
                 <CommandSeparator />
                 <CommandGroup>
                   <CommandItem
-                    onSelect={() => column?.setFilterValue(undefined)}
+                    onSelect={() => column.setFilterValue(undefined)}
                     className="justify-center text-center"
                   >
                     Clear filters

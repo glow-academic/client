@@ -2,8 +2,8 @@
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
-import { DataTableColumnHeader } from "@/components/tasks/data-table-column-header";
-import { DataTableRowActions } from "@/components/tasks/data-table-row-actions";
+import { DataTableColumnHeader } from "@/components/history/data-table-column-header";
+import { DataTableRowActions } from "@/components/history/data-table-row-actions";
 import { chats as chatsTable } from "@/drizzle/schema";
 import { useQuery } from "@tanstack/react-query";
 import { getChats } from "@/utils/queries/get-chats";
@@ -18,6 +18,8 @@ import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
 import { getProfileConfig } from "@/utils/profiles";
 import { getAttempts } from "@/utils/queries/get-attempts";
+import { getEnhancedAttempts } from "@/utils/queries/get-enhanced-attempts";
+import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 
 // Define statuses with proper icon components
 export const statuses = [
@@ -62,17 +64,36 @@ export function useTaskColumns({
   });
 
   // Use getAllChats if isAdmin, otherwise use getChats with user id (for chats view)
-  const { data: chats, isLoading: chatsLoading } = useQuery({
+  const { data: chats, isLoading: chatsLoading, error: chatsError } = useQuery({
     queryKey: isAdmin ? ["all-chats"] : ["chats", user?.id],
-    queryFn: () => (isAdmin ? getAllChats() : getChats(user!.id)),
-    enabled: (isAdmin || !!user) && viewMode === 'chats',
+    queryFn: () => {
+      return isAdmin ? getAllChats() : getChats(user?.id || '');
+    },
+    enabled: viewMode === 'chats',
+    retry: 1,
   });
 
-  // Fetch attempts data (for attempts view)
-  const { data: attempts, isLoading: attemptsLoading } = useQuery({
-    queryKey: ["attempts"],
-    queryFn: () => getAttempts(),
+  // Fetch enhanced attempts data (for attempts view)
+  const { data: enhancedAttempts, isLoading: attemptsLoading } = useQuery({
+    queryKey: ["enhanced-attempts"],
+    queryFn: () => getEnhancedAttempts(),
     enabled: viewMode === 'attempts',
+  });
+
+  // Fetch all chats for attempts to get rubrics
+  const attemptIds = enhancedAttempts?.map(attempt => attempt.id) || [];
+  const { data: allAttemptChats, isLoading: attemptChatsLoading } = useQuery({
+    queryKey: ["attempt-chats", attemptIds],
+    queryFn: () => getAttemptChats(attemptIds),
+    enabled: viewMode === 'attempts' && attemptIds.length > 0,
+  });
+
+  // Fetch rubrics for attempt chats
+  const chatIds = allAttemptChats?.map(chat => chat.id) || [];
+  const { data: attemptRubrics, isLoading: attemptRubricsLoading } = useQuery({
+    queryKey: ["attempt-rubrics", chatIds],
+    queryFn: () => getRubrics(chatIds),
+    enabled: viewMode === 'attempts' && chatIds.length > 0,
   });
 
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
@@ -131,6 +152,12 @@ export function useTaskColumns({
     return new Map(rubrics.map((rubric) => [rubric.chatId, rubric]));
   }, [rubrics]);
 
+  // Create a map of attempt rubrics for attempts view
+  const attemptRubricsByChat = useMemo(() => {
+    if (!attemptRubrics) return new Map();
+    return new Map(attemptRubrics.map((rubric) => [rubric.chatId, rubric]));
+  }, [attemptRubrics]);
+
   // Define columns
   const columns = useMemo<ColumnDef<any>[]>(() => {
     if (viewMode === 'attempts') {
@@ -178,23 +205,21 @@ export function useTaskColumns({
             if (!date) return null;
 
             const dateObj = new Date(date as string);
-            const formattedDate = dateObj.toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-              year: "numeric",
-            });
-            const formattedTime = dateObj.toLocaleTimeString("en-US", {
+            // Use compact DD-MM-YY format
+            const day = dateObj.getDate().toString().padStart(2, '0');
+            const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+            const year = dateObj.getFullYear().toString().slice(-2);
+            const time = dateObj.toLocaleTimeString("en-US", {
               hour: "2-digit",
               minute: "2-digit",
-              second: "2-digit",
               hour12: false,
             });
 
             return (
-              <div className="font-medium">
-                <div>{formattedDate}</div>
+              <div className="font-medium text-sm">
+                <div>{day}-{month}-{year}</div>
                 <div className="text-xs text-muted-foreground">
-                  {formattedTime}
+                  {time}
                 </div>
               </div>
             );
@@ -252,7 +277,7 @@ export function useTaskColumns({
             return value.includes(row.getValue(id));
           },
         },
-        // Chats count column
+        // Chats completion column
         {
           accessorKey: "chats",
           header: ({ column }: any) => (
@@ -276,58 +301,123 @@ export function useTaskColumns({
           },
           enableSorting: false,
         },
-        // Status column
+        // Profiles tested column
         {
-          id: "status",
+          accessorKey: "profilesTested",
           header: ({ column }: any) => (
             <DataTableColumnHeader
               column={column}
-              title="Status"
+              title="Profiles Tested"
               isAdmin={isAdmin}
             />
           ),
           cell: ({ row }: any) => {
-            const chats = row.getValue("chats") as any[];
-            const completedChats = chats?.filter(chat => chat.completed).length || 0;
-            const totalChats = chats?.length || 0;
+            const profilesTested = row.getValue("profilesTested") as string[];
             
-            let status;
-            if (completedChats === totalChats && totalChats > 0) {
-              status = statuses.find((s) => s.value === "completed");
-            } else if (completedChats > 0) {
-              status = statuses.find((s) => s.value === "grading");
-            } else {
-              status = statuses.find((s) => s.value === "in-progress");
+            if (!profilesTested || profilesTested.length === 0) {
+              return <span className="text-muted-foreground">None</span>;
             }
 
-            if (!status) return null;
-
             return (
-              <div className="flex items-center">
-                {status.icon &&
-                  React.createElement(status.icon, {
-                    className: "mr-2 h-4 w-4 text-muted-foreground",
-                  })}
-                <span>{status.label}</span>
+              <div className="flex flex-wrap gap-1">
+                {profilesTested.map((profileName, index) => {
+                  const config = getProfileConfig(profileName);
+                  // Create badge color classes based on profile colors
+                  const badgeColorClass = profileName.toLowerCase() === 'aggressive' 
+                    ? 'bg-red-100 text-red-800 border-red-300'
+                    : profileName.toLowerCase() === 'happy'
+                    ? 'bg-green-100 text-green-800 border-green-300'
+                    : profileName.toLowerCase() === 'confused'
+                    ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                    : 'bg-gray-100 text-gray-800 border-gray-300';
+                  
+                  return (
+                    <Badge
+                      key={index}
+                      variant="outline"
+                      className={`text-xs ${badgeColorClass}`}
+                    >
+                      {profileName}
+                    </Badge>
+                  );
+                })}
               </div>
             );
           },
           filterFn: (row: any, id: any, value: any) => {
-            const chats = row.getValue("chats") as any[];
-            const completedChats = chats?.filter(chat => chat.completed).length || 0;
-            const totalChats = chats?.length || 0;
-            
-            let statusValue;
-            if (completedChats === totalChats && totalChats > 0) {
-              statusValue = "completed";
-            } else if (completedChats > 0) {
-              statusValue = "grading";
-            } else {
-              statusValue = "in-progress";
-            }
-
-            return value.includes(statusValue);
+            const profilesTested = row.getValue(id) as string[];
+            if (!value || value.length === 0) return true;
+            return value.some((filterProfile: string) => 
+              profilesTested?.some(profile => profile.toLowerCase().includes(filterProfile.toLowerCase()))
+            );
           },
+        },
+        // Average score column
+        {
+          accessorKey: "averageScore",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Avg Score"
+              isAdmin={isAdmin}
+            />
+          ),
+          accessorFn: (row: any) => {
+            const chats = row.chats as any[];
+            if (!chats || chats.length === 0) return 0;
+            
+            const chatRubrics = chats
+              .map(chat => attemptRubricsByChat.get(chat.id))
+              .filter(Boolean);
+            
+            if (chatRubrics.length === 0) return 0;
+            
+            const totalScore = chatRubrics.reduce((sum, rubric) => sum + (rubric?.score || 0), 0);
+            return totalScore / chatRubrics.length;
+          },
+          cell: ({ row }: any) => {
+            const chats = row.getValue("chats") as any[];
+            if (!chats || chats.length === 0) {
+              return <div className="text-muted-foreground">No chats</div>;
+            }
+            
+            const chatRubrics = chats
+              .map((chat: any) => attemptRubricsByChat.get(chat.id))
+              .filter(Boolean);
+            
+            if (chatRubrics.length === 0) {
+              const completedChats = chats.filter(chat => chat.completed);
+              if (completedChats.length > 0) {
+                return <div className="text-amber-500">Grading in progress</div>;
+              }
+              return <div className="text-muted-foreground">Not graded</div>;
+            }
+            
+            const totalScore = chatRubrics.reduce((sum: number, rubric: any) => sum + (rubric?.score || 0), 0);
+            const averageScore = totalScore / chatRubrics.length;
+            const scorePercent = (averageScore / 20) * 100;
+            
+            return (
+              <div className="text-center">
+                <Badge
+                  variant="outline"
+                  className={`text-xs font-semibold ${
+                    scorePercent >= 80 
+                      ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200" 
+                      : scorePercent >= 70 
+                      ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200" 
+                      : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                  }`}
+                >
+                  {Math.round(scorePercent)}%
+                </Badge>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {averageScore.toFixed(1)}/20
+                </div>
+              </div>
+            );
+          },
+          enableSorting: true,
         },
         // Actions column
         {
@@ -382,28 +472,24 @@ export function useTaskColumns({
           const date = row.getValue("createdAt");
           if (!date) return null;
 
-          // Format the date with more detailed time information
+          // Format the date with compact format
           const dateObj = new Date(date as string);
 
-          // Format date as "Jan 01, 2023 - 14:30:45"
-          const formattedDate = dateObj.toLocaleDateString("en-US", {
-            month: "short",
-            day: "2-digit",
-            year: "numeric",
-          });
-
-          const formattedTime = dateObj.toLocaleTimeString("en-US", {
+          // Use compact DD-MM-YY format
+          const day = dateObj.getDate().toString().padStart(2, '0');
+          const month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+          const year = dateObj.getFullYear().toString().slice(-2);
+          const time = dateObj.toLocaleTimeString("en-US", {
             hour: "2-digit",
             minute: "2-digit",
-            second: "2-digit",
             hour12: false,
           });
 
           return (
-            <div className="font-medium">
-              <div>{formattedDate}</div>
+            <div className="font-medium text-sm">
+              <div>{day}-{month}-{year}</div>
               <div className="text-xs text-muted-foreground">
-                {formattedTime}
+                {time}
               </div>
             </div>
           );
@@ -411,37 +497,12 @@ export function useTaskColumns({
         enableSorting: true,
         filterFn: (row, id, value) => {
           if (!value || value.length === 0) return true;
-
           const rowDate = new Date(row.getValue(id) as string);
           const [fromDate, toDate] = value as [Date, Date];
-
           if (fromDate && toDate) {
             return rowDate >= fromDate && rowDate <= toDate;
           }
           return true;
-        },
-      },
-      {
-        accessorKey: "profile",
-        header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Profile"
-            isAdmin={isAdmin}
-          />
-        ),
-        cell: ({ row }) => {
-          const profileId = row.getValue("profile") as string;
-          const profile = profiles?.find((p) => p.id === profileId);
-
-          return (
-            <div className="w-[100px]">
-              {profile ? profile.name : profileId}
-            </div>
-          );
-        },
-        filterFn: (row, id, value) => {
-          return value.includes(row.getValue(id));
         },
       },
       {
@@ -464,7 +525,7 @@ export function useTaskColumns({
         },
       },
       {
-        accessorKey: "status",
+        id: "status",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
@@ -474,21 +535,19 @@ export function useTaskColumns({
         ),
         cell: ({ row }) => {
           const chatId = row.original.id;
-          const completed = row.original.completed;
           const hasRubric = chatRubricStatus.get(chatId);
+          const isCompleted = row.original.completed;
 
           let status;
           if (hasRubric) {
             status = statuses.find((s) => s.value === "completed");
-          } else if (completed) {
+          } else if (isCompleted) {
             status = statuses.find((s) => s.value === "grading");
           } else {
             status = statuses.find((s) => s.value === "in-progress");
           }
 
-          if (!status) {
-            return null;
-          }
+          if (!status) return null;
 
           return (
             <div className="flex items-center">
@@ -502,13 +561,13 @@ export function useTaskColumns({
         },
         filterFn: (row, id, value) => {
           const chatId = row.original.id;
-          const completed = row.original.completed;
           const hasRubric = chatRubricStatus.get(chatId);
+          const isCompleted = row.original.completed;
 
           let statusValue;
           if (hasRubric) {
             statusValue = "completed";
-          } else if (completed) {
+          } else if (isCompleted) {
             statusValue = "grading";
           } else {
             statusValue = "in-progress";
@@ -703,12 +762,12 @@ export function useTaskColumns({
     }
 
     return baseColumns;
-  }, [userOptions, classOptions, chatRubrics, isAdmin, profiles, viewMode]);
+  }, [userOptions, classOptions, chatRubrics, attemptRubricsByChat, isAdmin, profiles, viewMode]);
 
   // Determine which data to return based on view mode
-  const data = viewMode === 'attempts' ? attempts : chats;
+  const data = viewMode === 'attempts' ? enhancedAttempts : chats;
   const isLoading = viewMode === 'attempts' 
-    ? (usersLoading || classesLoading || attemptsLoading || profilesLoading)
+    ? (usersLoading || classesLoading || attemptsLoading || profilesLoading || attemptChatsLoading || attemptRubricsLoading)
     : (usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading);
 
   return {

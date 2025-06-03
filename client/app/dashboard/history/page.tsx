@@ -2,15 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import { DataTable } from "@/components/tasks/data-table";
-import { useTaskColumns } from "@/components/tasks/columns";
+import { DataTable } from "@/components/history/data-table";
+import { useTaskColumns } from "@/components/history/columns";
 import { getUser } from "@/utils/queries/get-user";
+import { useViewMode } from "../layout";
 
 type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta' | 'guest'
 
 export default function DashboardHistoryPage() {
-  const [viewMode, setViewMode] = useState<'chats' | 'attempts'>('chats');
   const [isClient, setIsClient] = useState(false);
+  
+  // Use context for view mode
+  const { viewMode } = useViewMode();
 
   // Handle client-side mounting
   useEffect(() => {
@@ -56,7 +59,6 @@ export default function DashboardHistoryPage() {
 
   return (
     <div className="space-y-6">
-      
       <DataTable
         data={data || []}
         columns={columns}
@@ -64,7 +66,6 @@ export default function DashboardHistoryPage() {
         classOptions={classOptions}
         isAdmin={isAdmin}
         viewMode={viewMode}
-        onViewModeChange={setViewMode}
       />
     </div>
   );

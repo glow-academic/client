@@ -36,7 +36,6 @@ interface DataTableProps<TData, TValue> {
   classOptions: { value: string; label: string }[];
   isAdmin?: boolean;
   viewMode?: 'chats' | 'attempts';
-  onViewModeChange?: (mode: 'chats' | 'attempts') => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -46,7 +45,6 @@ export function DataTable<TData, TValue>({
   classOptions,
   isAdmin = false,
   viewMode,
-  onViewModeChange,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -111,7 +109,6 @@ export function DataTable<TData, TValue>({
         dateRange={dateRange}
         setDateRange={setDateRange}
         viewMode={viewMode}
-        onViewModeChange={onViewModeChange}
       />
       <div className="rounded-md border">
         <Table>
