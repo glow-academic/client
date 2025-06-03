@@ -49,10 +49,6 @@ export function ChatScenariosContent() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Chat Scenarios</h2>
-          <p className="text-muted-foreground">Manage conversation scenarios for AI students</p>
-        </div>
         <Button onClick={() => setShowCreateScenario(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario

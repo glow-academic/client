@@ -2,8 +2,10 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { Plus } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
@@ -73,6 +75,45 @@ export default function MainLayout({
     router.push(route);
   };
 
+  // Determine action button based on current path
+  const getActionButton = () => {
+    // Don't show create buttons on the creation pages themselves
+    if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/')) {
+      return null;
+    }
+    
+    if (pathname.startsWith('/chat/templates')) {
+      return (
+        <Button onClick={() => router.push('/chat/templates/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Template
+        </Button>
+      );
+    }
+    
+    if (pathname.startsWith('/chat/profiles')) {
+      return (
+        <Button onClick={() => router.push('/chat/profiles/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Profile
+        </Button>
+      );
+    }
+    
+    if (pathname.startsWith('/chat/scenarios')) {
+      return (
+        <Button onClick={() => router.push('/chat/scenarios/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Scenario
+        </Button>
+      );
+    }
+    
+    return null;
+  };
+
+  const actionButton = getActionButton();
+
   return (
     <SidebarProvider>
       <UnifiedSidebar
@@ -81,7 +122,7 @@ export default function MainLayout({
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
+          <div className="flex items-center gap-2 px-4 flex-1">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
             <NavigationBreadcrumbs 
@@ -89,6 +130,11 @@ export default function MainLayout({
               onSectionChange={handleSectionChange}
             />
           </div>
+          {actionButton && (
+            <div className="px-4">
+              {actionButton}
+            </div>
+          )}
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           {children}

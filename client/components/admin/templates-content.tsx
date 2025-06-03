@@ -73,17 +73,6 @@ export function TemplatesContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Templates</h2>
-          <p className="text-muted-foreground">Manage conversation templates</p>
-        </div>
-        <Button onClick={() => router.push('/chat/templates/new')}>
-          <Plus className="h-4 w-4 mr-2" />
-          Create Template
-        </Button>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {templates.map((template: any) => (
           <Card key={template.id} className="hover:shadow-md transition-shadow">
