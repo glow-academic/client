@@ -339,7 +339,7 @@ export default function AttemptPage() {
  );
 
  const handleBack = () => {
-   router.push("/home");
+   router.push("/dashboard/home");
  };
 
  if (attemptLoading || templateLoading) {
@@ -554,7 +554,7 @@ export default function AttemptPage() {
              )}
 
              <div className="flex justify-center">
-               <Button onClick={handleBack} size="lg">
+               <Button onClick={() => router.push("/dashboard/home")} size="lg">
                  Return to Home
                </Button>
              </div>

@@ -3,16 +3,14 @@
  * Profile list page - redirects to home with profiles section
  */
 "use client";
+import React from "react";
+import { ProfilesContent } from "@/components/admin/profiles-content";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-
-export default function ProfilePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    router.push("/home?section=profiles");
-  }, [router]);
-
-  return null;
+export default function ChatProfilesPage() {
+  return (
+    <div className="space-y-6">
+      
+      <ProfilesContent />
+    </div>
+  );
 }

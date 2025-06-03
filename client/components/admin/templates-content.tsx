@@ -68,7 +68,7 @@ export function TemplatesContent() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/template/t/${id}`);
+    router.push(`/chat/templates/t/${id}`);
   };
 
   return (
@@ -78,7 +78,7 @@ export function TemplatesContent() {
           <h2 className="text-2xl font-bold">Templates</h2>
           <p className="text-muted-foreground">Manage conversation templates</p>
         </div>
-        <Button onClick={() => router.push('/template/new')}>
+        <Button onClick={() => router.push('/chat/templates/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Create Template
         </Button>

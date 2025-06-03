@@ -352,7 +352,7 @@ export default function ChatPage({
 
   const handleBack = () => {
     queryClient.invalidateQueries({ queryKey: ["chats"] });
-    router.push("/home");
+    router.push("/dashboard/home");
   };
 
   return (
@@ -759,7 +759,7 @@ export default function ChatPage({
                           </Card>
 
                           <Button
-                            onClick={() => router.push("/home")}
+                            onClick={() => router.push("/dashboard/home")}
                             className="mt-6 w-full text-sm py-2 h-auto font-medium"
                             size="lg"
                           >

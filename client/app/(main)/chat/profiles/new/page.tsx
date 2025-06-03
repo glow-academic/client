@@ -1,5 +1,5 @@
 /**
- * app/profile/new/page.tsx
+ * app/chat/profiles/new/page.tsx
  * Profile creation page
  */
 "use client";
@@ -14,9 +14,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
 
 export default function NewProfilePage() {
   const router = useRouter();
@@ -48,7 +45,7 @@ export default function NewProfilePage() {
       
       if (result.success) {
         toast.success("Profile created successfully!");
-        router.push("/home?section=profiles");
+        router.push("/chat/profiles");
       } else {
         toast.error(result.error || "Failed to create profile");
       }
@@ -61,101 +58,86 @@ export default function NewProfilePage() {
   };
 
   return (
-    <SidebarProvider>
-      <UnifiedSidebar
-        activeSection="profiles"
-        onSectionChange={() => {}} // No-op since we're on a dedicated page
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">Create Profile</h1>
-            </div>
-          </div>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Create Profile</h1>
+        <p className="text-muted-foreground">Create a new AI student profile</p>
+      </div>
+      
+      <div className="container mx-auto max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Profile Details</CardTitle>
+            <CardDescription>
+              Define the personality and behavior characteristics for this AI student profile.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Profile Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Enthusiastic Student"
+                  required
+                />
+              </div>
 
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="container mx-auto max-w-2xl">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Details</CardTitle>
-                <CardDescription>
-                  Define the personality and behavior characteristics for this AI student profile.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Profile Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Enthusiastic Student"
-                      required
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="subtitle">Subtitle</Label>
+                <Input
+                  id="subtitle"
+                  value={formData.subtitle}
+                  onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+                  placeholder="Brief description of the profile"
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="subtitle">Subtitle</Label>
-                    <Input
-                      id="subtitle"
-                      value={formData.subtitle}
-                      onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                      placeholder="Brief description of the profile"
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Detailed behavior description and personality traits"
+                  rows={4}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Detailed behavior description and personality traits"
-                      rows={4}
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="threshold">Threshold (%)</Label>
+                <Input
+                  id="threshold"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={formData.threshold}
+                  onChange={(e) => setFormData(prev => ({ ...prev, threshold: parseInt(e.target.value) || 0 }))}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Threshold value for profile activation (0-100)
+                </p>
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="threshold">Threshold (%)</Label>
-                    <Input
-                      id="threshold"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={formData.threshold}
-                      onChange={(e) => setFormData(prev => ({ ...prev, threshold: parseInt(e.target.value) || 0 }))}
-                    />
-                    <p className="text-sm text-muted-foreground">
-                      Threshold value for profile activation (0-100)
-                    </p>
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => router.push("/home?section=profiles")}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Creating..." : "Create Profile"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/chat/profiles")}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Creating..." : "Create Profile"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

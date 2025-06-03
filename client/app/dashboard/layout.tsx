@@ -1,67 +1,11 @@
 "use client";
 import React from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
-
-// Helper function to generate breadcrumbs from pathname
-const generateBreadcrumbs = (pathname: string) => {
-  const segments = pathname.split('/').filter(Boolean);
-  const breadcrumbs = [];
-  
-  // Remove 'dashboard' from segments since it's the base
-  const relevantSegments = segments.slice(1);
-  
-  for (let i = 0; i < relevantSegments.length; i++) {
-    const segment = relevantSegments[i];
-    const path = '/' + segments.slice(0, i + 2).join('/');
-    
-    // Convert segment to readable title
-    let title = segment;
-    switch (segment) {
-      case 'home':
-        title = 'Home';
-        break;
-      case 'history':
-        title = 'History';
-        break;
-      default:
-        title = segment.charAt(0).toUpperCase() + segment.slice(1);
-    }
-    
-    breadcrumbs.push({
-      title,
-      section: segment
-    });
-  }
-  
-  return breadcrumbs;
-};
-
-// Helper function to get active section from pathname
-const getActiveSectionFromPath = (pathname: string) => {
-  const segments = pathname.split('/').filter(Boolean);
-  if (segments.length < 2) return 'home';
-  
-  const section = segments[1]; // Get the section after /dashboard/
-  
-  // Handle special cases
-  if (segments[0] === 'classes' && segments[1] === 'general') {
-    return 'add-class';
-  }
-  if (segments[0] === 'classes' && segments[1] === 'c') {
-    return `class-${segments[2]}`;
-  }
-  if (segments[0] === 'chat') {
-    return `chat-${segments[1]}`;
-  }
-  if (segments[0] === 'management') {
-    return `manage-${segments[1]}`;
-  }
-  
-  return section;
-};
+import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
+import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 
 export default function DashboardLayout({
   children,
@@ -69,8 +13,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const activeSection = getActiveSectionFromPath(pathname);
-  const breadcrumbs = generateBreadcrumbs(pathname);
+  const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+
+  // Load enhanced breadcrumbs with async ID resolution
+  React.useEffect(() => {
+    const loadBreadcrumbs = async () => {
+      const enhancedBreadcrumbs = await generateEnhancedBreadcrumbs(pathname);
+      setBreadcrumbs(enhancedBreadcrumbs);
+    };
+    loadBreadcrumbs();
+  }, [pathname]);
 
   const handleSectionChange = (section: string) => {
     // Convert section to route
@@ -116,7 +70,7 @@ export default function DashboardLayout({
     }
     
     // Use Next.js router to navigate
-    window.location.href = route;
+    router.push(route);
   };
 
   return (
@@ -124,13 +78,16 @@ export default function DashboardLayout({
       <UnifiedSidebar
         activeSection={activeSection}
         onSectionChange={handleSectionChange}
-        breadcrumbs={breadcrumbs}
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
+            <NavigationBreadcrumbs 
+              breadcrumbs={breadcrumbs}
+              onSectionChange={handleSectionChange}
+            />
           </div>
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">

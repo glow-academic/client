@@ -35,14 +35,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -52,7 +44,6 @@ type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 interface UnifiedSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeSection: string
   onSectionChange?: (section: string) => void
-  breadcrumbs?: Array<{ title: string; section?: string }>
 }
 
 // Helper function to get initials from name
@@ -168,7 +159,7 @@ const getManagementTabs = (effectiveRole: UserRole | 'guest') => {
   return tabs;
 };
 
-export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ...props }: UnifiedSidebarProps) {
+export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: UnifiedSidebarProps) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
@@ -552,35 +543,6 @@ export function UnifiedSidebar({ activeSection, onSectionChange, breadcrumbs, ..
             </DropdownMenu>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        {/* Breadcrumbs */}
-        {breadcrumbs && breadcrumbs.length > 0 && (
-          <SidebarGroup className="py-0">
-            <SidebarGroupContent>
-              <Breadcrumb>
-                <BreadcrumbList>
-                  {breadcrumbs.map((crumb, index) => (
-                    <React.Fragment key={index}>
-                      <BreadcrumbItem>
-                        {index === breadcrumbs.length - 1 ? (
-                          <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
-                        ) : (
-                          <BreadcrumbLink
-                            className="cursor-pointer"
-                            onClick={() => handleBreadcrumbClick(crumb.section)}
-                          >
-                            {crumb.title}
-                          </BreadcrumbLink>
-                        )}
-                      </BreadcrumbItem>
-                      {index < breadcrumbs.length - 1 && <BreadcrumbSeparator />}
-                    </React.Fragment>
-                  ))}
-                </BreadcrumbList>
-              </Breadcrumb>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
         
         {/* Search Form */}
         <SidebarGroup className="py-0">

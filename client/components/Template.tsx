@@ -247,10 +247,6 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
       setErrors({});
     }
   };
-  
-  const handleCancelEdit = () => {
-    resetFormAndState();
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -426,12 +422,6 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
             {editingTemplateId ? "Update template settings and chat configurations" : "Set up a new template with AI student interactions"}
           </p>
         </div>
-        {editingTemplateId && (
-          <Button variant="outline" onClick={handleCancelEdit}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel Edit
-          </Button>
-        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

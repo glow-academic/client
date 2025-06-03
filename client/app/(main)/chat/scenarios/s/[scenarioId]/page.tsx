@@ -1,5 +1,5 @@
 /**
- * app/scenario/s/[scenarioId]/page.tsx
+ * app/chat/scenarios/s/[scenarioId]/page.tsx
  * Scenario editing page
  */
 "use client";
@@ -17,9 +17,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
 
 export default function EditScenarioPage() {
   const params = useParams();
@@ -66,7 +63,7 @@ export default function EditScenarioPage() {
       
       if (result.success) {
         toast.success("Scenario updated successfully!");
-        router.push("/home?section=scenarios");
+        router.push("/chat/scenarios");
       } else {
         toast.error(result.error || "Failed to update scenario");
       }
@@ -80,147 +77,97 @@ export default function EditScenarioPage() {
 
   if (isLoading) {
     return (
-      <SidebarProvider>
-        <UnifiedSidebar
-          activeSection="scenarios"
-          onSectionChange={() => {}}
-        />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="flex flex-1 items-center justify-between">
-              <div>
-                <Skeleton className="h-6 w-32" />
-              </div>
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4">
-            <div className="container mx-auto max-w-2xl">
-              <Card>
-                <CardHeader>
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-4 w-64" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-32 w-full" />
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="space-y-6">
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-4 w-64 mt-2" />
+        </div>
+        <div className="container mx-auto max-w-2xl">
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-20 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     );
   }
 
   if (!scenario) {
     return (
-      <SidebarProvider>
-        <UnifiedSidebar
-          activeSection="scenarios"
-          onSectionChange={() => {}}
-        />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <div className="flex flex-1 items-center justify-between">
-              <div>
-                <h1 className="text-xl font-semibold">Scenario Not Found</h1>
-              </div>
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4">
-            <div className="container mx-auto max-w-2xl text-center">
-              <h2 className="text-2xl font-bold">Scenario Not Found</h2>
-              <p className="text-muted-foreground mt-2">
-                The scenario you're looking for doesn't exist.
-              </p>
-              <Button 
-                className="mt-4" 
-                onClick={() => router.push("/home?section=scenarios")}
-              >
-                Back to Scenarios
-              </Button>
-            </div>
-          </div>
-        </SidebarInset>
-      </SidebarProvider>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Scenario Not Found</h1>
+          <p className="text-muted-foreground">The scenario you're looking for doesn't exist.</p>
+        </div>
+        <Button onClick={() => router.push("/chat/scenarios")}>
+          Back to Scenarios
+        </Button>
+      </div>
     );
   }
 
   return (
-    <SidebarProvider>
-      <UnifiedSidebar
-        activeSection="scenarios"
-        onSectionChange={() => {}} // No-op since we're on a dedicated page
-      />
-      <SidebarInset>
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <div className="flex flex-1 items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">Edit Scenario</h1>
-            </div>
-          </div>
-        </header>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold">Edit Scenario</h1>
+        <p className="text-muted-foreground">Modify an existing conversation scenario</p>
+      </div>
+      
+      <div className="container mx-auto max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Scenario Details</CardTitle>
+            <CardDescription>
+              Modify the context and setting for this conversation scenario.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Scenario Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="e.g., Office Hours Help Session"
+                  required
+                />
+              </div>
 
-        {/* Main Content */}
-        <div className="flex flex-1 flex-col gap-4 p-4">
-          <div className="container mx-auto max-w-2xl">
-            <Card>
-              <CardHeader>
-                <CardTitle>Scenario Details</CardTitle>
-                <CardDescription>
-                  Modify the context and setting for this conversation scenario.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Scenario Name *</Label>
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      placeholder="e.g., Office Hours Help Session"
-                      required
-                    />
-                  </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Describe the scenario context, setting, and expected interactions"
+                  rows={6}
+                />
+              </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Describe the scenario context, setting, and expected interactions"
-                      rows={6}
-                    />
-                  </div>
-
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => router.push("/home?section=scenarios")}
-                      disabled={isSubmitting}
-                    >
-                      Cancel
-                    </Button>
-                    <Button type="submit" disabled={isSubmitting}>
-                      {isSubmitting ? "Updating..." : "Update Scenario"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+              <div className="flex gap-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.push("/chat/scenarios")}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Updating..." : "Update Scenario"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

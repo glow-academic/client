@@ -8,7 +8,7 @@ import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 
-export default function MainLayout({
+export default function ChatLayout({
   children,
 }: {
   children: React.ReactNode;

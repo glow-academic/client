@@ -67,7 +67,7 @@ export function ScenariosContent() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/scenario/s/${id}`);
+    router.push(`/chat/scenarios/s/${id}`);
   };
 
   return (
@@ -77,7 +77,7 @@ export function ScenariosContent() {
           <h2 className="text-2xl font-bold">Chat Scenarios</h2>
           <p className="text-muted-foreground">Manage conversation scenarios for AI students</p>
         </div>
-        <Button onClick={() => router.push('/scenario/new')}>
+        <Button onClick={() => router.push('/chat/scenarios/new')}>
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario
         </Button>
