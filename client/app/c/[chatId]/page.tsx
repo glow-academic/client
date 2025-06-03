@@ -1,6 +1,8 @@
 /**
- * app/[chatId]/page.tsx
- * This page is to show each of the individual chats.
+ * app/chat/[chatId]/page.tsx
+ * This page shows individual chat results and history
+ * For completed chats, it shows the rubric and performance metrics
+ * For active chats, it allows continued interaction
  * @AshokSaravanan222 & @siladiea
  * 2025-05-13
  */
@@ -23,7 +25,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Send, ChevronDown, ArrowLeft, Clock } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Send, ChevronDown, ArrowLeft, Clock, CheckCircle, XCircle } from "lucide-react";
 import Markdown from "@/components/Markdown";
 import DocumentViewer from "@/components/DocumentViewer";
 import { getDocuments } from "@/utils/queries/get-documents";
@@ -36,6 +39,7 @@ import {
 } from "@/components/ui/sidebar";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { Separator } from "@/components/ui/separator";
+import { getAttempt } from "@/utils/queries/get-attempt";
 
 const hoverStyles = `
 .hover\\:scale-102:hover {
@@ -66,9 +70,16 @@ export default function ChatPage({
     queryFn: () => getChat(chatId),
   });
 
+  const {data: attempt, isLoading: attemptLoading} = useQuery({
+    queryKey: ["attempt", chat?.attemptId],
+    queryFn: () => getAttempt(chat!.attemptId),
+    enabled: !!chat
+  })
+
   const { data: rubric, isLoading: rubricLoading } = useQuery({
     queryKey: ["rubric", chatId],
     queryFn: () => getRubric(chatId),
+    enabled: !!chat?.completed,
   });
 
   // Fetch messages
@@ -114,6 +125,7 @@ export default function ChatPage({
       Math.abs(el.scrollHeight - el.clientHeight - el.scrollTop) <= 2; // 2-px tolerance
     setShowScrollButton(!atBottom);
   };
+  
   // Scroll to bottom when new messages arrive - removing auto-scroll behavior
   useEffect(() => {
     // Only scroll to bottom for new messages if user is already at the bottom
@@ -385,9 +397,68 @@ export default function ChatPage({
           ) : (
             <Card className="mb-4 shadow-sm border bg-card">
               <CardContent className="px-4">
-                <p className="text-sm text-card-foreground">
-                  Scenario ID: {chat?.scenarioId}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-card-foreground">
+                    Scenario ID: {chat?.scenarioId}
+                  </p>
+                  {chat?.completed && (
+                    <Badge variant={rubric?.passed ? "default" : "destructive"} className="ml-2">
+                      {chat.completed ? "Completed" : "In Progress"}
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Rubric Results Section - Only show for completed chats */}
+          {chat?.completed && rubric && (
+            <Card className={`mb-4 border-0 ${rubric.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  {rubric.passed ? (
+                    <CheckCircle className="h-5 w-5" />
+                  ) : (
+                    <XCircle className="h-5 w-5" />
+                  )}
+                  Performance Results
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold">{rubric.score}/20</div>
+                    <div className="font-medium">Overall Score</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">{rubric.listening}/5</div>
+                    <div className="font-medium">Listening</div>
+                    {rubric.listeningFeedback && (
+                      <div className="text-xs mt-1 opacity-80">{rubric.listeningFeedback}</div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">{rubric.objectives}/5</div>
+                    <div className="font-medium">Objectives</div>
+                    {rubric.objectivesFeedback && (
+                      <div className="text-xs mt-1 opacity-80">{rubric.objectivesFeedback}</div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">{rubric.timeManagement}/5</div>
+                    <div className="font-medium">Time Mgmt</div>
+                    {rubric.timeManagementFeedback && (
+                      <div className="text-xs mt-1 opacity-80">{rubric.timeManagementFeedback}</div>
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <div className="text-lg font-semibold">{rubric.adaptability}/5</div>
+                    <div className="font-medium">Adaptability</div>
+                    {rubric.adaptabilityFeedback && (
+                      <div className="text-xs mt-1 opacity-80">{rubric.adaptabilityFeedback}</div>
+                    )}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -528,14 +599,14 @@ export default function ChatPage({
                             className="flex-1 border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer hover:scale-102 focus-visible:ring-2 focus-visible:ring-primary"
                             onClick={() =>
                               handleInitialMessageClick(
-                                `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
+                                `Hi, are you here for ${classes?.find((c) => c.id === attempt?.classId)?.classCode}?`,
                               )
                             }
                             tabIndex={0}
                             onKeyDown={(e) =>
                               e.key === "Enter" &&
                               handleInitialMessageClick(
-                                `Hi, are you here for ${classes?.find((c) => c.id === chat?.classId)?.classCode}?`,
+                                `Hi, are you here for ${classes?.find((c) => c.id === attempt?.classId)?.classCode}?`,
                               )
                             }
                           >
@@ -543,7 +614,7 @@ export default function ChatPage({
                               <p className="text-base font-medium">
                                 Hi, are you here for{" "}
                                 {
-                                  classes?.find((c) => c.id === chat?.classId)
+                                  classes?.find((c) => c.id === attempt?.classId)
                                     ?.classCode
                                 }
                                 ?
@@ -717,7 +788,7 @@ export default function ChatPage({
                       </Card>
                     ) : (
                       <DocumentViewer
-                        classId={chat?.classId}
+                        classId={attempt?.classId}
                       />
                     )}
                   </div>

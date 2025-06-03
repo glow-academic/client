@@ -111,20 +111,6 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
       angry: 0,
     };
 
-    // Group by profile
-    classChats.forEach((chat) => {
-      const profile = profiles?.find(p => p.id === chat.profileId);
-      if (!profile) return;
-      
-      const profileName = profile.name.toLowerCase();
-      // Map 'aggressive' to 'angry' for the UI
-      const uiProfile = profileName === "aggressive" ? "angry" : profileName;
-
-      if (profileCounts[uiProfile] !== undefined) {
-        profileCounts[uiProfile]++;
-      }
-    });
-
     // Calculate percentages
     const total = classChats.length || 1; // Avoid division by zero
     const happy = Math.round((profileCounts.happy / total) * 100);

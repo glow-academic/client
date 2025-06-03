@@ -31,7 +31,7 @@ export async function login(
           name: username,
           username,
           password: hashedPassword,
-          role: admin ? "admin" : "guest",
+          role: admin ? "admin" : "ta",
         })
         .returning();
 

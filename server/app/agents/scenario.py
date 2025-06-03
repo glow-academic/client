@@ -1,6 +1,6 @@
 from app.db import get_session
 from sqlmodel import Session
-from app.models import Chats, Scenarios, Profiles
+from app.models import Scenarios, Profiles
 from fastapi import Depends
 import logging
 from app.utils.profiles import get_profile_info
@@ -10,25 +10,29 @@ from openai.types import Reasoning
 from app.extensions import get_gemini
 from pydantic import BaseModel
 from sqlmodel import select
+from typing import Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    profile_id: str, user_id: str, class_id: str, session: Session = Depends(get_session)
-) -> str:
+    profile_id: str, 
+    user_id: Optional[str], 
+    class_id: str, 
+    session: Session = Depends(get_session)
+) -> Tuple[str, str]:
     """
     This function is used to run the scenario agent.
-    Returns a string of the chat id.
+    Returns a tuple of (scenario_id, chat_title).
 
     Args:
         profile_id: The ID of the profile
-        user_id: The ID of the user
+        user_id: The ID of the user (can be None for guest mode)
         class_id: The ID of the class
         session: The database session
 
     Returns:
-        A string of the chat id.
+        A tuple of (scenario_id, chat_title).
     """
 
     # Get the profile to get its name for the agent
@@ -57,22 +61,8 @@ async def run_scenario_agent(
     session.commit()
     session.refresh(scenario)
 
-    # create a new chat
-    chat = Chats(
-        profile_id=profile_id,
-        user_id=user_id,
-        scenario_id=scenario.id,
-        title=scenario_result.title,
-        class_id=class_id,
-    )
-
-    # save the chat to the database
-    session.add(chat)
-    session.commit()
-    session.refresh(chat)  # Refresh to get DB generated values like ID
-
-    logger.info(f"New chat created with ID: {chat.id} for profile: {profile.name}")
-    return chat.id
+    logger.info(f"New scenario created with ID: {scenario.id} for profile: {profile.name}")
+    return str(scenario.id), scenario_result.title
 
 
 class Scenario(BaseModel):

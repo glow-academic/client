@@ -17,6 +17,7 @@ import { getUser } from "@/utils/queries/get-user";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
 import { getProfileConfig } from "@/utils/profiles";
+import { getAttempts } from "@/utils/queries/get-attempts";
 
 // Define statuses with proper icon components
 export const statuses = [
@@ -36,7 +37,9 @@ export const scoreMetrics = [
 // Component to use the columns with data from queries
 export function useTaskColumns({
   isAdmin = false,
-}: { isAdmin?: boolean } = {}) {
+  viewMode = 'chats',
+  effectiveRole = 'student',
+}: { isAdmin?: boolean; viewMode?: 'chats' | 'attempts'; effectiveRole?: 'student' | 'guest' } = {}) {
   const { data: user, isLoading: userLoading } = useQuery({
     queryKey: ["user"],
     queryFn: () => getUser(),
@@ -58,11 +61,18 @@ export function useTaskColumns({
     queryFn: () => getProfiles(),
   });
 
-  // Use getAllChats if isAdmin, otherwise use getChats with user id
+  // Use getAllChats if isAdmin, otherwise use getChats with user id (for chats view)
   const { data: chats, isLoading: chatsLoading } = useQuery({
     queryKey: isAdmin ? ["all-chats"] : ["chats", user?.id],
     queryFn: () => (isAdmin ? getAllChats() : getChats(user!.id)),
-    enabled: isAdmin || !!user,
+    enabled: (isAdmin || !!user) && viewMode === 'chats',
+  });
+
+  // Fetch attempts data (for attempts view)
+  const { data: attempts, isLoading: attemptsLoading } = useQuery({
+    queryKey: ["attempts"],
+    queryFn: () => getAttempts(),
+    enabled: viewMode === 'attempts',
   });
 
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
@@ -70,7 +80,7 @@ export function useTaskColumns({
       ? ["all-rubrics"]
       : ["rubrics", chats?.map((chat) => chat.id)],
     queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
+    enabled: !!chats && chats.length > 0 && viewMode === 'chats',
   });
 
   // Create dynamic profile types from database profiles
@@ -122,7 +132,214 @@ export function useTaskColumns({
   }, [rubrics]);
 
   // Define columns
-  const columns = useMemo<ColumnDef<typeof chatsTable.$inferSelect>[]>(() => {
+  const columns = useMemo<ColumnDef<any>[]>(() => {
+    if (viewMode === 'attempts') {
+      // Attempts view columns
+      const attemptColumns: ColumnDef<any>[] = [
+        // Select column only shows in admin mode
+        ...(isAdmin ? [{
+          id: "select",
+          header: ({ table }: any) => (
+            <Checkbox
+              checked={
+                table.getIsAllPageRowsSelected() ||
+                (table.getIsSomePageRowsSelected() && "indeterminate")
+              }
+              onCheckedChange={(value: any) =>
+                table.toggleAllPageRowsSelected(!!value)
+              }
+              aria-label="Select all"
+              className="translate-y-[2px]"
+            />
+          ),
+          cell: ({ row }: any) => (
+            <Checkbox
+              checked={row.getIsSelected()}
+              onCheckedChange={(value: any) => row.toggleSelected(!!value)}
+              aria-label="Select row"
+              className="translate-y-[2px]"
+            />
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        }] : []),
+        // Date column
+        {
+          accessorKey: "createdAt",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Date"
+              isAdmin={isAdmin}
+            />
+          ),
+          cell: ({ row }: any) => {
+            const date = row.getValue("createdAt");
+            if (!date) return null;
+
+            const dateObj = new Date(date as string);
+            const formattedDate = dateObj.toLocaleDateString("en-US", {
+              month: "short",
+              day: "2-digit",
+              year: "numeric",
+            });
+            const formattedTime = dateObj.toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: false,
+            });
+
+            return (
+              <div className="font-medium">
+                <div>{formattedDate}</div>
+                <div className="text-xs text-muted-foreground">
+                  {formattedTime}
+                </div>
+              </div>
+            );
+          },
+          enableSorting: true,
+          filterFn: (row: any, id: any, value: any) => {
+            if (!value || value.length === 0) return true;
+            const rowDate = new Date(row.getValue(id) as string);
+            const [fromDate, toDate] = value as [Date, Date];
+            if (fromDate && toDate) {
+              return rowDate >= fromDate && rowDate <= toDate;
+            }
+            return true;
+          },
+        },
+        // Template Title column
+        {
+          accessorKey: "templateTitle",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Template"
+              isAdmin={isAdmin}
+            />
+          ),
+          cell: ({ row }: any) => {
+            return (
+              <div className="flex space-x-2">
+                <span className="max-w-[500px] truncate font-medium">
+                  {row.getValue("templateTitle") || "Unknown Template"}
+                </span>
+              </div>
+            );
+          },
+        },
+        // Class column
+        {
+          accessorKey: "classCode",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Class"
+              isAdmin={isAdmin}
+            />
+          ),
+          cell: ({ row }: any) => {
+            const classCode = row.getValue("classCode");
+            return classCode ? (
+              <div className="flex items-center">
+                <span>{classCode}</span>
+              </div>
+            ) : null;
+          },
+          filterFn: (row: any, id: any, value: any) => {
+            return value.includes(row.getValue(id));
+          },
+        },
+        // Chats count column
+        {
+          accessorKey: "chats",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Chats"
+              isAdmin={isAdmin}
+            />
+          ),
+          cell: ({ row }: any) => {
+            const chats = row.getValue("chats") as any[];
+            const completedChats = chats?.filter(chat => chat.completed).length || 0;
+            const totalChats = chats?.length || 0;
+            
+            return (
+              <div className="text-center">
+                <span className="font-medium">{completedChats}/{totalChats}</span>
+                <div className="text-xs text-muted-foreground">completed</div>
+              </div>
+            );
+          },
+          enableSorting: false,
+        },
+        // Status column
+        {
+          id: "status",
+          header: ({ column }: any) => (
+            <DataTableColumnHeader
+              column={column}
+              title="Status"
+              isAdmin={isAdmin}
+            />
+          ),
+          cell: ({ row }: any) => {
+            const chats = row.getValue("chats") as any[];
+            const completedChats = chats?.filter(chat => chat.completed).length || 0;
+            const totalChats = chats?.length || 0;
+            
+            let status;
+            if (completedChats === totalChats && totalChats > 0) {
+              status = statuses.find((s) => s.value === "completed");
+            } else if (completedChats > 0) {
+              status = statuses.find((s) => s.value === "grading");
+            } else {
+              status = statuses.find((s) => s.value === "in-progress");
+            }
+
+            if (!status) return null;
+
+            return (
+              <div className="flex items-center">
+                {status.icon &&
+                  React.createElement(status.icon, {
+                    className: "mr-2 h-4 w-4 text-muted-foreground",
+                  })}
+                <span>{status.label}</span>
+              </div>
+            );
+          },
+          filterFn: (row: any, id: any, value: any) => {
+            const chats = row.getValue("chats") as any[];
+            const completedChats = chats?.filter(chat => chat.completed).length || 0;
+            const totalChats = chats?.length || 0;
+            
+            let statusValue;
+            if (completedChats === totalChats && totalChats > 0) {
+              statusValue = "completed";
+            } else if (completedChats > 0) {
+              statusValue = "grading";
+            } else {
+              statusValue = "in-progress";
+            }
+
+            return value.includes(statusValue);
+          },
+        },
+        // Actions column
+        {
+          id: "actions",
+          cell: ({ row }: any) => <DataTableRowActions row={row} isAdmin={isAdmin} />,
+        },
+      ];
+
+      return attemptColumns;
+    }
+
+    // Original chats view columns
     const baseColumns: ColumnDef<typeof chatsTable.$inferSelect>[] = [
       // Select column only shows in admin mode
       {
@@ -486,12 +703,18 @@ export function useTaskColumns({
     }
 
     return baseColumns;
-  }, [userOptions, classOptions, chatRubrics, isAdmin, profiles]);
+  }, [userOptions, classOptions, chatRubrics, isAdmin, profiles, viewMode]);
+
+  // Determine which data to return based on view mode
+  const data = viewMode === 'attempts' ? attempts : chats;
+  const isLoading = viewMode === 'attempts' 
+    ? (usersLoading || classesLoading || attemptsLoading || profilesLoading)
+    : (usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading);
 
   return {
     columns,
-    isLoading: usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading,
-    data: chats,
+    isLoading,
+    data: data || [],
     userOptions,
     classOptions,
     profileTypes, // Export dynamic profile types

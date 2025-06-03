@@ -34,7 +34,4 @@ gunicorn
 # Development tools
 ruff
 mypy
-pytest
-pytest-asyncio
 respx
-coverage

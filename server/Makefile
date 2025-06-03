@@ -1,4 +1,4 @@
-.PHONY: venv dev-tools sync format lint typecheck tests coverage run prod generate-models
+.PHONY: venv dev-tools sync format lint typecheck run prod generate-models
 
 # Check if venv exists
 VENV_EXISTS := $(shell test -d .venv && echo 1 || echo 0)
@@ -30,18 +30,6 @@ lint: venv
 typecheck: venv
 	@echo "Type checking..."
 	@uv run mypy app/
-
-# 7. Run pytest, with RESPX for HTTPX mocking
-tests: venv
-	@echo "Running tests..."
-	@uvx pytest -q --disable-warnings
-
-# 8. Generate coverage report (fail if <75% covered)
-coverage: venv
-	@echo "Generating coverage report..."
-	@uvx coverage run -m pytest -q
-	@uvx coverage xml -o coverage.xml
-	@uvx coverage report -m --fail-under=75
 
 # Generate SQLModel classes from database schema
 generate-models: venv

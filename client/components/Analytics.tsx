@@ -5,10 +5,10 @@
  * 05/20/2025
  */
 
-import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { getUsers } from "@/utils/queries/get-users";
 import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAttempts } from "@/utils/queries/get-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import {
@@ -47,13 +47,16 @@ import {
 } from "recharts";
 import { format, compareAsc, startOfDay, subDays } from "date-fns";
 import { getProfileConfig } from "@/utils/profiles";
+import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
+import { getTemplates } from "@/utils/queries/get-templates";
+import { getChatTemplates } from "@/utils/queries/get-chat-templates";
 
 // Interface for Teaching Assistant data
 interface TeachingAssistant {
   id: string;
   name: string;
   username: string;
-  admin: boolean;
+  role: 'admin' | 'instructional' | 'instructor' | 'ta';
   [key: string]: any; // For other properties
 }
 
@@ -122,10 +125,25 @@ export default function Analytics() {
     queryFn: () => getUsers(),
   });
 
-  // Fetch Chats
-  const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["all-chats"],
-    queryFn: () => getAllChats(),
+  // Fetch Attempts with Chats (this gives us the user-chat relationship)
+  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
+    queryKey: ["attempts"],
+    queryFn: () => getAttempts(),
+  });
+
+  const {data: templates, isLoading: isLoadingTemplates} = useQuery({
+    queryKey: ["templates"],
+    queryFn: () => getTemplates(),
+  });
+
+  const {data: chatTemplates, isLoading: isLoadingChatTemplates} = useQuery({
+    queryKey: ["chat-templates"],
+    queryFn: () => getChatTemplates(),
+  });
+
+  const {data: chats, isLoading: isLoadingChats} = useQuery({
+    queryKey: ["chats", attempts?.map((attempt) => attempt.id)],
+    queryFn: () => getAttemptChats(attempts!.map((attempt) => attempt.id)),
   });
 
   // Fetch Profiles
@@ -136,15 +154,15 @@ export default function Analytics() {
 
   // Fetch Rubrics (after chats are loaded)
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["all-rubrics"],
+    queryKey: ["all-rubrics-analytics"],
     queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
-  // Calculate Total TAs (users who are not admins)
+  // Calculate Total TAs (users who are TAs)
   const teachingAssistants = useMemo<TeachingAssistant[]>(() => {
     if (!users) return [];
-    return users.filter((user) => !user.admin);
+    return users.filter((user) => user.role === 'ta');
   }, [users]);
 
   // Calculate Average Score from rubrics
@@ -161,15 +179,6 @@ export default function Analytics() {
     return "text-red-600";
   };
 
-  // Get badge variant based on score
-  const getScoreBadgeVariant = (score: number) => {
-    if (score >= 80)
-      return { className: "bg-green-50 text-green-700 border-green-200" };
-    if (score >= 70)
-      return { className: "bg-amber-50 text-amber-700 border-amber-200" };
-    return { className: "bg-red-50 text-red-700 border-red-200" };
-  };
-
   // Calculate TAs needing attention (score < 70%)
   const needAttentionTAs = useMemo<TAWithScore[]>(() => {
     if (!users || !rubrics) return [];
@@ -183,9 +192,10 @@ export default function Analytics() {
     if (chats && rubrics) {
       chats.forEach((chat) => {
         const chatRubrics = rubrics.filter((r) => r.chatId === chat.id);
-        const user = users.find((u) => u.id === chat.userId);
+        const attempt = attempts?.find((a) => a.id === chat.attemptId);
+        const user = users?.find((u) => u.id === attempt?.userId);
 
-        if (chatRubrics.length > 0 && user && !user.admin) {
+        if (chatRubrics.length > 0 && user && user.role === 'ta') {
           if (!taScores[user.id]) {
             taScores[user.id] = {
               scores: [],
@@ -358,10 +368,13 @@ export default function Analytics() {
     chats.forEach((chat) => {
       const chatRubrics = rubrics.filter((r) => r.chatId === chat.id);
       if (chatRubrics.length > 0) {
-        const profileId = chat.profileId;
+        const attempt = attempts?.find((a) => a.id === chat.attemptId);
+        const template = templates?.find((t) => t.id === attempt?.templateId);
+        const chatTemplate = chatTemplates?.find((t) => t.id === template?.chatTemplateIds[0]);
+        const profileId = chatTemplate?.profileId;
 
         chatRubrics.forEach((rubric) => {
-          if (typeScores[profileId]) {
+          if (profileId && typeScores[profileId]) {
             typeScores[profileId].push(rubric.score);
           }
         });
@@ -403,9 +416,10 @@ export default function Analytics() {
 
     chats.forEach((chat) => {
       const chatRubrics = rubrics.filter((r) => r.chatId === chat.id);
-      const user = users.find((u) => u.id === chat.userId);
+      const attempt = attempts?.find((a) => a.id === chat.attemptId);
+      const user = users?.find((u) => u.id === attempt?.userId);
 
-      if (chatRubrics.length > 0 && user && !user.admin) {
+      if (chatRubrics.length > 0 && user && user.role === 'ta') {
         if (!taScores[user.id]) {
           taScores[user.id] = {
             scores: [],
@@ -467,7 +481,7 @@ export default function Analytics() {
   };
 
   // If all data is still loading, show loading state
-  if (isLoadingUsers || isLoadingChats || isLoadingRubrics || isLoadingProfiles) {
+  if (isLoadingUsers || isLoadingAttempts || isLoadingRubrics || isLoadingProfiles) {
     return (
       <div className="flex justify-center items-center p-10">
         Loading analytics...

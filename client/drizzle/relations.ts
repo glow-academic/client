@@ -1,16 +1,15 @@
 import { relations } from "drizzle-orm/relations";
-import { schedules, deadlines, classes, topics, prerequisites, documents, profiles, templates, quizzes, users, scenarios, chats, messages, rubrics } from "./schema";
+import { profiles, chatTemplates, schedules, classes, prerequisites, topics, deadlines, documents, users, attempts, templates, scenarios, chats, messages, rubrics } from "./schema";
 
-export const deadlinesRelations = relations(deadlines, ({one}) => ({
-	schedule: one(schedules, {
-		fields: [deadlines.scheduleId],
-		references: [schedules.id]
+export const chatTemplatesRelations = relations(chatTemplates, ({one}) => ({
+	profile: one(profiles, {
+		fields: [chatTemplates.profileId],
+		references: [profiles.id]
 	}),
 }));
 
-export const schedulesRelations = relations(schedules, ({many}) => ({
-	deadlines: many(deadlines),
-	classes: many(classes),
+export const profilesRelations = relations(profiles, ({many}) => ({
+	chatTemplates: many(chatTemplates),
 }));
 
 export const classesRelations = relations(classes, ({one, many}) => ({
@@ -18,11 +17,22 @@ export const classesRelations = relations(classes, ({one, many}) => ({
 		fields: [classes.scheduleId],
 		references: [schedules.id]
 	}),
-	topics: many(topics),
 	prerequisites: many(prerequisites),
+	topics: many(topics),
 	documents: many(documents),
-	quizzes: many(quizzes),
-	chats: many(chats),
+	attempts: many(attempts),
+}));
+
+export const schedulesRelations = relations(schedules, ({many}) => ({
+	classes: many(classes),
+	deadlines: many(deadlines),
+}));
+
+export const prerequisitesRelations = relations(prerequisites, ({one}) => ({
+	class: one(classes, {
+		fields: [prerequisites.classId],
+		references: [classes.id]
+	}),
 }));
 
 export const topicsRelations = relations(topics, ({one}) => ({
@@ -32,10 +42,10 @@ export const topicsRelations = relations(topics, ({one}) => ({
 	}),
 }));
 
-export const prerequisitesRelations = relations(prerequisites, ({one}) => ({
-	class: one(classes, {
-		fields: [prerequisites.classId],
-		references: [classes.id]
+export const deadlinesRelations = relations(deadlines, ({one}) => ({
+	schedule: one(schedules, {
+		fields: [deadlines.scheduleId],
+		references: [schedules.id]
 	}),
 }));
 
@@ -46,33 +56,28 @@ export const documentsRelations = relations(documents, ({one}) => ({
 	}),
 }));
 
-export const templatesRelations = relations(templates, ({one}) => ({
-	profile: one(profiles, {
-		fields: [templates.profileId],
-		references: [profiles.id]
+export const attemptsRelations = relations(attempts, ({one, many}) => ({
+	user: one(users, {
+		fields: [attempts.userId],
+		references: [users.id]
 	}),
-}));
-
-export const profilesRelations = relations(profiles, ({many}) => ({
-	templates: many(templates),
-	chats: many(chats),
-}));
-
-export const quizzesRelations = relations(quizzes, ({one, many}) => ({
 	class: one(classes, {
-		fields: [quizzes.classId],
+		fields: [attempts.classId],
 		references: [classes.id]
 	}),
-	user: one(users, {
-		fields: [quizzes.userId],
-		references: [users.id]
+	template: one(templates, {
+		fields: [attempts.templateId],
+		references: [templates.id]
 	}),
 	chats: many(chats),
 }));
 
 export const usersRelations = relations(users, ({many}) => ({
-	quizzes: many(quizzes),
-	chats: many(chats),
+	attempts: many(attempts),
+}));
+
+export const templatesRelations = relations(templates, ({many}) => ({
+	attempts: many(attempts),
 }));
 
 export const chatsRelations = relations(chats, ({one, many}) => ({
@@ -80,21 +85,9 @@ export const chatsRelations = relations(chats, ({one, many}) => ({
 		fields: [chats.scenarioId],
 		references: [scenarios.id]
 	}),
-	user: one(users, {
-		fields: [chats.userId],
-		references: [users.id]
-	}),
-	profile: one(profiles, {
-		fields: [chats.profileId],
-		references: [profiles.id]
-	}),
-	class: one(classes, {
-		fields: [chats.classId],
-		references: [classes.id]
-	}),
-	quiz: one(quizzes, {
-		fields: [chats.quizId],
-		references: [quizzes.id]
+	attempt: one(attempts, {
+		fields: [chats.attemptId],
+		references: [attempts.id]
 	}),
 	messages: many(messages),
 	rubrics: many(rubrics),

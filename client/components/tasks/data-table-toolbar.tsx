@@ -1,7 +1,7 @@
 "use client";
 
 import { Table } from "@tanstack/react-table";
-import { X, Download } from "lucide-react";
+import { X, Download, MessageSquare, FileText } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { useState } from "react";
 
@@ -65,6 +65,8 @@ interface DataTableToolbarProps<TData> {
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
+  viewMode?: 'chats' | 'attempts';
+  onViewModeChange?: (mode: 'chats' | 'attempts') => void;
 }
 
 export function DataTableToolbar<TData>({
@@ -74,6 +76,8 @@ export function DataTableToolbar<TData>({
   isAdmin = false,
   dateRange,
   setDateRange,
+  viewMode = 'chats',
+  onViewModeChange,
 }: DataTableToolbarProps<TData>) {
   // Check if any filters other than the date range are active
   const isFiltered =
@@ -265,6 +269,30 @@ export function DataTableToolbar<TData>({
           )}
         </div>
         <div className="flex items-center space-x-2">
+          {/* View Mode Toggle */}
+          {onViewModeChange && (
+            <div className="flex border rounded-md">
+              <Button
+                variant={viewMode === 'chats' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('chats')}
+                className="rounded-r-none border-r"
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                Chats
+              </Button>
+              <Button
+                variant={viewMode === 'attempts' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => onViewModeChange('attempts')}
+                className="rounded-l-none"
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                Attempts
+              </Button>
+            </div>
+          )}
+
           {/* Date range picker */}
           {setDateRange && (
             <DatePickerWithRange
