@@ -29,6 +29,8 @@ import { ChatProfilesContent } from "@/components/admin/chat-profiles-content";
 import { ChatScenariosContent } from "@/components/admin/chat-scenarios-content";
 import { StudentManagementContent } from "@/components/admin/student-management-content";
 import { ClassDetailsContent } from "@/components/admin/class-details-content";
+import { ProfileSection } from "@/components/profile-section";
+import { ManagementSection } from "@/components/management-section";
 
 type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta' | 'guest'
 
@@ -175,6 +177,7 @@ export default function Home() {
   const getPageTitle = () => {
     if (activeSection === "home") return "Home";
     if (activeSection === "history") return "Chat History";
+    if (activeSection === "profile") return "Profile";
     if (activeSection === "analytics") return "Analytics";
     if (activeSection === "documents") return "Documents";
     if (activeSection === "templates") return "Templates";
@@ -183,6 +186,9 @@ export default function Home() {
     if (activeSection === "chat-profiles") return "Chat Profiles";
     if (activeSection === "chat-scenarios") return "Chat Scenarios";
     if (activeSection === "student-management") return "Student Management";
+    if (activeSection === "manage-instructional") return "Manage Instructional Staff";
+    if (activeSection === "manage-instructors") return "Manage Instructors";
+    if (activeSection === "manage-tas") return "Manage Teaching Assistants";
     if (activeSection.startsWith("class-") && classData) {
       return `${classData.classCode} - ${classData.name}`;
     }
@@ -196,6 +202,8 @@ export default function Home() {
         return renderHomeContent();
       case "history":
         return renderHistoryContent();
+      case "profile":
+        return <ProfileSection />;
       case "template-list":
         return <Template mode="list" />;
       case "template-create":
@@ -206,6 +214,12 @@ export default function Home() {
         return <ChatScenariosContent />;
       case "student-management":
         return <StudentManagementContent />;
+      case "manage-instructional":
+        return <ManagementSection type="instructional" />;
+      case "manage-instructors":
+        return <ManagementSection type="instructors" />;
+      case "manage-tas":
+        return <ManagementSection type="tas" />;
       default:
         if (activeSection.startsWith("class-") && classData) {
           return <ClassDetailsContent classData={classData} />;
