@@ -1,4 +1,4 @@
-  -- Enable the gen_random_uuid() function
+-- Enable the gen_random_uuid() function
   CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
   -- ============================================================================
@@ -390,3 +390,17 @@
     
     -- Recursive Definitions
     ('66666666-aaaa-bbbb-cccc-000000000000', true, 18, 540, 4, 'Good adaptation to student''s interest in optimization', 5, 'Excellent listening, addressed specific questions about tail recursion', 4, 'Successfully explained recursive optimization techniques', 5, 'Excellent pacing, covered all aspects efficiently');
+
+  -- Insert Permanent Chat Templates for Individual Practice
+  INSERT INTO chat_templates (id, profile_id, scenario_id, crowdedness, intensity, seniority) VALUES
+    ('aaaaaaaa-1111-1111-1111-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', NULL, 3, 4, 'sophomore'),
+    ('bbbbbbbb-2222-2222-2222-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', NULL, 2, 2, 'freshman'),
+    ('cccccccc-3333-3333-3333-333333333333', '33333333-cccc-cccc-cccc-333333333333', NULL, 1, 5, 'freshman')
+  ON CONFLICT (id) DO NOTHING;
+
+  -- Insert Permanent Templates for Individual Practice (using existing chat templates)
+  INSERT INTO templates (id, title, documents, time_limit, active, chat_template_ids) VALUES
+    ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
+    ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['33333333-3333-3333-3333-333333333333']::UUID[]),
+    ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['55555555-5555-5555-5555-555555555555']::UUID[])
+  ON CONFLICT (id) DO NOTHING;

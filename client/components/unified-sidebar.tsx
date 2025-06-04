@@ -244,6 +244,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             url: "#",
             section: "history",
           },
+          {
+            title: "Rubric",
+            url: "#",
+            section: "rubric",
+          },
         ],
       });
     } else if (effectiveRole === 'ta') {
@@ -268,6 +273,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             url: "#",
             section: "history",
           },
+          {
+            title: "Rubric",
+            url: "#",
+            section: "rubric",
+          },
         ],
       });
     } else {
@@ -291,6 +301,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             title: "History",
             url: "#",
             section: "history",
+          },
+          {
+            title: "Rubric",
+            url: "#",
+            section: "rubric",
           },
         ],
       });
@@ -696,4 +711,4 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
       <SidebarRail />
     </Sidebar>
   )
-} 
+}

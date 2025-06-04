@@ -36,9 +36,13 @@ async def start_attempt(
 ):
     """
     This endpoint creates a new attempt and associated chats based on a template.
-    For guest mode, user_id can be None.
+    For guest mode, user_id can be None or empty string.
+    Handles both permanent individual practice templates and dynamic quiz templates.
     """
     try:
+        # Handle guest mode - convert empty string to None
+        actual_user_id = user_id if user_id and user_id.strip() else None
+        
         # Get the template
         template = session.exec(select(Templates).where(Templates.id == template_id)).one_or_none()
         if not template:
@@ -46,7 +50,7 @@ async def start_attempt(
         
         # Create the attempt
         new_attempt = Attempts(
-            user_id=user_id,  # Will be None for guest mode
+            user_id=actual_user_id,  # Will be None for guest mode
             class_id=class_id,
             template_id=template_id
         )
@@ -61,7 +65,7 @@ async def start_attempt(
         if not chat_template_ids:
             raise HTTPException(status_code=400, detail="Template has no chat templates configured")
         
-        # Just create the first chat template
+        # Create the first chat template
         chat_template_id = chat_template_ids[0]
         chat_template = session.exec(
             select(ChatTemplates).where(ChatTemplates.id == chat_template_id)
@@ -70,24 +74,29 @@ async def start_attempt(
         if not chat_template:
             raise HTTPException(status_code=400, detail=f"Chat template {chat_template_id} not found")
         
-        # if no scenario_id, create a new one
+        # Handle scenario creation or selection
         if not chat_template.scenario_id:
             scenario_id, chat_title = await run_scenario_agent(
                 profile_id=chat_template.profile_id,
-                user_id=user_id,  # Pass user_id (can be None for guest)
+                user_id=actual_user_id,  # Pass actual_user_id (can be None for guest)
                 class_id=class_id,
                 session=session
             )
         else:
             scenario_id = chat_template.scenario_id
-            chat_title = chat_template.title
+            # Use profile-specific default titles for permanent templates
+            profile = session.exec(select(Profiles).where(Profiles.id == chat_template.profile_id)).one_or_none()
+            if profile:
+                chat_title = f"{profile.name} Student Session"
+            else:
+                chat_title = "Practice Session"
 
-        # if no profile_id, select a random profile
+        # Handle profile selection
         if not chat_template.profile_id:
             # get all profiles
             profiles = session.exec(select(Profiles)).all()
             if not profiles:
-                raise HTTPException(status_code=400, detail="No profiles found for class")
+                raise HTTPException(status_code=400, detail="No profiles found")
             profile_id = random.choice(profiles).id
         else:
             profile_id = chat_template.profile_id

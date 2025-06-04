@@ -59,6 +59,9 @@ export default function DashboardLayout({
       case 'growth':
         route = '/dashboard/growth';
         break;
+      case 'rubric':
+        route = '/dashboard/rubric';
+        break;
       case 'analytics':
         route = '/dashboard/analytics';
         break;
@@ -144,4 +147,4 @@ export default function DashboardLayout({
   }
 
   return content;
-} 
+}
