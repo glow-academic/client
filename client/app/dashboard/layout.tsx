@@ -8,23 +8,10 @@ import { Switch } from "@/components/ui/switch";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
+import { ViewModeProvider } from "@/contexts/view-mode-context";
 import { getUser } from "@/utils/queries/get-user";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
-
-// Create context for view mode
-const ViewModeContext = React.createContext<{
-  viewMode: 'chats' | 'attempts';
-  setViewMode: (mode: 'chats' | 'attempts') => void;
-} | null>(null);
-
-export const useViewMode = () => {
-  const context = React.useContext(ViewModeContext);
-  if (!context) {
-    throw new Error('useViewMode must be used within ViewModeProvider');
-  }
-  return context;
-};
 
 export default function DashboardLayout({
   children,
@@ -98,9 +85,9 @@ export default function DashboardLayout({
   // Only provide context for history page
   if (isHistoryPage) {
     return (
-      <ViewModeContext.Provider value={{ viewMode, setViewMode }}>
+      <ViewModeProvider viewMode={viewMode} setViewMode={setViewMode}>
         {content}
-      </ViewModeContext.Provider>
+      </ViewModeProvider>
     );
   }
 

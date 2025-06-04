@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { DataTable } from "@/components/history/data-table";
 import { useTaskColumns } from "@/components/history/columns";
 import { getUser } from "@/utils/queries/get-user";
-import { useViewMode } from "../layout";
+import { useViewMode } from "@/contexts/view-mode-context";
 import { useRole } from "@/components/role-context";
 
 export default function DashboardHistoryPage() {
