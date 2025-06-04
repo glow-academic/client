@@ -2,7 +2,7 @@
 import { templates } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 
-export async function createTemplate(title: string, timeLimit: number, documents: string[], chatTemplateIds: string[]) {
+export async function createTemplate(title: string, timeLimit: number | null, documents: string[], chatTemplateIds: string[]) {
   try {
     const newTemplate = await db
       .insert(templates)

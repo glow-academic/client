@@ -30,7 +30,7 @@ AGENT_DISPATCH = {
 @router.post("/start")
 async def start_attempt(
     template_id: str = Form(...),
-    user_id: str = Form(...), 
+    user_id: Optional[str] = Form(None), 
     class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
@@ -40,9 +40,6 @@ async def start_attempt(
     Handles both permanent individual practice templates and dynamic quiz templates.
     """
     try:
-        # Handle guest mode - convert empty string to None
-        actual_user_id = user_id if user_id and user_id.strip() else None
-        
         # Get the template
         template = session.exec(select(Templates).where(Templates.id == template_id)).one_or_none()
         if not template:
@@ -50,7 +47,7 @@ async def start_attempt(
         
         # Create the attempt
         new_attempt = Attempts(
-            user_id=actual_user_id,  # Will be None for guest mode
+            user_id=user_id,  # Will be None for guest mode
             class_id=class_id,
             template_id=template_id
         )
@@ -60,10 +57,11 @@ async def start_attempt(
         
         logger.info(f"Created attempt {new_attempt.id} for template {template_id}")
         
-        # Get chat templates for this template
-        chat_template_ids = template.chat_template_ids
+        # Get chat templates for this template and filter out invalid ones
+        chat_template_ids = template.chat_template_ids or []
+        
         if not chat_template_ids:
-            raise HTTPException(status_code=400, detail="Template has no chat templates configured")
+            raise HTTPException(status_code=400, detail="Template has no valid chat templates configured")
         
         # Create the first chat template
         chat_template_id = chat_template_ids[0]
@@ -78,7 +76,7 @@ async def start_attempt(
         if not chat_template.scenario_id:
             scenario_id, chat_title = await run_scenario_agent(
                 profile_id=chat_template.profile_id,
-                user_id=actual_user_id,  # Pass actual_user_id (can be None for guest)
+                user_id=user_id,  # Pass actual_user_id (can be None for guest)
                 class_id=class_id,
                 session=session
             )
@@ -211,21 +209,21 @@ async def continue_attempt(
         if not template:
             raise HTTPException(status_code=404, detail="Template not found")
         
-        # get all the chat templates for this template
-        chat_templates = template.chat_template_ids
+        # get all the chat templates for this template and filter out invalid ones
+        chat_template_ids = template.chat_template_ids or []
         
         # Find the current chat template index and get the next one
         current_chat_template_id = chat.chat_template_id
-        if current_chat_template_id not in chat_templates:
+        if current_chat_template_id not in chat_template_ids:
             raise HTTPException(status_code=400, detail="Current chat template not found in template")
         
-        current_index = chat_templates.index(current_chat_template_id)
+        current_index = chat_template_ids.index(current_chat_template_id)
         next_index = current_index + 1
         
         # do not continue if we do not have any chat templates left
         next_chat_id = chat_id
-        if next_index < len(chat_templates):
-            next_chat_template_id = chat_templates[next_index]
+        if next_index < len(chat_template_ids):
+            next_chat_template_id = chat_template_ids[next_index]
             next_chat_template = session.exec(select(ChatTemplates).where(ChatTemplates.id == next_chat_template_id)).one_or_none()
             if not next_chat_template:
                 raise HTTPException(status_code=404, detail="Next chat template not found")

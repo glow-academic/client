@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2, Timer, Users, FileText } from "lucide-react";
+import { Edit, Trash2, Timer, Users, FileText } from "lucide-react";
 
 import { getTemplates } from "@/utils/queries/get-templates";
 import { deleteTemplate } from "@/utils/mutations/delete-template";
@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { templates as Templates } from "@/drizzle/schema";
 
 export function TemplatesContent() {
   const router = useRouter();
@@ -74,7 +75,7 @@ export function TemplatesContent() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {templates.map((template: any) => (
+        {templates.map((template: typeof Templates.$inferSelect) => (
           <Card key={template.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">

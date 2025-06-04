@@ -2,7 +2,7 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, Upload, Download, X } from "lucide-react";
+import { Download, X } from "lucide-react";
 
 import { getUser } from "@/utils/queries/get-user";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,7 +85,6 @@ export default function NewInstructionalPage() {
     reader.onload = (e) => {
       const text = e.target?.result as string;
       const lines = text.split('\n').filter(line => line.trim());
-      const headers = lines[0].split(',').map(h => h.trim());
       
       const users: CSVUser[] = lines.slice(1).map(line => {
         const values = line.split(',').map(v => v.trim());

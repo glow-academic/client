@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 
 import { getScenarios } from "@/utils/queries/get-scenarios";
 import { deleteScenario } from "@/utils/mutations/delete-scenario";
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { scenarios as Scenarios } from "@/drizzle/schema";
 
 export function ScenariosContent() {
   const router = useRouter();
@@ -73,7 +74,7 @@ export function ScenariosContent() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
-        {scenarios.map((scenario: any) => (
+        {scenarios.map((scenario: typeof Scenarios.$inferSelect) => (
           <Card key={scenario.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">

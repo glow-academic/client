@@ -99,13 +99,6 @@ const ratingColors = {
 export default function RubricPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Evaluation Rubric</h2>
-        <p className="text-muted-foreground">
-          Assessment criteria and performance standards for teaching assistant evaluation
-        </p>
-      </div>
-
       <div className="space-y-6">
         {rubricData.map((criterion, index) => {
           const IconComponent = criterion.icon;
@@ -149,13 +142,13 @@ export default function RubricPage() {
                       .map(([rating, description]) => (
                         <TableRow key={rating}>
                           <TableCell>
-                            <Badge className={`font-semibold ${ratingColors[rating as keyof typeof ratingColors]}`}>
+                            <Badge className={`font-semibold ${ratingColors[rating as unknown as keyof typeof ratingColors]}`}>
                               {rating}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <span className="font-medium">
-                              {ratingLabels[rating as keyof typeof ratingLabels]}
+                              {ratingLabels[rating as unknown as keyof typeof ratingLabels]}
                             </span>
                           </TableCell>
                           <TableCell className="text-sm leading-relaxed">

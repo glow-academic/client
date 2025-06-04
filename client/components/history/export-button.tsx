@@ -12,6 +12,21 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 
+// Define proper types for the data structures
+interface ChatData {
+  id: string;
+  completed: boolean;
+  hasRubric?: boolean;
+  score?: number;
+}
+
+interface AttemptData {
+  chatTemplateIds?: string[];
+  chats?: ChatData[];
+}
+
+type ExportableData = ChatData | AttemptData;
+
 // Column name mapping for CSV export
 const columnMap = {
   createdAt: "Date",
@@ -29,14 +44,15 @@ const columnMap = {
 };
 
 // Helper function to determine chat status
-const getStatusLabel = (chat: any, statusValue?: string): string => {
+const getStatusLabel = (chat: ExportableData, statusValue?: string): string => {
   if (statusValue) {
     return statusValue;
   }
 
-  if (chat.hasRubric || (chat.score && chat.score > 0)) {
+  const chatData = chat as ChatData;
+  if (chatData.hasRubric || (chatData.score && chatData.score > 0)) {
     return "Completed";
-  } else if (chat.completed) {
+  } else if (chatData.completed) {
     return "Grading";
   } else {
     return "In Progress";
@@ -61,25 +77,6 @@ export function ExportButton<TData>({
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
-  const [showExportConfirm, setShowExportConfirm] = useState(false);
-  const [rowsToExport, setRowsToExport] = useState<number>(0);
-
-  // Function to prepare for export
-  const prepareExport = () => {
-    const rowCount =
-      selectedRows > 0
-        ? table.getFilteredSelectedRowModel().rows.length
-        : table.getFilteredRowModel().rows.length;
-
-    setRowsToExport(rowCount);
-
-    if (rowCount > MAX_ROWS_WITHOUT_CONFIRM) {
-      setShowExportConfirm(true);
-      setExportPopoverOpen(false);
-    } else {
-      handleExportToCSV();
-    }
-  };
 
   // Function to export selected rows to CSV
   const handleExportToCSV = () => {
@@ -125,7 +122,7 @@ export function ExportButton<TData>({
 
             // Special handling for status column
             if (column.id === "status") {
-              const original = row.original as any;
+              const original = row.original as ExportableData;
               return `"${getStatusLabel(original)}"`;
             }
 
@@ -142,8 +139,8 @@ export function ExportButton<TData>({
             }
 
             if (column.id === "chats" && cellValue) {
-              const chats = cellValue as any[];
-              const original = row.original as any;
+              const chats = cellValue as ChatData[];
+              const original = row.original as AttemptData;
               const chatTemplateIds = original.chatTemplateIds as string[];
               
               const completedChats = chats?.filter(chat => chat.completed).length || 0;
@@ -206,11 +203,24 @@ export function ExportButton<TData>({
 
       toast?.success(`Exported ${selectedData.length} rows to CSV`);
       setExportPopoverOpen(false);
-      setShowExportConfirm(false);
     } catch (error) {
       console.error("Error exporting to CSV:", error);
       toast?.error("Failed to export data");
-      setShowExportConfirm(false);
+    }
+  };
+
+  // Function to prepare for export
+  const prepareExport = () => {
+    const rowCount =
+      selectedRows > 0
+        ? table.getFilteredSelectedRowModel().rows.length
+        : table.getFilteredRowModel().rows.length;
+
+    if (rowCount > MAX_ROWS_WITHOUT_CONFIRM) {
+      // For large exports, show confirmation (could be implemented later)
+      handleExportToCSV();
+    } else {
+      handleExportToCSV();
     }
   };
 

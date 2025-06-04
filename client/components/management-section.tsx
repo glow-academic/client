@@ -1,11 +1,11 @@
 import * as React from "react"
-import { Users, Shield, GraduationCap, User, Search, MoreHorizontal } from "lucide-react"
+import { Shield, GraduationCap, User, Search, MoreHorizontal } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 
 import { getUser } from "@/utils/queries/get-user"
 import { getUsers } from "@/utils/queries/get-users"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -103,7 +103,6 @@ export function ManagementSection({ type, className }: ManagementSectionProps) {
   });
 
   const typeInfo = getTypeInfo(type);
-  const TypeIcon = typeInfo.icon;
 
   // Filter users by role and search term
   const filteredUsers = allUsers

@@ -1,8 +1,6 @@
 import * as React from "react"
-import { Users, Shield, GraduationCap, User, Search, Plus, MoreHorizontal, Upload, Download, Filter, SortAsc, SortDesc, Eye, EyeOff } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+import { Shield, GraduationCap, User, Search, MoreHorizontal, SortAsc, SortDesc, Eye, EyeOff } from "lucide-react"
 
-import { getUser } from "@/utils/queries/get-user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -33,7 +31,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 
-type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 type ManagementType = 'instructional' | 'instructors' | 'tas'
 type SortField = 'name' | 'email' | 'department' | 'status' | 'lastLogin'
 type SortDirection = 'asc' | 'desc'
@@ -48,7 +45,7 @@ interface UserData {
   id: string
   name: string
   username: string
-  role: string
+  role: ManagementType
   email: string
   status: 'active' | 'inactive'
   lastLogin: string
@@ -70,24 +67,23 @@ const getInitials = (name?: string): string => {
 const getAllMockUsers = (type: ManagementType): UserData[] => {
   const baseUsers: UserData[] = [
     { id: '1', name: 'Dr. Sarah Johnson', username: 'sjohnson', role: 'instructional', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-15', department: 'Computer Science' },
-    { id: '2', name: 'Prof. Michael Chen', username: 'mchen', role: 'instructor', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-14', department: 'Computer Science' },
-    { id: '3', name: 'Dr. Emily Rodriguez', username: 'erodriguez', role: 'instructor', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-13', department: 'Mathematics' },
-    { id: '4', name: 'Prof. David Kim', username: 'dkim', role: 'instructor', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-12', department: 'Physics' },
+    { id: '2', name: 'Prof. Michael Chen', username: 'mchen', role: 'instructors', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-14', department: 'Computer Science' },
+    { id: '3', name: 'Dr. Emily Rodriguez', username: 'erodriguez', role: 'instructors', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-13', department: 'Mathematics' },
+    { id: '4', name: 'Prof. David Kim', username: 'dkim', role: 'instructors', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-12', department: 'Physics' },
     { id: '5', name: 'Dr. Lisa Wang', username: 'lwang', role: 'instructional', email: 'redacted@purdue.edu', status: 'inactive', lastLogin: '2024-01-10', department: 'Mathematics' },
-    { id: '6', name: 'Alex Thompson', username: 'athompson', role: 'ta', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-15', department: 'Computer Science' },
-    { id: '7', name: 'Jordan Lee', username: 'jlee', role: 'ta', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-14', department: 'Computer Science' },
-    { id: '8', name: 'Sam Wilson', username: 'swilson', role: 'ta', email: 'redacted@purdue.edu', status: 'inactive', lastLogin: '2024-01-10', department: 'Mathematics' },
-    { id: '9', name: 'Taylor Brown', username: 'tbrown', role: 'ta', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-13', department: 'Physics' },
-    { id: '10', name: 'Casey Davis', username: 'cdavis', role: 'ta', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-11', department: 'Chemistry' },
+    { id: '6', name: 'Alex Thompson', username: 'athompson', role: 'tas', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-15', department: 'Computer Science' },
+    { id: '7', name: 'Jordan Lee', username: 'jlee', role: 'tas', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-14', department: 'Computer Science' },
+    { id: '8', name: 'Sam Wilson', username: 'swilson', role: 'tas', email: 'redacted@purdue.edu', status: 'inactive', lastLogin: '2024-01-10', department: 'Mathematics' },
+    { id: '9', name: 'Taylor Brown', username: 'tbrown', role: 'tas', email: 'redacted@purdue.edu', status: 'active', lastLogin: '2024-01-13', department: 'Physics' },
   ];
 
   switch (type) {
     case 'instructional':
       return baseUsers.filter(user => user.role === 'instructional');
     case 'instructors':
-      return baseUsers.filter(user => user.role === 'instructor');
+      return baseUsers.filter(user => user.role === 'instructors');
     case 'tas':
-      return baseUsers.filter(user => user.role === 'ta');
+      return baseUsers.filter(user => user.role === 'tas');
     default:
       return [];
   }
@@ -148,7 +144,7 @@ export function UserManagementView({ type, className, onBack }: UserManagementVi
 
   // Filter and sort users
   const filteredAndSortedUsers = React.useMemo(() => {
-    let filtered = allUsers.filter(user => {
+    const filtered = allUsers.filter(user => {
       const matchesSearch = 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -282,7 +278,7 @@ export function UserManagementView({ type, className, onBack }: UserManagementVi
                 className="pl-10"
               />
             </div>
-            <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
+            <Select value={statusFilter} onValueChange={(value: 'all' | 'active' | 'inactive') => setStatusFilter(value)}>
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>

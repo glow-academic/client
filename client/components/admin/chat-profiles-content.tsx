@@ -22,6 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { profiles as Profiles } from "@/drizzle/schema";
 
 export function ChatProfilesContent() {
   const [showCreateProfile, setShowCreateProfile] = useState(false);
@@ -58,7 +59,7 @@ export function ChatProfilesContent() {
       </div>
 
       <div className="grid gap-4">
-        {profiles?.map((profile: any) => (
+        {profiles?.map((profile: typeof Profiles.$inferSelect) => (
           <Card key={profile.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">

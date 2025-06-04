@@ -1,10 +1,9 @@
 "use client";
 import React from "react";
-import { ColumnDef } from "@tanstack/react-table";
+import { ColumnDef, Row, Table } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/history/data-table-column-header";
 import { DataTableRowActions } from "@/components/history/data-table-row-actions";
-import { chats as chatsTable } from "@/drizzle/schema";
 import { useQuery } from "@tanstack/react-query";
 import { getChats } from "@/utils/queries/get-chats";
 import { getAllChats } from "@/utils/queries/get-all-chats";
@@ -16,9 +15,26 @@ import { getUser } from "@/utils/queries/get-user";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
 import { getProfileConfig } from "@/utils/profiles";
-import { getAttempts } from "@/utils/queries/get-attempts";
 import { getEnhancedAttempts, getEnhancedAttemptsByUser } from "@/utils/queries/get-enhanced-attempts";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
+import { classes as Classes, attempts as Attempts, chats as Chats, rubrics as Rubrics, profiles as Profiles, users as Users } from "@/drizzle/schema";
+
+// Use Drizzle schema types
+type User = typeof Users.$inferSelect;
+type Class = typeof Classes.$inferSelect;
+type Profile = typeof Profiles.$inferSelect;
+type Chat = typeof Chats.$inferSelect;
+type Rubric = typeof Rubrics.$inferSelect;
+type Attempt = typeof Attempts.$inferSelect;
+
+// Enhanced attempt type (from the query results)
+interface EnhancedAttempt extends Attempt {
+  chats: Chat[];
+  profilesTested: string[];
+  templateTitle?: string | null;
+  classCode?: string | null;
+  chatTemplateIds?: string[] | null;
+}
 
 // Define score metrics
 export const scoreMetrics = [
@@ -34,7 +50,7 @@ export function useTaskColumns({
   viewMode = 'chats',
   effectiveRole = 'student',
 }: { isAdmin?: boolean; viewMode?: 'chats' | 'attempts'; effectiveRole?: 'student' | 'guest' | 'ta' } = {}) {
-  const { data: user, isLoading: userLoading } = useQuery({
+  const { data: user, isLoading: _userLoading } = useQuery({
     queryKey: ["user"],
     queryFn: () => getUser(),
   });
@@ -56,7 +72,7 @@ export function useTaskColumns({
   });
 
   // Use getAllChats if isAdmin, otherwise use getChats with user id (for chats view)
-  const { data: chats, isLoading: chatsLoading, error: chatsError } = useQuery({
+  const { data: chats, isLoading: chatsLoading, error: _chatsError } = useQuery({
     queryKey: isAdmin ? ["all-chats"] : ["chats", user?.id],
     queryFn: () => {
       return isAdmin ? getAllChats() : getChats(user?.id || '');
@@ -105,7 +121,7 @@ export function useTaskColumns({
   // Create dynamic profile types from database profiles
   const profileTypes = useMemo(() => {
     if (!profiles) return [];
-    return profiles.map((profile) => ({
+    return profiles.map((profile: Profile) => ({
       value: profile.id,
       label: profile.name,
       icon: getProfileConfig(profile.name).icon,
@@ -115,7 +131,7 @@ export function useTaskColumns({
   // Create user options for GTA names
   const userOptions = useMemo(() => {
     if (!users) return [];
-    return users.map((user) => ({
+    return users.map((user: User) => ({
       value: user.id,
       label: user.name,
       icon: null,
@@ -125,7 +141,7 @@ export function useTaskColumns({
   // Create class options
   const classOptions = useMemo(() => {
     if (!classes) return [];
-    return classes.map((cls) => ({
+    return classes.map((cls: Class) => ({
       value: cls.id,
       label: cls.classCode,
       icon: null,
@@ -135,56 +151,50 @@ export function useTaskColumns({
   // Create class options for attempts (uses classCode as value since attempts data has classCode directly)
   const attemptClassOptions = useMemo(() => {
     if (!classes) return [];
-    return classes.map((cls) => ({
+    return classes.map((cls: Class) => ({
       value: cls.classCode,
       label: cls.classCode,
       icon: null,
     }));
   }, [classes]);
 
-  // Create a map of chat IDs to their rubric scores for efficient lookup
-  const chatScores = useMemo(() => {
-    if (!rubrics) return new Map();
-    return new Map(rubrics.map((rubric) => [rubric.chatId, rubric.score]));
-  }, [rubrics]);
-
   // Create a map of chat IDs to their full rubric data for efficient lookup
   const chatRubrics = useMemo(() => {
     if (!rubrics) return new Map();
-    return new Map(rubrics.map((rubric) => [rubric.chatId, rubric]));
+    return new Map(rubrics.map((rubric: Rubric) => [rubric.chatId, rubric]));
   }, [rubrics]);
 
   // Create a map of attempt rubrics for attempts view
   const attemptRubricsByChat = useMemo(() => {
     if (!attemptRubrics) return new Map();
-    return new Map(attemptRubrics.map((rubric) => [rubric.chatId, rubric]));
+    return new Map(attemptRubrics.map((rubric: Rubric) => [rubric.chatId, rubric]));
   }, [attemptRubrics]);
 
   // Define columns
-  const columns = useMemo<ColumnDef<any>[]>(() => {
+  const columns = useMemo(() => {
     if (viewMode === 'attempts') {
       // Attempts view columns
-      const attemptColumns: ColumnDef<any>[] = [
+      const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
         // Select column only shows in admin mode
         ...(isAdmin ? [{
           id: "select",
-          header: ({ table }: { table: any }) => (
+          header: ({ table }: { table: Table<EnhancedAttempt> }) => (
             <Checkbox
               checked={
                 table.getIsAllPageRowsSelected() ||
                 (table.getIsSomePageRowsSelected() && "indeterminate")
               }
-              onCheckedChange={(value: any) =>
+              onCheckedChange={(value: boolean | "indeterminate") =>
                 table.toggleAllPageRowsSelected(!!value)
               }
               aria-label="Select all"
               className="translate-y-[2px]"
             />
           ),
-          cell: ({ row }: { row: any }) => (
+          cell: ({ row }: { row: Row<EnhancedAttempt> }) => (
             <Checkbox
               checked={row.getIsSelected()}
-              onCheckedChange={(value: any) => row.toggleSelected(!!value)}
+              onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
               aria-label="Select row"
               className="translate-y-[2px]"
             />
@@ -195,14 +205,14 @@ export function useTaskColumns({
         // Date column
         {
           accessorKey: "createdAt",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Date"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             const date = row.getValue("createdAt");
             if (!date) return null;
 
@@ -227,7 +237,7 @@ export function useTaskColumns({
             );
           },
           enableSorting: true,
-          filterFn: (row: any, id: any, value: any) => {
+          filterFn: (row, id, value) => {
             if (!value || value.length === 0) return true;
             const rowDate = new Date(row.getValue(id) as string);
             const [fromDate, toDate] = value as [Date, Date];
@@ -240,14 +250,14 @@ export function useTaskColumns({
         // User Name column for attempts
         {
           accessorKey: "userId",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Name"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             const userOption = userOptions.find(
               (user) => user.value === row.getValue("userId"),
             );
@@ -262,22 +272,22 @@ export function useTaskColumns({
               </div>
             );
           },
-          filterFn: (row: any, id: any, value: any) => {
-            return value.includes(row.getValue(id));
+          filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id) as string);
           },
           enableSorting: true,
         },
         // Template Title column
         {
           accessorKey: "templateTitle",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Template"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             return (
               <div className="flex space-x-2">
                 <span className="max-w-[500px] truncate font-medium">
@@ -290,26 +300,26 @@ export function useTaskColumns({
         // Class column with proper sorting
         {
           accessorKey: "classCode",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Class"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             const classCode = row.getValue("classCode");
             return classCode ? (
               <div className="flex items-center">
-                <span>{classCode}</span>
+                <span>{classCode as string}</span>
               </div>
             ) : <span className="text-muted-foreground">No Class</span>;
           },
-          filterFn: (row: any, id: any, value: any) => {
-            return value.includes(row.getValue(id));
+          filterFn: (row, id, value) => {
+            return value.includes(row.getValue(id) as string);
           },
           enableSorting: true,
-          sortingFn: (rowA: any, rowB: any, columnId: any) => {
+          sortingFn: (rowA, rowB, columnId) => {
             const valueA = rowA.getValue(columnId) as string;
             const valueB = rowB.getValue(columnId) as string;
             
@@ -324,16 +334,16 @@ export function useTaskColumns({
         // Chats completion column
         {
           accessorKey: "chats",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Chats"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
-            const chats = row.getValue("chats") as any[];
-            const chatTemplateIds = row.original.chatTemplateIds as string[];
+          cell: ({ row }) => {
+            const chats = row.getValue("chats") as Chat[];
+            const chatTemplateIds = row.original.chatTemplateIds;
             
             const completedChats = chats?.filter(chat => chat.completed).length || 0;
             // Use template's chatTemplateIds length for total expected chats
@@ -351,14 +361,14 @@ export function useTaskColumns({
         // Profiles tested column
         {
           accessorKey: "profilesTested",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Profiles Tested"
               isAdmin={isAdmin}
             />
           ),
-          cell: ({ row }: any) => {
+          cell: ({ row }) => {
             const profilesTested = row.getValue("profilesTested") as string[];
             
             if (!profilesTested || profilesTested.length === 0) {
@@ -368,7 +378,6 @@ export function useTaskColumns({
             return (
               <div className="flex flex-wrap gap-1">
                 {profilesTested.map((profileName, index) => {
-                  const config = getProfileConfig(profileName);
                   // Create badge color classes based on profile colors
                   const badgeColorClass = profileName.toLowerCase() === 'aggressive' 
                     ? 'bg-red-100 text-red-800 border-red-300'
@@ -391,7 +400,7 @@ export function useTaskColumns({
               </div>
             );
           },
-          filterFn: (row: any, id: any, value: any) => {
+          filterFn: (row, id, value) => {
             const profilesTested = row.getValue(id) as string[];
             if (!value || value.length === 0) return true;
             return value.some((filterProfile: string) => 
@@ -402,15 +411,15 @@ export function useTaskColumns({
         // Average score column
         {
           accessorKey: "averageScore",
-          header: ({ column }: any) => (
+          header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
               title="Avg Score"
               isAdmin={isAdmin}
             />
           ),
-          accessorFn: (row: any) => {
-            const chats = row.chats as any[];
+          accessorFn: (row: EnhancedAttempt) => {
+            const chats = row.chats;
             if (!chats || chats.length === 0) return 0;
             
             const chatRubrics = chats
@@ -422,14 +431,14 @@ export function useTaskColumns({
             const totalScore = chatRubrics.reduce((sum, rubric) => sum + (rubric?.score || 0), 0);
             return totalScore / chatRubrics.length;
           },
-          cell: ({ row }: any) => {
-            const chats = row.getValue("chats") as any[];
+          cell: ({ row }) => {
+            const chats = row.getValue("chats") as Chat[];
             if (!chats || chats.length === 0) {
               return <div className="text-muted-foreground">No chats</div>;
             }
             
             const chatRubrics = chats
-              .map((chat: any) => attemptRubricsByChat.get(chat.id))
+              .map((chat: Chat) => attemptRubricsByChat.get(chat.id))
               .filter(Boolean);
             
             if (chatRubrics.length === 0) {
@@ -440,7 +449,7 @@ export function useTaskColumns({
               return <div className="text-muted-foreground">Not graded</div>;
             }
             
-            const totalScore = chatRubrics.reduce((sum: number, rubric: any) => sum + (rubric?.score || 0), 0);
+            const totalScore = chatRubrics.reduce((sum: number, rubric: Rubric) => sum + (rubric?.score || 0), 0);
             const averageScore = totalScore / chatRubrics.length;
             const scorePercent = (averageScore / 20) * 100;
             
@@ -469,9 +478,10 @@ export function useTaskColumns({
         // Actions column
         {
           id: "actions",
-          cell: ({ row }: any) => {
-            const chats = row.original.chats as any[];
-            const chatTemplateIds = row.original.chatTemplateIds as string[];
+          cell: ({ row }) => {
+            const attempt = row.original;
+            const chats = attempt.chats;
+            const chatTemplateIds = attempt.chatTemplateIds;
             
             // An attempt is completed if all expected chats are completed
             const totalExpectedChats = chatTemplateIds?.length || 0;
@@ -480,7 +490,7 @@ export function useTaskColumns({
             
             return (
               <DataTableRowActions 
-                id={row.original.id} 
+                id={attempt.id} 
                 completed={isAttemptCompleted} 
                 isAdmin={isAdmin} 
                 viewMode={viewMode} 
@@ -494,27 +504,27 @@ export function useTaskColumns({
     }
 
     // Original chats view columns
-    const baseColumns: ColumnDef<typeof chatsTable.$inferSelect>[] = [
+    const baseColumns: ColumnDef<Chat>[] = [
       // Select column only shows in admin mode
       ...(isAdmin ? [{
         id: "select",
-        header: ({ table }: { table: any }) => (
+        header: ({ table }: { table: Table<Chat> }) => (
           <Checkbox
             checked={
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
-            onCheckedChange={(value: any) =>
+            onCheckedChange={(value: boolean | "indeterminate") =>
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all"
             className="translate-y-[2px]"
           />
         ),
-        cell: ({ row }: { row: any }) => (
+        cell: ({ row }: { row: Row<Chat> }) => (
           <Checkbox
             checked={row.getIsSelected()}
-            onCheckedChange={(value: any) => row.toggleSelected(!!value)}
+            onCheckedChange={(value: boolean | "indeterminate") => row.toggleSelected(!!value)}
             aria-label="Select row"
             className="translate-y-[2px]"
           />
@@ -595,7 +605,7 @@ export function useTaskColumns({
           );
         },
         filterFn: (row, id, value) => {
-          return value.includes(row.getValue(id));
+          return value.includes(row.getValue(id) as string);
         },
         enableSorting: true,
       },
@@ -612,7 +622,7 @@ export function useTaskColumns({
           return (
             <div className="flex space-x-2">
               <span className="max-w-[500px] truncate font-medium">
-                {row.getValue("title")}
+                {row.getValue("title") as string}
               </span>
             </div>
           );
@@ -644,7 +654,7 @@ export function useTaskColumns({
           );
         },
         filterFn: (row, id, value) => {
-          return value.includes(row.getValue(id));
+          return value.includes(row.getValue(id) as string);
         },
         enableSorting: true,
       },
@@ -658,14 +668,15 @@ export function useTaskColumns({
             isAdmin={isAdmin}
           />
         ),
-        accessorFn: (row) => {
+        accessorFn: (row: Chat) => {
           const chatId = row.id;
           const rubric = chatRubrics.get(chatId);
           // Return 0 for chats without scores so they appear at top when sorting
           return rubric ? rubric.score : 0;
         },
         cell: ({ row, column }) => {
-          const chatId = row.original.id;
+          const chat = row.original;
+          const chatId = chat.id;
           const rubric = chatRubrics.get(chatId);
           const selectedMetrics = (column.getFilterValue() as string[]) || [];
 
@@ -675,7 +686,7 @@ export function useTaskColumns({
           }
 
           // If the chat is completed but not yet graded, show "Grading in progress"
-          if (row.original.completed && !rubric) {
+          if (chat.completed && !rubric) {
             return <div className="text-amber-500">Grading in progress</div>;
           }
 
@@ -696,7 +707,7 @@ export function useTaskColumns({
           const selectedScores = selectedMetrics.map((metric) => ({
             label:
               scoreMetrics.find((m) => m.value === metric)?.label || metric,
-            score: rubric[metric as keyof typeof rubric] as number,
+            score: rubric[metric as keyof Rubric] as number,
           }));
 
           const total = selectedScores.reduce(
@@ -728,7 +739,8 @@ export function useTaskColumns({
           );
         },
         filterFn: (row, id, value: string[]) => {
-          const chatId = row.original.id;
+          const chat = row.original;
+          const chatId = chat.id;
           const rubric = chatRubrics.get(chatId);
 
           // If no rubric, exclude from filter
@@ -739,7 +751,7 @@ export function useTaskColumns({
 
           // Check if any selected metric matches the filter value
           return value.some((metric) => {
-            const score = rubric[metric as keyof typeof rubric] as number;
+            const score = rubric[metric as keyof Rubric] as number;
             return score !== undefined;
           });
         },
@@ -757,24 +769,27 @@ export function useTaskColumns({
       },
       {
         id: "actions",
-        cell: ({ row }) => <DataTableRowActions id={row.original.id} completed={row.original.completed} isAdmin={isAdmin} viewMode={viewMode} />,
+        cell: ({ row }) => {
+          const chat = row.original;
+          return <DataTableRowActions id={chat.id} completed={chat.completed} isAdmin={isAdmin} viewMode={viewMode} />;
+        },
       },
     ];
 
     return baseColumns;
-  }, [userOptions, classOptions, chatRubrics, attemptRubricsByChat, isAdmin, profiles, viewMode]);
+  }, [userOptions, classOptions, chatRubrics, attemptRubricsByChat, isAdmin, viewMode]);
 
   // Determine which data to return based on view mode and apply additional filtering for TAs
-  let data: any[] = viewMode === 'attempts' ? (enhancedAttempts || []) : (chats || []);
+  let data: unknown[] = viewMode === 'attempts' ? (enhancedAttempts || []) : (chats || []);
   
   // Apply additional filtering for TAs and non-admin users
   if (!isAdmin && effectiveRole === 'ta' && user?.id) {
     if (viewMode === 'chats') {
       // Filter chats to only show those belonging to the current user
-      data = data.filter((chat: any) => chat.userId === user.id);
+      data = data.filter((chat: unknown) => (chat as Record<string, unknown>).userId === user.id);
     } else if (viewMode === 'attempts') {
       // Filter attempts to only show those belonging to the current user
-      data = data.filter((attempt: any) => attempt.userId === user.id);
+      data = data.filter((attempt: unknown) => (attempt as Record<string, unknown>).userId === user.id);
     }
   } else if (!isAdmin && !user?.id) {
     // If there's no user and not admin, show empty data

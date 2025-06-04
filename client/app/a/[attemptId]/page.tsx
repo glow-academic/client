@@ -25,16 +25,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { chats as Chat, documents as Documents, rubrics as Rubric } from "@/drizzle/schema";
+import { chatTemplates as ChatTemplate } from "@/drizzle/schema";
 
 // Icons
 import {
   Send,
   ChevronDown,
-  Clock,
   Users,
   CheckCircle,
   Activity,
-  AlertCircle,
 } from "lucide-react";
 
 import DocumentViewer from "@/components/DocumentViewer";
@@ -59,6 +59,15 @@ interface TemplateMessage {
   completed: boolean;
 }
 
+type WindowWithAttemptTimer = Window & typeof globalThis & {
+  attemptTimer: {
+    timeRemaining: number;
+    formatTime: (seconds: number) => string;
+    isActive: boolean;
+    showResults: boolean;
+  };
+};
+
 export default function AttemptPage() {
   const params = useParams();
   const router = useRouter();
@@ -66,14 +75,13 @@ export default function AttemptPage() {
   const attemptId = params.attemptId as string;
 
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
-  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
   const [isActive, setIsActive] = useState(true);
   const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<Set<string>>(new Set());
 
   // Chat state for current chat
   const [newMessage, setNewMessage] = useState("");
-  const [isFirstMessage, setIsFirstMessage] = useState(true);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [endChatLoading, setEndChatLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
@@ -88,7 +96,7 @@ export default function AttemptPage() {
     enabled: !!attemptId,
   });
 
-  const { data: classData, isLoading: classLoading } = useQuery({
+  const { data: classData } = useQuery({
     queryKey: ["class", attempt?.classId],
     queryFn: () => getClass(attempt!.classId),
   });
@@ -99,7 +107,7 @@ export default function AttemptPage() {
   });
 
   // Fetch chats linked to this attempt
-  const { data: chats = [], isLoading: chatsLoading } = useQuery({
+  const { data: chats = [] } = useQuery({
     queryKey: ["chats", attemptId],
     queryFn: () => getAttemptChats([attemptId]),
   });
@@ -122,7 +130,7 @@ export default function AttemptPage() {
   });
 
   // Fetch rubric for current chat
-  const { data: currentRubric, isLoading: rubricLoading } = useQuery({
+  const { data: currentRubric } = useQuery({
     queryKey: ["rubric", currentChat?.id],
     queryFn: () => getRubric(currentChat.id),
     enabled: !!currentChat?.id && currentChat.completed,
@@ -143,7 +151,7 @@ export default function AttemptPage() {
   });
 
   // Fetch all rubrics for completed chats (for final results)
-  const completedChatIds = chats.filter((chat: any) => chat.completed).map((chat: any) => chat.id);
+  const completedChatIds = chats.filter((chat: typeof Chat.$inferSelect) => chat.completed).map((chat: typeof Chat.$inferSelect) => chat.id);
   const { data: allRubrics = [] } = useQuery({
     queryKey: ["all-rubrics", completedChatIds],
     queryFn: async () => {
@@ -165,7 +173,7 @@ export default function AttemptPage() {
   // Filter documents for the current attempt's class
   const classDocuments = useMemo(() => {
     if (!attempt?.classId || !documents) return [];
-    return documents.filter((doc: any) => doc.classId === attempt.classId);
+    return documents.filter((doc: typeof Documents.$inferSelect) => doc.classId === attempt.classId);
   }, [documents, attempt?.classId]);
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
@@ -175,19 +183,20 @@ export default function AttemptPage() {
   useEffect(() => {
     if (template && !sessionStartTime) {
       setSessionStartTime(new Date());
-      setTimeRemaining(template.timeLimit * 60); // Convert to seconds
+      setTimeRemaining(template.timeLimit ? template.timeLimit * 60 : null); // Convert to seconds
     }
   }, [template, sessionStartTime]);
 
   // Timer countdown
   useEffect(() => {
-    if (!isActive || timeRemaining <= 0 || showResults) return;
+    if (!isActive || timeRemaining === null || timeRemaining <= 0 || showResults) return;
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
-        if (prev <= 1) {
+        if (prev === null || prev <= 1) {
           setIsActive(false);
-          handleSessionComplete();
+          setShowResults(true);
+          toast.success(isSingleChatAttempt ? "Session completed!" : "Attempt completed!");
           return 0;
         }
         return prev - 1;
@@ -195,12 +204,11 @@ export default function AttemptPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isActive, timeRemaining, showResults]);
+  }, [isActive, timeRemaining, showResults, isSingleChatAttempt]);
 
   // Reset chat state when moving to next chat
   useEffect(() => {
     setNewMessage("");
-    setIsFirstMessage(messages.length === 0);
     setShowScrollButton(false);
   }, [currentChatIndex, messages.length]);
 
@@ -209,10 +217,10 @@ export default function AttemptPage() {
     if (chats.length > 0 && template?.chatTemplateIds && currentChatIndex === 0) {
       // Find the first incomplete chat
       const firstIncompleteIndex = template.chatTemplateIds.findIndex((templateId: string) => {
-        const chat = chats.find((c: any) => c.chatTemplateId === templateId);
+        const chat = chats.find((c: typeof Chat.$inferSelect) => c.chatTemplateId === templateId);
         return chat && !chat.completed;
       });
-      
+
       // If we found an incomplete chat, set the index to it
       if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== currentChatIndex) {
         setCurrentChatIndex(firstIncompleteIndex);
@@ -225,7 +233,7 @@ export default function AttemptPage() {
     if (currentChat?.completed && !showResults) {
       // Only auto-advance if this chat was freshly completed in this session
       const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
-      
+
       if (isFreshlyCompleted) {
         if (!isSingleChatAttempt && currentChatIndex < (template?.chatTemplateIds?.length || 0) - 1) {
           // Move to next chat after a short delay (only for multi-chat attempts)
@@ -250,20 +258,14 @@ export default function AttemptPage() {
   useEffect(() => {
     if (chats.length > 0 && template?.chatTemplateIds && !showResults) {
       const totalExpectedChats = template.chatTemplateIds.length;
-      const completedChats = chats.filter((chat: any) => chat.completed).length;
-      
+      const completedChats = chats.filter((chat: typeof Chat.$inferSelect) => chat.completed).length;
+
       if (completedChats === totalExpectedChats) {
         setShowResults(true);
         setIsActive(false);
       }
     }
   }, [chats, template?.chatTemplateIds, showResults]);
-
-  const handleSessionComplete = async () => {
-    setShowResults(true);
-    setIsActive(false);
-    toast.success(isSingleChatAttempt ? "Session completed!" : "Attempt completed!");
-  };
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -272,9 +274,7 @@ export default function AttemptPage() {
   };
 
   // Helper function to format chat template attributes
-  const formatChatTemplateInfo = (template: any) => {
-    if (!template) return null;
-
+  const formatChatTemplateInfo = (template: typeof ChatTemplate.$inferSelect) => {
     const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" :
       template.crowdedness === 2 ? "Moderate crowdedness" :
         template.crowdedness === 3 ? "High crowdedness" :
@@ -314,7 +314,6 @@ export default function AttemptPage() {
     if (!messageToSend || !currentChat) return;
 
     setNewMessage("");
-    setIsFirstMessage(false);
 
     /* ---------------- optimistic user bubble ---------------- */
     const userMsg: TemplateMessage = {
@@ -445,7 +444,7 @@ export default function AttemptPage() {
       if (result.success) {
         // Mark this chat as freshly completed
         setFreshlyCompletedChats(prev => new Set(prev).add(currentChat.id));
-        
+
         queryClient.invalidateQueries({ queryKey: ["chats", attemptId] });
         queryClient.invalidateQueries({ queryKey: ["rubric", currentChat.id] });
         toast.success("Chat ended successfully");
@@ -486,10 +485,10 @@ export default function AttemptPage() {
   const aggregatedResults = useMemo(() => {
     if (allRubrics.length === 0) return null;
 
-    const totalScore = allRubrics.reduce((sum: number, rubric: any) => sum + rubric.score, 0);
+    const totalScore = allRubrics.reduce((sum: number, rubric: typeof Rubric.$inferSelect) => sum + rubric.score, 0);
     const averageScore = totalScore / allRubrics.length;
-    const passedChats = allRubrics.filter((rubric: any) => rubric.passed).length;
-    const totalTime = allRubrics.reduce((sum: number, rubric: any) => sum + rubric.timeTaken, 0);
+    const passedChats = allRubrics.filter((rubric: typeof Rubric.$inferSelect) => rubric.passed).length;
+    const totalTime = allRubrics.reduce((sum: number, rubric: typeof Rubric.$inferSelect) => sum + rubric.timeTaken, 0);
 
     return {
       totalChats: allRubrics.length,
@@ -513,8 +512,8 @@ export default function AttemptPage() {
   useEffect(() => {
     // Store timer data in a way that the layout can access it
     if (typeof window !== 'undefined') {
-      (window as any).attemptTimer = {
-        timeRemaining,
+      (window as WindowWithAttemptTimer).attemptTimer = {
+        timeRemaining: timeRemaining || 0,
         formatTime: formatTime,
         isActive,
         showResults
@@ -542,7 +541,7 @@ export default function AttemptPage() {
             <p className="text-muted-foreground mb-4">
               The attempt you're looking for doesn't exist or has no chats configured.
             </p>
-            <Button onClick={() => router.push("/dashboard/templates")}>Return To Templates</Button>
+            <Button onClick={() => router.push("/dashboard/chats")}>Return To Chats</Button>
           </CardContent>
         </Card>
       </div>
@@ -592,8 +591,8 @@ export default function AttemptPage() {
           {!isSingleChatAttempt && (
             <div className="grid gap-4">
               <h2 className="text-xl font-semibold">Individual Chat Results</h2>
-              {allRubrics.map((rubric: any, index: number) => {
-                const chat = chats.find((c: any) => c.id === rubric.chatId);
+              {allRubrics.map((rubric: typeof Rubric.$inferSelect, index: number) => {
+                const chat = chats.find((c: typeof Chat.$inferSelect) => c.id === rubric.chatId);
                 return (
                   <Link href={`/c/${rubric.chatId}`} key={rubric.id}>
                     <Card key={rubric.id} className="hover:shadow-md transition-shadow">
@@ -695,7 +694,7 @@ export default function AttemptPage() {
                 <span>{scenario?.description || currentChat?.title}</span>
                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                   {isSingleChatAttempt ? (
-                    formatChatTemplateInfo(chatTemplate)
+                    formatChatTemplateInfo(chatTemplate!)
                   ) : (
                     <>
                       <Users className="h-4 w-4" />
@@ -703,7 +702,7 @@ export default function AttemptPage() {
                       {chatTemplate && (
                         <>
                           <span>•</span>
-                          {formatChatTemplateInfo(chatTemplate)}
+                          {formatChatTemplateInfo(chatTemplate!)}
                         </>
                       )}
                     </>
@@ -877,7 +876,7 @@ export default function AttemptPage() {
             <CardContent className="p-0">
               <ScrollArea className="h-[calc(100vh-12rem)]">
                 <div className="p-4 space-y-4">
-                  {classDocuments.map((doc: any) => (
+                  {classDocuments.map((doc: typeof Documents.$inferSelect) => (
                     <DocumentViewer key={doc.id} document={doc} />
                   ))}
                 </div>

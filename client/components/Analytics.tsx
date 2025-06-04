@@ -21,33 +21,21 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  GraduationCap,
   Users,
   TrendingUp,
-  TrendingDown,
   Clock,
   Target,
   Award,
   AlertTriangle,
-  BookOpen,
   MessageSquare,
   Brain,
   Zap,
   Calendar,
-  Filter,
-  Download,
   Eye,
+  TrendingDown,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -67,18 +55,10 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
   Area,
   AreaChart,
 } from "recharts";
-import { format, subDays, startOfDay, compareAsc } from "date-fns";
+import { format, subDays } from "date-fns";
 import { getProfileConfig } from "@/utils/profiles";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 import { getTemplates } from "@/utils/queries/get-templates";
@@ -178,7 +158,7 @@ export default function Analytics() {
           : 0,
       timeManagement:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.time_management, 0) / rubrics.length)
+          ? Math.round(rubrics.reduce((sum, r) => sum + r.timeManagement, 0) / rubrics.length)
           : 0,
     };
 
@@ -348,12 +328,12 @@ export default function Analytics() {
   if (!analytics) return null;
 
   // Custom tooltip component for better positioning
-  const CustomBarTooltip = ({ active, payload, label }: any) => {
+  const CustomBarTooltip = ({ active, payload, label }: {active: boolean, payload: {name: string, value: number, color: string}[], label: string}) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-gray-800 p-3 border rounded-lg shadow-lg text-sm relative z-50">
           <p className="font-medium mb-2">{label}</p>
-          {payload.map((entry: any, index: number) => (
+          {payload.map((entry: { name: string, value: number, color: string }, index: number) => (
             <div key={index} className="flex items-center gap-2">
               <div 
                 className="w-3 h-3 rounded" 
@@ -371,41 +351,6 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <GraduationCap className="h-8 w-8 text-primary" />
-            Graduate TA Training Analytics
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Monitor teaching assistant performance across different student
-            personality types
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Select
-            value={selectedTimeRange}
-            onValueChange={setSelectedTimeRange}
-          >
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7d">Last 7 days</SelectItem>
-              <SelectItem value="30d">Last 30 days</SelectItem>
-              <SelectItem value="90d">Last 90 days</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </div>
-
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
@@ -612,7 +557,7 @@ export default function Analytics() {
                     <XAxis dataKey="date" className="text-xs" />
                     <YAxis className="text-xs" />
                     <Tooltip
-                      content={<CustomBarTooltip />}
+                      content={<CustomBarTooltip active={false} payload={[]} label={""} />}
                       position={{ x: 0, y: 0 }}
                       allowEscapeViewBox={{ x: false, y: true }}
                       offset={20}

@@ -23,13 +23,21 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Clock, CheckCircle, XCircle, ExternalLink, Activity, Users } from "lucide-react";
+import { CheckCircle, XCircle, ExternalLink, Activity, Users } from "lucide-react";
 import Markdown from "@/components/Markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";
 import { getChatTemplate } from "@/utils/queries/get-chat-template";
+import { chatTemplates as ChatTemplate } from "@/drizzle/schema";
+
+type WindowWithChatData = Window & typeof globalThis & {
+  chatData: {
+    elapsedTime: string;
+    completed: boolean;
+    passed: boolean;
+  };
+};
 
 export default function ChatPage({
   params,
@@ -65,7 +73,7 @@ export default function ChatPage({
     enabled: !!chat?.chatTemplateId,
   });
 
-  const { data: rubric, isLoading: rubricLoading } = useQuery({
+  const { data: rubric } = useQuery({
     queryKey: ["rubric", chatId],
     queryFn: () => getRubric(chatId),
     enabled: !!chat?.completed,
@@ -125,18 +133,16 @@ export default function ChatPage({
   // Expose chat data to layout
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      (window as any).chatData = {
+      (window as WindowWithChatData).chatData = {
         elapsedTime,
         completed: chat?.completed || false,
-        passed: rubric?.passed
+        passed: rubric?.passed || false
       };
     }
   }, [elapsedTime, chat?.completed, rubric?.passed]);
 
   // Helper function to format chat template attributes
-  const formatChatTemplateInfo = (template: any) => {
-    if (!template) return null;
-    
+  const formatChatTemplateInfo = (template: typeof ChatTemplate.$inferSelect) => {
     const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" : 
                            template.crowdedness === 2 ? "Moderate crowdedness" :
                            template.crowdedness === 3 ? "High crowdedness" :
@@ -166,7 +172,7 @@ export default function ChatPage({
   };
 
   const handleBack = () => {
-    router.push("/dashboard/templates");
+    router.push("/dashboard/chats");
   };
 
   const handleGoToAttempt = () => {
@@ -279,7 +285,7 @@ export default function ChatPage({
             <div className="flex items-center gap-2">
               <span>{scenario?.description || chat.title}</span>
               <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                {formatChatTemplateInfo(chatTemplate)}
+                {formatChatTemplateInfo(chatTemplate!)}
               </div>
             </div>
           </CardTitle>

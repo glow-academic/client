@@ -25,7 +25,7 @@ export default function Home() {
         if (admin) {
           router.push("/dashboard/analytics");
         } else {
-          router.push("/dashboard/templates");
+          router.push("/dashboard/chats");
         }
       } else {
         setError(error || "An error occurred during login");
@@ -41,7 +41,7 @@ export default function Home() {
   const handleGuestAccess = () => {
     // Set guest mode in localStorage and redirect
     localStorage.setItem('guestMode', 'true');
-    router.push("/dashboard/templates");
+    router.push("/dashboard/chats");
   };
 
   return (

@@ -1,25 +1,23 @@
 "use client";
 
-import { Row } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
 
-import { attempts, chats } from "@/drizzle/schema";
 import Link from "next/link";
 
-interface DataTableRowActionsProps<TData> {
+interface DataTableRowActionsProps {
   id: string;
   completed: boolean;
   isAdmin?: boolean;
   viewMode?: "chats" | "attempts";
 }
 
-export function DataTableRowActions<TData>({
+export function DataTableRowActions({
   id,
   completed,
   isAdmin = false,
   viewMode = "chats",
-}: DataTableRowActionsProps<TData>) {
+}: DataTableRowActionsProps) {
   // For non-admin view, render a simple button instead of dropdown
   if (!isAdmin) {
     if (!completed) {

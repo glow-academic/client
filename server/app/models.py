@@ -62,9 +62,9 @@ class Templates(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    time_limit: int = Field(sa_column=Column('time_limit', Integer))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     chat_template_ids: list = Field(sa_column=Column('chat_template_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     attempts: List['Attempts'] = Relationship(back_populates='template')
 

@@ -29,8 +29,7 @@ interface DataTableViewOptionsProps<TData> {
 }
 
 export function DataTableViewOptions<TData>({
-  table,
-  isAdmin = false,
+  table
 }: DataTableViewOptionsProps<TData>) {
   return (
     <DropdownMenu>

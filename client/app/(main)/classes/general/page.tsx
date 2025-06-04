@@ -69,7 +69,7 @@ export default function ClassesGeneralPage() {
 
     // Calculate average score for each day
     return Object.entries(dates)
-      .map(([dateStr, data]) => {
+      .map(([_, data]) => {
         const avgScore =
           data.scores.length > 0
             ? Math.round(
@@ -92,7 +92,6 @@ export default function ClassesGeneralPage() {
 
     // For demo purposes, generate some sample emotion data
     // In a real implementation, you'd analyze chat sentiment or profile usage
-    const totalChats = chats.length || 1;
     const happy = Math.round(Math.random() * 40 + 40); // 40-80%
     const confused = Math.round(Math.random() * 30 + 10); // 10-40%
     const angry = Math.max(0, 100 - happy - confused); // Remainder

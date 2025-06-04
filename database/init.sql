@@ -41,7 +41,7 @@
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     title      TEXT        NOT NULL,
     documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
-    time_limit INTEGER     NOT NULL,          -- in minutes
+    time_limit INTEGER     NULL,          -- in minutes, or no time limit
     active      BOOLEAN     NOT NULL           DEFAULT TRUE,
     chat_template_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[]
   );
@@ -400,7 +400,7 @@
 
   -- Insert Permanent Templates for Individual Practice (using existing chat templates)
   INSERT INTO templates (id, title, documents, time_limit, active, chat_template_ids) VALUES
-    ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
-    ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['33333333-3333-3333-3333-333333333333']::UUID[]),
-    ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', ARRAY[]::UUID[], 30, true, ARRAY['55555555-5555-5555-5555-555555555555']::UUID[])
+    ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
+    ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['33333333-3333-3333-3333-333333333333']::UUID[]),
+    ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['55555555-5555-5555-5555-555555555555']::UUID[])
   ON CONFLICT (id) DO NOTHING;

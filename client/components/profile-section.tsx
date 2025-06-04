@@ -1,5 +1,5 @@
 import * as React from "react"
-import { User, Shield, Calendar, Mail, Building, GraduationCap } from "lucide-react"
+import { User, Shield, Mail, Building, GraduationCap } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 
 import { getUser } from "@/utils/queries/get-user"
@@ -8,6 +8,10 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
+import { classes as Classes } from "@/drizzle/schema"
+
+type Class = typeof Classes.$inferSelect;
+
 
 type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 
@@ -66,7 +70,7 @@ export function ProfileSection({ className }: ProfileSectionProps) {
   });
 
   // Fetch classes for assigned courses
-  const { data: classes = [], isLoading: classesLoading } = useQuery({
+  const { data: classes = []} = useQuery({
     queryKey: ["classes"],
     queryFn: () => getClasses(),
     enabled: !!user
@@ -103,7 +107,7 @@ export function ProfileSection({ className }: ProfileSectionProps) {
   const RoleIcon = roleInfo.icon;
 
   // Filter classes user is assigned to
-  const assignedClasses = classes.filter((cls: any) => 
+  const assignedClasses = classes.filter((cls: Class) => 
     user.classIds?.includes(cls.id)
   );
 
@@ -185,7 +189,7 @@ export function ProfileSection({ className }: ProfileSectionProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {assignedClasses.map((cls: any, index: number) => (
+                {assignedClasses.map((cls: Class, index: number) => (
                   <div key={cls.id}>
                     <div className="flex items-center justify-between">
                       <div>

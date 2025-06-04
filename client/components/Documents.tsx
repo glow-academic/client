@@ -10,7 +10,6 @@ import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { getClasses } from "@/utils/queries/get-classes";
-import { getProfiles } from "@/utils/queries/get-profiles";
 import { toast } from "sonner";
 
 // UI Components
@@ -37,7 +36,6 @@ import { Progress } from "@/components/ui/progress";
 
 // Icons
 import {
-  Upload,
   FileText,
   Image as ImageIcon,
   File,
@@ -50,7 +48,6 @@ import {
 
 import DocumentViewer from "@/components/DocumentViewer";
 import DocumentUploader from "@/components/DocumentUploader";
-import { getProfileConfig } from "@/utils/profiles";
 import DocumentDropzone from "@/components/DocumentDropzone";
 
 import {
@@ -115,19 +112,7 @@ export default function Documents({ classId }: DocumentsProps) {
     queryKey: ["classes"],
     queryFn: () => getClasses(),
   });
-
-  // Fetch profiles dynamically
-  const { data: profiles = [], isLoading: isProfilesLoading } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
-  });
-
-  // Create profile options from fetched profiles
-  const profileOptions = profiles.map((profile) => ({
-    value: profile.id,
-    label: profile.name,
-  }));
-
+  
   // Create class options from fetched classes
   const classOptions = classes.map((cls: typeof ClassItem.$inferSelect) => ({
     value: cls.id,
@@ -161,7 +146,7 @@ export default function Documents({ classId }: DocumentsProps) {
     return matchesSearch && matchesClass && matchesType;
   });
 
-  const isLoading = isDocumentsLoading || isClassesLoading || isProfilesLoading;
+  const isLoading = isDocumentsLoading || isClassesLoading;
 
   // Handle upload complete
   const handleUploadComplete = () => {

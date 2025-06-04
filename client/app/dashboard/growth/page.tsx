@@ -8,7 +8,7 @@
 
 import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Users, Brain, Target, Clock, MessageSquare } from "lucide-react";
+import { TrendingUp, Brain, Target, Clock, MessageSquare } from "lucide-react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
 import {
@@ -29,12 +29,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 import { getRubrics } from "@/utils/queries/get-rubrics";
-import { getUsers } from "@/utils/queries/get-users";
-import { getProfiles } from "@/utils/queries/get-profiles";
 import { getAttempts } from "@/utils/queries/get-attempts";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
-import { getTemplates } from "@/utils/queries/get-templates";
-import { getChatTemplates } from "@/utils/queries/get-chat-templates";
 import { getUser } from "@/utils/queries/get-user";
 
 const chartConfig = {
@@ -73,25 +69,10 @@ export default function GrowthPage() {
     queryFn: () => getAttempts(),
   });
 
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
-  });
-
-  const { data: chatTemplates, isLoading: isLoadingChatTemplates } = useQuery({
-    queryKey: ["chat-templates"],
-    queryFn: () => getChatTemplates(),
-  });
-
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["chats", attempts?.map((attempt) => attempt.id)],
     queryFn: () => getAttemptChats(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -228,8 +209,7 @@ export default function GrowthPage() {
     return insights;
   }, [growthData]);
 
-  const isLoading = isLoadingAttempts || isLoadingTemplates || isLoadingChatTemplates || 
-                   isLoadingChats || isLoadingProfiles || isLoadingRubrics;
+  const isLoading = isLoadingAttempts || isLoadingChats || isLoadingRubrics;
 
   if (isLoading) {
     return (
@@ -268,13 +248,6 @@ export default function GrowthPage() {
   if (!growthData || growthData.length === 0) {
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight">Growth Tracking</h2>
-          <p className="text-muted-foreground">
-            Track your teaching performance and student interaction skills
-          </p>
-        </div>
-        
         <Card>
           <CardContent className="p-8 text-center">
             <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -290,16 +263,6 @@ export default function GrowthPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Growth Tracking</h2>
-        <p className="text-muted-foreground">
-          {user?.role === 'ta' 
-            ? "Track your teaching performance and student interaction skills"
-            : "Overview of teaching assistant performance and growth metrics"
-          }
-        </p>
-      </div>
-
       {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

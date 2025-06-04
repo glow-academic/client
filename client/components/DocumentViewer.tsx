@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import {
@@ -61,7 +61,11 @@ export default function DocumentViewer({
     enabled: !document,
   });
 
-  const documentsToUse = document ? [document] : docs;
+  // Memoize documentsToUse to prevent unnecessary re-renders
+  const documentsToUse = useMemo(() => {
+    return document ? [document] : docs;
+  }, [document, docs]);
+
   const showSelector = documentsToUse.length > 1;
 
   // Set default document

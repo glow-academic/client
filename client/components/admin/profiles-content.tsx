@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Plus, Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 
 import { getProfiles } from "@/utils/queries/get-profiles";
 import { deleteProfile } from "@/utils/mutations/delete-profile";

@@ -1,12 +1,16 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
+import { RoleProvider } from "@/components/role-context";
+import { getUser } from "@/utils/queries/get-user";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+import { createSectionChangeHandler } from "@/utils/navigation-utils";
 
 // Create context for view mode
 const ViewModeContext = React.createContext<{
@@ -33,6 +37,12 @@ export default function DashboardLayout({
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
   const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
 
+  // Fetch user data for role context
+  const { data: user } = useQuery({
+    queryKey: ["user"],
+    queryFn: () => getUser(),
+  });
+
   // Check if we're on the history page
   const isHistoryPage = pathname === '/dashboard/history';
 
@@ -45,61 +55,7 @@ export default function DashboardLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = (section: string) => {
-    // Convert section to route
-    let route = '/dashboard/templates';
-    
-    switch (section) {
-      case 'templates':
-        route = '/dashboard/templates';
-        break;
-      case 'history':
-        route = '/dashboard/history';
-        break;
-      case 'growth':
-        route = '/dashboard/growth';
-        break;
-      case 'rubric':
-        route = '/dashboard/rubric';
-        break;
-      case 'analytics':
-        route = '/dashboard/analytics';
-        break;
-      case 'profile':
-        route = '/profile';
-        break;
-      case 'chat-templates':
-        route = '/chat/templates';
-        break;
-      case 'chat-profiles':
-        route = '/chat/profiles';
-        break;
-      case 'chat-scenarios':
-        route = '/chat/scenarios';
-        break;
-      case 'add-class':
-        route = '/classes/general';
-        break;
-      case 'manage-instructional':
-        route = '/management/instructional';
-        break;
-      case 'manage-instructors':
-        route = '/management/instructor';
-        break;
-      case 'manage-tas':
-        route = '/management/ta';
-        break;
-      default:
-        if (section.startsWith('class-')) {
-          const classId = section.replace('class-', '');
-          route = `/classes/c/${classId}`;
-        }
-        break;
-    }
-    
-    // Use Next.js router to navigate
-    router.push(route);
-  };
+  const handleSectionChange = createSectionChangeHandler(router);
 
   // Create view mode toggle for history page
   const viewModeToggle = isHistoryPage ? (
@@ -113,28 +69,30 @@ export default function DashboardLayout({
   ) : null;
 
   const content = (
-    <SidebarProvider>
-      <UnifiedSidebar
-        activeSection={activeSection}
-        onSectionChange={handleSectionChange}
-      />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4 w-full">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <NavigationBreadcrumbs 
-              breadcrumbs={breadcrumbs}
-              onSectionChange={handleSectionChange}
-              rightContent={viewModeToggle}
-            />
+    <RoleProvider userRole={user?.role}>
+      <SidebarProvider>
+        <UnifiedSidebar
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
+        />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4 w-full">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <NavigationBreadcrumbs 
+                breadcrumbs={breadcrumbs}
+                onSectionChange={handleSectionChange}
+                rightContent={viewModeToggle}
+              />
+            </div>
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+            {children}
           </div>
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          {children}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+        </SidebarInset>
+      </SidebarProvider>
+    </RoleProvider>
   );
 
   // Only provide context for history page

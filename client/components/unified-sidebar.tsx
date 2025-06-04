@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronRight, Home, BookOpen, FileText, HelpCircle, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Eye, Check, ChevronsUpDown, Clock, Plus } from "lucide-react"
+import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Check, ChevronsUpDown } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -8,6 +8,8 @@ import { getClasses } from "@/utils/queries/get-classes"
 import { getUser } from "@/utils/queries/get-user"
 import { logout } from "@/utils/mutations/logout"
 import { getAttempts } from "@/utils/queries/get-attempts"
+import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils"
+import { useRole } from "@/components/role-context"
 import {
   Collapsible,
   CollapsibleContent,
@@ -36,7 +38,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 
 type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
@@ -44,6 +45,32 @@ type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 interface UnifiedSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeSection: string
   onSectionChange?: (section: string) => void
+}
+
+interface ClassData {
+  id: string
+  classCode: string
+}
+
+interface MenuItem {
+  title: string
+  url: string
+  section?: string
+  classData?: ClassData
+  isSubItem?: boolean
+}
+
+interface NavSection {
+  title: string
+  url: string
+  icon: React.ComponentType<{ className?: string }>
+  items?: MenuItem[]
+}
+
+interface ManagementTab {
+  key: string
+  label: string
+  section: string
 }
 
 // Helper function to get initials from name
@@ -55,58 +82,6 @@ const getInitials = (name?: string): string => {
     .join("")
     .toUpperCase()
     .slice(0, 2);
-};
-
-// Guest mode management
-const useGuestMode = () => {
-  const [isGuestMode, setIsGuestMode] = React.useState(false);
-  const [guestAttemptIds, setGuestAttemptIds] = React.useState<string[]>([]);
-
-  React.useEffect(() => {
-    const stored = localStorage.getItem('guestAttemptIds');
-    if (stored) {
-      setGuestAttemptIds(JSON.parse(stored));
-    }
-  }, []);
-
-  const enableGuestMode = () => {
-    setIsGuestMode(true);
-  };
-
-  const disableGuestMode = () => {
-    setIsGuestMode(false);
-  };
-
-  const addGuestAttempt = (attemptId: string) => {
-    const newIds = [...guestAttemptIds, attemptId];
-    setGuestAttemptIds(newIds);
-    localStorage.setItem('guestAttemptIds', JSON.stringify(newIds));
-  };
-
-  return { isGuestMode, guestAttemptIds, enableGuestMode, disableGuestMode, addGuestAttempt };
-};
-
-// Role simulation for admins and TAs
-const useRoleSimulation = () => {
-  const [simulatedRole, setSimulatedRole] = React.useState<UserRole | 'guest' | null>(null);
-
-  React.useEffect(() => {
-    const stored = localStorage.getItem('simulatedRole');
-    if (stored && ['admin', 'instructional', 'instructor', 'ta', 'guest'].includes(stored)) {
-      setSimulatedRole(stored as UserRole | 'guest');
-    }
-  }, []);
-
-  const setRole = (role: UserRole | 'guest' | null) => {
-    setSimulatedRole(role);
-    if (role) {
-      localStorage.setItem('simulatedRole', role);
-    } else {
-      localStorage.removeItem('simulatedRole');
-    }
-  };
-
-  return { simulatedRole, setRole };
 };
 
 // Helper function to get hierarchical modes based on user role
@@ -136,8 +111,8 @@ const getAvailableModes = (userRole: UserRole) => {
 };
 
 // Helper function to get management tabs based on role
-const getManagementTabs = (effectiveRole: UserRole | 'guest') => {
-  const tabs = [];
+const getManagementTabs = (effectiveRole: UserRole | 'guest'): ManagementTab[] => {
+  const tabs: ManagementTab[] = [];
 
   if (effectiveRole === 'admin') {
     tabs.push(
@@ -163,8 +138,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState('');
-  const { simulatedRole, setRole: setSimulatedRole } = useRoleSimulation();
-  const { isGuestMode, guestAttemptIds, enableGuestMode, disableGuestMode } = useGuestMode();
+  
+  // Use the role context instead of local state
+  const { effectiveRole, setRole, isGuestMode } = useRole();
 
   // Fetch user data
   const { data: user } = useQuery({
@@ -178,11 +154,8 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     queryFn: () => getClasses(),
   });
 
-  // Determine effective role (simulated role for admins/TAs, or actual role)
-  const effectiveRole = isGuestMode ? 'guest' : (simulatedRole || user?.role || 'guest');
-
   // Fetch attempts with chats for guest mode
-  const { data: guestAttempts = [] } = useQuery({
+  const { data: _guestAttempts = [] } = useQuery({
     queryKey: ["attempts"],
     queryFn: () => getAttempts(),
     enabled: effectiveRole === 'guest',
@@ -210,7 +183,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         return classes; // Full access
       case 'instructor':
         // Only classes the user is assigned to
-        return classes.filter((cls: any) => user.classIds?.includes(cls.id));
+        return classes.filter((cls: ClassData) => user.classIds?.includes(cls.id));
       case 'ta':
         return []; // No class access for TAs
       default:
@@ -225,7 +198,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
   // Build navigation menu based on role with search filtering
   const navMain = React.useMemo(() => {
-    const menu = [];
+    const menu: NavSection[] = [];
 
     if (effectiveRole === 'guest') {
       // Guest mode - simplified like TA mode, just dashboard
@@ -235,9 +208,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         icon: Home,
         items: [
           {
-            title: "Templates",
+            title: "Chats",
             url: "#",
-            section: "templates",
+            section: "chats",
           },
           {
             title: "History",
@@ -259,9 +232,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         icon: Home,
         items: [
           {
-            title: "Templates",
+            title: "Chats",
             url: "#",
-            section: "templates",
+            section: "chats",
           },
           {
             title: "Growth",
@@ -293,9 +266,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             section: "analytics",
           },
           {
-            title: "Templates",
+            title: "Chats",
             url: "#",
-            section: "templates",
+            section: "chats",
           },
           {
             title: "History",
@@ -312,7 +285,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
       // Classes section - for admin, instructional, and instructor
       if (availableClasses.length > 0 || effectiveRole === 'instructor') {
-        const classItems: any[] = availableClasses.map((cls: any) => ({
+        const classItems: MenuItem[] = availableClasses.map((cls: ClassData) => ({
           title: cls.classCode,
           url: "#",
           section: `class-${cls.id}`,
@@ -392,67 +365,9 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     return menu;
   }, [effectiveRole, availableClasses, managementTabs, searchTerm]);
 
-  const handleSectionChange = (section: string) => {
-    // If onSectionChange prop is provided, use it (for layout components)
-    if (onSectionChange) {
-      onSectionChange(section);
-      return;
-    }
+  const handleSectionChange = createFlexibleSectionChangeHandler(router, onSectionChange);
 
-    // Otherwise, handle navigation internally
-    // Convert section to route
-    let route = '/dashboard/templates';
-    
-    switch (section) {
-      case 'templates':
-        route = '/dashboard/templates';
-        break;
-      case 'analytics':
-        route = '/dashboard/analytics';
-        break;
-      case 'growth':
-        route = '/dashboard/growth';
-        break;
-      case 'history':
-        route = '/dashboard/history';
-        break;
-      case 'profile':
-        route = '/profile';
-        break;
-      case 'chat-templates':
-        route = '/chat/templates';
-        break;
-      case 'chat-profiles':
-        route = '/chat/profiles';
-        break;
-      case 'chat-scenarios':
-        route = '/chat/scenarios';
-        break;
-      case 'add-class':
-        route = '/classes/general';
-        break;
-      case 'manage-instructional':
-        route = '/management/instructional';
-        break;
-      case 'manage-instructors':
-        route = '/management/instructor';
-        break;
-      case 'manage-tas':
-        route = '/management/ta';
-        break;
-      default:
-        if (section.startsWith('class-')) {
-          const classId = section.replace('class-', '');
-          route = `/classes/c/${classId}`;
-        }
-        break;
-    }
-    
-    // Use Next.js router to navigate
-    router.push(route);
-  };
-
-  const handleItemClick = (item: any) => {
+  const handleItemClick = (item: MenuItem) => {
     if (item.url && item.url !== "#") {
       // Navigate to the URL (for attempts)
       router.push(item.url);
@@ -464,29 +379,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
   const handleModeChange = (mode: string) => {
     if (mode === 'guest') {
-      if (effectiveRole !== 'guest') {
-        enableGuestMode();
-        setSimulatedRole('guest');
-      }
+      setRole('guest');
+    } else if (mode === user?.role) {
+      setRole(null); // Reset to actual user role
     } else {
-      if (isGuestMode) {
-        disableGuestMode();
-      }
-      if (mode === user?.role) {
-        setSimulatedRole(null);
-      } else {
-        setSimulatedRole(mode as UserRole);
-      }
-    }
-    // Force a small delay to ensure state updates are processed
-    setTimeout(() => {
-      // This will trigger a re-render with updated effective role
-    }, 10);
-  };
-
-  const handleBreadcrumbClick = (section?: string) => {
-    if (section) {
-      handleSectionChange(section);
+      setRole(mode as UserRole);
     }
   };
 
@@ -510,6 +407,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
           // Clear guest mode if it exists
           localStorage.removeItem('guestAttemptIds');
           localStorage.removeItem('simulatedRole');
+          localStorage.removeItem('guestMode');
           
           const { success, error } = await logout();
           if (success) {
@@ -615,7 +513,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
               <CollapsibleContent>
                 <SidebarGroupContent>
                   <SidebarMenu>
-                    {item.items?.map((subItem: any) => (
+                    {item.items?.map((subItem: MenuItem) => (
                       <SidebarMenuItem key={subItem.title}>
                         <SidebarMenuButton 
                           isActive={activeSection === subItem.section}

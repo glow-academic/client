@@ -26,7 +26,10 @@ import {
 } from "recharts";
 
 interface ClassDetailsContentProps {
-  classData: any;
+  classData: {
+    id: string;
+    classCode: string;
+  };
 }
 
 export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
@@ -77,7 +80,7 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
 
     // Calculate average score for each day
     return Object.entries(dates)
-      .map(([dateStr, data]) => {
+      .map(([_, data]) => {
         const avgScore =
           data.scores.length > 0
             ? Math.round(
@@ -98,12 +101,6 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
   const emotionData = useMemo(() => {
     if (!chats || !profiles) return [];
 
-    // Get chats for this class
-    const classChats = chats.filter((chat) => {
-      // You might need to filter by class here if chat has classId
-      return true; // For now, include all chats
-    });
-
     // Count interactions by profile type
     const profileCounts: Record<string, number> = {
       happy: 0,
@@ -112,7 +109,7 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
     };
 
     // Calculate percentages
-    const total = classChats.length || 1; // Avoid division by zero
+    const total = chats.length || 1; // Avoid division by zero
     const happy = Math.round((profileCounts.happy / total) * 100);
     const confused = Math.round((profileCounts.confused / total) * 100);
     const angry = Math.round((profileCounts.angry / total) * 100);

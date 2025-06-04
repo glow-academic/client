@@ -60,16 +60,17 @@ import {
   Clock,
   Users,
   Shuffle,
-  HelpCircle,
   GripVertical,
   Sparkles,
   ChevronDown,
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import DocumentViewer from "@/components/DocumentViewer";
+import { templates as Templates } from "@/drizzle/schema";
+import { chatTemplates as ChatTemplates } from "@/drizzle/schema";
+import { documents as Documents } from "@/drizzle/schema";
+import { profiles as Profiles } from "@/drizzle/schema";
 
 // Queries and mutations
-import { getClasses } from "@/utils/queries/get-classes";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { getProfiles } from "@/utils/queries/get-profiles";
 import { getTemplates } from "@/utils/queries/get-templates";
@@ -80,7 +81,6 @@ import { deleteTemplate } from "@/utils/mutations/delete-template";
 import { getChatTemplates } from "@/utils/queries/get-chat-templates";
 import { createChatTemplate } from "@/utils/mutations/create-chat-template";
 import { updateChatTemplate } from "@/utils/mutations/update-chat-template";
-import { deleteChatTemplate } from "@/utils/mutations/delete-chat-template";
 
 interface ChatTemplateConfig {
   id: string;
@@ -93,7 +93,7 @@ interface ChatTemplateConfig {
 
 interface TemplateComponentFormData {
   title: string;
-  timeLimit: number;
+  timeLimit: number | null;
   documents: string[];
   chatTemplateConfigs: ChatTemplateConfig[];
   active: boolean;
@@ -158,7 +158,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
   const [templateToDelete, setTemplateToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [previewDocument, setPreviewDocument] = useState<any>(null);
+  const [previewDocument, setPreviewDocument] = useState<typeof Documents.$inferSelect | null>(null);
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null);
   const [draggedCard, setDraggedCard] = useState<ChatTemplateConfig | null>(null);
 
@@ -172,12 +172,6 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
 
   const [formData, setFormData] = useState<TemplateComponentFormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
-
-  // Fetch classes, documents, profiles, and templates
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: getClasses,
-  });
 
   const { data: documents = [] } = useQuery({
     queryKey: ["documents"],
@@ -216,7 +210,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
       // Map existing chat template IDs to full chat template objects
       const existingChatTemplateConfigs = templateToEdit.chatTemplateIds
         ?.map((id: string) => {
-          const chatTemplate = chatTemplates.find((t: any) => t.id === id);
+          const chatTemplate = chatTemplates.find((t: typeof ChatTemplates.$inferSelect) => t.id === id);
           return chatTemplate ? {
             id: chatTemplate.id,
             profileId: chatTemplate.profileId,
@@ -239,7 +233,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
     }
   }, [templateToEdit, templateId, chatTemplates]);
 
-  const handleInputChange = (field: keyof TemplateComponentFormData, value: any) => {
+  const handleInputChange = (field: keyof TemplateComponentFormData, value: string | number | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
@@ -297,7 +291,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
     }));
   };
 
-  const updateChatTemplateConfig = (index: number, field: keyof ChatTemplateConfig, value: any) => {
+  const updateChatTemplateConfig = (index: number, field: keyof ChatTemplateConfig, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       chatTemplateConfigs: prev.chatTemplateConfigs.map((config, i) => 
@@ -348,7 +342,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
       newErrors.title = "Title is required";
     }
 
-    if (formData.timeLimit < 1 || formData.timeLimit > 120) {
+    if (formData.timeLimit && (formData.timeLimit < 1 || formData.timeLimit > 120)) {
       newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
     }
     
@@ -367,14 +361,14 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
   };
 
   const handleEditTemplateClick = (templateId: string) => {
-    const templateToEdit = templates.find((t: any) => t.id === templateId);
+    const templateToEdit = templates.find((t: typeof Templates.$inferSelect) => t.id === templateId);
     if (templateToEdit) {
       setEditingTemplateId(templateToEdit.id);
       
       // Map existing chat template IDs to full chat template objects
       const existingChatTemplateConfigs = templateToEdit.chatTemplateIds
         ?.map((id: string) => {
-          const chatTemplate = chatTemplates.find((t: any) => t.id === id);
+          const chatTemplate = chatTemplates.find((t: typeof ChatTemplates.$inferSelect) => t.id === id);
           return chatTemplate ? {
             id: chatTemplate.id,
             profileId: chatTemplate.profileId,
@@ -422,7 +416,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
             config.profileId,
             config.crowdedness,
             config.intensity,
-            config.seniority as any
+            config.seniority as "freshman" | "sophomore" | "junior" | "senior"
           );
           
           if (result.success && result.chatTemplate) {
@@ -440,7 +434,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
             config.profileId,
             config.crowdedness,
             config.intensity,
-            config.seniority as any
+            config.seniority as "freshman" | "sophomore" | "junior" | "senior"
           );
         }
       }
@@ -525,7 +519,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
               </CardContent>
             </Card>
           ) : (
-            templates.map((template: any) => (
+            templates.map((template: typeof Templates.$inferSelect) => (
               <Card key={template.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -617,7 +611,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                 <Switch
                   id="active-toggle"
                   checked={formData.active}
-                  onCheckedChange={(checked) => handleInputChange("active", checked)}
+                  onCheckedChange={(checked: boolean) => handleInputChange("active", checked)}
                 />
               </div>
             </div>
@@ -644,7 +638,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                 type="number"
                 min="1"
                 max="120"
-                value={formData.timeLimit}
+                value={formData.timeLimit || ""}
                 onChange={(e) => handleInputChange("timeLimit", parseInt(e.target.value) || 0)}
                 className={errors.timeLimit ? "border-destructive" : ""}
               />
@@ -657,14 +651,14 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
               <Label htmlFor="documents">Reference Documents (Optional)</Label>
               <Select
                 value={formData.documents[0] || "none"}
-                onValueChange={(value) => handleInputChange("documents", value === "none" ? [] : [value])}
+                onValueChange={(value: string) => handleInputChange("documents", value)}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select documents" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No documents</SelectItem>
-                  {documents.map((doc: any) => (
+                  {documents.map((doc: typeof Documents.$inferSelect) => (
                     <SelectItem key={doc.id} value={doc.id}>
                       {doc.name}
                     </SelectItem>
@@ -676,7 +670,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    const doc = documents.find((d: any) => d.id === formData.documents[0]);
+                    const doc = documents.find((d: typeof Documents.$inferSelect) => d.id === formData.documents[0]);
                     if (doc) {
                       setPreviewDocument(doc);
                       setShowDocumentModal(true);
@@ -789,8 +783,6 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {formData.chatTemplateConfigs.map((config, index) => {
-                  const profile = profiles.find((p: any) => p.id === config.profileId);
-                  
                   return (
                     <Card 
                       key={config.id} 
@@ -837,7 +829,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                                 <SelectValue placeholder="Select profile" />
                               </SelectTrigger>
                               <SelectContent>
-                                {profiles.map((profile: any) => (
+                                {profiles.map((profile: typeof Profiles.$inferSelect) => (
                                   <SelectItem key={profile.id} value={profile.id}>
                                     {profile.name}
                                   </SelectItem>

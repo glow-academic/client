@@ -126,14 +126,18 @@ export default function DocumentDropzone({
               const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
 
               // Update file status
-              setFileUploads((prev) =>
-                prev.map((item) =>
+              setFileUploads((prev) => {
+                const updated = prev.map((item) =>
                   item.id === fileId ? { ...item, progress: percentage } : item,
-                ),
-              );
-
-              // Update overall progress
-              updateOverallProgress();
+                );
+                
+                // Calculate overall progress inline to avoid dependency issues
+                const totalProgress = updated.reduce((sum, file) => sum + file.progress, 0);
+                const overallPercent = Math.round(totalProgress / updated.length);
+                setOverallProgress(overallPercent);
+                
+                return updated;
+              });
 
               // Call onProgress callback if provided
               if (onProgress) {
@@ -223,24 +227,24 @@ export default function DocumentDropzone({
         // Dismiss the loading toast
         toast.dismiss(toastId);
 
-        // Check if all uploads were successful
-        const allSuccessful = fileUploads.every(
-          (f) => fileUploads.find(up => up.id === f.id)?.status === "complete"
-        );
+        // Check if all uploads were successful - use current state
+        setFileUploads((currentUploads) => {
+          const allSuccessful = currentUploads.every((f) => f.status === "complete");
 
-        // Show final toast
-        if (allSuccessful) {
-          if (fileArray.length > 1) {
-            toast.success(`All ${fileArray.length} files uploaded successfully!`);
+          // Show final toast
+          if (allSuccessful) {
+            if (fileArray.length > 1) {
+              toast.success(`All ${fileArray.length} files uploaded successfully!`);
+            }
+          } else {
+            const failedCount = currentUploads.filter((f) => f.status === "error").length;
+            toast.error(
+              `${failedCount} of ${fileArray.length} files failed to upload.`,
+            );
           }
-        } else {
-          const failedCount = fileUploads.filter(
-            (f) => fileUploads.find(up => up.id === f.id)?.status === "error",
-          ).length;
-          toast.error(
-            `${failedCount} of ${fileArray.length} files failed to upload.`,
-          );
-        }
+
+          return currentUploads;
+        });
 
         // Reset form
         if (fileInputRef.current) {
@@ -278,19 +282,6 @@ export default function DocumentDropzone({
       }
     }
   }, [classId, selectedType, onUploadComplete, onProgress, onError, queryClient]);
-
-  // Calculate overall progress across all files
-  const updateOverallProgress = () => {
-    if (fileUploads.length === 0) return;
-
-    const totalProgress = fileUploads.reduce(
-      (sum, file) => sum + file.progress,
-      0,
-    );
-    const overallPercent = Math.round(totalProgress / fileUploads.length);
-
-    setOverallProgress(overallPercent);
-  };
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();

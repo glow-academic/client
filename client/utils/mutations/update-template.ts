@@ -3,7 +3,7 @@ import { templates } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 import { eq } from "drizzle-orm";
 
-export async function updateTemplate(id: string, title?: string, timeLimit?: number, documents?: string[], chatTemplateIds?: string[], active?: boolean) {
+export async function updateTemplate(id: string, title?: string, timeLimit?: number | null, documents?: string[], chatTemplateIds?: string[], active?: boolean) {
   try {
     const updatedTemplate = await db
       .update(templates)
