@@ -1,18 +1,12 @@
 "use client";
-import React from "react";
+import React, { use } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ClassDetailsContent } from "@/components/admin/class-details-content";
 import { getClass } from "@/utils/queries/get-class";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface ClassDetailsPageProps {
-  params: {
-    classId: string;
-  };
-}
-
-export default function ClassDetailsPage({ params }: ClassDetailsPageProps) {
-  const { classId } = params;
+export default function ClassDetailsPage({ params }: { params: Promise<{ classId: string }> }) {
+  const { classId } = use(params);
 
   // Fetch specific class data
   const { data: classDataArray, isLoading } = useQuery({

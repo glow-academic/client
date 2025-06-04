@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { use } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Save, Trash2 } from "lucide-react";
@@ -23,13 +23,9 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface EditUserPageProps {
-  params: {
-    userId: string;
-  };
-}
+export default function EditInstructorPage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = use(params);
 
-export default function EditInstructorPage({ params }: EditUserPageProps) {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
     name: "",
@@ -52,7 +48,7 @@ export default function EditInstructorPage({ params }: EditUserPageProps) {
     queryFn: () => getUsers(),
   });
 
-  const targetUser = allUsers.find(user => user.id === params.userId);
+  const targetUser = allUsers.find(user => user.id === userId);
 
   // Check permissions
   const canEdit = currentUser?.role === 'admin' || 
@@ -86,7 +82,7 @@ export default function EditInstructorPage({ params }: EditUserPageProps) {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to update user
-      console.log("Updating user:", { userId: params.userId, ...formData });
+      console.log("Updating user:", { userId, ...formData });
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -106,7 +102,7 @@ export default function EditInstructorPage({ params }: EditUserPageProps) {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to delete user
-      console.log("Deleting user:", params.userId);
+      console.log("Deleting user:", userId);
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
