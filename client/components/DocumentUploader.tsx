@@ -117,6 +117,11 @@ export default function DocumentUploader({
             class: selectedClass, // Using class ID
             fileId: fileId,
             documentType: selectedType, // Add document type to metadata
+            // Add ZIP support with auto-classification
+            ...(file.type === "application/zip" && {
+              zip: "true",
+              autoClassify: "true"
+            })
           };
 
           // Create a new tus upload
@@ -175,6 +180,11 @@ export default function DocumentUploader({
                 const finalizePayload = {
                   fileId,
                   classId: selectedClass, // Using class ID
+                  // Add ZIP support with auto-classification
+                  ...(file.type === "application/zip" && {
+                    zip: true,
+                    autoClassify: true
+                  })
                 };
 
                 console.log("Finalize payload:", finalizePayload); // Debug log
@@ -396,7 +406,7 @@ export default function DocumentUploader({
           disabled={
             isUploading || (!defaultClassId && !selectedClass)
           }
-          accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
           className="cursor-pointer"
         />
         {!defaultClassId && !selectedClass && (

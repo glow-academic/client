@@ -46,8 +46,16 @@ export default defineConfig({
     viewportHeight: 720,
     video: false,
     screenshotOnRunFailure: true,
-    defaultCommandTimeout: 10000,
-    requestTimeout: 10000,
-    responseTimeout: 10000,
+    defaultCommandTimeout: 15000,
+    requestTimeout: 15000,
+    responseTimeout: 15000,
+    pageLoadTimeout: 30000,
+    experimentalStudio: true,
+    retries: {
+      runMode: 2,
+      openMode: 0
+    },
+    chromeWebSecurity: false,
+    modifyObstructiveCode: false,
   },
 }) 

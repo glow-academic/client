@@ -142,7 +142,7 @@ class Deadlines(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    document_type: str = Field(sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
+    document_type: str = Field(sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
     due_time: datetime = Field(sa_column=Column('due_time', DateTime(True)))
     schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
 
@@ -181,7 +181,8 @@ class Documents(_Base, table=True):
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
     class_id: UUID = Field(sa_column=Column('class_id', Uuid))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
+    classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
 
     class_: Optional['Classes'] = Relationship(back_populates='documents')
 

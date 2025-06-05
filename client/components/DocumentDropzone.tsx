@@ -88,6 +88,11 @@ export default function DocumentDropzone({
             class: classId,
             fileId: fileId,
             documentType: selectedType,
+            // Add ZIP support with auto-classification
+            ...(file.type === "application/zip" && {
+              zip: "true",
+              autoClassify: "true"
+            })
           };
 
           // Create a new tus upload
@@ -150,6 +155,11 @@ export default function DocumentDropzone({
                 const finalizePayload = {
                   fileId,
                   classId: classId,
+                  // Add ZIP support with auto-classification
+                  ...(file.type === "application/zip" && {
+                    zip: true,
+                    autoClassify: true
+                  })
                 };
 
                 const response = await fetch(
@@ -365,7 +375,7 @@ export default function DocumentDropzone({
           multiple
           onChange={handleFileInputChange}
           disabled={isUploading}
-          accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+          accept="application/pdf,image/*,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/zip"
           className="hidden"
         />
         
@@ -383,7 +393,7 @@ export default function DocumentDropzone({
             </p>
           </div>
           <p className="text-xs text-muted-foreground">
-            Supports PDF, images, Word documents, and text files
+            Supports PDF, images, Word documents, text files, and ZIP archives
           </p>
         </div>
       </div>

@@ -46,7 +46,15 @@ export default function ClassDetailsPage({ params }: { params: Promise<{ classId
 
   return (
     <div className="space-y-6">
-      <ClassDetailsContent classData={classData} />
+      <ClassDetailsContent classData={{
+        id: classData.id,
+        classCode: classData.classCode,
+        name: classData.name || '',
+        description: classData.description || '',
+        year: classData.year || new Date().getFullYear(),
+        term: classData.term || 'fall',
+        templateIds: classData.templateIds || [],
+      }} />
     </div>
   );
 }

@@ -6,7 +6,7 @@
   -- ============================================================================
 
   CREATE TYPE user_role AS ENUM ('admin', 'instructional', 'instructor', 'ta');
-  CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus');
+  CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus');
   CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophomore', 'junior', 'senior');
   CREATE TYPE class_term AS ENUM ('fall', 'spring', 'summer');
 
@@ -110,7 +110,8 @@
     file_path  TEXT        NOT NULL,
     mime_type  TEXT        NOT NULL,
     class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
-    type       document_type   NOT NULL           DEFAULT 'homework'
+    type       document_type   NOT NULL           DEFAULT 'homework',
+    classified BOOLEAN     NOT NULL           DEFAULT FALSE
   );
 
   CREATE TABLE attempts (

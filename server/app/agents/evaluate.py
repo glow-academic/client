@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_evaluate_agent(
-    chat_id: str, session: Session = Depends(get_session)
+    chat_id: str, test_data: bool, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the evaluate agent.
@@ -47,8 +47,20 @@ async def run_evaluate_agent(
     evaluate_agent = EvaluateAgent()
     input_items = [rubric] + conversation_history
 
-    result = await Runner.run(evaluate_agent.agent(), input=input_items)
-    rubric = result.final_output_as(Rubric)
+    if test_data:
+        rubric = Rubric(
+            listen=3,
+            listen_fb="Made a few mistakes, but overall did a good job",
+            obj=3,
+            obj_fb="Explained the course objectives well, but could have been more concise",
+            time=3,
+            time_fb="Spent a good amount of time on the question, but could have been more efficient",
+            adapt=3,
+            adapt_fb="Adapted well to the student's needs, but could have been more engaging"
+        )
+    else:
+        result = await Runner.run(evaluate_agent.agent(), input=input_items)
+        rubric = result.final_output_as(Rubric)
 
     active_listening = rubric.listen
     active_listening_feedback = rubric.listen_fb

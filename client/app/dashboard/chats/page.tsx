@@ -84,6 +84,11 @@ export default function DashboardHomePage() {
       }
       
       formData.append("class_id", classId);
+      
+      // Add test_data flag if running in test environment
+      if (typeof window !== 'undefined' && (window as any).Cypress) {
+        formData.append("test_data", "true");
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/attempt/start`,

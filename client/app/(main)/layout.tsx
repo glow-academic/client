@@ -3,7 +3,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { Plus, Settings } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,18 @@ export default function MainLayout({
     // Don't show create buttons on the creation pages themselves
     if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
       return null;
+    }
+    
+    // Check for individual class page pattern: /classes/c/[classId]
+    const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
+    if (classPageMatch && !pathname.includes('/settings')) {
+      const classId = classPageMatch[1];
+      return (
+        <Button onClick={() => router.push(`/classes/c/${classId}/settings`)} size="sm" variant="default">
+          <Settings className="h-4 w-4 mr-2" />
+          Settings
+        </Button>
+      );
     }
     
     if (pathname.startsWith('/chat/templates')) {

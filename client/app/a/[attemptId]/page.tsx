@@ -348,6 +348,11 @@ export default function AttemptPage() {
       const formData = new FormData();
       formData.append("chat_id", currentChat.id);
       formData.append("message", userMsg.query);
+      
+      // Add test_data flag if running in test environment
+      if (typeof window !== 'undefined' && (window as any).Cypress) {
+        formData.append("test_data", "true");
+      }
 
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/attempt/message`,
@@ -430,6 +435,11 @@ export default function AttemptPage() {
       const formData = new FormData();
       formData.append("chat_id", currentChat.id);
       formData.append("attempt_id", attemptId);
+      
+      // Add test_data flag if running in test environment
+      if (typeof window !== 'undefined' && (window as any).Cypress) {
+        formData.append("test_data", "true");
+      }
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attempt/continue`, {
         method: "POST",
         body: formData,
@@ -459,9 +469,7 @@ export default function AttemptPage() {
     }
   };
 
-  const handleInitialMessageClick = (message: string) => {
-    handleSendMessage(null, message);
-  };
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -730,36 +738,6 @@ export default function AttemptPage() {
                         <Skeleton className="h-16 w-full" />
                       </div>
                     ))}
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">
-                      Start the conversation by sending a message below.
-                    </p>
-                    {/* Initial message suggestions */}
-                    <div className="space-y-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => handleInitialMessageClick("Hi, how are you?")}
-                        className="block mx-auto"
-                      >
-                        "Hi, how are you?"
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleInitialMessageClick("Hi, what can I help you with?")}
-                        className="block mx-auto"
-                      >
-                        "Hi, what can I help you with?"
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleInitialMessageClick(`Hi, are you here for ${classData?.classCode}?`)}
-                        className="block mx-auto"
-                      >
-                        "Hi, are you here for {classData?.classCode}?"
-                      </Button>
-                    </div>
                   </div>
                 ) : (
                   messages.map((message: TemplateMessage) => (

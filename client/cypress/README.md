@@ -1,269 +1,170 @@
-# GLOW Cypress Testing Suite
+# GLOW Cypress Test Suite
 
-This directory contains modular, focused end-to-end tests for the GLOW application. The tests are designed to be minimal, reliable, and avoid unnecessary API calls to external services like OpenAI.
+This directory contains streamlined, page-based Cypress tests for the GLOW application. The tests are organized by page/feature and focus on core functionality rather than implementation details.
 
 ## Test Structure
 
-### Core Test Files
+### Page-Based Tests (`/e2e/pages/`)
 
-1. **`login.cy.ts`** - Basic authentication tests
-   - Guest access
-   - User registration and login
-   - Admin login
-   - Form validation
+Each page has its own test file focusing on:
+- Core functionality
+- User interactions
+- Access control
+- Responsive design
 
-2. **`auth.cy.ts`** - Comprehensive authentication tests
-   - User authentication flows
-   - Guest user restrictions
-   - Authentication form validation
+#### Core Test Files:
+- `core-auth.cy.ts` - Login/logout functionality
+- `core-chat.cy.ts` - Chat creation, messaging, and ending sessions
+- `core-management.cy.ts` - CRUD operations for profiles, scenarios, templates, users, and classes
+- `core-navigation.cy.ts` - UI navigation and role switching
+- `core-comprehensive.cy.ts` - Complete end-to-end workflows
 
-3. **`quiz.cy.ts`** - Quiz functionality tests
-   - Quiz access and visibility
-   - Quiz starting process
-   - Quiz page elements and navigation
-   - Error handling for quiz operations
+### Custom Commands (`/support/commands.ts`)
 
-4. **`chat.cy.ts`** - Chat functionality tests
-   - Chat creation with different profiles
-   - Message sending and receiving
-   - Chat completion and rubric display
-   - Guest chat access
-   - Error handling for chat operations
+Reusable commands for common actions:
+- `cy.loginAsUser()` - Login as regular user
+- `cy.loginAsAdmin()` - Login as admin
+- `cy.loginAsGuest()` - Continue as guest
+- `cy.setupApiMocks()` - Setup API mocks
+- `cy.navigateToPage(page)` - Navigate to specific page
+- `cy.startChat(profileName)` - Start chat with profile
+- `cy.sendMessage(message)` - Send chat message
 
-5. **`ui-navigation.cy.ts`** - UI and navigation tests
-   - Navigation elements
-   - Responsive design testing
-   - Profile and quiz card display
-   - Interactive elements
-   - Loading and error states
-   - Accessibility features
+## Test Philosophy
 
-## Key Features
+### Robust & Maintainable
+- Tests focus on user actions, not implementation details
+- Uses data-testid attributes where possible
+- Graceful fallbacks for UI changes
+- Minimal, focused assertions
 
-### Modular Design
-- Each test file focuses on a specific area of functionality
-- Tests are independent and can be run separately
-- Clear separation of concerns for easier maintenance
+### Page-Centric Organization
+- Each page has dedicated test file
+- Tests cover core functionality per page
+- Access control testing for each user type
+- Responsive design validation
 
-### API Mocking
-All tests use `cy.intercept()` to mock API responses, preventing:
-- Unnecessary calls to OpenAI API
-- External service dependencies
-- Flaky tests due to network issues
-- Rate limiting issues
-
-### Database Integration
-Tests use the simplified `init.sql` which includes:
-- Essential profiles (Aggressive, Happy, Confused)
-- CS 180 test class
-- Practice quiz for testing
-- Minimal test data for reliable testing
-
-### Test Data
-- Uses timestamp-based usernames to avoid conflicts
-- Automatically assigns users to CS 180 class for quiz testing
-- Includes proper cleanup with `cy.clearAllStorage()`
+### User Journey Testing
+- Complete user flows from login to task completion
+- Admin workflows
+- Guest user limitations
+- Error handling scenarios
 
 ## Running Tests
 
-### Prerequisites
-1. Ensure the database is running with the simplified `init.sql`
-2. Start the Next.js development server (`npm run dev`)
-3. Ensure the FastAPI server is running
-
-### Commands
+### Quick Start (Recommended)
 
 ```bash
-# Run all tests in headless mode
-npm run cypress:run
+# 1. Check if all services are running
+npm run test:setup -- -c
 
-# Open Cypress Test Runner
+# 2. If services aren't running, start them in separate terminals:
+# Terminal 1: cd ../database && bash run.sh --clean
+# Terminal 2: cd ../server && make run  
+# Terminal 3: yarn run dev
+
+# 3. Run tests (will check services automatically)
+npm run test:e2e
+
+# 4. Or run specific tests
+npm run test:login      # Authentication tests
+npm run test:chat       # Chat functionality tests
+npm run test:management # Management CRUD tests
+npm run test:navigation # Navigation and role switching
+npm run test:core       # Comprehensive test suite
+```
+
+### Alternative Methods
+
+```bash
+# Run tests with automatic frontend startup
+npm run test:dev        # Starts frontend + runs tests
+npm run test:dev:open   # Starts frontend + opens Cypress GUI
+
+# Run tests headless (assumes services running)
+npm run test:e2e:headless
+
+# Open Cypress GUI
 npm run cypress:open
 
-# Run specific test file
-npx cypress run --spec "cypress/e2e/auth.cy.ts"
-npx cypress run --spec "cypress/e2e/quiz.cy.ts"
-npx cypress run --spec "cypress/e2e/chat.cy.ts"
-npx cypress run --spec "cypress/e2e/ui-navigation.cy.ts"
-
-# Run multiple specific files
-npx cypress run --spec "cypress/e2e/{auth,quiz}.cy.ts"
+# Run specific test file directly
+npx cypress run --spec "cypress/e2e/core-auth.cy.ts"
 ```
 
-### Using the Test Runner Script
+### Service Management
 
 ```bash
-# From the client directory
-./cypress/scripts/run-tests.sh           # Interactive mode
-./cypress/scripts/run-tests.sh --headless # Headless mode
-./cypress/scripts/run-tests.sh --spec auth.cy.ts # Specific test
+# Check service status
+npm run test:setup -- -c
+
+# Get help with setup
+npm run test:setup -- -h
 ```
 
-### Environment Setup
+## Test Data
 
-The tests expect:
-- Frontend running on `http://localhost:3000`
-- Database accessible for the `assignUserToClass` task
-- Proper CORS configuration for API calls
+Tests use dynamic test data with timestamps to avoid conflicts:
+- Usernames: `test_user_${Date.now()}`
+- Admin users: `admin_${Date.now()}`
+- API responses are mocked for consistency
 
-## Test Coverage by File
+## Best Practices
 
-### `auth.cy.ts` - Authentication
-- ✅ User registration and login
-- ✅ Admin login with elevated permissions
-- ✅ Guest access with limited functionality
-- ✅ Form validation and error handling
-- ✅ Guest user restrictions and capabilities
+1. **Use Custom Commands**: Leverage reusable commands for common actions
+2. **Data Test IDs**: Prefer `[data-testid="element"]` selectors
+3. **Graceful Assertions**: Use conditional logic for UI variations
+4. **Mock APIs**: Use consistent API mocks for reliable tests
+5. **Page Focus**: Keep tests focused on single page functionality
+6. **User Perspective**: Test from user's point of view, not code structure
 
-### `quiz.cy.ts` - Quiz Functionality
-- ✅ Quiz visibility for enrolled students
-- ✅ Quiz starting process with API mocking
-- ✅ Quiz page navigation and timer
-- ✅ Quiz elements display (timer, chat counter, sidebar)
-- ✅ Error handling for failed quiz starts
+## Maintenance
 
-### `chat.cy.ts` - Chat Functionality
-- ✅ Chat creation with different profiles (Shuffle, Happy, Aggressive, Confused)
-- ✅ Initial message selection (button-based)
-- ✅ Custom message sending and receiving
-- ✅ Chat completion and ending with rubric
-- ✅ Guest chat access and limitations
-- ✅ Error handling for failed chat operations
-
-### `ui-navigation.cy.ts` - UI and Navigation
-- ✅ Responsive design testing (desktop, tablet, mobile)
-- ✅ Navigation elements (sidebar, header, main content)
-- ✅ Profile and quiz card display
-- ✅ Interactive elements and hover effects
-- ✅ Loading and error state handling
-- ✅ Accessibility features
-
-## API Mocking Details
-
-### Mocked Endpoints
-
-1. **`POST /quiz/start`** - Returns mock quiz start response
-2. **`POST /chat/new`** - Returns mock chat creation response  
-3. **`POST /chat/message`** - Returns mock streaming chat response
-4. **`POST /chat/end`** - Returns mock chat completion with rubric
-5. **`GET /quiz/**`** - Returns mock quiz data
-6. **`GET /quiz-chats/**`** - Returns mock quiz chat list
-7. **`GET /chat/**`** - Returns mock chat data
-8. **`GET /messages/**`** - Returns mock message history
-
-### Mock Response Format
-
-```javascript
-// Quiz start response
-{
-  message: 'Quiz started',
-  quiz_id: 'test-quiz-id',
-  chat_ids: ['chat-1', 'chat-2'],
-  total_chats: 2
-}
-
-// Chat message response (streaming)
-'data: {"text": "Hello! I understand..."}\n\ndata: {"done": true}\n\n'
-
-// Chat end response with rubric
-{
-  message: 'Chat ended successfully',
-  rubric: {
-    score: 18,
-    passed: true,
-    adaptability: 4,
-    listening: 5,
-    objectives: 4,
-    time_management: 4
-  }
-}
-```
-
-## Custom Commands
-
-Available custom Cypress commands:
-
-- `cy.loginAsUser(username, password)` - Login as regular user
-- `cy.loginAsAdmin(username, password)` - Login as admin  
-- `cy.accessAsGuest()` - Access as guest
-- `cy.clearAllStorage()` - Clear all browser storage
-- `cy.task('assignUserToClass', {username, classId})` - Assign user to class via database
-
-## Database Schema
-
-The simplified database includes:
-
-### Essential Tables
-- `profiles` - Chat personality profiles
-- `scenarios` - Chat scenarios for different situations
-- `classes` - Course information (CS 180 for testing)
-- `quizzes` - Test quiz data
-- `users` - User accounts
-- `templates` - Quiz generation templates
-
-### Test Data
-- 3 core profiles: Aggressive, Happy, Confused
-- 1 test class: CS 180 Problem Solving and OOP
-- 1 test quiz: "CS 180 Practice Quiz" (15 minutes)
-- 1 admin user for testing
+When adding new pages or features:
+1. Create new page test file in `/e2e/pages/`
+2. Add custom commands for new actions
+3. Update API mocks as needed
+4. Add to comprehensive test suite if part of main user flow
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Tests failing due to timing**
-   - Increase timeout values in test assertions
-   - Add appropriate `cy.wait()` calls after navigation
+**"Cypress failed to verify that your server is running"**
+- Make sure your frontend is running: `yarn run dev`
+- Check if it's accessible at http://localhost:3000
+- Use the setup script: `npm run test:setup -- -c`
 
-2. **Database connection issues**
-   - Verify PostgreSQL is running
-   - Check database credentials in `cypress.config.ts`
-   - Ensure `assignUserToClass` task is working
+**Tests failing due to missing elements**
+- Tests use flexible selectors that adapt to UI changes
+- If elements are missing, check if the page loaded correctly
+- Use `npm run test:dev:open` to debug interactively
 
-3. **API mocking not working**
-   - Check that `cy.intercept()` calls are before the actions that trigger them
-   - Verify API endpoint URLs match the actual application
+**API-related test failures**
+- Tests use mocked APIs by default
+- Make sure `cy.setupApiMocks()` is called in beforeEach
+- Check if backend is running for integration tests
 
-4. **Element not found errors**
-   - Check that `data-testid` attributes exist in components
-   - Verify selectors match the actual DOM structure
-   - Use `cy.get('body').then(($body) => {...})` for conditional logic
+**Database connection issues**
+- Start database first: `cd ../database && bash run.sh --clean`
+- Check if PostgreSQL is running on port 5432
 
-### Debug Tips
+### Quick Fix Commands
 
-1. Use `cy.log()` to add debug information
-2. Add `cy.screenshot()` for visual debugging
-3. Use `cy.pause()` to stop test execution for inspection
-4. Check browser console for JavaScript errors
-5. Run specific test files to isolate issues
+```bash
+# Install missing dependencies
+yarn install
 
-## Contributing
+# Reset everything and start fresh
+npm run test:setup -- -c
 
-When adding new tests:
+# Run a simple test to verify setup
+npm run test:login
+```
 
-1. Choose the appropriate test file based on functionality
-2. Keep tests focused and minimal
-3. Use API mocking to avoid external dependencies
-4. Include proper cleanup in `beforeEach()`
-5. Use descriptive test names and comments
-6. Follow the existing pattern of user creation with timestamps
+## Legacy Tests
 
-### Adding New Test Files
-
-If you need to add a new test file:
-
-1. Create the file in `cypress/e2e/` with a descriptive name
-2. Follow the existing structure with `describe` blocks
-3. Include proper `beforeEach()` setup
-4. Add API mocking as needed
-5. Update this README with the new file information
-
-## Performance
-
-The modular structure provides several benefits:
-
-- **Faster Development** - Run only the tests you're working on
-- **Parallel Execution** - Different test files can run in parallel
-- **Easier Debugging** - Isolate issues to specific functionality areas
-- **Better Maintenance** - Changes to one area don't affect other tests
-- **Clearer Organization** - Easy to find and understand test coverage 
+Original test files were simplified into focused core tests for:
+- Better organization
+- Easier maintenance
+- Clearer test intent
+- Reduced duplication 

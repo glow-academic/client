@@ -4,6 +4,7 @@ import uuid
 import json
 import shutil
 import logging
+import zipfile
 from fastapi import (
     APIRouter,
     Request,
@@ -21,6 +22,8 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 import mimetypes
 
+from app.agents.classify import run_classify_agent
+
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
@@ -30,6 +33,57 @@ os.makedirs(TUS_UPLOADS_DIR, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+
+
+@router.post("/classify")
+async def classify_documents(
+    class_id: str,
+    session: Session = Depends(get_session),
+):
+    """
+    Classify documents for a class
+    """
+    try:
+        # Run the classification agent
+        result = await run_classify_agent(class_id, session)
+        
+        if result["success"]:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": result["message"],
+                    "classified_count": result["classified_count"],
+                    "total_count": result["total_count"],
+                    "classification_results": result.get("classification_results", {})
+                }
+            )
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={
+                    "status": "error",
+                    "message": result["message"]
+                }
+            )
+            
+    except ValueError as e:
+        return JSONResponse(
+            status_code=404,
+            content={
+                "status": "error", 
+                "message": str(e)
+            }
+        )
+    except Exception as e:
+        logger.error(f"Error classifying documents: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Failed to classify documents: {str(e)}"
+            }
+        )
 
 
 # Regular file upload endpoint (alternative to TUS for simple uploads)
@@ -399,6 +453,154 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                     content={
                         "status": "error",
                         "message": f"Failed to process CSV file: {str(csv_error)}",
+                    },
+                )
+
+        # Check if this is a ZIP file upload
+        is_zip = body.get("zip", False)
+        if is_zip:
+            # Find the upload directory
+            upload_dir = None
+            for dir_name in os.listdir(TUS_UPLOADS_DIR):
+                metadata_path = os.path.join(TUS_UPLOADS_DIR, dir_name, "metadata.json")
+                if os.path.exists(metadata_path):
+                    with open(metadata_path, "r") as f:
+                        metadata = json.load(f)
+                        if metadata.get("fileId") == file_id:
+                            upload_dir = os.path.join(TUS_UPLOADS_DIR, dir_name)
+                            break
+
+            if not upload_dir:
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "status": "error",
+                        "message": f"Upload with fileId {file_id} not found",
+                    },
+                )
+
+            # Get the uploaded file path
+            file_path = os.path.join(upload_dir, "file")
+
+            # Check if file exists and has content
+            if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Upload file is missing or empty",
+                    },
+                )
+
+            # Process ZIP file
+            try:
+                extracted_documents = []
+                
+                # Extract ZIP file
+                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                    # Create a temporary directory for extraction
+                    extract_dir = os.path.join(TUS_UPLOADS_DIR, f"extract_{file_id}")
+                    os.makedirs(extract_dir, exist_ok=True)
+                    
+                    # Extract all files
+                    zip_ref.extractall(extract_dir)
+                    
+                    # Process each extracted file
+                    for root, dirs, files in os.walk(extract_dir):
+                        for filename in files:
+                            # Skip hidden files and directories
+                            if filename.startswith('.') or filename.startswith('__MACOSX'):
+                                continue
+                                
+                            extracted_file_path = os.path.join(root, filename)
+                            
+                            # Generate document ID
+                            document_id = str(uuid.uuid4())
+                            
+                            # Get file extension
+                            _, ext = os.path.splitext(filename)
+                            if not ext:
+                                ext = ".bin"
+                            
+                            # Create final file path
+                            final_file_path = f"{document_id}{ext}"
+                            final_full_path = os.path.join(UPLOAD_FOLDER, final_file_path)
+                            
+                            # Copy file to final location
+                            shutil.copy2(extracted_file_path, final_full_path)
+                            
+                            # Determine MIME type
+                            mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+                            
+                            # Create document record
+                            document = Documents(
+                                id=document_id,
+                                name=filename,
+                                file_path=final_file_path,
+                                mime_type=mime_type,
+                                class_id=class_id,
+                            )
+                            
+                            session.add(document)
+                            extracted_documents.append({
+                                "id": document_id,
+                                "name": filename,
+                                "mime_type": mime_type
+                            })
+                    
+                    # Clean up extraction directory
+                    shutil.rmtree(extract_dir)
+                
+                session.commit()
+                
+                # Clean up the TUS upload directory
+                try:
+                    shutil.rmtree(upload_dir)
+                    logger.info(f"Cleaned up TUS upload directory: {upload_dir}")
+                except Exception as cleanup_error:
+                    logger.warning(
+                        f"Failed to clean up TUS upload directory: {str(cleanup_error)}"
+                    )
+                
+                # Automatically classify the documents if requested
+                auto_classify = body.get("autoClassify", False)
+                classification_result = None
+                
+                if auto_classify and class_id:
+                    try:
+                        # Call the classify agent directly
+                        from app.agents.classify import run_classify_agent
+                        classification_result = await run_classify_agent(class_id, session)
+                        logger.info(f"Auto-classification completed: {classification_result}")
+                    except Exception as classify_error:
+                        logger.warning(f"Auto-classification error: {str(classify_error)}")
+                
+                return JSONResponse(
+                    status_code=200,
+                    content={
+                        "status": "success",
+                        "message": f"ZIP file processed successfully. Extracted {len(extracted_documents)} documents.",
+                        "extracted_count": len(extracted_documents),
+                        "documents": extracted_documents,
+                        "classification_result": classification_result
+                    },
+                )
+                
+            except zipfile.BadZipFile:
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "status": "error",
+                        "message": "Invalid ZIP file format",
+                    },
+                )
+            except Exception as zip_error:
+                logger.error(f"Error processing ZIP file: {str(zip_error)}")
+                return JSONResponse(
+                    status_code=500,
+                    content={
+                        "status": "error",
+                        "message": f"Failed to process ZIP file: {str(zip_error)}",
                     },
                 )
 

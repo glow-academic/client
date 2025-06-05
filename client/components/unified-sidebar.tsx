@@ -598,7 +598,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
                   className={isLoggingOut ? "opacity-70 cursor-not-allowed" : ""}
                 >
                   <LogOut className="h-4 w-4 mr-2" />
-                  {isLoggingOut ? "Logging out..." : (effectiveRole === 'guest' || !user) ? "Log in" : "Log out"}
+                  {isLoggingOut ? "Logging out..." : (effectiveRole === 'guest' || !user) ? "Log in" : "Logout"}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

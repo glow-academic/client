@@ -19,6 +19,7 @@ async def run_scenario_agent(
     profile_id: str, 
     user_id: Optional[str], 
     class_id: str, 
+    test_data: bool,
     session: Session = Depends(get_session)
 ) -> Tuple[str, str]:
     """
@@ -30,7 +31,7 @@ async def run_scenario_agent(
         user_id: The ID of the user (can be None for guest mode)
         class_id: The ID of the class
         session: The database session
-
+        test_data: Whether to use test data
     Returns:
         A tuple of (scenario_id, chat_title).
     """
@@ -47,10 +48,17 @@ async def run_scenario_agent(
 
     input_items = [profile_info, class_info]
 
-    result = await Runner.run(scenario_agent.agent(), input=input_items)
 
-    # call the agents sdk to come up with a scenario description
-    scenario_result = result.final_output_as(Scenario)
+    if test_data:
+        scenario_result = Scenario(
+            scenario = "Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line",
+            title = "Test Scenario"
+        )
+    else:
+        result = await Runner.run(scenario_agent.agent(), input=input_items)
+
+        # call the agents sdk to come up with a scenario description
+        scenario_result = result.final_output_as(Scenario)
 
     # Create a scenario record
     scenario = Scenarios(

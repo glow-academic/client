@@ -9,9 +9,7 @@ from typing import List, Optional
 import random
 
 from app.agents.evaluate import run_evaluate_agent
-from app.agents.aggressive import run_aggressive_agent
-from app.agents.confused import run_confused_agent
-from app.agents.happy import run_happy_agent
+from app.agents.generic import run_generic_agent
 from fastapi.responses import StreamingResponse
 import json
 from typing import AsyncIterator, Optional
@@ -20,18 +18,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-AGENT_DISPATCH = {
-    "aggressive": run_aggressive_agent,
-    "confused": run_confused_agent,
-    "happy": run_happy_agent,
-}
-
 
 @router.post("/start")
 async def start_attempt(
     template_id: str = Form(...),
     user_id: Optional[str] = Form(None), 
     class_id: str = Form(...),
+    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -78,6 +71,7 @@ async def start_attempt(
                 profile_id=chat_template.profile_id,
                 user_id=user_id,  # Pass actual_user_id (can be None for guest)
                 class_id=class_id,
+                test_data=test_data,
                 session=session
             )
         else:
@@ -129,6 +123,7 @@ async def start_attempt(
 async def message(
     chat_id: str = Form(...),
     message: str = Form(...),
+    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -143,22 +138,13 @@ async def message(
         if chat.completed:
             raise HTTPException(status_code=400, detail="Cannot send messages to completed chat")
 
-        # Get the profile using the profile_id from the chat
-        profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
-        if not profile:
-            raise HTTPException(status_code=404, detail="Profile not found")
-
-        agent_factory = AGENT_DISPATCH.get(profile.name.lower())
-        if not agent_factory:
-            raise HTTPException(status_code=400, detail=f"Invalid profile: {profile.name}")
-
         async def event_stream() -> AsyncIterator[str]:
             # initial heartbeat so proxies flush headers
             yield ":\n\n"
 
             try:
-                async for token in agent_factory(
-                    chat_id=chat_id, input_text=message, session=session
+                async for token in run_generic_agent(
+                    chat_id=chat_id, input_text=message, session=session, test_data=test_data
                 ):
                     yield f"data: {json.dumps({'text': token})}\n\n"
 
@@ -188,6 +174,7 @@ async def message(
 async def continue_attempt(
     attempt_id: str = Form(...),
     chat_id: str = Form(...),
+    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -234,6 +221,7 @@ async def continue_attempt(
                     profile_id=next_chat_template.profile_id,
                     user_id=attempt.user_id, 
                     class_id=attempt.class_id,
+                    test_data=test_data,
                     session=session
                 )
             else:
@@ -267,7 +255,7 @@ async def continue_attempt(
             next_chat_id = next_chat.id
 
         # Run logic to end the current chat
-        rubric_id = await run_evaluate_agent(chat_id, session)
+        rubric_id = await run_evaluate_agent(chat_id, test_data, session)
         
         return {
             "success": True,

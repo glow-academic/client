@@ -2,7 +2,7 @@ import { pgTable, uuid, timestamp, text, integer, foreignKey, unique, boolean, p
 import { sql } from "drizzle-orm"
 
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
-export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'syllabus'])
+export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
 export const userRole = pgEnum("user_role", ['admin', 'instructional', 'instructor', 'ta'])
 
@@ -135,6 +135,7 @@ export const documents = pgTable("documents", {
 	mimeType: text("mime_type").notNull(),
 	classId: uuid("class_id").notNull(),
 	type: documentType().default('homework').notNull(),
+	classified: boolean().default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.classId],
