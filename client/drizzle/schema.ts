@@ -173,7 +173,7 @@ export const templates = pgTable("templates", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
 	documents: uuid().array().default(["RAY"]).notNull(),
-	timeLimit: integer("time_limit"),
+	timeLimit: integer("time_limit").notNull(),
 	active: boolean().default(true).notNull(),
 	chatTemplateIds: uuid("chat_template_ids").array().default(["RAY"]).notNull(),
 });

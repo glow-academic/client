@@ -377,14 +377,9 @@ export default function Analytics() {
             <div className="text-2xl font-bold text-green-700">
               {analytics.totalSessions}
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <Badge
-                variant="outline"
-                className="text-xs text-green-600 border-green-300"
-              >
-                {Math.round(analytics.completionRate)}% completed
-              </Badge>
-            </div>
+            <p className="text-xs text-green-600 mt-1">
+              This week
+            </p>
           </CardContent>
         </Card>
 
@@ -395,14 +390,11 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-700">
-              {Math.round(analytics.totalSessions * 0.75)}h
+              45min
             </div>
-            <div className="flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span className="text-xs text-purple-600">
-                Avg 45min per session
-              </span>
-            </div>
+            <p className="text-xs text-purple-600 mt-1">
+              Avg time per session this week
+            </p>
           </CardContent>
         </Card>
 
@@ -509,7 +501,7 @@ export default function Analytics() {
                       icon: Eye,
                     },
                     {
-                      name: "Objectives",
+                      name: "Content Mastery",
                       score: analytics.avgScores.objectives * 20,
                       icon: Target,
                     },
@@ -700,7 +692,7 @@ export default function Analytics() {
                       stroke={COLORS.warning}
                       strokeWidth={3}
                       dot={{ r: 4 }}
-                      name="Objectives"
+                      name="Content Mastery"
                     />
                     <Line
                       type="monotone"
@@ -724,7 +716,7 @@ export default function Analytics() {
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.warning }}></div>
-                  <span className="text-sm">Objectives</span>
+                  <span className="text-sm">Content Mastery</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.purple }}></div>

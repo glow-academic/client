@@ -311,17 +311,17 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
       // Chat management - for admin and instructional
       if (['admin', 'instructional'].includes(effectiveRole)) {
         menu.push({
-          title: "Chat",
+          title: "Customization",
           url: "#",
           icon: MessageSquare,
           items: [
             {
-              title: "Templates",
+              title: "Simulations",
               url: "#",
               section: "chat-templates",
             },
             {
-              title: "Profiles",
+              title: "AI Profiles",
               url: "#",
               section: "chat-profiles",
             },
@@ -518,7 +518,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
                         <SidebarMenuButton 
                           isActive={activeSection === subItem.section}
                           onClick={() => handleItemClick(subItem)}
-                          className={subItem.isSubItem ? "pl-8 text-sm" : ""}
+                          className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
                         >
                           {subItem.isSubItem && <FileText className="h-3 w-3 mr-2" />}
                           {subItem.title}

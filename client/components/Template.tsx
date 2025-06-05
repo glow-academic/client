@@ -599,10 +599,8 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
           <CardHeader>
             <div className="flex justify-between items-start">
               <div>
-                <CardTitle>Template Information</CardTitle>
-                <CardDescription>
-                  Basic details about your template
-                </CardDescription>
+                <CardTitle>Simulation Information</CardTitle>
+
               </div>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="active-toggle" className="text-sm font-medium">
@@ -618,12 +616,12 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Template Title</Label>
+              <Label htmlFor="title">Simulation Title</Label>
               <Input
                 id="title"
                 value={formData.title}
                 onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="Enter template title"
+                placeholder="Enter simulation title"
                 className={errors.title ? "border-destructive" : ""}
               />
               {errors.title && (
@@ -690,32 +688,10 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Chat Template Configuration</CardTitle>
+                <CardTitle>Simulation</CardTitle>
                 <CardDescription>
                   Configure the AI student interactions for this template
                 </CardDescription>
-              </div>
-              {formData.chatTemplateConfigs.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={randomizeCards}
-                  className="flex items-center gap-2"
-                >
-                  <Shuffle className="h-4 w-4" />
-                  Randomize
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="text-lg font-medium">Chat Templates</h3>
-                <p className="text-sm text-muted-foreground">
-                  Add different AI student personalities and configurations
-                </p>
               </div>
               <div className="flex gap-2">
                 <Popover>
@@ -764,11 +740,24 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                   disabled={profiles.length === 0}
                 >
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Chat Template
+                  Add Chat
                 </Button>
+                {formData.chatTemplateConfigs.length > 1 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={randomizeCards}
+                    className="flex items-center gap-2"
+                  >
+                    <Shuffle className="h-4 w-4" />
+                    Randomize
+                  </Button>
+                )}
               </div>
             </div>
-
+          </CardHeader>
+          <CardContent className="space-y-6">
             {errors.chatTemplates && (
               <p className="text-sm text-destructive">{errors.chatTemplates}</p>
             )}
@@ -776,8 +765,8 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
             {formData.chatTemplateConfigs.length === 0 ? (
               <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
                 <div>
-                  <p className="text-red-500 font-medium mb-1">No chat templates configured</p>
-                  <p className="text-sm">You must add at least one chat template to create a template</p>
+                  <p className="text-red-500 font-medium mb-1">No simulations configured</p>
+                  <p className="text-sm">You must add at least one chat to create a simulation</p>
                 </div>
               </div>
             ) : (
@@ -858,7 +847,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
 
                           <div>
                             <div className="flex justify-between items-center mb-1">
-                              <Label className="text-xs">Crowdedness</Label>
+                              <Label className="text-xs">Crowdedness (Low - High)</Label>
                               <span className="text-xs text-muted-foreground">
                                 {config.crowdedness === 1 ? "Empty" : 
                                  config.crowdedness === 2 ? "Sparse" :
@@ -884,7 +873,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
 
                           <div>
                             <div className="flex justify-between items-center mb-1">
-                              <Label className="text-xs">Intensity</Label>
+                              <Label className="text-xs">Intensity (Low - High)</Label>
                               <span className="text-xs text-muted-foreground">
                                 {config.intensity === 1 ? "Low" : 
                                  config.intensity === 2 ? "Mild" :
@@ -939,7 +928,7 @@ export default function Template({ mode = "create", templateId }: TemplateProps)
                 {editingTemplateId ? "Updating..." : "Creating..."}
               </>
             ) : (
-              editingTemplateId ? "Update Template" : "Create Template"
+              editingTemplateId ? "Update Simulation" : "Create Simulation"
             )}
           </Button>
         </div>
