@@ -6,7 +6,7 @@
  */
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -22,8 +22,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
-import { BookOpen, Target, Clock, Users, MessageSquare } from "lucide-react";
+import { BookOpen, Target, Clock, Users, MessageSquare, ChevronDown, ChevronUp, Eye } from "lucide-react";
 
 const rubricData = [
   {
@@ -97,68 +102,104 @@ const ratingColors = {
 };
 
 export default function RubricPage() {
+  const [openCards, setOpenCards] = useState<Record<number, boolean>>({
+    0: true,
+    1: true,
+    2: true,
+    3: true
+  });
+
+  const toggleCard = (index: number) => {
+    setOpenCards(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
   return (
     <div className="space-y-6">
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold">Evaluation Rubric</h1>
+        <Badge variant="secondary" className="flex items-center gap-1.5">
+          <Eye className="h-3 w-3" />
+          Read-only
+        </Badge>
+      </div>
+      
       <div className="space-y-6">
         {rubricData.map((criterion, index) => {
           const IconComponent = criterion.icon;
+          const isOpen = openCards[index];
           return (
             <Card key={index} className="overflow-hidden">
-              <CardHeader>
-                <div className="flex items-center gap-3">
-                  <div className={`p-2 rounded-lg ${
-                    criterion.color === 'blue' ? 'bg-blue-100' :
-                    criterion.color === 'green' ? 'bg-green-100' :
-                    criterion.color === 'amber' ? 'bg-amber-100' :
-                    'bg-purple-100'
-                  }`}>
-                    <IconComponent className={`h-5 w-5 ${
-                      criterion.color === 'blue' ? 'text-blue-600' :
-                      criterion.color === 'green' ? 'text-green-600' :
-                      criterion.color === 'amber' ? 'text-amber-600' :
-                      'text-purple-600'
-                    }`} />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{criterion.criterion}</CardTitle>
-                    <CardDescription>
-                      Code: <Badge variant="outline">{criterion.shortName}</Badge>
-                    </CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-24">Rating</TableHead>
-                      <TableHead className="w-32">Level</TableHead>
-                      <TableHead>Description</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {Object.entries(criterion.ratings)
-                      .reverse()
-                      .map(([rating, description]) => (
-                        <TableRow key={rating}>
-                          <TableCell>
-                            <Badge className={`font-semibold ${ratingColors[rating as unknown as keyof typeof ratingColors]}`}>
-                              {rating}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-medium">
-                              {ratingLabels[rating as unknown as keyof typeof ratingLabels]}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-sm leading-relaxed">
-                            {description}
-                          </TableCell>
+              <Collapsible open={isOpen} onOpenChange={() => toggleCard(index)}>
+                <CollapsibleTrigger asChild>
+                  <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          criterion.color === 'blue' ? 'bg-blue-100' :
+                          criterion.color === 'green' ? 'bg-green-100' :
+                          criterion.color === 'amber' ? 'bg-amber-100' :
+                          'bg-purple-100'
+                        }`}>
+                          <IconComponent className={`h-5 w-5 ${
+                            criterion.color === 'blue' ? 'text-blue-600' :
+                            criterion.color === 'green' ? 'text-green-600' :
+                            criterion.color === 'amber' ? 'text-amber-600' :
+                            'text-purple-600'
+                          }`} />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg">{criterion.criterion}</CardTitle>
+                          <CardDescription>
+                            Code: <Badge variant="outline">{criterion.shortName}</Badge>
+                          </CardDescription>
+                        </div>
+                      </div>
+                      {isOpen ? (
+                        <ChevronUp className="h-5 w-5 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  </CardHeader>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-24">Rating</TableHead>
+                          <TableHead className="w-32">Level</TableHead>
+                          <TableHead>Description</TableHead>
                         </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
+                      </TableHeader>
+                      <TableBody>
+                        {Object.entries(criterion.ratings)
+                          .reverse()
+                          .map(([rating, description]) => (
+                            <TableRow key={rating}>
+                              <TableCell>
+                                <Badge className={`font-semibold ${ratingColors[rating as unknown as keyof typeof ratingColors]}`}>
+                                  {rating}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <span className="font-medium">
+                                  {ratingLabels[rating as unknown as keyof typeof ratingLabels]}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-sm leading-relaxed">
+                                {description}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </CollapsibleContent>
+              </Collapsible>
             </Card>
           );
         })}

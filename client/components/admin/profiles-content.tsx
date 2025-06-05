@@ -85,7 +85,7 @@ export function ProfilesContent() {
                   <p className="text-sm text-muted-foreground">{profile.description}</p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <Badge variant="outline">Threshold: {profile.threshold}%</Badge>
+                  <Badge variant="outline">Magnitude: {profile.threshold}%</Badge>
                   <Button variant="outline" size="sm" onClick={() => handleEdit(profile.id)}>
                     <Edit className="h-4 w-4" />
                   </Button>
