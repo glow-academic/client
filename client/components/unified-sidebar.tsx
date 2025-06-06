@@ -318,12 +318,12 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             {
               title: "Simulations",
               url: "#",
-              section: "chat-templates",
+              section: "chat-simulations",
             },
             {
-              title: "AI Profiles",
+              title: "Agents",
               url: "#",
-              section: "chat-profiles",
+              section: "chat-agents",
             },
             {
               title: "Scenarios",

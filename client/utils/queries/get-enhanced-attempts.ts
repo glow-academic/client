@@ -1,25 +1,25 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
-import { attempts, templates, classes, users, chats, chatTemplates, profiles } from "@/drizzle/schema";
+import { attempts, simulations, classes, users, chats, interactions, agents } from "@/drizzle/schema";
 import { eq, inArray } from "drizzle-orm";
 
 export async function getEnhancedAttempts() {
-  // First get all attempts with their related template and class data
+  // First get all attempts with their related simulation and class data
   const attemptsWithRelations = await db
     .select({
       id: attempts.id,
       createdAt: attempts.createdAt,
       userId: attempts.userId,
       classId: attempts.classId,
-      templateId: attempts.templateId,
-      templateTitle: templates.title,
+      simulationId: attempts.simulationId,
+      simulationTitle: simulations.title,
       classCode: classes.classCode,
       className: classes.name,
       userName: users.name,
-      chatTemplateIds: templates.chatTemplateIds,
+      interactionIds: simulations.interactionIds,
     })
     .from(attempts)
-    .leftJoin(templates, eq(attempts.templateId, templates.id))
+    .leftJoin(simulations, eq(attempts.simulationId, simulations.id))
     .leftJoin(classes, eq(attempts.classId, classes.id))
     .leftJoin(users, eq(attempts.userId, users.id));
 
@@ -36,20 +36,20 @@ export async function getEnhancedAttempts() {
     .from(chats)
     .where(inArray(chats.attemptId, attemptIds));
 
-  // Get all chat templates and their profiles for the templates used in these attempts
-  const allChatTemplateIds = attemptsWithRelations
-    .flatMap(attempt => attempt.chatTemplateIds || [])
+  // Get all interactions and their agents for the simulations used in these attempts
+  const allInteractionIds = attemptsWithRelations
+    .flatMap(attempt => attempt.interactionIds || [])
     .filter(Boolean);
 
-  const chatTemplatesWithProfiles = await db
+  const interactionsWithAgents = await db
     .select({
-      id: chatTemplates.id,
-      profileId: chatTemplates.profileId,
-      profileName: profiles.name,
+      id: interactions.id,
+      agentId: interactions.agentId,
+      agentName: agents.name,
     })
-    .from(chatTemplates)
-    .leftJoin(profiles, eq(chatTemplates.profileId, profiles.id))
-    .where(inArray(chatTemplates.id, allChatTemplateIds));
+    .from(interactions)
+    .leftJoin(agents, eq(interactions.agentId, agents.id))
+    .where(inArray(interactions.id, allInteractionIds));
 
   // Group chats by attempt ID
   const chatsByAttempt = allChats.reduce((acc, chat) => {
@@ -60,20 +60,20 @@ export async function getEnhancedAttempts() {
     return acc;
   }, {} as Record<string, typeof allChats>);
 
-  // Combine attempts with their chats and calculate profiles tested
+  // Combine attempts with their chats and calculate agents tested
   const enhancedAttempts = attemptsWithRelations.map(attempt => {
     const attemptChats = chatsByAttempt[attempt.id] || [];
     
-    // Get profiles tested based on the template's chat template IDs
-    const profilesTested = chatTemplatesWithProfiles
-      .filter(ct => attempt.chatTemplateIds?.includes(ct.id))
-      .map(ct => ct.profileName)
+    // Get agents tested based on the simulation's interaction IDs
+    const agentsTested = interactionsWithAgents
+      .filter(interaction => attempt.interactionIds?.includes(interaction.id))
+      .map(interaction => interaction.agentName)
       .filter(Boolean);
     
     return {
       ...attempt,
       chats: attemptChats,
-      profilesTested: [...new Set(profilesTested)], // Remove duplicates
+      agentsTested: [...new Set(agentsTested)], // Remove duplicates
     };
   });
 
@@ -81,22 +81,22 @@ export async function getEnhancedAttempts() {
 }
 
 export async function getEnhancedAttemptsByUser(userId: string) {
-  // First get attempts for specific user with their related template and class data
+  // First get attempts for specific user with their related simulation and class data
   const attemptsWithRelations = await db
     .select({
       id: attempts.id,
       createdAt: attempts.createdAt,
       userId: attempts.userId,
       classId: attempts.classId,
-      templateId: attempts.templateId,
-      templateTitle: templates.title,
+      simulationId: attempts.simulationId,
+      simulationTitle: simulations.title,
       classCode: classes.classCode,
       className: classes.name,
       userName: users.name,
-      chatTemplateIds: templates.chatTemplateIds,
+      interactionIds: simulations.interactionIds,
     })
     .from(attempts)
-    .leftJoin(templates, eq(attempts.templateId, templates.id))
+    .leftJoin(simulations, eq(attempts.simulationId, simulations.id))
     .leftJoin(classes, eq(attempts.classId, classes.id))
     .leftJoin(users, eq(attempts.userId, users.id))
     .where(eq(attempts.userId, userId));
@@ -119,22 +119,22 @@ export async function getEnhancedAttemptsByUser(userId: string) {
     .from(chats)
     .where(inArray(chats.attemptId, attemptIds));
 
-  // Get all chat templates and their profiles for the templates used in these attempts
-  const allChatTemplateIds = attemptsWithRelations
-    .flatMap(attempt => attempt.chatTemplateIds || [])
+  // Get all interactions and their agents for the simulations used in these attempts
+  const allInteractionIds = attemptsWithRelations
+    .flatMap(attempt => attempt.interactionIds || [])
     .filter(Boolean);
 
-  let chatTemplatesWithProfiles: any[] = [];
-  if (allChatTemplateIds.length > 0) {
-    chatTemplatesWithProfiles = await db
+  let interactionsWithAgents: any[] = [];
+  if (allInteractionIds.length > 0) {
+    interactionsWithAgents = await db
       .select({
-        id: chatTemplates.id,
-        profileId: chatTemplates.profileId,
-        profileName: profiles.name,
+        id: interactions.id,
+        agentId: interactions.agentId,
+        agentName: agents.name,
       })
-      .from(chatTemplates)
-      .leftJoin(profiles, eq(chatTemplates.profileId, profiles.id))
-      .where(inArray(chatTemplates.id, allChatTemplateIds));
+      .from(interactions)
+      .leftJoin(agents, eq(interactions.agentId, agents.id))
+      .where(inArray(interactions.id, allInteractionIds));
   }
 
   // Group chats by attempt ID
@@ -146,20 +146,20 @@ export async function getEnhancedAttemptsByUser(userId: string) {
     return acc;
   }, {} as Record<string, typeof allChats>);
 
-  // Combine attempts with their chats and calculate profiles tested
+  // Combine attempts with their chats and calculate agents tested
   const enhancedAttempts = attemptsWithRelations.map(attempt => {
     const attemptChats = chatsByAttempt[attempt.id] || [];
     
-    // Get profiles tested based on the template's chat template IDs
-    const profilesTested = chatTemplatesWithProfiles
-      .filter(ct => attempt.chatTemplateIds?.includes(ct.id))
-      .map(ct => ct.profileName)
+    // Get agents tested based on the simulation's interaction IDs
+    const agentsTested = interactionsWithAgents
+      .filter(interaction => attempt.interactionIds?.includes(interaction.id))
+      .map(interaction => interaction.agentName)
       .filter(Boolean);
     
     return {
       ...attempt,
       chats: attemptChats,
-      profilesTested: [...new Set(profilesTested)], // Remove duplicates
+      agentsTested: [...new Set(agentsTested)], // Remove duplicates
     };
   });
 

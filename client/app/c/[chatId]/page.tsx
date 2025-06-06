@@ -28,8 +28,8 @@ import Markdown from "@/components/Markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";
-import { getChatTemplate } from "@/utils/queries/get-chat-template";
-import { chatTemplates as ChatTemplate } from "@/drizzle/schema";
+import { getInteraction } from "@/utils/queries/get-interaction";
+import { interactions as Interaction } from "@/drizzle/schema";
 
 type WindowWithChatData = Window & typeof globalThis & {
   chatData: {
@@ -67,10 +67,10 @@ export default function ChatPage({
     enabled: !!chat?.scenarioId,
   });
 
-  const { data: chatTemplate, isLoading: chatTemplateLoading } = useQuery({
-    queryKey: ["chatTemplate", chat?.chatTemplateId],
-    queryFn: () => getChatTemplate(chat!.chatTemplateId),
-    enabled: !!chat?.chatTemplateId,
+  const { data: interaction, isLoading: interactionLoading } = useQuery({
+    queryKey: ["interaction", chat?.interactionId],
+    queryFn: () => getInteraction(chat!.interactionId),
+    enabled: !!chat?.interactionId,
   });
 
   const { data: rubric } = useQuery({
@@ -141,21 +141,21 @@ export default function ChatPage({
     }
   }, [elapsedTime, chat?.completed, rubric?.passed]);
 
-  // Helper function to format chat template attributes
-  const formatChatTemplateInfo = (template: typeof ChatTemplate.$inferSelect) => {
-    const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" : 
-                           template.crowdedness === 2 ? "Moderate crowdedness" :
-                           template.crowdedness === 3 ? "High crowdedness" :
-                           template.crowdedness === 4 ? "Very high crowdedness" :
-                           template.crowdedness === 5 ? "Extremely crowded" :
-                           `Crowdedness: ${template.crowdedness}`;
+    // Helper function to format interaction attributes
+  const formatInteractionInfo = (interaction: typeof Interaction.$inferSelect) => {
+    const crowdednessText = interaction.crowdedness === 1 ? "Low crowdedness" : 
+                           interaction.crowdedness === 2 ? "Moderate crowdedness" :
+                           interaction.crowdedness === 3 ? "High crowdedness" :
+                           interaction.crowdedness === 4 ? "Very high crowdedness" :
+                           interaction.crowdedness === 5 ? "Extremely crowded" :
+                           `Crowdedness: ${interaction.crowdedness}`;
     
-    const intensityText = template.intensity === 1 ? "Low intensity" :
-                         template.intensity === 2 ? "Moderate intensity" :
-                         template.intensity === 3 ? "High intensity" :
-                         template.intensity === 4 ? "Very high intensity" :
-                         template.intensity === 5 ? "Extremely intense" :
-                         `Intensity: ${template.intensity}`;
+    const intensityText = interaction.intensity === 1 ? "Low intensity" :
+                         interaction.intensity === 2 ? "Moderate intensity" :
+                         interaction.intensity === 3 ? "High intensity" :
+                         interaction.intensity === 4 ? "Very high intensity" :
+                         interaction.intensity === 5 ? "Extremely intense" :
+                         `Intensity: ${interaction.intensity}`;
     
     return (
       <div className="flex items-center gap-3">
@@ -181,7 +181,7 @@ export default function ChatPage({
     }
   };
 
-  if (chatLoading || attemptLoading || scenarioLoading || chatTemplateLoading) {
+  if (chatLoading || attemptLoading || scenarioLoading || interactionLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -285,7 +285,7 @@ export default function ChatPage({
             <div className="flex items-center gap-2">
               <span>{scenario?.description || chat.title}</span>
               <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                {formatChatTemplateInfo(chatTemplate!)}
+                {formatInteractionInfo(interaction!)}
               </div>
             </div>
           </CardTitle>

@@ -21,7 +21,7 @@ interface ChatData {
 }
 
 interface AttemptData {
-  chatTemplateIds?: string[];
+  interactionIds?: string[];
   chats?: ChatData[];
 }
 
@@ -33,14 +33,14 @@ const columnMap = {
   classId: "Class",
   classCode: "Class",
   userId: "Name",
-  profile: "Profile",
+  agent: "Agent",
   title: "Title",
-  templateTitle: "Template",
+  simulationTitle: "Simulation",
   status: "Status",
   score: "Score",
   averageScore: "Avg Score",
   chats: "Chats",
-  profilesTested: "Profiles Tested",
+  agentsTested: "Agents Tested",
 };
 
 // Helper function to determine chat status
@@ -141,17 +141,17 @@ export function ExportButton<TData>({
             if (column.id === "chats" && cellValue) {
               const chats = cellValue as ChatData[];
               const original = row.original as AttemptData;
-              const chatTemplateIds = original.chatTemplateIds as string[];
+              const interactionIds = original.interactionIds as string[];
               
               const completedChats = chats?.filter(chat => chat.completed).length || 0;
-              // Use template's chatTemplateIds length for total expected chats
-              const totalChats = chatTemplateIds?.length || chats?.length || 0;
+              // Use simulation's interactionIds length for total expected chats
+              const totalChats = interactionIds?.length || chats?.length || 0;
               return `"${completedChats}/${totalChats}"`;
             }
 
-            if (column.id === "profilesTested" && cellValue) {
-              const profiles = cellValue as string[];
-              return `"${profiles.join(', ')}"`;
+            if (column.id === "agentsTested" && cellValue) {
+              const agents = cellValue as string[];
+              return `"${agents.join(', ')}"`;
             }
 
             if (column.id === "averageScore" && cellValue) {

@@ -8,7 +8,7 @@
 
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { getUsers } from "@/utils/queries/get-users";
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAgents } from "@/utils/queries/get-agents";
 import { getAttempts } from "@/utils/queries/get-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
@@ -59,10 +59,10 @@ import {
   AreaChart,
 } from "recharts";
 import { format, subDays } from "date-fns";
-import { getProfileConfig } from "@/utils/profiles";
+import { getAgentConfig } from "@/utils/agents";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
-import { getTemplates } from "@/utils/queries/get-templates";
-import { getChatTemplates } from "@/utils/queries/get-chat-templates";
+import { getSimulations } from "@/utils/queries/get-simulations";
+import { getInteractions } from "@/utils/queries/get-interactions";
 
 // Color palette for charts
 const COLORS = {
@@ -101,14 +101,14 @@ export default function Analytics() {
     queryFn: () => getAttempts(),
   });
 
-  const { data: templates, isLoading: isLoadingTemplates } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
+  const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getSimulations(),
   });
 
-  const { data: chatTemplates, isLoading: isLoadingChatTemplates } = useQuery({
-    queryKey: ["chat-templates"],
-    queryFn: () => getChatTemplates(),
+  const { data: interactions, isLoading: isLoadingInteractions } = useQuery({
+    queryKey: ["interactions"],
+    queryFn: () => getInteractions(),
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -117,9 +117,9 @@ export default function Analytics() {
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -130,7 +130,7 @@ export default function Analytics() {
 
   // Calculate key metrics
   const analytics = useMemo(() => {
-    if (!users || !chats || !rubrics || !profiles) return null;
+    if (!users || !chats || !rubrics || !agents) return null;
 
     const tas = users.filter((user) => user.role === "ta");
     const completedChats = chats.filter((chat) => chat.completed);
@@ -163,11 +163,11 @@ export default function Analytics() {
     };
 
     // Performance by student type
-    const performanceByType = profiles.map((profile) => {
-      const profileChats = chats.filter((chat) => chat.profileId === profile.id);
+    const performanceByType = agents.map((agent) => {
+      const profileChats = chats.filter((chat) => chat.agentId === agent.id);
       const profileRubrics = rubrics.filter((rubric) => {
         const chat = chats.find((c) => c.id === rubric.chatId);
-        return chat?.profileId === profile.id;
+        return chat?.agentId === agent.id;
       });
 
       const avgScore =
@@ -178,10 +178,10 @@ export default function Analytics() {
           : 0;
 
       return {
-        name: profile.name,
+        name: agent.name,
         score: avgScore,
         sessions: profileChats.length,
-        color: getProfileConfig(profile.name).colors.bgColor,
+        color: getAgentConfig(agent.name).colors.bgColor,
       };
     });
 
@@ -285,7 +285,7 @@ export default function Analytics() {
       skillProgressionData,
       avgTrainingTime,
     };
-  }, [users, chats, rubrics, profiles, attempts]);
+  }, [users, chats, rubrics, agents, attempts]);
 
   // Loading state
   if (
@@ -293,7 +293,7 @@ export default function Analytics() {
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingRubrics ||
-    isLoadingProfiles
+    isLoadingAgents
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">

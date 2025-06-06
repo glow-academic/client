@@ -4,17 +4,17 @@ describe('Core Management Operations', () => {
     cy.setupApiMocks()
     
     // Mock management API endpoints
-    cy.intercept('POST', '**/profiles', { statusCode: 200, body: { id: 'new-profile-id' } }).as('createProfile')
-    cy.intercept('PUT', '**/profiles/**', { statusCode: 200, body: { message: 'Profile updated' } }).as('updateProfile')
-    cy.intercept('DELETE', '**/profiles/**', { statusCode: 200, body: { message: 'Profile deleted' } }).as('deleteProfile')
+    cy.intercept('POST', '**/agents', { statusCode: 200, body: { id: 'new-agent-id' } }).as('createAgent')
+    cy.intercept('PUT', '**/agents/**', { statusCode: 200, body: { message: 'Agent updated' } }).as('updateAgent')
+    cy.intercept('DELETE', '**/agents/**', { statusCode: 200, body: { message: 'Agent deleted' } }).as('deleteAgent')
     
     cy.intercept('POST', '**/scenarios', { statusCode: 200, body: { id: 'new-scenario-id' } }).as('createScenario')
     cy.intercept('PUT', '**/scenarios/**', { statusCode: 200, body: { message: 'Scenario updated' } }).as('updateScenario')
     cy.intercept('DELETE', '**/scenarios/**', { statusCode: 200, body: { message: 'Scenario deleted' } }).as('deleteScenario')
     
-    cy.intercept('POST', '**/templates', { statusCode: 200, body: { id: 'new-template-id' } }).as('createTemplate')
-    cy.intercept('PUT', '**/templates/**', { statusCode: 200, body: { message: 'Template updated' } }).as('updateTemplate')
-    cy.intercept('DELETE', '**/templates/**', { statusCode: 200, body: { message: 'Template deleted' } }).as('deleteTemplate')
+    cy.intercept('POST', '**/simulations', { statusCode: 200, body: { id: 'new-simulation-id' } }).as('createSimulation')
+    cy.intercept('PUT', '**/simulations/**', { statusCode: 200, body: { message: 'Simulation updated' } }).as('updateSimulation')
+    cy.intercept('DELETE', '**/simulations/**', { statusCode: 200, body: { message: 'Simulation deleted' } }).as('deleteSimulation')
     
     cy.intercept('POST', '**/users', { statusCode: 200, body: { id: 'new-user-id' } }).as('createUser')
     cy.intercept('POST', '**/classes', { statusCode: 200, body: { id: 'new-class-id' } }).as('createClass')
@@ -25,46 +25,46 @@ describe('Core Management Operations', () => {
     cy.intercept('POST', '/_next/static/chunks/app/**', { statusCode: 200 }).as('serverAction')
   })
 
-  describe('Profile Management', () => {
-    it('should create a new profile', () => {
+  describe('Agent Management', () => {
+    it('should create a new agent', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/profiles/new')
+      cy.navigateToPage('/chat/agents/new')
       
-      // Fill profile form
-      cy.get('[data-testid="profile-name"]').type('Test Profile')
-      cy.get('[data-testid="profile-description"]').type('Test Description')
-      cy.get('[data-testid="save-profile"]').click()
+      // Fill agent form
+      cy.get('[data-testid="agent-name"]').type('Test Agent')
+      cy.get('[data-testid="agent-description"]').type('Test Description')
+      cy.get('[data-testid="save-agent"]').click()
       
-      cy.wait('@createProfile')
+      cy.wait('@createAgent')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(created|success)/i)
       })
     })
 
-    it('should update an existing profile', () => {
+    it('should update an existing agent', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/profiles/p/test-profile-id')
+      cy.navigateToPage('/chat/agents/a/test-agent-id')
       
-      // Update profile
-      cy.get('[data-testid="edit-profile"]').click()
-      cy.get('[data-testid="profile-name"]').clear().type('Updated Profile')
-      cy.get('[data-testid="save-profile"]').click()
+      // Update agent
+      cy.get('[data-testid="edit-agent"]').click()
+      cy.get('[data-testid="agent-name"]').clear().type('Updated Agent')
+      cy.get('[data-testid="save-agent"]').click()
       
-      cy.wait('@updateProfile')
+      cy.wait('@updateAgent')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(updated|success)/i)
       })
     })
 
-    it('should delete a profile', () => {
+    it('should delete an agent', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/profiles')
+      cy.navigateToPage('/chat/agents')
       
-      // Delete profile
-      cy.get('[data-testid="delete-profile"]').first().click()
+      // Delete agent
+      cy.get('[data-testid="delete-agent"]').first().click()
       cy.get('[data-testid="confirm-delete"]').click()
       
-      cy.wait('@deleteProfile')
+      cy.wait('@deleteAgent')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(deleted|removed)/i)
       })
@@ -117,46 +117,46 @@ describe('Core Management Operations', () => {
     })
   })
 
-  describe('Template Management', () => {
-    it('should create a new template', () => {
+  describe('Simulation Management', () => {
+    it('should create a new simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/templates/new')
+      cy.navigateToPage('/chat/simulations/new')
       
-      // Fill template form
-      cy.get('[data-testid="template-name"]').type('Test Template')
-      cy.get('[data-testid="template-content"]').type('Template content here')
-      cy.get('[data-testid="save-template"]').click()
+      // Fill simulation form
+      cy.get('[data-testid="simulation-name"]').type('Test Simulation')
+      cy.get('[data-testid="simulation-content"]').type('Simulation content here')
+      cy.get('[data-testid="save-simulation"]').click()
       
-      cy.wait('@createTemplate')
+      cy.wait('@createSimulation')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(created|success)/i)
       })
     })
 
-    it('should update a template', () => {
+    it('should update a simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/templates/t/test-template-id')
+      cy.navigateToPage('/chat/simulations/s/test-simulation-id')
       
-      // Update template
-      cy.get('[data-testid="edit-template"]').click()
-      cy.get('[data-testid="template-name"]').clear().type('Updated Template')
-      cy.get('[data-testid="save-template"]').click()
+      // Update simulation
+      cy.get('[data-testid="edit-simulation"]').click()
+      cy.get('[data-testid="simulation-name"]').clear().type('Updated Simulation')
+      cy.get('[data-testid="save-simulation"]').click()
       
-      cy.wait('@updateTemplate')
+      cy.wait('@updateSimulation')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(updated|success)/i)
       })
     })
 
-    it('should delete a template', () => {
+    it('should delete a simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/templates')
+      cy.navigateToPage('/chat/simulations')
       
-      // Delete template
-      cy.get('[data-testid="delete-template"]').first().click()
+      // Delete simulation
+      cy.get('[data-testid="delete-simulation"]').first().click()
       cy.get('[data-testid="confirm-delete"]').click()
       
-      cy.wait('@deleteTemplate')
+      cy.wait('@deleteSimulation')
       cy.get('body').then(($body) => {
         expect($body.text()).to.match(/(deleted|removed)/i)
       })
@@ -230,7 +230,7 @@ describe('Core Management Operations', () => {
   describe('Document Upload', () => {
     it('should upload a document', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/templates/new')
+      cy.navigateToPage('/chat/simulations/new')
       
       // Upload document
       cy.get('[data-testid="file-upload"]').selectFile('cypress/fixtures/test-document.pdf', { force: true })

@@ -16,58 +16,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+
+
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import {
-  X,
   Trash2,
   FileText,
-  Settings,
   Upload,
   Image as ImageIcon,
   File,
   FileCode,
   Search,
-  Plus,
   Eye,
-  Download,
   Grid3X3,
   List,
-  UploadCloud,
-  Users,
-  Clock,
-  Zap,
-  GraduationCap
+  UploadCloud
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 
-import { getTemplates } from "@/utils/queries/get-templates";
-import { getChatTemplates } from "@/utils/queries/get-chat-templates";
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getSimulations } from "@/utils/queries/get-simulations";
+import { getInteractions } from "@/utils/queries/get-interactions";
+import { getAgents } from "@/utils/queries/get-agents";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { updateClass } from "@/utils/mutations/update-class";
 import { createClass } from "@/utils/mutations/create-class";
-import { deleteClass } from "@/utils/mutations/delete-class";
 import DocumentViewer from "@/components/DocumentViewer";
 import { documents as DocumentItem } from "@/drizzle/schema";
 import { cn } from "@/lib/utils";
@@ -92,7 +68,6 @@ interface FormData {
   year: number;
   term: 'fall' | 'spring' | 'summer';
   description: string;
-  templateIds: string[];
 }
 
 interface FormErrors {
@@ -101,7 +76,6 @@ interface FormErrors {
   year?: string;
   term?: string;
   description?: string;
-  templateIds?: string;
 }
 
 interface ClassFormProps {
@@ -140,27 +114,26 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     year: initialData?.year || new Date().getFullYear(),
     term: initialData?.term || 'fall',
     description: initialData?.description || "",
-    templateIds: initialData?.templateIds || [],
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch templates for selection
-  const { data: templates = [] } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
+  // Fetch simulations for selection
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getSimulations(),
   });
 
-  // Fetch chat templates for additional template information
-  const { data: chatTemplates = [] } = useQuery({
-    queryKey: ["chatTemplates"],
-    queryFn: () => getChatTemplates(),
+  // Fetch interactions for additional simulation information
+  const { data: interactions = [] } = useQuery({
+    queryKey: ["interactions"],
+    queryFn: () => getInteractions(),
   });
 
-  // Fetch profiles for template information
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  // Fetch agents for simulation information
+  const { data: agents = [] } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
   // Fetch documents for this class
@@ -183,7 +156,6 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
         year: initialData.year || new Date().getFullYear(),
         term: initialData.term || 'fall',
         description: initialData.description || "",
-        templateIds: initialData.templateIds || [],
       });
     }
   }, [initialData]);
@@ -230,8 +202,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
           formData.classCode,
           formData.year,
           formData.term,
-          formData.description,
-          formData.templateIds
+          formData.description
         );
         
         if (result.success && result.class) {
@@ -254,8 +225,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
           formData.classCode,
           formData.year,
           formData.term,
-          formData.description,
-          formData.templateIds
+          formData.description
         );
 
         if (result.success) {
@@ -277,22 +247,6 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleTemplateToggle = (templateId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      templateIds: prev.templateIds.includes(templateId)
-        ? prev.templateIds.filter(id => id !== templateId)
-        : [...prev.templateIds, templateId]
-    }));
-  };
-
-  const removeTemplate = (templateId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      templateIds: prev.templateIds.filter(id => id !== templateId)
-    }));
   };
 
   // File upload handling
@@ -676,39 +630,6 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     const matchesType = typeFilter === "all" ? true : doc.type === typeFilter;
     return matchesSearch && matchesType;
   });
-
-  // Get template information with chat template details
-  const getTemplateInfo = (template: any) => {
-    const templateChatTemplates = chatTemplates.filter(ct =>
-      template.chatTemplateIds?.includes(ct.id)
-    );
-
-    const profilesUsed = templateChatTemplates
-      .map(ct => profiles.find(p => p.id === ct.profileId))
-      .filter(Boolean);
-
-    const avgCrowdedness = templateChatTemplates.length > 0
-      ? Math.round(templateChatTemplates.reduce((sum, ct) => sum + ct.crowdedness, 0) / templateChatTemplates.length)
-      : 0;
-
-    const avgIntensity = templateChatTemplates.length > 0
-      ? Math.round(templateChatTemplates.reduce((sum, ct) => sum + ct.intensity, 0) / templateChatTemplates.length)
-      : 0;
-
-    const seniorityLevels = [...new Set(templateChatTemplates.map(ct => ct.seniority))];
-
-    return {
-      profilesUsed,
-      avgCrowdedness,
-      avgIntensity,
-      seniorityLevels,
-      chatCount: templateChatTemplates.length
-    };
-  };
-
-  const selectedTemplates = templates.filter(template =>
-    formData.templateIds.includes(template.id)
-  );
 
   return (
     <div

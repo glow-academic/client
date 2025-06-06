@@ -17,9 +17,9 @@ const columnMap = {
   createdAt: "Date",
   classId: "Class",
   userId: "Name",
-  templateTitle: "Template",
+  simulationTitle: "Simulation",
   classCode: "Class",
-  profilesTested: "Profiles",
+  agentsTested: "Agents",
   averageScore: "Score",
 };
 

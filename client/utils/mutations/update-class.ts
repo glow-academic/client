@@ -8,13 +8,12 @@ export async function updateClass(id: string, name: string,
     classCode: string, 
     year: number, 
     term: 'fall' | 'spring' | 'summer', 
-    description: string, 
-    templateIds: string[]
+    description: string
 ) {
   try {
     await db
       .update(classes)
-      .set({ name, classCode, year, term, description, templateIds })
+      .set({ name, classCode, year, term, description })
       .where(eq(classes.id, id));
     return { success: true, error: "" };
   } catch (error) {

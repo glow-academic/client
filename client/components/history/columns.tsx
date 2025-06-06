@@ -9,20 +9,20 @@ import { getChats } from "@/utils/queries/get-chats";
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getUsers } from "@/utils/queries/get-users";
 import { getClasses } from "@/utils/queries/get-classes";
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAgents } from "@/utils/queries/get-agents";
 import { useMemo } from "react";
 import { getUser } from "@/utils/queries/get-user";
 import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../ui/badge";
-import { getProfileConfig } from "@/utils/profiles";
+import { getAgentConfig } from "@/utils/agents";
 import { getEnhancedAttempts, getEnhancedAttemptsByUser } from "@/utils/queries/get-enhanced-attempts";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
-import { classes as Classes, attempts as Attempts, chats as Chats, rubrics as Rubrics, profiles as Profiles, users as Users } from "@/drizzle/schema";
+import { classes as Classes, attempts as Attempts, chats as Chats, rubrics as Rubrics, agents as Agents, users as Users } from "@/drizzle/schema";
 
 // Use Drizzle schema types
 type User = typeof Users.$inferSelect;
 type Class = typeof Classes.$inferSelect;
-type Profile = typeof Profiles.$inferSelect;
+type Agent = typeof Agents.$inferSelect;
 type Chat = typeof Chats.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
 type Attempt = typeof Attempts.$inferSelect;
@@ -30,10 +30,10 @@ type Attempt = typeof Attempts.$inferSelect;
 // Enhanced attempt type (from the query results)
 interface EnhancedAttempt extends Attempt {
   chats: Chat[];
-  profilesTested: string[];
-  templateTitle?: string | null;
+  agentsTested: string[];
+  simulationTitle?: string | null;
   classCode?: string | null;
-  chatTemplateIds?: string[] | null;
+  interactionIds?: string[] | null;
 }
 
 // Define score metrics
@@ -66,9 +66,9 @@ export function useTaskColumns({
   });
 
   // Fetch profiles dynamically
-  const { data: profiles, isLoading: profilesLoading } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  const { data: agents, isLoading: agentsLoading } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
   // Use getAllChats if isAdmin, otherwise use getChats with user id (for chats view)
@@ -119,14 +119,14 @@ export function useTaskColumns({
   });
 
   // Create dynamic profile types from database profiles
-  const profileTypes = useMemo(() => {
-    if (!profiles) return [];
-    return profiles.map((profile: Profile) => ({
-      value: profile.id,
-      label: profile.name,
-      icon: getProfileConfig(profile.name).icon,
+  const agentTypes = useMemo(() => {
+    if (!agents) return [];
+    return agents.map((agent: Agent) => ({
+      value: agent.id,
+      label: agent.name,
+      icon: getAgentConfig(agent.name).icon,
     }));
-  }, [profiles]);
+  }, [agents]);
 
   // Create user options for GTA names
   const userOptions = useMemo(() => {
@@ -277,13 +277,13 @@ export function useTaskColumns({
           },
           enableSorting: true,
         },
-        // Template Title column
+        // Simulation Title column
         {
-          accessorKey: "templateTitle",
+          accessorKey: "simulationTitle",
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Template"
+              title="Simulation"
               isAdmin={isAdmin}
             />
           ),
@@ -291,7 +291,7 @@ export function useTaskColumns({
             return (
               <div className="flex space-x-2">
                 <span className="max-w-[500px] truncate font-medium">
-                  {row.getValue("templateTitle") || "Unknown Template"}
+                  {row.getValue("simulationTitle") || "Unknown Simulation"}
                 </span>
               </div>
             );
@@ -343,11 +343,11 @@ export function useTaskColumns({
           ),
           cell: ({ row }) => {
             const chats = row.getValue("chats") as Chat[];
-            const chatTemplateIds = row.original.chatTemplateIds;
+            const interactionIds = row.original.interactionIds;
             
             const completedChats = chats?.filter(chat => chat.completed).length || 0;
-            // Use template's chatTemplateIds length for total expected chats
-            const totalChats = chatTemplateIds?.length || chats?.length || 0;
+            // Use simulation's interactionIds length for total expected chats
+            const totalChats = interactionIds?.length || chats?.length || 0;
             
             return (
               <div className="text-center">
@@ -360,30 +360,30 @@ export function useTaskColumns({
         },
         // Profiles tested column
         {
-          accessorKey: "profilesTested",
+          accessorKey: "agentsTested",
           header: ({ column }) => (
             <DataTableColumnHeader
               column={column}
-              title="Profiles Tested"
+              title="Agents Tested"
               isAdmin={isAdmin}
             />
           ),
           cell: ({ row }) => {
-            const profilesTested = row.getValue("profilesTested") as string[];
+            const agentsTested = row.getValue("agentsTested") as string[];
             
-            if (!profilesTested || profilesTested.length === 0) {
+            if (!agentsTested || agentsTested.length === 0) {
               return <span className="text-muted-foreground">None</span>;
             }
 
             return (
               <div className="flex flex-wrap gap-1">
-                {profilesTested.map((profileName, index) => {
+                {agentsTested.map((agentName, index) => {
                   // Create badge color classes based on profile colors
-                  const badgeColorClass = profileName.toLowerCase() === 'aggressive' 
+                  const badgeColorClass = agentName.toLowerCase() === 'aggressive' 
                     ? 'bg-red-100 text-red-800 border-red-300'
-                    : profileName.toLowerCase() === 'happy'
+                    : agentName.toLowerCase() === 'happy'
                     ? 'bg-green-100 text-green-800 border-green-300'
-                    : profileName.toLowerCase() === 'confused'
+                    : agentName.toLowerCase() === 'confused'
                     ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
                     : 'bg-gray-100 text-gray-800 border-gray-300';
                   
@@ -393,7 +393,7 @@ export function useTaskColumns({
                       variant="outline"
                       className={`text-xs ${badgeColorClass}`}
                     >
-                      {profileName}
+                      {agentName}
                     </Badge>
                   );
                 })}
@@ -401,10 +401,10 @@ export function useTaskColumns({
             );
           },
           filterFn: (row, id, value) => {
-            const profilesTested = row.getValue(id) as string[];
+            const agentsTested = row.getValue(id) as string[];
             if (!value || value.length === 0) return true;
-            return value.some((filterProfile: string) => 
-              profilesTested?.some(profile => profile.toLowerCase().includes(filterProfile.toLowerCase()))
+            return value.some((filterAgent: string) => 
+              agentsTested?.some(agent => agent.toLowerCase().includes(filterAgent.toLowerCase()))
             );
           },
         },
@@ -481,10 +481,10 @@ export function useTaskColumns({
           cell: ({ row }) => {
             const attempt = row.original;
             const chats = attempt.chats;
-            const chatTemplateIds = attempt.chatTemplateIds;
+            const interactionIds = attempt.interactionIds;
             
             // An attempt is completed if all expected chats are completed
-            const totalExpectedChats = chatTemplateIds?.length || 0;
+            const totalExpectedChats = interactionIds?.length || 0;
             const completedChats = chats?.filter(chat => chat.completed).length || 0;
             const isAttemptCompleted = totalExpectedChats > 0 && completedChats === totalExpectedChats;
             
@@ -797,8 +797,8 @@ export function useTaskColumns({
   }
 
   const isLoading = viewMode === 'attempts' 
-    ? (usersLoading || classesLoading || attemptsLoading || profilesLoading || attemptChatsLoading || attemptRubricsLoading)
-    : (usersLoading || classesLoading || chatsLoading || rubricsLoading || profilesLoading);
+    ? (usersLoading || classesLoading || attemptsLoading || agentsLoading || attemptChatsLoading || attemptRubricsLoading)
+    : (usersLoading || classesLoading || chatsLoading || rubricsLoading || agentsLoading);
 
   return {
     columns,
@@ -806,7 +806,7 @@ export function useTaskColumns({
     data: data,
     userOptions,
     classOptions: viewMode === 'attempts' ? attemptClassOptions : classOptions,
-    profileTypes, // Export dynamic profile types
+    agentTypes, // Export dynamic agent types
     isAdmin,
   };
 }

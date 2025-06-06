@@ -10,7 +10,7 @@
   CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophomore', 'junior', 'senior');
   CREATE TYPE class_term AS ENUM ('fall', 'spring', 'summer');
 
-  CREATE TABLE profiles (
+  CREATE TABLE agents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
@@ -25,26 +25,6 @@
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL
-  );
-
-  CREATE TABLE chat_templates (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    profile_id UUID        NULL REFERENCES profiles(id)  ON DELETE SET NULL, -- can be null for global templates
-    scenario_id UUID        NULL REFERENCES scenarios(id)  ON DELETE SET NULL, -- can be null for global templates
-    crowdedness INTEGER     NOT NULL,
-    intensity INTEGER     NOT NULL,
-    seniority seniority_levels NOT NULL             DEFAULT 'freshman'
-  );
-
-  CREATE TABLE templates (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    title      TEXT        NOT NULL,
-    documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
-    time_limit INTEGER     NULL,          -- in minutes, or no time limit
-    active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-    chat_template_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[]
   );
 
   CREATE TABLE schedules (
@@ -62,9 +42,28 @@
     year       INTEGER     NOT NULL,
     term       class_term  NOT NULL           DEFAULT 'fall',
     description TEXT        NOT NULL,
-    template_ids UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[],
-    syllabus_id UUID        NULL,
     schedule_id UUID        NULL REFERENCES schedules(id) ON DELETE SET NULL
+  );
+
+    CREATE TABLE interactions (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    agent_id UUID        NULL REFERENCES agents(id)  ON DELETE SET NULL, -- can be null for global simulations
+    scenario_id UUID        NULL REFERENCES scenarios(id)  ON DELETE SET NULL, -- can be null for global simulations
+    crowdedness INTEGER     NOT NULL,
+    intensity INTEGER     NOT NULL,
+    seniority seniority_levels NOT NULL             DEFAULT 'freshman'
+  );
+
+  CREATE TABLE simulations (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    title      TEXT        NOT NULL,
+    class_id   UUID        NULL REFERENCES classes(id) ON DELETE SET NULL, -- can be null for global simulations
+    documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
+    time_limit INTEGER     NULL,          -- in minutes, or no time limit
+    active      BOOLEAN     NOT NULL           DEFAULT TRUE,
+    interaction_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[]
   );
 
   CREATE TABLE topics (
@@ -72,24 +71,18 @@
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,
+    prerequisite  BOOLEAN     NOT NULL           DEFAULT FALSE,
     class_id   UUID        NOT NULL REFERENCES classes(id) ON DELETE CASCADE
   );
 
-  CREATE TABLE prerequisites (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    name       TEXT        NOT NULL,
-    description TEXT        NOT NULL,
-    class_id   UUID        NOT NULL REFERENCES classes(id) ON DELETE CASCADE
-  );
 
-  CREATE TABLE deadlines (
+  CREATE TABLE events (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name        TEXT        NOT NULL,
     description TEXT        NOT NULL,
-    document_type document_type NOT NULL       DEFAULT 'homework',
-    due_time    TIMESTAMPTZ NOT NULL,
+    document_type document_type NULL,
+    time    TIMESTAMPTZ NOT NULL,
     schedule_id UUID        NOT NULL REFERENCES schedules(id) ON DELETE CASCADE
   );
 
@@ -120,7 +113,7 @@
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     user_id    UUID         NULL REFERENCES users(id)  ON DELETE CASCADE,
     class_id   UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
-    template_id    UUID        NOT NULL REFERENCES templates(id)  ON DELETE CASCADE
+    simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE
   );
 
   CREATE TABLE chats (
@@ -129,8 +122,8 @@
     completed_at TIMESTAMPTZ  NULL,
     title      TEXT         NOT NULL,
     scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE, -- must converge when creating a chat
-    profile_id UUID         NOT NULL REFERENCES profiles(id)  ON DELETE CASCADE, -- must converge when creating a chat
-    chat_template_id UUID         NOT NULL REFERENCES chat_templates(id)  ON DELETE CASCADE, -- must converge when creating a chat
+    agent_id UUID         NOT NULL REFERENCES agents(id)  ON DELETE CASCADE, -- must converge when creating a chat
+    interaction_id UUID         NOT NULL REFERENCES interactions(id)  ON DELETE CASCADE, -- must converge when creating a chat
     completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
     attempt_id UUID         NOT NULL REFERENCES attempts(id)  ON DELETE CASCADE
   );
@@ -165,8 +158,8 @@
   -- ESSENTIAL TEST DATA
   -- ============================================================================
 
-  -- Insert Core Profiles (Essential for testing)
-  INSERT INTO profiles (id, name, subtitle, description, threshold, prompt) VALUES
+  -- Insert Core Agents (Essential for testing)
+  INSERT INTO agents (id, name, subtitle, description, threshold, prompt) VALUES
     ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive', 'Direct and Challenging', 'Pushes back on your ideas and challenges assumptions.', 50, 'Try and truly embrace your anger and aggressiveness in various ways, such as making certain words, not sentences, in all caps, or adding multiple "!", or just anything you think would truly portray an incredibly aggressive student.'),
     ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Positive and Encouraging', 'Provides uplifting feedback and cheerful responses.', 50, 'Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.'),
     ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Asks clarifying questions', 'Seeks to understand by asking questions and exploring ideas', 50, 'There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.');
@@ -191,27 +184,24 @@
     ('aaaaaaaa-1111-1111-1111-111111111111', 'CS 180 Fall 2024 Schedule', 'Weekly schedule for Problem Solving and Object-Oriented Programming');
 
   -- Insert Test Class (CS 180 - Essential for quiz testing)
-  INSERT INTO classes (id, name, class_code, year, term, description, template_ids, schedule_id) VALUES
-    ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 2024, 'fall', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', ARRAY['aaaaaaaa-bbbb-cccc-dddd-111111111111']::UUID[], 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 2024, 'fall', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', ARRAY['aaaaaaaa-bbbb-cccc-dddd-111111111111']::UUID[], 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 2024, 'fall', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', ARRAY['aaaaaaaa-bbbb-cccc-dddd-111111111111']::UUID[], 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 2024, 'fall', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', ARRAY['aaaaaaaa-bbbb-cccc-dddd-111111111111']::UUID[], 'aaaaaaaa-1111-1111-1111-111111111111');
+  INSERT INTO classes (id, name, class_code, year, term, description, schedule_id) VALUES
+    ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 2024, 'fall', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'aaaaaaaa-1111-1111-1111-111111111111'),
+    ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 2024, 'fall', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'aaaaaaaa-1111-1111-1111-111111111111'),
+    ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 2024, 'fall', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'aaaaaaaa-1111-1111-1111-111111111111'),
+    ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 2024, 'fall', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'aaaaaaaa-1111-1111-1111-111111111111');
 
   -- Insert Essential Topics for CS 180
-  INSERT INTO topics (id, name, description, class_id) VALUES
-    ('11111111-1111-1111-1111-111111111111', 'Variables and Data Types', 'Understanding primitive data types, variable declaration, and initialization in Java', '44444444-1111-1111-1111-111111111111'),
-    ('11111111-1111-1111-1111-111111111112', 'Control Structures', 'Conditional statements (if/else), loops (for, while, do-while), and switch statements', '44444444-1111-1111-1111-111111111111'),
-    ('11111111-1111-1111-1111-111111111113', 'Object-Oriented Programming', 'Classes, objects, inheritance, polymorphism, and encapsulation principles', '44444444-1111-1111-1111-111111111111');
+  INSERT INTO topics (id, name, description, class_id, prerequisite) VALUES
+    ('11111111-1111-1111-1111-111111111111', 'Variables and Data Types', 'Understanding primitive data types, variable declaration, and initialization in Java', '44444444-1111-1111-1111-111111111111', false),
+    ('11111111-1111-1111-1111-111111111112', 'Control Structures', 'Conditional statements (if/else), loops (for, while, do-while), and switch statements', '44444444-1111-1111-1111-111111111111', false),
+    ('11111111-1111-1111-1111-111111111113', 'Object-Oriented Programming', 'Classes, objects, inheritance, polymorphism, and encapsulation principles', '44444444-1111-1111-1111-111111111111', false);
 
-  -- Insert Basic Prerequisites
-  INSERT INTO prerequisites (id, name, description, class_id) VALUES
-    ('11111111-aaaa-aaaa-aaaa-111111111111', 'High School Mathematics', 'Algebra and basic mathematical reasoning skills', '44444444-1111-1111-1111-111111111111'),
-    ('11111111-aaaa-aaaa-aaaa-111111111112', 'Basic Computer Literacy', 'Familiarity with using computers and basic software applications', '44444444-1111-1111-1111-111111111111');
-
-  -- Insert Test Deadlines
-  INSERT INTO deadlines (id, name, description, document_type, due_time, schedule_id) VALUES
+  -- Insert Test Events
+  INSERT INTO events (id, name, description, document_type, time, schedule_id) VALUES
     ('aaaaaaaa-aaaa-aaaa-aaaa-111111111111', 'Homework 1: Variables and Control', 'Basic programming exercises covering variables, data types, and control structures', 'homework', '2024-09-15 23:59:00', 'aaaaaaaa-1111-1111-1111-111111111111'),
     ('aaaaaaaa-aaaa-aaaa-aaaa-111111111112', 'Project 1: Simple Calculator', 'Create a basic calculator application using object-oriented principles', 'project', '2024-10-01 23:59:00', 'aaaaaaaa-1111-1111-1111-111111111111');
+
+
 
   -- Insert Test Admin User
   INSERT INTO users (id, viewed_intro, role, name, username, password, class_ids) VALUES
@@ -228,20 +218,20 @@
     ('abcd1234-efab-cdef-abcd-123456abcdef', false, 'ta', 'Yuting Zhou', 'yuting_zhou', 'hashed_password_11', ARRAY['55555555-2222-2222-2222-222222222222', '77777777-4444-4444-4444-444444444444']::UUID[]),
     ('a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6', true, 'ta', 'Nikita Park', 'nikita_park', 'hashed_password_12', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]);
 
-  -- Insert Chat Templates (Essential for testing)
-  INSERT INTO chat_templates (id, profile_id, crowdedness, intensity, seniority) VALUES
+  -- Insert Chat simulations (Essential for testing)
+  INSERT INTO interactions (id, agent_id, crowdedness, intensity, seniority) VALUES
     ('11111111-1111-1111-1111-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', 3, 4, 'sophomore'),
     ('33333333-3333-3333-3333-333333333333', '22222222-bbbb-bbbb-bbbb-222222222222', 2, 2, 'freshman'),
     ('55555555-5555-5555-5555-555555555555', '33333333-cccc-cccc-cccc-333333333333', 1, 5, 'freshman')
   ON CONFLICT (id) DO NOTHING;
 
-  -- Insert Templates (Essential for testing)
-  INSERT INTO templates (id, title, documents, time_limit, active, chat_template_ids) VALUES
-    ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Template', ARRAY[]::UUID[], 15, true, ARRAY['11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', '55555555-5555-5555-5555-555555555555']::UUID[])
+  -- Insert simulations (Essential for testing)
+  INSERT INTO simulations (id, title, documents, time_limit, active, interaction_ids) VALUES
+    ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice simulation', ARRAY[]::UUID[], 15, true, ARRAY['11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', '55555555-5555-5555-5555-555555555555']::UUID[])
   ON CONFLICT (id) DO NOTHING;
 
-  -- Insert Attempts (Essential for linking chats to templates and users)
-  INSERT INTO attempts (id, created_at, user_id, class_id, template_id) VALUES
+  -- Insert Attempts (Essential for linking chats to simulations and users)
+  INSERT INTO attempts (id, created_at, user_id, class_id, simulation_id) VALUES
     -- CS 180 attempts
     ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
     ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
@@ -275,7 +265,7 @@
     ('aaaaaaaa-1111-2222-3333-444444444450', NOW() - INTERVAL '2 days', NULL, '55555555-2222-2222-2222-222222222222', 'aaaaaaaa-bbbb-cccc-dddd-111111111111');
 
   -- Insert Comprehensive Chat Data
-  INSERT INTO chats (id, created_at, completed_at, title, scenario_id, profile_id, chat_template_id, completed, attempt_id) VALUES
+  INSERT INTO chats (id, created_at, completed_at, title, scenario_id, agent_id, interaction_id, completed, attempt_id) VALUES
     -- CS 180 (Problem Solving And Object-Oriented Programming)
     ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', NULL, 'NullPointer Exception', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-1111-1111-1111-111111111111', false, 'f1e2d3c4-b5a6-47f8-9e00-111111111111'),
     ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'File I/O Issues', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-3333-3333-3333-333333333333', true, 'f1e2d3c4-b5a6-47f8-9e00-222222222222'),
@@ -416,15 +406,15 @@
     ('66666666-aaaa-bbbb-cccc-777777777777', false, 13, 1080, 4, 'Good adaptation to student confusion', 3, 'Good listening but explanation gaps', 3, 'Partial explanation of space complexity', 4, 'Decent time awareness'),
     ('66666666-aaaa-bbbb-cccc-999999999999', false, 11, 1320, 3, 'Some adaptation but inconsistent', 3, 'Missed key student concerns', 3, 'Limited explanation of randomized algorithms', 3, 'Poor time management');
 
-  -- Insert Permanent Chat Templates for Individual Practice
-  INSERT INTO chat_templates (id, profile_id, scenario_id, crowdedness, intensity, seniority) VALUES
+  -- Insert Permanent Chat simulations for Individual Practice
+  INSERT INTO interactions (id, agent_id, scenario_id, crowdedness, intensity, seniority) VALUES
     ('aaaaaaaa-1111-1111-1111-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', NULL, 3, 4, 'sophomore'),
     ('bbbbbbbb-2222-2222-2222-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', NULL, 2, 2, 'freshman'),
     ('cccccccc-3333-3333-3333-333333333333', '33333333-cccc-cccc-cccc-333333333333', NULL, 1, 5, 'freshman')
   ON CONFLICT (id) DO NOTHING;
 
-  -- Insert Permanent Templates for Individual Practice (using existing chat templates)
-  INSERT INTO templates (id, title, documents, time_limit, active, chat_template_ids) VALUES
+  -- Insert Permanent simulations for Individual Practice (using existing chat simulations)
+  INSERT INTO simulations (id, title, documents, time_limit, active, interaction_ids) VALUES
     ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
     ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['33333333-3333-3333-3333-333333333333']::UUID[]),
     ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['55555555-5555-5555-5555-555555555555']::UUID[])

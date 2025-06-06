@@ -53,7 +53,7 @@ export default function ClassDetailsPage({ params }: { params: Promise<{ classId
         description: classData.description || '',
         year: classData.year || new Date().getFullYear(),
         term: classData.term || 'fall',
-        templateIds: classData.templateIds || [],
+        simulationIds: classData.simulationIds || [],
       }} />
     </div>
   );

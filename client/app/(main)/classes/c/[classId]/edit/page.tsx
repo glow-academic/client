@@ -55,7 +55,6 @@ export default function SettingsPage({ params }: { params: Promise<{ classId: st
         year: classData.year || new Date().getFullYear(),
         term: classData.term || 'fall',
         description: classData.description || "",
-        templateIds: classData.templateIds || [],
       }}
     />
   );

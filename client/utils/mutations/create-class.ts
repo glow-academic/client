@@ -7,8 +7,7 @@ export async function createClass(
   classCode: string, 
   year: number, 
   term: 'fall' | 'spring' | 'summer', 
-  description: string, 
-  templateIds: string[]
+  description: string
 ) {
   try {
     const newClass = await db
@@ -18,8 +17,7 @@ export async function createClass(
         classCode,
         year,
         term,
-        description,
-        templateIds: templateIds || [],
+        description
       })
       .returning();
 

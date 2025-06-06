@@ -6,7 +6,7 @@ from app.utils.chat import get_conversation_history, get_chat_scenario
 from app.utils.classes import get_class_info
 from app.db import get_session
 from sqlmodel import Session, select
-from app.models import Messages, Chats, Attempts, Profiles
+from app.models import Messages, Chats, Attempts, Agents
 from fastapi import Depends
 from openai.types.responses import (
     ResponseTextDeltaEvent,
@@ -19,7 +19,7 @@ async def run_generic_agent(
     """
     This function is used to run the generic agent using the OpenAI Agents SDK.
     Returns a streamable result that yields clean text chunks as they're generated.
-    The agent behavior is customized based on the profile's description.
+    The agent behavior is customized based on the agent's description.
 
     Args:
         chat_id: The ID of the chat session
@@ -51,10 +51,10 @@ async def run_generic_agent(
     if not attempt:
         raise ValueError(f"Attempt not found for chat {chat_id}")
 
-    # get the profile from the chat
-    profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one()
-    if not profile:
-        raise ValueError(f"Profile not found for chat {chat_id}")
+    # get the agent from the chat
+    agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one()
+    if not agent:
+        raise ValueError(f"Agent not found for chat {chat_id}")
 
     # add a new message with an empty response
     message = Messages(chat_id=chat_id, query=input_text, response="")
@@ -74,8 +74,8 @@ async def run_generic_agent(
 
     input_items = [chat_scenario, class_info] + conversation_history
 
-    # define the agent with profile-specific behavior
-    generic_agent = GenericAgent(profile_name=profile.name, profile_prompt=profile.prompt)
+    # define the agent with agent-specific behavior
+    generic_agent = GenericAgent(agent_name=agent.name, agent_prompt=agent.prompt)
 
     result = Runner.run_streamed(
         generic_agent.agent(),
@@ -99,13 +99,13 @@ async def run_generic_agent(
 
 
 class GenericAgent:
-    def __init__(self, profile_name: str, profile_prompt: str):
+    def __init__(self, agent_name: str, agent_prompt: str):
         self.gemini_client = get_gemini()
-        self.profile_name = profile_name
-        self.profile_prompt = profile_prompt
+        self.agent_name = agent_name
+        self.agent_prompt = agent_prompt
         self.system_prompt = (
-            f"Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a {profile_name} student, so I need you to truly embrace this role."
-            f"{profile_prompt}"
+            f"Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a {agent_name} student, so I need you to truly embrace this role."
+            f"{agent_prompt}"
             "You will be given a scenario, and you will need to do your best to respond to the student in a way that is appropriate for the scenario."
             "This training for Graduate Level Teaching Assistant is very important because they need to learn how to deal with different types of students in various situations. "
             "Remember that you are a student, not an AI, so keep conversations natural, concise, and engaging, don't say unnecessary information just for the sake of having more words. "
@@ -140,7 +140,7 @@ class GenericAgent:
 
     def agent(self):
         return Agent(
-            name="Generic Agent",
+            name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
                 model="gemini-2.5-flash-preview-04-17",

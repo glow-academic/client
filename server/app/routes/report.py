@@ -7,7 +7,7 @@ import os
 import tempfile
 from datetime import datetime
 import statistics
-from app.models import Users, Chats, Rubrics, Profiles
+from app.models import Users, Chats, Rubrics, Agents
 from typing import Dict, List, Tuple
 from collections import defaultdict
 
@@ -28,10 +28,10 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def create_student_type_chart(chat_profiles: Dict[str, int], filename: str):
+def create_student_type_chart(chat_agents: Dict[str, int], filename: str):
     """Create a pie chart showing distribution of student types the TA has interacted with"""
-    labels = list(chat_profiles.keys())
-    sizes = list(chat_profiles.values())
+    labels = list(chat_agents.keys())
+    sizes = list(chat_agents.values())
     colors = {
         "aggressive": "#ff6b6b",  # Red for aggressive
         "happy": "#51cf66",  # Green for happy
@@ -210,8 +210,15 @@ async def get_report(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    # Get the chats for the user
-    chats = session.exec(select(Chats).where(Chats.user_id == user_id)).all()
+    # Get the chats for the user through attempts
+    from app.models import Attempts
+    attempts = session.exec(select(Attempts).where(Attempts.user_id == user_id)).all()
+    if not attempts:
+        raise HTTPException(status_code=404, detail="No attempts found for this user")
+    
+    # Get all chats from the user's attempts
+    attempt_ids = [attempt.id for attempt in attempts]
+    chats = session.exec(select(Chats).where(Chats.attempt_id.in_(attempt_ids))).all()
     if not chats:
         raise HTTPException(status_code=404, detail="No chats found for this user")
 
@@ -224,22 +231,22 @@ async def get_report(
         # Prepare data for charts
 
         # 1. Student type distribution
-        chat_profiles = defaultdict(int)
+        chat_agents = defaultdict(int)
         for chat in chats:
-            # Get the profile name from the profile_id
-            profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
-            if profile:
-                chat_profiles[profile.name] += 1
+            # Get the agent name from the agent_id
+            agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one_or_none()
+            if agent:
+                chat_agents[agent.name] += 1
 
         # 2. Performance by student type
         performance_by_type = defaultdict(list)
         for chat in chats:
-            # Get the profile name from the profile_id
-            profile = session.exec(select(Profiles).where(Profiles.id == chat.profile_id)).one_or_none()
-            if profile:
+            # Get the agent name from the agent_id
+            agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one_or_none()
+            if agent:
                 for rubric in rubrics:
                     if rubric.chat_id == chat.id:
-                        performance_by_type[profile.name].append(rubric.score)
+                        performance_by_type[agent.name].append(rubric.score)
 
         # 3. Average scores for different categories
         avg_scores = {
@@ -262,8 +269,8 @@ async def get_report(
         time_series_data.sort(key=lambda x: x[0])  # Sort by date
 
         # Generate charts
-        profile_chart = os.path.join(temp_dir, "student_types.png")
-        create_student_type_chart(chat_profiles, profile_chart)
+        agent_chart = os.path.join(temp_dir, "student_types.png")
+        create_student_type_chart(chat_agents, agent_chart)
 
         performance_chart = os.path.join(temp_dir, "performance_by_type.png")
         create_student_type_performance(performance_by_type, performance_chart)
@@ -348,7 +355,7 @@ async def get_report(
             doc.append(
                 NoEscape(
                     r"\item \textbf{Student Types Encountered}: "
-                    + f"{', '.join(chat_profiles.keys())}"
+                    + f"{', '.join(chat_agents.keys())}"
                     + r""
                 )
             )
@@ -387,7 +394,7 @@ async def get_report(
 
             # Add pie chart
             with doc.create(Figure(position="h!")) as fig:
-                fig.add_image(profile_chart, width=NoEscape(r"0.6\textwidth"))
+                fig.add_image(agent_chart, width=NoEscape(r"0.6\textwidth"))
                 fig.add_caption("Distribution of Student Types")
 
             # Add explanation text for each student type

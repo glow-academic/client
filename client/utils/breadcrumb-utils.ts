@@ -1,10 +1,9 @@
 import { getClass } from "@/utils/queries/get-class";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";
-import { getProfile } from "@/utils/queries/get-profile";
-import { getTemplate } from "@/utils/queries/get-template";
+import { getAgent } from "@/utils/queries/get-agent";
+import { getSimulation } from "@/utils/queries/get-simulation";
 import { getChat } from "@/utils/queries/get-chat";
-import { getChatTemplate } from "./queries/get-chat-template";
 
 interface BreadcrumbItem {
   title: string;
@@ -26,22 +25,22 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       
       case 'attempt':
         const attemptData = await getAttempt(id);
-        // get template for attempt
-        const attemptTemplate = await getTemplate(attemptData?.templateId);
+        // get simulation for attempt
+        const attemptSimulation = await getSimulation(attemptData?.simulationId);
         // Attempts don't have a title, so we'll use a generic name with timestamp
-        return attemptTemplate ? `${attemptTemplate.title}` : `Attempt ${id.substring(0, 8)}...`;
+        return attemptSimulation ? `${attemptSimulation.title}` : `Attempt ${id.substring(0, 8)}...`;
       
       case 'scenario':
         const scenarioData = await getScenario(id);
         return scenarioData?.name || `Scenario ${id.substring(0, 8)}...`;
       
-      case 'profile':
-        const profileData = await getProfile(id);
-        return profileData?.name || `Profile ${id.substring(0, 8)}...`;
+      case 'agent':
+        const agentData = await getAgent(id);
+        return agentData?.name || `Agent ${id.substring(0, 8)}...`;
       
-      case 'template':
-        const templateData = await getTemplate(id);
-        return templateData?.title || `Template ${id.substring(0, 8)}...`;
+      case 'simulation':
+        const simulationData = await getSimulation(id);
+        return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
       
       case 'chat':
         const chatData = await getChat(id);
@@ -86,8 +85,8 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
           if (prevSegment === 'c') context = 'class';
           break;
         case 'chat':
-          if (prevSegment === 't') context = 'template';
-          else if (prevSegment === 'p') context = 'profile';
+          if (prevSegment === 't') context = 'simulation';
+          else if (prevSegment === 'p') context = 'agent';
           else if (prevSegment === 's') context = 'scenario';
           break;
         case 'c':
@@ -107,11 +106,12 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
         case 'chat':
           title = 'Chat';
           break;
-        case 'templates':
-          title = 'Templates';
+        case 'simulations':
+          title = 'Simulations';
           break;
         case 'profiles':
-          title = 'Profiles';
+        case 'agents':
+          title = 'Agents';
           break;
         case 'scenarios':
           title = 'Scenarios';
@@ -140,11 +140,11 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
         case 'new':
           title = 'New';
           break;
-        case 't':
-          title = 'Template';
+        case 's':
+          title = 'Simulation';
           break;
-        case 'p':
-          title = 'Profile';
+        case 'a':
+          title = 'Agent';
           break;
         case 's':
           title = 'Scenario';
@@ -183,7 +183,7 @@ const getSectionFromSegments = (segments: string[]) => {
     return 'history'; // Chat pages should be under history section
   }
   if (first === 'a') {
-    return 'templates'; // Attempt pages should be under templates section
+    return 'simulations'; // Attempt pages should be under simulations section
   }
   if (first === 'management') {
     return `manage-${second}`;
@@ -214,11 +214,12 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case 'chat':
         title = 'Chat';
         break;
-      case 'templates':
-        title = 'Templates';
+      case 'simulations':
+        title = 'Simulations';
         break;
       case 'profiles':
-        title = 'Profiles';
+      case 'agents':
+        title = 'Agents';
         break;
       case 'scenarios':
         title = 'Scenarios';

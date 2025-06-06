@@ -11,15 +11,12 @@ import { format, compareAsc, startOfDay, subDays, isAfter, isBefore, addDays } f
 
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
-import { getProfiles } from "@/utils/queries/get-profiles";
-import { getTemplates } from "@/utils/queries/get-templates";
-import { getPrerequisites } from "@/utils/queries/get-prerequisites";
+import { getSimulations } from "@/utils/queries/get-simulations";
 import { getTopics } from "@/utils/queries/get-topics";
-import { getDeadlines } from "@/utils/queries/get-deadlines";
+import { getEvents } from "@/utils/queries/get-events";
 import { getEnhancedAttempts } from "@/utils/queries/get-enhanced-attempts";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -51,7 +48,6 @@ import {
   Calendar, 
   Clock, 
   Users, 
-  BookOpen, 
   Target, 
   TrendingUp,
   AlertTriangle,
@@ -59,9 +55,7 @@ import {
   PlayCircle,
   BarChart3,
   PieChart as PieChartIcon,
-  Activity,
-  FileText,
-  ExternalLink
+  Activity
 } from "lucide-react";
 
 interface ClassDetailsContentProps {
@@ -72,7 +66,7 @@ interface ClassDetailsContentProps {
     description: string;
     year: number;
     term: string;
-    templateIds: string[];
+    simulationIds: string[];
   };
 }
 
@@ -88,19 +82,9 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
     queryFn: () => getAllChats(),
   });
 
-  const { data: profiles = [] } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
-  });
-
-  const { data: templates = [] } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
-  });
-
-  const { data: prerequisites = [] } = useQuery({
-    queryKey: ["prerequisites", classData.id],
-    queryFn: () => getPrerequisites(classData.id),
+  const { data: simulations = [] } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getSimulations(),
   });
 
   const { data: topics = [] } = useQuery({
@@ -108,9 +92,9 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
     queryFn: () => getTopics(classData.id),
   });
 
-  const { data: deadlines = [] } = useQuery({
-    queryKey: ["deadlines", classData.id],
-    queryFn: () => getDeadlines(classData.id),
+  const { data: events = [] } = useQuery({
+    queryKey: ["events", classData.id],
+    queryFn: () => getEvents(classData.id),
   });
 
   const { data: attempts = [] } = useQuery({
@@ -135,22 +119,22 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
     [attempts, classData.id]
   );
 
-  const classTemplates = useMemo(() => 
-    templates.filter(template => classData.templateIds.includes(template.id)), 
-    [templates, classData.templateIds]
+  const classSimulations = useMemo(() => 
+    simulations.filter(simulation => classData.simulationIds.includes(simulation.id)), 
+    [simulations, classData.simulationIds]
   );
 
   // Calculate course progress based on deadlines
   const courseProgress = useMemo(() => {
-    if (deadlines.length === 0) return 0;
+    if (events.length === 0) return 0;
     
     const now = new Date();
-    const completedDeadlines = deadlines.filter(deadline => 
-      isBefore(new Date(deadline.dueTime), now)
+    const completedEvents = events.filter(event => 
+      isBefore(new Date(event.time), now)
     ).length;
     
-    return Math.round((completedDeadlines / deadlines.length) * 100);
-  }, [deadlines]);
+    return Math.round((completedEvents / events.length) * 100);
+  }, [events]);
 
   // Generate performance trend data
   const performanceTrendData = useMemo(() => {
@@ -195,40 +179,40 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
       .sort((a, b) => compareAsc(new Date(a.date), new Date(b.date)));
   }, [rubrics, timeRange]);
 
-  // Template usage analytics
-  const templateUsageData = useMemo(() => {
-    const usage = classTemplates.map(template => {
-      const templateAttempts = classAttempts.filter(attempt => 
-        attempt.templateId === template.id
+  // Simulation usage analytics
+  const simulationUsageData = useMemo(() => {
+    const usage = classSimulations.map(simulation => {
+      const simulationAttempts = classAttempts.filter(attempt => 
+        attempt.simulationId === simulation.id
       ).length;
       
-      const templateChats = classChats.filter(chat => 
+      const simulationChats = classChats.filter(chat => 
         classAttempts.some(attempt => 
-          attempt.id === chat.attemptId && attempt.templateId === template.id
+          attempt.id === chat.attemptId && attempt.simulationId === simulation.id
         )
       ).length;
 
       return {
-        name: template.title,
-        attempts: templateAttempts,
-        chats: templateChats,
-        completion: templateChats > 0 ? Math.round((templateChats / templateAttempts) * 100) : 0,
+        name: simulation.title,
+        attempts: simulationAttempts,
+        chats: simulationChats,
+        completion: simulationChats > 0 ? Math.round((simulationChats / simulationAttempts) * 100) : 0,
       };
     });
 
     return usage;
-  }, [classTemplates, classAttempts, classChats]);
+  }, [classSimulations, classAttempts, classChats]);
 
   // Upcoming deadlines
   const upcomingDeadlines = useMemo(() => {
     const now = new Date();
-    const upcoming = deadlines
-      .filter(deadline => isAfter(new Date(deadline.dueTime), now))
-      .sort((a, b) => compareAsc(new Date(a.dueTime), new Date(b.dueTime)))
+    const upcoming = events
+      .filter(event => isAfter(new Date(event.time), now))
+      .sort((a, b) => compareAsc(new Date(a.time), new Date(b.time)))
       .slice(0, 5);
     
     return upcoming;
-  }, [deadlines]);
+  }, [events]);
 
   // Student engagement metrics
   const engagementData = useMemo(() => {
@@ -299,8 +283,8 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Active Templates</p>
-                <p className="text-2xl font-bold">{classTemplates.length}</p>
+                <p className="text-sm font-medium text-muted-foreground">Active Simulations</p>
+                  <p className="text-2xl font-bold">{classSimulations.length}</p>
               </div>
               <PlayCircle className="h-8 w-8 text-muted-foreground" />
             </div>
@@ -341,7 +325,7 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="progress">Progress</TabsTrigger>
-          <TabsTrigger value="templates">Templates</TabsTrigger>
+          <TabsTrigger value="simulations">Simulations</TabsTrigger>
           <TabsTrigger value="curriculum">Curriculum</TabsTrigger>
         </TabsList>
 
@@ -444,21 +428,21 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
                 <ScrollArea className="h-48">
                   <div className="space-y-3">
                     {upcomingDeadlines.length > 0 ? (
-                      upcomingDeadlines.map((deadline) => (
-                        <div key={deadline.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      upcomingDeadlines.map((event) => (
+                        <div key={event.id} className="flex items-center justify-between p-3 border rounded-lg">
                           <div>
-                            <p className="font-medium">{deadline.name}</p>
-                            <p className="text-sm text-muted-foreground">{deadline.description}</p>
+                            <p className="font-medium">{event.name}</p>
+                            <p className="text-sm text-muted-foreground">{event.description}</p>
                             <Badge variant="outline" className="mt-1">
-                              {deadline.documentType}
+                              {event.documentType}
                             </Badge>
                           </div>
                           <div className="text-right">
                             <p className="text-sm font-medium">
-                              {format(new Date(deadline.dueTime), "MMM dd")}
+                              {format(new Date(event.time), "MMM dd")}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {format(new Date(deadline.dueTime), "h:mm a")}
+                              {format(new Date(event.time), "h:mm a")}
                             </p>
                           </div>
                         </div>
@@ -487,13 +471,13 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {deadlines.map((deadline, index) => {
-                  const isCompleted = isBefore(new Date(deadline.dueTime), new Date());
-                  const isUpcoming = isAfter(new Date(deadline.dueTime), new Date()) && 
-                                   isBefore(new Date(deadline.dueTime), addDays(new Date(), 7));
+                {events.map((event, index) => {
+                  const isCompleted = isBefore(new Date(event.time), new Date());
+                  const isUpcoming = isAfter(new Date(event.time), new Date()) && 
+                                   isBefore(new Date(event.time), addDays(new Date(), 7));
                   
                   return (
-                    <div key={deadline.id} className="flex items-center gap-4 p-4 border rounded-lg">
+                    <div key={event.id} className="flex items-center gap-4 p-4 border rounded-lg">
                       <div className="flex-shrink-0">
                         {isCompleted ? (
                           <CheckCircle className="h-6 w-6 text-green-500" />
@@ -505,14 +489,14 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium">{deadline.name}</h4>
+                          <h4 className="font-medium">{event.name}</h4>
                           <Badge variant={isCompleted ? "default" : isUpcoming ? "secondary" : "outline"}>
-                            {deadline.documentType}
+                            {event.documentType}
                           </Badge>
                         </div>
-                        <p className="text-sm text-muted-foreground">{deadline.description}</p>
+                        <p className="text-sm text-muted-foreground">{event.description}</p>
                         <p className="text-xs text-muted-foreground mt-1">
-                          Due: {format(new Date(deadline.dueTime), "PPP 'at' p")}
+                          Due: {format(new Date(event.time), "PPP 'at' p")}
                         </p>
                       </div>
                     </div>
@@ -523,35 +507,35 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
           </Card>
         </TabsContent>
 
-        {/* Templates Tab */}
-        <TabsContent value="templates" className="space-y-6">
+        {/* Simulations Tab */}
+        <TabsContent value="simulations" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Template Usage Analytics
+                Simulation Usage Analytics
               </CardTitle>
-              <CardDescription>Monitor how templates are being used in this class</CardDescription>
+              <CardDescription>Monitor how simulations are being used in this class</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {templateUsageData.map((template) => (
-                  <div key={template.name} className="p-4 border rounded-lg">
+                {simulationUsageData.map((simulation) => (
+                  <div key={simulation.name} className="p-4 border rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium">{template.name}</h4>
-                      <Badge variant="outline">{template.completion}% completion</Badge>
+                      <h4 className="font-medium">{simulation.name}</h4>
+                      <Badge variant="outline">{simulation.completion}% completion</Badge>
                     </div>
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
                         <p className="text-muted-foreground">Attempts</p>
-                        <p className="font-medium">{template.attempts}</p>
+                        <p className="font-medium">{simulation.attempts}</p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Completed Chats</p>
-                        <p className="font-medium">{template.chats}</p>
+                        <p className="text-muted-foreground">Completed Simulations</p>
+                        <p className="font-medium">{simulation.chats}</p>
                       </div>
                     </div>
-                    <Progress value={template.completion} className="mt-2" />
+                    <Progress value={simulation.completion} className="mt-2" />
                   </div>
                 ))}
               </div>
@@ -562,35 +546,6 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
         {/* Curriculum Tab */}
         <TabsContent value="curriculum" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Prerequisites */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5" />
-                  Prerequisites
-                </CardTitle>
-                <CardDescription>Required knowledge and skills</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-64">
-                  <div className="space-y-3">
-                    {prerequisites.length > 0 ? (
-                      prerequisites.map((prereq) => (
-                        <div key={prereq.id} className="p-3 border rounded-lg">
-                          <h4 className="font-medium">{prereq.name}</h4>
-                          <p className="text-sm text-muted-foreground">{prereq.description}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <p className="text-center text-muted-foreground py-8">
-                        No prerequisites defined
-                      </p>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-
             {/* Topics */}
             <Card>
               <CardHeader>

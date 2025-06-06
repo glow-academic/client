@@ -13,8 +13,8 @@ export async function getChats(userId: string) {
       completedAt: chats.completedAt,
       title: chats.title,
       scenarioId: chats.scenarioId,
-      profileId: chats.profileId,
-      chatTemplateId: chats.chatTemplateId,
+      agentId: chats.agentId,
+      interactionId: chats.interactionId,
       completed: chats.completed,
       attemptId: chats.attemptId,
       // Add user and class information from attempts

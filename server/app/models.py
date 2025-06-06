@@ -9,9 +9,9 @@ from sqlmodel import Field, Relationship, SQLModel
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
-class Profiles(_Base, table=True):
+class Agents(_Base, table=True):
     __table_args__ = (
-        PrimaryKeyConstraint('id', name='profiles_pkey'),
+        PrimaryKeyConstraint('id', name='agents_pkey'),
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
@@ -22,8 +22,8 @@ class Profiles(_Base, table=True):
     prompt: str = Field(sa_column=Column('prompt', Text))
     threshold: int = Field(sa_column=Column('threshold', Integer))
 
-    chat_templates: List['ChatTemplates'] = Relationship(back_populates='profile')
-    chats: List['Chats'] = Relationship(back_populates='profile')
+    interactions: List['Interactions'] = Relationship(back_populates='agent')
+    chats: List['Chats'] = Relationship(back_populates='agent')
 
 
 class Scenarios(_Base, table=True):
@@ -36,7 +36,7 @@ class Scenarios(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
 
-    chat_templates: List['ChatTemplates'] = Relationship(back_populates='scenario')
+    interactions: List['Interactions'] = Relationship(back_populates='scenario')
     chats: List['Chats'] = Relationship(back_populates='scenario')
 
 
@@ -51,23 +51,7 @@ class Schedules(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
 
     classes: List['Classes'] = Relationship(back_populates='schedule')
-    deadlines: List['Deadlines'] = Relationship(back_populates='schedule')
-
-
-class Templates(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='templates_pkey'),
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    title: str = Field(sa_column=Column('title', Text))
-    documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    chat_template_ids: list = Field(sa_column=Column('chat_template_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
-
-    attempts: List['Attempts'] = Relationship(back_populates='template')
+    events: List['Events'] = Relationship(back_populates='schedule')
 
 
 class Users(_Base, table=True):
@@ -88,27 +72,6 @@ class Users(_Base, table=True):
     attempts: List['Attempts'] = Relationship(back_populates='user')
 
 
-class ChatTemplates(_Base, table=True):
-    __tablename__ = 'chat_templates'
-    __table_args__ = (
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='SET NULL', name='chat_templates_profile_id_fkey'),
-        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='SET NULL', name='chat_templates_scenario_id_fkey'),
-        PrimaryKeyConstraint('id', name='chat_templates_pkey')
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
-    intensity: int = Field(sa_column=Column('intensity', Integer))
-    seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
-    profile_id: Optional[UUID] = Field(default=None, sa_column=Column('profile_id', Uuid))
-    scenario_id: Optional[UUID] = Field(default=None, sa_column=Column('scenario_id', Uuid))
-
-    profile: Optional['Profiles'] = Relationship(back_populates='chat_templates')
-    scenario: Optional['Scenarios'] = Relationship(back_populates='chat_templates')
-    chats: List['Chats'] = Relationship(back_populates='chat_template')
-
-
 class Classes(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='SET NULL', name='classes_schedule_id_fkey'),
@@ -122,52 +85,50 @@ class Classes(_Base, table=True):
     year: int = Field(sa_column=Column('year', Integer))
     term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
     description: str = Field(sa_column=Column('description', Text))
-    template_ids: list = Field(sa_column=Column('template_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    syllabus_id: Optional[UUID] = Field(default=None, sa_column=Column('syllabus_id', Uuid))
     schedule_id: Optional[UUID] = Field(default=None, sa_column=Column('schedule_id', Uuid))
 
     schedule: Optional['Schedules'] = Relationship(back_populates='classes')
-    attempts: List['Attempts'] = Relationship(back_populates='class_')
     documents: List['Documents'] = Relationship(back_populates='class_')
-    prerequisites: List['Prerequisites'] = Relationship(back_populates='class_')
+    simulations: List['Simulations'] = Relationship(back_populates='class_')
     topics: List['Topics'] = Relationship(back_populates='class_')
+    attempts: List['Attempts'] = Relationship(back_populates='class_')
 
 
-class Deadlines(_Base, table=True):
+class Events(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE', name='deadlines_schedule_id_fkey'),
-        PrimaryKeyConstraint('id', name='deadlines_pkey')
+        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE', name='events_schedule_id_fkey'),
+        PrimaryKeyConstraint('id', name='events_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    document_type: str = Field(sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
-    due_time: datetime = Field(sa_column=Column('due_time', DateTime(True)))
+    time: datetime = Field(sa_column=Column('time', DateTime(True)))
     schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
+    document_type: Optional[str] = Field(default=None, sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type')))
 
-    schedule: Optional['Schedules'] = Relationship(back_populates='deadlines')
+    schedule: Optional['Schedules'] = Relationship(back_populates='events')
 
 
-class Attempts(_Base, table=True):
+class Interactions(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='attempts_class_id_fkey'),
-        ForeignKeyConstraint(['template_id'], ['templates.id'], ondelete='CASCADE', name='attempts_template_id_fkey'),
-        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='attempts_user_id_fkey'),
-        PrimaryKeyConstraint('id', name='attempts_pkey')
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='SET NULL', name='interactions_agent_id_fkey'),
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='SET NULL', name='interactions_scenario_id_fkey'),
+        PrimaryKeyConstraint('id', name='interactions_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
-    template_id: UUID = Field(sa_column=Column('template_id', Uuid))
-    user_id: Optional[UUID] = Field(default=None, sa_column=Column('user_id', Uuid))
+    crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
+    intensity: int = Field(sa_column=Column('intensity', Integer))
+    seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
+    agent_id: Optional[UUID] = Field(default=None, sa_column=Column('agent_id', Uuid))
+    scenario_id: Optional[UUID] = Field(default=None, sa_column=Column('scenario_id', Uuid))
 
-    class_: Optional['Classes'] = Relationship(back_populates='attempts')
-    template: Optional['Templates'] = Relationship(back_populates='attempts')
-    user: Optional['Users'] = Relationship(back_populates='attempts')
-    chats: List['Chats'] = Relationship(back_populates='attempt')
+    agent: Optional['Agents'] = Relationship(back_populates='interactions')
+    scenario: Optional['Scenarios'] = Relationship(back_populates='interactions')
+    chats: List['Chats'] = Relationship(back_populates='interaction')
 
 
 class Documents(_Base, table=True):
@@ -188,19 +149,23 @@ class Documents(_Base, table=True):
     class_: Optional['Classes'] = Relationship(back_populates='documents')
 
 
-class Prerequisites(_Base, table=True):
+class Simulations(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='prerequisites_class_id_fkey'),
-        PrimaryKeyConstraint('id', name='prerequisites_pkey')
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='simulations_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulations_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    title: str = Field(sa_column=Column('title', Text))
+    documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
+    interaction_ids: list = Field(sa_column=Column('interaction_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
+    time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
-    class_: Optional['Classes'] = Relationship(back_populates='prerequisites')
+    class_: Optional['Classes'] = Relationship(back_populates='simulations')
+    attempts: List['Attempts'] = Relationship(back_populates='simulation')
 
 
 class Topics(_Base, table=True):
@@ -213,16 +178,37 @@ class Topics(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
+    prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, server_default=text('false')))
     class_id: UUID = Field(sa_column=Column('class_id', Uuid))
 
     class_: Optional['Classes'] = Relationship(back_populates='topics')
 
 
+class Attempts(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='attempts_class_id_fkey'),
+        ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='attempts_simulation_id_fkey'),
+        ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='attempts_user_id_fkey'),
+        PrimaryKeyConstraint('id', name='attempts_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    simulation_id: UUID = Field(sa_column=Column('simulation_id', Uuid))
+    user_id: Optional[UUID] = Field(default=None, sa_column=Column('user_id', Uuid))
+
+    class_: Optional['Classes'] = Relationship(back_populates='attempts')
+    simulation: Optional['Simulations'] = Relationship(back_populates='attempts')
+    user: Optional['Users'] = Relationship(back_populates='attempts')
+    chats: List['Chats'] = Relationship(back_populates='attempt')
+
+
 class Chats(_Base, table=True):
     __table_args__ = (
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='chats_agent_id_fkey'),
         ForeignKeyConstraint(['attempt_id'], ['attempts.id'], ondelete='CASCADE', name='chats_attempt_id_fkey'),
-        ForeignKeyConstraint(['chat_template_id'], ['chat_templates.id'], ondelete='CASCADE', name='chats_chat_template_id_fkey'),
-        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='chats_profile_id_fkey'),
+        ForeignKeyConstraint(['interaction_id'], ['interactions.id'], ondelete='CASCADE', name='chats_interaction_id_fkey'),
         ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='chats_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='chats_pkey')
     )
@@ -231,15 +217,15 @@ class Chats(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
-    profile_id: UUID = Field(sa_column=Column('profile_id', Uuid))
-    chat_template_id: UUID = Field(sa_column=Column('chat_template_id', Uuid))
+    agent_id: UUID = Field(sa_column=Column('agent_id', Uuid))
+    interaction_id: UUID = Field(sa_column=Column('interaction_id', Uuid))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     attempt_id: UUID = Field(sa_column=Column('attempt_id', Uuid))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
+    agent: Optional['Agents'] = Relationship(back_populates='chats')
     attempt: Optional['Attempts'] = Relationship(back_populates='chats')
-    chat_template: Optional['ChatTemplates'] = Relationship(back_populates='chats')
-    profile: Optional['Profiles'] = Relationship(back_populates='chats')
+    interaction: Optional['Interactions'] = Relationship(back_populates='chats')
     scenario: Optional['Scenarios'] = Relationship(back_populates='chats')
     messages: List['Messages'] = Relationship(back_populates='chat')
     rubrics: List['Rubrics'] = Relationship(back_populates='chat')

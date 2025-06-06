@@ -5,7 +5,7 @@ import { format, compareAsc, startOfDay, subDays } from "date-fns";
 
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAgents } from "@/utils/queries/get-agents";
 import { getClasses } from "@/utils/queries/get-classes";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import {
@@ -32,9 +32,9 @@ export default function ClassesGeneralPage() {
     queryFn: () => getAllChats(),
   });
 
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
   const { data: rubrics } = useQuery({
@@ -88,7 +88,7 @@ export default function ClassesGeneralPage() {
 
   // Generate aggregated emotion data
   const emotionData = useMemo(() => {
-    if (!chats || !profiles) return [];
+    if (!chats || !agents) return [];
 
     // For demo purposes, generate some sample emotion data
     // In a real implementation, you'd analyze chat sentiment or profile usage
@@ -101,7 +101,7 @@ export default function ClassesGeneralPage() {
       { emotion: "Confused", value: confused, fill: "#f59e0b" },
       { emotion: "Angry", value: angry, fill: "#ef4444" },
     ];
-  }, [chats, profiles]);
+  }, [chats, agents]);
 
   return (
     <div className="space-y-6">

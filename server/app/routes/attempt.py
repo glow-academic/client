@@ -1,6 +1,6 @@
 # app/routes/attempt.py
 from fastapi import APIRouter, Form, HTTPException, Depends
-from app.models import Attempts, Templates, Chats, Profiles, ChatTemplates, Classes, Scenarios
+from app.models import Attempts, Simulations, Chats, Agents, Interactions, Classes, Scenarios
 from app.db import get_session
 from sqlmodel import Session, select
 import logging
@@ -21,84 +21,84 @@ router = APIRouter()
 
 @router.post("/start")
 async def start_attempt(
-    template_id: str = Form(...),
+    simulation_id: str = Form(...),
     user_id: Optional[str] = Form(None), 
     class_id: str = Form(...),
     test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
-    This endpoint creates a new attempt and associated chats based on a template.
+    This endpoint creates a new attempt and associated chats based on a simulation.
     For guest mode, user_id can be None or empty string.
-    Handles both permanent individual practice templates and dynamic quiz templates.
+    Handles both permanent individual practice simulations and dynamic quiz simulations.
     """
     try:
-        # Get the template
-        template = session.exec(select(Templates).where(Templates.id == template_id)).one_or_none()
-        if not template:
-            raise HTTPException(status_code=404, detail="Template not found")
+        # Get the simulation
+        simulation = session.exec(select(Simulations).where(Simulations.id == simulation_id)).one_or_none()
+        if not simulation:
+            raise HTTPException(status_code=404, detail="Simulation not found")
         
         # Create the attempt
         new_attempt = Attempts(
             user_id=user_id,  # Will be None for guest mode
             class_id=class_id,
-            template_id=template_id
+            simulation_id=simulation_id
         )
         session.add(new_attempt)
         session.commit()
         session.refresh(new_attempt)
         
-        logger.info(f"Created attempt {new_attempt.id} for template {template_id}")
+        logger.info(f"Created attempt {new_attempt.id} for simulation {simulation_id}")
         
-        # Get chat templates for this template and filter out invalid ones
-        chat_template_ids = template.chat_template_ids or []
+        # Get interaction IDs for this simulation and filter out invalid ones
+        interaction_ids = simulation.interaction_ids or []
         
-        if not chat_template_ids:
-            raise HTTPException(status_code=400, detail="Template has no valid chat templates configured")
+        if not interaction_ids:
+            raise HTTPException(status_code=400, detail="Simulation has no valid interactions configured")
         
-        # Create the first chat template
-        chat_template_id = chat_template_ids[0]
-        chat_template = session.exec(
-            select(ChatTemplates).where(ChatTemplates.id == chat_template_id)
+        # Create the first interaction
+        interaction_id = interaction_ids[0]
+        interaction = session.exec(
+            select(Interactions).where(Interactions.id == interaction_id)
         ).one_or_none()
         
-        if not chat_template:
-            raise HTTPException(status_code=400, detail=f"Chat template {chat_template_id} not found")
+        if not interaction:
+            raise HTTPException(status_code=400, detail=f"Interaction {interaction_id} not found")
         
         # Handle scenario creation or selection
-        if not chat_template.scenario_id:
+        if not interaction.scenario_id:
             scenario_id, chat_title = await run_scenario_agent(
-                profile_id=chat_template.profile_id,
+                agent_id=interaction.agent_id,
                 user_id=user_id,  # Pass actual_user_id (can be None for guest)
                 class_id=class_id,
                 test_data=test_data,
                 session=session
             )
         else:
-            scenario_id = chat_template.scenario_id
-            # Use profile-specific default titles for permanent templates
-            profile = session.exec(select(Profiles).where(Profiles.id == chat_template.profile_id)).one_or_none()
-            if profile:
-                chat_title = f"{profile.name} Student Session"
+            scenario_id = interaction.scenario_id
+            # Use agent-specific default titles for permanent simulations
+            agent = session.exec(select(Agents).where(Agents.id == interaction.agent_id)).one_or_none()
+            if agent:
+                chat_title = f"{agent.name} Student Session"
             else:
                 chat_title = "Practice Session"
 
-        # Handle profile selection
-        if not chat_template.profile_id:
-            # get all profiles
-            profiles = session.exec(select(Profiles)).all()
-            if not profiles:
-                raise HTTPException(status_code=400, detail="No profiles found")
-            profile_id = random.choice(profiles).id
+        # Handle agent selection
+        if not interaction.agent_id:
+            # get all agents
+            agents = session.exec(select(Agents)).all()
+            if not agents:
+                raise HTTPException(status_code=400, detail="No agents found")
+            agent_id = random.choice(agents).id
         else:
-            profile_id = chat_template.profile_id
+            agent_id = interaction.agent_id
 
         # Create the chat with the scenario and link it to this attempt
         chat = Chats(
             title=chat_title,
             scenario_id=scenario_id,
-            profile_id=profile_id,
-            chat_template_id=chat_template_id,
+            agent_id=agent_id,
+            interaction_id=interaction_id,
             attempt_id=new_attempt.id,
             completed=False
         )
@@ -191,59 +191,64 @@ async def continue_attempt(
         if not attempt:
             raise HTTPException(status_code=404, detail="Attempt not found")
         
-        # get the template  
-        template = session.exec(select(Templates).where(Templates.id == attempt.template_id)).one_or_none()
-        if not template:
-            raise HTTPException(status_code=404, detail="Template not found")
+        # get the simulation  
+        simulation = session.exec(select(Simulations).where(Simulations.id == attempt.simulation_id)).one_or_none()
+        if not simulation:
+            raise HTTPException(status_code=404, detail="Simulation not found")
         
-        # get all the chat templates for this template and filter out invalid ones
-        chat_template_ids = template.chat_template_ids or []
+        # get all the interactions for this simulation and filter out invalid ones
+        interaction_ids = simulation.interaction_ids or []
         
-        # Find the current chat template index and get the next one
-        current_chat_template_id = chat.chat_template_id
-        if current_chat_template_id not in chat_template_ids:
-            raise HTTPException(status_code=400, detail="Current chat template not found in template")
+        # Find the current interaction index and get the next one
+        current_interaction_id = chat.interaction_id
+        if current_interaction_id not in interaction_ids:
+            raise HTTPException(status_code=400, detail="Current interaction not found in simulation")
         
-        current_index = chat_template_ids.index(current_chat_template_id)
+        current_index = interaction_ids.index(current_interaction_id)
         next_index = current_index + 1
         
-        # do not continue if we do not have any chat templates left
+        # do not continue if we do not have any interactions left
         next_chat_id = chat_id
-        if next_index < len(chat_template_ids):
-            next_chat_template_id = chat_template_ids[next_index]
-            next_chat_template = session.exec(select(ChatTemplates).where(ChatTemplates.id == next_chat_template_id)).one_or_none()
-            if not next_chat_template:
-                raise HTTPException(status_code=404, detail="Next chat template not found")
+        if next_index < len(interaction_ids):
+            next_interaction_id = interaction_ids[next_index]
+            next_interaction = session.exec(select(Interactions).where(Interactions.id == next_interaction_id)).one_or_none()
+            if not next_interaction:
+                raise HTTPException(status_code=404, detail="Next interaction not found")
             
             # if no scenario_id, create a new one
-            if not next_chat_template.scenario_id:
+            if not next_interaction.scenario_id:
                 scenario_id, chat_title = await run_scenario_agent(
-                    profile_id=next_chat_template.profile_id,
+                    agent_id=next_interaction.agent_id,
                     user_id=attempt.user_id, 
                     class_id=attempt.class_id,
                     test_data=test_data,
                     session=session
                 )
             else:
-                scenario_id = next_chat_template.scenario_id
-                chat_title = next_chat_template.title
+                scenario_id = next_interaction.scenario_id
+                # Use agent name for title if available
+                agent = session.exec(select(Agents).where(Agents.id == next_interaction.agent_id)).one_or_none()
+                if agent:
+                    chat_title = f"{agent.name} Student Session"
+                else:
+                    chat_title = "Practice Session"
 
-            # if no profile_id, select a random profile
-            if not next_chat_template.profile_id:
-                # get all profiles
-                profiles = session.exec(select(Profiles)).all()
-                if not profiles:
-                    raise HTTPException(status_code=400, detail="No profiles found for class")
-                profile_id = random.choice(profiles).id
+            # if no agent_id, select a random agent
+            if not next_interaction.agent_id:
+                # get all agents
+                agents = session.exec(select(Agents)).all()
+                if not agents:
+                    raise HTTPException(status_code=400, detail="No agents found for class")
+                agent_id = random.choice(agents).id
             else:
-                profile_id = next_chat_template.profile_id
+                agent_id = next_interaction.agent_id
 
             # Create the chat with the scenario and link it to this attempt
             next_chat = Chats(
                 title=chat_title,
                 scenario_id=scenario_id,
-                profile_id=profile_id,
-                chat_template_id=next_chat_template_id,  # Add the missing chat_template_id
+                agent_id=agent_id,
+                interaction_id=next_interaction_id,  # Add the missing interaction_id
                 attempt_id=attempt_id,
                 completed=False
             )

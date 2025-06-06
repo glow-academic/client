@@ -2,7 +2,6 @@
 import React, { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,9 +19,7 @@ import {
   AlertCircle,
   Archive,
   Search,
-  BookOpen,
-  Users,
-  Calendar
+  BookOpen
 } from "lucide-react";
 
 import { getClass } from "@/utils/queries/get-class";

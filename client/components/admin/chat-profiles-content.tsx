@@ -9,7 +9,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, Edit } from "lucide-react";
 
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAgents } from "@/utils/queries/get-agents";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -22,7 +22,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { profiles as Profiles } from "@/drizzle/schema";
+import { agents as Agents } from "@/drizzle/schema";
 
 export function ChatProfilesContent() {
   const [showCreateProfile, setShowCreateProfile] = useState(false);
@@ -33,9 +33,9 @@ export function ChatProfilesContent() {
     threshold: 50 
   });
 
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
   const handleCreateProfile = async () => {
@@ -59,17 +59,17 @@ export function ChatProfilesContent() {
       </div>
 
       <div className="grid gap-4">
-        {profiles?.map((profile: typeof Profiles.$inferSelect) => (
-          <Card key={profile.id} className="hover:shadow-md transition-shadow">
+        {agents?.map((agent: typeof Agents.$inferSelect) => (
+          <Card key={agent.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle className="text-lg">{profile.name}</CardTitle>
-                  <CardDescription>{profile.subtitle}</CardDescription>
-                  <p className="text-sm text-muted-foreground">{profile.description}</p>
+                  <CardTitle className="text-lg">{agent.name}</CardTitle>
+                  <CardDescription>{agent.subtitle}</CardDescription>
+                  <p className="text-sm text-muted-foreground">{agent.description}</p>
                 </div>
                 <div className="flex gap-2">
-                  <Badge variant="outline">Threshold: {profile.threshold}%</Badge>
+                  <Badge variant="outline">Threshold: {agent.threshold}%</Badge>
                   <Button variant="outline" size="sm">
                     <Edit className="h-4 w-4" />
                   </Button>
@@ -84,24 +84,24 @@ export function ChatProfilesContent() {
       <Dialog open={showCreateProfile} onOpenChange={setShowCreateProfile}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create New Profile</DialogTitle>
+            <DialogTitle>Create New Agent</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="profileName">Profile Name</Label>
+              <Label htmlFor="agentName">Agent Name</Label>
               <Input
-                id="profileName"
+                id="agentName"
                 value={newProfile.name}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                   setNewProfile(prev => ({ ...prev, name: e.target.value }))
                 }
-                placeholder="e.g., Enthusiastic"
+                placeholder="e.g., Enthusiastic Student Agent"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profileSubtitle">Subtitle</Label>
+              <Label htmlFor="agentSubtitle">Subtitle</Label>
               <Input
-                id="profileSubtitle"
+                id="agentSubtitle"
                 value={newProfile.subtitle}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => 
                   setNewProfile(prev => ({ ...prev, subtitle: e.target.value }))
@@ -110,9 +110,9 @@ export function ChatProfilesContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profileDescription">Description</Label>
+              <Label htmlFor="agentDescription">Description</Label>
               <Textarea
-                id="profileDescription"
+                id="agentDescription"
                 value={newProfile.description}
                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => 
                   setNewProfile(prev => ({ ...prev, description: e.target.value }))
@@ -121,9 +121,9 @@ export function ChatProfilesContent() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="profileThreshold">Threshold (%)</Label>
+              <Label htmlFor="agentThreshold">Threshold (%)</Label>
               <Input
-                id="profileThreshold"
+                id="agentThreshold"
                 type="number"
                 min="0"
                 max="100"
@@ -138,7 +138,7 @@ export function ChatProfilesContent() {
                 Cancel
               </Button>
               <Button onClick={handleCreateProfile}>
-                Create Profile
+                Create Agent
               </Button>
             </div>
           </div>

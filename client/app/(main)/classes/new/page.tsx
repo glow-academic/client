@@ -14,7 +14,6 @@ import {
   Archive,
   ArrowRight,
   CheckCircle,
-  FileText,
   Loader2
 } from "lucide-react";
 
@@ -57,8 +56,7 @@ export default function NewClassPage() {
         `TEMP${Date.now()}`,
         new Date().getFullYear(),
         'fall',
-        'Temporary class for ZIP processing',
-        []
+        'Temporary class for ZIP processing'
       );
 
       if (!tempClassResult.success || !tempClassResult.class) {

@@ -105,7 +105,7 @@ Cypress.Commands.add('waitForServerAction', () => {
 })
 
 // Chat helpers - Robust for real data scenarios
-Cypress.Commands.add('startChat', (templateTitle = 'Happy Chat Template') => {
+Cypress.Commands.add('startChat', (simulationTitle = 'Happy Chat Simulation') => {
   // Navigate to chats page and start a chat
   cy.navigateToPage('/dashboard/chats')
   
@@ -119,7 +119,7 @@ Cypress.Commands.add('startChat', (templateTitle = 'Happy Chat Template') => {
       cy.wait('@startAttempt', { timeout: 15000 })
       cy.url().should('include', '/a/')
     } else {
-      throw new Error('No template cards found - database may need setup')
+      throw new Error('No simulation cards found - database may need setup')
     }
   })
 })

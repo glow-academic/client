@@ -4,9 +4,9 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.setupApiMocks()
     
     // Mock all management endpoints
-    cy.intercept('POST', '**/profiles', { statusCode: 200, body: { id: 'new-profile-id' } }).as('createProfile')
+    cy.intercept('POST', '**/agents', { statusCode: 200, body: { id: 'new-agent-id' } }).as('createAgent')
     cy.intercept('POST', '**/scenarios', { statusCode: 200, body: { id: 'new-scenario-id' } }).as('createScenario')
-    cy.intercept('POST', '**/templates', { statusCode: 200, body: { id: 'new-template-id' } }).as('createTemplate')
+    cy.intercept('POST', '**/simulations', { statusCode: 200, body: { id: 'new-simulation-id' } }).as('createSimulation')
     cy.intercept('POST', '**/users', { statusCode: 200, body: { id: 'new-user-id' } }).as('createUser')
     cy.intercept('POST', '**/classes', { statusCode: 200, body: { id: 'new-class-id' } }).as('createClass')
     cy.intercept('POST', '**/upload', { statusCode: 200, body: { url: 'uploaded-file-url' } }).as('uploadDocument')
@@ -21,12 +21,12 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.navigateToPage('/dashboard/analytics')
     cy.get('main').should('be.visible')
     
-    // 3. Create a new profile
-    cy.navigateToPage('/(main)/chat/profiles/new')
-    cy.get('[data-testid="profile-name"]').type('Test Profile')
-    cy.get('[data-testid="profile-description"]').type('Test Description')
-    cy.get('[data-testid="save-profile"]').click()
-    cy.wait('@createProfile')
+    // 3. Create a new agent
+    cy.navigateToPage('/(main)/chat/agents/new')
+    cy.get('[data-testid="agent-name"]').type('Test Agent')
+    cy.get('[data-testid="agent-description"]').type('Test Description')
+    cy.get('[data-testid="save-agent"]').click()
+    cy.wait('@createAgent')
     
     // 4. Create a new scenario
     cy.navigateToPage('/(main)/chat/scenarios/new')
@@ -35,12 +35,12 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.get('[data-testid="save-scenario"]').click()
     cy.wait('@createScenario')
     
-    // 5. Create a new template
-    cy.navigateToPage('/(main)/chat/templates/new')
-    cy.get('[data-testid="template-name"]').type('Test Template')
-    cy.get('[data-testid="template-content"]').type('Template content here')
-    cy.get('[data-testid="save-template"]').click()
-    cy.wait('@createTemplate')
+    // 5. Create a new simulation
+    cy.navigateToPage('/(main)/chat/simulations/new')
+    cy.get('[data-testid="simulation-name"]').type('Test Simulation')
+    cy.get('[data-testid="simulation-content"]').type('Simulation content here')
+    cy.get('[data-testid="save-simulation"]').click()
+    cy.wait('@createSimulation')
     
     // 6. Add new instructor
     cy.navigateToPage('/(main)/management/instructor/new')
@@ -57,7 +57,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.wait('@createClass')
     
     // 8. Test document upload
-    cy.navigateToPage('/(main)/chat/templates/new')
+    cy.navigateToPage('/(main)/chat/simulations/new')
     cy.get('[data-testid="file-upload"]').selectFile('cypress/fixtures/test-document.pdf', { force: true })
     cy.wait('@uploadDocument')
     

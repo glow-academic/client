@@ -44,7 +44,7 @@ describe('Core Chat Functionality', () => {
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000) // Wait for data to load
 
-      // Wait for templates to load and start a chat
+      // Wait for simulations to load and start a chat
       cy.get('[class*="card"]', { timeout: 10000 }).should('exist')
       cy.get('[class*="card"]').should('have.length.greaterThan', 0)
       
@@ -87,13 +87,13 @@ describe('Core Chat Functionality', () => {
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
-      // Wait for templates to load and start a chat
+      // Wait for simulations to load and start a chat
       cy.get('[class*="card"]', { timeout: 10000 }).should('exist')
       cy.get('[class*="card"]').should('have.length.greaterThan', 0)
       
       cy.log('✅ Starting multi-chat attempt')
       
-      // Start with any available template
+      // Start with any available simulation
       cy.get('[class*="card"]').first().click()
       cy.wait('@startAttempt', { timeout: 30000 })
       cy.url().should('include', '/a/')
@@ -148,7 +148,7 @@ describe('Core Chat Functionality', () => {
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
-      // Wait for templates to load
+      // Wait for simulations to load
       cy.get('[class*="card"]', { timeout: 10000 }).should('exist')
       cy.get('[class*="card"]').first().click()
       cy.wait('@startAttempt', { timeout: 30000 })
@@ -179,7 +179,7 @@ describe('Core Chat Functionality', () => {
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
-      // Wait for templates to load
+      // Wait for simulations to load
       cy.get('[class*="card"]', { timeout: 10000 }).should('exist')
       cy.log('✅ Guest user starting chat')
       
@@ -216,7 +216,7 @@ describe('Core Chat Functionality', () => {
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
-      // Wait for templates to load
+      // Wait for simulations to load
       cy.get('[class*="card"]', { timeout: 10000 }).should('exist')
       cy.get('[class*="card"]').first().click()
       cy.wait('@startAttempt', { timeout: 30000 })

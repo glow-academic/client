@@ -15,15 +15,15 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton";
 import { getClasses } from "@/utils/queries/get-classes";
 import { getUser } from "@/utils/queries/get-user";
-import { getProfileConfig } from "@/utils/profiles";
-import { getTemplates } from "@/utils/queries/get-templates";
-import { getChatTemplates } from "@/utils/queries/get-chat-templates";
-import { getProfiles } from "@/utils/queries/get-profiles";
+import { getAgentConfig } from "@/utils/agents";
+import { getSimulations } from "@/utils/queries/get-simulations";
+import { getInteractions } from "@/utils/queries/get-interactions";
+import { getAgents } from "@/utils/queries/get-agents";
 import { useRole } from "@/components/role-context";
 
 export default function DashboardHomePage() {
   const router = useRouter();
-  const [loadingTemplate, setLoadingTemplate] = useState<string | null>(null);
+  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(null);
   
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
@@ -33,36 +33,36 @@ export default function DashboardHomePage() {
     queryFn: () => getUser(),
   });
 
-  // Fetch classes and templates
+  // Fetch classes and simulations
   const { data: classes } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getClasses(),
   });
   
-  const { data: templates, isLoading: templatesLoading } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
+  const { data: simulations, isLoading: simulationsLoading } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getSimulations(),
   });
 
-  const { data: chatTemplates } = useQuery({
-    queryKey: ["chatTemplates"],
-    queryFn: () => getChatTemplates(),
+  const { data: interactions } = useQuery({
+    queryKey: ["interactions"],
+    queryFn: () => getInteractions(),
   });
 
-  const { data: profiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getProfiles(),
+  const { data: agents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAgents(),
   });
 
-  const handleStartTemplate = async (templateId: string) => {
+  const handleStartSimulation = async (simulationId: string) => {
     try {
       if (!classes) {
         toast.error("No classes found. Please contact an administrator.");
         return;
       }
 
-      setLoadingTemplate(templateId);
-      toast.loading("Starting template...");
+      setLoadingSimulation(simulationId);
+      toast.loading("Starting simulation...");
 
       // For guests, use all available classes; for users, use their assigned classes or all if none assigned
       const availableClasses = effectiveRole === 'guest'
@@ -74,7 +74,7 @@ export default function DashboardHomePage() {
         : classes[Math.floor(Math.random() * classes.length)].id;
 
       const formData = new FormData();
-      formData.append("template_id", templateId);
+      formData.append("simulation_id", simulationId);
       
       // Handle user_id for guest mode
       if (effectiveRole === 'guest' || !user) {
@@ -101,46 +101,46 @@ export default function DashboardHomePage() {
       if (response.ok) {
         const data = await response.json();
         toast.dismiss();
-        toast.success("Template started");
+        toast.success("Simulation started");
         router.push(`/a/${data.attempt_id}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail || response.statusText || "Failed to start template");
+        throw new Error(errorData.detail || response.statusText || "Failed to start simulation");
       }
     } catch (error) {
-      console.error("Error starting template:", error);
+      console.error("Error starting simulation:", error);
       toast.dismiss();
-      toast.error("Failed to start template. Please try again.");
+      toast.error("Failed to start simulation. Please try again.");
     } finally {
-      setLoadingTemplate(null);
+      setLoadingSimulation(null);
     }
   };
 
-  // Helper function to get chat template details with profile info
-  const getChatTemplateWithProfile = (chatTemplateId: string) => {
-    const chatTemplate = chatTemplates?.find(ct => ct.id === chatTemplateId);
-    if (!chatTemplate) return null;
+  // Helper function to get interaction details with agent info
+  const getInteractionWithAgent = (interactionId: string) => {
+    const interaction = interactions?.find((int: any) => int.id === interactionId);
+    if (!interaction) return null;
     
-    const profile = profiles?.find(p => p.id === chatTemplate.profileId);
+    const agent = agents?.find((a: any) => a.id === interaction.agentId);
     return {
-      ...chatTemplate,
-      profile
+      ...interaction,
+      agent
     };
   };
 
-  // Separate templates into solo and multi based on chat template count
-  const soloTemplates = templates?.filter(template => {
-    const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
-    return validChatTemplateIds.length === 1;
+  // Separate simulations into solo and multi based on interaction count
+  const soloSimulations = simulations?.filter((simulation: any) => {
+    const validInteractionIds = simulation.interactionIds?.filter((id: string) => id !== "RAY") || [];
+    return validInteractionIds.length === 1;
   }) || [];
 
-  const multiTemplates = templates?.filter(template => {
-    const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
-    return validChatTemplateIds.length > 1;
+  const multiSimulations = simulations?.filter((simulation: any) => {
+    const validInteractionIds = simulation.interactionIds?.filter((id: string) => id !== "RAY") || [];
+    return validInteractionIds.length > 1;
   }) || [];
 
   // Loading state
-  if (templatesLoading) {
+  if (simulationsLoading) {
     return (
       <div className="space-y-8">
         <div className="flex items-center justify-between space-y-2">
@@ -150,7 +150,7 @@ export default function DashboardHomePage() {
           </div>
         </div>
 
-        {/* Skeleton for Template Cards */}
+        {/* Skeleton for Simulation Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
             <Card key={i} className="overflow-hidden bg-white dark:bg-gray-900 border-0 shadow-lg">
@@ -185,26 +185,25 @@ export default function DashboardHomePage() {
   }
 
   if (effectiveRole === 'guest') {
-    // Guest view - show all templates
+    // Guest view - show all simulations
     return (
       <div className="space-y-8">
-        {/* Solo Chat Templates */}
-        {soloTemplates.length > 0 && (
+        {/* Solo Chat Simulations */}
+        {soloSimulations.length > 0 && (
           <div>
             <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Solo Chat</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {soloTemplates.map(template => {
-                const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
-                const chatTemplateWithProfile = getChatTemplateWithProfile(validChatTemplateIds[0]);
-                const profileName = chatTemplateWithProfile?.profile?.name || 'general';
-                const profileConfig = getProfileConfig(profileName);
-                const IconComponent = profileConfig.icon;
+              {soloSimulations.map(simulation => {
+                const validInteractionIds = simulation.interactionIds?.filter(id => id !== "RAY") || [];
+                const agent = agents?.find((a: any) => a.id === validInteractionIds[0]);
+                const agentConfig = getAgentConfig(agent?.name || 'general');
+                const IconComponent = agentConfig.icon;
 
                 return (
                   <Card
-                    key={template.id}
-                    className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
-                    onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
+                    key={simulation.id}
+                    className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingSimulation ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
+                    onClick={() => !loadingSimulation && handleStartSimulation(simulation.id)}
                   >
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-5">
@@ -217,7 +216,7 @@ export default function DashboardHomePage() {
                     
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
-                        <div className={`p-3 rounded-xl bg-gradient-to-br ${profileConfig.colors.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <div className={`p-3 rounded-xl bg-gradient-to-br ${agentConfig.colors.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                           <IconComponent className="h-6 w-6 text-white" />
                         </div>
                         <div className="text-right">
@@ -230,17 +229,17 @@ export default function DashboardHomePage() {
                     <CardContent className="space-y-4">
                       <div>
                         <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
-                          {template.title}
+                          {simulation.title}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                          {profileConfig.description}
+                          {agent?.description}
                         </p>
                       </div>
                       
                       <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center">
                           <Timer className="h-3 w-3 mr-1" />
-                          <span className="text-sm">{template.timeLimit ? `${template.timeLimit}` : '∞'}</span>
+                          <span className="text-sm">{simulation.timeLimit ? `${simulation.timeLimit}` : '∞'}</span>
                           <span className="ml-1">min</span>
                         </div>
                         <div className="flex items-center">
@@ -251,8 +250,8 @@ export default function DashboardHomePage() {
                     </CardContent>
                     
                     <CardFooter className="pt-0">
-                      <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${profileConfig.colors.gradient} text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingTemplate === template.id ? 'animate-pulse' : ''}`}>
-                        {loadingTemplate === template.id ? 'Starting...' : 'Start Chat'}
+                      <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${agentConfig.colors.gradient} text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingSimulation === simulation.id ? 'animate-pulse' : ''}`}>
+                        {loadingSimulation === simulation.id ? 'Starting...' : 'Start Chat'}
                       </div>
                     </CardFooter>
                   </Card>
@@ -262,19 +261,19 @@ export default function DashboardHomePage() {
           </div>
         )}
 
-        {/* Multi Chat Templates */}
-        {multiTemplates.length > 0 && (
-          <div className={soloTemplates.length > 0 ? "border-t pt-8" : ""}>
+        {/* Multi Chat Simulations */}
+        {multiSimulations.length > 0 && (
+          <div className={soloSimulations.length > 0 ? "border-t pt-8" : ""}>
             <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Multi Chats</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {multiTemplates.map(template => {
-                const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
+              {multiSimulations.map(simulation => {
+                const validInteractionIds = simulation.interactionIds?.filter(id => id !== "RAY") || [];
                 
                 return (
                   <Card
-                    key={template.id}
-                    className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
-                    onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
+                    key={simulation.id}
+                    className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingSimulation ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
+                    onClick={() => !loadingSimulation && handleStartSimulation(simulation.id)}
                   >
                     {/* Background Pattern */}
                     <div className="absolute inset-0 opacity-5">
@@ -300,28 +299,28 @@ export default function DashboardHomePage() {
                     <CardContent className="space-y-4">
                       <div>
                         <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors">
-                          {template.title}
+                          {simulation.title}
                         </h3>
                         <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                          Interactive template with {validChatTemplateIds.length} chat configuration{validChatTemplateIds.length !== 1 ? 's' : ''}
+                          Interactive simulation with {validInteractionIds.length} interaction{validInteractionIds.length !== 1 ? 's' : ''}
                         </p>
                       </div>
                       
                       <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
                         <div className="flex items-center">
                           <Timer className="h-3 w-3 mr-1" />
-                          <span>{template.timeLimit ? `${template.timeLimit}` : '∞'} min</span>
+                          <span>{simulation.timeLimit ? `${simulation.timeLimit}` : '∞'} min</span>
                         </div>
                         <div className="flex items-center">
                           <Users className="h-3 w-3 mr-1" />
-                          <span>{validChatTemplateIds.length} session{validChatTemplateIds.length !== 1 ? 's' : ''}</span>
+                          <span>{validInteractionIds.length} session{validInteractionIds.length !== 1 ? 's' : ''}</span>
                         </div>
                       </div>
                     </CardContent>
                     
                     <CardFooter className="pt-0">
-                      <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingTemplate === template.id ? 'animate-pulse' : ''}`}>
-                        {loadingTemplate === template.id ? 'Starting...' : 'Start Chats'}
+                      <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingSimulation === simulation.id ? 'animate-pulse' : ''}`}>
+                        {loadingSimulation === simulation.id ? 'Starting...' : 'Start Chats'}
                       </div>
                     </CardFooter>
                   </Card>
@@ -331,38 +330,37 @@ export default function DashboardHomePage() {
           </div>
         )}
 
-        {/* No templates message */}
-        {soloTemplates.length === 0 && multiTemplates.length === 0 && (
+        {/* No simulations message */}
+        {soloSimulations.length === 0 && multiSimulations.length === 0 && (
           <div className="text-center py-12">
-            <h3 className="text-lg font-semibold mb-2">No templates available</h3>
-            <p className="text-muted-foreground">Contact an administrator to add templates.</p>
+            <h3 className="text-lg font-semibold mb-2">No simulations available</h3>
+            <p className="text-muted-foreground">Contact an administrator to add simulations.</p>
           </div>
         )}
       </div>
     );
   }
 
-  // Regular user view - show all templates
+  // Regular user view - show all simulations
   return (
     <div className="space-y-8">
-      {/* Solo Chat Templates */}
-      {soloTemplates.length > 0 && (
+      {/* Solo Chat Simulations */}
+      {soloSimulations.length > 0 && (
         <div>
           <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Solo Chat</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {soloTemplates.map(template => {
-              const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
-              const chatTemplateWithProfile = getChatTemplateWithProfile(validChatTemplateIds[0]);
-              const profileName = chatTemplateWithProfile?.profile?.name || 'general';
-              const profileConfig = getProfileConfig(profileName);
-              const IconComponent = profileConfig.icon;
+            {soloSimulations.map(simulation => {
+              const validInteractionIds = simulation.interactionIds?.filter(id => id !== "RAY") || [];
+              const agent = agents?.find((a: any) => a.id === validInteractionIds[0]);
+              const agentConfig = getAgentConfig(agent?.name || 'general');
+              const IconComponent = agentConfig.icon;
 
               return (
                 <Card
-                  key={template.id}
-                  data-testid="permanent-template-card"
-                  className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
-                  onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
+                  key={simulation.id}
+                  data-testid="permanent-simulation-card"
+                  className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingSimulation ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
+                  onClick={() => !loadingSimulation && handleStartSimulation(simulation.id)}
                 >
                   {/* Background Pattern */}
                   <div className="absolute inset-0 opacity-5">
@@ -375,11 +373,11 @@ export default function DashboardHomePage() {
                   
                   <CardHeader className="pb-4">
                     <div className="flex items-start justify-between">
-                      <div className={`p-3 rounded-xl bg-gradient-to-br ${profileConfig.colors.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <div className={`p-3 rounded-xl bg-gradient-to-br ${agentConfig.colors.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
                         <IconComponent className="h-6 w-6 text-white" />
                       </div>
                       <div className="text-right">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400" data-testid="template-type">Solo</div>
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400" data-testid="simulation-type">Solo</div>
                         <div className="text-xs text-gray-400">Chat</div>
                       </div>
                     </div>
@@ -387,18 +385,18 @@ export default function DashboardHomePage() {
                   
                   <CardContent className="space-y-4">
                     <div>
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors" data-testid="template-title">
-                        {template.title}
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors" data-testid="simulation-title">
+                        {simulation.title}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                        {profileConfig.description}
+                        {agent?.description}
                       </p>
                     </div>
                     
                     <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center" data-testid="template-duration">
+                      <div className="flex items-center" data-testid="simulation-duration">
                         <Timer className="h-3 w-3 mr-1" />
-                        <span className="text-sm">{template.timeLimit ? `${template.timeLimit}` : '∞'}</span>
+                        <span className="text-sm">{simulation.timeLimit ? `${simulation.timeLimit}` : '∞'}</span>
                         <span className="ml-1">min</span>
                       </div>
                       <div className="flex items-center">
@@ -409,8 +407,8 @@ export default function DashboardHomePage() {
                   </CardContent>
                   
                   <CardFooter className="pt-0">
-                    <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${profileConfig.colors.gradient} text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingTemplate === template.id ? 'animate-pulse' : ''}`}>
-                      {loadingTemplate === template.id ? 'Starting...' : 'Start Chat'}
+                    <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${agentConfig.colors.gradient} text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingSimulation === simulation.id ? 'animate-pulse' : ''}`}>
+                      {loadingSimulation === simulation.id ? 'Starting...' : 'Start Chat'}
                     </div>
                   </CardFooter>
                 </Card>
@@ -420,20 +418,20 @@ export default function DashboardHomePage() {
         </div>
       )}
 
-      {/* Multi Chat Templates */}
-      {multiTemplates.length > 0 && (
-        <div className={soloTemplates.length > 0 ? "border-t pt-8" : ""}>
+      {/* Multi Chat Simulations */}
+      {multiSimulations.length > 0 && (
+        <div className={soloSimulations.length > 0 ? "border-t pt-8" : ""}>
           <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Multi Chats</h3>
-          <div data-testid="template-section" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {multiTemplates.map(template => {
-              const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
+          <div data-testid="simulation-section" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {multiSimulations.map(simulation => {
+              const validInteractionIds = simulation.interactionIds?.filter(id => id !== "RAY") || [];
               
               return (
                 <Card
-                  key={template.id}
-                  data-testid="template-card"
-                  className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingTemplate ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
-                  onClick={() => !loadingTemplate && handleStartTemplate(template.id)}
+                  key={simulation.id}
+                  data-testid="simulation-card"
+                  className={`group relative overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 ${loadingSimulation ? "cursor-not-allowed opacity-70" : "cursor-pointer"} bg-white dark:bg-gray-900 border-0 shadow-lg`}
+                  onClick={() => !loadingSimulation && handleStartSimulation(simulation.id)}
                 >
                   {/* Background Pattern */}
                   <div className="absolute inset-0 opacity-5">
@@ -450,7 +448,7 @@ export default function DashboardHomePage() {
                         <Users className="h-6 w-6 text-white" />
                       </div>
                       <div className="text-right">
-                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400" data-testid="template-class">Multi</div>
+                        <div className="text-xs font-medium text-gray-500 dark:text-gray-400" data-testid="simulation-class">Multi</div>
                         <div className="text-xs text-gray-400">Chats</div>
                       </div>
                     </div>
@@ -458,29 +456,29 @@ export default function DashboardHomePage() {
                   
                   <CardContent className="space-y-4">
                     <div>
-                      <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors" data-testid="template-title">
-                        {template.title}
+                      <h3 className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors" data-testid="simulation-title">
+                        {simulation.title}
                       </h3>
                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                        Interactive template with {validChatTemplateIds.length} chat configuration{validChatTemplateIds.length !== 1 ? 's' : ''}
+                        Interactive simulation with {validInteractionIds.length} interaction{validInteractionIds.length !== 1 ? 's' : ''}
                       </p>
                     </div>
                     
                     <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                      <div className="flex items-center" data-testid="template-duration">
+                      <div className="flex items-center" data-testid="simulation-duration">
                         <Timer className="h-3 w-3 mr-1" />
-                        <span>{template.timeLimit ? `${template.timeLimit}` : '∞'} min</span>
+                        <span>{simulation.timeLimit ? `${simulation.timeLimit}` : '∞'} min</span>
                       </div>
                       <div className="flex items-center">
                         <Users className="h-3 w-3 mr-1" />
-                        <span>{validChatTemplateIds.length} session{validChatTemplateIds.length !== 1 ? 's' : ''}</span>
+                        <span>{validInteractionIds.length} session{validInteractionIds.length !== 1 ? 's' : ''}</span>
                       </div>
                     </div>
                   </CardContent>
                   
                   <CardFooter className="pt-0">
-                    <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingTemplate === template.id ? 'animate-pulse' : ''}`}>
-                      {loadingTemplate === template.id ? 'Starting...' : 'Start Chats'}
+                    <div className={`w-full text-center py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium text-sm group-hover:shadow-lg transition-all duration-300 ${loadingSimulation === simulation.id ? 'animate-pulse' : ''}`}>
+                      {loadingSimulation === simulation.id ? 'Starting...' : 'Start Chats'}
                     </div>
                   </CardFooter>
                 </Card>
@@ -490,11 +488,11 @@ export default function DashboardHomePage() {
         </div>
       )}
 
-      {/* No templates message */}
-      {soloTemplates.length === 0 && multiTemplates.length === 0 && (
+      {/* No simulations message */}
+      {soloSimulations.length === 0 && multiSimulations.length === 0 && (
         <div className="text-center py-12">
-          <h3 className="text-lg font-semibold mb-2">No templates available</h3>
-          <p className="text-muted-foreground">Contact an administrator to add templates.</p>
+          <h3 className="text-lg font-semibold mb-2">No simulations available</h3>
+          <p className="text-muted-foreground">Contact an administrator to add simulations.</p>
         </div>
       )}
     </div>

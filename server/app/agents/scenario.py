@@ -1,9 +1,9 @@
 from app.db import get_session
 from sqlmodel import Session
-from app.models import Scenarios, Profiles
+from app.models import Scenarios, Agents
 from fastapi import Depends
 import logging
-from app.utils.profiles import get_profile_info
+from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
 from openai.types import Reasoning
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    profile_id: str, 
+    agent_id: str, 
     user_id: Optional[str], 
     class_id: str, 
     test_data: bool,
@@ -27,7 +27,7 @@ async def run_scenario_agent(
     Returns a tuple of (scenario_id, chat_title).
 
     Args:
-        profile_id: The ID of the profile
+        agent_id: The ID of the agent
         user_id: The ID of the user (can be None for guest mode)
         class_id: The ID of the class
         session: The database session
@@ -36,17 +36,17 @@ async def run_scenario_agent(
         A tuple of (scenario_id, chat_title).
     """
 
-    # Get the profile to get its name for the agent
-    profile = session.exec(select(Profiles).where(Profiles.id == profile_id)).one_or_none()
-    if not profile:
-        raise ValueError(f"Profile with ID {profile_id} not found")
+    # Get the agent to get its name for the agent
+    agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
 
     scenario_agent = ScenarioAgent()
 
-    profile_info = get_profile_info(profile.name)
+    agent_info = get_agent_info(agent.name)
     class_info = get_class_info(class_id, session)
 
-    input_items = [profile_info, class_info]
+    input_items = [agent_info, class_info]
 
 
     if test_data:
@@ -69,7 +69,7 @@ async def run_scenario_agent(
     session.commit()
     session.refresh(scenario)
 
-    logger.info(f"New scenario created with ID: {scenario.id} for profile: {profile.name}")
+    logger.info(f"New scenario created with ID: {scenario.id} for agent: {agent.name}")
     return str(scenario.id), scenario_result.title
 
 

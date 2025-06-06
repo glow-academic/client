@@ -1,4 +1,4 @@
-// utils/queries/get-templates.ts
+// utils/queries/get-attempt-chats.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { chats } from "@/drizzle/schema";

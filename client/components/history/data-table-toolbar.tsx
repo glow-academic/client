@@ -49,10 +49,10 @@ export function DataTableToolbar<TData>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder={viewMode === 'chats' ? "Filter chats..." : "Filter templates..."}
-            value={(table.getColumn(viewMode === 'chats' ? "title" : "templateTitle")?.getFilterValue() as string) ?? ""}
+            placeholder={viewMode === 'chats' ? "Filter chats..." : "Filter simulations..."}
+            value={(table.getColumn(viewMode === 'chats' ? "title" : "simulationTitle")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn(viewMode === 'chats' ? "title" : "templateTitle")?.setFilterValue(event.target.value)
+              table.getColumn(viewMode === 'chats' ? "title" : "simulationTitle")?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />

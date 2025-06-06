@@ -3,7 +3,7 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Pencil, Plus, Settings, Upload, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
@@ -140,20 +140,20 @@ export default function MainLayout({
       );
     }
     
-    if (pathname.startsWith('/chat/templates')) {
+    if (pathname.startsWith('/chat/simulations')) {
       return (
-        <Button onClick={() => router.push('/chat/templates/new')} size="sm">
+        <Button onClick={() => router.push('/chat/simulations/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Simulation
         </Button>
       );
     }
     
-    if (pathname.startsWith('/chat/profiles')) {
+    if (pathname.startsWith('/chat/agents')) {
       return (
-        <Button onClick={() => router.push('/chat/profiles/new')} size="sm">
+        <Button onClick={() => router.push('/chat/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Profile
+          Create Agent
         </Button>
       );
     }

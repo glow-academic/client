@@ -26,7 +26,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { chats as Chat, documents as Documents, rubrics as Rubric } from "@/drizzle/schema";
-import { chatTemplates as ChatTemplate } from "@/drizzle/schema";
+import { interactions as Interaction } from "@/drizzle/schema";
 
 // Icons
 import {
@@ -44,13 +44,13 @@ import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 import { getMessages } from "@/utils/queries/get-messages";
 import { getRubric } from "@/utils/queries/get-rubric";
 import { getDocuments } from "@/utils/queries/get-documents";
-import { getTemplate } from "@/utils/queries/get-template";
 import { getClass } from "@/utils/queries/get-class";
 import { getScenario } from "@/utils/queries/get-scenario";
-import { getChatTemplate } from "@/utils/queries/get-chat-template";
+import { getInteraction } from "@/utils/queries/get-interaction";
 import Link from "next/link";
+import { getSimulation } from "@/utils/queries/get-simulation";
 
-interface TemplateMessage {
+interface SimulationMessage {
   id: string;
   query: string;
   response: string;
@@ -102,9 +102,9 @@ export default function AttemptPage() {
     queryFn: () => getClass(attempt!.classId),
   });
 
-  const { data: template, isLoading: templateLoading } = useQuery({
-    queryKey: ["template", attempt?.templateId],
-    queryFn: () => getTemplate(attempt!.templateId),
+  const { data: simulation, isLoading: simulationLoading } = useQuery({
+    queryKey: ["simulation", attempt?.simulationId],
+    queryFn: () => getSimulation(attempt!.simulationId),
   });
 
   // Fetch chats linked to this attempt
@@ -113,15 +113,15 @@ export default function AttemptPage() {
     queryFn: () => getAttemptChats([attemptId]),
   });
 
-  // Determine current chat based on chat template ID position in template
+  // Determine current chat based on chat simulation ID position in simulation
   const currentChat = React.useMemo(() => {
-    if (!chats.length || !template?.chatTemplateIds) return chats[0];
+    if (!chats.length || !simulation?.interactionIds) return chats[0];
 
-    // Find the chat that matches the current chat template ID
-    const currentChatTemplateId = template.chatTemplateIds[currentChatIndex];
-    const chat = chats.find(chat => chat.chatTemplateId === currentChatTemplateId);
+    // Find the chat that matches the current chat simulation ID
+    const currentChatSimulationId = simulation.interactionIds[currentChatIndex];
+    const chat = chats.find(chat => chat.interactionId === currentChatSimulationId);
     return chat || chats[0];
-  }, [chats, template?.chatTemplateIds, currentChatIndex]);
+  }, [chats, simulation?.interactionIds, currentChatIndex]);
 
   // Fetch messages for current chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
@@ -144,11 +144,11 @@ export default function AttemptPage() {
     enabled: !!currentChat?.scenarioId,
   });
 
-  // Fetch chat template for current chat
-  const { data: chatTemplate, isLoading: chatTemplateLoading } = useQuery({
-    queryKey: ["chatTemplate", currentChat?.chatTemplateId],
-    queryFn: () => getChatTemplate(currentChat.chatTemplateId),
-    enabled: !!currentChat?.chatTemplateId,
+  // Fetch interaction for current chat
+  const { data: interaction, isLoading: interactionLoading } = useQuery({
+    queryKey: ["interaction", currentChat?.interactionId],
+    queryFn: () => getInteraction(currentChat.interactionId),
+    enabled: !!currentChat?.interactionId,
   });
 
   // Fetch all rubrics for completed chats (for final results)
@@ -178,20 +178,20 @@ export default function AttemptPage() {
   }, [documents, attempt?.classId]);
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
-  const isSingleChatAttempt = template?.chatTemplateIds?.length === 1;
+  const isSingleChatAttempt = simulation?.interactionIds?.length === 1;
 
   // Initialize session timer
   useEffect(() => {
-    if (template && !sessionStartTime) {
+    if (simulation && !sessionStartTime) {
       setSessionStartTime(new Date());
-      setTimeRemaining(template.timeLimit ? template.timeLimit * 60 : null); // Convert to seconds
+      setTimeRemaining(simulation.timeLimit ? simulation.timeLimit * 60 : null); // Convert to seconds
     }
-  }, [template, sessionStartTime]);
+  }, [simulation, sessionStartTime]);
 
   // Timer countdown - only run if there's a time limit
   useEffect(() => {
     // Don't run timer if there's no time limit
-    if (!template?.timeLimit || !isActive || timeRemaining === null || timeRemaining <= 0 || showResults) return;
+    if (!simulation?.timeLimit || !isActive || timeRemaining === null || timeRemaining <= 0 || showResults) return;
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
@@ -206,7 +206,7 @@ export default function AttemptPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isActive, timeRemaining, showResults, isSingleChatAttempt, template?.timeLimit]);
+  }, [isActive, timeRemaining, showResults, isSingleChatAttempt, simulation?.timeLimit]);
 
   // Reset chat state when moving to next chat
   useEffect(() => {
@@ -216,10 +216,10 @@ export default function AttemptPage() {
 
   // Initialize to first incomplete chat when data loads
   useEffect(() => {
-    if (chats.length > 0 && template?.chatTemplateIds && currentChatIndex === 0) {
+    if (chats.length > 0 && simulation?.interactionIds && currentChatIndex === 0) {
       // Find the first incomplete chat
-      const firstIncompleteIndex = template.chatTemplateIds.findIndex((templateId: string) => {
-        const chat = chats.find((c: typeof Chat.$inferSelect) => c.chatTemplateId === templateId);
+      const firstIncompleteIndex = simulation.interactionIds.findIndex((interactionId: string) => {
+        const chat = chats.find((c: typeof Chat.$inferSelect) => c.interactionId === interactionId);
         return chat && !chat.completed;
       });
 
@@ -228,7 +228,7 @@ export default function AttemptPage() {
         setCurrentChatIndex(firstIncompleteIndex);
       }
     }
-  }, [chats, template?.chatTemplateIds, currentChatIndex]);
+  }, [chats, simulation?.interactionIds, currentChatIndex]);
 
   // Check if current chat is completed and move to next or show results
   useEffect(() => {
@@ -237,12 +237,12 @@ export default function AttemptPage() {
       const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
 
       if (isFreshlyCompleted) {
-        if (!isSingleChatAttempt && currentChatIndex < (template?.chatTemplateIds?.length || 0) - 1) {
+        if (!isSingleChatAttempt && currentChatIndex < (simulation?.interactionIds?.length || 0) - 1) {
           // Move to next chat after a short delay (only for multi-chat attempts)
           const timer = setTimeout(() => {
             setCurrentChatIndex(prev => {
               const nextIndex = prev + 1;
-              toast.success(`Moving to chat ${nextIndex + 1} of ${template?.chatTemplateIds?.length || 0}`);
+              toast.success(`Moving to chat ${nextIndex + 1} of ${simulation?.interactionIds?.length || 0}`);
               return nextIndex;
             });
           }, 2000);
@@ -254,12 +254,12 @@ export default function AttemptPage() {
         }
       }
     }
-  }, [currentChat?.completed, currentChat?.id, currentChatIndex, template?.chatTemplateIds?.length, showResults, isSingleChatAttempt, freshlyCompletedChats]);
+  }, [currentChat?.completed, currentChat?.id, currentChatIndex, simulation?.interactionIds?.length, showResults, isSingleChatAttempt, freshlyCompletedChats]);
 
   // Check if all chats are completed and show results (regardless of freshly completed status)
   useEffect(() => {
-    if (chats.length > 0 && template?.chatTemplateIds && !showResults) {
-      const totalExpectedChats = template.chatTemplateIds.length;
+    if (chats.length > 0 && simulation?.interactionIds && !showResults) {
+      const totalExpectedChats = simulation.interactionIds.length;
       const completedChats = chats.filter((chat: typeof Chat.$inferSelect) => chat.completed).length;
 
       if (completedChats === totalExpectedChats) {
@@ -267,7 +267,7 @@ export default function AttemptPage() {
         setIsActive(false);
       }
     }
-  }, [chats, template?.chatTemplateIds, showResults]);
+  }, [chats, simulation?.interactionIds, showResults]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -275,21 +275,21 @@ export default function AttemptPage() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  // Helper function to format chat template attributes
-  const formatChatTemplateInfo = (template: typeof ChatTemplate.$inferSelect) => {
-    const crowdednessText = template.crowdedness === 1 ? "Low crowdedness" :
-      template.crowdedness === 2 ? "Moderate crowdedness" :
-        template.crowdedness === 3 ? "High crowdedness" :
-          template.crowdedness === 4 ? "Very high crowdedness" :
-            template.crowdedness === 5 ? "Extremely crowded" :
-              `Crowdedness: ${template.crowdedness}`;
+  // Helper function to format interaction attributes
+  const formatInteractionInfo = (interaction: typeof Interaction.$inferSelect) => {
+    const crowdednessText = interaction.crowdedness === 1 ? "Low crowdedness" :
+      interaction.crowdedness === 2 ? "Moderate crowdedness" :
+        interaction.crowdedness === 3 ? "High crowdedness" :
+          interaction.crowdedness === 4 ? "Very high crowdedness" :
+            interaction.crowdedness === 5 ? "Extremely crowded" :
+              `Crowdedness: ${interaction.crowdedness}`;
 
-    const intensityText = template.intensity === 1 ? "Low intensity" :
-      template.intensity === 2 ? "Moderate intensity" :
-        template.intensity === 3 ? "High intensity" :
-          template.intensity === 4 ? "Very high intensity" :
-            template.intensity === 5 ? "Extremely intense" :
-              `Intensity: ${template.intensity}`;
+    const intensityText = interaction.intensity === 1 ? "Low intensity" :
+      interaction.intensity === 2 ? "Moderate intensity" :
+        interaction.intensity === 3 ? "High intensity" :
+          interaction.intensity === 4 ? "Very high intensity" :
+            interaction.intensity === 5 ? "Extremely intense" :
+              `Intensity: ${interaction.intensity}`;
 
     return (
       <div className="flex items-center gap-3">
@@ -318,7 +318,7 @@ export default function AttemptPage() {
     setNewMessage("");
 
     /* ---------------- optimistic user bubble ---------------- */
-    const userMsg: TemplateMessage = {
+    const userMsg: SimulationMessage = {
       id: `temp-${Date.now()}`,
       query: messageToSend,
       response: "",
@@ -327,7 +327,7 @@ export default function AttemptPage() {
       completed: false,
     };
 
-    const aiMsg: TemplateMessage = {
+    const aiMsg: SimulationMessage = {
       id: `temp-ai-${Date.now()}`,
       query: "",
       response: "",
@@ -338,7 +338,7 @@ export default function AttemptPage() {
 
     queryClient.setQueryData(
       ["messages", currentChat.id],
-      (old: TemplateMessage[] = []) => [...old, userMsg, aiMsg],
+      (old: SimulationMessage[] = []) => [...old, userMsg, aiMsg],
     );
 
     let accumulated = ""; // running buffer
@@ -394,7 +394,7 @@ export default function AttemptPage() {
             /* immutable cache update */
             queryClient.setQueryData(
               ["messages", currentChat.id],
-              (old: TemplateMessage[] = []) =>
+              (old: SimulationMessage[] = []) =>
                 old.map((m) =>
                   m.id === aiMsg.id ? { ...m, response: accumulated } : m,
                 ),
@@ -413,7 +413,7 @@ export default function AttemptPage() {
       console.error("sendMessage error:", err);
       queryClient.setQueryData(
         ["messages", currentChat.id],
-        (old: TemplateMessage[] = []) =>
+        (old: SimulationMessage[] = []) =>
           old.map((m) =>
             m.id === aiMsg.id
               ? {
@@ -539,12 +539,12 @@ export default function AttemptPage() {
         formatTime: formatTime,
         isActive,
         showResults,
-        hasTimeLimit: template?.timeLimit !== null && template?.timeLimit !== undefined
+        hasTimeLimit: simulation?.timeLimit !== null && simulation?.timeLimit !== undefined
       };
     }
-  }, [timeRemaining, isActive, showResults, template?.timeLimit]);
+  }, [timeRemaining, isActive, showResults, simulation?.timeLimit]);
 
-  if (attemptLoading || templateLoading || scenarioLoading || chatTemplateLoading) {
+  if (attemptLoading || simulationLoading || scenarioLoading || interactionLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -555,7 +555,7 @@ export default function AttemptPage() {
     );
   }
 
-  if (attemptError || !attempt || template?.chatTemplateIds?.length === 0) {
+  if (attemptError || !attempt || simulation?.interactionIds?.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Card>
@@ -720,15 +720,15 @@ export default function AttemptPage() {
                 <span>{scenario?.description || currentChat?.title}</span>
                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                   {isSingleChatAttempt ? (
-                    formatChatTemplateInfo(chatTemplate!)
+                    formatInteractionInfo(interaction!)
                   ) : (
                     <>
                       <Users className="h-4 w-4" />
-                      <span data-testid="chat-counter">Chat {currentChatIndex + 1} of {template?.chatTemplateIds?.length || 0}</span>
-                      {chatTemplate && (
+                      <span data-testid="chat-counter">Chat {currentChatIndex + 1} of {simulation?.interactionIds?.length || 0}</span>
+                      {interaction && (
                         <>
                           <span>•</span>
-                          {formatChatTemplateInfo(chatTemplate!)}
+                          {formatInteractionInfo(interaction!)}
                         </>
                       )}
                     </>
@@ -758,7 +758,7 @@ export default function AttemptPage() {
                     ))}
                   </div>
                 ) : (
-                  messages.map((message: TemplateMessage) => (
+                  messages.map((message: SimulationMessage) => (
                     <div key={message.id} className="space-y-4">
                       {/* User Message */}
                       {message.query && (
@@ -830,13 +830,13 @@ export default function AttemptPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    disabled={template?.timeLimit ? !isActive : false}
+                    disabled={simulation?.timeLimit ? !isActive : false}
                     className="flex-1"
                     data-testid="message-input"
                   />
                   <Button
                     type="submit"
-                    disabled={!newMessage.trim() || (template?.timeLimit ? !isActive : false)}
+                    disabled={!newMessage.trim() || (simulation?.timeLimit ? !isActive : false)}
                     data-testid="send-button"
                   >
                     <Send className="h-4 w-4" />
@@ -845,13 +845,13 @@ export default function AttemptPage() {
                     type="button"
                     variant="outline"
                     onClick={handleEndChat}
-                    disabled={endChatLoading || (template?.timeLimit ? !isActive : false)}
+                    disabled={endChatLoading || (simulation?.timeLimit ? !isActive : false)}
                     className="whitespace-nowrap"
                   >
                     {endChatLoading ? "Ending..." : isSingleChatAttempt ? "End Session" : "End Chat"}
                   </Button>
                 </form>
-                {template?.timeLimit && !isActive && (
+                {simulation?.timeLimit && !isActive && (
                   <p className="text-sm text-muted-foreground text-center">
                     Time's up! The session has ended.
                   </p>

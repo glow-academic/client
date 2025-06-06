@@ -17,10 +17,10 @@ export const getSectionRoute = (section: string): string => {
       return '/dashboard/rubric';
     case 'profile':
       return '/profile';
-    case 'chat-templates':
-      return '/chat/templates';
-    case 'chat-profiles':
-      return '/chat/profiles';
+    case 'chat-simulations':
+      return '/chat/simulations';
+    case 'chat-agents':
+      return '/chat/agents';
     case 'chat-scenarios':
       return '/chat/scenarios';
     case 'add-class':
