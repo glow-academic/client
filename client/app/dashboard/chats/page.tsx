@@ -266,7 +266,7 @@ export default function DashboardHomePage() {
         {multiTemplates.length > 0 && (
           <div className={soloTemplates.length > 0 ? "border-t pt-8" : ""}>
             <h3 className="text-lg font-semibold mb-6 text-gray-900 dark:text-white">Multi Chats</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {multiTemplates.map(template => {
                 const validChatTemplateIds = template.chatTemplateIds?.filter(id => id !== "RAY") || [];
                 

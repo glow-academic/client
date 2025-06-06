@@ -15,10 +15,11 @@ import { Clock } from "lucide-react";
 
 type WindowWithAttemptTimer = Window & typeof globalThis & {
   attemptTimer: {
-    timeRemaining: number;
+    timeRemaining: number | null;
     formatTime: (seconds: number) => string;
     isActive: boolean;
     showResults: boolean;
+    hasTimeLimit: boolean;
   };
 };
 
@@ -32,10 +33,11 @@ export default function AttemptLayout({
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
   const [timerData, setTimerData] = React.useState<{
-    timeRemaining: number;
+    timeRemaining: number | null;
     formatTime: (seconds: number) => string;
     isActive: boolean;
     showResults: boolean;
+    hasTimeLimit: boolean;
   } | null>(null);
 
   // Fetch user data for role context
@@ -95,9 +97,12 @@ export default function AttemptLayout({
               <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full mr-4">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium" data-testid="timer">
-                  {timerData.formatTime(timerData.timeRemaining)}
+                  {timerData.hasTimeLimit && timerData.timeRemaining !== null
+                    ? timerData.formatTime(timerData.timeRemaining)
+                    : "No time limit"
+                  }
                 </span>
-                {!timerData.isActive && (
+                {timerData.hasTimeLimit && !timerData.isActive && (
                   <span className="text-xs text-red-500 ml-1">(Expired)</span>
                 )}
               </div>

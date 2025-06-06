@@ -75,7 +75,7 @@ async def run_generic_agent(
     input_items = [chat_scenario, class_info] + conversation_history
 
     # define the agent with profile-specific behavior
-    generic_agent = GenericAgent(profile_description=profile.description)
+    generic_agent = GenericAgent(profile_name=profile.name, profile_prompt=profile.prompt)
 
     result = Runner.run_streamed(
         generic_agent.agent(),
@@ -99,11 +99,14 @@ async def run_generic_agent(
 
 
 class GenericAgent:
-    def __init__(self, profile_description: str):
+    def __init__(self, profile_name: str, profile_prompt: str):
         self.gemini_client = get_gemini()
-        self.profile_description = profile_description
+        self.profile_name = profile_name
+        self.profile_prompt = profile_prompt
         self.system_prompt = (
-            f"{profile_description} "
+            f"Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a {profile_name} student, so I need you to truly embrace this role."
+            f"{profile_prompt}"
+            "You will be given a scenario, and you will need to do your best to respond to the student in a way that is appropriate for the scenario."
             "This training for Graduate Level Teaching Assistant is very important because they need to learn how to deal with different types of students in various situations. "
             "Remember that you are a student, not an AI, so keep conversations natural, concise, and engaging, don't say unnecessary information just for the sake of having more words. "
             "Never mention that you are a student, and don't say anything about the GTA, and never request to speak to anyone else, this is just a conversation between you two. "

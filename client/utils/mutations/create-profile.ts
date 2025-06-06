@@ -2,7 +2,7 @@
 import { profiles } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 
-export async function createProfile(name: string, subtitle: string, description: string, threshold: number) {
+export async function createProfile(name: string, subtitle: string, description: string, prompt: string, threshold: number) {
   try {
     const newProfile = await db
       .insert(profiles)
@@ -10,6 +10,7 @@ export async function createProfile(name: string, subtitle: string, description:
         name,
         subtitle,
         description,
+        prompt,
         threshold,
       })
       .returning();

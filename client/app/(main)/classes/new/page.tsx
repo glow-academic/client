@@ -1,343 +1,365 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import * as tus from "tus-js-client";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Upload, 
+  Plus, 
+  Archive,
+  ArrowRight,
+  CheckCircle,
+  FileText,
+  Loader2
+} from "lucide-react";
 
-import { getTemplates } from "@/utils/queries/get-templates";
 import { createClass } from "@/utils/mutations/create-class";
+import ClassForm from "@/components/ClassForm";
 
-interface FormData {
+type ProcessingStep = 'idle' | 'uploading' | 'extracting' | 'classifying' | 'complete';
+type CreationMode = 'selection' | 'manual' | 'zip';
+
+interface FileUploadStatus {
+  id: string;
   name: string;
-  classCode: string;
-  year: number;
-  term: 'fall' | 'spring' | 'summer';
-  description: string;
-  templateIds: string[];
-}
-
-interface FormErrors {
-  name?: string;
-  classCode?: string;
-  year?: string;
-  term?: string;
-  description?: string;
-  templateIds?: string;
+  progress: number;
+  status: "uploading" | "complete" | "error";
+  error?: string;
 }
 
 export default function NewClassPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [creationMode, setCreationMode] = useState<CreationMode>('selection');
+  const [processingStep, setProcessingStep] = useState<ProcessingStep>('idle');
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [extractedFiles, setExtractedFiles] = useState<string[]>([]);
+  const [classifiedDocs, setClassifiedDocs] = useState<any[]>([]);
+  const [createdClassId, setCreatedClassId] = useState<string | null>(null);
+  const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const [formData, setFormData] = useState<FormData>({
-    name: "",
-    classCode: "",
-    year: new Date().getFullYear(),
-    term: 'fall',
-    description: "",
-    templateIds: [],
-  });
-
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  // Fetch templates for selection
-  const { data: templates = [] } = useQuery({
-    queryKey: ["templates"],
-    queryFn: () => getTemplates(),
-  });
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.name.trim()) {
-      newErrors.name = "Class name is required";
-    }
-
-    if (!formData.classCode.trim()) {
-      newErrors.classCode = "Class code is required";
-    }
-
-    if (formData.year < 2020 || formData.year > 2030) {
-      newErrors.year = "Year must be between 2020 and 2030";
-    }
-
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required";
-    }
-
-    if (formData.templateIds.length === 0) {
-      newErrors.templateIds = "At least one template must be selected";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
+  const handleZipUpload = async (file: File) => {
     try {
-      const result = await createClass(
-        formData.name,
-        formData.classCode,
-        formData.year,
-        formData.term,
-        formData.description,
-        formData.templateIds
+      setProcessingStep('uploading');
+      setIsUploading(true);
+
+      // First create a temporary class for the ZIP upload
+      const tempClassResult = await createClass(
+        `Temp Class ${Date.now()}`,
+        `TEMP${Date.now()}`,
+        new Date().getFullYear(),
+        'fall',
+        'Temporary class for ZIP processing',
+        []
       );
-      
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-        toast.success("Class created successfully!");
-        router.push('/classes/general');
-      } else {
-        toast.error(`Failed to create class: ${result.error}`);
+
+      if (!tempClassResult.success || !tempClassResult.class) {
+        throw new Error(tempClassResult.error || "Failed to create temporary class");
       }
+
+      const tempClassId = tempClassResult.class.id;
+      setCreatedClassId(tempClassId);
+
+      // Create file upload status
+      const fileUploadStatus: FileUploadStatus = {
+        id: crypto.randomUUID(),
+        name: file.name,
+        progress: 0,
+        status: "uploading",
+      };
+
+      setFileUploads([fileUploadStatus]);
+
+      // Show loading toast
+      const toastId = toast.loading(`Uploading ${file.name}...`);
+
+      // Get the API URL from environment
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
+      // Upload the ZIP file using tus
+      await new Promise<void>((resolve, reject) => {
+        const tusMetadata = {
+          filename: file.name,
+          filetype: file.type,
+          class: tempClassId,
+          fileId: fileUploadStatus.id,
+          zip: "true",
+          autoClassify: "true"
+        };
+
+        const upload = new tus.Upload(file, {
+          endpoint: `${apiUrl}/documents/tus`,
+          retryDelays: [0, 3000, 5000, 10000, 20000],
+          metadata: tusMetadata,
+          onError: (error) => {
+            console.error(`Failed to upload ${file.name}: `, error);
+            setFileUploads(prev => 
+              prev.map(item => 
+                item.id === fileUploadStatus.id 
+                  ? { ...item, status: "error", error: error.message || "Unknown error" }
+                  : item
+              )
+            );
+            toast.dismiss(toastId);
+            toast.error(`Failed to upload ${file.name}: ${error.message || "Unknown error"}`);
+            reject(error);
+          },
+          onProgress: (bytesUploaded, bytesTotal) => {
+            const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+            setUploadProgress(percentage);
+            setFileUploads(prev => 
+              prev.map(item => 
+                item.id === fileUploadStatus.id 
+                  ? { ...item, progress: percentage }
+                  : item
+              )
+            );
+          },
+          onSuccess: async () => {
+            try {
+              setProcessingStep('extracting');
+              
+              const finalizePayload = {
+                fileId: fileUploadStatus.id,
+                classId: tempClassId,
+                zip: true,
+                autoClassify: true
+              };
+
+              const response = await fetch(
+                `${apiUrl}/documents/tus/finalize`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  credentials: "include",
+                  body: JSON.stringify(finalizePayload),
+                }
+              );
+
+              if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || "Failed to finalize upload");
+              }
+
+              setFileUploads(prev => 
+                prev.map(item => 
+                  item.id === fileUploadStatus.id 
+                    ? { ...item, status: "complete", progress: 100 }
+                    : item
+                )
+              );
+
+              toast.dismiss(toastId);
+              toast.success(`${file.name} uploaded and processed successfully!`);
+              
+              setProcessingStep('complete');
+              
+              // Route to the status page
+              setTimeout(() => {
+                router.push(`/classes/new/${tempClassId}`);
+              }, 1000);
+
+              resolve();
+            } catch (error) {
+              console.error(`Finalization error for ${file.name}:`, error);
+              setFileUploads(prev => 
+                prev.map(item => 
+                  item.id === fileUploadStatus.id 
+                    ? { 
+                        ...item, 
+                        status: "error", 
+                        error: error instanceof Error ? error.message : "Unknown error" 
+                      }
+                    : item
+                )
+              );
+              toast.dismiss(toastId);
+              toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`);
+              reject(error);
+            }
+          },
+        });
+
+        upload.start();
+      });
+
     } catch (error) {
-      toast.error(`Failed to create class: ${error instanceof Error ? error.message : "Unknown error"}`);
-      console.error("Error creating class:", error);
+      console.error("ZIP upload error:", error);
+      toast.error(`Failed to upload ZIP: ${error instanceof Error ? error.message : "Unknown error"}`);
+      setProcessingStep('idle');
     } finally {
-      setIsSubmitting(false);
+      setIsUploading(false);
     }
   };
 
-  const handleTemplateToggle = (templateId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      templateIds: prev.templateIds.includes(templateId)
-        ? prev.templateIds.filter(id => id !== templateId)
-        : [...prev.templateIds, templateId]
-    }));
+  const handleManualCreate = () => {
+    setCreationMode('manual');
   };
 
-  const removeTemplate = (templateId: string) => {
-    setFormData(prev => ({
-      ...prev,
-      templateIds: prev.templateIds.filter(id => id !== templateId)
-    }));
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === "application/zip") {
+      handleZipUpload(file);
+    } else {
+      toast.error("Please select a ZIP file");
+    }
   };
 
-  const selectedTemplates = templates.filter(template => 
-    formData.templateIds.includes(template.id)
-  );
+  const getProcessingMessage = () => {
+    switch (processingStep) {
+      case 'uploading':
+        return `Uploading ZIP file... ${uploadProgress}%`;
+      case 'extracting':
+        return 'Extracting and processing files from ZIP...';
+      case 'classifying':
+        return 'Classifying documents with AI...';
+      case 'complete':
+        return 'Processing complete! Redirecting...';
+      default:
+        return '';
+    }
+  };
+
+  const getProcessingProgress = () => {
+    switch (processingStep) {
+      case 'uploading':
+        return uploadProgress;
+      case 'extracting':
+        return 100;
+      case 'classifying':
+        return 100;
+      case 'complete':
+        return 100;
+      default:
+        return 0;
+    }
+  };
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight">Create New Class</h1>
-        <p className="text-muted-foreground mt-2">
-          Set up a new class with templates and configuration
-        </p>
-      </div>
-
-      <div className="max-w-2xl mx-auto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Class Information</CardTitle>
-            <CardDescription>
-              Enter the basic information for your new class
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <CardContent className="space-y-6">
-              {/* Class Name */}
-              <div className="space-y-2">
-                <Label htmlFor="name">Class Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Introduction to Computer Science"
-                  className={errors.name ? "border-red-500" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-red-500">{errors.name}</p>
-                )}
+    <div className="min-h-screen py-8 px-4">
+      <div className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Processing Status Bar */}
+        {processingStep !== 'idle' && (
+          <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-3">
+            <div className="flex items-center gap-3">
+              <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                  {getProcessingMessage()}
+                </p>
+                <Progress value={getProcessingProgress()} className="h-2 mt-2" />
               </div>
-
-              {/* Class Code */}
-              <div className="space-y-2">
-                <Label htmlFor="classCode">Class Code *</Label>
-                <Input
-                  id="classCode"
-                  value={formData.classCode}
-                  onChange={(e) => setFormData(prev => ({ ...prev, classCode: e.target.value }))}
-                  placeholder="e.g., CS101"
-                  className={errors.classCode ? "border-red-500" : ""}
-                />
-                {errors.classCode && (
-                  <p className="text-sm text-red-500">{errors.classCode}</p>
-                )}
+            </div>
+            
+            {fileUploads.length > 0 && (
+              <div className="text-xs text-blue-700 dark:text-blue-300">
+                Processing: {fileUploads[0].name}
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Year and Term */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="year">Year *</Label>
-                  <Input
-                    id="year"
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
-                    min="2020"
-                    max="2030"
-                    className={errors.year ? "border-red-500" : ""}
-                  />
-                  {errors.year && (
-                    <p className="text-sm text-red-500">{errors.year}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="term">Term *</Label>
-                  <Select
-                    value={formData.term}
-                    onValueChange={(value: 'fall' | 'spring' | 'summer') => 
-                      setFormData(prev => ({ ...prev, term: value }))
-                    }
-                  >
-                    <SelectTrigger className={errors.term ? "border-red-500" : ""}>
-                      <SelectValue placeholder="Select term" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fall">Fall</SelectItem>
-                      <SelectItem value="spring">Spring</SelectItem>
-                      <SelectItem value="summer">Summer</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.term && (
-                    <p className="text-sm text-red-500">{errors.term}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Describe the class objectives, topics covered, and any other relevant information..."
-                  rows={4}
-                  className={errors.description ? "border-red-500" : ""}
-                />
-                {errors.description && (
-                  <p className="text-sm text-red-500">{errors.description}</p>
-                )}
-              </div>
-
-              {/* Template Selection */}
-              <div className="space-y-4">
-                <div>
-                  <Label>Templates *</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Select the templates that will be available for this class
-                  </p>
-                </div>
-
-                {/* Selected Templates */}
-                {selectedTemplates.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-sm">Selected Templates:</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {selectedTemplates.map((template) => (
-                        <Badge key={template.id} variant="secondary" className="flex items-center gap-1">
-                          {template.title}
-                          <button
-                            type="button"
-                            onClick={() => removeTemplate(template.id)}
-                            className="ml-1 hover:bg-secondary-foreground/20 rounded-full p-0.5"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </Badge>
-                      ))}
-                    </div>
+        {/* Main Content */}
+        {creationMode === 'selection' && processingStep === 'idle' && (
+          <>
+            {/* Method Selection Cards */}
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* ZIP Upload Option */}
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50">
+                <CardContent className="p-8 text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Archive className="h-8 w-8 text-primary" />
                   </div>
-                )}
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Upload from ZIP</h3>
+                    <p className="text-muted-foreground">
+                      Upload a ZIP file containing all your class materials. We'll automatically extract and classify your documents.
+                    </p>
+                  </div>
+                  <Button 
+                    className="w-full" 
+                    size="lg"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    {isUploading ? "Processing..." : "Choose ZIP File"}
+                    <Upload className="ml-2 h-4 w-4" />
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".zip"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </CardContent>
+              </Card>
 
-                {/* Template Selection */}
-                <div className="space-y-2">
-                  <Label className="text-sm">Available Templates:</Label>
-                  <ScrollArea className="h-48 border rounded-md p-4">
-                    <div className="space-y-3">
-                      {templates.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No templates available. Create templates first.
-                        </p>
-                      ) : (
-                        templates.map((template) => (
-                          <div key={template.id} className="flex items-start space-x-3">
-                            <Checkbox
-                              id={`template-${template.id}`}
-                              checked={formData.templateIds.includes(template.id)}
-                              onCheckedChange={() => handleTemplateToggle(template.id)}
-                            />
-                            <div className="flex-1 min-w-0">
-                              <Label
-                                htmlFor={`template-${template.id}`}
-                                className="text-sm font-medium cursor-pointer"
-                              >
-                                {template.title}
-                              </Label>
-                              <p className="text-xs text-muted-foreground">
-                                {template.timeLimit} minutes • {template.documents?.length || 0} documents
-                              </p>
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
+              {/* Manual Creation Option */}
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50">
+                <CardContent className="p-8 text-center space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
+                    <Plus className="h-8 w-8 text-secondary-foreground" />
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-semibold">Create Manually</h3>
+                    <p className="text-muted-foreground">
+                      Set up your class first and add documents later. Perfect if you want to organize everything step by step.
+                    </p>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full" 
+                    size="lg"
+                    onClick={handleManualCreate}
+                  >
+                    Create Class
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </>
+        )}
 
-                {errors.templateIds && (
-                  <p className="text-sm text-red-500">{errors.templateIds}</p>
-                )}
-              </div>
-            </CardContent>
+        {/* Manual Creation Form */}
+        {creationMode === 'manual' && (
+          <ClassForm
+            mode="create"
+            onSuccess={(classId) => {
+              router.push(`/classes/c/${classId}/edit`);
+            }}
+          />
+        )}
 
-            <CardFooter className="flex justify-between">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.push('/classes/general')}
-                disabled={isSubmitting}
-              >
-                Cancel
+        {/* Processing Complete State */}
+        {processingStep === 'complete' && (
+          <div className="text-center space-y-4">
+            <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+              <CheckCircle className="h-8 w-8 text-green-600 dark:text-green-400" />
+            </div>
+            <h2 className="text-2xl font-bold">ZIP Uploaded Successfully!</h2>
+            <p className="text-muted-foreground">
+              Your files are being processed and classified...
+            </p>
+            <div className="flex justify-center gap-2 mt-4">
+              <Button onClick={() => router.push(`/classes/new/${createdClassId}`)}>
+                View Processing Status
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Class"}
-              </Button>
-            </CardFooter>
-          </form>
-        </Card>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

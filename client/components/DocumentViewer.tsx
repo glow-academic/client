@@ -24,6 +24,7 @@ type DocumentType = typeof documents.$inferSelect;
 
 interface DocumentViewerProps {
   document?: DocumentType;
+  bare?: boolean;
   classId?: string;
 }
 
@@ -42,6 +43,7 @@ const getDocumentTypeInfo = (type: string) => {
 export default function DocumentViewer({
   document,
   classId,
+  bare = false,
 }: DocumentViewerProps) {
   const [docId, setDocId] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
@@ -205,6 +207,13 @@ export default function DocumentViewer({
 
   // Single document view (no selector)
   if (document && !classId) {
+    if (bare) {
+      return (
+        <div className="w-full h-full flex flex-col overflow-hidden">
+          {renderContent()}
+        </div>
+      );
+    }
     return (
       <div className="w-full h-full flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-3 border-b bg-muted/30 shrink-0">

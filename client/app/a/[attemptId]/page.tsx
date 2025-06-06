@@ -61,10 +61,11 @@ interface TemplateMessage {
 
 type WindowWithAttemptTimer = Window & typeof globalThis & {
   attemptTimer: {
-    timeRemaining: number;
+    timeRemaining: number | null;
     formatTime: (seconds: number) => string;
     isActive: boolean;
     showResults: boolean;
+    hasTimeLimit: boolean;
   };
 };
 
@@ -187,9 +188,10 @@ export default function AttemptPage() {
     }
   }, [template, sessionStartTime]);
 
-  // Timer countdown
+  // Timer countdown - only run if there's a time limit
   useEffect(() => {
-    if (!isActive || timeRemaining === null || timeRemaining <= 0 || showResults) return;
+    // Don't run timer if there's no time limit
+    if (!template?.timeLimit || !isActive || timeRemaining === null || timeRemaining <= 0 || showResults) return;
 
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
@@ -204,7 +206,7 @@ export default function AttemptPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isActive, timeRemaining, showResults, isSingleChatAttempt]);
+  }, [isActive, timeRemaining, showResults, isSingleChatAttempt, template?.timeLimit]);
 
   // Reset chat state when moving to next chat
   useEffect(() => {
@@ -489,6 +491,14 @@ export default function AttemptPage() {
     }
   }, [messages.length]);
 
+  // Helper function to calculate actual time taken from database timestamps
+  const calculateActualTimeTaken = (chat: typeof Chat.$inferSelect): number => {
+    if (!chat.createdAt || !chat.completedAt) return 0;
+    const startTime = new Date(chat.createdAt).getTime();
+    const endTime = new Date(chat.completedAt).getTime();
+    return Math.round((endTime - startTime) / 1000); // Return seconds
+  };
+
   // Calculate aggregated results for final display
   const aggregatedResults = useMemo(() => {
     if (allRubrics.length === 0) return null;
@@ -496,7 +506,11 @@ export default function AttemptPage() {
     const totalScore = allRubrics.reduce((sum: number, rubric: typeof Rubric.$inferSelect) => sum + rubric.score, 0);
     const averageScore = totalScore / allRubrics.length;
     const passedChats = allRubrics.filter((rubric: typeof Rubric.$inferSelect) => rubric.passed).length;
-    const totalTime = allRubrics.reduce((sum: number, rubric: typeof Rubric.$inferSelect) => sum + rubric.timeTaken, 0);
+    
+    // Calculate total time using actual database timestamps instead of rubric timeTaken
+    const totalTime = chats
+      .filter((chat: typeof Chat.$inferSelect) => chat.completed)
+      .reduce((sum: number, chat: typeof Chat.$inferSelect) => sum + calculateActualTimeTaken(chat), 0);
 
     return {
       totalChats: allRubrics.length,
@@ -505,7 +519,7 @@ export default function AttemptPage() {
       totalTime: Math.round(totalTime / 60), // Convert to minutes
       overallPassed: passedChats === allRubrics.length,
     };
-  }, [allRubrics]);
+  }, [allRubrics, chats]);
 
   const LoadingDots = () => (
     <div className="flex space-x-1">
@@ -521,13 +535,14 @@ export default function AttemptPage() {
     // Store timer data in a way that the layout can access it
     if (typeof window !== 'undefined') {
       (window as WindowWithAttemptTimer).attemptTimer = {
-        timeRemaining: timeRemaining || 0,
+        timeRemaining: timeRemaining,
         formatTime: formatTime,
         isActive,
-        showResults
+        showResults,
+        hasTimeLimit: template?.timeLimit !== null && template?.timeLimit !== undefined
       };
     }
-  }, [timeRemaining, isActive, showResults]);
+  }, [timeRemaining, isActive, showResults, template?.timeLimit]);
 
   if (attemptLoading || templateLoading || scenarioLoading || chatTemplateLoading) {
     return (
@@ -601,6 +616,7 @@ export default function AttemptPage() {
               <h2 className="text-xl font-semibold">Individual Chat Results</h2>
               {allRubrics.map((rubric: typeof Rubric.$inferSelect, index: number) => {
                 const chat = chats.find((c: typeof Chat.$inferSelect) => c.id === rubric.chatId);
+                const actualTimeTaken = chat ? calculateActualTimeTaken(chat) : rubric.timeTaken;
                 return (
                   <Link href={`/c/${rubric.chatId}`} key={rubric.id}>
                     <Card key={rubric.id} className="hover:shadow-md transition-shadow">
@@ -620,7 +636,7 @@ export default function AttemptPage() {
                           </div>
                           <div>
                             <div className="font-medium">Time Taken</div>
-                            <div>{Math.round(rubric.timeTaken / 60)} min</div>
+                            <div>{Math.round(actualTimeTaken / 60)} min</div>
                           </div>
                           <div>
                             <div className="font-medium">Adaptability</div>
@@ -652,7 +668,9 @@ export default function AttemptPage() {
                     <div className="text-sm text-muted-foreground">Overall Score</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold">{Math.round(currentRubric.timeTaken / 60)}</div>
+                    <div className="text-2xl font-bold">
+                      {Math.round((currentChat ? calculateActualTimeTaken(currentChat) : currentRubric.timeTaken) / 60)}
+                    </div>
                     <div className="text-sm text-muted-foreground">Minutes</div>
                   </div>
                   <div className="text-center">
@@ -812,13 +830,13 @@ export default function AttemptPage() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    disabled={!isActive}
+                    disabled={template?.timeLimit ? !isActive : false}
                     className="flex-1"
                     data-testid="message-input"
                   />
                   <Button
                     type="submit"
-                    disabled={!newMessage.trim() || !isActive}
+                    disabled={!newMessage.trim() || (template?.timeLimit ? !isActive : false)}
                     data-testid="send-button"
                   >
                     <Send className="h-4 w-4" />
@@ -827,13 +845,13 @@ export default function AttemptPage() {
                     type="button"
                     variant="outline"
                     onClick={handleEndChat}
-                    disabled={endChatLoading || !isActive}
+                    disabled={endChatLoading || (template?.timeLimit ? !isActive : false)}
                     className="whitespace-nowrap"
                   >
                     {endChatLoading ? "Ending..." : isSingleChatAttempt ? "End Session" : "End Chat"}
                   </Button>
                 </form>
-                {!isActive && (
+                {template?.timeLimit && !isActive && (
                   <p className="text-sm text-muted-foreground text-center">
                     Time's up! The session has ended.
                   </p>

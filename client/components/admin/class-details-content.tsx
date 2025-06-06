@@ -280,31 +280,6 @@ export function ClassDetailsContent({ classData }: ClassDetailsContentProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header with Class Info */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{classData.classCode}</h1>
-          <p className="text-lg text-muted-foreground">{classData.name}</p>
-          <p className="text-sm text-muted-foreground">
-            {classData.term.charAt(0).toUpperCase() + classData.term.slice(1)} {classData.year}
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => router.push(`/classes/c/${classData.id}/documents`)}
-          >
-            <FileText className="h-4 w-4 mr-2" />
-            Documents
-            <ExternalLink className="h-3 w-3 ml-1" />
-          </Button>
-          <Badge variant="outline" className="text-sm">
-            {courseProgress}% Complete
-          </Badge>
-          <Progress value={courseProgress} className="w-32" />
-        </div>
-      </div>
 
       {/* Key Metrics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

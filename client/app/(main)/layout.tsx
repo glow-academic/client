@@ -2,17 +2,31 @@
 import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { Plus, Settings } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Download, Pencil, Plus, Settings, Upload, Trash2 } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
 import { getUser } from "@/utils/queries/get-user";
+import { getClass } from "@/utils/queries/get-class";
+import { deleteClass } from "@/utils/mutations/delete-class";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
+import { toast } from "sonner";
 
 export default function MainLayout({
   children,
@@ -21,13 +35,26 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+  const [isDeleting, setIsDeleting] = React.useState(false);
+
+  // Extract classId from edit page path
+  const classEditPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)\/edit$/);
+  const classId = classEditPageMatch?.[1];
 
   // Fetch user data for role context
   const { data: user } = useQuery({
     queryKey: ["user"],
     queryFn: () => getUser(),
+  });
+
+  // Fetch class data for delete confirmation
+  const { data: classData } = useQuery({
+    queryKey: ["class", classId],
+    queryFn: () => getClass(classId!),
+    enabled: !!classId,
   });
 
   // Load enhanced breadcrumbs with async ID resolution
@@ -41,22 +68,75 @@ export default function MainLayout({
 
   const handleSectionChange = createSectionChangeHandler(router, '/dashboard/chats');
 
+  const handleDeleteClass = async () => {
+    if (!classId) return;
+    
+    setIsDeleting(true);
+    try {
+      const result = await deleteClass(classId);
+      if (result.success) {
+        queryClient.invalidateQueries({ queryKey: ["classes"] });
+        toast.success("Class deleted successfully!");
+        router.push('/classes/general');
+      } else {
+        toast.error(`Failed to delete class: ${result.error}`);
+      }
+    } catch (error) {
+      toast.error(`Failed to delete class: ${error instanceof Error ? error.message : "Unknown error"}`);
+      console.error("Error deleting class:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
     if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
       return null;
     }
-    
     // Check for individual class page pattern: /classes/c/[classId]
     const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
-    if (classPageMatch && !pathname.includes('/settings')) {
+    if (classPageMatch && !pathname.includes('/edit')) {
       const classId = classPageMatch[1];
       return (
-        <Button onClick={() => router.push(`/classes/c/${classId}/settings`)} size="sm" variant="default">
-          <Settings className="h-4 w-4 mr-2" />
-          Settings
+        <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Class  
         </Button>
+      );
+    }
+    
+    // Check for class edit page pattern: /classes/c/[classId]/edit
+    if (classEditPageMatch && classData) {
+      return (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="destructive" disabled={isDeleting}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {isDeleting ? "Deleting..." : "Delete Class"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the class
+                "{classData.classCode}" and remove all associated data.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteClass}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? "Deleting..." : "Delete Class"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       );
     }
     

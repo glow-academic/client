@@ -89,46 +89,62 @@ async def classify_documents(
 # Regular file upload endpoint (alternative to TUS for simple uploads)
 @router.post("/upload")
 async def upload_document(
-    file: UploadFile = File(...),
+    files: list[UploadFile] = File(...),
     class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    Upload a document using regular multipart form data
+    Upload one or more documents using regular multipart form data
     """
     if class_id is None:
         raise HTTPException(status_code=400, detail="Class ID is required")
 
-    # Generate a unique ID for the document
-    document_id = str(uuid.uuid4())
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided")
 
-    # Get file extension from filename
-    _, ext = os.path.splitext(file.filename)
-    if not ext:
-        ext = ".bin"  # Default extension if none is provided
+    uploaded_documents = []
+    
+    for file in files:
+        # Generate a unique ID for the document
+        document_id = str(uuid.uuid4())
 
-    # Create the file path
-    file_path = f"{document_id}{ext}"
-    full_path = os.path.join(UPLOAD_FOLDER, file_path)
+        # Get file extension from filename
+        _, ext = os.path.splitext(file.filename)
+        if not ext:
+            ext = ".bin"  # Default extension if none is provided
 
-    # Save the file
-    with open(full_path, "wb") as f:
-        content = await file.read()
-        f.write(content)
+        # Create the file path
+        file_path = f"{document_id}{ext}"
+        full_path = os.path.join(UPLOAD_FOLDER, file_path)
 
-    # Create document record in database
-    document = Documents(
-        id=document_id,
-        name=file.filename,
-        file_path=file_path,
-        mime_type=file.content_type,
-        class_id=class_id,
-    )
+        # Save the file
+        with open(full_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
 
-    session.add(document)
+        # Create document record in database
+        document = Documents(
+            id=document_id,
+            name=file.filename,
+            file_path=file_path,
+            mime_type=file.content_type,
+            class_id=class_id,
+        )
+
+        session.add(document)
+        uploaded_documents.append({
+            "document_id": document_id,
+            "name": file.filename,
+            "mime_type": file.content_type
+        })
+
     session.commit()
 
-    return {"message": "Document uploaded successfully", "document_id": document_id}
+    return {
+        "message": f"Successfully uploaded {len(uploaded_documents)} document(s)", 
+        "documents": uploaded_documents,
+        "count": len(uploaded_documents)
+    }
 
 
 # Get document by ID

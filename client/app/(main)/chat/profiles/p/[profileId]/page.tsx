@@ -28,6 +28,7 @@ export default function EditProfilePage() {
     name: "",
     subtitle: "",
     description: "",
+    prompt: "",
     threshold: 50,
   });
 
@@ -43,6 +44,7 @@ export default function EditProfilePage() {
         name: profile.name || "",
         subtitle: profile.subtitle || "",
         description: profile.description || "",
+        prompt: profile.prompt || "",
         threshold: profile.threshold || 50,
       });
     }
@@ -64,6 +66,7 @@ export default function EditProfilePage() {
         formData.name,
         formData.subtitle,
         formData.description,
+        formData.prompt,
         formData.threshold
       );
       

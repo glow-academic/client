@@ -22,6 +22,7 @@ export default function NewProfilePage() {
     name: "",
     subtitle: "",
     description: "",
+    prompt: "",
     threshold: 50,
   });
 
@@ -40,6 +41,7 @@ export default function NewProfilePage() {
         formData.name,
         formData.subtitle,
         formData.description,
+        formData.prompt,
         formData.threshold
       );
       

@@ -16,7 +16,8 @@
     name       TEXT        NOT NULL,
     subtitle   TEXT        NOT NULL,
     description TEXT        NOT NULL,
-    threshold INTEGER NOT NULL -- 0-100
+    prompt     TEXT        NOT NULL,
+    threshold  INTEGER     NOT NULL -- 0-100
   );
 
   CREATE TABLE scenarios (
@@ -165,10 +166,10 @@
   -- ============================================================================
 
   -- Insert Core Profiles (Essential for testing)
-  INSERT INTO profiles (id, name, subtitle, description, threshold) VALUES
-    ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive', 'Direct and Challenging', 'Pushes back on your ideas and challenges assumptions.', 50),
-    ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Positive and Encouraging', 'Provides uplifting feedback and cheerful responses.', 50),
-    ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Asks clarifying questions', 'Seeks to understand by asking questions and exploring ideas', 50);
+  INSERT INTO profiles (id, name, subtitle, description, threshold, prompt) VALUES
+    ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive', 'Direct and Challenging', 'Pushes back on your ideas and challenges assumptions.', 50, 'Try and truly embrace your anger and aggressiveness in various ways, such as making certain words, not sentences, in all caps, or adding multiple "!", or just anything you think would truly portray an incredibly aggressive student.'),
+    ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Positive and Encouraging', 'Provides uplifting feedback and cheerful responses.', 50, 'Remember the you are a student, not an AI, so keep conversations natural, concise, and engaging, dont say unnecessary information just for the sake of having more words.'),
+    ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Asks clarifying questions', 'Seeks to understand by asking questions and exploring ideas', 50, 'There is a fundamental misunderstanding of a given concept, and you have this lead to your answers being incorrect.');
 
   -- Insert Essential Scenarios
   INSERT INTO scenarios (id, name, description) VALUES
@@ -215,7 +216,7 @@
   -- Insert Test Admin User
   INSERT INTO users (id, viewed_intro, role, name, username, password, class_ids) VALUES
     ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', true, 'admin', 'Test Admin', 'test_admin', 'hashed_password_admin', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
-    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true, 'ta', 'Nina Park', 'nina_park' 'hashed_password_2', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+    ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', true, 'ta', 'Nina Park', 'nina_park', 'hashed_password_2', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
     ('cccccccc-cccc-cccc-cccc-cccccccccccc', false, 'ta', 'Pranav Patel', 'pranav_patel', 'hashed_password_3', ARRAY['66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
     ('dddddddd-dddd-dddd-dddd-dddddddddddd', true, 'ta', 'Richie Qian', 'richie_qian', 'hashed_password_4', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
     ('eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', false, 'ta', 'Rohan Saxena', 'rohan_saxena', 'hashed_password_5', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]),
