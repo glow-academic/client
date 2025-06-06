@@ -138,27 +138,27 @@ export default function Analytics() {
     const completionRate =
       totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
 
-    // Calculate average scores by category
+    // Calculate average scores by category (convert from 1-5 scale to percentage)
     const avgScores = {
       overall:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.score, 0) / rubrics.length)
+          ? Math.round((rubrics.reduce((sum, r) => sum + r.score, 0) / rubrics.length / 20) * 100)
           : 0,
       adaptability:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.adaptability, 0) / rubrics.length)
+          ? Math.round((rubrics.reduce((sum, r) => sum + r.adaptability, 0) / rubrics.length / 5) * 100)
           : 0,
       listening:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.listening, 0) / rubrics.length)
+          ? Math.round((rubrics.reduce((sum, r) => sum + r.listening, 0) / rubrics.length / 5) * 100)
           : 0,
       objectives:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.objectives, 0) / rubrics.length)
+          ? Math.round((rubrics.reduce((sum, r) => sum + r.objectives, 0) / rubrics.length / 5) * 100)
           : 0,
       timeManagement:
         rubrics.length > 0
-          ? Math.round(rubrics.reduce((sum, r) => sum + r.timeManagement, 0) / rubrics.length)
+          ? Math.round((rubrics.reduce((sum, r) => sum + r.timeManagement, 0) / rubrics.length / 5) * 100)
           : 0,
     };
 
@@ -173,7 +173,7 @@ export default function Analytics() {
       const avgScore =
         profileRubrics.length > 0
           ? Math.round(
-              profileRubrics.reduce((sum, r) => sum + r.score, 0) / profileRubrics.length,
+              (profileRubrics.reduce((sum, r) => sum + r.score, 0) / profileRubrics.length / 20) * 100,
             )
           : 0;
 
@@ -185,33 +185,7 @@ export default function Analytics() {
       };
     });
 
-    // Filter out entries with no sessions, then use mock data if we don't have meaningful real data
-    const realDataWithSessions = performanceByType.filter(type => type.sessions > 0);
-    
-    const performanceByTypeWithMock = realDataWithSessions.length > 0 
-      ? realDataWithSessions 
-      : [
-          {
-            name: 'Aggressive',
-            score: 72,
-            sessions: 15,
-            color: 'bg-red-200',
-          },
-          {
-            name: 'Happy',
-            score: 88,
-            sessions: 23,
-            color: 'bg-green-200',
-          },
-          {
-            name: 'Confused',
-            score: 79,
-            sessions: 18,
-            color: 'bg-yellow-200',
-          },
-        ];
-
-    // Mock time-series data for skill progression
+    // Mock time-series data for skill progression (keep this as mock for now since it requires historical tracking)
     const skillProgressionData = Array.from({ length: 7 }, (_, i) => {
       const date = subDays(new Date(), 6 - i);
       const baseAdaptability = 65 + i * 2 + Math.random() * 10;
@@ -241,7 +215,7 @@ export default function Analytics() {
 
         const avgScore =
           taRubrics.length > 0
-            ? Math.round(taRubrics.reduce((sum, r) => sum + r.score, 0) / taRubrics.length)
+            ? Math.round((taRubrics.reduce((sum, r) => sum + r.score, 0) / taRubrics.length / 20) * 100)
             : 0;
 
         const completedSessions = taChats.filter((chat) => chat.completed).length;
@@ -282,7 +256,7 @@ export default function Analytics() {
         date: format(date, "MMM dd"),
         score:
           dayRubrics.length > 0
-            ? Math.round(dayRubrics.reduce((sum, r) => sum + r.score, 0) / dayRubrics.length)
+            ? Math.round((dayRubrics.reduce((sum, r) => sum + r.score, 0) / dayRubrics.length / 20) * 100)
             : 0,
         sessions: dayChats.length,
         completed: dayChats.filter((chat) => chat.completed).length,
@@ -294,16 +268,22 @@ export default function Analytics() {
       (ta) => ta.avgScore < 70 && ta.totalSessions > 0,
     );
 
+    // Calculate average training time from rubrics (convert seconds to minutes)
+    const avgTrainingTime = rubrics.length > 0 
+      ? Math.round(rubrics.reduce((sum, r) => sum + r.timeTaken, 0) / rubrics.length / 60)
+      : 45;
+
     return {
       totalTAs: tas.length,
       totalSessions,
       completionRate,
       avgScores,
-      performanceByType: performanceByTypeWithMock,
+      performanceByType,
       taPerformance,
       timeSeriesData,
       strugglingTAs,
       skillProgressionData,
+      avgTrainingTime,
     };
   }, [users, chats, rubrics, profiles, attempts]);
 
@@ -390,7 +370,7 @@ export default function Analytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-700">
-              45min
+              {analytics.avgTrainingTime}min
             </div>
             <p className="text-xs text-purple-600 mt-1">
               Avg time per session this week
@@ -492,22 +472,22 @@ export default function Analytics() {
                   {[
                     {
                       name: "Adaptability",
-                      score: analytics.avgScores.adaptability * 20,
+                      score: analytics.avgScores.adaptability,
                       icon: Zap,
                     },
                     {
                       name: "Active Listening",
-                      score: analytics.avgScores.listening * 20,
+                      score: analytics.avgScores.listening,
                       icon: Eye,
                     },
                     {
                       name: "Content Mastery",
-                      score: analytics.avgScores.objectives * 20,
+                      score: analytics.avgScores.objectives,
                       icon: Target,
                     },
                     {
                       name: "Time Management",
-                      score: analytics.avgScores.timeManagement * 20,
+                      score: analytics.avgScores.timeManagement,
                       icon: Clock,
                     },
                   ].map((skill) => (
@@ -876,10 +856,10 @@ export default function Analytics() {
                   </h4>
                   <div className="space-y-3">
                     {[
-                      { skill: 'Time Management', avgScore: 68, improvement: '+3%', trend: 'up' },
-                      { skill: 'Adaptability', avgScore: 72, improvement: '+1%', trend: 'up' },
-                      { skill: 'Active Listening', avgScore: 76, improvement: '-2%', trend: 'down' },
-                      { skill: 'Meeting Objectives', avgScore: 78, improvement: '+5%', trend: 'up' },
+                      { skill: 'Time Management', avgScore: analytics.avgScores.timeManagement, improvement: '+3%', trend: 'up' },
+                      { skill: 'Adaptability', avgScore: analytics.avgScores.adaptability, improvement: '+1%', trend: 'up' },
+                      { skill: 'Active Listening', avgScore: analytics.avgScores.listening, improvement: '-2%', trend: analytics.avgScores.listening >= 70 ? 'up' : 'down' },
+                      { skill: 'Meeting Objectives', avgScore: analytics.avgScores.objectives, improvement: '+5%', trend: 'up' },
                     ].map((competency) => (
                       <div key={competency.skill} className="flex items-center justify-between p-2 rounded border">
                         <div className="flex items-center gap-2">
@@ -907,11 +887,15 @@ export default function Analytics() {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">84%</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {analytics.avgScores.overall}%
+                    </div>
                     <div className="text-xs text-blue-600">Average Score</div>
                   </div>
                   <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">92%</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {Math.round(analytics.completionRate)}%
+                    </div>
                     <div className="text-xs text-green-600">Pass Rate</div>
                   </div>
                 </div>

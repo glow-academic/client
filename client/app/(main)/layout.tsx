@@ -144,7 +144,7 @@ export default function MainLayout({
       return (
         <Button onClick={() => router.push('/chat/templates/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Create Template
+          Create Simulation
         </Button>
       );
     }
