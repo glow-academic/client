@@ -36,7 +36,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.wait('@createScenario')
     
     // 5. Create a new simulation
-    cy.navigateToPage('/(main)/chat/simulations/new')
+    cy.navigateToPage('/(main)/simulations/new')
     cy.get('[data-testid="simulation-name"]').type('Test Simulation')
     cy.get('[data-testid="simulation-content"]').type('Simulation content here')
     cy.get('[data-testid="save-simulation"]').click()
@@ -57,7 +57,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.wait('@createClass')
     
     // 8. Test document upload
-    cy.navigateToPage('/(main)/chat/simulations/new')
+    cy.navigateToPage('/(main)/simulations/new')
     cy.get('[data-testid="file-upload"]').selectFile('cypress/fixtures/test-document.pdf', { force: true })
     cy.wait('@uploadDocument')
     
@@ -81,7 +81,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.url().should('include', '/dashboard')
     
     // 2. Navigate to chats
-    cy.navigateToPage('/dashboard/chats')
+    cy.navigateToPage('/dashboard')
     cy.get('main').should('be.visible')
     
     // 3. Start a chat
@@ -129,7 +129,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.window().its('localStorage').invoke('getItem', 'guestMode').should('equal', 'true')
     
     // 2. Navigate to chats
-    cy.navigateToPage('/dashboard/chats')
+    cy.navigateToPage('/dashboard')
     cy.get('main').should('be.visible')
     
     // 3. Start a chat as guest
@@ -162,7 +162,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
     cy.intercept('POST', '**/chat/new', { forceNetworkError: true }).as('networkError')
     
     cy.loginAsUser()
-    cy.navigateToPage('/dashboard/chats')
+    cy.navigateToPage('/dashboard')
     
     // Try to start chat with network error
     cy.contains('Happy').parents('[class*="card"]').first().click()
@@ -202,7 +202,7 @@ describe('GLOW Core Functionality - Comprehensive Test', () => {
       
       // Test main page
       cy.loginAsUser()
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       cy.get('main').should('be.visible')
       
       // Test chat functionality

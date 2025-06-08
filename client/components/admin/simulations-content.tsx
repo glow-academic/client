@@ -68,7 +68,7 @@ export function SimulationsContent() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/chat/simulations/s/${id}`);
+    router.push(`/simulations/s/${id}`);
   };
 
   return (

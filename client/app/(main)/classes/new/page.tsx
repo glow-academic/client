@@ -50,13 +50,19 @@ export default function NewClassPage() {
       setProcessingStep('uploading');
       setIsUploading(true);
 
+      // use the file name as the class name
+      const className = file.name.split('.')[0];
+
+      // try to find numeric codes for the class code in the class name
+      const classCode = className.match(/\d+/);
+
       // First create a temporary class for the ZIP upload
       const tempClassResult = await createClass(
-        `Temp Class ${Date.now()}`,
-        `TEMP${Date.now()}`,
+        className,
+        classCode ? classCode[0] : className,
         new Date().getFullYear(),
         'fall',
-        'Temporary class for ZIP processing'
+        'Make changes to this class description'
       );
 
       if (!tempClassResult.success || !tempClassResult.class) {
@@ -90,7 +96,8 @@ export default function NewClassPage() {
           class: tempClassId,
           fileId: fileUploadStatus.id,
           zip: "true",
-          autoClassify: "true"
+          autoClassify: "true",
+          autoCourseProcess: "true"
         };
 
         const upload = new tus.Upload(file, {
@@ -129,7 +136,8 @@ export default function NewClassPage() {
                 fileId: fileUploadStatus.id,
                 classId: tempClassId,
                 zip: true,
-                autoClassify: true
+                autoClassify: true,
+                autoCourseProcess: true
               };
 
               const response = await fetch(
@@ -164,7 +172,7 @@ export default function NewClassPage() {
               
               // Route to the status page
               setTimeout(() => {
-                router.push(`/classes/new/${tempClassId}`);
+                router.push(`/classes/new/c/${tempClassId}`);
               }, 1000);
 
               resolve();
@@ -274,7 +282,7 @@ export default function NewClassPage() {
             {/* Method Selection Cards */}
             <div className="grid md:grid-cols-2 gap-6">
               {/* ZIP Upload Option */}
-              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50">
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50" onClick={() => fileInputRef.current?.click()}>
                 <CardContent className="p-8 text-center space-y-4">
                   <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
                     <Archive className="h-8 w-8 text-primary" />
@@ -285,15 +293,6 @@ export default function NewClassPage() {
                       Upload a ZIP file containing all your class materials. We'll automatically extract and classify your documents.
                     </p>
                   </div>
-                  <Button 
-                    className="w-full" 
-                    size="lg"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? "Processing..." : "Choose ZIP File"}
-                    <Upload className="ml-2 h-4 w-4" />
-                  </Button>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -305,7 +304,7 @@ export default function NewClassPage() {
               </Card>
 
               {/* Manual Creation Option */}
-              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50">
+              <Card className="cursor-pointer hover:shadow-lg transition-all duration-200 border-2 hover:border-primary/50" onClick={handleManualCreate}>
                 <CardContent className="p-8 text-center space-y-4">
                   <div className="mx-auto w-16 h-16 bg-secondary/10 rounded-full flex items-center justify-center">
                     <Plus className="h-8 w-8 text-secondary-foreground" />
@@ -316,15 +315,6 @@ export default function NewClassPage() {
                       Set up your class first and add documents later. Perfect if you want to organize everything step by step.
                     </p>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    size="lg"
-                    onClick={handleManualCreate}
-                  >
-                    Create Class
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -352,7 +342,7 @@ export default function NewClassPage() {
               Your files are being processed and classified...
             </p>
             <div className="flex justify-center gap-2 mt-4">
-              <Button onClick={() => router.push(`/classes/new/${createdClassId}`)}>
+              <Button onClick={() => router.push(`/classes/new/c/${createdClassId}`)}>
                 View Processing Status
               </Button>
             </div>

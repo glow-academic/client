@@ -22,11 +22,7 @@ export default function Home() {
       const { success, error } = await login(username, password, admin);
       if (success) {
         // Both admin and regular users go to the dashboard home page
-        if (admin) {
-          router.push("/dashboard/analytics");
-        } else {
-          router.push("/dashboard/chats");
-        }
+        router.push("/dashboard");
       } else {
         setError(error || "An error occurred during login");
         throw new Error(error);
@@ -41,7 +37,7 @@ export default function Home() {
   const handleGuestAccess = () => {
     // Set guest mode in localStorage and redirect
     localStorage.setItem('guestMode', 'true');
-    router.push("/dashboard/chats");
+    router.push("/dashboard");
   };
 
   return (

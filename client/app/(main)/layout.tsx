@@ -3,10 +3,11 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { Download, Pencil, Plus, Settings, Upload, Trash2 } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +22,7 @@ import {
 import { UnifiedSidebar } from "@/components/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
+import { ViewModeProvider } from "@/contexts/view-mode-context";
 import { getUser } from "@/utils/queries/get-user";
 import { getClass } from "@/utils/queries/get-class";
 import { deleteClass } from "@/utils/mutations/delete-class";
@@ -39,10 +41,15 @@ export default function MainLayout({
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
 
-  // Extract classId from edit page path
+  // Extract classId from edit page path or new class status page path
   const classEditPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)\/edit$/);
-  const classId = classEditPageMatch?.[1];
+  const newClassPageMatch = pathname.match(/^\/classes\/new\/c\/([^\/]+)$/);
+  const classId = classEditPageMatch?.[1] || newClassPageMatch?.[1];
+
+  // Check if we're on the history page
+  const isHistoryPage = pathname === '/history';
 
   // Fetch user data for role context
   const { data: user } = useQuery({
@@ -66,7 +73,18 @@ export default function MainLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router, '/dashboard/chats');
+  const handleSectionChange = createSectionChangeHandler(router, '/dashboard');
+
+  // Create view mode toggle for history page
+  const viewModeToggle = isHistoryPage ? (
+    <div className="flex items-center space-x-2">
+      <span className="text-sm text-muted-foreground">Show individual chats</span>
+      <Switch
+        checked={viewMode === 'chats'}
+        onCheckedChange={(checked) => setViewMode(checked ? 'chats' : 'attempts')}
+      />
+    </div>
+  ) : null;
 
   const handleDeleteClass = async () => {
     if (!classId) return;
@@ -77,7 +95,7 @@ export default function MainLayout({
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ["classes"] });
         toast.success("Class deleted successfully!");
-        router.push('/classes/general');
+        router.push('/classes');
       } else {
         toast.error(`Failed to delete class: ${result.error}`);
       }
@@ -92,13 +110,24 @@ export default function MainLayout({
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
-    if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
+    if (pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
       return null;
     }
     // Check for individual class page pattern: /classes/c/[classId]
     const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
     if (classPageMatch && !pathname.includes('/edit')) {
       const classId = classPageMatch[1];
+      return (
+        <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Class  
+        </Button>
+      );
+    }
+    
+    // Check for new class status page pattern: /classes/new/[classId]
+    if (newClassPageMatch) {
+      const classId = newClassPageMatch[1];
       return (
         <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
           <Pencil className="h-4 w-4 mr-2" />
@@ -140,34 +169,34 @@ export default function MainLayout({
       );
     }
     
-    if (pathname.startsWith('/chat/simulations')) {
+    if (pathname.startsWith('/simulations')) {
       return (
-        <Button onClick={() => router.push('/chat/simulations/new')} size="sm">
+        <Button onClick={() => router.push('/simulations/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Simulation
         </Button>
       );
     }
     
-    if (pathname.startsWith('/chat/agents')) {
+    if (pathname.startsWith('/simulations/agents')) {
       return (
-        <Button onClick={() => router.push('/chat/agents/new')} size="sm">
+        <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
     
-    if (pathname.startsWith('/chat/scenarios')) {
+    if (pathname.startsWith('/simulations/scenarios')) {
       return (
-        <Button onClick={() => router.push('/chat/scenarios/new')} size="sm">
+        <Button onClick={() => router.push('/simulations/scenarios/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario
         </Button>
       );
     }
     
-    if (pathname.startsWith('/classes/general')) {
+    if (pathname.startsWith('/classes')) {
       return (
         <Button onClick={() => router.push('/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -208,7 +237,7 @@ export default function MainLayout({
 
   const actionButton = getActionButton();
 
-  return (
+  const content = (
     <RoleProvider userRole={user?.role}>
       <SidebarProvider>
         <UnifiedSidebar
@@ -223,6 +252,7 @@ export default function MainLayout({
               <NavigationBreadcrumbs 
                 breadcrumbs={breadcrumbs}
                 onSectionChange={handleSectionChange}
+                rightContent={viewModeToggle}
               />
             </div>
             {actionButton && (
@@ -238,4 +268,15 @@ export default function MainLayout({
       </SidebarProvider>
     </RoleProvider>
   );
+
+  // Only provide ViewModeProvider context for history page
+  if (isHistoryPage) {
+    return (
+      <ViewModeProvider viewMode={viewMode} setViewMode={setViewMode}>
+        {content}
+      </ViewModeProvider>
+    );
+  }
+
+  return content;
 } 

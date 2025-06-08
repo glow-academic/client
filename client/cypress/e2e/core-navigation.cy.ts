@@ -12,7 +12,7 @@ describe('Core Navigation & Role Switching', () => {
       cy.loginAsUser()
       
       // Navigate to chats
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       cy.get('main').should('be.visible')
       
       // Navigate to history
@@ -36,13 +36,13 @@ describe('Core Navigation & Role Switching', () => {
       cy.get('main').should('be.visible')
       
       // Navigate to classes
-      cy.navigateToPage('/(main)/classes/general')
+      cy.navigateToPage('/(main)/classes')
       cy.get('main').should('be.visible')
     })
 
     it('should show proper navigation elements', () => {
       cy.loginAsUser()
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       
       // Should have navigation elements
       cy.get('body').then(($body) => {
@@ -131,7 +131,7 @@ describe('Core Navigation & Role Switching', () => {
     it('should work on mobile devices', () => {
       cy.viewport(375, 667)
       cy.loginAsUser()
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       
       // Should have mobile navigation
       cy.get('body').then(($body) => {
@@ -148,7 +148,7 @@ describe('Core Navigation & Role Switching', () => {
     it('should work on tablet devices', () => {
       cy.viewport(768, 1024)
       cy.loginAsUser()
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       
       // Should have proper navigation
       cy.get('main').should('be.visible')
@@ -159,7 +159,7 @@ describe('Core Navigation & Role Switching', () => {
   describe('Navigation State', () => {
     it('should maintain navigation state during session', () => {
       cy.loginAsUser()
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       
       // Start a chat
       cy.startChat('Happy')
@@ -167,7 +167,7 @@ describe('Core Navigation & Role Switching', () => {
       
       // Navigate back
       cy.go('back')
-      cy.url().should('include', '/dashboard/chats')
+      cy.url().should('include', '/dashboard')
       
       // Should still be logged in
       cy.get('main').should('be.visible')
@@ -190,7 +190,7 @@ describe('Core Navigation & Role Switching', () => {
       cy.loginAsGuest()
       
       // Should be able to access chats
-      cy.navigateToPage('/dashboard/chats')
+      cy.navigateToPage('/dashboard')
       cy.get('main').should('be.visible')
       
       // Should not be able to access management

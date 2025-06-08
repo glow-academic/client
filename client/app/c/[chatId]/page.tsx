@@ -172,7 +172,7 @@ export default function ChatPage({
   };
 
   const handleBack = () => {
-    router.push("/dashboard/chats");
+    router.push("/dashboard");
   };
 
   const handleGoToAttempt = () => {

@@ -27,13 +27,6 @@
     description TEXT        NOT NULL
   );
 
-  CREATE TABLE schedules (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    name       TEXT        NOT NULL,
-    description TEXT        NOT NULL
-  );
-
   CREATE TABLE classes (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -41,8 +34,7 @@
     class_code TEXT        NOT NULL,
     year       INTEGER     NOT NULL,
     term       class_term  NOT NULL           DEFAULT 'fall',
-    description TEXT        NOT NULL,
-    schedule_id UUID        NULL REFERENCES schedules(id) ON DELETE SET NULL
+    description TEXT        NOT NULL
   );
 
     CREATE TABLE interactions (
@@ -73,6 +65,14 @@
     description TEXT        NOT NULL,
     prerequisite  BOOLEAN     NOT NULL           DEFAULT FALSE,
     class_id   UUID        NOT NULL REFERENCES classes(id) ON DELETE CASCADE
+  );
+  
+  CREATE TABLE schedules (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    name       TEXT        NOT NULL,
+    description TEXT        NOT NULL,
+    class_id UUID        NOT NULL REFERENCES classes(id) ON DELETE CASCADE
   );
 
 
@@ -179,16 +179,20 @@
     ('bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'NP-Completeness', 'A student sits back with their arms crossed, skeptical about why SAT reduces to 3-SAT.'),
     ('cccccccc-ffff-aaaa-bbbb-cccccccccccc', 'Dynamic Programming', 'A student smiles warmly, proud of their bottom-up DP table for the knapsack problem, seeking edge-case checks.');
 
-  -- Insert Test Schedule
-  INSERT INTO schedules (id, name, description) VALUES
-    ('aaaaaaaa-1111-1111-1111-111111111111', 'CS 180 Fall 2024 Schedule', 'Weekly schedule for Problem Solving and Object-Oriented Programming');
-
   -- Insert Test Class (CS 180 - Essential for quiz testing)
-  INSERT INTO classes (id, name, class_code, year, term, description, schedule_id) VALUES
-    ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 2024, 'fall', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 2024, 'fall', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 2024, 'fall', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', 'aaaaaaaa-1111-1111-1111-111111111111'),
-    ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 2024, 'fall', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.', 'aaaaaaaa-1111-1111-1111-111111111111');
+  INSERT INTO classes (id, name, class_code, year, term, description) VALUES
+    ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 2024, 'fall', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.'),
+    ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 2024, 'fall', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.'),
+    ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 2024, 'fall', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.'),
+    ('77777777-4444-4444-4444-444444444444', 'Introduction To The Analysis Of Algorithms', 'CS 381', 2024, 'fall', 'Techniques for analyzing the time and space requirements of algorithms. Application of these techniques to sorting, searching, pattern-matching, graph problems, and other selected problems. Brief introduction to the intractable (NP-hard) problems.');
+
+  -- Insert Test Schedule
+  INSERT INTO schedules (id, name, description, class_id) VALUES
+    ('aaaaaaaa-1111-1111-1111-111111111111', 'CS 180 Fall 2024 Schedule', 'Weekly schedule for Problem Solving and Object-Oriented Programming', '44444444-1111-1111-1111-111111111111'),
+    ('bbbbbbbb-1111-1111-1111-111111111111', 'CS 182 Fall 2024 Schedule', 'Weekly schedule for Foundations of Computer Science', '55555555-2222-2222-2222-222222222222'),
+    ('cccccccc-1111-1111-1111-111111111111', 'CS 251 Fall 2024 Schedule', 'Weekly schedule for Data Structures and Algorithms', '66666666-3333-3333-3333-333333333333'),
+    ('dddddddd-1111-1111-1111-111111111111', 'CS 381 Fall 2024 Schedule', 'Weekly schedule for Introduction to the Analysis of Algorithms', '77777777-4444-4444-4444-444444444444');
+
 
   -- Insert Essential Topics for CS 180
   INSERT INTO topics (id, name, description, class_id, prerequisite) VALUES

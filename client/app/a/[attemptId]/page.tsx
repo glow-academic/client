@@ -166,9 +166,9 @@ export default function AttemptPage() {
 
   // Fetch documents for the attempt class
   const { data: documents = [] } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getDocuments(),
-    enabled: !!attempt?.classId,
+    queryKey: ["documents", attempt?.classId],
+    queryFn: () => getDocuments(attempt?.classId || ""),
+    enabled: !!attempt
   });
 
   // Filter documents for the current attempt's class
@@ -564,7 +564,7 @@ export default function AttemptPage() {
             <p className="text-muted-foreground mb-4">
               The attempt you're looking for doesn't exist or has no chats configured.
             </p>
-            <Button onClick={() => router.push("/dashboard/chats")}>Return To Chats</Button>
+            <Button onClick={() => router.push("/dashboard")}>Return To Dashboard</Button>
           </CardContent>
         </Card>
       </div>

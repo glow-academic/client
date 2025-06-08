@@ -26,6 +26,26 @@ class Agents(_Base, table=True):
     chats: List['Chats'] = Relationship(back_populates='agent')
 
 
+class Classes(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='classes_pkey'),
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    class_code: str = Field(sa_column=Column('class_code', Text))
+    year: int = Field(sa_column=Column('year', Integer))
+    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
+    description: str = Field(sa_column=Column('description', Text))
+
+    documents: List['Documents'] = Relationship(back_populates='class_')
+    schedules: List['Schedules'] = Relationship(back_populates='class_')
+    simulations: List['Simulations'] = Relationship(back_populates='class_')
+    topics: List['Topics'] = Relationship(back_populates='class_')
+    attempts: List['Attempts'] = Relationship(back_populates='class_')
+
+
 class Scenarios(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='scenarios_pkey'),
@@ -38,20 +58,6 @@ class Scenarios(_Base, table=True):
 
     interactions: List['Interactions'] = Relationship(back_populates='scenario')
     chats: List['Chats'] = Relationship(back_populates='scenario')
-
-
-class Schedules(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='schedules_pkey'),
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-
-    classes: List['Classes'] = Relationship(back_populates='schedule')
-    events: List['Events'] = Relationship(back_populates='schedule')
 
 
 class Users(_Base, table=True):
@@ -72,43 +78,22 @@ class Users(_Base, table=True):
     attempts: List['Attempts'] = Relationship(back_populates='user')
 
 
-class Classes(_Base, table=True):
+class Documents(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='SET NULL', name='classes_schedule_id_fkey'),
-        PrimaryKeyConstraint('id', name='classes_pkey')
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='documents_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
-    class_code: str = Field(sa_column=Column('class_code', Text))
-    year: int = Field(sa_column=Column('year', Integer))
-    term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
-    description: str = Field(sa_column=Column('description', Text))
-    schedule_id: Optional[UUID] = Field(default=None, sa_column=Column('schedule_id', Uuid))
+    file_path: str = Field(sa_column=Column('file_path', Text))
+    mime_type: str = Field(sa_column=Column('mime_type', Text))
+    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
+    classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
 
-    schedule: Optional['Schedules'] = Relationship(back_populates='classes')
-    documents: List['Documents'] = Relationship(back_populates='class_')
-    simulations: List['Simulations'] = Relationship(back_populates='class_')
-    topics: List['Topics'] = Relationship(back_populates='class_')
-    attempts: List['Attempts'] = Relationship(back_populates='class_')
-
-
-class Events(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE', name='events_schedule_id_fkey'),
-        PrimaryKeyConstraint('id', name='events_pkey')
-    )
-
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    name: str = Field(sa_column=Column('name', Text))
-    description: str = Field(sa_column=Column('description', Text))
-    time: datetime = Field(sa_column=Column('time', DateTime(True)))
-    schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
-    document_type: Optional[str] = Field(default=None, sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type')))
-
-    schedule: Optional['Schedules'] = Relationship(back_populates='events')
+    class_: Optional['Classes'] = Relationship(back_populates='documents')
 
 
 class Interactions(_Base, table=True):
@@ -131,22 +116,20 @@ class Interactions(_Base, table=True):
     chats: List['Chats'] = Relationship(back_populates='interaction')
 
 
-class Documents(_Base, table=True):
+class Schedules(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='documents_class_id_fkey'),
-        PrimaryKeyConstraint('id', name='documents_pkey')
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='schedules_class_id_fkey'),
+        PrimaryKeyConstraint('id', name='schedules_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
-    file_path: str = Field(sa_column=Column('file_path', Text))
-    mime_type: str = Field(sa_column=Column('mime_type', Text))
+    description: str = Field(sa_column=Column('description', Text))
     class_id: UUID = Field(sa_column=Column('class_id', Uuid))
-    type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
-    classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
 
-    class_: Optional['Classes'] = Relationship(back_populates='documents')
+    class_: Optional['Classes'] = Relationship(back_populates='schedules')
+    events: List['Events'] = Relationship(back_populates='schedule')
 
 
 class Simulations(_Base, table=True):
@@ -202,6 +185,23 @@ class Attempts(_Base, table=True):
     simulation: Optional['Simulations'] = Relationship(back_populates='attempts')
     user: Optional['Users'] = Relationship(back_populates='attempts')
     chats: List['Chats'] = Relationship(back_populates='attempt')
+
+
+class Events(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['schedule_id'], ['schedules.id'], ondelete='CASCADE', name='events_schedule_id_fkey'),
+        PrimaryKeyConstraint('id', name='events_pkey')
+    )
+
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    time: datetime = Field(sa_column=Column('time', DateTime(True)))
+    schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
+    document_type: Optional[str] = Field(default=None, sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type')))
+
+    schedule: Optional['Schedules'] = Relationship(back_populates='events')
 
 
 class Chats(_Base, table=True):

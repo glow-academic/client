@@ -107,7 +107,7 @@ Cypress.Commands.add('waitForServerAction', () => {
 // Chat helpers - Robust for real data scenarios
 Cypress.Commands.add('startChat', (simulationTitle = 'Happy Chat Simulation') => {
   // Navigate to chats page and start a chat
-  cy.navigateToPage('/dashboard/chats')
+  cy.navigateToPage('/dashboard')
   
   // Wait for page to load and data to be fetched
   cy.waitForServerAction()

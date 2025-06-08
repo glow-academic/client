@@ -81,6 +81,7 @@ import { deleteSimulation } from "@/utils/mutations/delete-simulation";
 import { getInteractions } from "@/utils/queries/get-interactions";
 import { createInteraction } from "@/utils/mutations/create-interaction";
 import { updateInteraction } from "@/utils/mutations/update-interaction";
+import { getAllDocuments } from "@/utils/queries/get-all-documents";
 
 interface InteractionConfig {
   id: string;
@@ -175,7 +176,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
 
   const { data: documents = [] } = useQuery({
     queryKey: ["documents"],
-    queryFn: getDocuments,
+    queryFn: getAllDocuments,
   });
 
   const { data: agents = [] } = useQuery({

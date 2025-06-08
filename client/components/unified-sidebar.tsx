@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Check, ChevronsUpDown } from "lucide-react"
+import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Check, ChevronsUpDown, ChartBar, TrendingUp, Clock } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -65,13 +65,10 @@ interface NavSection {
   url: string
   icon: React.ComponentType<{ className?: string }>
   items?: MenuItem[]
+  section?: string
 }
 
-interface ManagementTab {
-  key: string
-  label: string
-  section: string
-}
+
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -110,29 +107,7 @@ const getAvailableModes = (userRole: UserRole) => {
   return modes;
 };
 
-// Helper function to get management tabs based on role
-const getManagementTabs = (effectiveRole: UserRole | 'guest'): ManagementTab[] => {
-  const tabs: ManagementTab[] = [];
 
-  if (effectiveRole === 'admin') {
-    tabs.push(
-      { key: 'instructional-staff', label: 'Instructional Staff', section: 'manage-instructional' },
-      { key: 'instructors', label: 'Instructors', section: 'manage-instructors' },
-      { key: 'teaching-assistants', label: 'Teaching Assistants', section: 'manage-tas' }
-    );
-  } else if (effectiveRole === 'instructional') {
-    tabs.push(
-      { key: 'instructors', label: 'Instructors', section: 'manage-instructors' },
-      { key: 'teaching-assistants', label: 'Teaching Assistants', section: 'manage-tas' }
-    );
-  } else if (effectiveRole === 'instructor') {
-    tabs.push(
-      { key: 'teaching-assistants', label: 'Teaching Assistants', section: 'manage-tas' }
-    );
-  }
-
-  return tabs;
-};
 
 export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: UnifiedSidebarProps) {
   const router = useRouter();
@@ -191,162 +166,170 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     }
   }, [classes, user, effectiveRole]);
 
-  // Get management tabs based on current role
-  const managementTabs = React.useMemo(() => {
-    return getManagementTabs(effectiveRole);
-  }, [effectiveRole]);
+
 
   // Build navigation menu based on role with search filtering
   const navMain = React.useMemo(() => {
     const menu: NavSection[] = [];
 
-    if (effectiveRole === 'guest') {
-      // Guest mode - simplified like TA mode, just dashboard
+    // Standalone menu items (formerly dashboard items)
+    // Home - Available to all roles
+    menu.push({
+      title: "Home",
+      url: "#",
+      icon: Home,
+      section: "dashboard",
+    });
+
+    // Growth - Only for TAs
+    if (effectiveRole === 'ta') {
       menu.push({
-        title: "Dashboard",
+        title: "Growth",
         url: "#",
-        icon: Home,
-        items: [
-          {
-            title: "Chats",
-            url: "#",
-            section: "chats",
-          },
-          {
-            title: "History",
-            url: "#",
-            section: "history",
-          },
-          {
-            title: "Rubric",
-            url: "#",
-            section: "rubric",
-          },
-        ],
+        icon: TrendingUp,
+        section: "growth",
       });
-    } else if (effectiveRole === 'ta') {
-      // TA mode - home, history, and growth
+    }
+
+    // History - Only for TAs and guests
+    if (effectiveRole === 'ta' || effectiveRole === 'guest') {
       menu.push({
-        title: "Dashboard",
+        title: "History",
         url: "#",
-        icon: Home,
-        items: [
-          {
-            title: "Chats",
-            url: "#",
-            section: "chats",
-          },
-          {
-            title: "Growth",
-            url: "#",
-            section: "growth",
-          },
-          {
-            title: "History",
-            url: "#",
-            section: "history",
-          },
-          {
-            title: "Rubric",
-            url: "#",
-            section: "rubric",
-          },
-        ],
+        icon: Clock,
+        section: "history",
       });
-    } else {
-      // Other roles - full dashboard with analytics
+    }
+
+    // Rubric - Only for TAs and guests
+    if (effectiveRole === 'ta' || effectiveRole === 'guest') {
       menu.push({
-        title: "Dashboard",
+        title: "Rubric",
         url: "#",
-        icon: Home,
+        icon: FileText,
+        section: "rubric",
+      });
+    }
+
+    // Analytics - Available from TA level and up
+    if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
+      menu.push({
+        title: "Analytics",
+        url: "#",
+        icon: ChartBar,
         items: [
           {
-            title: "Analytics",
+            title: "Overview",
             url: "#",
             section: "analytics",
           },
           {
-            title: "Chats",
+            title: "Performance",
             url: "#",
-            section: "chats",
+            section: "performance",
           },
           {
-            title: "History",
+            title: "Leaderboard",
             url: "#",
-            section: "history",
+            section: "leaderboard",
           },
           {
-            title: "Rubric",
+            title: "Logs",
             url: "#",
-            section: "rubric",
+            section: "logs",
           },
         ],
       });
+    }
 
-      // Classes section - for admin, instructional, and instructor
-      if (availableClasses.length > 0 || effectiveRole === 'instructor') {
-        const classItems: MenuItem[] = availableClasses.map((cls: ClassData) => ({
-          title: cls.classCode,
-          url: "#",
-          section: `class-${cls.id}`,
-          classData: cls,
-        }));
-
-        if (effectiveRole === 'admin' || effectiveRole === 'instructional' || effectiveRole === 'instructor') {
-          classItems.unshift({
-            title: "General",
+    // Simulations - Available from instructor level and up
+    if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
+      menu.push({
+        title: "Simulations",
+        url: "#",
+        icon: MessageSquare,
+        items: [
+          {
+            title: "Create",
             url: "#",
-            section: "add-class",
+            section: "simulations",
+          },
+          {
+            title: "Agents",
+            url: "#",
+            section: "agents",
+          },
+          {
+            title: "Scenarios",
+            url: "#",
+            section: "scenarios",
+          },
+        ],
+      });
+    }
+
+    // Classes - Available from instructor level and up
+    if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
+      const classItems: MenuItem[] = [];
+      
+      // Add general classes section
+      classItems.push({
+        title: "Dashboard",
+        url: "#",
+        section: "classes",
+      });
+
+      // Add specific classes based on role
+      if (availableClasses.length > 0) {
+        availableClasses.forEach((cls: ClassData) => {
+          classItems.push({
+            title: cls.classCode,
+            url: "#",
+            section: `class-${cls.id}`,
+            classData: cls,
           });
-        }
-
-        menu.push({
-          title: "Classes",
-          url: "#",
-          icon: GraduationCap,
-          items: classItems,
         });
       }
 
-      // Chat management - for admin and instructional
-      if (['admin', 'instructional'].includes(effectiveRole)) {
-        menu.push({
-          title: "Customization",
-          url: "#",
-          icon: MessageSquare,
-          items: [
-            {
-              title: "Simulations",
-              url: "#",
-              section: "chat-simulations",
-            },
-            {
-              title: "Agents",
-              url: "#",
-              section: "chat-agents",
-            },
-            {
-              title: "Scenarios",
-              url: "#",
-              section: "chat-scenarios",
-            },
-          ],
-        });
-      }
+      menu.push({
+        title: "Classes",
+        url: "#",
+        icon: GraduationCap,
+        items: classItems,
+      });
+    }
 
-      // Management section - hierarchical tabs based on role
-      if (managementTabs.length > 0) {
-        menu.push({
-          title: "Management",
-          url: "#",
-          icon: Settings,
-          items: managementTabs.map(tab => ({
-            title: tab.label,
-            url: "#",
-            section: tab.section,
-          })),
-        });
-      }
+    // Management - Available from admin level and up
+    if (['admin'].includes(effectiveRole)) {
+      const managementItems: MenuItem[] = [];
+
+      // Staff management - always available for instructional and admin
+      managementItems.push({
+        title: "Staff",
+        url: "#",
+        section: "staff",
+      });
+
+      // Reports - available for instructional and admin
+      managementItems.push({
+        title: "Reports",
+        url: "#",
+        section: "reports",
+      });
+
+      // Evaluations - available for instructional and admin
+      managementItems.push({
+        title: "Evaluations",
+        url: "#",
+        section: "evals",
+      });
+
+      menu.push({
+        title: "Management",
+        url: "#",
+        icon: Settings,
+        items: managementItems,
+      });
     }
 
     // Apply search filter if search term exists
@@ -363,7 +346,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     }
 
     return menu;
-  }, [effectiveRole, availableClasses, managementTabs, searchTerm]);
+  }, [effectiveRole, availableClasses, searchTerm]);
 
   const handleSectionChange = createFlexibleSectionChangeHandler(router, onSectionChange);
 
@@ -492,45 +475,68 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
       </SidebarHeader>
 
       <SidebarContent className="gap-0">
-        {navMain.map((item) => (
-          <Collapsible
-            key={item.title}
-            title={item.title}
-            defaultOpen
-            className="group/collapsible"
-          >
-            <SidebarGroup>
-              <SidebarGroupLabel
-                asChild
-                className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
-              >
-                <CollapsibleTrigger>
-                  <item.icon className="h-4 w-4 mr-2" />
-                  {item.title}
-                  <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
-                </CollapsibleTrigger>
-              </SidebarGroupLabel>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {item.items?.map((subItem: MenuItem) => (
-                      <SidebarMenuItem key={subItem.title}>
-                        <SidebarMenuButton 
-                          isActive={activeSection === subItem.section}
-                          onClick={() => handleItemClick(subItem)}
-                          className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
-                        >
-                          {subItem.isSubItem && <FileText className="h-3 w-3 mr-2" />}
-                          {subItem.title}
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </SidebarGroup>
-          </Collapsible>
-        ))}
+        {navMain.map((item) => {
+          // If item has no sub-items and has a section, render as standalone menu item
+          if (!item.items && item.section) {
+            return (
+              <SidebarGroup key={item.title}>
+                <SidebarGroupLabel
+                  asChild
+                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm font-medium cursor-pointer"
+                >
+                  <div
+                    onClick={() => handleItemClick({ title: item.title, url: item.url, section: item.section })}
+                    className={`flex items-center gap-2 px-2 py-1.5 ${activeSection === item.section ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''}`}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.title}
+                  </div>
+                </SidebarGroupLabel>
+              </SidebarGroup>
+            );
+          }
+
+          // Otherwise render as collapsible section with sub-items
+          return (
+            <Collapsible
+              key={item.title}
+              title={item.title}
+              defaultOpen
+              className="group/collapsible"
+            >
+              <SidebarGroup>
+                <SidebarGroupLabel
+                  asChild
+                  className="group/label text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sm"
+                >
+                  <CollapsibleTrigger>
+                    <item.icon className="h-4 w-4 mr-2" />
+                    {item.title}
+                    <ChevronRight className="ml-auto transition-transform group-data-[state=open]/collapsible:rotate-90" />
+                  </CollapsibleTrigger>
+                </SidebarGroupLabel>
+                <CollapsibleContent>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {item.items?.map((subItem: MenuItem) => (
+                        <SidebarMenuItem key={subItem.title}>
+                          <SidebarMenuButton 
+                            isActive={activeSection === subItem.section}
+                            onClick={() => handleItemClick(subItem)}
+                            className={`${subItem.isSubItem ? "pl-8 text-sm" : "pl-8"}`}
+                          >
+                            {subItem.isSubItem && <FileText className="h-3 w-3 mr-2" />}
+                            {subItem.title}
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </CollapsibleContent>
+              </SidebarGroup>
+            </Collapsible>
+          );
+        })}
       </SidebarContent>
 
       {/* User Profile in Footer */}

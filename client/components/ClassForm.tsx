@@ -21,6 +21,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 
 
@@ -35,7 +37,10 @@ import {
   Eye,
   Grid3X3,
   List,
-  UploadCloud
+  UploadCloud,
+  Brain,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 
 import { getSimulations } from "@/utils/queries/get-simulations";
@@ -47,6 +52,7 @@ import { createClass } from "@/utils/mutations/create-class";
 import DocumentViewer from "@/components/DocumentViewer";
 import { documents as DocumentItem } from "@/drizzle/schema";
 import { cn } from "@/lib/utils";
+import { updateDocument } from "@/utils/mutations/update-document";
 
 // Define document type
 type DocumentType = typeof DocumentItem.$inferSelect;
@@ -108,6 +114,68 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   const [overallProgress, setOverallProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Course processing state
+  const [showCourseProcessDialog, setShowCourseProcessDialog] = useState(false);
+  const [isProcessingCourse, setIsProcessingCourse] = useState(false);
+
+  // Handle course processing
+  const handleCourseProcessing = async () => {
+    if (!classId) {
+      toast.error("Please save the class first before processing course information");
+      return;
+    }
+
+    try {
+      setIsProcessingCourse(true);
+      setShowCourseProcessDialog(false);
+
+      const toastId = toast.loading("Processing course information...");
+      
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const response = await fetch(`${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || "Failed to process course information");
+      }
+
+      const result = await response.json();
+      
+      toast.dismiss(toastId);
+      
+      if (result.status === "success") {
+        toast.success("Course information processed successfully!");
+        
+        // Show details of what was updated
+        if (result.updates_made && result.updates_made.length > 0) {
+          toast.info(`Updated: ${result.updates_made.join(", ")}`);
+        }
+        
+        // Refresh the class data
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
+        queryClient.invalidateQueries({ queryKey: ["classes"] });
+        
+        // If there's debug info, log it
+        if (result.debug_info) {
+          console.log("Course processing debug info:", result.debug_info);
+        }
+      } else {
+        throw new Error(result.message || "Course processing failed");
+      }
+    } catch (error) {
+      toast.error(`Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`);
+      console.error("Course processing error:", error);
+    } finally {
+      setIsProcessingCourse(false);
+    }
+  };
+
   const [formData, setFormData] = useState<FormData>({
     name: initialData?.name || "",
     classCode: initialData?.classCode || "",
@@ -139,12 +207,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   // Fetch documents for this class
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
     queryKey: ["documents", classId],
-    queryFn: async () => {
-      if (!classId) return [];
-      const docs = await getDocuments();
-      return docs.filter((doc: DocumentType) => doc.classId === classId);
-    },
-    enabled: !!classId,
+    queryFn: () => getDocuments(classId || ""),
+    enabled: classId !== undefined && classId !== null,
   });
 
   // Update form data when initial data changes
@@ -559,20 +623,10 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
 
   const handleDocumentTypeChange = async (documentId: string, newType: string) => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-          body: JSON.stringify({ type: newType }),
-        }
-      );
+      const { success, error } = await updateDocument(documentId, undefined, undefined, undefined, classId, newType as DocumentTypeEnum, false);
 
-      if (!response.ok) {
-        throw new Error('Failed to update document type');
+      if (!success) {
+        throw new Error(error);
       }
 
       queryClient.invalidateQueries({ queryKey: ["documents", classId] });
@@ -785,7 +839,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                       <List className="h-4 w-4" />
                     </Button>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -804,6 +858,21 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                     >
                       <Upload className="h-4 w-4" />
                       {isUploading ? "Uploading..." : "Upload"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCourseProcessDialog(true)}
+                      className="flex items-center gap-2"
+                      title="Process Course Information"
+                      disabled={isProcessingCourse}
+                    >
+                      {isProcessingCourse ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Brain className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -1025,6 +1094,67 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
               {isDeletingDoc ? "Deleting..." : "Delete"}
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Course Processing Dialog */}
+      <Dialog open={showCourseProcessDialog} onOpenChange={setShowCourseProcessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Process Course Information
+            </DialogTitle>
+            <DialogDescription>
+              Extract course information from uploaded documents, especially syllabus files.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                  Warning: This will override existing information
+                </p>
+                <p className="text-sm text-amber-700 dark:text-amber-300">
+                  Course processing will analyze your documents (especially syllabus files) and may update the following fields:
+                </p>
+                <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside space-y-1 ml-2">
+                  <li>Class name and code</li>
+                  <li>Course description</li>
+                  <li>Year and term</li>
+                  <li>Course topics and prerequisites</li>
+                  <li>Class schedules and events</li>
+                </ul>
+              </div>
+            </div>
+            
+            <p className="text-sm text-muted-foreground">
+              This will analyze all documents in this class and extract course information using AI. Make sure you have uploaded relevant documents (especially a syllabus) before processing.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCourseProcessDialog(false)}
+              disabled={isProcessingCourse}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCourseProcessing}
+              disabled={isProcessingCourse}
+            >
+              {isProcessingCourse ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Processing...
+                </>
+              ) : (
+                "Process Course"
+              )}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

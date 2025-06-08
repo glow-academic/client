@@ -57,10 +57,9 @@ export default function DocumentViewer({
     isLoading,
     error: queryError,
   } = useQuery({
-    queryKey: ["documents"],
-    queryFn: getDocuments,
-    select: (data) => classId ? data?.filter((x) => x.classId === classId) ?? [] : data ?? [],
-    enabled: !document,
+    queryKey: ["documents", classId],
+    queryFn: () => getDocuments(classId || ""),
+    enabled: !!classId,
   });
 
   // Memoize documentsToUse to prevent unnecessary re-renders

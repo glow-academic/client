@@ -94,18 +94,9 @@ export default function Documents({ classId }: DocumentsProps) {
 
   // Fetch documents and classes
   const { data: documents = [], isLoading: isDocumentsLoading } = useQuery({
-    queryKey: ["documents"],
-    queryFn: async () => {
-      try {
-        const docs = await getDocuments();
-        // Filter out any mock/system documents if needed
-        // For now, show all documents but we could add a filter here
-        return docs;
-      } catch (error) {
-        console.error("Error fetching documents:", error);
-        return [];
-      }
-    },
+    queryKey: ["documents", classId],
+    queryFn: () => getDocuments(classId || ""),
+    enabled: !!classId,
   });
 
   const { data: classes = [], isLoading: isClassesLoading } = useQuery({

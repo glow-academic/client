@@ -1,21 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { schedules, classes, agents, interactions, scenarios, simulations, topics, events, documents, users, attempts, chats, messages, rubrics } from "./schema";
-
-export const classesRelations = relations(classes, ({one, many}) => ({
-	schedule: one(schedules, {
-		fields: [classes.scheduleId],
-		references: [schedules.id]
-	}),
-	simulations: many(simulations),
-	topics: many(topics),
-	documents: many(documents),
-	attempts: many(attempts),
-}));
-
-export const schedulesRelations = relations(schedules, ({many}) => ({
-	classes: many(classes),
-	events: many(events),
-}));
+import { agents, interactions, scenarios, classes, simulations, topics, schedules, events, documents, users, attempts, chats, messages, rubrics } from "./schema";
 
 export const interactionsRelations = relations(interactions, ({one, many}) => ({
 	agent: one(agents, {
@@ -47,11 +31,27 @@ export const simulationsRelations = relations(simulations, ({one, many}) => ({
 	attempts: many(attempts),
 }));
 
+export const classesRelations = relations(classes, ({many}) => ({
+	simulations: many(simulations),
+	topics: many(topics),
+	schedules: many(schedules),
+	documents: many(documents),
+	attempts: many(attempts),
+}));
+
 export const topicsRelations = relations(topics, ({one}) => ({
 	class: one(classes, {
 		fields: [topics.classId],
 		references: [classes.id]
 	}),
+}));
+
+export const schedulesRelations = relations(schedules, ({one, many}) => ({
+	class: one(classes, {
+		fields: [schedules.classId],
+		references: [classes.id]
+	}),
+	events: many(events),
 }));
 
 export const eventsRelations = relations(events, ({one}) => ({

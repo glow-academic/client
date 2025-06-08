@@ -1,6 +1,6 @@
 /**
  * Analytics.tsx
- * Graduate TA Training Analytics Dashboard
+ * Graduate TA Training Analytics Dashboard - Overview
  * Tracks TA performance across different student personality interactions
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
@@ -19,35 +19,22 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users,
   TrendingUp,
   Clock,
   Target,
-  Award,
   AlertTriangle,
   MessageSquare,
   Brain,
   Zap,
   Calendar,
   Eye,
-  TrendingDown,
-  ChevronRight,
 } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -55,14 +42,9 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
-  Area,
-  AreaChart,
 } from "recharts";
 import { format, subDays } from "date-fns";
-import { getAgentConfig } from "@/utils/agents";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
-import { getSimulations } from "@/utils/queries/get-simulations";
-import { getInteractions } from "@/utils/queries/get-interactions";
 
 // Color palette for charts
 const COLORS = {
@@ -76,20 +58,7 @@ const COLORS = {
   orange: "#f97316",
 };
 
-const CHART_COLORS = [
-  COLORS.primary,
-  COLORS.success,
-  COLORS.warning,
-  COLORS.danger,
-  COLORS.purple,
-  COLORS.pink,
-];
-
 export default function Analytics() {
-  const [selectedTimeRange, setSelectedTimeRange] = useState("7d");
-  const [selectedClass, setSelectedClass] = useState("all");
-  const [activeTab, setActiveTab] = useState("overview");
-
   // Fetch data
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
@@ -99,16 +68,6 @@ export default function Analytics() {
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["attempts"],
     queryFn: () => getAttempts(),
-  });
-
-  const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getSimulations(),
-  });
-
-  const { data: interactions, isLoading: isLoadingInteractions } = useQuery({
-    queryKey: ["interactions"],
-    queryFn: () => getInteractions(),
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -162,47 +121,7 @@ export default function Analytics() {
           : 0,
     };
 
-    // Performance by student type
-    const performanceByType = agents.map((agent) => {
-      const profileChats = chats.filter((chat) => chat.agentId === agent.id);
-      const profileRubrics = rubrics.filter((rubric) => {
-        const chat = chats.find((c) => c.id === rubric.chatId);
-        return chat?.agentId === agent.id;
-      });
-
-      const avgScore =
-        profileRubrics.length > 0
-          ? Math.round(
-              (profileRubrics.reduce((sum, r) => sum + r.score, 0) / profileRubrics.length / 20) * 100,
-            )
-          : 0;
-
-      return {
-        name: agent.name,
-        score: avgScore,
-        sessions: profileChats.length,
-        color: getAgentConfig(agent.name).colors.bgColor,
-      };
-    });
-
-    // Mock time-series data for skill progression (keep this as mock for now since it requires historical tracking)
-    const skillProgressionData = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(new Date(), 6 - i);
-      const baseAdaptability = 65 + i * 2 + Math.random() * 10;
-      const baseListening = 70 + i * 1.5 + Math.random() * 8;
-      const baseObjectives = 75 + i * 1.8 + Math.random() * 6;
-      const baseTimeManagement = 68 + i * 2.2 + Math.random() * 9;
-      
-      return {
-        date: format(date, "MMM dd"),
-        adaptability: Math.min(95, Math.round(baseAdaptability)),
-        listening: Math.min(95, Math.round(baseListening)),
-        objectives: Math.min(95, Math.round(baseObjectives)),
-        timeManagement: Math.min(95, Math.round(baseTimeManagement)),
-      };
-    });
-
-    // TA leaderboard
+    // TA performance for struggling count
     const taPerformance = tas
       .map((ta) => {
         const taAttempts = attempts?.filter((attempt) => attempt.userId === ta.id) || [];
@@ -218,24 +137,8 @@ export default function Analytics() {
             ? Math.round((taRubrics.reduce((sum, r) => sum + r.score, 0) / taRubrics.length / 20) * 100)
             : 0;
 
-        const completedSessions = taChats.filter((chat) => chat.completed).length;
-        const totalSessions = taChats.length;
-
-        return {
-          id: ta.id,
-          name: ta.name,
-          username: ta.username,
-          avgScore,
-          completedSessions,
-          totalSessions,
-          completionRate:
-            totalSessions > 0
-              ? Math.round((completedSessions / totalSessions) * 100)
-              : 0,
-          initials: ta.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
-        };
-      })
-      .sort((a, b) => b.avgScore - a.avgScore);
+        return { avgScore };
+      });
 
     // Time series data (last 7 days)
     const timeSeriesData = Array.from({ length: 7 }, (_, i) => {
@@ -265,7 +168,7 @@ export default function Analytics() {
 
     // Struggling TAs (score < 70)
     const strugglingTAs = taPerformance.filter(
-      (ta) => ta.avgScore < 70 && ta.totalSessions > 0,
+      (ta) => ta.avgScore < 70
     );
 
     // Calculate average training time from rubrics (convert seconds to minutes)
@@ -278,11 +181,8 @@ export default function Analytics() {
       totalSessions,
       completionRate,
       avgScores,
-      performanceByType,
-      taPerformance,
       timeSeriesData,
       strugglingTAs,
-      skillProgressionData,
       avgTrainingTime,
     };
   }, [users, chats, rubrics, agents, attempts]);
@@ -330,7 +230,7 @@ export default function Analytics() {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6">
       {/* Key Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200">
@@ -394,772 +294,154 @@ export default function Analytics() {
         </Card>
       </div>
 
-      {/* Main Analytics Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
-          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* Performance Trends */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  Performance Trends
-                </CardTitle>
-                <CardDescription>
-                  Training scores and session completion over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.timeSeriesData}>
-                      <defs>
-                        <linearGradient
-                          id="scoreGradient"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-muted"
-                      />
-                      <XAxis dataKey="date" className="text-xs" />
-                      <YAxis className="text-xs" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "6px",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="score"
-                        stroke={COLORS.primary}
-                        strokeWidth={2}
-                        fill="url(#scoreGradient)"
-                        name="Average Score"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Skill Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Skill Breakdown
-                </CardTitle>
-                <CardDescription>Average scores by competency</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {[
-                    {
-                      name: "Adaptability",
-                      score: analytics.avgScores.adaptability,
-                      icon: Zap,
-                    },
-                    {
-                      name: "Active Listening",
-                      score: analytics.avgScores.listening,
-                      icon: Eye,
-                    },
-                    {
-                      name: "Content Mastery",
-                      score: analytics.avgScores.objectives,
-                      icon: Target,
-                    },
-                    {
-                      name: "Time Management",
-                      score: analytics.avgScores.timeManagement,
-                      icon: Clock,
-                    },
-                  ].map((skill) => (
-                    <div key={skill.name} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <skill.icon className="h-4 w-4 text-muted-foreground" />
-                          <span>{skill.name}</span>
-                        </div>
-                        <span className="font-medium">{skill.score}%</span>
-                      </div>
-                      <Progress value={skill.score} className="h-2" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Session Activity */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Daily Session Activity
-              </CardTitle>
-              <CardDescription>
-                Training session volume and completion rates
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={analytics.timeSeriesData}>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-muted"
-                    />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis className="text-xs" />
-                    <Tooltip
-                      content={<CustomBarTooltip active={false} payload={[]} label={""} />}
-                      position={{ x: 0, y: 0 }}
-                      allowEscapeViewBox={{ x: false, y: true }}
-                      offset={20}
-                    />
-                    <Bar
-                      dataKey="sessions"
-                      fill={COLORS.primary}
-                      name="Total Sessions"
-                      radius={[4, 4, 0, 0]}
-                    />
-                    <Bar
-                      dataKey="completed"
-                      fill={COLORS.success}
-                      name="Completed Sessions"
-                      radius={[4, 4, 0, 0]}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="performance" className="space-y-6">
-          {/* Performance by Student Type */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Performance by Student Personality</CardTitle>
-              <CardDescription>
-                How TAs handle different student types during training
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="h-[300px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.performanceByType} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 100]} />
-                      <YAxis dataKey="name" type="category" width={80} />
-                      <Tooltip 
-                        formatter={(value: number) => [`${value}%`, 'Average Score']}
-                        labelFormatter={(label) => `${label} Students`}
-                      />
-                      <Bar
-                        dataKey="score"
-                        fill={COLORS.primary}
-                        radius={[0, 4, 4, 0]}
-                        name="Average Score"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="space-y-4">
-                  {analytics.performanceByType.map((type, index) => (
-                    <div
-                      key={type.name}
-                      className="flex items-center justify-between p-4 rounded-lg border"
+      {/* Performance Trends */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Performance Trends
+            </CardTitle>
+            <CardDescription>
+              Training scores and session completion over time
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={analytics.timeSeriesData}>
+                  <defs>
+                    <linearGradient
+                      id="scoreGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
-                        <div>
-                          <p className="font-medium">{type.name} Student</p>
-                          <p className="text-sm text-muted-foreground">
-                            {type.sessions} sessions
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold">{type.score}%</p>
-                        <Badge
-                          variant={
-                            type.score >= 80
-                              ? "default"
-                              : type.score >= 70
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {type.score >= 80
-                            ? "Excellent"
-                            : type.score >= 70
-                            ? "Good"
-                            : "Needs Work"}
-                        </Badge>
-                      </div>
+                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
+                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    className="stroke-muted"
+                  />
+                  <XAxis dataKey="date" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--background))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "6px",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="score"
+                    stroke={COLORS.primary}
+                    strokeWidth={2}
+                    fill="url(#scoreGradient)"
+                    name="Average Score"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Skill Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Skill Breakdown
+            </CardTitle>
+            <CardDescription>Average scores by competency</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[
+                {
+                  name: "Adaptability",
+                  score: analytics.avgScores.adaptability,
+                  icon: Zap,
+                },
+                {
+                  name: "Active Listening",
+                  score: analytics.avgScores.listening,
+                  icon: Eye,
+                },
+                {
+                  name: "Content Mastery",
+                  score: analytics.avgScores.objectives,
+                  icon: Target,
+                },
+                {
+                  name: "Time Management",
+                  score: analytics.avgScores.timeManagement,
+                  icon: Clock,
+                },
+              ].map((skill) => (
+                <div key={skill.name} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <skill.icon className="h-4 w-4 text-muted-foreground" />
+                      <span>{skill.name}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Skill Development Over Time */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Skill Development Over Time
-              </CardTitle>
-              <CardDescription>
-                Track improvement in key competencies across all TAs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={analytics.skillProgressionData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis dataKey="date" className="text-xs" />
-                    <YAxis domain={[0, 100]} className="text-xs" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "hsl(var(--background))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "6px",
-                      }}
-                      formatter={(value: number) => [`${value}%`, '']}
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="adaptability"
-                      stroke={COLORS.primary}
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      name="Adaptability"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="listening"
-                      stroke={COLORS.success}
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      name="Active Listening"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="objectives"
-                      stroke={COLORS.warning}
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      name="Content Mastery"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="timeManagement"
-                      stroke={COLORS.purple}
-                      strokeWidth={3}
-                      dot={{ r: 4 }}
-                      name="Time Management"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.primary }}></div>
-                  <span className="text-sm">Adaptability</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.success }}></div>
-                  <span className="text-sm">Active Listening</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.warning }}></div>
-                  <span className="text-sm">Content Mastery</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.purple }}></div>
-                  <span className="text-sm">Time Management</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Performance Distribution */}
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Performance Analytics
-                </CardTitle>
-                <CardDescription>
-                  Detailed breakdown of TA performance metrics
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Score Distribution */}
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Award className="h-4 w-4" />
-                    Score Distribution
-                  </h4>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    {[
-                      { 
-                        label: 'Excellent', 
-                        range: '90-100%', 
-                        count: analytics.taPerformance.filter(ta => ta.avgScore >= 90).length, 
-                        color: COLORS.success, 
-                        bgColor: 'bg-green-50',
-                        tas: analytics.taPerformance.filter(ta => ta.avgScore >= 90)
-                      },
-                      { 
-                        label: 'Good', 
-                        range: '80-89%', 
-                        count: analytics.taPerformance.filter(ta => ta.avgScore >= 80 && ta.avgScore < 90).length, 
-                        color: COLORS.primary, 
-                        bgColor: 'bg-blue-50',
-                        tas: analytics.taPerformance.filter(ta => ta.avgScore >= 80 && ta.avgScore < 90)
-                      },
-                      { 
-                        label: 'Average', 
-                        range: '70-79%', 
-                        count: analytics.taPerformance.filter(ta => ta.avgScore >= 70 && ta.avgScore < 80).length, 
-                        color: COLORS.warning, 
-                        bgColor: 'bg-yellow-50',
-                        tas: analytics.taPerformance.filter(ta => ta.avgScore >= 70 && ta.avgScore < 80)
-                      },
-                      { 
-                        label: 'Needs Support', 
-                        range: '<70%', 
-                        count: analytics.taPerformance.filter(ta => ta.avgScore < 70).length, 
-                        color: COLORS.danger, 
-                        bgColor: 'bg-red-50',
-                        tas: analytics.taPerformance.filter(ta => ta.avgScore < 70)
-                      },
-                    ].map((tier) => (
-                      <Dialog key={tier.label}>
-                        <DialogTrigger asChild>
-                          <div 
-                            className={`p-3 rounded-lg border ${tier.bgColor} cursor-pointer hover:shadow-md transition-all duration-200 relative group`}
-                          >
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-sm font-medium">{tier.label}</span>
-                              <span className="text-lg font-bold" style={{ color: tier.color }}>
-                                {tier.count}
-                              </span>
-                            </div>
-                            <div className="text-xs text-muted-foreground">{tier.range}</div>
-                            <div className="mt-2 h-1 bg-gray-200 rounded">
-                              <div 
-                                className="h-1 rounded transition-all duration-200"
-                                style={{ 
-                                  backgroundColor: tier.color, 
-                                  width: `${analytics.taPerformance.length > 0 ? (tier.count / analytics.taPerformance.length) * 100 : 0}%` 
-                                }}
-                              />
-                            </div>
-                            
-                            {/* Quick preview tooltip - only shows on hover when not empty */}
-                            {tier.tas.length > 0 && tier.tas.length <= 3 && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
-                                <div className="font-medium mb-1">{tier.label} TAs:</div>
-                                <div className="space-y-1">
-                                  {tier.tas.map((ta) => (
-                                    <div key={ta.id} className="flex justify-between">
-                                      <span>{ta.name}</span>
-                                      <span className="ml-2 opacity-75">{ta.avgScore}%</span>
-                                    </div>
-                                  ))}
-                                </div>
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                              </div>
-                            )}
-                            
-                            {/* Click to view more indicator */}
-                            {tier.tas.length > 3 && (
-                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10 whitespace-nowrap">
-                                <div className="font-medium">Click to view all {tier.tas.length} TAs</div>
-                                <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
-                              </div>
-                            )}
-                          </div>
-                        </DialogTrigger>
-                        
-                        {tier.tas.length > 0 && (
-                          <DialogContent className="max-w-md">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: tier.color }}></div>
-                                {tier.label} TAs ({tier.range})
-                              </DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-3 max-h-96 overflow-y-auto">
-                              {tier.tas.map((ta) => (
-                                <div key={ta.id} className="flex items-center justify-between p-3 rounded-lg border">
-                                  <div className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8">
-                                      <AvatarFallback>{ta.initials}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                      <p className="font-medium text-sm">{ta.name}</p>
-                                      <p className="text-xs text-muted-foreground">
-                                        {ta.completedSessions}/{ta.totalSessions} sessions
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div className="text-right">
-                                    <div className="text-lg font-bold" style={{ color: tier.color }}>
-                                      {ta.avgScore}%
-                                    </div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {ta.completionRate}% completion
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </DialogContent>
-                        )}
-                      </Dialog>
-                    ))}
+                    <span className="font-medium">{skill.score}%</span>
                   </div>
+                  <Progress value={skill.score} className="h-2" />
                 </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-                {/* Competency Breakdown */}
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Brain className="h-4 w-4" />
-                    Skill Change
-                  </h4>
-                  <div className="space-y-3">
-                    {[
-                      { skill: 'Time Management', avgScore: analytics.avgScores.timeManagement, improvement: '+3%', trend: 'up' },
-                      { skill: 'Adaptability', avgScore: analytics.avgScores.adaptability, improvement: '+1%', trend: 'up' },
-                      { skill: 'Active Listening', avgScore: analytics.avgScores.listening, improvement: '-2%', trend: analytics.avgScores.listening >= 70 ? 'up' : 'down' },
-                      { skill: 'Meeting Objectives', avgScore: analytics.avgScores.objectives, improvement: '+5%', trend: 'up' },
-                    ].map((competency) => (
-                      <div key={competency.skill} className="flex items-center justify-between p-2 rounded border">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                          <span className="text-sm font-medium">{competency.skill}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold">{competency.avgScore}%</span>
-                          <div className={`flex items-center gap-1 text-xs ${
-                            competency.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                          }`}>
-                            {competency.trend === 'up' ? (
-                              <TrendingUp className="h-3 w-3" />
-                            ) : (
-                              <TrendingDown className="h-3 w-3" />
-                            )}
-                            {competency.improvement}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {analytics.avgScores.overall}%
-                    </div>
-                    <div className="text-xs text-blue-600">Average Score</div>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {Math.round(analytics.completionRate)}%
-                    </div>
-                    <div className="text-xs text-green-600">Pass Rate</div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Training Insights
-                </CardTitle>
-                <CardDescription>
-                  Patterns and recommendations from training data
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Session Completion Insights */}
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4" />
-                    Session Patterns
-                  </h4>
-                  <div className="space-y-3">
-                    <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium text-yellow-800">
-                            Peak Difficulty: Aggressive Students
-                          </div>
-                          <div className="text-xs text-yellow-700 mt-1">
-                            TAs score 15% lower when handling aggressive personalities
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <Award className="h-4 w-4 text-green-600 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium text-green-800">
-                            Strength: Happy Students
-                          </div>
-                          <div className="text-xs text-green-700 mt-1">
-                            Highest success rate (88%) with positive personalities
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="flex items-start gap-2">
-                        <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
-                        <div>
-                          <div className="text-sm font-medium text-blue-800">
-                            Improvement Trend
-                          </div>
-                          <div className="text-xs text-blue-700 mt-1">
-                            Overall scores increased 8% over the last month
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Recommendations */}
-                <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    Action Items
-                  </h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 p-2 text-sm bg-purple-50 rounded border">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                      <span>Focus training on de-escalation techniques</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 text-sm bg-orange-50 rounded border">
-                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                      <span>Review time management strategies</span>
-                    </div>
-                    <div className="flex items-center gap-2 p-2 text-sm bg-teal-50 rounded border">
-                      <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                      <span>Pair struggling TAs with high performers</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Performance Trends */}
-                <div>
-                  <h4 className="font-medium mb-3">Weekly Progress</h4>
-                  <div className="space-y-2">
-                    {[
-                      { week: 'This Week', score: 84, change: '+2%' },
-                      { week: 'Last Week', score: 82, change: '+1%' },
-                      { week: '2 Weeks Ago', score: 81, change: '+3%' },
-                    ].map((week, index) => (
-                      <div key={week.week} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{week.week}</span>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{week.score}%</span>
-                          <span className="text-green-600 text-xs">{week.change}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Session Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Daily Session Activity
+          </CardTitle>
+          <CardDescription>
+            Training session volume and completion rates
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={analytics.timeSeriesData}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  className="stroke-muted"
+                />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip
+                  content={<CustomBarTooltip active={false} payload={[]} label={""} />}
+                  position={{ x: 0, y: 0 }}
+                  allowEscapeViewBox={{ x: false, y: true }}
+                  offset={20}
+                />
+                <Bar
+                  dataKey="sessions"
+                  fill={COLORS.primary}
+                  name="Total Sessions"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="completed"
+                  fill={COLORS.success}
+                  name="Completed Sessions"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </TabsContent>
-
-        <TabsContent value="leaderboard" className="space-y-6">
-          {/* TA Leaderboard */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  TA Performance Leaderboard
-                </CardTitle>
-                <CardDescription>
-                  Ranked by overall training performance
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analytics.taPerformance.slice(0, 10).map((ta, index) => (
-                    <div
-                      key={ta.id}
-                      className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-3 flex-1">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                          #{index + 1}
-                        </div>
-                        <Avatar className="h-10 w-10">
-                          <AvatarFallback>{ta.initials}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{ta.name}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {ta.username}@purdue.edu
-                          </p>
-                        </div>
-                      </div>
-                      <div className="text-right space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Badge
-                            variant={
-                              ta.avgScore >= 80
-                                ? "default"
-                                : ta.avgScore >= 70
-                                ? "secondary"
-                                : "destructive"
-                            }
-                          >
-                            {ta.avgScore}%
-                          </Badge>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {ta.completedSessions}/{ta.totalSessions} sessions
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* TAs Needing Support */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-orange-500" />
-                  Need Support
-                </CardTitle>
-                <CardDescription>
-                  TAs who may need additional training
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {analytics.strugglingTAs.length > 0 ? (
-                    analytics.strugglingTAs.map((ta) => (
-                      <Dialog key={ta.id}>
-                        <DialogTrigger asChild>
-                          <div className="flex items-center gap-3 p-3 rounded-lg border border-orange-200 hover:bg-orange-50 transition-colors cursor-pointer">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-orange-100 text-orange-800">
-                                {ta.initials}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1">
-                              <p className="font-medium text-sm">{ta.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {ta.avgScore}% avg score
-                              </p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          </div>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>
-                              Support Recommendations for {ta.name}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div className="p-4 rounded-lg bg-orange-50 border border-orange-200">
-                              <h4 className="font-medium text-orange-800 mb-2">
-                                Current Performance
-                              </h4>
-                              <div className="grid grid-cols-2 gap-4 text-sm">
-                                <div>
-                                  <span className="text-muted-foreground">
-                                    Average Score:
-                                  </span>
-                                  <span className="font-medium ml-2">
-                                    {ta.avgScore}%
-                                  </span>
-                                </div>
-                                <div>
-                                  <span className="text-muted-foreground">
-                                    Completion Rate:
-                                  </span>
-                                  <span className="font-medium ml-2">
-                                    {ta.completionRate}%
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <h4 className="font-medium">Recommended Actions:</h4>
-                              <ul className="text-sm space-y-1 text-muted-foreground">
-                                <li>• Schedule one-on-one mentoring session</li>
-                                <li>• Focus on confused student interaction patterns</li>
-                                <li>• Review active listening techniques</li>
-                                <li>• Practice time management strategies</li>
-                              </ul>
-                            </div>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    ))
-                  ) : (
-                    <div className="text-center py-6">
-                      <Award className="h-12 w-12 text-green-500 mx-auto mb-2" />
-                      <p className="text-sm font-medium text-green-700">
-                        All TAs are performing well!
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        No additional support needed
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -40,7 +40,7 @@ describe('Core Chat Functionality', () => {
       cy.url().should('include', '/dashboard', { timeout: 15000 })
 
       // Navigate to chats page
-      cy.visit('/dashboard/chats')
+      cy.visit('/dashboard')
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000) // Wait for data to load
 
@@ -83,7 +83,7 @@ describe('Core Chat Functionality', () => {
       cy.url().should('include', '/dashboard', { timeout: 15000 })
 
       // Navigate to chats page
-      cy.visit('/dashboard/chats')
+      cy.visit('/dashboard')
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
@@ -144,7 +144,7 @@ describe('Core Chat Functionality', () => {
       cy.get('button').contains('Login').click()
       cy.url().should('include', '/dashboard', { timeout: 15000 })
 
-      cy.visit('/dashboard/chats')
+      cy.visit('/dashboard')
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
@@ -175,7 +175,7 @@ describe('Core Chat Functionality', () => {
   describe('Guest User Workflow', () => {
     it('should allow guest users to complete chat workflow', () => {
       // Navigate directly to chats as guest
-      cy.visit('/dashboard/chats')
+      cy.visit('/dashboard')
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 
@@ -212,7 +212,7 @@ describe('Core Chat Functionality', () => {
       cy.get('button').contains('Login').click()
       cy.url().should('include', '/dashboard', { timeout: 15000 })
 
-      cy.visit('/dashboard/chats')
+      cy.visit('/dashboard')
       cy.get('body', { timeout: 15000 }).should('be.visible')
       cy.wait(3000)
 

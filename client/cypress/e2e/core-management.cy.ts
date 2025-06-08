@@ -120,7 +120,7 @@ describe('Core Management Operations', () => {
   describe('Simulation Management', () => {
     it('should create a new simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/simulations/new')
+      cy.navigateToPage('/simulations/new')
       
       // Fill simulation form
       cy.get('[data-testid="simulation-name"]').type('Test Simulation')
@@ -135,7 +135,7 @@ describe('Core Management Operations', () => {
 
     it('should update a simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/simulations/s/test-simulation-id')
+      cy.navigateToPage('/simulations/s/test-simulation-id')
       
       // Update simulation
       cy.get('[data-testid="edit-simulation"]').click()
@@ -150,7 +150,7 @@ describe('Core Management Operations', () => {
 
     it('should delete a simulation', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/simulations')
+      cy.navigateToPage('/simulations')
       
       // Delete simulation
       cy.get('[data-testid="delete-simulation"]').first().click()
@@ -230,7 +230,7 @@ describe('Core Management Operations', () => {
   describe('Document Upload', () => {
     it('should upload a document', () => {
       cy.loginAsAdmin()
-      cy.navigateToPage('/chat/simulations/new')
+      cy.navigateToPage('/simulations/new')
       
       // Upload document
       cy.get('[data-testid="file-upload"]').selectFile('cypress/fixtures/test-document.pdf', { force: true })
