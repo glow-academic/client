@@ -7,7 +7,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { format, compareAsc, startOfDay, subDays, isAfter, isBefore, addDays } from "date-fns";
+import { format, compareAsc, startOfDay, subDays, isAfter } from "date-fns";
 
 import { getAllChats } from "@/utils/queries/get-all-chats";
 import { getRubrics } from "@/utils/queries/get-rubrics";
@@ -41,12 +41,8 @@ import {
 } from "recharts";
 import { 
   Calendar, 
-  Clock, 
   Users, 
-  Target, 
   TrendingUp,
-  AlertTriangle,
-  CheckCircle,
   PlayCircle,
   Activity,
   BookOpen

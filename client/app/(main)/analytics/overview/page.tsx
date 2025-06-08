@@ -1,18 +1,14 @@
 /**
- * app/dashboard/analytics/page.tsx
- * Dedicated analytics page for admin, instructional, and instructor roles
+ * app/(main)/analytics/overview/page.tsx
+ * Overview page for the analytics section.
  * @AshokSaravanan222 & @siladiea
- * 05/20/2025
+ * 06/08/2025
  */
+
 "use client";
 
-import React from "react";
-import Analytics from "@/components/Analytics";
+import Overview from "@/components/analytics/Overview";
 
-export default function AnalyticsPage() {
-  return (
-    <div className="space-y-6">
-      <Analytics />
-    </div>
-  );
+export default function OverviewPage() {
+  return <div className="space-y-6"><Overview /></div>;
 }

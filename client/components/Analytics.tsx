@@ -11,7 +11,7 @@ import { getUsers } from "@/utils/queries/get-users";
 import { getAgents } from "@/utils/queries/get-agents";
 import { getAttempts } from "@/utils/queries/get-attempts";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Card,
   CardContent,

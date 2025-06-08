@@ -1,10 +1,12 @@
 /**
  * ScenarioEdit.tsx
- * Used to display the edit for the scenarios page.
+ * Used to edit scenarios using the unified simulation playground.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
 
+import { SimulationPlayground } from "@/components/common/playground/simulation-playground"
+
 export default function ScenarioEdit() {
-    return <div>ScenarioEdit</div>;
-  }
+  return <SimulationPlayground />
+}

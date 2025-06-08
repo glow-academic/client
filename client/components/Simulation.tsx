@@ -71,7 +71,6 @@ import { documents as Documents } from "@/drizzle/schema";
 import { agents as Agents } from "@/drizzle/schema";
 
 // Queries and mutations
-import { getDocuments } from "@/utils/queries/get-documents";
 import { getAgents } from "@/utils/queries/get-agents";
 import { getSimulations } from "@/utils/queries/get-simulations";
 import { getSimulation } from "@/utils/queries/get-simulation";

@@ -1,10 +1,14 @@
+/**
+ * app/(main)/classes/c/page.tsx
+ * Class page for the classes section.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
+
 "use client";
 
-/**
- * Classes create page. This is the main page for the classes create section.
- */
 import { redirect } from "next/navigation";
 
-export default function ClassesCreatePage() {
-  return redirect("/classes");
+export default function ClassPage() {
+    return redirect("/classes/new");
 }

@@ -1,15 +1,11 @@
 /**
- * app/chat/simulations/new/page.tsx
- * Simulation creation page
+ * app/create/simulations/new/page.tsx
+ * New simulation creation page using the unified playground
  */
 "use client";
-
-import Simulation from "@/components/Simulation";
+import React from "react";
+import { SimulationPlayground } from "@/components/common/playground/simulation-playground";
 
 export default function NewSimulationPage() {
-  return (
-    <div className="space-y-6">
-      <Simulation mode="create" />
-    </div>
-  );
+  return <SimulationPlayground />;
 }

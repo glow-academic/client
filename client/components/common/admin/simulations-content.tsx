@@ -8,7 +8,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Edit, Trash2, Timer, Users, FileText } from "lucide-react";
+import { Edit, Trash2, Timer, Users, FileText, Plus, Sparkles } from "lucide-react";
 
 import { getSimulations } from "@/utils/queries/get-simulations";
 import { deleteSimulation } from "@/utils/mutations/delete-simulation";
@@ -71,8 +71,26 @@ export function SimulationsContent() {
     router.push(`/simulations/s/${id}`);
   };
 
+  const handleCreateNew = () => {
+    router.push("/create");
+  };
+
   return (
     <div className="space-y-6">
+      {/* Header with Create Button */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Simulations</h2>
+          <p className="text-muted-foreground">
+            Manage your simulation configurations and create new ones
+          </p>
+        </div>
+        <Button onClick={handleCreateNew} className="bg-primary text-primary-foreground">
+          <Sparkles className="h-4 w-4 mr-2" />
+          Create New Simulation
+        </Button>
+      </div>
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {simulations.map((simulation: typeof Simulations.$inferSelect) => (
           <Card key={simulation.id} className="hover:shadow-md transition-shadow">
@@ -118,8 +136,20 @@ export function SimulationsContent() {
         ))}
         
         {simulations.length === 0 && (
-          <div className="col-span-full text-center py-8 text-muted-foreground">
-            No simulations found. Create your first simulation to get started.
+          <div className="col-span-full">
+            <Card className="border-dashed">
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <Sparkles className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">No simulations yet</h3>
+                <p className="text-muted-foreground text-center mb-4">
+                  Create your first simulation using our interactive playground
+                </p>
+                <Button onClick={handleCreateNew}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Simulation
+                </Button>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

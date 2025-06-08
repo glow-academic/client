@@ -6,5 +6,5 @@
 import { redirect } from "next/navigation";
 
 export default function ClassesPage() {
-  return redirect("/classes/dashboard");
+  return redirect("/classes/new");
 }

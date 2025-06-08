@@ -2,9 +2,10 @@
 
 /**
  * Create page. This is the main page for the create section.
+ * Now redirects to the unified simulation playground.
  */
-import { redirect } from "next/navigation";
+import { SimulationPlayground } from "@/components/common/playground/simulation-playground";
 
 export default function CreatePage() {
-  return redirect("/create/simulations");
+  return <SimulationPlayground />;
 }

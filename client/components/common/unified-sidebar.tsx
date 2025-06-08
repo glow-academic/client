@@ -1,5 +1,5 @@
 import * as React from "react"
-import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Check, ChevronsUpDown, ChartBar, TrendingUp, Clock, PenTool, Sparkles } from "lucide-react"
+import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, Settings, Search, User, LogOut, Check, ChevronsUpDown, ChartBar, TrendingUp, Clock, Sparkles } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
