@@ -2,8 +2,8 @@
 
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { DataTable } from "@/components/history/data-table";
-import { useTaskColumns } from "@/components/history/columns";
+import { DataTable } from "@/components/common/history/data-table";
+import { useTaskColumns } from "@/components/common/history/columns";
 import { getUser } from "@/utils/queries/get-user";
 import { useRole } from "@/components/role-context";
 

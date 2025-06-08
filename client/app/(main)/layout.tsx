@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { UnifiedSidebar } from "@/components/common/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
 import { ViewModeProvider } from "@/contexts/view-mode-context";

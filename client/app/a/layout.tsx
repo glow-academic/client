@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
+import { UnifiedSidebar } from "@/components/common/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
 import { getUser } from "@/utils/queries/get-user";

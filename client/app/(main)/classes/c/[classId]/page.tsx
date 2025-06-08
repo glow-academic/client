@@ -1,7 +1,7 @@
 "use client";
 import React, { use } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ClassDetailsContent } from "@/components/admin/class-details-content";
+import { ClassDetailsContent } from "@/components/common/admin/class-details-content";
 import { getClass } from "@/utils/queries/get-class";
 import { Skeleton } from "@/components/ui/skeleton";
 
