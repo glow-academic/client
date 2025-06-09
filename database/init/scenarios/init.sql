@@ -22,7 +22,7 @@ CREATE TABLE scenarios (
 -- ESSENTIAL TEST DATA
 -- ============================================================================
 
--- Insert Essential Scenarios
+-- Insert Essential Scenarios (around 10 diverse scenarios)
 INSERT INTO scenarios (id, name, description, agent_id, crowdedness, intensity, seniority) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'NullPointer Exception', 'A student storms in holding their Java console output, annoyed by a runtime error they can''t trace in their GUI project.', '11111111-aaaa-aaaa-aaaa-111111111111', 3, 4, 'sophomore'),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'File I/O Issues', 'A student timidly approaches, worried they''ve overwritten their data file while implementing file read/write methods.', '22222222-bbbb-bbbb-bbbb-222222222222', 2, 2, 'freshman'),

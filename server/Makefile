@@ -36,8 +36,46 @@ generate-models: venv
 	@echo "Generating SQLModel classes from database schema..."
 	@uv run python scripts/generate_models.py
 
+# Generate pytest tests for routes and services
+generate-tests: venv
+	@echo "Generating pytest tests..."
+	@uv run python scripts/generate_pytest_tests.py
+
+# Watch for changes in Python files and regenerate tests
+watch-tests: venv
+	@echo "Watching for Python file changes..."
+	@uv run python scripts/watch_python_changes.py
+
+# Check for changes in Python files
+check-tests: venv
+	@uv run python scripts/watch_python_changes.py check
+
+# Force regenerate all tests
+force-tests: venv
+	@uv run python scripts/watch_python_changes.py force
+	@uv run python scripts/generate_pytest_tests.py
+
+# Run all tests
+test: sync generate-tests
+	@echo "Running pytest tests..."
+	@uv run pytest tests/ -v
+
+# Run tests with coverage
+test-cov: sync generate-tests
+	@echo "Running pytest tests with coverage..."
+	@uv run pytest tests/ --cov=app --cov-report=term-missing --cov-report=html
+
+# Run specific test file
+test-file: sync
+	@echo "Running specific test file: $(FILE)"
+	@uv run pytest $(FILE) -v
+
 # 9. Start FastAPI via Uvicorn
 run: sync generate-models
+	@echo "Checking for Python file changes..."
+	@uv run python scripts/watch_python_changes.py check || true
+	@echo "Generating pytest tests..."
+	@uv run python scripts/generate_pytest_tests.py
 	@echo "Starting FastAPI server..."
 	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 

@@ -13,7 +13,7 @@ CREATE TABLE simulations (
   documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
   time_limit INTEGER     NULL,          -- in minutes, or no time limit
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
-  scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references scenarios instead of interactions
+  scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references scenarios
   rubric_id   UUID        NULL REFERENCES rubrics(id) ON DELETE SET NULL -- can be null if no rubric is used
 );
 
@@ -48,16 +48,21 @@ CREATE TABLE simulation_messages (
 -- ESSENTIAL TEST DATA
 -- ============================================================================
 
--- Insert simulations (Essential for testing)
+-- Insert Default Simulations (3 for the main agents)
+INSERT INTO simulations (id, title, class_id, documents, time_limit, active, scenario_ids, rubric_id) VALUES
+  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], NULL),
+  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], NULL),
+  ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], NULL);
+
+-- Insert Custom Randomized Simulations (3 additional diverse simulations)
+INSERT INTO simulations (id, title, class_id, documents, time_limit, active, scenario_ids, rubric_id) VALUES
+  ('c5a0b001-aaaa-bbbb-cccc-dddddddddddd', 'CS 180 Programming Challenge', '44444444-1111-1111-1111-111111111111', ARRAY[]::UUID[], 45, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '11111111-1111-1111-1111-111111111111'),
+  ('c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee', 'Multi-Course Algorithm Assessment', NULL, ARRAY[]::UUID[], 60, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '22222222-2222-2222-2222-222222222222'),
+  ('c5a0b003-cccc-dddd-eeee-ffffffffffff', 'Advanced Theory Deep Dive', '77777777-4444-4444-4444-444444444444', ARRAY[]::UUID[], 90, true, ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], '22222222-2222-2222-2222-222222222222');
+
+-- Insert Main Coding Practice Simulation
 INSERT INTO simulations (id, title, documents, time_limit, active, scenario_ids) VALUES
   ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', ARRAY[]::UUID[], 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[])
-ON CONFLICT (id) DO NOTHING;
-
--- Insert Permanent simulations for Individual Practice
-INSERT INTO simulations (id, title, documents, time_limit, active, scenario_ids) VALUES
-  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[]),
-  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[]),
-  ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', ARRAY[]::UUID[], NULL, true, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[])
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert Attempts (Essential for linking chats to simulations and users)
@@ -82,6 +87,14 @@ INSERT INTO attempts (id, created_at, user_id, class_id, simulation_id) VALUES
   ('f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb', NOW() - INTERVAL '5 hours', 'ffffffff-ffff-ffff-ffff-ffffffffffff', '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('f1e2d3c4-b5a6-47f8-9e00-cccccccccccc', NOW() - INTERVAL '1 day', '12ab34cd-56ef-78ab-90cd-12ef34567890', '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   
+  -- Custom simulation attempts
+  ('c5a0b001-1111-2222-3333-444444444444', NOW() - INTERVAL '4 hours', 'c5180001-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'c5a0b001-aaaa-bbbb-cccc-dddddddddddd'),
+  ('c5a0b002-1111-2222-3333-444444444444', NOW() - INTERVAL '2 days', 'c5182001-2222-3333-4444-555555555555', '55555555-2222-2222-2222-222222222222', 'c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('c5a0b003-1111-2222-3333-444444444444', NOW() - INTERVAL '1 day', 'c5381001-4444-5555-6666-777777777777', '77777777-4444-4444-4444-444444444444', 'c5a0b003-cccc-dddd-eeee-ffffffffffff'),
+  ('c5a0b004-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', 'c5abc001-aaaa-bbbb-cccc-dddddddddddd', '44444444-1111-1111-1111-111111111111', 'c5a0b001-aaaa-bbbb-cccc-dddddddddddd'),
+  ('c5a0b005-1111-2222-3333-444444444444', NOW() - INTERVAL '6 hours', 'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '66666666-3333-3333-3333-333333333333', 'c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('c5a0b006-1111-2222-3333-444444444444', NOW() - INTERVAL '8 hours', 'c5abc003-aaaa-bbbb-cccc-dddddddddddd', '77777777-4444-4444-4444-444444444444', 'c5a0b003-cccc-dddd-eeee-ffffffffffff'),
+  
   -- Additional attempts for guest mode testing (NULL user_id for guest attempts)
   ('aaaaaaaa-1111-2222-3333-444444444441', NOW() - INTERVAL '30 minutes', NULL, '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('aaaaaaaa-1111-2222-3333-444444444442', NOW() - INTERVAL '2 days', NULL, '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
@@ -92,7 +105,12 @@ INSERT INTO attempts (id, created_at, user_id, class_id, simulation_id) VALUES
   ('aaaaaaaa-1111-2222-3333-444444444447', NOW() - INTERVAL '4 days', NULL, '55555555-2222-2222-2222-222222222222', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('aaaaaaaa-1111-2222-3333-444444444448', NOW() - INTERVAL '12 hours', NULL, '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('aaaaaaaa-1111-2222-3333-444444444449', NOW() - INTERVAL '7 days', NULL, '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
-  ('aaaaaaaa-1111-2222-3333-444444444450', NOW() - INTERVAL '2 days', NULL, '55555555-2222-2222-2222-222222222222', 'aaaaaaaa-bbbb-cccc-dddd-111111111111');
+  ('aaaaaaaa-1111-2222-3333-444444444450', NOW() - INTERVAL '2 days', NULL, '55555555-2222-2222-2222-222222222222', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
+  
+  -- Custom simulation guest attempts
+  ('a5e5b001-1111-2222-3333-444444444444', NOW() - INTERVAL '1 hour', NULL, '44444444-1111-1111-1111-111111111111', 'c5a0b001-aaaa-bbbb-cccc-dddddddddddd'),
+  ('a5e5b002-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', NULL, '55555555-2222-2222-2222-222222222222', 'c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee'),
+  ('a5e5b003-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NULL, '77777777-4444-4444-4444-444444444444', 'c5a0b003-cccc-dddd-eeee-ffffffffffff');
 
 -- Insert Comprehensive Chat Data
 INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, completed, attempt_id) VALUES
@@ -114,7 +132,15 @@ INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, 
   -- CS 381 (Introduction To The Analysis Of Algorithms)
   ('f1e2d3c4-b5a6-47f8-9e00-aaaaaaaaaaaa', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '6 hours', 'Recurrence Relations', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'f1e2d3c4-b5a6-47f8-9e00-aaaaaaaaaaaa'),
   ('f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb', NOW() - INTERVAL '5 hours', NULL, 'NP-Completeness', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb'),
-  ('f1e2d3c4-b5a6-47f8-9e00-cccccccccccc', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Dynamic Programming', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', true, 'f1e2d3c4-b5a6-47f8-9e00-cccccccccccc');
+  ('f1e2d3c4-b5a6-47f8-9e00-cccccccccccc', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', 'Dynamic Programming', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', true, 'f1e2d3c4-b5a6-47f8-9e00-cccccccccccc'),
+
+  -- Custom simulation chats
+  ('c5a0b001-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours', 'Programming Challenge - NullPointer', '11111111-aaaa-aaaa-aaaa-111111111111', true, 'c5a0b001-1111-2222-3333-444444444444'),
+  ('c5a0b002-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '2 days', NULL, 'Multi-Course Assessment - Proof', '44444444-dddd-dddd-dddd-444444444444', false, 'c5a0b002-1111-2222-3333-444444444444'),
+  ('c5a0b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours', 'Theory Deep Dive - NP Complete', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', true, 'c5a0b003-1111-2222-3333-444444444444'),
+  ('c5a0b004-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '3 hours', NULL, 'Programming Challenge - File I/O', '22222222-bbbb-bbbb-bbbb-222222222222', false, 'c5a0b004-1111-2222-3333-444444444444'),
+  ('c5a0b005-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '5 hours', 'Multi-Course - Hash Tables', '77777777-aaaa-bbbb-cccc-777777777777', true, 'c5a0b005-1111-2222-3333-444444444444'),
+  ('c5a0b006-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '8 hours', NULL, 'Theory Deep Dive - Dynamic Programming', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', false, 'c5a0b006-1111-2222-3333-444444444444');
 
 -- Additional sample chat data for testing
 INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, completed, attempt_id) VALUES
@@ -122,4 +148,9 @@ INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, 
   ('aaaaaaaa-1111-2222-3333-444444444442', NOW() - INTERVAL '2 days', NOW() - INTERVAL '1 day', 'Master Theorem Edge Case', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, 'aaaaaaaa-1111-2222-3333-444444444442'),
   ('aaaaaaaa-1111-2222-3333-444444444443', NOW() - INTERVAL '3 hours', NULL, 'Balancing BST', '99999999-cccc-dddd-eeee-999999999999', false, 'aaaaaaaa-1111-2222-3333-444444444443'),
   ('aaaaaaaa-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours', 'Adjacency List', '77777777-aaaa-bbbb-cccc-777777777777', true, 'aaaaaaaa-1111-2222-3333-444444444444'),
-  ('aaaaaaaa-1111-2222-3333-444444444445', NOW() - INTERVAL '1 day', NULL, 'Set Theory Paradox', '44444444-dddd-dddd-dddd-444444444444', false, 'aaaaaaaa-1111-2222-3333-444444444445');
+  ('aaaaaaaa-1111-2222-3333-444444444445', NOW() - INTERVAL '1 day', NULL, 'Set Theory Paradox', '44444444-dddd-dddd-dddd-444444444444', false, 'aaaaaaaa-1111-2222-3333-444444444445'),
+  
+  -- Guest simulation chats
+  ('a5e5b001-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 hour', NULL, 'Guest Programming Challenge', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'a5e5b001-1111-2222-3333-444444444444'),
+  ('a5e5b002-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours', 'Guest Multi-Course Test', '44444444-dddd-dddd-dddd-444444444444', true, 'a5e5b002-1111-2222-3333-444444444444'),
+  ('a5e5b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NULL, 'Guest Theory Challenge', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'a5e5b003-1111-2222-3333-444444444444');

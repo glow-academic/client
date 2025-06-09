@@ -58,22 +58,87 @@ CREATE TABLE rubric_grades (
 -- ESSENTIAL TEST DATA
 -- ============================================================================
 
--- Insert sample rubrics
+-- Insert 2 Main Rubrics (AI Student and AI Teacher)
 INSERT INTO rubrics (id, name, description, points, pass_points) VALUES
-  ('11111111-1111-1111-1111-111111111111', 'Basic Programming Rubric', 'Evaluates fundamental programming concepts and problem-solving skills', 100, 70),
-  ('22222222-2222-2222-2222-222222222222', 'Advanced Algorithms Rubric', 'Assesses understanding of complex algorithms and data structures', 100, 75),
-  ('33333333-3333-3333-3333-333333333333', 'Mathematical Proofs Rubric', 'Evaluates mathematical reasoning and proof construction skills', 100, 80);
+  ('11111111-1111-1111-1111-111111111111', 'AI Student Evaluation Rubric', 'Evaluates AI student agents on their ability to demonstrate realistic student behaviors, learning patterns, and interaction quality', 100, 70),
+  ('22222222-2222-2222-2222-222222222222', 'AI Teacher Evaluation Rubric', 'Assesses AI teacher/TA agents on their pedagogical effectiveness, response quality, and ability to guide student learning', 100, 75);
 
--- Insert standard groups
+-- Insert Standard Groups for AI Student Rubric
 INSERT INTO standard_groups (id, name, description, points, pass_points, rubric_id) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-111111111111', 'Problem Understanding', 'Demonstrates clear understanding of the problem requirements', 25, 18, '11111111-1111-1111-1111-111111111111'),
-  ('bbbbbbbb-bbbb-bbbb-bbbb-111111111111', 'Solution Design', 'Shows effective approach to solving the problem', 25, 18, '11111111-1111-1111-1111-111111111111'),
-  ('cccccccc-cccc-cccc-cccc-111111111111', 'Implementation Quality', 'Code is clean, efficient, and follows best practices', 25, 18, '11111111-1111-1111-1111-111111111111'),
-  ('dddddddd-dddd-dddd-dddd-111111111111', 'Communication Skills', 'Explains concepts clearly and responds appropriately', 25, 18, '11111111-1111-1111-1111-111111111111');
+  ('aaaaaaaa-aaaa-aaaa-aaaa-111111111111', 'Personality Consistency', 'Maintains consistent personality traits throughout the interaction', 25, 18, '11111111-1111-1111-1111-111111111111'),
+  ('bbbbbbbb-bbbb-bbbb-bbbb-111111111111', 'Learning Behavior', 'Demonstrates realistic student learning patterns and responses', 25, 18, '11111111-1111-1111-1111-111111111111'),
+  ('cccccccc-cccc-cccc-cccc-111111111111', 'Question Quality', 'Asks appropriate questions that reflect genuine student confusion or curiosity', 25, 18, '11111111-1111-1111-1111-111111111111'),
+  ('dddddddd-dddd-dddd-dddd-111111111111', 'Engagement Level', 'Shows appropriate level of engagement and interaction with the material', 25, 18, '11111111-1111-1111-1111-111111111111');
 
--- Insert standards
+-- Insert Standard Groups for AI Teacher Rubric
+INSERT INTO standard_groups (id, name, description, points, pass_points, rubric_id) VALUES
+  ('eeeeeeee-eeee-eeee-eeee-222222222222', 'Pedagogical Approach', 'Uses effective teaching strategies and guides student discovery', 30, 22, '22222222-2222-2222-2222-222222222222'),
+  ('ffffffff-ffff-ffff-ffff-222222222222', 'Content Accuracy', 'Provides accurate and relevant information in responses', 25, 19, '22222222-2222-2222-2222-222222222222'),
+  ('aaaaaaaa-bbbb-cccc-dddd-222222222222', 'Communication Skills', 'Communicates clearly and adapts to student needs', 25, 19, '22222222-2222-2222-2222-222222222222'),
+  ('bbbbbbbb-cccc-dddd-eeee-222222222222', 'Problem-Solving Support', 'Effectively helps students work through problems independently', 20, 15, '22222222-2222-2222-2222-222222222222');
+
+-- Insert Standards for AI Student Rubric
 INSERT INTO standards (id, name, description, points, standard_group_id) VALUES
-  ('11111111-aaaa-bbbb-cccc-111111111111', 'Identifies Key Requirements', 'Student correctly identifies the main requirements of the problem', 10, 'aaaaaaaa-aaaa-aaaa-aaaa-111111111111'),
-  ('22222222-aaaa-bbbb-cccc-111111111111', 'Recognizes Edge Cases', 'Student considers and addresses potential edge cases', 15, 'aaaaaaaa-aaaa-aaaa-aaaa-111111111111'),
-  ('33333333-aaaa-bbbb-cccc-111111111111', 'Chooses Appropriate Algorithm', 'Student selects an efficient algorithm for the problem', 15, 'bbbbbbbb-bbbb-bbbb-bbbb-111111111111'),
-  ('44444444-aaaa-bbbb-cccc-111111111111', 'Designs Clear Structure', 'Solution has a logical and well-organized structure', 10, 'bbbbbbbb-bbbb-bbbb-bbbb-111111111111');
+  -- Personality Consistency Standards
+  ('11111111-aaaa-bbbb-cccc-111111111111', 'Maintains Character Voice', 'Student consistently uses language and tone appropriate to their personality type', 12, 'aaaaaaaa-aaaa-aaaa-aaaa-111111111111'),
+  ('22222222-aaaa-bbbb-cccc-111111111111', 'Emotional Responses', 'Shows appropriate emotional reactions based on personality (aggressive, happy, confused)', 13, 'aaaaaaaa-aaaa-aaaa-aaaa-111111111111'),
+  
+  -- Learning Behavior Standards
+  ('33333333-aaaa-bbbb-cccc-111111111111', 'Knowledge Progression', 'Demonstrates realistic learning curve and knowledge building', 15, 'bbbbbbbb-bbbb-bbbb-bbbb-111111111111'),
+  ('44444444-aaaa-bbbb-cccc-111111111111', 'Mistake Patterns', 'Makes believable mistakes consistent with student level and personality', 10, 'bbbbbbbb-bbbb-bbbb-bbbb-111111111111'),
+  
+  -- Question Quality Standards
+  ('55555555-aaaa-bbbb-cccc-111111111111', 'Relevant Inquiries', 'Asks questions that are relevant to the topic and learning objectives', 15, 'cccccccc-cccc-cccc-cccc-111111111111'),
+  ('66666666-aaaa-bbbb-cccc-111111111111', 'Depth Appropriateness', 'Questions match expected depth for student seniority level', 10, 'cccccccc-cccc-cccc-cccc-111111111111'),
+  
+  -- Engagement Level Standards
+  ('77777777-aaaa-bbbb-cccc-111111111111', 'Active Participation', 'Engages actively in the learning conversation', 15, 'dddddddd-dddd-dddd-dddd-111111111111'),
+  ('88888888-aaaa-bbbb-cccc-111111111111', 'Response Timing', 'Provides responses at appropriate intervals and lengths', 10, 'dddddddd-dddd-dddd-dddd-111111111111');
+
+-- Insert Standards for AI Teacher Rubric
+INSERT INTO standards (id, name, description, points, standard_group_id) VALUES
+  -- Pedagogical Approach Standards
+  ('aaaaaaaa-1111-2222-3333-222222222222', 'Socratic Method', 'Uses questioning to guide student discovery rather than giving direct answers', 15, 'eeeeeeee-eeee-eeee-eeee-222222222222'),
+  ('bbbbbbbb-1111-2222-3333-222222222222', 'Scaffolding', 'Provides appropriate support structure for student learning', 15, 'eeeeeeee-eeee-eeee-eeee-222222222222'),
+  
+  -- Content Accuracy Standards
+  ('cccccccc-1111-2222-3333-222222222222', 'Technical Correctness', 'Provides technically accurate information and explanations', 15, 'ffffffff-ffff-ffff-ffff-222222222222'),
+  ('dddddddd-1111-2222-3333-222222222222', 'Conceptual Clarity', 'Explains concepts clearly and at appropriate level', 10, 'ffffffff-ffff-ffff-ffff-222222222222'),
+  
+  -- Communication Skills Standards
+  ('eeeeeeee-1111-2222-3333-222222222222', 'Clear Expression', 'Communicates ideas clearly and understandably', 12, 'aaaaaaaa-bbbb-cccc-dddd-222222222222'),
+  ('ffffffff-1111-2222-3333-222222222222', 'Adaptive Communication', 'Adjusts communication style based on student needs and personality', 13, 'aaaaaaaa-bbbb-cccc-dddd-222222222222'),
+  
+  -- Problem-Solving Support Standards
+  ('aaaaaaaa-2222-3333-4444-222222222222', 'Guided Discovery', 'Helps students discover solutions through guided questioning', 12, 'bbbbbbbb-cccc-dddd-eeee-222222222222'),
+  ('bbbbbbbb-2222-3333-4444-222222222222', 'Independence Building', 'Encourages student independence and critical thinking', 8, 'bbbbbbbb-cccc-dddd-eeee-222222222222');
+
+-- Insert Sample Rubric Grades
+INSERT INTO rubric_grades (id, passed, score, time_taken, rubric_id) VALUES
+  ('aade0001-1111-2222-3333-444444444444', true, 85, 1200, '11111111-1111-1111-1111-111111111111'),
+  ('aade0002-1111-2222-3333-444444444444', false, 65, 900, '11111111-1111-1111-1111-111111111111'),
+  ('aade0003-1111-2222-3333-444444444444', true, 92, 1500, '11111111-1111-1111-1111-111111111111'),
+  ('aade0004-2222-3333-4444-555555555555', true, 88, 1800, '22222222-2222-2222-2222-222222222222'),
+  ('aade0005-2222-3333-4444-555555555555', true, 76, 1350, '22222222-2222-2222-2222-222222222222'),
+  ('aade0006-2222-3333-4444-555555555555', false, 72, 1100, '22222222-2222-2222-2222-222222222222');
+
+-- Insert Sample Standard Grades
+INSERT INTO standard_grades (id, standard_id, rubric_grade_id, total, feedback) VALUES
+  -- Grades for AI Student evaluations
+  ('aaade001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 10, 'Excellent consistency in aggressive personality - used caps and exclamation points effectively'),
+  ('aaade002-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 13, 'Showed realistic learning progression from confusion to understanding'),
+  ('aaade003-1111-2222-3333-444444444444', '55555555-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 14, 'Asked highly relevant questions about NullPointerException debugging'),
+  
+  ('aaade004-2222-3333-4444-555555555555', '22222222-aaaa-bbbb-cccc-111111111111', 'aade0002-1111-2222-3333-444444444444', 8, 'Emotional responses were somewhat inconsistent with happy personality'),
+  ('aaade005-2222-3333-4444-555555555555', '44444444-aaaa-bbbb-cccc-111111111111', 'aade0002-1111-2222-3333-444444444444', 6, 'Mistakes seemed too advanced for freshman level student'),
+  
+  -- Grades for AI Teacher evaluations
+  ('aaade006-3333-4444-5555-666666666666', 'aaaaaaaa-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 14, 'Excellent use of Socratic questioning to guide student discovery'),
+  ('aaade007-3333-4444-5555-666666666666', 'cccccccc-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 15, 'All technical information was accurate and well-explained'),
+  ('aaade008-3333-4444-5555-666666666666', 'eeeeeeee-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 11, 'Clear communication but could be more concise'),
+  
+  ('aaade009-4444-5555-6666-777777777777', 'bbbbbbbb-1111-2222-3333-222222222222', 'aade0005-2222-3333-4444-555555555555', 12, 'Good scaffolding approach, helped student build understanding step by step'),
+  ('aaade010-4444-5555-6666-777777777777', 'ffffffff-1111-2222-3333-222222222222', 'aade0005-2222-3333-4444-555555555555', 10, 'Adapted communication style well to confused student personality'),
+  
+  ('aaade011-5555-6666-7777-888888888888', 'dddddddd-1111-2222-3333-222222222222', 'aade0006-2222-3333-4444-555555555555', 8, 'Explanations were sometimes too complex for the student level'),
+  ('aaade012-5555-6666-7777-888888888888', 'aaaaaaaa-2222-3333-4444-222222222222', 'aade0006-2222-3333-4444-555555555555', 9, 'Good guided discovery but could encourage more independence');

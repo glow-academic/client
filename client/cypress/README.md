@@ -1,170 +1,330 @@
-# GLOW Cypress Test Suite
+# Automated Database Table Testing System
 
-This directory contains streamlined, page-based Cypress tests for the GLOW application. The tests are organized by page/feature and focus on core functionality rather than implementation details.
+This directory contains an automated Cypress testing system that generates comprehensive test files for every table in your database schema. The system ensures that all database tables are properly tested and automatically updates tests when your schema changes.
 
-## Test Structure
+## 🚀 Features
 
-### Page-Based Tests (`/e2e/pages/`)
+- **Automatic Test Generation**: Generates Cypress test files for every table in your Drizzle schema
+- **Schema-Aware Testing**: Analyzes your schema to create specific tests for fields, constraints, and relationships
+- **Failing Tests by Default**: All generated tests fail until implemented, ensuring you know what needs to be done
+- **Schema Change Detection**: Automatically detects when your schema changes and updates tests accordingly
+- **Comprehensive Coverage**: Tests CRUD operations, API endpoints, UI integration, and error handling
+- **Foreign Key Testing**: Validates relationships between tables
+- **Constraint Validation**: Tests unique constraints, required fields, and enum values
+- **Watch Mode**: Continuously monitors schema changes during development
 
-Each page has its own test file focusing on:
-- Core functionality
-- User interactions
-- Access control
-- Responsive design
+## 📁 Directory Structure
 
-#### Core Test Files:
-- `core-auth.cy.ts` - Login/logout functionality
-- `core-chat.cy.ts` - Chat creation, messaging, and ending sessions
-- `core-management.cy.ts` - CRUD operations for profiles, scenarios, templates, users, and classes
-- `core-navigation.cy.ts` - UI navigation and role switching
-- `core-comprehensive.cy.ts` - Complete end-to-end workflows
-
-### Custom Commands (`/support/commands.ts`)
-
-Reusable commands for common actions:
-- `cy.loginAsUser()` - Login as regular user
-- `cy.loginAsAdmin()` - Login as admin
-- `cy.loginAsGuest()` - Continue as guest
-- `cy.setupApiMocks()` - Setup API mocks
-- `cy.navigateToPage(page)` - Navigate to specific page
-- `cy.startChat(profileName)` - Start chat with profile
-- `cy.sendMessage(message)` - Send chat message
-
-## Test Philosophy
-
-### Robust & Maintainable
-- Tests focus on user actions, not implementation details
-- Uses data-testid attributes where possible
-- Graceful fallbacks for UI changes
-- Minimal, focused assertions
-
-### Page-Centric Organization
-- Each page has dedicated test file
-- Tests cover core functionality per page
-- Access control testing for each user type
-- Responsive design validation
-
-### User Journey Testing
-- Complete user flows from login to task completion
-- Admin workflows
-- Guest user limitations
-- Error handling scenarios
-
-## Running Tests
-
-### Quick Start (Recommended)
-
-```bash
-# 1. Check if all services are running
-npm run test:setup -- -c
-
-# 2. If services aren't running, start them in separate terminals:
-# Terminal 1: cd ../database && bash run.sh --clean
-# Terminal 2: cd ../server && make run  
-# Terminal 3: yarn run dev
-
-# 3. Run tests (will check services automatically)
-npm run test:e2e
-
-# 4. Or run specific tests
-npm run test:login      # Authentication tests
-npm run test:chat       # Chat functionality tests
-npm run test:management # Management CRUD tests
-npm run test:navigation # Navigation and role switching
-npm run test:core       # Comprehensive test suite
+```
+cypress/
+├── e2e/                          # Test files
+│   ├── core-*.cy.ts             # Core application tests (maintained separately)
+│   ├── *.cy.ts                  # Auto-generated table tests
+│   └── table-test-coverage.md   # Coverage report
+├── scripts/                      # Automation scripts
+│   ├── generate-table-tests.js  # Basic test generator
+│   ├── advanced-test-generator.js # Advanced schema-aware generator
+│   └── watch-schema-changes.js  # Schema change monitor
+├── fixtures/                     # Test data
+├── support/                      # Cypress support files
+└── README.md                     # This file
 ```
 
-### Alternative Methods
+## 🛠️ Available Commands
+
+### Basic Commands
 
 ```bash
-# Run tests with automatic frontend startup
-npm run test:dev        # Starts frontend + runs tests
-npm run test:dev:open   # Starts frontend + opens Cypress GUI
+# Start development server with automatic test generation
+npm run dev
 
-# Run tests headless (assumes services running)
-npm run test:e2e:headless
+# Generate basic test files for all tables
+npm run test:tables:generate
 
-# Open Cypress GUI
-npm run cypress:open
+# Generate advanced test files with schema analysis
+npm run test:tables:advanced
 
-# Run specific test file directly
-npx cypress run --spec "cypress/e2e/core-auth.cy.ts"
+# Run all table tests
+npm run test:tables
+
+# Open Cypress UI for table tests
+npm run test:tables:open
 ```
 
-### Service Management
+### Schema Monitoring
 
 ```bash
-# Check service status
-npm run test:setup -- -c
+# Check for schema changes and update tests if needed
+npm run test:tables:check
 
-# Get help with setup
-npm run test:setup -- -h
+# Watch schema file continuously for changes
+npm run test:tables:watch
 ```
 
-## Test Data
-
-Tests use dynamic test data with timestamps to avoid conflicts:
-- Usernames: `test_user_${Date.now()}`
-- Admin users: `admin_${Date.now()}`
-- API responses are mocked for consistency
-
-## Best Practices
-
-1. **Use Custom Commands**: Leverage reusable commands for common actions
-2. **Data Test IDs**: Prefer `[data-testid="element"]` selectors
-3. **Graceful Assertions**: Use conditional logic for UI variations
-4. **Mock APIs**: Use consistent API mocks for reliable tests
-5. **Page Focus**: Keep tests focused on single page functionality
-6. **User Perspective**: Test from user's point of view, not code structure
-
-## Maintenance
-
-When adding new pages or features:
-1. Create new page test file in `/e2e/pages/`
-2. Add custom commands for new actions
-3. Update API mocks as needed
-4. Add to comprehensive test suite if part of main user flow
-
-## Troubleshooting
-
-### Common Issues
-
-**"Cypress failed to verify that your server is running"**
-- Make sure your frontend is running: `yarn run dev`
-- Check if it's accessible at http://localhost:3000
-- Use the setup script: `npm run test:setup -- -c`
-
-**Tests failing due to missing elements**
-- Tests use flexible selectors that adapt to UI changes
-- If elements are missing, check if the page loaded correctly
-- Use `npm run test:dev:open` to debug interactively
-
-**API-related test failures**
-- Tests use mocked APIs by default
-- Make sure `cy.setupApiMocks()` is called in beforeEach
-- Check if backend is running for integration tests
-
-**Database connection issues**
-- Start database first: `cd ../database && bash run.sh --clean`
-- Check if PostgreSQL is running on port 5432
-
-### Quick Fix Commands
+### Core Tests (Separate from table tests)
 
 ```bash
-# Install missing dependencies
-yarn install
+# Run comprehensive core tests
+npm run test:core
 
-# Reset everything and start fresh
-npm run test:setup -- -c
-
-# Run a simple test to verify setup
+# Run authentication tests
 npm run test:login
+
+# Run chat functionality tests
+npm run test:chat
+
+# Run management interface tests
+npm run test:management
+
+# Run navigation tests
+npm run test:navigation
 ```
 
-## Legacy Tests
+## 📊 Test Generation Process
 
-Original test files were simplified into focused core tests for:
-- Better organization
-- Easier maintenance
-- Clearer test intent
-- Reduced duplication 
+### 1. Schema Analysis
+
+The system analyzes your `drizzle/schema.ts` file to extract:
+
+- **Tables**: All `pgTable` definitions
+- **Fields**: Column types, constraints, and properties
+- **Enums**: Enum definitions and their values
+- **Relationships**: Foreign key constraints
+- **Constraints**: Unique constraints, required fields
+
+### 2. Test Template Generation
+
+For each table, the system generates tests for:
+
+#### Database Schema Validation
+- UUID primary key generation
+- Automatic timestamp setting
+- Required field enforcement
+- Unique constraint validation
+- Enum value validation
+
+#### Foreign Key Relationships
+- Constraint maintenance
+- Cascade behavior testing
+- Reference integrity
+
+#### CRUD Operations
+- Create records with proper validation
+- Read records and verify data
+- Update records and check changes
+- Delete records and verify removal
+
+#### API Endpoints
+- GET requests for data retrieval
+- POST requests for record creation
+- PUT/PATCH requests for updates
+- DELETE requests for removal
+
+#### Error Handling
+- Validation error scenarios
+- Constraint violation handling
+- Edge case testing
+
+### 3. Failing Tests Strategy
+
+All generated tests include failing assertions like:
+```javascript
+cy.wrap(null).should('not.exist', 'IMPLEMENT: users creation test');
+```
+
+This ensures that:
+- You know exactly which tests need implementation
+- Tests fail until you write actual test logic
+- No false positives in your test suite
+
+## 🔧 Configuration
+
+### Schema Path
+The system reads your schema from: `drizzle/schema.ts`
+
+### Test File Naming
+Tables are converted to test files using this pattern:
+- `users` → `users.cy.ts`
+- `user_profiles` → `user-profiles.cy.ts`
+- `simulation_chats` → `simulation-chats.cy.ts`
+
+### Core Test Exclusion
+Files starting with `core-` are maintained separately and not auto-generated.
+
+## 📈 Coverage Reporting
+
+The system generates a coverage report at `cypress/e2e/table-test-coverage.md` showing:
+
+- Total number of tables
+- Test files created/updated/skipped
+- Implementation status for each table
+- Next steps and recommendations
+
+## 🔄 Schema Change Detection
+
+### Automatic Detection
+When you run `npm run dev`, the system:
+1. Checks if the schema file has been modified
+2. Compares current tables with cached version
+3. Generates tests for new tables
+4. Removes tests for deleted tables
+5. Updates the coverage report
+
+### Manual Checking
+```bash
+# Check for changes (exits with code 1 if changes detected)
+npm run test:tables:check
+
+# Force regeneration regardless of modification time
+node cypress/scripts/watch-schema-changes.js force
+```
+
+### Watch Mode
+```bash
+# Continuously monitor schema file
+npm run test:tables:watch
+```
+
+This will:
+- Monitor `drizzle/schema.ts` for changes
+- Automatically regenerate tests when changes are detected
+- Show real-time updates in the console
+
+## 🎯 Implementation Guide
+
+### 1. Start with Generated Tests
+Run the test generator to create failing tests for all tables:
+```bash
+npm run test:tables:advanced
+```
+
+### 2. Review Coverage Report
+Check `cypress/e2e/table-test-coverage.md` to see what needs implementation.
+
+### 3. Implement Tests Gradually
+For each table, replace the failing assertions with actual test logic:
+
+```javascript
+// Before (generated)
+cy.wrap(null).should('not.exist', 'IMPLEMENT: users creation test');
+
+// After (implemented)
+cy.request('POST', '/api/users', {
+  name: 'Test User',
+  email: 'test@example.com'
+}).then((response) => {
+  expect(response.status).to.eq(201);
+  expect(response.body).to.have.property('id');
+});
+```
+
+### 4. Use Schema Information
+Each test file includes detailed schema information in comments:
+
+```javascript
+/*
+ * Table Schema Reference for users:
+ * Export name: users
+ * 
+ * Fields:
+ * - id: uuid (required) (primary key)
+ * - name: text (required)
+ * - email: text (required) (unique)
+ * - role: enum (admin|user|guest)
+ * 
+ * Constraints:
+ * - unique: users_email_key on email
+ * 
+ * Foreign Key Relationships:
+ * - profile_id -> profiles.id (cascade)
+ */
+```
+
+## 🚨 Best Practices
+
+### 1. Keep Core Tests Separate
+Don't modify files starting with `core-` as they're maintained separately.
+
+### 2. Implement Tests Incrementally
+Start with the most critical tables and work your way through.
+
+### 3. Use Real API Endpoints
+Test against your actual API endpoints, not mock data.
+
+### 4. Test Edge Cases
+Include tests for validation errors, constraint violations, and edge cases.
+
+### 5. Monitor Schema Changes
+Use watch mode during active development to catch schema changes immediately.
+
+## 🔍 Troubleshooting
+
+### Tests Not Generating
+- Check that `drizzle/schema.ts` exists and is readable
+- Ensure your schema uses the expected `pgTable` format
+- Run with verbose logging: `node cypress/scripts/generate-table-tests.js`
+
+### Schema Changes Not Detected
+- Check file permissions on the schema file
+- Clear the cache: `rm cypress/.schema-cache.json`
+- Force regeneration: `npm run test:tables:check`
+
+### Tests Failing Unexpectedly
+- Remember that generated tests are designed to fail until implemented
+- Check the test file comments for schema information
+- Verify your API endpoints match the expected patterns
+
+## 📚 Examples
+
+### Basic Table Test Implementation
+```javascript
+describe('users Table Tests', () => {
+  it('should create users records', () => {
+    const userData = {
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'user'
+    };
+    
+    cy.request('POST', '/api/users', userData).then((response) => {
+      expect(response.status).to.eq(201);
+      expect(response.body).to.have.property('id');
+      expect(response.body.name).to.eq(userData.name);
+    });
+  });
+});
+```
+
+### Foreign Key Relationship Test
+```javascript
+it('should maintain foreign key constraint: posts_user_id_fkey', () => {
+  // Create a user first
+  cy.request('POST', '/api/users', { name: 'Test User' })
+    .then((userResponse) => {
+      const userId = userResponse.body.id;
+      
+      // Create a post with valid user_id
+      return cy.request('POST', '/api/posts', {
+        title: 'Test Post',
+        user_id: userId
+      });
+    })
+    .then((postResponse) => {
+      expect(postResponse.status).to.eq(201);
+    });
+});
+```
+
+## 🤝 Contributing
+
+When adding new tables to your schema:
+1. The system will automatically detect them on next `npm run dev`
+2. Implement the generated tests
+3. Update this README if you add new features to the testing system
+
+## 📝 Notes
+
+- This system is designed to work with Drizzle ORM and PostgreSQL
+- Test files are generated based on your current schema
+- The system preserves existing implemented tests
+- Core application tests are maintained separately from table tests 

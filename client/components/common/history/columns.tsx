@@ -17,15 +17,6 @@ import { Badge } from "../../ui/badge";
 import { getAgentConfig } from "@/utils/agents";
 import { getEnhancedAttempts, getEnhancedAttemptsByUser } from "@/utils/queries/get-enhanced-attempts";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
-import { classes as Classes, attempts as Attempts, chats as Chats, rubrics as Rubrics, agents as Agents, users as Users } from "@/drizzle/schema";
-
-// Use Drizzle schema types
-type User = typeof Users.$inferSelect;
-type Class = typeof Classes.$inferSelect;
-type Agent = typeof Agents.$inferSelect;
-type Chat = typeof Chats.$inferSelect;
-type Rubric = typeof Rubrics.$inferSelect;
-type Attempt = typeof Attempts.$inferSelect;
 
 // Enhanced attempt type (from the query results)
 interface EnhancedAttempt extends Attempt {
