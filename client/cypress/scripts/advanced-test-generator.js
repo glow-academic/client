@@ -161,11 +161,8 @@ function generateAdvancedTestTemplate(table, allTables) {
   const { tableName, exportName, fields, constraints, hasTimestamps, hasUuid, requiredFields, uniqueFields } = table;
   
   let template = `describe('${tableName} Table Tests', () => {
-  beforeEach(() => {
-    // Setup: Visit the application and ensure proper authentication
-    cy.visit('/');
-    // Add any necessary authentication steps here
-  });
+  // Note: These tests are placeholders and will fail until implemented
+  // Remove cy.visit('/') to make tests fail faster during development
 
   describe('Database Schema Validation', () => {`;
 
@@ -174,10 +171,7 @@ function generateAdvancedTestTemplate(table, allTables) {
     template += `
     it('should generate UUID primary keys automatically', () => {
       // TODO: Test UUID generation for ${tableName}
-      cy.log('Testing UUID primary key generation for ${tableName}');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: UUID primary key test for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: UUID primary key test for ${tableName}');
     });`;
   }
 
@@ -186,10 +180,7 @@ function generateAdvancedTestTemplate(table, allTables) {
     template += `
     it('should automatically set timestamps', () => {
       // TODO: Test timestamp fields (created_at, updated_at) for ${tableName}
-      cy.log('Testing automatic timestamp generation for ${tableName}');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Timestamp validation test for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: Timestamp validation test for ${tableName}');
     });`;
   }
 
@@ -198,13 +189,10 @@ function generateAdvancedTestTemplate(table, allTables) {
     template += `
     it('should enforce required fields', () => {
       // TODO: Test required fields: ${requiredFields.map(f => f.name).join(', ')}
-      cy.log('Testing required fields for ${tableName}');
-      
       // Required fields that should be validated:
       ${requiredFields.map(f => `      // - ${f.name} (${f.type})`).join('\n')}
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Required fields validation for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: Required fields validation for ${tableName}');
     });`;
   }
 
@@ -213,13 +201,10 @@ function generateAdvancedTestTemplate(table, allTables) {
     template += `
     it('should enforce unique constraints', () => {
       // TODO: Test unique constraints for ${tableName}
-      cy.log('Testing unique constraints for ${tableName}');
-      
       ${uniqueFields.length > 0 ? `// Unique fields: ${uniqueFields.map(f => f.name).join(', ')}` : ''}
       ${constraints.filter(c => c.type === 'unique').map(c => `      // Unique constraint: ${c.name} on ${c.columns.join(', ')}`).join('\n')}
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Unique constraints test for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: Unique constraints test for ${tableName}');
     });`;
   }
 
@@ -229,12 +214,9 @@ function generateAdvancedTestTemplate(table, allTables) {
     template += `
     it('should validate enum values', () => {
       // TODO: Test enum field validation for ${tableName}
-      cy.log('Testing enum validation for ${tableName}');
-      
       ${enumFields.map(f => `      // ${f.name}: ${f.enumType.values.join(' | ')}`).join('\n')}
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Enum validation test for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: Enum validation test for ${tableName}');
     });`;
   }
 
@@ -250,23 +232,17 @@ function generateAdvancedTestTemplate(table, allTables) {
       template += `
     it('should maintain foreign key constraint: ${fk.name}', () => {
       // TODO: Test foreign key relationship
-      cy.log('Testing foreign key constraint: ${fk.name}');
-      
       // Foreign key: ${fk.columns.join(', ')} -> ${fk.foreignColumns.join(', ')}
       // On delete: ${fk.onDelete}
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Foreign key test for ${fk.name}').should('not.exist');
+      throw new Error('IMPLEMENT: Foreign key test for ${fk.name}');
     });`;
     });
   } else {
     template += `
     it('should handle relationships correctly', () => {
       // TODO: Test table relationships for ${tableName}
-      cy.log('Testing relationships for ${tableName}');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: Relationship test for ${tableName}').should('not.exist');
+      throw new Error('IMPLEMENT: Relationship test for ${tableName}');
     });`;
   }
 
@@ -276,45 +252,31 @@ function generateAdvancedTestTemplate(table, allTables) {
   describe('CRUD Operations', () => {
     it('should create ${tableName} records', () => {
       // TODO: Test record creation
-      cy.log('Testing ${tableName} creation');
-      
       // Sample data structure:
       ${generateSampleDataComment(fields)}
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} creation test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} creation test');
     });
 
     it('should read ${tableName} records', () => {
       // TODO: Test record retrieval
-      cy.log('Testing ${tableName} reading');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} read test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} read test');
     });
 
     it('should update ${tableName} records', () => {
       // TODO: Test record updates
-      cy.log('Testing ${tableName} updates');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} update test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} update test');
     });
 
     it('should delete ${tableName} records', () => {
       // TODO: Test record deletion
-      cy.log('Testing ${tableName} deletion');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} delete test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} delete test');
     });
   });
 
   describe('API Endpoints', () => {
     it('should test ${tableName} API endpoints', () => {
       // TODO: Test API endpoints for ${tableName}
-      cy.log('Testing ${tableName} API endpoints');
-      
       // Example API tests:
       // cy.request('GET', '/api/${tableName}').then((response) => {
       //   expect(response.status).to.eq(200);
@@ -326,26 +288,19 @@ function generateAdvancedTestTemplate(table, allTables) {
       //   expect(response.body).to.have.property('id');
       // });
       
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} API endpoint tests').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} API endpoint tests');
     });
   });
 
   describe('Error Handling', () => {
     it('should handle validation errors', () => {
       // TODO: Test validation error scenarios
-      cy.log('Testing ${tableName} validation errors');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} validation error test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} validation error test');
     });
 
     it('should handle constraint violations', () => {
       // TODO: Test constraint violation scenarios
-      cy.log('Testing ${tableName} constraint violations');
-      
-      // This test should fail until implemented
-      cy.wrap('IMPLEMENT: ${tableName} constraint violation test').should('not.exist');
+      throw new Error('IMPLEMENT: ${tableName} constraint violation test');
     });
   });
 });
