@@ -119,20 +119,6 @@ export default function Evals() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Create Button */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Evaluations</h2>
-          <p className="text-muted-foreground">
-            Manage your evaluation configurations and run assessments
-          </p>
-        </div>
-        <Button onClick={handleCreateNew} className="bg-primary text-primary-foreground">
-          <Settings className="h-4 w-4 mr-2" />
-          Create New Evaluation
-        </Button>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {evals.map((evaluation: Eval) => {
           const typeBadge = getEvalTypeBadge(evaluation.evalType);

@@ -50,8 +50,8 @@ export default function MainLayout({
   const newClassPageMatch = pathname.match(/^\/classes\/new\/c\/([^\/]+)$/);
   const classId = classEditPageMatch?.[1] || newClassPageMatch?.[1];
 
-  // Check if we're on the history page
-  const isHistoryPage = pathname === '/history';
+  // Check if we're on the logs page
+  const isLogsPage = pathname === '/analytics/logs';
 
   // Fetch user data for role context
   const { data: user } = useQuery({
@@ -79,7 +79,7 @@ export default function MainLayout({
   const handleSectionChange = createSectionChangeHandler(router, '/simulations');
 
   // Create view mode toggle for history page
-  const viewModeToggle = isHistoryPage ? (
+  const viewModeToggle = isLogsPage ? (
     <div className="flex items-center space-x-2">
       <span className="text-sm text-muted-foreground">Show individual chats</span>
       <Switch
@@ -168,16 +168,34 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/simulations')) {
+    if (pathname.startsWith('/create/scenarios')) {
       return (
-        <Button onClick={() => router.push('/simulations/new')} size="sm">
+        <Button onClick={() => router.push('/create/scenarios/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Scenario
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/create/simulations')) {
+      return (
+        <Button onClick={() => router.push('/create/simulations/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Simulation
         </Button>
       );
     }
 
-    if (pathname.startsWith('/simulations/agents')) {
+    if (pathname.startsWith('/create/rubrics')) {
+      return (
+        <Button onClick={() => router.push('/create/rubrics/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Rubric
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/create/simulations/agents')) {
       return (
         <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -186,16 +204,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/simulations/scenarios')) {
-      return (
-        <Button onClick={() => router.push('/simulations/scenarios/new')} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Scenario
-        </Button>
-      );
-    }
-
-    if (pathname.startsWith('/classes')) {
+    if (pathname.startsWith('/classes') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -204,32 +213,34 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/management/instructional')) {
+    if (pathname.startsWith('/management/staff')) {
       return (
-        <Button onClick={() => router.push('/management/instructional/new')} size="sm">
+        <Button onClick={() => router.push('/management/staff/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Instructional Staff
+          Add Staff
         </Button>
       );
     }
 
-    if (pathname.startsWith('/management/instructor')) {
+    if (pathname.startsWith('/management/agents')) {
       return (
-        <Button onClick={() => router.push('/management/instructor/new')} size="sm">
+        <Button onClick={() => router.push('/management/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Instructor
+          Create Agent
         </Button>
       );
     }
 
-    if (pathname.startsWith('/management/ta')) {
+    if (pathname.startsWith('/management/evals')) {
       return (
-        <Button onClick={() => router.push('/management/ta/new')} size="sm">
+        <Button onClick={() => router.push('/management/evals/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Teaching Assistant
+          Create Evaluation
         </Button>
       );
     }
+
+
 
     return null;
   };
@@ -268,8 +279,8 @@ export default function MainLayout({
     </RoleProvider>
   );
 
-  // Only provide ViewModeProvider context for history page
-  if (isHistoryPage) {
+  // Only provide ViewModeProvider context for logs page
+  if (isLogsPage) {
     return (
       <ViewModeProvider viewMode={viewMode} setViewMode={setViewMode}>
         {content}

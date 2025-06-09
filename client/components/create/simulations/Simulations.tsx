@@ -74,20 +74,6 @@ export function Simulations() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Create Button */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Simulations</h2>
-          <p className="text-muted-foreground">
-            Manage your simulation configurations and create new ones
-          </p>
-        </div>
-        <Button onClick={handleCreateNew} className="bg-primary text-primary-foreground">
-          <Sparkles className="h-4 w-4 mr-2" />
-          Create New Simulation
-        </Button>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {simulations.map((simulation: Simulation) => (
           <Card key={simulation.id} className="hover:shadow-md transition-shadow">

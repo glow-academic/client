@@ -87,20 +87,6 @@ export default function Rubrics() {
 
   return (
     <div className="space-y-6">
-      {/* Header with Create Button */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-bold">Rubrics</h2>
-          <p className="text-muted-foreground">
-            Manage your evaluation rubrics and create new assessment criteria
-          </p>
-        </div>
-        <Button onClick={handleCreateNew} className="bg-primary text-primary-foreground">
-          <BookOpen className="h-4 w-4 mr-2" />
-          Create New Rubric
-        </Button>
-      </div>
-
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {rubrics.map((rubric: Rubric) => {
           const statusBadge = getStatusBadge(rubric);

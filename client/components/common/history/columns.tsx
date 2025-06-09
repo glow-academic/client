@@ -28,6 +28,7 @@ import {
   SimulationChatGrade,
   SimulationChatFeedback
 } from "@/types";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -67,6 +68,11 @@ export function useColumns({
   const {data: rubrics, isLoading: isLoadingRubrics} = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
+  });
+
+  const {data: simulations, isLoading: isLoadingSimulations} = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
   });
 
   const {data: standardGroups, isLoading: isLoadingStandardGroups} = useQuery({
@@ -147,15 +153,17 @@ export function useColumns({
         return agent?.name || 'Unknown';
       }))];
 
+      const simulation = simulations?.find(s => s.id === attempt.simulationId);
+
       return {
         ...attempt,
         chats: attemptChats,
         agentsTested,
-        simulationTitle: `Simulation ${attempt.simulationId}`,
+        simulationTitle: simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: [], // This would come from simulation data if available
       };
     });
-  }, [attempts, chats, agents]);
+  }, [attempts, chats, agents, simulations]);
 
   // Create enhanced chats data
   const enhancedChats = useMemo(() => {
