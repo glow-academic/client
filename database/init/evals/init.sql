@@ -78,23 +78,23 @@ CREATE TABLE eval_runs (
 
 -- Insert 3 Runnable Evaluations
 INSERT INTO evals (id, name, description, class_id, base_agent_id, scenario_ids, agent_ids, eval_type, max_turns, num_parallel_runs, rubric_ids) VALUES
-  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '44444444-1111-1111-1111-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 10, 3, ARRAY['11111111-1111-1111-1111-111111111111']::UUID[]),
+  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '44444444-1111-1111-1111-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 10, 3, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', NULL, '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 15, 5, ARRAY['22222222-2222-2222-2222-222222222222']::UUID[]),
+  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', NULL, '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 15, 5, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '77777777-4444-4444-4444-444444444444', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 20, 3, ARRAY['22222222-2222-2222-2222-222222222222']::UUID[]);
+  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '77777777-4444-4444-4444-444444444444', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 20, 3, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]);
 
 -- Insert Sample Eval Runs (showing how evaluations would be executed)
 INSERT INTO eval_runs (id, class_id, eval_id, query_agent_id, response_agent_id, scenario_id, rubric_id) VALUES
-  ('aaa00001-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-1111-1111-1111-111111111111'),
-  ('aaa00002-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '11111111-1111-1111-1111-111111111111'),
-  ('aaa00003-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '11111111-1111-1111-1111-111111111111'),
+  ('aaa00001-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', '44444444-4444-4444-4444-444444444444'),
+  ('aaa00002-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-4444-4444-4444-444444444444'),
+  ('aaa00003-1111-2222-3333-444444444444', '44444444-1111-1111-1111-111111111111', 'eaa10001-1111-2222-3333-444444444444', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '44444444-4444-4444-4444-444444444444'),
   
-  ('aaa00004-2222-3333-4444-555555555555', '55555555-2222-2222-2222-222222222222', 'eaa10002-2222-3333-4444-555555555555', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-dddd-dddd-dddd-444444444444', '22222222-2222-2222-2222-222222222222'),
-  ('aaa00005-2222-3333-4444-555555555555', '66666666-3333-3333-3333-333333333333', 'eaa10002-2222-3333-4444-555555555555', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '77777777-aaaa-bbbb-cccc-777777777777', '22222222-2222-2222-2222-222222222222'),
+  ('aaa00004-2222-3333-4444-555555555555', '55555555-2222-2222-2222-222222222222', 'eaa10002-2222-3333-4444-555555555555', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-dddd-dddd-dddd-444444444444', '44444444-4444-4444-4444-444444444444'),
+  ('aaa00005-2222-3333-4444-555555555555', '66666666-3333-3333-3333-333333333333', 'eaa10002-2222-3333-4444-555555555555', '33333333-cccc-cccc-cccc-333333333333', '33333333-cccc-cccc-cccc-333333333333', '77777777-aaaa-bbbb-cccc-777777777777', '44444444-4444-4444-4444-444444444444'),
   
-  ('aaa00006-3333-4444-5555-666666666666', '77777777-4444-4444-4444-444444444444', 'eaa10003-3333-4444-5555-666666666666', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', '22222222-2222-2222-2222-222222222222'),
-  ('aaa00007-3333-4444-5555-666666666666', '77777777-4444-4444-4444-444444444444', 'eaa10003-3333-4444-5555-666666666666', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '22222222-2222-2222-2222-222222222222');
+  ('aaa00006-3333-4444-5555-666666666666', '77777777-4444-4444-4444-444444444444', 'eaa10003-3333-4444-5555-666666666666', '11111111-aaaa-aaaa-aaaa-111111111111', '11111111-aaaa-aaaa-aaaa-111111111111', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', '44444444-4444-4444-4444-444444444444'),
+  ('aaa00007-3333-4444-5555-666666666666', '77777777-4444-4444-4444-444444444444', 'eaa10003-3333-4444-5555-666666666666', '22222222-bbbb-bbbb-bbbb-222222222222', '22222222-bbbb-bbbb-bbbb-222222222222', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '44444444-4444-4444-4444-444444444444');
 
 -- Insert Sample Eval Chats
 INSERT INTO eval_chats (id, created_at, completed_at, title, eval_run_id) VALUES
@@ -123,41 +123,46 @@ INSERT INTO eval_messages (id, chat_id, query, response, completed) VALUES
 -- Insert Eval Chat Rubrics (Custom rubric grades for each eval chat)
 INSERT INTO eval_chat_grades (id, passed, score, time_taken, rubric_id, eval_chat_id) VALUES
   -- CS 180 Student Behavior Evaluation chats
-  ('dddd0001-1111-2222-3333-444444444444', true, 85, 1200, '11111111-1111-1111-1111-111111111111', 'cbab0001-1111-2222-3333-444444444444'),
-  ('dddd0002-1111-2222-3333-444444444444', true, 92, 1450, '11111111-1111-1111-1111-111111111111', 'cbab0002-1111-2222-3333-444444444444'),
-  ('dddd0003-1111-2222-3333-444444444444', false, 65, 900, '11111111-1111-1111-1111-111111111111', 'cbab0003-1111-2222-3333-444444444444'),
+  ('dddd0001-1111-2222-3333-444444444444', true, 85, 1200, '44444444-4444-4444-4444-444444444444', 'cbab0001-1111-2222-3333-444444444444'),
+  ('dddd0002-1111-2222-3333-444444444444', true, 92, 1450, '44444444-4444-4444-4444-444444444444', 'cbab0002-1111-2222-3333-444444444444'),
+  ('dddd0003-1111-2222-3333-444444444444', false, 65, 900, '44444444-4444-4444-4444-444444444444', 'cbab0003-1111-2222-3333-444444444444'),
   
   -- Multi-Class Algorithm Understanding chats
-  ('dddd0004-1111-2222-3333-444444444444', true, 88, 1600, '22222222-2222-2222-2222-222222222222', 'cbab0004-2222-3333-4444-555555555555'),
-  ('dddd0005-1111-2222-3333-444444444444', true, 76, 1100, '22222222-2222-2222-2222-222222222222', 'cbab0005-2222-3333-4444-555555555555'),
+  ('dddd0004-1111-2222-3333-444444444444', true, 88, 1600, '44444444-4444-4444-4444-444444444444', 'cbab0004-2222-3333-4444-555555555555'),
+  ('dddd0005-1111-2222-3333-444444444444', true, 76, 1100, '44444444-4444-4444-4444-444444444444', 'cbab0005-2222-3333-4444-555555555555'),
   
   -- Advanced Problem Solving Assessment chats
-  ('dddd0006-1111-2222-3333-444444444444', true, 94, 1800, '22222222-2222-2222-2222-222222222222', 'cbab0006-3333-4444-5555-666666666666'),
-  ('dddd0007-1111-2222-3333-444444444444', true, 81, 1350, '22222222-2222-2222-2222-222222222222', 'cbab0007-3333-4444-5555-666666666666');
+  ('dddd0006-1111-2222-3333-444444444444', true, 94, 1800, '44444444-4444-4444-4444-444444444444', 'cbab0006-3333-4444-5555-666666666666'),
+  ('dddd0007-1111-2222-3333-444444444444', true, 81, 1350, '44444444-4444-4444-4444-444444444444', 'cbab0007-3333-4444-5555-666666666666');
 
 -- Insert Sample Eval Chat Feedbacks (showing detailed grading breakdown)
 INSERT INTO eval_chat_feedbacks (id, standard_id, eval_chat_grade_id, total, feedback) VALUES
-  -- Standards for dddd0001 (Aggressive Student - AI Student rubric)
-  ('eeee0001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 11, 'Perfect aggressive personality consistency - used caps and frustration effectively'),
-  ('eeee0002-1111-2222-3333-444444444444', '22222222-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 12, 'Excellent emotional escalation pattern typical of aggressive students'),
-  ('eeee0003-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 14, 'Showed realistic learning progression despite initial frustration'),
-  ('eeee0004-1111-2222-3333-444444444444', '55555555-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 13, 'Asked relevant debugging questions appropriate for CS 180 level'),
+  -- Standards for dddd0001 (Aggressive Student - AI Student Performance Rubric)
+  ('eeee0001-1111-2222-3333-444444444444', '11111111-1111-aaaa-bbbb-444444444444', 'dddd0001-1111-2222-3333-444444444444', 5, 'Perfect aggressive personality consistency - used caps and frustration effectively'),
+  ('eeee0002-1111-2222-3333-444444444444', '22222222-2222-aaaa-bbbb-444444444444', 'dddd0001-1111-2222-3333-444444444444', 4, 'Good learning progression from initial frustration to understanding'),
+  ('eeee0003-1111-2222-3333-444444444444', '33333333-1111-aaaa-bbbb-444444444444', 'dddd0001-1111-2222-3333-444444444444', 5, 'Asked highly relevant debugging questions appropriate for CS 180 level'),
+  ('eeee0004-1111-2222-3333-444444444444', '44444444-2222-aaaa-bbbb-444444444444', 'dddd0001-1111-2222-3333-444444444444', 4, 'Maintained good conversational flow despite emotional intensity'),
   
-  -- Standards for dddd0002 (Happy Student - AI Student rubric)
-  ('eeee0005-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 12, 'Maintained enthusiastic and positive tone throughout interaction'),
-  ('eeee0006-1111-2222-3333-444444444444', '77777777-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 15, 'Excellent active participation with appropriate enthusiasm'),
-  ('eeee0007-1111-2222-3333-444444444444', '66666666-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 9, 'Questions were appropriate depth for file I/O concepts'),
+  -- Standards for dddd0002 (Happy Student - AI Student Performance Rubric)
+  ('eeee0005-1111-2222-3333-444444444444', '11111111-1111-aaaa-bbbb-444444444444', 'dddd0002-1111-2222-3333-444444444444', 5, 'Perfectly maintained enthusiastic and positive personality throughout'),
+  ('eeee0006-1111-2222-3333-444444444444', '22222222-1111-aaaa-bbbb-444444444444', 'dddd0002-1111-2222-3333-444444444444', 5, 'Excellent realistic learning progression with natural enthusiasm'),
+  ('eeee0007-1111-2222-3333-444444444444', '33333333-1111-aaaa-bbbb-444444444444', 'dddd0002-1111-2222-3333-444444444444', 5, 'Questions were perfectly calibrated for file I/O concepts'),
+  ('eeee0008-1111-2222-3333-444444444444', '44444444-1111-aaaa-bbbb-444444444444', 'dddd0002-1111-2222-3333-444444444444', 5, 'Perfect conversational timing and engagement throughout'),
   
-  -- Standards for dddd0003 (Confused Student - AI Student rubric - failed example)
-  ('eeee0008-1111-2222-3333-444444444444', '44444444-aaaa-bbbb-cccc-111111111111', 'dddd0003-1111-2222-3333-444444444444', 5, 'Mistakes were too basic for expected CS 180 student level'),
-  ('eeee0009-1111-2222-3333-444444444444', '88888888-aaaa-bbbb-cccc-111111111111', 'dddd0003-1111-2222-3333-444444444444', 6, 'Response timing was too slow and answers too brief'),
+  -- Standards for dddd0003 (Confused Student - AI Student Performance Rubric - failed example)
+  ('eeee0009-1111-2222-3333-444444444444', '11111111-3333-aaaa-bbbb-444444444444', 'dddd0003-1111-2222-3333-444444444444', 3, 'Generally maintained confused character but with some inconsistencies'),
+  ('eeee0010-1111-2222-3333-444444444444', '22222222-4444-aaaa-bbbb-444444444444', 'dddd0003-1111-2222-3333-444444444444', 2, 'Limited evidence of realistic learning progression'),
+  ('eeee0011-1111-2222-3333-444444444444', '33333333-4444-aaaa-bbbb-444444444444', 'dddd0003-1111-2222-3333-444444444444', 2, 'Questions were too basic for expected CS 180 student level'),
+  ('eeee0012-1111-2222-3333-444444444444', '44444444-4444-aaaa-bbbb-444444444444', 'dddd0003-1111-2222-3333-444444444444', 2, 'Response timing was poor and answers too brief'),
   
-  -- Standards for dddd0004 (Happy Student - AI Teacher rubric)
-  ('eeee0010-1111-2222-3333-444444444444', 'aaaaaaaa-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 13, 'Good use of Socratic method to guide proof understanding'),
-  ('eeee0011-1111-2222-3333-444444444444', 'cccccccc-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 15, 'All mathematical concepts explained accurately'),
-  ('eeee0012-1111-2222-3333-444444444444', 'eeeeeeee-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 12, 'Clear explanations adapted well to student enthusiasm'),
+  -- Standards for dddd0004 (Happy Student - AI Student Performance Rubric)
+  ('eeee0013-1111-2222-3333-444444444444', '11111111-2222-aaaa-bbbb-444444444444', 'dddd0004-1111-2222-3333-444444444444', 4, 'Good maintenance of happy personality with minor lapses'),
+  ('eeee0014-1111-2222-3333-444444444444', '22222222-2222-aaaa-bbbb-444444444444', 'dddd0004-1111-2222-3333-444444444444', 4, 'Believable learning progression for proof concepts'),
+  ('eeee0015-1111-2222-3333-444444444444', '33333333-2222-aaaa-bbbb-444444444444', 'dddd0004-1111-2222-3333-444444444444', 4, 'Generally appropriate questions for mathematical proof level'),
+  ('eeee0016-1111-2222-3333-444444444444', '44444444-2222-aaaa-bbbb-444444444444', 'dddd0004-1111-2222-3333-444444444444', 4, 'Good conversational flow with appropriate enthusiasm'),
   
-  -- Standards for dddd0006 (Aggressive Student - AI Teacher rubric)
-  ('eeee0013-1111-2222-3333-444444444444', 'bbbbbbbb-1111-2222-3333-222222222222', 'dddd0006-1111-2222-3333-444444444444', 14, 'Excellent scaffolding approach despite student frustration'),
-  ('eeee0014-1111-2222-3333-444444444444', 'ffffffff-1111-2222-3333-222222222222', 'dddd0006-1111-2222-3333-444444444444', 13, 'Adapted communication style perfectly to aggressive personality'),
-  ('eeee0015-1111-2222-3333-444444444444', 'aaaaaaaa-2222-3333-4444-222222222222', 'dddd0006-1111-2222-3333-444444444444', 11, 'Guided discovery approach worked well for complex NP-completeness topic');
+  -- Standards for dddd0006 (Aggressive Student - AI Student Performance Rubric)
+  ('eeee0017-1111-2222-3333-444444444444', '11111111-1111-aaaa-bbbb-444444444444', 'dddd0006-1111-2222-3333-444444444444', 5, 'Excellent aggressive personality consistency throughout complex topic'),
+  ('eeee0018-1111-2222-3333-444444444444', '22222222-1111-aaaa-bbbb-444444444444', 'dddd0006-1111-2222-3333-444444444444', 5, 'Highly realistic progression from frustration to gradual understanding'),
+  ('eeee0019-1111-2222-3333-444444444444', '33333333-1111-aaaa-bbbb-444444444444', 'dddd0006-1111-2222-3333-444444444444', 5, 'Perfect calibration of questions for NP-completeness complexity'),
+  ('eeee0020-1111-2222-3333-444444444444', '44444444-1111-aaaa-bbbb-444444444444', 'dddd0006-1111-2222-3333-444444444444', 5, 'Maintained excellent conversational flow despite emotional intensity');
