@@ -153,10 +153,18 @@ function generateQueries(tables) {
     const getByIdQuery = generateGetByIdQuery(exportName, tableName, singularName, primaryKey);
     writeQueryFile(tableName, `get-${singularName.replace(/_/g, '-')}.ts`, getByIdQuery, created, updated);
     
-    // 3. Get items by foreign key relationships
+    // 3. Get items by foreign key relationships (singular)
     foreignKeys.forEach(fk => {
       const getByFkQuery = generateGetByForeignKeyQuery(exportName, tableName, fk);
       writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${fk.columnName.replace(/Id$/, '').replace(/_/g, '-')}.ts`, getByFkQuery, created, updated);
+    });
+    
+    // 4. Get items by foreign key relationships (plural)
+    foreignKeys.forEach(fk => {
+      const getByFkPluralQuery = generateGetByForeignKeyPluralQuery(exportName, tableName, fk);
+      const paramName = fk.columnName.replace(/Id$/, '').replace(/_/g, '');
+      const pluralParamName = paramName.endsWith('s') ? paramName : paramName + 's';
+      writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${pluralParamName.replace(/_/g, '-')}.ts`, getByFkPluralQuery, created, updated);
     });
   });
 
@@ -271,6 +279,29 @@ export async function get${capitalize(exportName)}By${capitalize(paramName)}(${p
     return await db.select().from(${exportName}).where(eq(${exportName}.${foreignKey.columnName}, ${paramName}Id));
   } catch (error) {
     console.error("Error fetching ${tableName} by ${paramName}:", error);
+    throw error;
+  }
+}
+`;
+}
+
+/**
+ * Generate get by foreign key query (plural version)
+ */
+function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
+  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_/g, '');
+  const pluralParamName = paramName.endsWith('s') ? paramName : paramName + 's';
+  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${pluralParamName.replace(/_/g, '-')}.ts
+"use server";
+import { db } from "@/utils/drizzle/database";
+import { ${exportName} } from "@/drizzle/schema";
+import { inArray } from "drizzle-orm";
+
+export async function get${capitalize(exportName)}By${capitalize(pluralParamName)}(${paramName}Ids: string[]) {
+  try {
+    return await db.select().from(${exportName}).where(inArray(${exportName}.${foreignKey.columnName}, ${paramName}Ids));
+  } catch (error) {
+    console.error("Error fetching ${tableName} by ${pluralParamName}:", error);
     throw error;
   }
 }

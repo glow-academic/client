@@ -2,11 +2,11 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { documents } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
-export async function getDocumentsByClass(classId: string) {
+export async function getDocumentsByClass(classIds: string[]) {
   try {
-    return await db.select().from(documents).where(eq(documents.classId, classId));
+    return await db.select().from(documents).where(inArray(documents.classId, classIds));
   } catch (error) {
     console.error("Error fetching documents by class:", error);
     throw error;

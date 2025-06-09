@@ -2,11 +2,11 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { evalRuns } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
-export async function getEvalRunsByClass(classId: string) {
+export async function getEvalRunsByClass(classIds: string[]) {
   try {
-    return await db.select().from(evalRuns).where(eq(evalRuns.classId, classId));
+    return await db.select().from(evalRuns).where(inArray(evalRuns.classId, classIds));
   } catch (error) {
     console.error("Error fetching eval_runs by class:", error);
     throw error;

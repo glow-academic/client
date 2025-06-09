@@ -2,11 +2,11 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { schedules } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
-export async function getSchedulesByClass(classId: string) {
+export async function getSchedulesByClass(classIds: string[]) {
   try {
-    return await db.select().from(schedules).where(eq(schedules.classId, classId));
+    return await db.select().from(schedules).where(inArray(schedules.classId, classIds));
   } catch (error) {
     console.error("Error fetching schedules by class:", error);
     throw error;

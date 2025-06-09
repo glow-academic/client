@@ -2,11 +2,11 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { simulations } from "@/drizzle/schema";
-import { eq } from "drizzle-orm";
+import { inArray } from "drizzle-orm";
 
-export async function getSimulationsByClass(classId: string) {
+export async function getSimulationsByClass(classIds: string[]) {
   try {
-    return await db.select().from(simulations).where(eq(simulations.classId, classId));
+    return await db.select().from(simulations).where(inArray(simulations.classId, classIds));
   } catch (error) {
     console.error("Error fetching simulations by class:", error);
     throw error;
