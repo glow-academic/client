@@ -5,6 +5,8 @@
  * 06/07/2025
  */
 
+import Eval from "@/components/common/eval/Eval";
+
 export default function NewEval() {
-    return <div>NewEval</div>;
-  }
+    return <Eval mode="create" />;
+}

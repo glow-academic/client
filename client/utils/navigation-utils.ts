@@ -5,16 +5,12 @@ import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.share
  */
 export const getSectionRoute = (section: string): string => {
   switch (section) {
-    // Dashboard routes (now standalone)
-    case 'dashboard':
-      return '/home'; // Dashboard home is now /home
+    case 'home':
+      return '/home';
     case 'growth':
       return '/growth';
-    case 'history':
-      return '/history';
-    case 'rubric':
-      return '/rubric';
-    
+
+
     // Analytics routes
     case 'overview':
       return '/analytics';
@@ -24,17 +20,19 @@ export const getSectionRoute = (section: string): string => {
       return '/analytics/reports';
     case 'logs':
       return '/analytics/logs';
-    
+
     // Simulations routes
+    case 'scenarios':
+      return '/create/scenarios';
     case 'simulations':
-      return '/simulations';
+      return '/create/simulations';
     case 'rubrics':
-      return '/simulations/rubrics';
-    
+      return '/create/rubrics';
+
     // Classes routes
     case 'new-class':
       return '/classes/new';
-    
+
     // Management routes
     case 'staff':
       return '/management/staff';
@@ -42,11 +40,11 @@ export const getSectionRoute = (section: string): string => {
       return '/management/agents';
     case 'evals':
       return '/management/evals';
-    
+
     // Profile route
     case 'profile':
       return '/profile';
-    
+
     default:
       // Handle dynamic routes with IDs
       if (section.startsWith('class-')) {
@@ -77,7 +75,7 @@ export const getSectionRoute = (section: string): string => {
         const userId = section.replace('user-', '');
         return `/management/staff/u/${userId}`;
       }
-      
+
       return '/home'; // Default fallback to home instead of dashboard
   }
 };

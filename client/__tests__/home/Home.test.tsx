@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import Simulations from '@/components/simulations/Simulations';
+import Home from '@/components/home/Home';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({
@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('Simulations', () => {
+describe('Home', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -48,11 +48,11 @@ describe('Simulations', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for Simulations
-      renderWithProviders(<Simulations />);
+      // TODO: Implement basic rendering test for Home
+      renderWithProviders(<Home />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Home
     });
 
     
@@ -61,7 +61,7 @@ describe('Simulations', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Home
     });
   });
 
@@ -71,7 +71,7 @@ describe('Simulations', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Form handling test for Home
     });
 
     it('should handle state changes', async () => {
@@ -79,7 +79,7 @@ describe('Simulations', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: State management test for Home
     });
 
     it('should handle user events', async () => {
@@ -87,7 +87,7 @@ describe('Simulations', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: User events test for Home
     });
   });
 
@@ -96,21 +96,21 @@ describe('Simulations', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: API integration test for Home
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for Home
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for Home
     });
   });
 
@@ -119,7 +119,7 @@ describe('Simulations', () => {
       // TODO: Test navigation behavior
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Navigation test for Home
     });
   });
 
@@ -128,7 +128,7 @@ describe('Simulations', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Simulations
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Home
     });
 
     
@@ -136,8 +136,8 @@ describe('Simulations', () => {
 });
 
 /*
- * Component Analysis for Simulations:
- * Path: simulations/Simulations.tsx
+ * Component Analysis for Home:
+ * Path: home/Home.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -158,12 +158,12 @@ describe('Simulations', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Simulations />);
+ * render(<Home />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Simulations {...props} />);
+ * render(<Home {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

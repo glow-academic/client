@@ -169,15 +169,8 @@ export default function Staff() {
     };
   }, [staffUsers]);
 
-  const handleEditUser = (userId: string, userRole: string) => {
-    // Navigate to the appropriate management section based on role
-    const roleToPath = {
-      'instructional': 'instructional',
-      'instructor': 'instructor',
-      'ta': 'ta'
-    };
-    const path = roleToPath[userRole as keyof typeof roleToPath] || 'instructor';
-    router.push(`/management/${path}/u/${userId}`);
+  const handleEditUser = (userId: string) => {
+    router.push(`/management/staff/u/${userId}`);
   };
 
   // Check if current user can edit users
@@ -361,7 +354,7 @@ export default function Staff() {
                               <DropdownMenuContent align="end">
                                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditUser(user.id, user.role)}>
+                                <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
                                   Edit User
                                 </DropdownMenuItem>
                               </DropdownMenuContent>

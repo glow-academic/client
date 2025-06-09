@@ -168,14 +168,14 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
 
 
-    if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
-      menu.push({
-        title: "Home",
-        url: "#",
-        icon: Home,
-        section: "home",
-      });
-    }
+    // if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
+    //   menu.push({
+    //     title: "Home",
+    //     url: "#",
+    //     icon: Home,
+    //     section: "home",
+    //   });
+    // }
 
     // Simulations - Only for TAs and guests
     if (effectiveRole === 'ta' || effectiveRole === 'guest') {
@@ -183,7 +183,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         title: "Simulations",
         url: "#",
         icon: MessageSquare,
-        section: "simulations",
+        section: "home",
       });
     }
 
@@ -194,26 +194,6 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         url: "#",
         icon: TrendingUp,
         section: "growth",
-      });
-    }
-
-    // History - Only for TAs and guests
-    if (effectiveRole === 'ta' || effectiveRole === 'guest') {
-      menu.push({
-        title: "History",
-        url: "#",
-        icon: Clock,
-        section: "history",
-      });
-    }
-
-    // Rubric - Only for TAs and guests
-    if (effectiveRole === 'ta' || effectiveRole === 'guest') {
-      menu.push({
-        title: "Rubric",
-        url: "#",
-        icon: FileText,
-        section: "rubric",
       });
     }
 
@@ -255,6 +235,11 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         url: "#",
         icon: Sparkles,
         items: [
+          {
+            title: "Scenarios",
+            url: "#",
+            section: "scenarios",
+          },
           {
             title: "Simulations",
             url: "#",
@@ -312,12 +297,20 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         section: "staff",
       });
 
+      // Agents - available for instructional and admin
+      managementItems.push({
+        title: "Agents",
+        url: "#",
+        section: "agents",
+      });
+
       // Evaluations - available for instructional and admin
       managementItems.push({
         title: "Evaluations",
         url: "#",
         section: "evals",
       });
+
 
       menu.push({
         title: "Management",

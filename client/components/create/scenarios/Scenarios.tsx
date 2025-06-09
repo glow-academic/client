@@ -64,7 +64,7 @@ export function Scenarios() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/chat/scenarios/s/${id}`);
+    router.push(`/create/scenarios/s/${id}`);
   };
 
   return (

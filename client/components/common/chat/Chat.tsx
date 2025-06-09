@@ -241,7 +241,7 @@ export default function Chat({ chatId }: { chatId: string }) {
   };
 
   const handleBack = () => {
-    router.push("/dashboard");
+    router.push("/home");
   };
 
   const handleGoToAttempt = () => {

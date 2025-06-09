@@ -5,6 +5,8 @@
  * 06/07/2025
  */
 
+import Eval from "@/components/common/eval/Eval";
+
 export default function EvalEdit({ evalId }: { evalId: string }) {
-    return <div>EvalEdit</div>;
-  }
+    return <Eval evalId={evalId} mode="edit" />;
+}

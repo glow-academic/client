@@ -658,7 +658,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <p className="text-muted-foreground mb-4">
                             The attempt you're looking for doesn't exist or has no chats configured.
                         </p>
-                        <Button onClick={() => router.push("/dashboard")}>Return To Dashboard</Button>
+                        <Button onClick={() => router.push("/simulations")}>Return To Dashboard</Button>
                     </CardContent>
                 </Card>
             </div>

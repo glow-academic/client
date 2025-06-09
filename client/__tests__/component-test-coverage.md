@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-09T20:40:36.894Z
+Generated on: 2025-06-09T21:26:42.670Z
 
 ## Summary
 - **Total Components**: 52
 - **Tests Created**: 0
-- **Tests Updated**: 29
-- **Tests Skipped** (already implemented): 23
+- **Tests Updated**: 27
+- **Tests Skipped** (already implemented): 25
 
 ## Component Coverage
 
@@ -27,6 +27,7 @@ Generated on: 2025-06-09T20:40:36.894Z
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ❌ Needs Implementation |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ❌ Needs Implementation |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ❌ Needs Implementation |
+| Eval | common/eval/Eval.tsx | Eval.test.tsx | ❌ Needs Implementation |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
 | data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ✅ Implemented |
@@ -44,7 +45,7 @@ Generated on: 2025-06-09T20:40:36.894Z
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ❌ Needs Implementation |
-| Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ❌ Needs Implementation |
+| Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ❌ Needs Implementation |
@@ -52,18 +53,17 @@ Generated on: 2025-06-09T20:40:36.894Z
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ❌ Needs Implementation |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ❌ Needs Implementation |
 | Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
+| Home | home/Home.tsx | Home.test.tsx | ❌ Needs Implementation |
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
-| EvalDetails | management/evals/EvalDetails.tsx | EvalDetails.test.tsx | ❌ Needs Implementation |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
-| Evals | management/evals/Evals.tsx | Evals.test.tsx | ❌ Needs Implementation |
+| Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ❌ Needs Implementation |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ❌ Needs Implementation |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ❌ Needs Implementation |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ❌ Needs Implementation |
-| Simulations | simulations/Simulations.tsx | Simulations.test.tsx | ❌ Needs Implementation |
 
 ## Directory Structure
 
@@ -90,6 +90,8 @@ __tests__/
 │   │   ├── MarkdownImage.test.tsx
 │   ├── class/
 │   │   ├── ClassForm.test.tsx
+│   ├── eval/
+│   │   ├── Eval.test.tsx
 │   ├── history/
 │   │   ├── SimulationHistory.test.tsx
 │   │   ├── columns.test.tsx
@@ -125,13 +127,14 @@ __tests__/
 │   │   ├── Simulations.test.tsx
 ├── growth/
 │   ├── Growth.test.tsx
+├── home/
+│   ├── Home.test.tsx
 ├── management/
 │   ├── agents/
 │   │   ├── AgentEdit.test.tsx
 │   │   ├── Agents.test.tsx
 │   │   ├── NewAgent.test.tsx
 │   ├── evals/
-│   │   ├── EvalDetails.test.tsx
 │   │   ├── EvalEdit.test.tsx
 │   │   ├── Evals.test.tsx
 │   │   ├── NewEval.test.tsx
@@ -141,8 +144,6 @@ __tests__/
 │   │   ├── StaffEdit.test.tsx
 ├── profile/
 │   ├── Profile.test.tsx
-├── simulations/
-│   ├── Simulations.test.tsx
 
 ```
 

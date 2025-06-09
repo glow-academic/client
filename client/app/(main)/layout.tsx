@@ -76,7 +76,7 @@ export default function MainLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router, '/dashboard');
+  const handleSectionChange = createSectionChangeHandler(router, '/simulations');
 
   // Create view mode toggle for history page
   const viewModeToggle = isHistoryPage ? (

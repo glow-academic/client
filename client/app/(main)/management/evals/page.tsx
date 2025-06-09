@@ -1,13 +1,17 @@
 /**
  * app/(main)/management/evals/page.tsx
- * Evals page. Redirects to evals page.
+ * Eval list page - redirects to home with evals section
  * @AshokSaravanan222 & @siladiea
- * 06/08/2025
+ * 06/09/2025
  */
 "use client";
+import React from "react";
+import Evals from "@/components/management/evals/Evals";
 
-import { redirect } from "next/navigation";
-
-export default function EvalsPage() {
-  return redirect("/management/evals/new");
+export default function RubricsPage() {
+  return (
+    <div className="space-y-6">
+      <Evals />
+    </div>
+  );
 }

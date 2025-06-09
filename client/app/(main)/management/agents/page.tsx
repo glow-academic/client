@@ -1,13 +1,17 @@
 /**
  * app/(main)/management/agents/page.tsx
- * Agents page. Redirects to agents page.
+ * Agent list page - redirects to home with agents section
  * @AshokSaravanan222 & @siladiea
- * 06/08/2025
+ * 06/09/2025
  */
 "use client";
-
-import { redirect } from "next/navigation";
+import React from "react";
+import Agents from "@/components/management/agents/Agents";
 
 export default function AgentsPage() {
-  return redirect("/management/agents/new");
+  return (
+    <div className="space-y-6">
+      <Agents />
+    </div>
+  );
 }

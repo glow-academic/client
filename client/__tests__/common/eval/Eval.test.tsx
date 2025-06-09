@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import Staff from '@/components/management/staff/Staff';
+import Eval from '@/components/common/eval/Eval';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({
@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('Staff', () => {
+describe('Eval', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -48,32 +48,44 @@ describe('Staff', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for Staff
-      renderWithProviders(<Staff />);
+      // TODO: Implement basic rendering test for Eval
+      renderWithProviders(<Eval />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Staff
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Eval
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: EvalProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for Eval
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Staff
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Eval
     });
   });
 
   describe('User Interactions', () => {
-    
+    it('should handle form submissions', async () => {
+      // TODO: Test form handling
+      const user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Form handling test for Eval
+    });
 
     it('should handle state changes', async () => {
       // TODO: Test state management
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for Staff
+      expect(true).toBe(false); // IMPLEMENT: State management test for Eval
     });
 
     it('should handle user events', async () => {
@@ -81,7 +93,7 @@ describe('Staff', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Staff
+      expect(true).toBe(false); // IMPLEMENT: User events test for Eval
     });
   });
 
@@ -90,21 +102,21 @@ describe('Staff', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for Staff
+      expect(true).toBe(false); // IMPLEMENT: API integration test for Eval
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for Staff
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for Eval
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for Staff
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for Eval
     });
   });
 
@@ -113,7 +125,7 @@ describe('Staff', () => {
       // TODO: Test navigation behavior
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for Staff
+      expect(true).toBe(false); // IMPLEMENT: Navigation test for Eval
     });
   });
 
@@ -122,29 +134,34 @@ describe('Staff', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Staff
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Eval
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for Eval
+    });
   });
 });
 
 /*
- * Component Analysis for Staff:
- * Path: management/staff/Staff.tsx
+ * Component Analysis for Eval:
+ * Path: common/eval/Eval.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useQuery, useRouter, users, user, useAuth, useState, userId, useMemo, username
+ * - Has props: true
+ * - Props interface: EvalProps
+ * - Client component: true
+ * - Uses hooks: useState, useEffect, useQuery, useMutation, useQueryClient, useRouter
  * - Uses router: true
  * - Has API calls: true
- * - Has form handling: false
+ * - Has form handling: true
  * - Uses state: true
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -152,12 +169,12 @@ describe('Staff', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Staff />);
+ * render(<Eval {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Staff {...props} />);
+ * render(<Eval {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

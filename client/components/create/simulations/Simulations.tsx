@@ -65,7 +65,7 @@ export function Simulations() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/simulations/s/${id}`);
+    router.push(`/create/simulations/s/${id}`);
   };
 
   const handleCreateNew = () => {

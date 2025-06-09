@@ -1,6 +1,6 @@
 /**
- * Simulations.tsx
- * This is the unified simulations page with role-based access control
+ * Home.tsx
+ * This is the unified home page with role-based access control
  * @AshokSaravanan222 & @siladiea
  * 05/14/2025
  */
@@ -24,7 +24,7 @@ import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { Agent, Scenario, Simulation } from "@/types";
 
-export default function Simulations() {
+export default function Home() {
     const router = useRouter();
     const [loadingSimulation, setLoadingSimulation] = useState<string | null>(null);
 

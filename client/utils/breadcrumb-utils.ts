@@ -140,8 +140,8 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
         case 'performance':
           title = 'Performance';
           break;
-        case 'leaderboard':
-          title = 'Leaderboard';
+        case 'reports':
+          title = 'Reports';
           break;
         case 'logs':
           title = 'Logs';
@@ -158,9 +158,6 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
         // Management subsections
         case 'staff':
           title = 'Staff';
-          break;
-        case 'reports':
-          title = 'Reports';
           break;
         case 'evals':
           title = 'Evaluations';
