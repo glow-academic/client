@@ -17,7 +17,7 @@ CREATE TABLE simulations (
   rubric_id   UUID        NULL REFERENCES rubrics(id) ON DELETE SET NULL -- can be null if no rubric is used
 );
 
-CREATE TABLE attempts (
+CREATE TABLE simulation_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   user_id    UUID         NULL REFERENCES users(id)  ON DELETE CASCADE,
@@ -31,7 +31,7 @@ CREATE TABLE simulation_chats (
   completed_at TIMESTAMPTZ  NULL,
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
-  attempt_id UUID         NOT NULL REFERENCES attempts(id)  ON DELETE CASCADE,
+  attempt_id UUID         NOT NULL REFERENCES simulation_attempts(id)  ON DELETE CASCADE,
   completed  BOOLEAN      NOT NULL           DEFAULT FALSE
 );
 
@@ -43,6 +43,26 @@ CREATE TABLE simulation_messages (
   response   TEXT        NOT NULL,
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
+
+CREATE TABLE simulation_chat_rubrics (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    passed     BOOLEAN     NOT NULL,
+    score      INTEGER     NOT NULL,
+    time_taken INTEGER     NOT NULL, -- in seconds
+    rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
+    simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE
+  );
+
+  CREATE TABLE simulation_chat_standards (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
+    simulation_chat_rubric_id   UUID        NOT NULL REFERENCES simulation_chat_rubrics(id)  ON DELETE CASCADE,
+    total INTEGER     NOT NULL,
+    feedback TEXT
+  );
+
 
 -- ============================================================================
 -- ESSENTIAL TEST DATA
@@ -65,8 +85,8 @@ INSERT INTO simulations (id, title, documents, time_limit, active, scenario_ids)
   ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', ARRAY[]::UUID[], 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[])
 ON CONFLICT (id) DO NOTHING;
 
--- Insert Attempts (Essential for linking chats to simulations and users)
-INSERT INTO attempts (id, created_at, user_id, class_id, simulation_id) VALUES
+-- Insert Simulation Attempts (Essential for linking chats to simulations and users)
+INSERT INTO simulation_attempts (id, created_at, user_id, class_id, simulation_id) VALUES
   -- CS 180 attempts
   ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
@@ -154,3 +174,69 @@ INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, 
   ('a5e5b001-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 hour', NULL, 'Guest Programming Challenge', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'a5e5b001-1111-2222-3333-444444444444'),
   ('a5e5b002-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours', 'Guest Multi-Course Test', '44444444-dddd-dddd-dddd-444444444444', true, 'a5e5b002-1111-2222-3333-444444444444'),
   ('a5e5b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NULL, 'Guest Theory Challenge', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'a5e5b003-1111-2222-3333-444444444444');
+
+-- Insert Simulation Chat Rubrics (Custom rubric grades for each simulation chat)
+INSERT INTO simulation_chat_rubrics (id, passed, score, time_taken, rubric_id, simulation_chat_id) VALUES
+  -- CS 180 chats
+  ('bbbb0001-1111-2222-3333-444444444444', true, 78, 1400, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-111111111111'),
+  ('bbbb0002-1111-2222-3333-444444444444', true, 82, 1600, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-222222222222'),
+  ('bbbb0003-1111-2222-3333-444444444444', false, 68, 1100, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-333333333333'),
+  
+  -- CS 182 chats
+  ('bbbb0004-1111-2222-3333-444444444444', true, 91, 1750, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-444444444444'),
+  ('bbbb0005-1111-2222-3333-444444444444', true, 74, 1250, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-555555555555'),
+  ('bbbb0006-1111-2222-3333-444444444444', true, 86, 1550, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-666666666666'),
+  
+  -- CS 251 chats
+  ('bbbb0007-1111-2222-3333-444444444444', false, 63, 950, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-777777777777'),
+  ('bbbb0008-1111-2222-3333-444444444444', true, 89, 1650, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-888888888888'),
+  ('bbbb0009-1111-2222-3333-444444444444', true, 77, 1300, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-999999999999'),
+  
+  -- CS 381 chats
+  ('bbbb0010-1111-2222-3333-444444444444', true, 84, 1450, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-aaaaaaaaaaaa'),
+  ('bbbb0011-1111-2222-3333-444444444444', false, 66, 1050, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-bbbbbbbbbbbb'),
+  ('bbbb0012-1111-2222-3333-444444444444', true, 93, 1800, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-cccccccccccc'),
+  
+  -- Custom simulation chats
+  ('bbbb0013-1111-2222-3333-444444444444', true, 80, 1350, '11111111-1111-1111-1111-111111111111', 'c5a0b001-aaaa-bbbb-cccc-111111111111'),
+  ('bbbb0014-1111-2222-3333-444444444444', true, 87, 1500, '22222222-2222-2222-2222-222222222222', 'c5a0b002-aaaa-bbbb-cccc-222222222222'),
+  ('bbbb0015-1111-2222-3333-444444444444', true, 75, 1200, '11111111-1111-1111-1111-111111111111', 'c5a0b003-aaaa-bbbb-cccc-333333333333'),
+  ('bbbb0016-1111-2222-3333-444444444444', false, 69, 1000, '22222222-2222-2222-2222-222222222222', 'c5a0b004-aaaa-bbbb-cccc-444444444444'),
+  ('bbbb0017-1111-2222-3333-444444444444', true, 81, 1400, '11111111-1111-1111-1111-111111111111', 'c5a0b005-aaaa-bbbb-cccc-555555555555'),
+  ('bbbb0018-1111-2222-3333-444444444444', true, 88, 1600, '22222222-2222-2222-2222-222222222222', 'c5a0b006-aaaa-bbbb-cccc-666666666666'),
+  
+  -- Additional sample chats
+  ('bbbb0019-1111-2222-3333-444444444444', true, 79, 1300, '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-1111-2222-3333-444444444441'),
+  ('bbbb0020-1111-2222-3333-444444444444', true, 85, 1450, '22222222-2222-2222-2222-222222222222', 'aaaaaaaa-1111-2222-3333-444444444442'),
+  ('bbbb0021-1111-2222-3333-444444444444', false, 64, 900, '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-1111-2222-3333-444444444443'),
+  ('bbbb0022-1111-2222-3333-444444444444', true, 90, 1700, '22222222-2222-2222-2222-222222222222', 'aaaaaaaa-1111-2222-3333-444444444444'),
+  ('bbbb0023-1111-2222-3333-444444444444', true, 76, 1250, '11111111-1111-1111-1111-111111111111', 'aaaaaaaa-1111-2222-3333-444444444445'),
+  
+  -- Guest simulation chats
+  ('bbbb0024-1111-2222-3333-444444444444', true, 83, 1400, '22222222-2222-2222-2222-222222222222', 'a5e5b001-aaaa-bbbb-cccc-111111111111'),
+  ('bbbb0025-1111-2222-3333-444444444444', true, 72, 1150, '11111111-1111-1111-1111-111111111111', 'a5e5b002-aaaa-bbbb-cccc-222222222222'),
+  ('bbbb0026-1111-2222-3333-444444444444', false, 67, 1050, '22222222-2222-2222-2222-222222222222', 'a5e5b003-aaaa-bbbb-cccc-333333333333');
+
+-- Insert Sample Simulation Chat Standards (showing detailed grading breakdown)
+INSERT INTO simulation_chat_standards (id, standard_id, simulation_chat_rubric_id, total, feedback) VALUES
+  -- Standards for bbbb0001 (AI Student rubric)
+  ('cccc0001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'bbbb0001-1111-2222-3333-444444444444', 10, 'Excellent consistency in aggressive personality - used caps and exclamation points effectively'),
+  ('cccc0002-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'bbbb0001-1111-2222-3333-444444444444', 13, 'Showed realistic learning progression from confusion to understanding'),
+  ('cccc0003-1111-2222-3333-444444444444', '55555555-aaaa-bbbb-cccc-111111111111', 'bbbb0001-1111-2222-3333-444444444444', 14, 'Asked highly relevant questions about NullPointerException debugging'),
+  
+  -- Standards for bbbb0002 (AI Teacher rubric)
+  ('cccc0004-1111-2222-3333-444444444444', 'aaaaaaaa-1111-2222-3333-222222222222', 'bbbb0002-1111-2222-3333-444444444444', 14, 'Excellent use of Socratic questioning to guide student discovery'),
+  ('cccc0005-1111-2222-3333-444444444444', 'cccccccc-1111-2222-3333-222222222222', 'bbbb0002-1111-2222-3333-444444444444', 15, 'All technical information was accurate and well-explained'),
+  ('cccc0006-1111-2222-3333-444444444444', 'eeeeeeee-1111-2222-3333-222222222222', 'bbbb0002-1111-2222-3333-444444444444', 11, 'Clear communication but could be more concise'),
+  
+  -- Standards for bbbb0003 (AI Student rubric - failed example)
+  ('cccc0007-1111-2222-3333-444444444444', '22222222-aaaa-bbbb-cccc-111111111111', 'bbbb0003-1111-2222-3333-444444444444', 8, 'Emotional responses were somewhat inconsistent with confused personality'),
+  ('cccc0008-1111-2222-3333-444444444444', '44444444-aaaa-bbbb-cccc-111111111111', 'bbbb0003-1111-2222-3333-444444444444', 6, 'Mistakes seemed too advanced for freshman level student'),
+  
+  -- Standards for bbbb0004 (AI Teacher rubric)
+  ('cccc0009-1111-2222-3333-444444444444', 'bbbbbbbb-1111-2222-3333-222222222222', 'bbbb0004-1111-2222-3333-444444444444', 12, 'Good scaffolding approach, helped student build understanding step by step'),
+  ('cccc0010-1111-2222-3333-444444444444', 'ffffffff-1111-2222-3333-222222222222', 'bbbb0004-1111-2222-3333-444444444444', 10, 'Adapted communication style well to confused student personality'),
+  
+  -- Standards for bbbb0011 (AI Student rubric - failed example)
+  ('cccc0011-1111-2222-3333-444444444444', '77777777-aaaa-bbbb-cccc-111111111111', 'bbbb0011-1111-2222-3333-444444444444', 8, 'Engagement level was inconsistent throughout the conversation'),
+  ('cccc0012-1111-2222-3333-444444444444', '66666666-aaaa-bbbb-cccc-111111111111', 'bbbb0011-1111-2222-3333-444444444444', 7, 'Questions were sometimes too shallow for the complexity of the topic');

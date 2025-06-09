@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getScenariosByAgents(agentIds: string[]) {
   try {
-    return await db.select().from(scenarios).where(inArray(scenarios.agent_id, agentIds));
+    return await db.select().from(scenarios).where(inArray(scenarios.agentId, agentIds));
   } catch (error) {
     console.error("Error fetching scenarios by agents:", error);
     throw error;

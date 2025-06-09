@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getEvalMessagesByChats(chatIds: string[]) {
   try {
-    return await db.select().from(evalMessages).where(inArray(evalMessages.chat_id, chatIds));
+    return await db.select().from(evalMessages).where(inArray(evalMessages.chatId, chatIds));
   } catch (error) {
     console.error("Error fetching eval_messages by chats:", error);
     throw error;

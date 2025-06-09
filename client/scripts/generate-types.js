@@ -40,10 +40,32 @@ function extractSchemaInfo() {
 }
 
 /**
+ * Convert plural table names to singular type names
+ */
+function singularize(word) {
+  // Handle special cases that don't follow simple rules
+  const specialCases = {
+    'classes': 'class'
+  };
+  
+  if (specialCases[word.toLowerCase()]) {
+    return specialCases[word.toLowerCase()];
+  }
+  
+  // For most cases, just remove the 's' at the end
+  if (word.endsWith('s') && !word.endsWith('ss')) {
+    return word.slice(0, -1);
+  }
+  
+  // Return as-is if no pattern matches
+  return word;
+}
+
+/**
  * Generate types.ts content
  */
 function generateTypesContent(tables, enums) {
-  // Generate imports
+  // Generate imports - keep original table names for imports
   const tableImports = tables.map(table => `${table} as ${capitalize(table)}`).join(',\n  ');
   const enumImports = enums.join(', ');
   
@@ -52,18 +74,19 @@ function generateTypesContent(tables, enums) {
   ${enumImports}
 } from "@/drizzle/schema";`;
 
-  // Generate table types
-  const tableTypes = tables.map(table => 
-    `type ${capitalize(table)} = typeof ${capitalize(table)}.$inferSelect;`
-  ).join('\n');
+  // Generate table types with singular names
+  const tableTypes = tables.map(table => {
+    const singularName = capitalize(singularize(table));
+    return `type ${singularName} = typeof ${capitalize(table)}.$inferSelect;`;
+  }).join('\n');
 
   // Generate enum types
   const enumTypes = enums.map(enumName => 
     `type ${capitalize(enumName)} = (typeof ${enumName}.enumValues)[number];`
   ).join('\n');
 
-  // Generate exports
-  const tableExports = tables.map(table => capitalize(table)).join(',\n  ');
+  // Generate exports with singular names
+  const tableExports = tables.map(table => capitalize(singularize(table))).join(',\n  ');
   const enumExports = enums.map(enumName => capitalize(enumName)).join(',\n  ');
   
   const exports = `export type { 
@@ -107,7 +130,7 @@ function generateTypes() {
   fs.writeFileSync(TYPES_PATH, typesContent);
   
   console.log(`\n✅ Generated ${TYPES_PATH}`);
-  console.log('📝 All table and enum types are now available!');
+  console.log('📝 All table and enum types are now available with singular names!');
 }
 
 // Run if called directly

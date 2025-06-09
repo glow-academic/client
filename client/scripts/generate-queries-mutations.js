@@ -28,19 +28,106 @@ function getLatestSnapshotPath() {
  */
 function generateSnapshot() {
   try {
-    console.log('🔄 Generating fresh schema snapshot...');
+    console.log('🔄 Generating fresh schema snapshot from database...');
     
-    // Run drizzle-kit introspect to generate/update the snapshot
+    // First, pull the latest schema from the database
     execSync('npx drizzle-kit introspect', { 
       cwd: path.join(__dirname, '..'),
       stdio: 'inherit'
     });
     
-    console.log('✅ Schema snapshot generated successfully\n');
+    console.log('✅ Schema snapshot generated successfully from database\n');
   } catch (error) {
-    console.error('❌ Error generating snapshot:', error.message);
+    console.error('❌ Error generating snapshot from database:', error.message);
     console.log('📝 Falling back to existing snapshot if available...\n');
   }
+}
+
+/**
+ * Generate fresh snapshot from current schema (for schema-first approach)
+ */
+function generateSnapshotFromSchema() {
+  try {
+    console.log('🔄 Generating fresh snapshot from schema file...');
+    
+    // Generate snapshot from schema file
+    execSync('npx drizzle-kit generate', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    console.log('✅ Schema snapshot generated successfully from schema file\n');
+  } catch (error) {
+    console.error('❌ Error generating snapshot from schema:', error.message);
+    console.log('📝 Falling back to existing snapshot if available...\n');
+  }
+}
+
+/**
+ * Pull latest schema from database and generate snapshot
+ */
+function pullAndGenerateSnapshot() {
+  try {
+    console.log('🔄 Pulling latest schema from database...');
+    
+    // Pull the latest schema from the database
+    execSync('npx drizzle-kit pull', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    console.log('✅ Latest schema pulled from database successfully\n');
+  } catch (error) {
+    console.error('❌ Error pulling from database:', error.message);
+    console.log('📝 Trying introspect instead...\n');
+    
+    // Fallback to introspect
+    generateSnapshot();
+  }
+}
+
+/**
+ * Detect potential schema mismatches between schema file and database
+ */
+function detectSchemaMismatches(snapshot) {
+  const warnings = [];
+  const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
+  
+  // Extract table definitions from schema
+  const schemaTableRegex = /export const (\w+)\s*=\s*pgTable\(\s*["']([^"']+)["']/g;
+  const schemaTables = new Map();
+  let match;
+  
+  while ((match = schemaTableRegex.exec(schemaContent)) !== null) {
+    const [, exportName, tableName] = match;
+    schemaTables.set(tableName, exportName);
+  }
+  
+  // Check for mismatches
+  Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
+    const dbTableName = tableData.name;
+    const schemaExportName = schemaTables.get(dbTableName);
+    
+    if (!schemaExportName) {
+      warnings.push(`⚠️  Table "${dbTableName}" exists in database but not found in schema file`);
+    }
+  });
+  
+  // Check for schema tables not in database
+  schemaTables.forEach((exportName, tableName) => {
+    const dbTable = Object.values(snapshot.tables || {}).find(table => table.name === tableName);
+    if (!dbTable) {
+      warnings.push(`⚠️  Table "${tableName}" (${exportName}) exists in schema but not in database`);
+    }
+  });
+  
+  if (warnings.length > 0) {
+    console.log('🔍 Schema mismatch warnings:');
+    warnings.forEach(warning => console.log(`  ${warning}`));
+    console.log('💡 Consider running migrations or using --pull to sync with database\n');
+  }
+  
+  return warnings;
 }
 
 /**
@@ -61,6 +148,9 @@ function extractTableInfo() {
     
     const snapshotContent = fs.readFileSync(snapshotPath, 'utf8');
     const snapshot = JSON.parse(snapshotContent);
+    
+    // Detect potential schema mismatches
+    detectSchemaMismatches(snapshot);
     
     const tables = [];
     
@@ -173,6 +263,15 @@ function isForeignKeyColumn(columnName, foreignKeys) {
   return Object.values(foreignKeys).some(fk => 
     fk.columnsFrom && fk.columnsFrom.includes(columnName)
   );
+}
+
+/**
+ * Convert database column name to TypeScript property name
+ * e.g., "agent_id" -> "agentId", "class_id" -> "classId"
+ */
+function getTsPropertyName(dbColumnName) {
+  // Convert snake_case to camelCase
+  return dbColumnName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
 }
 
 /**
@@ -342,7 +441,9 @@ export async function get${capitalize(singularName)}(${primaryKey}: string) {
  * Generate get by foreign key query
  */
 function generateGetByForeignKeyQuery(exportName, tableName, foreignKey) {
-  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
+  // Get the TypeScript property name from the schema (camelCase)
+  const tsPropertyName = getTsPropertyName(foreignKey.columnName);
+  const paramName = tsPropertyName.replace(/Id$/, '');
   const cleanParamName = paramName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
   return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${cleanParamName}.ts
 "use server";
@@ -352,7 +453,7 @@ import { eq } from "drizzle-orm";
 
 export async function get${capitalize(exportName)}By${capitalize(paramName)}(${paramName}Id: string) {
   try {
-    return await db.select().from(${exportName}).where(eq(${exportName}.${foreignKey.columnName}, ${paramName}Id));
+    return await db.select().from(${exportName}).where(eq(${exportName}.${tsPropertyName}, ${paramName}Id));
   } catch (error) {
     console.error("Error fetching ${tableName} by ${paramName}:", error);
     throw error;
@@ -365,7 +466,9 @@ export async function get${capitalize(exportName)}By${capitalize(paramName)}(${p
  * Generate get by foreign key query (plural version)
  */
 function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
-  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
+  // Get the TypeScript property name from the schema (camelCase)
+  const tsPropertyName = getTsPropertyName(foreignKey.columnName);
+  const paramName = tsPropertyName.replace(/Id$/, '');
   const pluralParamName = paramName.endsWith('s') ? paramName : paramName + 's';
   const cleanPluralParamName = pluralParamName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
   return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${cleanPluralParamName}.ts
@@ -376,7 +479,7 @@ import { inArray } from "drizzle-orm";
 
 export async function get${capitalize(exportName)}By${capitalize(pluralParamName)}(${paramName}Ids: string[]) {
   try {
-    return await db.select().from(${exportName}).where(inArray(${exportName}.${foreignKey.columnName}, ${paramName}Ids));
+    return await db.select().from(${exportName}).where(inArray(${exportName}.${tsPropertyName}, ${paramName}Ids));
   } catch (error) {
     console.error("Error fetching ${tableName} by ${pluralParamName}:", error);
     throw error;
@@ -559,21 +662,23 @@ function capitalize(str) {
  * Main generation function
  */
 function generateQueriesAndMutations(options = {}) {
-  console.log('🚀 Generating queries and mutations from Drizzle schema...\n');
+  console.log('🚀 Generating queries and mutations from latest database state...\n');
   
-  // Generate a fresh snapshot unless --skip-snapshot flag is used
+  // Check for different snapshot generation options
   const skipSnapshot = process.argv.includes('--skip-snapshot') || options.skipSnapshot;
+  const useSchema = process.argv.includes('--from-schema') || options.fromSchema;
+  const usePull = process.argv.includes('--pull') || options.pull;
   
   if (!skipSnapshot) {
-    console.log('🔄 Generating fresh snapshot from current schema...');
-    try {
-      execSync('npx drizzle-kit generate', { 
-        cwd: path.join(__dirname, '..'),
-        stdio: 'pipe' // Hide output unless there's an error
-      });
-      console.log('✅ Fresh snapshot generated\n');
-    } catch (error) {
-      console.warn('⚠️  Could not generate fresh snapshot, using existing one\n');
+    if (usePull) {
+      console.log('🔄 Using drizzle-kit pull to get latest database state...');
+      pullAndGenerateSnapshot();
+    } else if (useSchema) {
+      console.log('🔄 Generating snapshot from schema file...');
+      generateSnapshotFromSchema();
+    } else {
+      console.log('🔄 Using drizzle-kit introspect to get latest database state...');
+      generateSnapshot();
     }
   } else {
     console.log('⏭️  Skipping snapshot generation (using existing snapshot)\n');
@@ -606,21 +711,30 @@ Usage: node scripts/generate-queries-mutations.js [options]
 
 Options:
   --skip-snapshot    Skip generating fresh snapshot (use existing one)
+  --pull             Use 'drizzle-kit pull' to get latest database state (recommended)
+  --from-schema      Generate snapshot from schema file instead of database
   --help, -h         Show this help message
 
 Description:
-  This script generates TypeScript query and mutation files based on your Drizzle schema.
+  This script generates TypeScript query and mutation files based on your database state.
   It uses drizzle-kit's JSON snapshots for reliable parsing instead of regex.
 
   By default, it will:
-  1. Generate a fresh snapshot from your current schema
+  1. Use 'drizzle-kit introspect' to get the latest database state
   2. Parse all tables and relationships from the snapshot
   3. Generate query files (get all, get by ID, get by foreign keys)
   4. Generate mutation files (create, update, delete - both single and multiple)
 
 Examples:
-  node scripts/generate-queries-mutations.js                 # Full generation with fresh snapshot
+  node scripts/generate-queries-mutations.js                 # Use introspect (default)
+  node scripts/generate-queries-mutations.js --pull          # Use pull (recommended for latest DB state)
+  node scripts/generate-queries-mutations.js --from-schema   # Generate from schema file
   node scripts/generate-queries-mutations.js --skip-snapshot # Use existing snapshot (faster)
+
+Recommended workflow:
+  1. Make database changes (migrations, manual changes, etc.)
+  2. Run with --pull to ensure you have the latest database state
+  3. Generated queries/mutations will match your actual database structure
 `);
     process.exit(0);
   }

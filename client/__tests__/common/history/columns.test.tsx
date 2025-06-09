@@ -103,7 +103,7 @@ describe('columns', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, users, useMemo, user, useTaskColumns, userLoading, usersLoading, userOptions, uses, userId, userOption, used
+ * - Uses hooks: useQuery, useMemo, user, users, useTaskColumns, userLoading, usersLoading, userRubricGrades, userRubricGradesLoading, userOptions, uses, userId, userOption, used
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

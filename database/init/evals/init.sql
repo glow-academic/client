@@ -51,6 +51,27 @@ CREATE TABLE eval_runs (
     completed  BOOLEAN     NOT NULL           DEFAULT FALSE
   );
 
+
+  CREATE TABLE eval_chat_rubrics (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    passed     BOOLEAN     NOT NULL,
+    score      INTEGER     NOT NULL,
+    time_taken INTEGER     NOT NULL, -- in seconds
+    rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE,
+    eval_chat_id   UUID        NOT NULL REFERENCES eval_chats(id)  ON DELETE CASCADE
+  );
+
+  CREATE TABLE eval_chat_standards (
+    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
+    eval_chat_rubric_id   UUID        NOT NULL REFERENCES eval_chat_rubrics(id)  ON DELETE CASCADE,
+    total INTEGER     NOT NULL,
+    feedback TEXT
+  );
+
+
 -- ============================================================================
 -- ESSENTIAL TEST DATA
 -- ============================================================================
@@ -98,3 +119,45 @@ INSERT INTO eval_messages (id, chat_id, query, response, completed) VALUES
   ('ddd00006-4444-5555-6666-777777777777', 'cbab0004-2222-3333-4444-555555555555', 'Can you help me understand proof by induction?', 'Absolutely! I love mathematical proofs! Induction is such an elegant technique - we prove a base case and then show the inductive step!', true),
   
   ('ddd00007-5555-6666-7777-888888888888', 'cbab0006-3333-4444-5555-666666666666', 'Why is the SAT problem NP-complete?', 'Are you KIDDING me?! This NP-completeness stuff is SO confusing! Why does everything have to be so complicated?!', false);
+
+-- Insert Eval Chat Rubrics (Custom rubric grades for each eval chat)
+INSERT INTO eval_chat_rubrics (id, passed, score, time_taken, rubric_id, eval_chat_id) VALUES
+  -- CS 180 Student Behavior Evaluation chats
+  ('dddd0001-1111-2222-3333-444444444444', true, 85, 1200, '11111111-1111-1111-1111-111111111111', 'cbab0001-1111-2222-3333-444444444444'),
+  ('dddd0002-1111-2222-3333-444444444444', true, 92, 1450, '11111111-1111-1111-1111-111111111111', 'cbab0002-1111-2222-3333-444444444444'),
+  ('dddd0003-1111-2222-3333-444444444444', false, 65, 900, '11111111-1111-1111-1111-111111111111', 'cbab0003-1111-2222-3333-444444444444'),
+  
+  -- Multi-Class Algorithm Understanding chats
+  ('dddd0004-1111-2222-3333-444444444444', true, 88, 1600, '22222222-2222-2222-2222-222222222222', 'cbab0004-2222-3333-4444-555555555555'),
+  ('dddd0005-1111-2222-3333-444444444444', true, 76, 1100, '22222222-2222-2222-2222-222222222222', 'cbab0005-2222-3333-4444-555555555555'),
+  
+  -- Advanced Problem Solving Assessment chats
+  ('dddd0006-1111-2222-3333-444444444444', true, 94, 1800, '22222222-2222-2222-2222-222222222222', 'cbab0006-3333-4444-5555-666666666666'),
+  ('dddd0007-1111-2222-3333-444444444444', true, 81, 1350, '22222222-2222-2222-2222-222222222222', 'cbab0007-3333-4444-5555-666666666666');
+
+-- Insert Sample Eval Chat Standards (showing detailed grading breakdown)
+INSERT INTO eval_chat_standards (id, standard_id, eval_chat_rubric_id, total, feedback) VALUES
+  -- Standards for dddd0001 (Aggressive Student - AI Student rubric)
+  ('eeee0001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 11, 'Perfect aggressive personality consistency - used caps and frustration effectively'),
+  ('eeee0002-1111-2222-3333-444444444444', '22222222-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 12, 'Excellent emotional escalation pattern typical of aggressive students'),
+  ('eeee0003-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 14, 'Showed realistic learning progression despite initial frustration'),
+  ('eeee0004-1111-2222-3333-444444444444', '55555555-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 13, 'Asked relevant debugging questions appropriate for CS 180 level'),
+  
+  -- Standards for dddd0002 (Happy Student - AI Student rubric)
+  ('eeee0005-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 12, 'Maintained enthusiastic and positive tone throughout interaction'),
+  ('eeee0006-1111-2222-3333-444444444444', '77777777-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 15, 'Excellent active participation with appropriate enthusiasm'),
+  ('eeee0007-1111-2222-3333-444444444444', '66666666-aaaa-bbbb-cccc-111111111111', 'dddd0002-1111-2222-3333-444444444444', 9, 'Questions were appropriate depth for file I/O concepts'),
+  
+  -- Standards for dddd0003 (Confused Student - AI Student rubric - failed example)
+  ('eeee0008-1111-2222-3333-444444444444', '44444444-aaaa-bbbb-cccc-111111111111', 'dddd0003-1111-2222-3333-444444444444', 5, 'Mistakes were too basic for expected CS 180 student level'),
+  ('eeee0009-1111-2222-3333-444444444444', '88888888-aaaa-bbbb-cccc-111111111111', 'dddd0003-1111-2222-3333-444444444444', 6, 'Response timing was too slow and answers too brief'),
+  
+  -- Standards for dddd0004 (Happy Student - AI Teacher rubric)
+  ('eeee0010-1111-2222-3333-444444444444', 'aaaaaaaa-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 13, 'Good use of Socratic method to guide proof understanding'),
+  ('eeee0011-1111-2222-3333-444444444444', 'cccccccc-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 15, 'All mathematical concepts explained accurately'),
+  ('eeee0012-1111-2222-3333-444444444444', 'eeeeeeee-1111-2222-3333-222222222222', 'dddd0004-1111-2222-3333-444444444444', 12, 'Clear explanations adapted well to student enthusiasm'),
+  
+  -- Standards for dddd0006 (Aggressive Student - AI Teacher rubric)
+  ('eeee0013-1111-2222-3333-444444444444', 'bbbbbbbb-1111-2222-3333-222222222222', 'dddd0006-1111-2222-3333-444444444444', 14, 'Excellent scaffolding approach despite student frustration'),
+  ('eeee0014-1111-2222-3333-444444444444', 'ffffffff-1111-2222-3333-222222222222', 'dddd0006-1111-2222-3333-444444444444', 13, 'Adapted communication style perfectly to aggressive personality'),
+  ('eeee0015-1111-2222-3333-444444444444', 'aaaaaaaa-2222-3333-4444-222222222222', 'dddd0006-1111-2222-3333-444444444444', 11, 'Guided discovery approach worked well for complex NP-completeness topic');

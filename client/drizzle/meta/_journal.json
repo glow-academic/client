@@ -15,6 +15,20 @@
       "when": 1749435886372,
       "tag": "0001_mushy_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749476068688,
+      "tag": "0002_black_famine",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749481062856,
+      "tag": "0003_yielding_darkhawk",
+      "breakpoints": true
     }
   ]
 }

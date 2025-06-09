@@ -1,14 +1,14 @@
-// utils/queries/standards/get-standards-by-standardgroup.ts
+// utils/queries/standards/get-standards-by-standard-group.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { standards } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function getStandardsByStandardgroup(standardgroupId: string) {
+export async function getStandardsByStandardGroup(standardGroupId: string) {
   try {
-    return await db.select().from(standards).where(eq(standards.standard_group_id, standardgroupId));
+    return await db.select().from(standards).where(eq(standards.standardGroupId, standardGroupId));
   } catch (error) {
-    console.error("Error fetching standards by standardgroup:", error);
+    console.error("Error fetching standards by standardGroup:", error);
     throw error;
   }
 }

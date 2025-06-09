@@ -3,14 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js && node cypress/scripts/advanced-test-generator.js && node scripts/generate-component-tests.js && next dev",
+    "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node cypress/scripts/advanced-test-generator.js && node scripts/generate-component-tests.js && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
     "generate:types": "node scripts/generate-types.js",
-    "generate:queries": "node scripts/generate-queries-mutations.js",
+    "generate:queries": "node scripts/generate-queries-mutations.js --pull",
+    "generate:queries:fast": "node scripts/generate-queries-mutations.js --skip-snapshot",
     "test:cypress": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cypress run\"",
     "test:jest": "vitest run",
     "test": "npm run test:jest && npm run test:cypress"

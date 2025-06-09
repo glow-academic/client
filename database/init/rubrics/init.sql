@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TABLE rubrics (
+  CREATE TABLE rubrics (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
@@ -33,26 +33,6 @@ CREATE TABLE rubrics (
     points INTEGER     NOT NULL,
     standard_group_id   UUID        NOT NULL REFERENCES standard_groups(id)  ON DELETE CASCADE
   );
-
-
-CREATE TABLE rubric_grades (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    passed     BOOLEAN     NOT NULL,
-    score      INTEGER     NOT NULL,
-    time_taken INTEGER     NOT NULL, -- in seconds
-    rubric_id   UUID        NOT NULL REFERENCES rubrics(id)  ON DELETE CASCADE
-  );
-
-  CREATE TABLE standard_grades (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-    standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
-    rubric_grade_id   UUID        NOT NULL REFERENCES rubric_grades(id)  ON DELETE CASCADE,
-    total INTEGER     NOT NULL,
-    feedback TEXT
-  );
-
 
 -- ============================================================================
 -- ESSENTIAL TEST DATA
@@ -112,33 +92,3 @@ INSERT INTO standards (id, name, description, points, standard_group_id) VALUES
   -- Problem-Solving Support Standards
   ('aaaaaaaa-2222-3333-4444-222222222222', 'Guided Discovery', 'Helps students discover solutions through guided questioning', 12, 'bbbbbbbb-cccc-dddd-eeee-222222222222'),
   ('bbbbbbbb-2222-3333-4444-222222222222', 'Independence Building', 'Encourages student independence and critical thinking', 8, 'bbbbbbbb-cccc-dddd-eeee-222222222222');
-
--- Insert Sample Rubric Grades
-INSERT INTO rubric_grades (id, passed, score, time_taken, rubric_id) VALUES
-  ('aade0001-1111-2222-3333-444444444444', true, 85, 1200, '11111111-1111-1111-1111-111111111111'),
-  ('aade0002-1111-2222-3333-444444444444', false, 65, 900, '11111111-1111-1111-1111-111111111111'),
-  ('aade0003-1111-2222-3333-444444444444', true, 92, 1500, '11111111-1111-1111-1111-111111111111'),
-  ('aade0004-2222-3333-4444-555555555555', true, 88, 1800, '22222222-2222-2222-2222-222222222222'),
-  ('aade0005-2222-3333-4444-555555555555', true, 76, 1350, '22222222-2222-2222-2222-222222222222'),
-  ('aade0006-2222-3333-4444-555555555555', false, 72, 1100, '22222222-2222-2222-2222-222222222222');
-
--- Insert Sample Standard Grades
-INSERT INTO standard_grades (id, standard_id, rubric_grade_id, total, feedback) VALUES
-  -- Grades for AI Student evaluations
-  ('aaade001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 10, 'Excellent consistency in aggressive personality - used caps and exclamation points effectively'),
-  ('aaade002-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 13, 'Showed realistic learning progression from confusion to understanding'),
-  ('aaade003-1111-2222-3333-444444444444', '55555555-aaaa-bbbb-cccc-111111111111', 'aade0001-1111-2222-3333-444444444444', 14, 'Asked highly relevant questions about NullPointerException debugging'),
-  
-  ('aaade004-2222-3333-4444-555555555555', '22222222-aaaa-bbbb-cccc-111111111111', 'aade0002-1111-2222-3333-444444444444', 8, 'Emotional responses were somewhat inconsistent with happy personality'),
-  ('aaade005-2222-3333-4444-555555555555', '44444444-aaaa-bbbb-cccc-111111111111', 'aade0002-1111-2222-3333-444444444444', 6, 'Mistakes seemed too advanced for freshman level student'),
-  
-  -- Grades for AI Teacher evaluations
-  ('aaade006-3333-4444-5555-666666666666', 'aaaaaaaa-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 14, 'Excellent use of Socratic questioning to guide student discovery'),
-  ('aaade007-3333-4444-5555-666666666666', 'cccccccc-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 15, 'All technical information was accurate and well-explained'),
-  ('aaade008-3333-4444-5555-666666666666', 'eeeeeeee-1111-2222-3333-222222222222', 'aade0004-2222-3333-4444-555555555555', 11, 'Clear communication but could be more concise'),
-  
-  ('aaade009-4444-5555-6666-777777777777', 'bbbbbbbb-1111-2222-3333-222222222222', 'aade0005-2222-3333-4444-555555555555', 12, 'Good scaffolding approach, helped student build understanding step by step'),
-  ('aaade010-4444-5555-6666-777777777777', 'ffffffff-1111-2222-3333-222222222222', 'aade0005-2222-3333-4444-555555555555', 10, 'Adapted communication style well to confused student personality'),
-  
-  ('aaade011-5555-6666-7777-888888888888', 'dddddddd-1111-2222-3333-222222222222', 'aade0006-2222-3333-4444-555555555555', 8, 'Explanations were sometimes too complex for the student level'),
-  ('aaade012-5555-6666-7777-888888888888', 'aaaaaaaa-2222-3333-4444-222222222222', 'aade0006-2222-3333-4444-555555555555', 9, 'Good guided discovery but could encourage more independence');

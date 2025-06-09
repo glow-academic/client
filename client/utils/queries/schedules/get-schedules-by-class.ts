@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getSchedulesByClass(classIds: string[]) {
   try {
-    return await db.select().from(schedules).where(inArray(schedules.class_id, classIds));
+    return await db.select().from(schedules).where(inArray(schedules.classId, classIds));
   } catch (error) {
     console.error("Error fetching schedules by class:", error);
     throw error;
