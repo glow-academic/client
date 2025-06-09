@@ -177,7 +177,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing UUID primary key generation for ${tableName}');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: UUID primary key test for ${tableName}');
+      cy.wrap('IMPLEMENT: UUID primary key test for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -189,7 +189,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing automatic timestamp generation for ${tableName}');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Timestamp validation test for ${tableName}');
+      cy.wrap('IMPLEMENT: Timestamp validation test for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -204,7 +204,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       ${requiredFields.map(f => `      // - ${f.name} (${f.type})`).join('\n')}
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Required fields validation for ${tableName}');
+      cy.wrap('IMPLEMENT: Required fields validation for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -219,7 +219,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       ${constraints.filter(c => c.type === 'unique').map(c => `      // Unique constraint: ${c.name} on ${c.columns.join(', ')}`).join('\n')}
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Unique constraints test for ${tableName}');
+      cy.wrap('IMPLEMENT: Unique constraints test for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -234,7 +234,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       ${enumFields.map(f => `      // ${f.name}: ${f.enumType.values.join(' | ')}`).join('\n')}
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Enum validation test for ${tableName}');
+      cy.wrap('IMPLEMENT: Enum validation test for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -256,7 +256,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       // On delete: ${fk.onDelete}
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Foreign key test for ${fk.name}');
+      cy.wrap('IMPLEMENT: Foreign key test for ${fk.name}').should('not.exist');
     });`;
     });
   } else {
@@ -266,7 +266,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing relationships for ${tableName}');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: Relationship test for ${tableName}');
+      cy.wrap('IMPLEMENT: Relationship test for ${tableName}').should('not.exist');
     });`;
   }
 
@@ -282,7 +282,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       ${generateSampleDataComment(fields)}
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} creation test');
+      cy.wrap('IMPLEMENT: ${tableName} creation test').should('not.exist');
     });
 
     it('should read ${tableName} records', () => {
@@ -290,7 +290,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing ${tableName} reading');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} read test');
+      cy.wrap('IMPLEMENT: ${tableName} read test').should('not.exist');
     });
 
     it('should update ${tableName} records', () => {
@@ -298,7 +298,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing ${tableName} updates');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} update test');
+      cy.wrap('IMPLEMENT: ${tableName} update test').should('not.exist');
     });
 
     it('should delete ${tableName} records', () => {
@@ -306,7 +306,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing ${tableName} deletion');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} delete test');
+      cy.wrap('IMPLEMENT: ${tableName} delete test').should('not.exist');
     });
   });
 
@@ -327,7 +327,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       // });
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} API endpoint tests');
+      cy.wrap('IMPLEMENT: ${tableName} API endpoint tests').should('not.exist');
     });
   });
 
@@ -337,7 +337,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing ${tableName} validation errors');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} validation error test');
+      cy.wrap('IMPLEMENT: ${tableName} validation error test').should('not.exist');
     });
 
     it('should handle constraint violations', () => {
@@ -345,7 +345,7 @@ function generateAdvancedTestTemplate(table, allTables) {
       cy.log('Testing ${tableName} constraint violations');
       
       // This test should fail until implemented
-      cy.wrap(null).should('not.exist', 'IMPLEMENT: ${tableName} constraint violation test');
+      cy.wrap('IMPLEMENT: ${tableName} constraint violation test').should('not.exist');
     });
   });
 });

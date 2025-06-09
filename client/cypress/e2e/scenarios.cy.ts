@@ -5,29 +5,80 @@ describe('scenarios Table Tests', () => {
     // Add any necessary authentication steps here
   });
 
-  describe('Database Operations', () => {
-    it('should handle scenarios CRUD operations', () => {
-      // TODO: Implement scenarios creation test
+  describe('Database Schema Validation', () => {
+    it('should generate UUID primary keys automatically', () => {
+      // TODO: Test UUID generation for scenarios
+      cy.log('Testing UUID primary key generation for scenarios');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: UUID primary key test for scenarios');
+    });
+    it('should automatically set timestamps', () => {
+      // TODO: Test timestamp fields (created_at, updated_at) for scenarios
+      cy.log('Testing automatic timestamp generation for scenarios');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Timestamp validation test for scenarios');
+    });
+    it('should enforce required fields', () => {
+      // TODO: Test required fields: id
+      cy.log('Testing required fields for scenarios');
+      
+      // Required fields that should be validated:
+            // - id (uuid)
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Required fields validation for scenarios');
+    });
+  });
+
+  describe('Foreign Key Relationships', () => {
+    it('should handle relationships correctly', () => {
+      // TODO: Test table relationships for scenarios
+      cy.log('Testing relationships for scenarios');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Relationship test for scenarios');
+    });
+  });
+
+  describe('CRUD Operations', () => {
+    it('should create scenarios records', () => {
+      // TODO: Test record creation
       cy.log('Testing scenarios creation');
       
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios creation test').to.be.true;
-    });
-
-    it('should validate scenarios data integrity', () => {
-      // TODO: Implement scenarios validation test
-      cy.log('Testing scenarios data validation');
+      // Sample data structure:
+            // id: // Auto-generated UUID
+      // createdAt: // Auto-generated timestamp
+      // withTimezone: "withTimezone_value"
+      // mode: "mode_value"
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios validation test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios creation test');
     });
 
-    it('should handle scenarios relationships correctly', () => {
-      // TODO: Implement scenarios relationship test
-      cy.log('Testing scenarios foreign key relationships');
+    it('should read scenarios records', () => {
+      // TODO: Test record retrieval
+      cy.log('Testing scenarios reading');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios relationship test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios read test');
+    });
+
+    it('should update scenarios records', () => {
+      // TODO: Test record updates
+      cy.log('Testing scenarios updates');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios update test');
+    });
+
+    it('should delete scenarios records', () => {
+      // TODO: Test record deletion
+      cy.log('Testing scenarios deletion');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios delete test');
     });
   });
 
@@ -36,33 +87,37 @@ describe('scenarios Table Tests', () => {
       // TODO: Test API endpoints for scenarios
       cy.log('Testing scenarios API endpoints');
       
-      // Example API tests (uncomment and modify as needed):
+      // Example API tests:
       // cy.request('GET', '/api/scenarios').then((response) => {
       //   expect(response.status).to.eq(200);
+      //   expect(response.body).to.be.an('array');
+      // });
+      
+      // cy.request('POST', '/api/scenarios', sampleData).then((response) => {
+      //   expect(response.status).to.eq(201);
+      //   expect(response.body).to.have.property('id');
       // });
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios API endpoint tests').to.be.true;
-    });
-  });
-
-  describe('UI Integration', () => {
-    it('should test scenarios UI components', () => {
-      // TODO: Test UI components that interact with scenarios
-      cy.log('Testing scenarios UI integration');
-      
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios UI integration test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios API endpoint tests');
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle scenarios errors gracefully', () => {
-      // TODO: Test error scenarios for scenarios
-      cy.log('Testing scenarios error handling');
+    it('should handle validation errors', () => {
+      // TODO: Test validation error scenarios
+      cy.log('Testing scenarios validation errors');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: scenarios error handling test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios validation error test');
+    });
+
+    it('should handle constraint violations', () => {
+      // TODO: Test constraint violation scenarios
+      cy.log('Testing scenarios constraint violations');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: scenarios constraint violation test');
     });
   });
 });
@@ -71,23 +126,15 @@ describe('scenarios Table Tests', () => {
  * Table Schema Reference for scenarios:
  * Export name: scenarios
  * 
- * TODO: Add specific field tests based on your schema:
- * - Test required fields
- * - Test field validation
- * - Test default values
- * - Test foreign key constraints
- * - Test unique constraints
+ * Fields:
+ * - id: uuid (required) (primary key)
+ * - createdAt: timestamp
+ * - withTimezone: unknown
+ * - mode: unknown
  * 
- * Example field tests:
- * it('should validate required fields', () => {
- *   // Test that required fields are enforced
- * });
+ * Constraints:
+
  * 
- * it('should handle UUID generation', () => {
- *   // Test UUID primary key generation
- * });
- * 
- * it('should validate timestamps', () => {
- *   // Test created_at and other timestamp fields
- * });
+ * Foreign Key Relationships:
+
  */

@@ -5,29 +5,80 @@ describe('agents Table Tests', () => {
     // Add any necessary authentication steps here
   });
 
-  describe('Database Operations', () => {
-    it('should handle agents CRUD operations', () => {
-      // TODO: Implement agents creation test
+  describe('Database Schema Validation', () => {
+    it('should generate UUID primary keys automatically', () => {
+      // TODO: Test UUID generation for agents
+      cy.log('Testing UUID primary key generation for agents');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: UUID primary key test for agents');
+    });
+    it('should automatically set timestamps', () => {
+      // TODO: Test timestamp fields (created_at, updated_at) for agents
+      cy.log('Testing automatic timestamp generation for agents');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Timestamp validation test for agents');
+    });
+    it('should enforce required fields', () => {
+      // TODO: Test required fields: id
+      cy.log('Testing required fields for agents');
+      
+      // Required fields that should be validated:
+            // - id (uuid)
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Required fields validation for agents');
+    });
+  });
+
+  describe('Foreign Key Relationships', () => {
+    it('should handle relationships correctly', () => {
+      // TODO: Test table relationships for agents
+      cy.log('Testing relationships for agents');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Relationship test for agents');
+    });
+  });
+
+  describe('CRUD Operations', () => {
+    it('should create agents records', () => {
+      // TODO: Test record creation
       cy.log('Testing agents creation');
       
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents creation test').to.be.true;
-    });
-
-    it('should validate agents data integrity', () => {
-      // TODO: Implement agents validation test
-      cy.log('Testing agents data validation');
+      // Sample data structure:
+            // id: // Auto-generated UUID
+      // createdAt: // Auto-generated timestamp
+      // withTimezone: "withTimezone_value"
+      // mode: "mode_value"
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents validation test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents creation test');
     });
 
-    it('should handle agents relationships correctly', () => {
-      // TODO: Implement agents relationship test
-      cy.log('Testing agents foreign key relationships');
+    it('should read agents records', () => {
+      // TODO: Test record retrieval
+      cy.log('Testing agents reading');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents relationship test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents read test');
+    });
+
+    it('should update agents records', () => {
+      // TODO: Test record updates
+      cy.log('Testing agents updates');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents update test');
+    });
+
+    it('should delete agents records', () => {
+      // TODO: Test record deletion
+      cy.log('Testing agents deletion');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents delete test');
     });
   });
 
@@ -36,33 +87,37 @@ describe('agents Table Tests', () => {
       // TODO: Test API endpoints for agents
       cy.log('Testing agents API endpoints');
       
-      // Example API tests (uncomment and modify as needed):
+      // Example API tests:
       // cy.request('GET', '/api/agents').then((response) => {
       //   expect(response.status).to.eq(200);
+      //   expect(response.body).to.be.an('array');
+      // });
+      
+      // cy.request('POST', '/api/agents', sampleData).then((response) => {
+      //   expect(response.status).to.eq(201);
+      //   expect(response.body).to.have.property('id');
       // });
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents API endpoint tests').to.be.true;
-    });
-  });
-
-  describe('UI Integration', () => {
-    it('should test agents UI components', () => {
-      // TODO: Test UI components that interact with agents
-      cy.log('Testing agents UI integration');
-      
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents UI integration test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents API endpoint tests');
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle agents errors gracefully', () => {
-      // TODO: Test error scenarios for agents
-      cy.log('Testing agents error handling');
+    it('should handle validation errors', () => {
+      // TODO: Test validation error scenarios
+      cy.log('Testing agents validation errors');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: agents error handling test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents validation error test');
+    });
+
+    it('should handle constraint violations', () => {
+      // TODO: Test constraint violation scenarios
+      cy.log('Testing agents constraint violations');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: agents constraint violation test');
     });
   });
 });
@@ -71,23 +126,15 @@ describe('agents Table Tests', () => {
  * Table Schema Reference for agents:
  * Export name: agents
  * 
- * TODO: Add specific field tests based on your schema:
- * - Test required fields
- * - Test field validation
- * - Test default values
- * - Test foreign key constraints
- * - Test unique constraints
+ * Fields:
+ * - id: uuid (required) (primary key)
+ * - createdAt: timestamp
+ * - withTimezone: unknown
+ * - mode: unknown
  * 
- * Example field tests:
- * it('should validate required fields', () => {
- *   // Test that required fields are enforced
- * });
+ * Constraints:
+
  * 
- * it('should handle UUID generation', () => {
- *   // Test UUID primary key generation
- * });
- * 
- * it('should validate timestamps', () => {
- *   // Test created_at and other timestamp fields
- * });
+ * Foreign Key Relationships:
+
  */

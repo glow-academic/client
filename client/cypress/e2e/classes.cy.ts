@@ -5,29 +5,80 @@ describe('classes Table Tests', () => {
     // Add any necessary authentication steps here
   });
 
-  describe('Database Operations', () => {
-    it('should handle classes CRUD operations', () => {
-      // TODO: Implement classes creation test
+  describe('Database Schema Validation', () => {
+    it('should generate UUID primary keys automatically', () => {
+      // TODO: Test UUID generation for classes
+      cy.log('Testing UUID primary key generation for classes');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: UUID primary key test for classes');
+    });
+    it('should automatically set timestamps', () => {
+      // TODO: Test timestamp fields (created_at, updated_at) for classes
+      cy.log('Testing automatic timestamp generation for classes');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Timestamp validation test for classes');
+    });
+    it('should enforce required fields', () => {
+      // TODO: Test required fields: id
+      cy.log('Testing required fields for classes');
+      
+      // Required fields that should be validated:
+            // - id (uuid)
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Required fields validation for classes');
+    });
+  });
+
+  describe('Foreign Key Relationships', () => {
+    it('should handle relationships correctly', () => {
+      // TODO: Test table relationships for classes
+      cy.log('Testing relationships for classes');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: Relationship test for classes');
+    });
+  });
+
+  describe('CRUD Operations', () => {
+    it('should create classes records', () => {
+      // TODO: Test record creation
       cy.log('Testing classes creation');
       
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes creation test').to.be.true;
-    });
-
-    it('should validate classes data integrity', () => {
-      // TODO: Implement classes validation test
-      cy.log('Testing classes data validation');
+      // Sample data structure:
+            // id: // Auto-generated UUID
+      // createdAt: // Auto-generated timestamp
+      // withTimezone: "withTimezone_value"
+      // mode: "mode_value"
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes validation test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes creation test');
     });
 
-    it('should handle classes relationships correctly', () => {
-      // TODO: Implement classes relationship test
-      cy.log('Testing classes foreign key relationships');
+    it('should read classes records', () => {
+      // TODO: Test record retrieval
+      cy.log('Testing classes reading');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes relationship test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes read test');
+    });
+
+    it('should update classes records', () => {
+      // TODO: Test record updates
+      cy.log('Testing classes updates');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes update test');
+    });
+
+    it('should delete classes records', () => {
+      // TODO: Test record deletion
+      cy.log('Testing classes deletion');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes delete test');
     });
   });
 
@@ -36,33 +87,37 @@ describe('classes Table Tests', () => {
       // TODO: Test API endpoints for classes
       cy.log('Testing classes API endpoints');
       
-      // Example API tests (uncomment and modify as needed):
+      // Example API tests:
       // cy.request('GET', '/api/classes').then((response) => {
       //   expect(response.status).to.eq(200);
+      //   expect(response.body).to.be.an('array');
+      // });
+      
+      // cy.request('POST', '/api/classes', sampleData).then((response) => {
+      //   expect(response.status).to.eq(201);
+      //   expect(response.body).to.have.property('id');
       // });
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes API endpoint tests').to.be.true;
-    });
-  });
-
-  describe('UI Integration', () => {
-    it('should test classes UI components', () => {
-      // TODO: Test UI components that interact with classes
-      cy.log('Testing classes UI integration');
-      
-      // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes UI integration test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes API endpoint tests');
     });
   });
 
   describe('Error Handling', () => {
-    it('should handle classes errors gracefully', () => {
-      // TODO: Test error scenarios for classes
-      cy.log('Testing classes error handling');
+    it('should handle validation errors', () => {
+      // TODO: Test validation error scenarios
+      cy.log('Testing classes validation errors');
       
       // This test should fail until implemented
-      expect(false, 'IMPLEMENT: classes error handling test').to.be.true;
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes validation error test');
+    });
+
+    it('should handle constraint violations', () => {
+      // TODO: Test constraint violation scenarios
+      cy.log('Testing classes constraint violations');
+      
+      // This test should fail until implemented
+      cy.wrap(null).should('not.exist', 'IMPLEMENT: classes constraint violation test');
     });
   });
 });
@@ -71,23 +126,15 @@ describe('classes Table Tests', () => {
  * Table Schema Reference for classes:
  * Export name: classes
  * 
- * TODO: Add specific field tests based on your schema:
- * - Test required fields
- * - Test field validation
- * - Test default values
- * - Test foreign key constraints
- * - Test unique constraints
+ * Fields:
+ * - id: uuid (required) (primary key)
+ * - createdAt: timestamp
+ * - withTimezone: unknown
+ * - mode: unknown
  * 
- * Example field tests:
- * it('should validate required fields', () => {
- *   // Test that required fields are enforced
- * });
+ * Constraints:
+
  * 
- * it('should handle UUID generation', () => {
- *   // Test UUID primary key generation
- * });
- * 
- * it('should validate timestamps', () => {
- *   // Test created_at and other timestamp fields
- * });
+ * Foreign Key Relationships:
+
  */

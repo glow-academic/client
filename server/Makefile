@@ -41,20 +41,6 @@ generate-tests: venv
 	@echo "Generating pytest tests..."
 	@uv run python scripts/generate_pytest_tests.py
 
-# Watch for changes in Python files and regenerate tests
-watch-tests: venv
-	@echo "Watching for Python file changes..."
-	@uv run python scripts/watch_python_changes.py
-
-# Check for changes in Python files
-check-tests: venv
-	@uv run python scripts/watch_python_changes.py check
-
-# Force regenerate all tests
-force-tests: venv
-	@uv run python scripts/watch_python_changes.py force
-	@uv run python scripts/generate_pytest_tests.py
-
 # Run all tests
 test: sync generate-tests
 	@echo "Running pytest tests..."
@@ -71,11 +57,7 @@ test-file: sync
 	@uv run pytest $(FILE) -v
 
 # 9. Start FastAPI via Uvicorn
-run: sync generate-models
-	@echo "Checking for Python file changes..."
-	@uv run python scripts/watch_python_changes.py check || true
-	@echo "Generating pytest tests..."
-	@uv run python scripts/generate_pytest_tests.py
+run: sync generate-models generate-tests
 	@echo "Starting FastAPI server..."
 	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
