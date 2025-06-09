@@ -46,8 +46,6 @@ import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllStandards } from "@/utils/queries/standards/get-all-standards";
-import { getAllStandardGroups } from "@/utils/queries/standard_groups/get-all-standard-groups";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 

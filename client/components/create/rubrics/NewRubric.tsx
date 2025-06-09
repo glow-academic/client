@@ -5,6 +5,8 @@
  * 06/07/2025
  */
 
+import Rubric from "@/components/common/rubric/Rubric";
+
 export default function NewRubric() {
-    return <div>NewRubric</div>;
-  }
+  return <Rubric mode="create" showAdvancedFeatures={false} />;
+}

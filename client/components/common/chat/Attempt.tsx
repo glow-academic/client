@@ -39,11 +39,9 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getClass } from "@/utils/queries/classes/get-class";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulationAttempt";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
 import { Document, Scenario, SimulationChat, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";

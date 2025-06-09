@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-09T20:03:11.576Z
+Generated on: 2025-06-09T20:40:36.894Z
 
 ## Summary
-- **Total Components**: 51
-- **Tests Created**: 1
-- **Tests Updated**: 28
-- **Tests Skipped** (already implemented): 22
+- **Total Components**: 52
+- **Tests Created**: 0
+- **Tests Updated**: 29
+- **Tests Skipped** (already implemented): 23
 
 ## Component Coverage
 
@@ -22,7 +22,7 @@ Generated on: 2025-06-09T20:03:11.576Z
 | NewClass | classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
-| Chat | common/chat/Chat.tsx | Chat.test.tsx | ❌ Needs Implementation |
+| Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ❌ Needs Implementation |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ❌ Needs Implementation |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ❌ Needs Implementation |
@@ -39,6 +39,7 @@ Generated on: 2025-06-09T20:03:11.576Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ❌ Needs Implementation |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ❌ Needs Implementation |
+| Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ❌ Needs Implementation |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
@@ -103,6 +104,8 @@ __tests__/
 │   ├── layout/
 │   │   ├── navigation-breadcrumbs.test.tsx
 │   │   ├── unified-sidebar.test.tsx
+│   ├── rubric/
+│   │   ├── Rubric.test.tsx
 │   ├── scenario/
 │   │   ├── Scenario.test.tsx
 │   ├── simulation/

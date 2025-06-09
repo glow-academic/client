@@ -26,9 +26,7 @@ import {
   SimulationChat, 
   SimulationAttempt, 
   SimulationChatGrade,
-  SimulationChatFeedback,
-  Standard,
-  StandardGroup
+  SimulationChatFeedback
 } from "@/types";
 
 // Enhanced types for the data table
