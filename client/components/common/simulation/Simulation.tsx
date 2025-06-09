@@ -47,11 +47,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Plus,
   Trash2,
   Edit,
@@ -61,90 +56,34 @@ import {
   Users,
   Shuffle,
   GripVertical,
-  Sparkles,
-  ChevronDown,
+  MessageSquare,
 } from "lucide-react";
-import DocumentViewer from "@/components/common/chat/DocumentViewer";
-
-// Queries and mutations
-import { getAgents } from "@/utils/queries/get-agents";
-import { getSimulations } from "@/utils/queries/get-simulations";
-import { getSimulation } from "@/utils/queries/get-simulation";
-import { createSimulation } from "@/utils/mutations/create-simulation";
-import { updateSimulation } from "@/utils/mutations/update-simulation";
-import { deleteSimulation } from "@/utils/mutations/delete-simulation";
-import { getInteractions } from "@/utils/queries/get-interactions";
-import { createInteraction } from "@/utils/mutations/create-interaction";
-import { updateInteraction } from "@/utils/mutations/update-interaction";
-import { getAllDocuments } from "@/utils/queries/get-all-documents";
-
-interface InteractionConfig {
-  id: string;
-  agentId: string;
-  crowdedness: number;
-  intensity: number;
-  seniority: string;
-  isNew?: boolean; // Track if this is a new interaction that needs to be created
-}
-
-interface SimulationComponentFormData {
-  title: string;
-  timeLimit: number | null;
-  documents: string[];
-  interactionConfigs: InteractionConfig[];
-  active: boolean;
-}
-
-interface FormErrors {
-  title?: string;
-  timeLimit?: string;
-  interactions?: string;
-}
+import { Document, Scenario } from "@/types";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
+import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 
 interface SimulationProps {
   mode?: "list" | "create";
   simulationId?: string;
 }
 
-// Preset configurations for quick setup
-const INTERACTION_PRESETS = [
-  {
-    name: "Balanced Classroom",
-    description: "A mix of engaged and confused students",
-    configs: [
-      { agentId: "", crowdedness: 3, intensity: 2, seniority: "sophomore" },
-      { agentId: "", crowdedness: 4, intensity: 3, seniority: "junior" },
-      { agentId: "", crowdedness: 2, intensity: 4, seniority: "freshman" },
-    ]
-  },
-  {
-    name: "High Energy Session",
-    description: "Active and engaged students",
-    configs: [
-      { agentId: "", crowdedness: 4, intensity: 4, seniority: "junior" },
-      { agentId: "", crowdedness: 5, intensity: 3, seniority: "senior" },
-      { agentId: "", crowdedness: 3, intensity: 5, seniority: "sophomore" },
-    ]
-  },
-  {
-    name: "Quiet Study Group",
-    description: "Focused, low-intensity environment",
-    configs: [
-      { agentId: "", crowdedness: 2, intensity: 2, seniority: "senior" },
-      { agentId: "", crowdedness: 1, intensity: 1, seniority: "junior" },
-    ]
-  },
-  {
-    name: "Mixed Experience",
-    description: "Students from all levels",
-    configs: [
-      { agentId: "", crowdedness: 3, intensity: 3, seniority: "freshman" },
-      { agentId: "", crowdedness: 3, intensity: 3, seniority: "sophomore" },
-      { agentId: "", crowdedness: 3, intensity: 3, seniority: "junior" },
-      { agentId: "", crowdedness: 3, intensity: 3, seniority: "senior" },
-    ]
-  }
-];
+interface SimulationFormData {
+  title: string;
+  timeLimit: number | null;
+  documents: string[];
+  scenarioIds: string[];
+  active: boolean;
+}
+
+interface FormErrors {
+  title?: string;
+  timeLimit?: string;
+  scenarios?: string;
+}
 
 export default function Simulation({ mode = "create", simulationId }: SimulationProps) {
   const queryClient = useQueryClient();
@@ -154,156 +93,84 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
   const [simulationToDelete, setSimulationToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [previewDocument, setPreviewDocument] = useState<typeof Documents.$inferSelect | null>(null);
+  const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(null);
-  const [draggedCard, setDraggedCard] = useState<InteractionConfig | null>(null);
+  const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
 
-  const initialFormData: SimulationComponentFormData = {
+  const initialFormData: SimulationFormData = {
     title: "",
     timeLimit: 15,
     documents: [],
-    interactionConfigs: [],
+    scenarioIds: [],
     active: true,
   };
 
-  const [formData, setFormData] = useState<SimulationComponentFormData>(initialFormData);
+  const [formData, setFormData] = useState<SimulationFormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   const { data: documents = [] } = useQuery({
     queryKey: ["documents"],
-    queryFn: getAllDocuments,
-  });
-
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: getAgents,
+    queryFn: () => getAllDocuments(),
   });
 
   // Fetch simulations for the list mode
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
-    queryFn: getSimulations,
-    enabled: mode === "list",
+    queryFn: () => getAllSimulations(),
   });
 
-  const { data: interactions = [] } = useQuery({
-    queryKey: ["interactions"],
-    queryFn: getInteractions,
+  const { data: scenarios = [] } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
-  // Fetch specific simulation for editing
-  const { data: simulationToEdit } = useQuery({
-    queryKey: ["simulation", simulationId],
-    queryFn: () => getSimulation(simulationId!),
-    enabled: !!simulationId && mode === "create",
-  });
-
-  // Load simulation data when editing
+  // Load simulation data if editing
   useEffect(() => {
-    if (simulationToEdit && simulationId && interactions.length > 0) {
-      setEditingSimulationId(simulationToEdit.id);
-      
-      // Map existing interaction IDs to full interaction objects
-      const existingInteractionConfigs = simulationToEdit.interactionIds
-        ?.map((id: string) => {
-          const interaction = interactions.find((t: typeof Interactions.$inferSelect) => t.id === id);
-          return interaction ? {
-            id: interaction.id,
-            agentId: interaction.agentId,
-            crowdedness: interaction.crowdedness,
-            intensity: interaction.intensity,
-            seniority: interaction.seniority,
-            isNew: false,
-          } : null;
-        })
-        .filter(Boolean) || [];
-
-      setFormData({
-        title: simulationToEdit.title,
-        timeLimit: simulationToEdit.timeLimit,
-        documents: simulationToEdit.documents || [],
-        interactionConfigs: existingInteractionConfigs as InteractionConfig[],
-        active: simulationToEdit.active ?? true,
-      });
-      setErrors({});
+    if (editingSimulationId) {
+      const simulationToEdit = simulations.find((s: any) => s.id === editingSimulationId);
+      if (simulationToEdit) {
+        setFormData({
+          title: simulationToEdit.title || "",
+          timeLimit: simulationToEdit.timeLimit || 15,
+          documents: simulationToEdit.documents?.filter((id: string) => id !== "RAY") || [],
+          scenarioIds: simulationToEdit.scenarioIds?.filter((id: string) => id !== "RAY") || [],
+          active: simulationToEdit.active ?? true,
+        });
+      }
     }
-  }, [simulationToEdit, simulationId, interactions]);
+  }, [editingSimulationId, simulations]);
 
-  const handleInputChange = (field: keyof SimulationComponentFormData, value: string | number | boolean) => {
+  const handleInputChange = (field: keyof SimulationFormData, value: string | number | boolean | string[] | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
-  const addInteraction = () => {
-    if (agents.length === 0) {
-      toast.error("No agents available. Please create agents first.");
-      return;
+  const addScenario = (scenarioId: string) => {
+    if (!formData.scenarioIds.includes(scenarioId)) {
+      setFormData(prev => ({
+        ...prev,
+        scenarioIds: [...prev.scenarioIds, scenarioId]
+      }));
     }
+  };
 
-    const newConfig: InteractionConfig = {
-      id: `temp-${Date.now()}`,
-      agentId: agents[0]?.id || "",
-      crowdedness: 3,
-      intensity: 3,
-      seniority: "freshman",
-      isNew: true,
-    };
+  const removeScenario = (scenarioId: string) => {
     setFormData(prev => ({
       ...prev,
-      interactionConfigs: [...prev.interactionConfigs, newConfig]
+      scenarioIds: prev.scenarioIds.filter(id => id !== scenarioId)
     }));
   };
 
-  const addPresetInteractions = (preset: typeof INTERACTION_PRESETS[0]) => {
-    if (agents.length === 0) {
-      toast.error("No agents available. Please create agents first.");
-      return;
-    }
-
-    const defaultAgentId = agents[0]?.id || "";
-    const newConfigs: InteractionConfig[] = preset.configs.map((config, index) => ({
-      id: `temp-${Date.now()}-${index}`,
-      agentId: config.agentId || defaultAgentId,
-      crowdedness: config.crowdedness,
-      intensity: config.intensity,
-      seniority: config.seniority,
-      isNew: true,
-    }));
-
-    setFormData(prev => ({
-      ...prev,
-      interactionConfigs: [...prev.interactionConfigs, ...newConfigs]
-    }));
-
-    toast.success(`Added ${preset.name} preset with ${newConfigs.length} interactions!`);
+  const randomizeScenarios = () => {
+    const shuffled = [...formData.scenarioIds].sort(() => Math.random() - 0.5);
+    setFormData(prev => ({ ...prev, scenarioIds: shuffled }));
+    toast.success("Scenarios randomized!");
   };
 
-  const removeInteraction = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      interactionConfigs: prev.interactionConfigs.filter((_, i) => i !== index)
-    }));
-  };
-
-  const updateInteractionConfig = (index: number, field: keyof InteractionConfig, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      interactionConfigs: prev.interactionConfigs.map((config, i) => 
-        i === index ? { ...config, [field]: value } : config
-      )
-    }));
-  };
-
-  const randomizeCards = () => {
-    const shuffled = [...formData.interactionConfigs].sort(() => Math.random() - 0.5);
-    setFormData(prev => ({ ...prev, interactionConfigs: shuffled }));
-    toast.success("Interactions randomized!");
-  };
-
-  const handleDragStart = (e: React.DragEvent, config: InteractionConfig) => {
-    setDraggedCard(config);
+  const handleDragStart = (e: React.DragEvent, scenarioId: string) => {
+    setDraggedScenario(scenarioId);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -312,23 +179,23 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetConfig: InteractionConfig) => {
+  const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
     e.preventDefault();
     
-    if (!draggedCard) return;
+    if (!draggedScenario) return;
 
-    const newOrder = [...formData.interactionConfigs];
-    const draggedIndex = newOrder.findIndex(config => config.id === draggedCard.id);
-    const targetIndex = newOrder.findIndex(config => config.id === targetConfig.id);
+    const newOrder = [...formData.scenarioIds];
+    const draggedIndex = newOrder.findIndex(id => id === draggedScenario);
+    const targetIndex = newOrder.findIndex(id => id === targetScenarioId);
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
       newOrder.splice(targetIndex, 0, removed);
       
-      setFormData(prev => ({ ...prev, interactionConfigs: newOrder }));
+      setFormData(prev => ({ ...prev, scenarioIds: newOrder }));
     }
     
-    setDraggedCard(null);
+    setDraggedScenario(null);
   };
 
   const validateForm = (): boolean => {
@@ -342,8 +209,8 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
       newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
     }
     
-    if (formData.interactionConfigs.length === 0) {
-      newErrors.interactions = "At least one interaction must be configured";
+    if (formData.scenarioIds.length === 0) {
+      newErrors.scenarios = "At least one scenario must be selected";
     }
 
     setErrors(newErrors);
@@ -357,42 +224,15 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
   };
 
   const handleEditSimulationClick = (simulationId: string) => {
-    const simulationToEdit = simulations.find((t: typeof Simulations.$inferSelect) => t.id === simulationId);
-    if (simulationToEdit) {
-      setEditingSimulationId(simulationToEdit.id);
-      
-      // Map existing interaction IDs to full interaction objects
-      const existingInteractionConfigs = simulationToEdit.interactionIds
-        ?.map((id: string) => {
-          const interaction = interactions.find((t: typeof Interactions.$inferSelect) => t.id === id);
-          return interaction ? {
-            id: interaction.id,
-            agentId: interaction.agentId,
-            crowdedness: interaction.crowdedness,
-            intensity: interaction.intensity,
-            seniority: interaction.seniority,
-            isNew: false,
-          } : null;
-        })
-        .filter(Boolean) || [];
-
-      setFormData({
-        title: simulationToEdit.title,
-        timeLimit: simulationToEdit.timeLimit,
-        documents: simulationToEdit.documents || [],
-        interactionConfigs: existingInteractionConfigs as InteractionConfig[],
-        active: simulationToEdit.active ?? true,
-      });
-      setErrors({});
-    }
+    setEditingSimulationId(simulationId);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) {
-      if (errors.interactions) {
-        toast.error(errors.interactions);
+      if (errors.scenarios) {
+        toast.error(errors.scenarios);
       } else {
         toast.error("Please fill in all required fields");
       }
@@ -402,65 +242,24 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
     setIsSubmitting(true);
     
     try {
-      // First, create any new interactions
-      const interactionIds: string[] = [];
-      
-      for (const config of formData.interactionConfigs) {
-        if (config.isNew) {
-          // Create new interaction
-          const result = await createInteraction(
-            config.agentId,
-            config.crowdedness,
-            config.intensity,
-            config.seniority as "freshman" | "sophomore" | "junior" | "senior"
-          );
-          
-          if (result.success && result.interaction) {
-            interactionIds.push(result.interaction.id);
-          } else {
-            throw new Error(`Failed to create interaction: ${result.error}`);
-          }
-        } else {
-          // Use existing interaction ID
-          interactionIds.push(config.id);
-          
-          // Update existing interaction if needed
-          await updateInteraction(
-            config.id,
-            config.agentId,
-            config.crowdedness,
-            config.intensity,
-            config.seniority as "freshman" | "sophomore" | "junior" | "senior"
-          );
-        }
-      }
-
       const payload = {
         title: formData.title,
         timeLimit: formData.timeLimit,
-        documents: formData.documents,
-        interactionIds: interactionIds,
+        documents: formData.documents.length > 0 ? formData.documents : ["RAY"],
+        scenarioIds: formData.scenarioIds.length > 0 ? formData.scenarioIds : ["RAY"],
+        active: formData.active,
       };
 
       let result;
       if (editingSimulationId) {
-        result = await updateSimulation(editingSimulationId, payload.title, payload.timeLimit, payload.documents, payload.interactionIds, formData.active);
+        result = await updateSimulation(editingSimulationId, payload);
       } else {
-        result = await createSimulation(payload.title, payload.timeLimit, payload.documents, payload.interactionIds);
-        // Set active status after creation if needed
-        if (result.success && result.simulation && !formData.active) {
-          await updateSimulation(result.simulation.id, undefined, undefined, undefined, undefined, formData.active);
-        }
+        result = await createSimulation(payload);
       }
       
-      if (result.success) {
-        resetFormAndState();
-        queryClient.invalidateQueries({ queryKey: ["simulations"] });
-        queryClient.invalidateQueries({ queryKey: ["interactions"] });
-        toast.success(editingSimulationId ? "Simulation updated successfully!" : "Simulation created successfully!");
-      } else {
-        toast.error(`Failed to ${editingSimulationId ? 'update' : 'create'} simulation: ${result.error}`);
-      }
+      resetFormAndState();
+      queryClient.invalidateQueries({ queryKey: ["simulations"] });
+      toast.success(editingSimulationId ? "Simulation updated successfully!" : "Simulation created successfully!");
     } catch (error) {
       toast.error(`Failed to ${editingSimulationId ? 'update' : 'create'} simulation: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
@@ -475,19 +274,15 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
       setIsDeleting(true);
       toast.loading("Deleting simulation...");
 
-      const result = await deleteSimulation(simulationToDelete);
+      await deleteSimulation(simulationToDelete);
 
-      if (result.success) {
-        // Refresh the simulation list
-        queryClient.invalidateQueries({ queryKey: ["simulations"] });
-        
-        toast.dismiss();
-        toast.success("Simulation deleted successfully");
-        setShowDeleteDialog(false);
-        setSimulationToDelete(null);
-      } else {
-        throw new Error(result.error);
-      }
+      // Refresh the simulation list
+      queryClient.invalidateQueries({ queryKey: ["simulations"] });
+      
+      toast.dismiss();
+      toast.success("Simulation deleted successfully");
+      setShowDeleteDialog(false);
+      setSimulationToDelete(null);
     } catch (error) {
       console.error("Error deleting simulation:", error);
       toast.dismiss();
@@ -514,7 +309,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
               </CardContent>
             </Card>
           ) : (
-            simulations.map((simulation: typeof Simulations.$inferSelect) => (
+            simulations.map((simulation: any) => (
               <Card key={simulation.id} className="hover:shadow-md transition-shadow">
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -523,11 +318,11 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
                       <CardDescription>
                         <span className="inline-flex items-center text-sm text-muted-foreground">
                           <Clock className="h-4 w-4 mr-1" />
-                          {simulation.timeLimit} minutes
+                          {simulation.timeLimit || "No limit"} {simulation.timeLimit ? "minutes" : ""}
                         </span>
                         <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
-                          <Users className="h-4 w-4 mr-1" />
-                          {simulation.interactionIds?.length || 0} interactions
+                          <MessageSquare className="h-4 w-4 mr-1" />
+                          {simulation.scenarioIds?.filter((id: string) => id !== "RAY").length || 0} scenarios
                         </span>
                       </CardDescription>
                     </div>
@@ -595,7 +390,9 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
             <div className="flex justify-between items-start">
               <div>
                 <CardTitle>Simulation Information</CardTitle>
-
+                <CardDescription>
+                  Configure the basic settings for this simulation
+                </CardDescription>
               </div>
               <div className="flex items-center space-x-2">
                 <Label htmlFor="active-toggle" className="text-sm font-medium">
@@ -632,8 +429,9 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
                 min="1"
                 max="120"
                 value={formData.timeLimit || ""}
-                onChange={(e) => handleInputChange("timeLimit", parseInt(e.target.value) || 0)}
+                onChange={(e) => handleInputChange("timeLimit", parseInt(e.target.value) || null)}
                 className={errors.timeLimit ? "border-destructive" : ""}
+                placeholder="Leave empty for no time limit"
               />
               {errors.timeLimit && (
                 <p className="text-sm text-destructive">{errors.timeLimit}</p>
@@ -644,14 +442,16 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
               <Label htmlFor="documents">Reference Documents (Optional)</Label>
               <Select
                 value={formData.documents[0] || "none"}
-                onValueChange={(value: string) => handleInputChange("documents", value)}
+                onValueChange={(value: string) => 
+                  handleInputChange("documents", value === "none" ? [] : [value])
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select documents" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No documents</SelectItem>
-                  {documents.map((doc: typeof Documents.$inferSelect) => (
+                  {documents.map((doc: any) => (
                     <SelectItem key={doc.id} value={doc.id}>
                       {doc.name}
                     </SelectItem>
@@ -663,7 +463,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    const doc = documents.find((d: typeof Documents.$inferSelect) => d.id === formData.documents[0]);
+                    const doc = documents.find((d: any) => d.id === formData.documents[0]);
                     if (doc) {
                       setPreviewDocument(doc);
                       setShowDocumentModal(true);
@@ -678,71 +478,42 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
           </CardContent>
         </Card>
 
-        {/* Interaction Configuration */}
+        {/* Scenario Configuration */}
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
               <div>
-                <CardTitle>Simulation</CardTitle>
+                <CardTitle>Scenarios</CardTitle>
                 <CardDescription>
-                  Configure the AI student interactions for this simulation
+                  Select and arrange the scenarios for this simulation
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={agents.length === 0}
-                      className="flex items-center gap-2"
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      Presets
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="space-y-3">
-                      <div>
-                        <h4 className="font-medium">Quick Setup Presets</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Choose a preset to quickly add multiple interactions
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        {INTERACTION_PRESETS.map((preset, index) => (
-                          <div
-                            key={index}
-                            className="p-3 border rounded-lg hover:bg-muted/50 cursor-pointer transition-colors"
-                            onClick={() => addPresetInteractions(preset)}
-                          >
-                            <div className="font-medium text-sm">{preset.name}</div>
-                            <div className="text-xs text-muted-foreground">{preset.description}</div>
-                            <div className="text-xs text-muted-foreground mt-1">
-                              {preset.configs.length} interactions
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={addInteraction}
-                  disabled={agents.length === 0}
+                <Select
+                  value=""
+                  onValueChange={(value: string) => {
+                    if (value) addScenario(value);
+                  }}
                 >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Interaction
-                </Button>
-                {formData.interactionConfigs.length > 1 && (
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Add scenario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scenarios
+                      .filter((scenario: Scenario) => !formData.scenarioIds.includes(scenario.id))
+                      .map((scenario: Scenario) => (
+                        <SelectItem key={scenario.id} value={scenario.id}>
+                          {scenario.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                {formData.scenarioIds.length > 1 && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={randomizeCards}
+                    onClick={randomizeScenarios}
                     className="flex items-center gap-2"
                   >
                     <Shuffle className="h-4 w-4" />
@@ -753,47 +524,46 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {errors.interactions && (
-              <p className="text-sm text-destructive">{errors.interactions}</p>
+            {errors.scenarios && (
+              <p className="text-sm text-destructive">{errors.scenarios}</p>
             )}
 
-            {formData.interactionConfigs.length === 0 ? (
+            {formData.scenarioIds.length === 0 ? (
               <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
                 <div>
-                  <p className="text-red-500 font-medium mb-1">No simulations configured</p>
-                  <p className="text-sm">You must add at least one chat to create a simulation</p>
+                  <p className="text-red-500 font-medium mb-1">No scenarios selected</p>
+                  <p className="text-sm">You must add at least one scenario to create a simulation</p>
                 </div>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {formData.interactionConfigs.map((config, index) => {
+                {formData.scenarioIds.map((scenarioId, index) => {
+                  const scenario = scenarios.find((s: Scenario) => s.id === scenarioId);
+                  if (!scenario) return null;
+
                   return (
                     <Card 
-                      key={config.id} 
-                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 ${
-                        config.isNew ? 'border-l-green-500' : 'border-l-blue-500'
-                      } ${draggedCard?.id === config.id ? 'opacity-50' : ''}`}
+                      key={scenarioId} 
+                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                        draggedScenario === scenarioId ? 'opacity-50' : ''
+                      }`}
                       draggable
-                      onDragStart={(e) => handleDragStart(e, config)}
+                      onDragStart={(e) => handleDragStart(e, scenarioId)}
                       onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, config)}
+                      onDrop={(e) => handleDrop(e, scenarioId)}
                     >
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm font-medium">Interaction {index + 1}</span>
-                            {config.isNew && (
-                              <Badge variant="secondary" className="text-xs">New</Badge>
-                            )}
+                            <MessageSquare className="h-4 w-4 text-blue-500" />
+                            <span className="text-sm font-medium">#{index + 1}</span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">#{index + 1}</span>
                             <Button
                               type="button"
                               variant="outline"
                               size="sm"
-                              onClick={() => removeInteraction(index)}
+                              onClick={() => removeScenario(scenarioId)}
                               className="h-6 w-6 p-0"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -803,102 +573,27 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
                         </div>
 
                         <div className="space-y-2">
-                          <div>
-                            <Label className="text-xs">Agent</Label>
-                            <Select
-                              value={config.agentId}
-                              onValueChange={(value) => updateInteractionConfig(index, "agentId", value)}
-                            >
-                              <SelectTrigger className="h-8">
-                                <SelectValue placeholder="Select profile" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {agents.map((agent: typeof Agents.$inferSelect) => (
-                                  <SelectItem key={agent.id} value={agent.id}>
-                                    {agent.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                          <h4 className="font-medium text-sm">{scenario.name}</h4>
+                          <p className="text-xs text-muted-foreground line-clamp-3">
+                            {scenario.description}
+                          </p>
+                          
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">
+                              Crowdedness: {scenario.crowdedness}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Intensity: {scenario.intensity}
+                            </Badge>
                           </div>
-
-                          <div>
-                            <Label className="text-xs">Seniority</Label>
-                            <Select
-                              value={config.seniority}
-                              onValueChange={(value) => updateInteractionConfig(index, "seniority", value)}
-                            >
-                              <SelectTrigger className="h-8">
-                                <SelectValue placeholder="Select seniority" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="freshman">Freshman</SelectItem>
-                                <SelectItem value="sophomore">Sophomore</SelectItem>
-                                <SelectItem value="junior">Junior</SelectItem>
-                                <SelectItem value="senior">Senior</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <Label className="text-xs">Crowdedness (Low - High)</Label>
-                              <span className="text-xs text-muted-foreground">
-                                {config.crowdedness === 1 ? "Empty" : 
-                                 config.crowdedness === 2 ? "Sparse" :
-                                 config.crowdedness === 3 ? "Moderate" :
-                                 config.crowdedness === 4 ? "Busy" : "Crowded"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              {[1, 2, 3, 4, 5].map(level => (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  className={`w-4 h-4 rounded-full border-2 transition-all ${
-                                    level === config.crowdedness 
-                                      ? 'bg-blue-500 border-blue-500' 
-                                      : 'border-gray-300 hover:border-blue-300'
-                                  }`}
-                                  onClick={() => updateInteractionConfig(index, 'crowdedness', level)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="flex justify-between items-center mb-1">
-                              <Label className="text-xs">Intensity (Low - High)</Label>
-                              <span className="text-xs text-muted-foreground">
-                                {config.intensity === 1 ? "Low" : 
-                                 config.intensity === 2 ? "Mild" :
-                                 config.intensity === 3 ? "Moderate" :
-                                 config.intensity === 4 ? "High" : "Very High"}
-                              </span>
-                            </div>
-                            <div className="flex justify-between">
-                              {[1, 2, 3, 4, 5].map(level => (
-                                <button
-                                  key={level}
-                                  type="button"
-                                  className={`w-4 h-4 rounded-full border-2 transition-all ${
-                                    level === config.intensity 
-                                      ? 'bg-orange-500 border-orange-500' 
-                                      : 'border-gray-300 hover:border-orange-300'
-                                  }`}
-                                  onClick={() => updateInteractionConfig(index, 'intensity', level)}
-                                />
-                              ))}
-                            </div>
-                          </div>
-
+                          
                           <Badge className={`text-xs ${
-                            config.seniority === 'freshman' ? 'bg-blue-100 text-blue-800' :
-                            config.seniority === 'sophomore' ? 'bg-green-100 text-green-800' :
-                            config.seniority === 'junior' ? 'bg-yellow-100 text-yellow-800' :
+                            scenario.seniority === 'freshman' ? 'bg-blue-100 text-blue-800' :
+                            scenario.seniority === 'sophomore' ? 'bg-green-100 text-green-800' :
+                            scenario.seniority === 'junior' ? 'bg-yellow-100 text-yellow-800' :
                             'bg-red-100 text-red-800'
                           }`}>
-                            {config.seniority.charAt(0).toUpperCase() + config.seniority.slice(1)}
+                            {scenario.seniority.charAt(0).toUpperCase() + scenario.seniority.slice(1)}
                           </Badge>
                         </div>
                       </div>
@@ -912,6 +607,16 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
+          {editingSimulationId && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={resetFormAndState}
+              disabled={isSubmitting}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             type="submit"
             disabled={isSubmitting}
@@ -937,7 +642,9 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
           </DialogHeader>
           <div className="flex-1 overflow-hidden">
             {previewDocument && (
-              <DocumentViewer document={previewDocument} />
+              <div className="p-4 bg-muted rounded-md">
+                <p className="text-sm text-muted-foreground">Document preview would be displayed here</p>
+              </div>
             )}
           </div>
         </DialogContent>

@@ -21,7 +21,7 @@ import {
   Loader2
 } from "lucide-react";
 
-import { createClass } from "@/utils/mutations/create-class";
+import { createClass } from "@/utils/mutations/classes/create-class";
 import ClassForm from "@/components/common/class/ClassForm";
 
 type ProcessingStep = 'idle' | 'uploading' | 'extracting' | 'classifying' | 'complete';
@@ -61,19 +61,15 @@ export default function NewClass() {
       const classCode = className.match(/\d+/);
 
       // First create a temporary class for the ZIP upload
-      const tempClassResult = await createClass(
-        className,
-        classCode ? classCode[0] : className,
-        new Date().getFullYear(),
-        'fall',
-        'Make changes to this class description'
-      );
+      const tempClassResult = await createClass({
+        name: className,
+        classCode: classCode ? classCode[0] : className,
+        year: new Date().getFullYear(),
+        term: 'fall',
+        description: 'Make changes to this class description'
+      });
 
-      if (!tempClassResult.success || !tempClassResult.class) {
-        throw new Error(tempClassResult.error || "Failed to create temporary class");
-      }
-
-      const tempClassId = tempClassResult.class.id;
+      const tempClassId = tempClassResult.id;
       setCreatedClassId(tempClassId);
 
       // Create file upload status

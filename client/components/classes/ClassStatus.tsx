@@ -25,12 +25,14 @@ import {
   Calendar,
   Target
 } from "lucide-react";
-
-import { getClass } from "@/utils/queries/get-class";
-import { getDocuments } from "@/utils/queries/get-documents";
-import { getEvents } from "@/utils/queries/get-events";
-import { getSchedules } from "@/utils/queries/get-schedules";
-import { getTopics } from "@/utils/queries/get-topics";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getTopicsByClass } from "@/utils/queries/topics/get-topics-by-class";
+import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
+import { getEventsBySchedules } from "@/utils/queries/events/get-events-by-schedules";
+import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
+import { Document, Topic } from "@/types";
+import { Schedule } from "@/types";
+import { Event } from "@/types";
 
 
 interface ProcessingStatus {
@@ -71,36 +73,36 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
 
   const { data: topics = [] } = useQuery({
     queryKey: ["topics", classId],
-    queryFn: () => getTopics(classId),
+    queryFn: () => getTopicsByClass([classId]),
   });
 
   const {data: schedules = [], isLoading: schedulesLoading} = useQuery({
     queryKey: ["schedules", classId],
-    queryFn: () => getSchedules(classId),
+    queryFn: () => getSchedulesByClass([classId]),
   });
 
   const {data: events = [], isLoading: eventsLoading} = useQuery({
     queryKey: ["events", classId],
-    queryFn: () => getEvents(schedules.map((schedule) => schedule.id)),
+    queryFn: () => getEventsBySchedules(schedules.map((schedule) => schedule.id)),
     enabled: !!schedules,
   });
 
   // Fetch documents with polling
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
     queryKey: ["documents", classId],
-    queryFn: () => getDocuments(classId),
+    queryFn: () => getDocumentsByClass([classId]),
   });
 
   // Simulate processing stages based on document count and types
   useEffect(() => {
     if (documents.length === 0) return;
 
-    const syllabusDoc = documents.find((doc: DocumentType) => 
+    const syllabusDoc = documents.find((doc: Document) => 
       doc.type === 'syllabus' || 
       doc.name.toLowerCase().includes('syllabus')
     );
 
-    const classifiedDocs = documents.filter((doc: DocumentType) => 
+    const classifiedDocs = documents.filter((doc: Document) => 
       doc.type && doc.type.trim() !== '' && doc.type !== null
     );
 
@@ -149,7 +151,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
     return typeMap[type] || { label: type, icon: "📄", color: "bg-gray-100 text-gray-800" };
   };
 
-  const documentTypeCounts = documents.reduce((acc: Record<string, number>, doc: DocumentType) => {
+  const documentTypeCounts = documents.reduce((acc: Record<string, number>, doc: Document) => {
     const type = doc.type || 'unknown';
     acc[type] = (acc[type] || 0) + 1;
     return acc;
@@ -299,7 +301,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                {topics.slice(0, 12).map((topic: any) => (
+                {topics.slice(0, 12).map((topic: Topic) => (
                   <Badge key={topic.id} variant="outline">
                     {topic.name}
                   </Badge>
@@ -327,11 +329,11 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {schedules.slice(0, 3).map((schedule: any) => (
+                    {schedules.slice(0, 3).map((schedule: Schedule) => (
                       <div key={schedule.id} className="flex justify-between items-center p-2 border rounded">
                         <span className="text-sm font-medium">{schedule.name}</span>
                         <Badge variant="outline" className="text-xs">
-                          {schedule.type}
+                          {schedule.description}
                         </Badge>
                       </div>
                     ))}
@@ -355,11 +357,11 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {events.slice(0, 3).map((event: any) => (
+                    {events.slice(0, 3).map((event: Event) => (
                       <div key={event.id} className="flex justify-between items-center p-2 border rounded">
-                        <span className="text-sm font-medium">{event.title}</span>
+                        <span className="text-sm font-medium">{event.name}</span>
                         <span className="text-xs text-muted-foreground">
-                          {new Date(event.date).toLocaleDateString()}
+                          {new Date(event.createdAt).toLocaleDateString()}
                         </span>
                       </div>
                     ))}

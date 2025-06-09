@@ -1,31 +1,56 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import {  } from '@/components/profile/Profile';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
+import { Profile } from '@/components/profile/Profile';
 
 // Mock external dependencies
 
 
-
+// Mock API calls
+global.fetch = vi.fn();
 
 describe('Profile', () => {
+  let queryClient: QueryClient;
+  
   beforeEach(() => {
     vi.clearAllMocks();
-    
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
   });
 
+  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+    const AllProviders = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+
+    return render(ui, { wrapper: AllProviders, ...options });
+  };
   
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
       // TODO: Implement basic rendering test for Profile
-      render(<Profile />);
+      renderWithProviders(<Profile />);
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Profile
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ProfileProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for Profile
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -37,7 +62,28 @@ describe('Profile', () => {
 
   
 
-  
+  describe('API Integration', () => {
+    it('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: API integration test for Profile
+    });
+
+    it('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for Profile
+    });
+
+    it('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for Profile
+    });
+  });
 
   
 
@@ -49,7 +95,12 @@ describe('Profile', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for Profile
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for Profile
+    });
   });
 });
 
@@ -59,13 +110,13 @@ describe('Profile', () => {
  * 
  * Features detected:
  * - Default export: false
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Named exports: Profile
+ * - Has props: true
+ * - Props interface: ProfileProps
  * - Client component: false
- * - Uses hooks: None
+ * - Uses hooks: useQuery, users, user, useAuth, userId, userLoading, username
  * - Uses router: false
- * - Has API calls: false
+ * - Has API calls: true
  * - Has form handling: false
  * - Uses state: false
  * - Uses effects: false
@@ -76,7 +127,7 @@ describe('Profile', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Profile />);
+ * render(<Profile {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

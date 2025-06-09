@@ -9,7 +9,7 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 
-import { getClass } from "@/utils/queries/get-class";
+import { getClass } from "@/utils/queries/classes/get-class";
 import ClassForm from "@/components/common/class/ClassForm";
 
 type ClassEditProps = {

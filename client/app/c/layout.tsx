@@ -8,11 +8,12 @@ import { Separator } from "@/components/ui/separator";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { RoleProvider } from "@/contexts/role-context";
-import { getUser } from "@/utils/queries/get-user";
+import { getUser } from "@/utils/queries/users/get-user";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { Clock, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/use-auth";
 
 type WindowWithChatData = Window & typeof globalThis & {
   chatData: {
@@ -37,10 +38,13 @@ export default function ChatLayout({
     passed?: boolean;
   } | null>(null);
 
+  const {userId} = useAuth();
+
   // Fetch user data for role context
   const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(),
+    queryKey: ["user", userId],
+    queryFn: () => getUser(userId!),
+    enabled: !!userId,
   });
 
   // Load enhanced breadcrumbs with async ID resolution

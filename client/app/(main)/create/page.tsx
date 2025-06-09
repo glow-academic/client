@@ -1,11 +1,13 @@
+/**
+ * app/(main)/create/page.tsx
+ * Create page. Redirects to new class page.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
 "use client";
 
-/**
- * Create page. This is the main page for the create section.
- * Now redirects to the unified simulation playground.
- */
-import { SimulationPlayground } from "@/components/common/simulation/simulation-playground";
+import { redirect } from "next/navigation";
 
 export default function CreatePage() {
-  return <SimulationPlayground />;
+  return redirect("/create/simulations");
 }

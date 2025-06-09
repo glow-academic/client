@@ -42,30 +42,20 @@ import {
   AlertTriangle,
   Loader2
 } from "lucide-react";
-
-import { getSimulations } from "@/utils/queries/get-simulations";
-import { getInteractions } from "@/utils/queries/get-interactions";
-import { getAgents } from "@/utils/queries/get-agents";
-import { getDocuments } from "@/utils/queries/get-documents";
-import { updateClass } from "@/utils/mutations/update-class";
-import { createClass } from "@/utils/mutations/create-class";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { cn } from "@/lib/utils";
-import { updateDocument } from "@/utils/mutations/update-document";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { createClass } from "@/utils/mutations/classes/create-class";
+import { updateClass } from "@/utils/mutations/classes/update-class";
+import { Class, Document, DocumentType } from "@/types";
+import { updateDocument } from "@/utils/mutations/documents/update-document";
+
 interface FileUploadStatus {
   id: string;
   name: string;
   progress: number;
   status: "uploading" | "complete" | "error";
   error?: string;
-}
-
-interface FormData {
-  name: string;
-  classCode: string;
-  year: number;
-  term: 'fall' | 'spring' | 'summer';
-  description: string;
 }
 
 interface FormErrors {
@@ -79,7 +69,7 @@ interface FormErrors {
 interface ClassFormProps {
   mode: 'create' | 'edit';
   classId?: string;
-  initialData?: Partial<FormData>;
+  initialData?: Partial<Class>;
   onSuccess?: (classId: string) => void;
 }
 
@@ -93,9 +83,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [selectedDocument, setSelectedDocument] = useState<DocumentType | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<DocumentType | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
 
@@ -122,7 +112,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       setShowCourseProcessDialog(false);
 
       const toastId = toast.loading("Processing course information...");
-      
+
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
       const response = await fetch(`${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`, {
         method: "POST",
@@ -138,21 +128,21 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       }
 
       const result = await response.json();
-      
+
       toast.dismiss(toastId);
-      
+
       if (result.status === "success") {
         toast.success("Course information processed successfully!");
-        
+
         // Show details of what was updated
         if (result.updates_made && result.updates_made.length > 0) {
           toast.info(`Updated: ${result.updates_made.join(", ")}`);
         }
-        
+
         // Refresh the class data
         queryClient.invalidateQueries({ queryKey: ["class", classId] });
         queryClient.invalidateQueries({ queryKey: ["classes"] });
-        
+
         // If there's debug info, log it
         if (result.debug_info) {
           console.log("Course processing debug info:", result.debug_info);
@@ -168,7 +158,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     }
   };
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<Partial<Class>>({
+    id: initialData?.id || "",
     name: initialData?.name || "",
     classCode: initialData?.classCode || "",
     year: initialData?.year || new Date().getFullYear(),
@@ -178,28 +169,10 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
 
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch simulations for selection
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getSimulations(),
-  });
-
-  // Fetch interactions for additional simulation information
-  const { data: interactions = [] } = useQuery({
-    queryKey: ["interactions"],
-    queryFn: () => getInteractions(),
-  });
-
-  // Fetch agents for simulation information
-  const { data: agents = [] } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAgents(),
-  });
-
   // Fetch documents for this class
   const { data: documents = [], isLoading: documentsLoading } = useQuery({
     queryKey: ["documents", classId],
-    queryFn: () => getDocuments(classId || ""),
+    queryFn: () => getAllDocuments(),
     enabled: classId !== undefined && classId !== null,
   });
 
@@ -219,19 +192,19 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "Class name is required";
     }
 
-    if (!formData.classCode.trim()) {
+    if (!formData.classCode?.trim()) {
       newErrors.classCode = "Class code is required";
     }
 
-    if (formData.year < 2020 || formData.year > 2030) {
+    if (formData.year && (formData.year < 2020 || formData.year > 2030)) {
       newErrors.year = "Year must be between 2020 and 2030";
     }
 
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       newErrors.description = "Description is required";
     }
 
@@ -251,50 +224,34 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
 
     try {
       let result;
-      
+
       if (mode === 'create') {
         result = await createClass(
-          formData.name,
-          formData.classCode,
-          formData.year,
-          formData.term,
-          formData.description
+          formData as Class
         );
-        
-        if (result.success && result.class) {
-          queryClient.invalidateQueries({ queryKey: ["classes"] });
-          toast.success("Class created successfully!");
-          if (onSuccess) {
-            onSuccess(result.class.id);
-          } else {
-            router.push(`/classes/c/${result.class.id}`);
-          }
+
+        queryClient.invalidateQueries({ queryKey: ["classes"] });
+        toast.success("Class created successfully!");
+        if (onSuccess) {
+          onSuccess(result.id);
         } else {
-          toast.error(`Failed to create class: ${result.error}`);
+          router.push(`/classes/c/${result.id}`);
         }
       } else {
         if (!classId) throw new Error("Class ID is required for editing");
-        
+
         result = await updateClass(
           classId,
-          formData.name,
-          formData.classCode,
-          formData.year,
-          formData.term,
-          formData.description
+          formData as Class
         );
 
-        if (result.success) {
-          queryClient.invalidateQueries({ queryKey: ["classes"] });
-          queryClient.invalidateQueries({ queryKey: ["class", classId] });
-          toast.success("Class updated successfully!");
-          if (onSuccess) {
-            onSuccess(classId);
-          } else {
-            router.push(`/classes/c/${classId}`);
-          }
+        queryClient.invalidateQueries({ queryKey: ["classes"] });
+        queryClient.invalidateQueries({ queryKey: ["class", classId] });
+        toast.success("Class updated successfully!");
+        if (onSuccess) {
+          onSuccess(classId);
         } else {
-          toast.error(`Failed to update class: ${result.error}`);
+          router.push(`/classes/c/${classId}`);
         }
       }
     } catch (error) {
@@ -614,13 +571,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   };
 
   const handleDocumentTypeChange = async (documentId: string, newType: string) => {
-    try {
-      const { success, error } = await updateDocument(documentId, undefined, undefined, undefined, classId, newType as DocumentTypeEnum, false);
-
-      if (!success) {
-        throw new Error(error);
-      }
-
+    try { 
+      await updateDocument(documentId, { type: newType as DocumentType });
       queryClient.invalidateQueries({ queryKey: ["documents", classId] });
       toast.success("Document type updated");
     } catch (error) {
@@ -663,13 +615,13 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     return <File className="h-6 w-6 text-gray-500" />;
   };
 
-  const viewDocument = (document: DocumentType) => {
+  const viewDocument = (document: Document) => {
     setSelectedDocument(document);
     setShowPreviewModal(true);
   };
 
   // Filter documents
-  const filteredDocuments = documents.filter((doc: DocumentType) => {
+  const filteredDocuments = documents.filter((doc: Document) => {
     const matchesSearch = searchQuery
       ? doc.name.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
@@ -950,7 +902,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                               {/* Image area */}
                               <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
                                 {getDocumentIcon(doc.name, doc.type)}
-                                
+
                                 {/* Title in bottom right of image */}
                                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
                                   {doc.name}
@@ -1120,7 +1072,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                 </ul>
               </div>
             </div>
-            
+
             <p className="text-sm text-muted-foreground">
               This will analyze all documents in this class and extract course information using AI. Make sure you have uploaded relevant documents (especially a syllabus) before processing.
             </p>

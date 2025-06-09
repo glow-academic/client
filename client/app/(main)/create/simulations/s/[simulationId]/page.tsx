@@ -1,19 +1,20 @@
 /**
- * app/chat/simulations/s/[simulationId]/page.tsx
+ * app/create/simulations/s/[simulationId]/page.tsx
  * Simulation editing page
- */
+ * @AshokSaravanan222 & @siladiea
+ * 06/09/2025
+*/
 "use client";
 
-import { useParams } from "next/navigation";
-import Simulation from "@/components/common/simulation/Simulation";
+import { use } from "react";
+import SimulationEdit from "@/components/create/simulations/SimulationEdit";
 
-export default function EditSimulationPage() {
-  const params = useParams();
-  const simulationId = params.simulationId as string;
+export default function EditSimulationPage({ params }: { params: Promise<{ simulationId: string }> }) {
+  const { simulationId } = use(params);
 
   return (
     <div className="space-y-6">
-      <Simulation mode="create" simulationId={simulationId} />
+      <SimulationEdit simulationId={simulationId} />
     </div>
   );
 }

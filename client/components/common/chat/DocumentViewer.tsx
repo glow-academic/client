@@ -14,13 +14,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import Markdown from "@/components/common/chat/Markdown";
-import { getDocuments } from "@/utils/queries/get-documents";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import Image from "next/image";
 import { FileText, Download } from "lucide-react";
+import { Document } from "@/types";
 
 
 interface DocumentViewerProps {
-  document?: DocumentType;
+  document?: Document;
   bare?: boolean;
   classId?: string;
 }
@@ -55,7 +56,7 @@ export default function DocumentViewer({
     error: queryError,
   } = useQuery({
     queryKey: ["documents", classId],
-    queryFn: () => getDocuments(classId || ""),
+    queryFn: () => getAllDocuments(),
     enabled: !!classId,
   });
 

@@ -1,10 +1,17 @@
 /**
  * AgentEdit.tsx
- * Used to display the edit for the agents page.
+ * Used to edit agents using the unified agent component.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
 
+import Agent from "@/components/common/agent/Agent";
+
 export default function AgentEdit({ agentId }: { agentId: string }) {
-    return <div>AgentEdit</div>;
-  }
+  return (
+    <Agent 
+      agentId={agentId} 
+      mode="edit" 
+    />
+  );
+}

@@ -1,10 +1,14 @@
+/**
+ * app/(main)/create/rubrics/r/page.tsx
+ * Rubric page for the rubrics section. Redirects to rubrics page.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
+
 "use client";
 
-/**
- * Create rubrics page. This is the main page for the classes create rubrics section.
- */
 import { redirect } from "next/navigation";
 
-export default function CreateRubricsPage() {
-  return redirect("/create/rubrics");
+export default function RubricsPage() {
+    return redirect("/create/rubrics");
 }

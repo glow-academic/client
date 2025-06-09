@@ -63,7 +63,7 @@ describe('RubricEdit', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: None
+ * - Uses hooks: uses
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

@@ -5,8 +5,8 @@
  * 06/07/2025
  */
 
-import { SimulationPlayground } from "@/components/common/simulation/simulation-playground"
+import Simulation from "@/components/common/simulation/Simulation"
 
 export default function SimulationEdit({ simulationId }: { simulationId: string }) {
-  return <SimulationPlayground />
+  return <Simulation mode="list" simulationId={simulationId} />
 }
