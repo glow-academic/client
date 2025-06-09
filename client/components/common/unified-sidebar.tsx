@@ -6,7 +6,7 @@ import { toast } from "sonner"
 
 import { getClasses } from "@/utils/queries/get-classes"
 import { getUser } from "@/utils/queries/get-user"
-import { logout } from "@/utils/mutations/logout"
+import { logout } from "@/utils/auth/logout"
 import { getAttempts } from "@/utils/queries/get-attempts"
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils"
 import { useRole } from "@/components/role-context"

@@ -7,7 +7,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/utils/mutations/login";
+import { login } from "@/utils/auth/login";
 
 export default function Home() {
   const [username, setUsername] = useState("");
