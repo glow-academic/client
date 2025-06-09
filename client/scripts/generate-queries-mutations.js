@@ -16,7 +16,7 @@ function extractTableInfo() {
     const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
     
     // Extract tables with their relationships
-    const tableRegex = /export const (\w+) = pgTable\("([^"]+)", \{([^}]+)\}(?:, \(table\) => \[([^\]]+)\])?\)/gs;
+    const tableRegex = /export const (\w+)\s*=\s*pgTable\(\s*"([^"]+)"\s*,\s*\{([\s\S]*?)\}\s*,\s*\(table\)\s*=>\s*\[([\s\S]*?)\]\s*\)/g;
     const tables = [];
     let tableMatch;
     
@@ -80,7 +80,9 @@ function parseFields(fieldsContent) {
 function parseForeignKeys(constraintsContent) {
   const foreignKeys = [];
   
-  const fkMatches = constraintsContent.matchAll(/foreignKey\(\{[^}]+columns:\s*\[([^\]]+)\][^}]+foreignColumns:\s*\[([^\]]+)\][^}]+name:\s*"([^"]+)"[^}]*\}\)/g);
+  const fkMatches = constraintsContent.matchAll(
+    /foreignKey\(\s*\{[\s\S]*?columns:\s*\[([^\]]+?)\][\s\S]*?foreignColumns:\s*\[([^\]]+?)\][\s\S]*?name:\s*"([^"]+)"[\s\S]*?\}\)\s*(?:\.\w+\([^)]*\))*/g
+  );
   
   for (const match of fkMatches) {
     const [, columns, foreignColumns, name] = match;

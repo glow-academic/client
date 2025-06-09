@@ -249,10 +249,16 @@ export const simulationChats = pgTable("simulation_chats", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	title: text().notNull(),
+	userId: uuid("user_id"),
 	scenarioId: uuid("scenario_id").notNull(),
 	attemptId: uuid("attempt_id").notNull(),
 	completed: boolean().default(false).notNull(),
 }, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "simulation_chats_user_id_fkey"
+		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
