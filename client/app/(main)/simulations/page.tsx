@@ -20,15 +20,9 @@ import { getSimulations } from "@/utils/queries/get-simulations";
 import { getInteractions } from "@/utils/queries/get-interactions";
 import { getAgents } from "@/utils/queries/get-agents";
 import { useRole } from "@/components/role-context";
-import { agents, simulations } from "@/drizzle/schema";
-import { interactions } from "@/drizzle/schema";
 import { useViewMode } from "@/contexts/view-mode-context";
 import { useTaskColumns } from "@/components/common/history/columns";
 import { DataTable } from "@/components/common/history/data-table";
-
-type Simulation = typeof simulations.$inferSelect;
-type Agent = typeof agents.$inferSelect;
-type Interaction = typeof interactions.$inferSelect;
 
 export default function DashboardHomePage() {
     const router = useRouter();

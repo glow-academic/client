@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getStandardGradesByStandards(standardIds: string[]) {
   try {
-    return await db.select().from(standardGrades).where(inArray(standardGrades.standardId, standardIds));
+    return await db.select().from(standardGrades).where(inArray(standardGrades.standard_id, standardIds));
   } catch (error) {
     console.error("Error fetching standard_grades by standards:", error);
     throw error;

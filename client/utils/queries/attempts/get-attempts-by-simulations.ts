@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getAttemptsBySimulations(simulationIds: string[]) {
   try {
-    return await db.select().from(attempts).where(inArray(attempts.simulationId, simulationIds));
+    return await db.select().from(attempts).where(inArray(attempts.simulation_id, simulationIds));
   } catch (error) {
     console.error("Error fetching attempts by simulations:", error);
     throw error;

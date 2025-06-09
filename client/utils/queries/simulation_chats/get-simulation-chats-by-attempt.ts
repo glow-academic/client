@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulationChatsByAttempt(attemptId: string) {
   try {
-    return await db.select().from(simulationChats).where(eq(simulationChats.attemptId, attemptId));
+    return await db.select().from(simulationChats).where(eq(simulationChats.attempt_id, attemptId));
   } catch (error) {
     console.error("Error fetching simulation_chats by attempt:", error);
     throw error;

@@ -1,14 +1,14 @@
-// utils/queries/eval_runs/get-eval-runs-by-responseAgent.ts
+// utils/queries/eval_runs/get-eval-runs-by-responseagent.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { evalRuns } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function getEvalRunsByResponseAgent(responseAgentId: string) {
+export async function getEvalRunsByResponseagent(responseagentId: string) {
   try {
-    return await db.select().from(evalRuns).where(eq(evalRuns.responseAgentId, responseAgentId));
+    return await db.select().from(evalRuns).where(eq(evalRuns.response_agent_id, responseagentId));
   } catch (error) {
-    console.error("Error fetching eval_runs by responseAgent:", error);
+    console.error("Error fetching eval_runs by responseagent:", error);
     throw error;
   }
 }

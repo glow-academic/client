@@ -22,7 +22,6 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { agents as Agents } from "@/drizzle/schema";
 
 export function ChatProfilesContent() {
   const [showCreateProfile, setShowCreateProfile] = useState(false);

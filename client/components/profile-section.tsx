@@ -8,12 +8,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { classes as Classes } from "@/drizzle/schema"
-
-type Class = typeof Classes.$inferSelect;
-
-
-type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {

@@ -50,16 +50,8 @@ import { getDocuments } from "@/utils/queries/get-documents";
 import { updateClass } from "@/utils/mutations/update-class";
 import { createClass } from "@/utils/mutations/create-class";
 import DocumentViewer from "@/components/DocumentViewer";
-import { documents as DocumentItem } from "@/drizzle/schema";
 import { cn } from "@/lib/utils";
 import { updateDocument } from "@/utils/mutations/update-document";
-
-// Define document type
-type DocumentType = typeof DocumentItem.$inferSelect;
-
-// Add document type enum
-export type DocumentTypeEnum = 'homework' | 'project' | 'quiz' | 'midterm' | 'lab' | 'lecture' | 'syllabus';
-
 interface FileUploadStatus {
   id: string;
   name: string;

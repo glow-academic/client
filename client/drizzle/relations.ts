@@ -132,14 +132,9 @@ export const attemptsRelations = relations(attempts, ({one, many}) => ({
 
 export const usersRelations = relations(users, ({many}) => ({
 	attempts: many(attempts),
-	simulationChats: many(simulationChats),
 }));
 
 export const simulationChatsRelations = relations(simulationChats, ({one, many}) => ({
-	user: one(users, {
-		fields: [simulationChats.userId],
-		references: [users.id]
-	}),
 	scenario: one(scenarios, {
 		fields: [simulationChats.scenarioId],
 		references: [scenarios.id]

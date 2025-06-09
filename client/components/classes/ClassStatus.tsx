@@ -28,12 +28,10 @@ import {
 
 import { getClass } from "@/utils/queries/get-class";
 import { getDocuments } from "@/utils/queries/get-documents";
-import { documents as DocumentItem } from "@/drizzle/schema";
 import { getEvents } from "@/utils/queries/get-events";
 import { getSchedules } from "@/utils/queries/get-schedules";
 import { getTopics } from "@/utils/queries/get-topics";
 
-type DocumentType = typeof DocumentItem.$inferSelect;
 
 interface ProcessingStatus {
   stage: 'extracting' | 'classifying' | 'analyzing' | 'complete';

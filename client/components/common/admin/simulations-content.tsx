@@ -26,7 +26,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { simulations as Simulations } from "@/drizzle/schema";
 
 export function SimulationsContent() {
   const router = useRouter();

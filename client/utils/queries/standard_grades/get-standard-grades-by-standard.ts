@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getStandardGradesByStandard(standardId: string) {
   try {
-    return await db.select().from(standardGrades).where(eq(standardGrades.standardId, standardId));
+    return await db.select().from(standardGrades).where(eq(standardGrades.standard_id, standardId));
   } catch (error) {
     console.error("Error fetching standard_grades by standard:", error);
     throw error;

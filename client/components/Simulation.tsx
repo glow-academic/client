@@ -65,10 +65,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import DocumentViewer from "@/components/DocumentViewer";
-import { simulations as Simulations } from "@/drizzle/schema";
-import { interactions as Interactions } from "@/drizzle/schema";
-import { documents as Documents } from "@/drizzle/schema";
-import { agents as Agents } from "@/drizzle/schema";
 
 // Queries and mutations
 import { getAgents } from "@/utils/queries/get-agents";

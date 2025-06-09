@@ -6,7 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getRubricGradesByRubrics(rubricIds: string[]) {
   try {
-    return await db.select().from(rubricGrades).where(inArray(rubricGrades.rubricId, rubricIds));
+    return await db.select().from(rubricGrades).where(inArray(rubricGrades.rubric_id, rubricIds));
   } catch (error) {
     console.error("Error fetching rubric_grades by rubrics:", error);
     throw error;

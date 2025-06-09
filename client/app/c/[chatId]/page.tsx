@@ -29,7 +29,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";
 import { getInteraction } from "@/utils/queries/get-interaction";
-import { interactions as Interaction } from "@/drizzle/schema";
 
 type WindowWithChatData = Window & typeof globalThis & {
   chatData: {

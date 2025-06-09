@@ -5,18 +5,23 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/common/history/data-table-column-header";
 import { DataTableRowActions } from "@/components/common/history/data-table-row-actions";
 import { useQuery } from "@tanstack/react-query";
-import { getChats } from "@/utils/queries/get-chats";
-import { getAllChats } from "@/utils/queries/get-all-chats";
-import { getUsers } from "@/utils/queries/get-users";
-import { getClasses } from "@/utils/queries/get-classes";
-import { getAgents } from "@/utils/queries/get-agents";
 import { useMemo } from "react";
-import { getUser } from "@/utils/queries/get-user";
-import { getRubrics } from "@/utils/queries/get-rubrics";
 import { Badge } from "../../ui/badge";
 import { getAgentConfig } from "@/utils/agents";
-import { getEnhancedAttempts, getEnhancedAttemptsByUser } from "@/utils/queries/get-enhanced-attempts";
-import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
+import { getAuthUser } from "@/utils/auth/get-auth-user";
+import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllEvalChats } from "@/utils/queries/eval_chats/get-all-eval-chats";
+import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
+import { getAllAttempts } from "@/utils/queries/attempts/get-all-attempts";
+import { getAttemptsByUser } from "@/utils/queries/attempts/get-attempts-by-user";
+import { getSimulationChatsByUser } from "@/utils/queries/simulation_chats/get-simulation-chats-by-user";
+import { getAllRubricGrades } from "@/utils/queries/rubric_grades/get-all-rubric-grades";
+import { getRubricGradesByRubric } from "@/utils/queries/rubric_grades/get-rubric-grades-by-rubric";
+import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+
 
 // Enhanced attempt type (from the query results)
 interface EnhancedAttempt extends Attempt {
@@ -41,73 +46,60 @@ export function useTaskColumns({
   viewMode = 'chats',
   effectiveRole = 'student',
 }: { isAdmin?: boolean; viewMode?: 'chats' | 'attempts'; effectiveRole?: 'student' | 'guest' | 'ta' } = {}) {
+  
+  
   const { data: user, isLoading: _userLoading } = useQuery({
     queryKey: ["user"],
-    queryFn: () => getUser(),
+    queryFn: () => getAuthUser(),
   });
 
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ["users"],
-    queryFn: () => getUsers(),
+    queryFn: () => getAllUsers(),
   });
 
   const { data: classes, isLoading: classesLoading } = useQuery({
     queryKey: ["classes"],
-    queryFn: () => getClasses(),
+    queryFn: () => getAllClasses(),
   });
 
   // Fetch profiles dynamically
   const { data: agents, isLoading: agentsLoading } = useQuery({
     queryKey: ["agents"],
-    queryFn: () => getAgents(),
+    queryFn: () => getAllAgents(),
   });
 
-  // Use getAllChats if isAdmin, otherwise use getChats with user id (for chats view)
-  const { data: chats, isLoading: chatsLoading, error: _chatsError } = useQuery({
-    queryKey: isAdmin ? ["all-chats"] : ["chats", user?.id],
-    queryFn: () => {
-      return isAdmin ? getAllChats() : getChats(user?.id || '');
-    },
-    enabled: viewMode === 'chats',
-    retry: 1,
+  const {data: allAttempts, isLoading: allAttemptsLoading} = useQuery({
+    queryKey: ["all-attempts"],
+    queryFn: () => getAllAttempts(),
   });
 
-  // Fetch enhanced attempts data (for attempts view)
-  const { data: enhancedAttempts, isLoading: attemptsLoading } = useQuery({
-    queryKey: isAdmin ? ["enhanced-attempts"] : ["enhanced-attempts", user?.id],
-    queryFn: () => {
-      if (isAdmin) {
-        return getEnhancedAttempts();
-      } else {
-        return getEnhancedAttemptsByUser(user?.id || '');
-      }
-    },
-    enabled: viewMode === 'attempts' && (isAdmin || !!user?.id),
+  const {data: attemptsByUser, isLoading: attemptsByUserLoading} = useQuery({
+    queryKey: ["attempts-by-user", user?.id],
+    queryFn: () => getAttemptsByUser(user?.id || ''),
   });
 
-  // Fetch all chats for attempts to get rubrics
-  const attemptIds = enhancedAttempts?.map(attempt => attempt.id) || [];
-  const { data: allAttemptChats, isLoading: attemptChatsLoading } = useQuery({
-    queryKey: ["attempt-chats", attemptIds],
-    queryFn: () => getAttemptChats(attemptIds),
-    enabled: viewMode === 'attempts' && attemptIds.length > 0,
+  const { data: allSimulationChats, isLoading: allSimulationChatsLoading } = useQuery({
+    queryKey: ["all-simulation-chats", allAttempts?.map((attempt) => attempt.id)],
+    queryFn: () => getSimulationChatsByAttempts(allAttempts!.map((attempt) => attempt.id)),
+    enabled: !!allAttempts && allAttempts.length > 0,
   });
 
-  // Fetch rubrics for attempt chats
-  const chatIds = allAttemptChats?.map(chat => chat.id) || [];
-  const { data: attemptRubrics, isLoading: attemptRubricsLoading } = useQuery({
-    queryKey: ["attempt-rubrics", chatIds],
-    queryFn: () => getRubrics(chatIds),
-    enabled: viewMode === 'attempts' && chatIds.length > 0,
+  const {data: simulationChatsByUser, isLoading: simulationChatsByUserLoading} = useQuery({
+    queryKey: ["simulation-chats-by-user", user?.id],
+    queryFn: () => getSimulationChatsByUser(user?.id || ''),
   });
 
-  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
-    queryKey: isAdmin
-      ? ["all-rubrics"]
-      : ["rubrics", chats?.map((chat) => chat.id)],
-    queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0 && viewMode === 'chats',
+  const {data: allRubricGrades, isLoading: allRubricGradesLoading} = useQuery({
+    queryKey: ["all-rubric-grades"],
+    queryFn: () => getAllRubricGrades(),
   });
+
+  const {data: userRubricGrades, isLoading: userRubricGradesLoading} = useQuery({
+    queryKey: ["user-rubric-grades", user?.id],
+    queryFn: () => getRubricGradesByRubric(user?.id || ''),
+  });
+
 
   // Create dynamic profile types from database profiles
   const agentTypes = useMemo(() => {

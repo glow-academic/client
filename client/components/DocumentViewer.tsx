@@ -16,11 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import Markdown from "@/components/Markdown";
 import { getDocuments } from "@/utils/queries/get-documents";
 import Image from "next/image";
-import { documents } from "@/drizzle/schema";
 import { FileText, Download } from "lucide-react";
 
-// Define types for props
-type DocumentType = typeof documents.$inferSelect;
 
 interface DocumentViewerProps {
   document?: DocumentType;

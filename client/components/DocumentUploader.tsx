@@ -21,7 +21,6 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getClasses } from "@/utils/queries/get-classes";
-import { classes as ClassItem } from "@/drizzle/schema";
 
 // Add document type enum
 export type DocumentTypeEnum = 'homework' | 'project' | 'quiz' | 'midterm' | 'lab';

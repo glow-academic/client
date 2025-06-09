@@ -50,20 +50,10 @@ import DocumentViewer from "@/components/DocumentViewer";
 import DocumentUploader from "@/components/DocumentUploader";
 import DocumentDropzone from "@/components/DocumentDropzone";
 
-import {
-  documents as DocumentItem,
-  classes as ClassItem,
-} from "@/drizzle/schema";
-
 // View modes
 type ViewMode = "grid" | "list";
 // Upload states
 type UploadState = "idle" | "uploading" | "complete" | "error";
-// Document types enum
-export type DocumentTypeEnum = 'homework' | 'project' | 'quiz' | 'midterm' | 'lab';
-
-// Define a document type for our component
-type DocumentType = typeof DocumentItem.$inferSelect;
 
 interface DocumentsProps {
   classId?: string; // Optional class filter

@@ -2,32 +2,93 @@
 
 const fs = require('fs');
 const path = require('path');
+const { execSync } = require('child_process');
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, '../drizzle/schema.ts');
 const QUERIES_DIR = path.join(__dirname, '../utils/queries');
 const MUTATIONS_DIR = path.join(__dirname, '../utils/mutations');
+// Function to get the latest snapshot file
+function getLatestSnapshotPath() {
+  const metaDir = path.join(__dirname, '../drizzle/meta');
+  const files = fs.readdirSync(metaDir)
+    .filter(file => file.endsWith('_snapshot.json'))
+    .sort()
+    .reverse(); // Get the latest one
+  
+  if (files.length === 0) {
+    throw new Error('No snapshot files found');
+  }
+  
+  return path.join(metaDir, files[0]);
+}
 
 /**
- * Extract detailed table information including relationships
+ * Generate fresh snapshot using drizzle-kit introspect
+ */
+function generateSnapshot() {
+  try {
+    console.log('🔄 Generating fresh schema snapshot...');
+    
+    // Run drizzle-kit introspect to generate/update the snapshot
+    execSync('npx drizzle-kit introspect', { 
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit'
+    });
+    
+    console.log('✅ Schema snapshot generated successfully\n');
+  } catch (error) {
+    console.error('❌ Error generating snapshot:', error.message);
+    console.log('📝 Falling back to existing snapshot if available...\n');
+  }
+}
+
+/**
+ * Extract detailed table information from drizzle-kit JSON snapshot
  */
 function extractTableInfo() {
   try {
-    const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
+    let snapshotPath;
     
-    // Extract tables with their relationships
-    const tableRegex = /export const (\w+)\s*=\s*pgTable\(\s*"([^"]+)"\s*,\s*\{([\s\S]*?)\}\s*,\s*\(table\)\s*=>\s*\[([\s\S]*?)\]\s*\)/g;
+    try {
+      snapshotPath = getLatestSnapshotPath();
+      console.log(`📄 Using snapshot: ${path.basename(snapshotPath)}`);
+    } catch (error) {
+      console.log('📄 No snapshot found, generating one...');
+      generateSnapshot();
+      snapshotPath = getLatestSnapshotPath();
+    }
+    
+    const snapshotContent = fs.readFileSync(snapshotPath, 'utf8');
+    const snapshot = JSON.parse(snapshotContent);
+    
     const tables = [];
-    let tableMatch;
     
-    while ((tableMatch = tableRegex.exec(schemaContent)) !== null) {
-      const [, exportName, tableName, fieldsContent, constraintsContent] = tableMatch;
+    // Extract tables from snapshot
+    Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
+      const tableName = tableData.name;
+      const exportName = getExportNameFromSchema(tableName);
       
-      // Parse fields
-      const fields = parseFields(fieldsContent);
+      // Parse columns
+      const fields = Object.entries(tableData.columns || {}).map(([columnKey, columnData]) => ({
+        name: columnData.name,
+        type: mapDrizzleType(columnData.type),
+        isRequired: columnData.notNull,
+        isPrimaryKey: columnData.primaryKey,
+        hasDefault: columnData.default !== undefined,
+        isForeignKey: isForeignKeyColumn(columnData.name, tableData.foreignKeys || {})
+      }));
       
-      // Parse foreign key relationships
-      const foreignKeys = constraintsContent ? parseForeignKeys(constraintsContent) : [];
+      // Parse foreign keys
+      const foreignKeys = Object.entries(tableData.foreignKeys || {}).map(([fkKey, fkData]) => ({
+        columnName: fkData.columnsFrom[0], // Taking first column for simplicity
+        foreignTable: fkData.tableTo,
+        name: fkData.name
+      }));
+      
+      // Find primary key
+      const primaryKeyField = fields.find(f => f.isPrimaryKey);
+      const primaryKey = primaryKeyField ? primaryKeyField.name : 'id';
       
       tables.push({
         exportName,
@@ -35,82 +96,83 @@ function extractTableInfo() {
         singularName: getSingularName(exportName),
         fields,
         foreignKeys,
-        primaryKey: fields.find(f => f.isPrimaryKey)?.name || 'id'
+        primaryKey
       });
-    }
+    });
     
     return tables;
   } catch (error) {
-    console.error('❌ Error parsing schema:', error.message);
+    console.error('❌ Error parsing snapshot:', error.message);
     process.exit(1);
   }
 }
 
 /**
- * Parse field definitions
+ * Get export name from schema file for a given table name
  */
-function parseFields(fieldsContent) {
-  const fields = [];
-  const fieldLines = fieldsContent.split(',').map(line => line.trim()).filter(line => line);
-  
-  fieldLines.forEach(line => {
-    const fieldMatch = line.match(/(\w+):\s*([^,]+)/);
-    if (fieldMatch) {
-      const [, fieldName, fieldDef] = fieldMatch;
-      
-      fields.push({
-        name: fieldName,
-        definition: fieldDef.trim(),
-        type: extractFieldType(fieldDef),
-        isRequired: fieldDef.includes('.notNull()'),
-        isPrimaryKey: fieldDef.includes('.primaryKey()'),
-        isUnique: fieldDef.includes('.unique()'),
-        hasDefault: fieldDef.includes('.default('),
-        isForeignKey: fieldName.endsWith('Id') || fieldName.endsWith('Ids') || fieldName.includes('_id')
-      });
+function getExportNameFromSchema(tableName) {
+  try {
+    const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
+    
+    // Look for export const [name] = pgTable("tableName"
+    const exportRegex = new RegExp(`export const (\\w+)\\s*=\\s*pgTable\\(\\s*["']${tableName}["']`, 'g');
+    const match = exportRegex.exec(schemaContent);
+    
+    if (match) {
+      return match[1];
     }
-  });
-  
-  return fields;
+    
+    // Fallback: convert table name to camelCase
+    return tableName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  } catch (error) {
+    console.warn(`⚠️  Could not find export name for table ${tableName}, using fallback`);
+    return tableName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  }
 }
 
 /**
- * Parse foreign key constraints
+ * Map database types to TypeScript types
  */
-function parseForeignKeys(constraintsContent) {
-  const foreignKeys = [];
+function mapDrizzleType(dbType) {
+  const typeMap = {
+    'uuid': 'string',
+    'text': 'string',
+    'varchar': 'string',
+    'char': 'string',
+    'integer': 'number',
+    'bigint': 'number',
+    'smallint': 'number',
+    'numeric': 'number',
+    'decimal': 'number',
+    'real': 'number',
+    'double precision': 'number',
+    'boolean': 'boolean',
+    'timestamp': 'string',
+    'timestamp with time zone': 'string',
+    'timestamp without time zone': 'string',
+    'date': 'string',
+    'time': 'string',
+    'json': 'any',
+    'jsonb': 'any'
+  };
   
-  const fkMatches = constraintsContent.matchAll(
-    /foreignKey\(\s*\{[\s\S]*?columns:\s*\[([^\]]+?)\][\s\S]*?foreignColumns:\s*\[([^\]]+?)\][\s\S]*?name:\s*"([^"]+)"[\s\S]*?\}\)\s*(?:\.\w+\([^)]*\))*/g
-  );
-  
-  for (const match of fkMatches) {
-    const [, columns, foreignColumns, name] = match;
-    const columnName = columns.split(',')[0].trim().replace(/table\./, '');
-    const foreignTable = name.split('_')[0]; // Extract table name from constraint name
-    
-    foreignKeys.push({
-      columnName,
-      foreignTable,
-      name
-    });
+  // Handle array types
+  if (dbType.includes('[]')) {
+    const baseType = dbType.replace('[]', '');
+    const mappedType = typeMap[baseType] || 'any';
+    return `${mappedType}[]`;
   }
   
-  return foreignKeys;
+  return typeMap[dbType] || 'any';
 }
 
 /**
- * Extract field type
+ * Check if a column is a foreign key
  */
-function extractFieldType(fieldDef) {
-  if (fieldDef.includes('uuid(')) return 'string';
-  if (fieldDef.includes('text(')) return 'string';
-  if (fieldDef.includes('integer(')) return 'number';
-  if (fieldDef.includes('boolean(')) return 'boolean';
-  if (fieldDef.includes('timestamp(')) return 'string';
-  if (fieldDef.includes('pgEnum')) return 'string';
-  if (fieldDef.includes('.array()')) return 'string[]';
-  return 'any';
+function isForeignKeyColumn(columnName, foreignKeys) {
+  return Object.values(foreignKeys).some(fk => 
+    fk.columnsFrom && fk.columnsFrom.includes(columnName)
+  );
 }
 
 /**
@@ -147,24 +209,31 @@ function generateQueries(tables) {
     
     // 1. Get all items
     const getAllQuery = generateGetAllQuery(exportName, tableName);
-    writeQueryFile(tableName, `get-all-${tableName.replace(/_/g, '-')}.ts`, getAllQuery, created, updated);
+    const getAllResult = writeQueryFile(tableName, `get-all-${tableName.replace(/_/g, '-')}.ts`, getAllQuery);
+    if (getAllResult.created) created++; else updated++;
     
     // 2. Get single item by ID
     const getByIdQuery = generateGetByIdQuery(exportName, tableName, singularName, primaryKey);
-    writeQueryFile(tableName, `get-${singularName.replace(/_/g, '-')}.ts`, getByIdQuery, created, updated);
+    const getByIdResult = writeQueryFile(tableName, `get-${singularName.replace(/_/g, '-')}.ts`, getByIdQuery);
+    if (getByIdResult.created) created++; else updated++;
     
     // 3. Get items by foreign key relationships (singular)
     foreignKeys.forEach(fk => {
       const getByFkQuery = generateGetByForeignKeyQuery(exportName, tableName, fk);
-      writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${fk.columnName.replace(/Id$/, '').replace(/_/g, '-')}.ts`, getByFkQuery, created, updated);
+      const paramName = fk.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
+      const cleanParamName = paramName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+      const getByFkResult = writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${cleanParamName}.ts`, getByFkQuery);
+      if (getByFkResult.created) created++; else updated++;
     });
     
     // 4. Get items by foreign key relationships (plural)
     foreignKeys.forEach(fk => {
       const getByFkPluralQuery = generateGetByForeignKeyPluralQuery(exportName, tableName, fk);
-      const paramName = fk.columnName.replace(/Id$/, '').replace(/_/g, '');
+      const paramName = fk.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
       const pluralParamName = paramName.endsWith('s') ? paramName : paramName + 's';
-      writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${pluralParamName.replace(/_/g, '-')}.ts`, getByFkPluralQuery, created, updated);
+      const cleanPluralParamName = pluralParamName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+      const getByFkPluralResult = writeQueryFile(tableName, `get-${tableName.replace(/_/g, '-')}-by-${cleanPluralParamName}.ts`, getByFkPluralQuery);
+      if (getByFkPluralResult.created) created++; else updated++;
     });
   });
 
@@ -195,27 +264,33 @@ function generateMutations(tables) {
     
     // 1. Create single
     const createMutation = generateCreateMutation(exportName, tableName, singularName, fields);
-    writeMutationFile(tableName, `create-${singularName.replace(/_/g, '-')}.ts`, createMutation, created, updated);
+    const createResult = writeMutationFile(tableName, `create-${singularName.replace(/_/g, '-')}.ts`, createMutation);
+    if (createResult.created) created++; else updated++;
     
     // 2. Create multiple
     const createMultipleMutation = generateCreateMultipleMutation(exportName, tableName, singularName, fields);
-    writeMutationFile(tableName, `create-${tableName.replace(/_/g, '-')}.ts`, createMultipleMutation, created, updated);
+    const createMultipleResult = writeMutationFile(tableName, `create-${tableName.replace(/_/g, '-')}.ts`, createMultipleMutation);
+    if (createMultipleResult.created) created++; else updated++;
     
     // 3. Update single
     const updateMutation = generateUpdateMutation(exportName, tableName, singularName, fields, primaryKey);
-    writeMutationFile(tableName, `update-${singularName.replace(/_/g, '-')}.ts`, updateMutation, created, updated);
+    const updateResult = writeMutationFile(tableName, `update-${singularName.replace(/_/g, '-')}.ts`, updateMutation);
+    if (updateResult.created) created++; else updated++;
     
     // 4. Update multiple
     const updateMultipleMutation = generateUpdateMultipleMutation(exportName, tableName, singularName, fields, primaryKey);
-    writeMutationFile(tableName, `update-${tableName.replace(/_/g, '-')}.ts`, updateMultipleMutation, created, updated);
+    const updateMultipleResult = writeMutationFile(tableName, `update-${tableName.replace(/_/g, '-')}.ts`, updateMultipleMutation);
+    if (updateMultipleResult.created) created++; else updated++;
     
     // 5. Delete single
     const deleteMutation = generateDeleteMutation(exportName, tableName, singularName, primaryKey);
-    writeMutationFile(tableName, `delete-${singularName.replace(/_/g, '-')}.ts`, deleteMutation, created, updated);
+    const deleteResult = writeMutationFile(tableName, `delete-${singularName.replace(/_/g, '-')}.ts`, deleteMutation);
+    if (deleteResult.created) created++; else updated++;
     
     // 6. Delete multiple
     const deleteMultipleMutation = generateDeleteMultipleMutation(exportName, tableName, singularName, primaryKey);
-    writeMutationFile(tableName, `delete-${tableName.replace(/_/g, '-')}.ts`, deleteMultipleMutation, created, updated);
+    const deleteMultipleResult = writeMutationFile(tableName, `delete-${tableName.replace(/_/g, '-')}.ts`, deleteMultipleMutation);
+    if (deleteMultipleResult.created) created++; else updated++;
   });
 
   console.log(`✏️  Mutation generation complete: ${created} created, ${updated} updated`);
@@ -267,8 +342,9 @@ export async function get${capitalize(singularName)}(${primaryKey}: string) {
  * Generate get by foreign key query
  */
 function generateGetByForeignKeyQuery(exportName, tableName, foreignKey) {
-  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_/g, '');
-  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${paramName.replace(/_/g, '-')}.ts
+  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
+  const cleanParamName = paramName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${cleanParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -289,9 +365,10 @@ export async function get${capitalize(exportName)}By${capitalize(paramName)}(${p
  * Generate get by foreign key query (plural version)
  */
 function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
-  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_/g, '');
+  const paramName = foreignKey.columnName.replace(/Id$/, '').replace(/_id$/, '').replace(/_/g, '');
   const pluralParamName = paramName.endsWith('s') ? paramName : paramName + 's';
-  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${pluralParamName.replace(/_/g, '-')}.ts
+  const cleanPluralParamName = pluralParamName.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, '-')}-by-${cleanPluralParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -438,36 +515,36 @@ export async function delete${capitalize(exportName)}(${primaryKey}s: string[]) 
 /**
  * Write query file
  */
-function writeQueryFile(tableName, filename, content, created, updated) {
+function writeQueryFile(tableName, filename, content) {
   const filePath = path.join(QUERIES_DIR, tableName, filename);
   const exists = fs.existsSync(filePath);
   
   fs.writeFileSync(filePath, content);
   
   if (exists) {
-    updated++;
     console.log(`🔄 Updated ${tableName}/${filename}`);
+    return { created: false, updated: true };
   } else {
-    created++;
     console.log(`📝 Created ${tableName}/${filename}`);
+    return { created: true, updated: false };
   }
 }
 
 /**
  * Write mutation file
  */
-function writeMutationFile(tableName, filename, content, created, updated) {
+function writeMutationFile(tableName, filename, content) {
   const filePath = path.join(MUTATIONS_DIR, tableName, filename);
   const exists = fs.existsSync(filePath);
   
   fs.writeFileSync(filePath, content);
   
   if (exists) {
-    updated++;
     console.log(`🔄 Updated ${tableName}/${filename}`);
+    return { created: false, updated: true };
   } else {
-    created++;
     console.log(`📝 Created ${tableName}/${filename}`);
+    return { created: true, updated: false };
   }
 }
 
@@ -481,8 +558,26 @@ function capitalize(str) {
 /**
  * Main generation function
  */
-function generateQueriesAndMutations() {
+function generateQueriesAndMutations(options = {}) {
   console.log('🚀 Generating queries and mutations from Drizzle schema...\n');
+  
+  // Generate a fresh snapshot unless --skip-snapshot flag is used
+  const skipSnapshot = process.argv.includes('--skip-snapshot') || options.skipSnapshot;
+  
+  if (!skipSnapshot) {
+    console.log('🔄 Generating fresh snapshot from current schema...');
+    try {
+      execSync('npx drizzle-kit generate', { 
+        cwd: path.join(__dirname, '..'),
+        stdio: 'pipe' // Hide output unless there's an error
+      });
+      console.log('✅ Fresh snapshot generated\n');
+    } catch (error) {
+      console.warn('⚠️  Could not generate fresh snapshot, using existing one\n');
+    }
+  } else {
+    console.log('⏭️  Skipping snapshot generation (using existing snapshot)\n');
+  }
   
   const tables = extractTableInfo();
   
@@ -502,6 +597,34 @@ function generateQueriesAndMutations() {
 
 // Run if called directly
 if (require.main === module) {
+  // Check for help flag
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    console.log(`
+🚀 Drizzle Queries & Mutations Generator
+
+Usage: node scripts/generate-queries-mutations.js [options]
+
+Options:
+  --skip-snapshot    Skip generating fresh snapshot (use existing one)
+  --help, -h         Show this help message
+
+Description:
+  This script generates TypeScript query and mutation files based on your Drizzle schema.
+  It uses drizzle-kit's JSON snapshots for reliable parsing instead of regex.
+
+  By default, it will:
+  1. Generate a fresh snapshot from your current schema
+  2. Parse all tables and relationships from the snapshot
+  3. Generate query files (get all, get by ID, get by foreign keys)
+  4. Generate mutation files (create, update, delete - both single and multiple)
+
+Examples:
+  node scripts/generate-queries-mutations.js                 # Full generation with fresh snapshot
+  node scripts/generate-queries-mutations.js --skip-snapshot # Use existing snapshot (faster)
+`);
+    process.exit(0);
+  }
+  
   generateQueriesAndMutations();
 }
 

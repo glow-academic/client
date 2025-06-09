@@ -25,8 +25,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { chats as Chat, documents as Documents, rubrics as Rubric } from "@/drizzle/schema";
-import { interactions as Interaction } from "@/drizzle/schema";
 
 // Icons
 import {
