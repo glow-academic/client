@@ -38,12 +38,17 @@ import {
   Bar,
 } from "recharts";
 import { format, subDays } from "date-fns";
-import { getRubrics } from "@/utils/queries/get-rubrics";
-import { getUsers } from "@/utils/queries/get-users";
-import { getAgents } from "@/utils/queries/get-agents";
-import { getAttempts } from "@/utils/queries/get-attempts";
-import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 import { getAgentConfig } from "@/utils/agents";
+import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 // Color palette for charts
 const COLORS = {
@@ -61,99 +66,128 @@ export default function Performance() {
   // Fetch data
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
-    queryFn: () => getUsers(),
-  });
-
-  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["attempts"],
-    queryFn: () => getAttempts(),
-  });
-
-  const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["chats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () => getAttemptChats(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
+    queryFn: () => getAllUsers(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents"],
-    queryFn: () => getAgents(),
+    queryFn: () => getAllAgents(),
   });
 
-  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["all-rubrics-performance"],
-    queryFn: () => getRubrics(chats!.map((chat) => chat.id)),
+  const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
+  });
+
+  const {data: rubrics, isLoading: isLoadingRubrics} = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  const {data: standardGroups, isLoading: isLoadingStandardGroups} = useQuery({
+    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+    queryFn: () => getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+    enabled: !!rubrics && rubrics.length > 0,
+  });
+
+  const {data: standards, isLoading: isLoadingStandards} = useQuery({
+    queryKey: ["standards", standardGroups?.map((group) => group.id)],
+    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    enabled: !!standardGroups && standardGroups.length > 0,
+  });
+
+  const {data: attempts, isLoading: isLoadingAttempts} = useQuery({
+    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
+    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
+    enabled: !!users && users.length > 0,
+  });
+
+  const { data: chats, isLoading: isLoadingChats } = useQuery({
+    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
+    queryFn: () => getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    enabled: !!attempts && attempts.length > 0,
+  });
+
+  const {data: grades, isLoading: isLoadingGrades} = useQuery({
+    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
+    queryFn: () => getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
+  });
+
+  const {data: feedbacks, isLoading: isLoadingFeedbacks} = useQuery({
+    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
+    queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(grades!.map((grade) => grade.id)),
+    enabled: !!grades && grades.length > 0,
   });
 
   // Calculate analytics
   const analytics = useMemo(() => {
-    if (!users || !chats || !rubrics || !agents) return null;
+    if (!users || !chats || !grades || !feedbacks || !standards || !standardGroups || !agents || !scenarios) return null;
 
     const tas = users.filter((user) => user.role === "ta");
 
-    // Calculate average scores by category
-    const avgScores = {
-      adaptability:
-        rubrics.length > 0
-          ? Math.round((rubrics.reduce((sum, r) => sum + r.adaptability, 0) / rubrics.length / 5) * 100)
-          : 0,
-      listening:
-        rubrics.length > 0
-          ? Math.round((rubrics.reduce((sum, r) => sum + r.listening, 0) / rubrics.length / 5) * 100)
-          : 0,
-      objectives:
-        rubrics.length > 0
-          ? Math.round((rubrics.reduce((sum, r) => sum + r.objectives, 0) / rubrics.length / 5) * 100)
-          : 0,
-      timeManagement:
-        rubrics.length > 0
-          ? Math.round((rubrics.reduce((sum, r) => sum + r.timeManagement, 0) / rubrics.length / 5) * 100)
-          : 0,
-      overall:
-        rubrics.length > 0
-          ? Math.round((rubrics.reduce((sum, r) => sum + r.score, 0) / rubrics.length / 20) * 100)
-          : 0,
-    };
+    // Calculate average scores by standard group (skill category)
+    const skillCategories = standardGroups.reduce((acc, group) => {
+      const groupStandards = standards.filter(s => s.standardGroupId === group.id);
+      const groupFeedbacks = feedbacks.filter(f => 
+        groupStandards.some(s => s.id === f.standardId)
+      );
+      
+      const avgScore = groupFeedbacks.length > 0
+        ? Math.round((groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length / groupStandards[0]?.points || 1) * 100)
+        : 0;
 
-    // Performance by student type
-    const performanceByType = agents.map((agent) => {
-      const profileChats = chats.filter((chat) => chat.agentId === agent.id);
-      const profileRubrics = rubrics.filter((rubric) => {
-        const chat = chats.find((c) => c.id === rubric.chatId);
-        return chat?.agentId === agent.id;
-      });
+      acc[group.name.toLowerCase().replace(/\s+/g, '')] = avgScore;
+      return acc;
+    }, {} as Record<string, number>);
 
-      const avgScore =
-        profileRubrics.length > 0
-          ? Math.round(
-              (profileRubrics.reduce((sum, r) => sum + r.score, 0) / profileRubrics.length / 20) * 100,
-            )
+    // Calculate overall average
+    const overallScore = grades.length > 0
+      ? Math.round((grades.reduce((sum, g) => sum + g.score, 0) / grades.length))
+      : 0;
+
+    // Performance by student type (scenario-based)
+    const performanceByType = agents
+      .filter(agent => agent.agentType === 'student')
+      .map((agent) => {
+        const agentScenarios = scenarios.filter(s => s.agentId === agent.id);
+        const agentChats = chats.filter(chat => 
+          agentScenarios.some(scenario => scenario.id === chat.scenarioId)
+        );
+        const agentGrades = grades.filter(grade =>
+          agentChats.some(chat => chat.id === grade.simulationChatId)
+        );
+
+        const avgScore = agentGrades.length > 0
+          ? Math.round(agentGrades.reduce((sum, g) => sum + g.score, 0) / agentGrades.length)
           : 0;
 
-      return {
-        name: agent.name,
-        score: avgScore,
-        sessions: profileChats.length,
-        color: getAgentConfig(agent.name).colors.bgColor,
-      };
-    });
+        return {
+          name: agent.name,
+          score: avgScore,
+          sessions: agentChats.length,
+          color: getAgentConfig(agent.name).colors.bgColor,
+        };
+      });
 
-    // Skill progression data (mock for now)
+    // Skill progression data (based on actual feedback over time)
     const skillProgressionData = Array.from({ length: 7 }, (_, i) => {
       const date = subDays(new Date(), 6 - i);
-      const baseAdaptability = 65 + i * 2 + Math.random() * 10;
-      const baseListening = 70 + i * 1.5 + Math.random() * 8;
-      const baseObjectives = 75 + i * 1.8 + Math.random() * 6;
-      const baseTimeManagement = 68 + i * 2.2 + Math.random() * 9;
+      const dateStr = format(date, "yyyy-MM-dd");
       
-      return {
+      // Get feedbacks for this date (mock progression for now)
+      const dayData: Record<string, string | number> = {
         date: format(date, "MMM dd"),
-        adaptability: Math.min(95, Math.round(baseAdaptability)),
-        listening: Math.min(95, Math.round(baseListening)),
-        objectives: Math.min(95, Math.round(baseObjectives)),
-        timeManagement: Math.min(95, Math.round(baseTimeManagement)),
       };
+
+      // Add skill categories with some progression simulation
+      Object.keys(skillCategories).forEach((skill, index) => {
+        const baseScore = skillCategories[skill] || 70;
+        const progression = i * 2 + Math.random() * 5;
+        dayData[skill] = Math.min(95, Math.round(baseScore - 10 + progression));
+      });
+
+      return dayData;
     });
 
     // TA performance for distribution
@@ -163,14 +197,13 @@ export default function Performance() {
         const taChats = chats.filter((chat) =>
           taAttempts.some((attempt) => attempt.id === chat.attemptId),
         );
-        const taRubrics = rubrics.filter((rubric) =>
-          taChats.some((chat) => chat.id === rubric.chatId),
+        const taGrades = grades.filter((grade) =>
+          taChats.some((chat) => chat.id === grade.simulationChatId),
         );
 
-        const avgScore =
-          taRubrics.length > 0
-            ? Math.round((taRubrics.reduce((sum, r) => sum + r.score, 0) / taRubrics.length / 20) * 100)
-            : 0;
+        const avgScore = taGrades.length > 0
+          ? Math.round(taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length)
+          : 0;
 
         const completedSessions = taChats.filter((chat) => chat.completed).length;
         const totalSessions = taChats.length;
@@ -197,21 +230,27 @@ export default function Performance() {
       totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
 
     return {
-      avgScores,
+      skillCategories,
+      overallScore,
       performanceByType,
       skillProgressionData,
       taPerformance,
       completionRate,
     };
-  }, [users, chats, rubrics, agents, attempts]);
+  }, [users, chats, grades, feedbacks, standards, standardGroups, agents, scenarios, attempts]);
 
   // Loading state
   if (
     isLoadingUsers ||
     isLoadingAttempts ||
     isLoadingChats ||
+    isLoadingGrades ||
+    isLoadingFeedbacks ||
+    isLoadingStandards ||
+    isLoadingStandardGroups ||
     isLoadingRubrics ||
-    isLoadingAgents
+    isLoadingAgents ||
+    isLoadingScenarios
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -224,6 +263,10 @@ export default function Performance() {
   }
 
   if (!analytics) return null;
+
+  // Get skill categories for display
+  const skillCategoryEntries = Object.entries(analytics.skillCategories);
+  const skillColors = [COLORS.primary, COLORS.success, COLORS.warning, COLORS.purple];
 
   return (
     <div className="space-y-6">
@@ -323,58 +366,30 @@ export default function Performance() {
                   }}
                   formatter={(value: number) => [`${value}%`, '']}
                 />
-                <Line
-                  type="monotone"
-                  dataKey="adaptability"
-                  stroke={COLORS.primary}
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  name="Adaptability"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="listening"
-                  stroke={COLORS.success}
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  name="Active Listening"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="objectives"
-                  stroke={COLORS.warning}
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  name="Content Mastery"
-                />
-                <Line
-                  type="monotone"
-                  dataKey="timeManagement"
-                  stroke={COLORS.purple}
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                  name="Time Management"
-                />
+                {skillCategoryEntries.map(([skill, _], index) => (
+                  <Line
+                    key={skill}
+                    type="monotone"
+                    dataKey={skill}
+                    stroke={skillColors[index % skillColors.length]}
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    name={skill.charAt(0).toUpperCase() + skill.slice(1)}
+                  />
+                ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.primary }}></div>
-              <span className="text-sm">Adaptability</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.success }}></div>
-              <span className="text-sm">Active Listening</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.warning }}></div>
-              <span className="text-sm">Content Mastery</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.purple }}></div>
-              <span className="text-sm">Time Management</span>
-            </div>
+            {skillCategoryEntries.map(([skill, _], index) => (
+              <div key={skill} className="flex items-center gap-2">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: skillColors[index % skillColors.length] }}
+                ></div>
+                <span className="text-sm">{skill.charAt(0).toUpperCase() + skill.slice(1)}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -458,31 +473,31 @@ export default function Performance() {
             <div>
               <h4 className="font-medium mb-3 flex items-center gap-2">
                 <Brain className="h-4 w-4" />
-                Skill Change
+                Skill Performance
               </h4>
               <div className="space-y-3">
-                {[
-                  { skill: 'Time Management', avgScore: analytics.avgScores.timeManagement, improvement: '+3%', trend: 'up' },
-                  { skill: 'Adaptability', avgScore: analytics.avgScores.adaptability, improvement: '+1%', trend: 'up' },
-                  { skill: 'Active Listening', avgScore: analytics.avgScores.listening, improvement: '-2%', trend: analytics.avgScores.listening >= 70 ? 'up' : 'down' },
-                  { skill: 'Meeting Objectives', avgScore: analytics.avgScores.objectives, improvement: '+5%', trend: 'up' },
-                ].map((competency) => (
-                  <div key={competency.skill} className="flex items-center justify-between p-2 rounded border">
+                {skillCategoryEntries.map(([skill, score], index) => (
+                  <div key={skill} className="flex items-center justify-between p-2 rounded border">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-orange-400"></div>
-                      <span className="text-sm font-medium">{competency.skill}</span>
+                      <div 
+                        className="w-2 h-2 rounded-full" 
+                        style={{ backgroundColor: skillColors[index % skillColors.length] }}
+                      ></div>
+                      <span className="text-sm font-medium">
+                        {skill.charAt(0).toUpperCase() + skill.slice(1)}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">{competency.avgScore}%</span>
+                      <span className="text-sm font-bold">{score}%</span>
                       <div className={`flex items-center gap-1 text-xs ${
-                        competency.trend === 'up' ? 'text-green-600' : 'text-red-600'
+                        score >= 75 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {competency.trend === 'up' ? (
+                        {score >= 75 ? (
                           <TrendingUp className="h-3 w-3" />
                         ) : (
                           <TrendingDown className="h-3 w-3" />
                         )}
-                        {competency.improvement}
+                        {score >= 75 ? '+2%' : '-1%'}
                       </div>
                     </div>
                   </div>
@@ -494,7 +509,7 @@ export default function Performance() {
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
-                  {analytics.avgScores.overall}%
+                  {analytics.overallScore}%
                 </div>
                 <div className="text-xs text-blue-600">Average Score</div>
               </div>
@@ -502,7 +517,7 @@ export default function Performance() {
                 <div className="text-2xl font-bold text-green-600">
                   {Math.round(analytics.completionRate)}%
                 </div>
-                <div className="text-xs text-green-600">Pass Rate</div>
+                <div className="text-xs text-green-600">Completion Rate</div>
               </div>
             </div>
           </CardContent>

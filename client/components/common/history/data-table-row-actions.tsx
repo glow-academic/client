@@ -8,21 +8,19 @@ import Link from "next/link";
 interface DataTableRowActionsProps {
   id: string;
   completed: boolean;
-  isAdmin?: boolean;
-  viewMode?: "chats" | "attempts";
+  showChats?: boolean;
 }
 
 export function DataTableRowActions({
   id,
   completed,
-  isAdmin = false,
-  viewMode = "chats",
+  showChats = false,
 }: DataTableRowActionsProps) {
   // For non-admin view, render a simple button instead of dropdown
-  if (!isAdmin) {
+  if (showChats) {
     if (!completed) {
       return (
-        <Link href={`/${viewMode === "chats" ? "c" : "a"}/${id}`}>
+        <Link href={`/a/${id}`}>
           <Button variant="outline" size="sm" className="h-8">
             Continue
           </Button>
@@ -30,7 +28,7 @@ export function DataTableRowActions({
       );
     } else {
       return (
-        <Link href={`/${viewMode === "chats" ? "c" : "a"}/${id}`}>
+        <Link href={`/c/${id}`}>
           <Button variant="outline" size="sm" className="h-8">
             View
           </Button>
@@ -39,7 +37,7 @@ export function DataTableRowActions({
     }
   } else {
     return (
-      <Link href={`/${viewMode === "chats" ? "c" : "a"}/${id}`}>
+      <Link href={`/a/${id}`}>
         <Button variant="outline" size="sm" className="h-8">
           View
         </Button>

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import ScenarioDetails from '@/components/create/scenarios/ScenarioDetails';
+import ScenarioDetails from '@/components/create/simulations/SimulationDetails';
 
 // Mock external dependencies
 

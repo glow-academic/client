@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-09T15:00:45.520Z
+Generated on: 2025-06-09T16:18:44.257Z
 
 ## Summary
-- **Total Components**: 78
+- **Total Components**: 79
 - **Tests Created**: 0
-- **Tests Updated**: 78
-- **Tests Skipped** (already implemented): 0
+- **Tests Updated**: 76
+- **Tests Skipped** (already implemented): 3
 
 ## Component Coverage
 
@@ -25,9 +25,9 @@ Generated on: 2025-06-09T15:00:45.520Z
 | Rubric | Rubric.tsx | Rubric.test.tsx | ❌ Needs Implementation |
 | Simulation | Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
 | Logs | analytics/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
-| Overview | analytics/Overview.tsx | Overview.test.tsx | ❌ Needs Implementation |
-| Performance | analytics/Performance.tsx | Performance.test.tsx | ❌ Needs Implementation |
-| Reports | analytics/Reports.tsx | Reports.test.tsx | ❌ Needs Implementation |
+| Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
+| Performance | analytics/Performance.tsx | Performance.test.tsx | ✅ Implemented |
+| Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | app-sidebar | app-sidebar.tsx | app-sidebar.test.tsx | ❌ Needs Implementation |
 | ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ❌ Needs Implementation |
 | ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ❌ Needs Implementation |
@@ -40,6 +40,7 @@ Generated on: 2025-06-09T15:00:45.520Z
 | scenarios-content | common/admin/scenarios-content.tsx | scenarios-content.test.tsx | ❌ Needs Implementation |
 | simulations-content | common/admin/simulations-content.tsx | simulations-content.test.tsx | ❌ Needs Implementation |
 | student-management-content | common/admin/student-management-content.tsx | student-management-content.test.tsx | ❌ Needs Implementation |
+| SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ❌ Needs Implementation |
 | columns | common/history/columns.tsx | columns.test.tsx | ❌ Needs Implementation |
 | data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ❌ Needs Implementation |
 | data-table-faceted-filter | common/history/data-table-faceted-filter.tsx | data-table-faceted-filter.test.tsx | ❌ Needs Implementation |
@@ -128,6 +129,7 @@ __tests__/
 │   │   ├── simulations-content.test.tsx
 │   │   ├── student-management-content.test.tsx
 │   ├── history/
+│   │   ├── SimulationHistory.test.tsx
 │   │   ├── columns.test.tsx
 │   │   ├── data-table-column-header.test.tsx
 │   │   ├── data-table-faceted-filter.test.tsx

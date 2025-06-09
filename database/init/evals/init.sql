@@ -52,7 +52,7 @@ CREATE TABLE eval_runs (
   );
 
 
-  CREATE TABLE eval_chat_rubrics (
+  CREATE TABLE eval_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     passed     BOOLEAN     NOT NULL,
@@ -62,11 +62,11 @@ CREATE TABLE eval_runs (
     eval_chat_id   UUID        NOT NULL REFERENCES eval_chats(id)  ON DELETE CASCADE
   );
 
-  CREATE TABLE eval_chat_standards (
+  CREATE TABLE eval_chat_feedbacks (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
-    eval_chat_rubric_id   UUID        NOT NULL REFERENCES eval_chat_rubrics(id)  ON DELETE CASCADE,
+    eval_chat_grade_id   UUID        NOT NULL REFERENCES eval_chat_grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
     feedback TEXT
   );
@@ -121,7 +121,7 @@ INSERT INTO eval_messages (id, chat_id, query, response, completed) VALUES
   ('ddd00007-5555-6666-7777-888888888888', 'cbab0006-3333-4444-5555-666666666666', 'Why is the SAT problem NP-complete?', 'Are you KIDDING me?! This NP-completeness stuff is SO confusing! Why does everything have to be so complicated?!', false);
 
 -- Insert Eval Chat Rubrics (Custom rubric grades for each eval chat)
-INSERT INTO eval_chat_rubrics (id, passed, score, time_taken, rubric_id, eval_chat_id) VALUES
+INSERT INTO eval_chat_grades (id, passed, score, time_taken, rubric_id, eval_chat_id) VALUES
   -- CS 180 Student Behavior Evaluation chats
   ('dddd0001-1111-2222-3333-444444444444', true, 85, 1200, '11111111-1111-1111-1111-111111111111', 'cbab0001-1111-2222-3333-444444444444'),
   ('dddd0002-1111-2222-3333-444444444444', true, 92, 1450, '11111111-1111-1111-1111-111111111111', 'cbab0002-1111-2222-3333-444444444444'),
@@ -135,8 +135,8 @@ INSERT INTO eval_chat_rubrics (id, passed, score, time_taken, rubric_id, eval_ch
   ('dddd0006-1111-2222-3333-444444444444', true, 94, 1800, '22222222-2222-2222-2222-222222222222', 'cbab0006-3333-4444-5555-666666666666'),
   ('dddd0007-1111-2222-3333-444444444444', true, 81, 1350, '22222222-2222-2222-2222-222222222222', 'cbab0007-3333-4444-5555-666666666666');
 
--- Insert Sample Eval Chat Standards (showing detailed grading breakdown)
-INSERT INTO eval_chat_standards (id, standard_id, eval_chat_rubric_id, total, feedback) VALUES
+-- Insert Sample Eval Chat Feedbacks (showing detailed grading breakdown)
+INSERT INTO eval_chat_feedbacks (id, standard_id, eval_chat_grade_id, total, feedback) VALUES
   -- Standards for dddd0001 (Aggressive Student - AI Student rubric)
   ('eeee0001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 11, 'Perfect aggressive personality consistency - used caps and frustration effectively'),
   ('eeee0002-1111-2222-3333-444444444444', '22222222-aaaa-bbbb-cccc-111111111111', 'dddd0001-1111-2222-3333-444444444444', 12, 'Excellent emotional escalation pattern typical of aggressive students'),

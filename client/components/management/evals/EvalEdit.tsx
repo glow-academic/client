@@ -5,6 +5,6 @@
  * 06/07/2025
  */
 
-export default function EvalEdit() {
+export default function EvalEdit({ evalId }: { evalId: string }) {
     return <div>EvalEdit</div>;
   }

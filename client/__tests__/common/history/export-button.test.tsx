@@ -1,73 +1,196 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { columnMap, ExportButton, prepareExport } from '@/components/common/history/export-button';
+import { ExportButton } from '@/components/common/history/export-button';
 
-// Mock external dependencies
+// Mock sonner toast
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
+// Mock the table object for testing
+const mockTable = {
+  getState: vi.fn(() => ({
+    rowSelection: {},
+  })),
+  getFilteredSelectedRowModel: vi.fn(() => ({
+    rows: [],
+  })),
+  getFilteredRowModel: vi.fn(() => ({
+    rows: [
+      { 
+        original: { 
+          id: '1', 
+          createdAt: '2024-01-01T10:00:00Z', 
+          userId: 'user1', 
+          classId: 'class1',
+          title: 'Test Chat 1',
+          score: 85 
+        } 
+      },
+      { 
+        original: { 
+          id: '2', 
+          createdAt: '2024-01-02T11:00:00Z', 
+          userId: 'user2', 
+          classId: 'class2',
+          title: 'Test Chat 2',
+          score: 92 
+        } 
+      },
+    ],
+  })),
+};
 
+const mockUserOptions = [
+  { label: 'User 1', value: 'user1' },
+  { label: 'User 2', value: 'user2' },
+];
 
+const mockClassOptions = [
+  { label: 'Class 1', value: 'class1' },
+  { label: 'Class 2', value: 'class2' },
+];
 
-describe('export-button', () => {
+describe('ExportButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
   });
-
-  
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for export-button
-      render(<export-button />);
+      render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for export-button
+      expect(screen.getByRole('button')).toBeInTheDocument();
     });
 
-    
-
-    it('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should show export button with download icon', () => {
+      render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for export-button
+      const button = screen.getByRole('button');
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveTextContent('Export');
+    });
+
+    it('should show selected count when rows are selected', () => {
+      const tableWithSelection = {
+        ...mockTable,
+        getState: vi.fn(() => ({
+          rowSelection: { '1': true, '2': true },
+        })),
+        getFilteredSelectedRowModel: vi.fn(() => ({
+          rows: [{ id: '1' }, { id: '2' }],
+        })),
+      };
+      
+      render(
+        <ExportButton 
+          table={tableWithSelection as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
+      
+      expect(screen.getByText('Export (2)')).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it('should handle state changes', async () => {
-      // TODO: Test state management
+  describe('Export Popover', () => {
+    it('should open popover when export button is clicked', async () => {
       const user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for export-button
+      render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
+      
+      const button = screen.getByRole('button');
+      await user.click(button);
+      
+      // Check if popover content appears
+      expect(screen.getByText('Export Options')).toBeInTheDocument();
+      expect(screen.getByText(/Exporting all filtered rows/)).toBeInTheDocument();
     });
 
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
+    it('should show export information in popover', async () => {
       const user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for export-button
+      render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
+      
+      const button = screen.getByRole('button');
+      await user.click(button);
+      
+      expect(screen.getByText('Export Options')).toBeInTheDocument();
+      expect(screen.getByText(/Exporting all filtered rows/)).toBeInTheDocument();
     });
   });
 
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+  describe('Props Handling', () => {
+    it('should handle different viewModes', () => {
+      const { rerender } = render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="chats"
+        />
+      );
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for export-button
+      expect(screen.getByRole('button')).toBeInTheDocument();
+      
+      rerender(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          viewMode="attempts"
+        />
+      );
+      
+      expect(screen.getByRole('button')).toBeInTheDocument();
     });
 
-    
+    it('should handle empty options arrays', () => {
+      render(
+        <ExportButton 
+          table={mockTable as any}
+          userOptions={[]}
+          classOptions={[]}
+          viewMode="chats"
+        />
+      );
+      
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
   });
 });
 

@@ -44,7 +44,7 @@ CREATE TABLE simulation_messages (
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
-CREATE TABLE simulation_chat_rubrics (
+CREATE TABLE simulation_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     passed     BOOLEAN     NOT NULL,
@@ -54,11 +54,11 @@ CREATE TABLE simulation_chat_rubrics (
     simulation_chat_id   UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE
   );
 
-  CREATE TABLE simulation_chat_standards (
+  CREATE TABLE simulation_chat_feedbacks (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     standard_id   UUID        NOT NULL REFERENCES standards(id)  ON DELETE CASCADE,
-    simulation_chat_rubric_id   UUID        NOT NULL REFERENCES simulation_chat_rubrics(id)  ON DELETE CASCADE,
+    simulation_chat_grade_id   UUID        NOT NULL REFERENCES simulation_chat_grades(id)  ON DELETE CASCADE,
     total INTEGER     NOT NULL,
     feedback TEXT
   );
@@ -176,7 +176,7 @@ INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, 
   ('a5e5b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NULL, 'Guest Theory Challenge', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'a5e5b003-1111-2222-3333-444444444444');
 
 -- Insert Simulation Chat Rubrics (Custom rubric grades for each simulation chat)
-INSERT INTO simulation_chat_rubrics (id, passed, score, time_taken, rubric_id, simulation_chat_id) VALUES
+INSERT INTO simulation_chat_grades (id, passed, score, time_taken, rubric_id, simulation_chat_id) VALUES
   -- CS 180 chats
   ('bbbb0001-1111-2222-3333-444444444444', true, 78, 1400, '11111111-1111-1111-1111-111111111111', 'f1e2d3c4-b5a6-47f8-9e00-111111111111'),
   ('bbbb0002-1111-2222-3333-444444444444', true, 82, 1600, '22222222-2222-2222-2222-222222222222', 'f1e2d3c4-b5a6-47f8-9e00-222222222222'),
@@ -217,8 +217,8 @@ INSERT INTO simulation_chat_rubrics (id, passed, score, time_taken, rubric_id, s
   ('bbbb0025-1111-2222-3333-444444444444', true, 72, 1150, '11111111-1111-1111-1111-111111111111', 'a5e5b002-aaaa-bbbb-cccc-222222222222'),
   ('bbbb0026-1111-2222-3333-444444444444', false, 67, 1050, '22222222-2222-2222-2222-222222222222', 'a5e5b003-aaaa-bbbb-cccc-333333333333');
 
--- Insert Sample Simulation Chat Standards (showing detailed grading breakdown)
-INSERT INTO simulation_chat_standards (id, standard_id, simulation_chat_rubric_id, total, feedback) VALUES
+-- Insert Sample Simulation Chat Feedbacks (showing detailed grading breakdown)
+INSERT INTO simulation_chat_feedbacks (id, standard_id, simulation_chat_grade_id, total, feedback) VALUES
   -- Standards for bbbb0001 (AI Student rubric)
   ('cccc0001-1111-2222-3333-444444444444', '11111111-aaaa-bbbb-cccc-111111111111', 'bbbb0001-1111-2222-3333-444444444444', 10, 'Excellent consistency in aggressive personality - used caps and exclamation points effectively'),
   ('cccc0002-1111-2222-3333-444444444444', '33333333-aaaa-bbbb-cccc-111111111111', 'bbbb0001-1111-2222-3333-444444444444', 13, 'Showed realistic learning progression from confusion to understanding'),

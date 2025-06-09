@@ -5,6 +5,6 @@
  * 06/07/2025
  */
 
-export default function EvalDetails() {
+export default function EvalDetails({ evalId }: { evalId: string }) {
     return <div>EvalDetails</div>;
   }

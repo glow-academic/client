@@ -16,34 +16,30 @@ export const getSectionRoute = (section: string): string => {
       return '/rubric';
     
     // Analytics routes
-    case 'analytics':
+    case 'overview':
       return '/analytics';
     case 'performance':
       return '/analytics/performance';
-    case 'leaderboard':
-      return '/analytics/leaderboard';
+    case 'reports':
+      return '/analytics/reports';
     case 'logs':
       return '/analytics/logs';
     
     // Simulations routes
     case 'simulations':
       return '/simulations';
-    case 'agents':
-      return '/simulations/agents';
-    case 'scenarios':
-      return '/simulations/scenarios';
+    case 'rubrics':
+      return '/simulations/rubrics';
     
     // Classes routes
-    case 'classes':
-      return '/classes';
+    case 'new-class':
+      return '/classes/new';
     
     // Management routes
-    case 'management':
-      return '/management/staff'; // Default to staff
     case 'staff':
       return '/management/staff';
-    case 'reports':
-      return '/management/reports';
+    case 'agents':
+      return '/management/agents';
     case 'evals':
       return '/management/evals';
     

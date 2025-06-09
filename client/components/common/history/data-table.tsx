@@ -34,8 +34,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   userOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
-  isAdmin?: boolean;
-  viewMode?: 'chats' | 'attempts';
+  showChats?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -43,8 +42,7 @@ export function DataTable<TData, TValue>({
   data,
   userOptions,
   classOptions,
-  isAdmin = false,
-  viewMode,
+  showChats,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -105,10 +103,8 @@ export function DataTable<TData, TValue>({
         table={table}
         userOptions={userOptions}
         classOptions={classOptions}
-        isAdmin={isAdmin}
         dateRange={dateRange}
         setDateRange={setDateRange}
-        viewMode={viewMode}
       />
       <div className="rounded-md border">
         <Table>
@@ -138,7 +134,7 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className={!isAdmin ? "pl-6" : ""}>
+                    <TableCell key={cell.id} className={!showChats ? "pl-6" : ""}>
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext(),
@@ -151,7 +147,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className={`h-24 text-center ${!isAdmin ? "pl-6" : ""}`}
+                  className={`h-24 text-center ${!showChats ? "pl-6" : ""}`}
                 >
                   No results.
                 </TableCell>
@@ -160,7 +156,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} isAdmin={isAdmin} />
+      <DataTablePagination table={table} showChats={showChats || false} />
     </div>
   );
 }

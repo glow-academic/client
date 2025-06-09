@@ -245,7 +245,7 @@ export const simulationMessages = pgTable("simulation_messages", {
 		}).onDelete("cascade"),
 ]);
 
-export const simulationChatRubrics = pgTable("simulation_chat_rubrics", {
+export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	passed: boolean().notNull(),
@@ -257,32 +257,32 @@ export const simulationChatRubrics = pgTable("simulation_chat_rubrics", {
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
-			name: "simulation_chat_rubrics_rubric_id_fkey"
+			name: "simulation_chat_grades_rubric_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.simulationChatId],
 			foreignColumns: [simulationChats.id],
-			name: "simulation_chat_rubrics_simulation_chat_id_fkey"
+			name: "simulation_chat_grades_simulation_chat_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const simulationChatStandards = pgTable("simulation_chat_standards", {
+export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	standardId: uuid("standard_id").notNull(),
-	simulationChatRubricId: uuid("simulation_chat_rubric_id").notNull(),
+	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
 	total: integer().notNull(),
 	feedback: text(),
 }, (table) => [
 	foreignKey({
 			columns: [table.standardId],
 			foreignColumns: [standards.id],
-			name: "simulation_chat_standards_standard_id_fkey"
+			name: "simulation_chat_feedbacks_standard_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.simulationChatRubricId],
-			foreignColumns: [simulationChatRubrics.id],
-			name: "simulation_chat_standards_simulation_chat_rubric_id_fkey"
+			columns: [table.simulationChatGradeId],
+			foreignColumns: [simulationChatGrades.id],
+			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -383,7 +383,7 @@ export const evalMessages = pgTable("eval_messages", {
 		}).onDelete("cascade"),
 ]);
 
-export const evalChatRubrics = pgTable("eval_chat_rubrics", {
+export const evalChatGrades = pgTable("eval_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	passed: boolean().notNull(),
@@ -395,31 +395,31 @@ export const evalChatRubrics = pgTable("eval_chat_rubrics", {
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
-			name: "eval_chat_rubrics_rubric_id_fkey"
+			name: "eval_chat_grades_rubric_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.evalChatId],
 			foreignColumns: [evalChats.id],
-			name: "eval_chat_rubrics_eval_chat_id_fkey"
+			name: "eval_chat_grades_eval_chat_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
-export const evalChatStandards = pgTable("eval_chat_standards", {
+export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	standardId: uuid("standard_id").notNull(),
-	evalChatRubricId: uuid("eval_chat_rubric_id").notNull(),
+	evalChatGradeId: uuid("eval_chat_grade_id").notNull(),
 	total: integer().notNull(),
 	feedback: text(),
 }, (table) => [
 	foreignKey({
 			columns: [table.standardId],
 			foreignColumns: [standards.id],
-			name: "eval_chat_standards_standard_id_fkey"
+			name: "eval_chat_feedbacks_standard_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.evalChatRubricId],
-			foreignColumns: [evalChatRubrics.id],
-			name: "eval_chat_standards_eval_chat_rubric_id_fkey"
+			columns: [table.evalChatGradeId],
+			foreignColumns: [evalChatGrades.id],
+			name: "eval_chat_feedbacks_eval_chat_grade_id_fkey"
 		}).onDelete("cascade"),
 ]);

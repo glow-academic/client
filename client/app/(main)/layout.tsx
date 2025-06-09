@@ -23,12 +23,13 @@ import { UnifiedSidebar } from "@/components/common/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
 import { RoleProvider } from "@/components/role-context";
 import { ViewModeProvider } from "@/contexts/view-mode-context";
-import { getUser } from "@/utils/queries/get-user";
-import { getClass } from "@/utils/queries/get-class";
-import { deleteClass } from "@/utils/mutations/delete-class";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { getUser } from "@/utils/queries/users/get-user";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { deleteClass } from "@/utils/mutations/classes/delete-class";
 
 export default function MainLayout({
   children,
@@ -42,6 +43,7 @@ export default function MainLayout({
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
+  const { userId } = useAuth();
 
   // Extract classId from edit page path or new class status page path
   const classEditPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)\/edit$/);
@@ -53,8 +55,9 @@ export default function MainLayout({
 
   // Fetch user data for role context
   const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(),
+    queryKey: ["user", userId],
+    queryFn: () => getUser(userId!),
+    enabled: !!userId,
   });
 
   // Fetch class data for delete confirmation
@@ -88,17 +91,13 @@ export default function MainLayout({
 
   const handleDeleteClass = async () => {
     if (!classId) return;
-    
+
     setIsDeleting(true);
     try {
-      const result = await deleteClass(classId);
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-        toast.success("Class deleted successfully!");
-        router.push('/classes');
-      } else {
-        toast.error(`Failed to delete class: ${result.error}`);
-      }
+      await deleteClass(classId);
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      toast.success("Class deleted successfully!");
+      router.push('/classes');
     } catch (error) {
       toast.error(`Failed to delete class: ${error instanceof Error ? error.message : "Unknown error"}`);
       console.error("Error deleting class:", error);
@@ -120,22 +119,22 @@ export default function MainLayout({
       return (
         <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
           <Pencil className="h-4 w-4 mr-2" />
-          Edit Class  
+          Edit Class
         </Button>
       );
     }
-    
+
     // Check for new class status page pattern: /classes/new/[classId]
     if (newClassPageMatch) {
       const classId = newClassPageMatch[1];
       return (
         <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
           <Pencil className="h-4 w-4 mr-2" />
-          Edit Class  
+          Edit Class
         </Button>
       );
     }
-    
+
     // Check for class edit page pattern: /classes/c/[classId]/edit
     if (classEditPageMatch && classData) {
       return (
@@ -168,7 +167,7 @@ export default function MainLayout({
         </AlertDialog>
       );
     }
-    
+
     if (pathname.startsWith('/simulations')) {
       return (
         <Button onClick={() => router.push('/simulations/new')} size="sm">
@@ -177,7 +176,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/simulations/agents')) {
       return (
         <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
@@ -186,7 +185,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/simulations/scenarios')) {
       return (
         <Button onClick={() => router.push('/simulations/scenarios/new')} size="sm">
@@ -195,7 +194,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/classes')) {
       return (
         <Button onClick={() => router.push('/classes/new')} size="sm">
@@ -204,7 +203,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/management/instructional')) {
       return (
         <Button onClick={() => router.push('/management/instructional/new')} size="sm">
@@ -213,7 +212,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/management/instructor')) {
       return (
         <Button onClick={() => router.push('/management/instructor/new')} size="sm">
@@ -222,7 +221,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     if (pathname.startsWith('/management/ta')) {
       return (
         <Button onClick={() => router.push('/management/ta/new')} size="sm">
@@ -231,7 +230,7 @@ export default function MainLayout({
         </Button>
       );
     }
-    
+
     return null;
   };
 
@@ -249,7 +248,7 @@ export default function MainLayout({
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs 
+              <NavigationBreadcrumbs
                 breadcrumbs={breadcrumbs}
                 onSectionChange={handleSectionChange}
                 rightContent={viewModeToggle}

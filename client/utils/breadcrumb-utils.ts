@@ -1,10 +1,10 @@
-import { getClass } from "@/utils/queries/get-class";
-import { getAttempt } from "@/utils/queries/get-attempt";
-import { getScenario } from "@/utils/queries/get-scenario";
-import { getAgent } from "@/utils/queries/get-agent";
-import { getSimulation } from "@/utils/queries/get-simulation";
-import { getChat } from "@/utils/queries/get-chat";
-import { getUserById } from "./queries/get-user-by-id";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulationAttempt";
+import { getSimulationChat } from "@/utils/queries/simulation_chats/get-simulationChat";
+import { getUser } from "@/utils/queries/users/get-user";
 
 
 interface BreadcrumbItem {
@@ -26,7 +26,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return classData?.classCode || `Class ${id.substring(0, 8)}...`;
       
       case 'attempt':
-        const attemptData = await getAttempt(id);
+        const attemptData = await getSimulationAttempt(id);
         // get simulation for attempt
         const attemptSimulation = await getSimulation(attemptData?.simulationId);
         // Attempts don't have a title, so we'll use a generic name with timestamp
@@ -45,11 +45,11 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
       
       case 'chat':
-        const chatData = await getChat(id);
+        const chatData = await getSimulationChat(id);
         return chatData?.title || `Chat ${id.substring(0, 8)}...`;
       
       case 'user':
-        const userData = await getUserById(id);
+        const userData = await getUser(id);
         return userData?.name || `User ${id.substring(0, 8)}...`;
       
       default:

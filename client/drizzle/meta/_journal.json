@@ -29,6 +29,20 @@
       "when": 1749481062856,
       "tag": "0003_yielding_darkhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1749482667218,
+      "tag": "0004_windy_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1749482864100,
+      "tag": "0005_light_puff_adder",
+      "breakpoints": true
     }
   ]
 }

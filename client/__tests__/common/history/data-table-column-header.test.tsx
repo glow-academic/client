@@ -3,53 +3,168 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { DataTableColumnHeader } from '@/components/common/history/data-table-column-header';
 
-// Mock external dependencies
+// Mock the column object for testing
+const mockColumn = {
+  getCanSort: vi.fn(() => true),
+  getIsSorted: vi.fn(() => false),
+  toggleSorting: vi.fn(),
+  toggleVisibility: vi.fn(),
+};
 
+const mockNonSortableColumn = {
+  getCanSort: vi.fn(() => false),
+  getIsSorted: vi.fn(() => false),
+  toggleSorting: vi.fn(),
+  toggleVisibility: vi.fn(),
+};
 
-
-
-describe('data-table-column-header', () => {
+describe('DataTableColumnHeader', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    
   });
-
-  
 
   describe('Rendering', () => {
-    it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for data-table-column-header
-      render(<data-table-column-header />);
+    it('should render without crashing for sortable column', () => {
+      render(
+        <DataTableColumnHeader 
+          column={mockColumn as any} 
+          title="Test Column" 
+        />
+      );
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for data-table-column-header
+      expect(screen.getByText('Test Column')).toBeInTheDocument();
     });
 
-    
-
-    it('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should render simple div for non-sortable column', () => {
+      render(
+        <DataTableColumnHeader 
+          column={mockNonSortableColumn as any} 
+          title="Non-sortable Column" 
+        />
+      );
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for data-table-column-header
+      expect(screen.getByText('Non-sortable Column')).toBeInTheDocument();
+      expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    });
+
+    it('should apply showChats styling when showChats is true', () => {
+      const { container } = render(
+        <DataTableColumnHeader 
+          column={mockNonSortableColumn as any} 
+          title="Test Column"
+          showChats={true}
+        />
+      );
+      
+      const div = container.firstChild as HTMLElement;
+      expect(div).toHaveClass('pl-4');
+    });
+
+    it('should render dropdown menu for sortable columns', () => {
+      render(
+        <DataTableColumnHeader 
+          column={mockColumn as any} 
+          title="Sortable Column" 
+        />
+      );
+      
+      expect(screen.getByRole('button')).toBeInTheDocument();
     });
   });
 
-  
-
-  
-
-  
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
+  describe('User Interactions', () => {
+    it('should handle ascending sort click', async () => {
+      const user = userEvent.setup();
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for data-table-column-header
+      render(
+        <DataTableColumnHeader 
+          column={mockColumn as any} 
+          title="Test Column" 
+        />
+      );
+      
+      const button = screen.getByRole('button');
+      await user.click(button);
+      
+      const ascOption = screen.getByText('Asc');
+      await user.click(ascOption);
+      
+      expect(mockColumn.toggleSorting).toHaveBeenCalledWith(false);
     });
 
-    
+    it('should handle descending sort click', async () => {
+      const user = userEvent.setup();
+      
+      render(
+        <DataTableColumnHeader 
+          column={mockColumn as any} 
+          title="Test Column" 
+        />
+      );
+      
+      const button = screen.getByRole('button');
+      await user.click(button);
+      
+      const descOption = screen.getByText('Desc');
+      await user.click(descOption);
+      
+      expect(mockColumn.toggleSorting).toHaveBeenCalledWith(true);
+    });
+
+    it('should handle hide column click', async () => {
+      const user = userEvent.setup();
+      
+      render(
+        <DataTableColumnHeader 
+          column={mockColumn as any} 
+          title="Test Column" 
+        />
+      );
+      
+      const button = screen.getByRole('button');
+      await user.click(button);
+      
+      const hideOption = screen.getByText('Hide');
+      await user.click(hideOption);
+      
+      expect(mockColumn.toggleVisibility).toHaveBeenCalledWith(false);
+    });
+  });
+
+  describe('Sort State Display', () => {
+    it('should show ascending arrow when sorted ascending', () => {
+      const ascColumn = {
+        ...mockColumn,
+        getIsSorted: vi.fn(() => 'asc'),
+      };
+      
+      render(
+        <DataTableColumnHeader 
+          column={ascColumn as any} 
+          title="Test Column" 
+        />
+      );
+      
+      // ArrowUp icon should be present
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    it('should show descending arrow when sorted descending', () => {
+      const descColumn = {
+        ...mockColumn,
+        getIsSorted: vi.fn(() => 'desc'),
+      };
+      
+      render(
+        <DataTableColumnHeader 
+          column={descColumn as any} 
+          title="Test Column" 
+        />
+      );
+      
+      // ArrowDown icon should be present
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
   });
 });
 

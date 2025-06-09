@@ -63,7 +63,7 @@ describe('Logs', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useTaskColumns, userOptions
+ * - Uses hooks: useTaskColumns
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

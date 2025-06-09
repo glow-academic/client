@@ -1,8 +1,11 @@
+/**
+ * app/(main)/classes/page.tsx
+ * Classes page. Redirects to new class page.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
 "use client";
 
-/**
- * Classes page. This is the main page for the classes section.
- */
 import { redirect } from "next/navigation";
 
 export default function ClassesPage() {

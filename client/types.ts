@@ -14,14 +14,14 @@ import {
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
-  simulationChatRubrics as SimulationChatRubrics,
-  simulationChatStandards as SimulationChatStandards,
+  simulationChatGrades as SimulationChatGrades,
+  simulationChatFeedbacks as SimulationChatFeedbacks,
   evals as Evals,
   evalRuns as EvalRuns,
   evalChats as EvalChats,
   evalMessages as EvalMessages,
-  evalChatRubrics as EvalChatRubrics,
-  evalChatStandards as EvalChatStandards,
+  evalChatGrades as EvalChatGrades,
+  evalChatFeedbacks as EvalChatFeedbacks,
   agentType, classTerm, documentType, evalType, seniorityLevels, userRole
 } from "@/drizzle/schema";
 
@@ -41,14 +41,14 @@ type Scenario = typeof Scenarios.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
-type SimulationChatRubric = typeof SimulationChatRubrics.$inferSelect;
-type SimulationChatStandard = typeof SimulationChatStandards.$inferSelect;
+type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
+type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type Eval = typeof Evals.$inferSelect;
 type EvalRun = typeof EvalRuns.$inferSelect;
 type EvalChat = typeof EvalChats.$inferSelect;
 type EvalMessage = typeof EvalMessages.$inferSelect;
-type EvalChatRubric = typeof EvalChatRubrics.$inferSelect;
-type EvalChatStandard = typeof EvalChatStandards.$inferSelect;
+type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
+type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 
 type AgentType = (typeof agentType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
@@ -73,14 +73,14 @@ export type {
   SimulationAttempt,
   SimulationChat,
   SimulationMessage,
-  SimulationChatRubric,
-  SimulationChatStandard,
+  SimulationChatGrade,
+  SimulationChatFeedback,
   Eval,
   EvalRun,
   EvalChat,
   EvalMessage,
-  EvalChatRubric,
-  EvalChatStandard,
+  EvalChatGrade,
+  EvalChatFeedback,
   AgentType,
   ClassTerm,
   DocumentType,

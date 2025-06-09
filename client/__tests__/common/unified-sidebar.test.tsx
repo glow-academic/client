@@ -139,7 +139,7 @@ describe('unified-sidebar', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useQuery, useRouter, user, useRole, userRole, userIndex, useState, useMemo, users, username
+ * - Uses hooks: useQuery, useRouter, useRole, useAuth, users, user, userRole, userIndex, useState, userId, useMemo, username
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false

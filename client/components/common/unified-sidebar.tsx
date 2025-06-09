@@ -3,11 +3,7 @@ import { ChevronRight, Home, BookOpen, FileText, GraduationCap, MessageSquare, S
 import { useQuery } from "@tanstack/react-query"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-
-import { getClasses } from "@/utils/queries/get-classes"
-import { getUser } from "@/utils/queries/get-user"
 import { logout } from "@/utils/auth/logout"
-import { getAttempts } from "@/utils/queries/get-attempts"
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils"
 import { useRole } from "@/components/role-context"
 import {
@@ -39,6 +35,9 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
+import { useAuth } from "@/hooks/use-auth"
+import { getUser } from "@/utils/queries/users/get-user"
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes"
 
 type UserRole = 'admin' | 'instructional' | 'instructor' | 'ta'
 
@@ -116,24 +115,19 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
 
   // Use the role context instead of local state
   const { effectiveRole, setRole, isGuestMode } = useRole();
+  const { userId } = useAuth();
 
   // Fetch user data
   const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(),
+    queryKey: ["user", userId],
+    queryFn: () => getUser(userId!),
+    enabled: !!userId,
   });
 
   // Fetch classes for dynamic menu
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
-    queryFn: () => getClasses(),
-  });
-
-  // Fetch attempts with chats for guest mode
-  const { data: _guestAttempts = [] } = useQuery({
-    queryKey: ["attempts"],
-    queryFn: () => getAttempts(),
-    enabled: effectiveRole === 'guest',
+    queryFn: () => getAllClasses(),
   });
 
   // Get available modes based on user role
@@ -233,7 +227,7 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
           {
             title: "Overview",
             url: "#",
-            section: "analytics",
+            section: "overview",
           },
           {
             title: "Performance",
@@ -267,16 +261,6 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
             section: "simulations",
           },
           {
-            title: "Agents",
-            url: "#",
-            section: "agents",
-          },
-          {
-            title: "Scenarios",
-            url: "#",
-            section: "scenarios",
-          },
-          {
             title: "Rubrics",
             url: "#",
             section: "rubrics",
@@ -289,12 +273,6 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
       const classItems: MenuItem[] = [];
 
-      // Add general classes section
-      classItems.push({
-        title: "Dashboard",
-        url: "#",
-        section: "classes",
-      });
 
       // Add specific classes based on role
       if (availableClasses.length > 0) {
@@ -307,6 +285,13 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
           });
         });
       }
+
+      // Add general classes section
+      classItems.push({
+        title: "New Class",
+        url: "#",
+        section: "new-class",
+      });
 
       menu.push({
         title: "Classes",

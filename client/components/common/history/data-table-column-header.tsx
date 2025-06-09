@@ -15,17 +15,17 @@ interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
-  isAdmin?: boolean;
+  showChats?: boolean;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
-  isAdmin = false,
+  showChats = false ,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <div className={cn(className, !isAdmin && "pl-4")}>{title}</div>;
+    return <div className={cn(className, showChats && "pl-4")}>{title}</div>;
   }
 
   return (
@@ -37,7 +37,7 @@ export function DataTableColumnHeader<TData, TValue>({
             size="sm"
             className={cn(
               "-ml-3 h-8 data-[state=open]:bg-accent",
-              !isAdmin && "ml-1",
+              showChats && "ml-1",
             )}
           >
             <span>{title}</span>
