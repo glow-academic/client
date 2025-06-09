@@ -64,7 +64,7 @@ import {
   Sparkles,
   ChevronDown,
 } from "lucide-react";
-import DocumentViewer from "@/components/DocumentViewer";
+import DocumentViewer from "@/components/common/chat/DocumentViewer";
 
 // Queries and mutations
 import { getAgents } from "@/utils/queries/get-agents";

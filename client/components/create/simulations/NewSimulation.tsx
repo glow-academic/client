@@ -5,7 +5,7 @@
  * 06/07/2025
  */
 
-import { SimulationPlayground } from "@/components/common/playground/simulation-playground"
+import { SimulationPlayground } from "@/components/common/simulation/simulation-playground"
 
 export default function NewSimulation() {
   return <SimulationPlayground />

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
-import { SimulationSummary } from '@/components/common/playground/simulation-summary';
+import { SimulationSummary } from '@/components/common/simulation/simulation-summary';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({

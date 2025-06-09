@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { CodeViewer } from '@/components/common/playground/code-viewer';
+import { CodeViewer } from '@/components/common/simulation/code-viewer';
 
 // Mock external dependencies
 

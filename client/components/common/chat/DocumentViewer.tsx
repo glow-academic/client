@@ -13,7 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import Markdown from "@/components/Markdown";
+import Markdown from "@/components/common/chat/Markdown";
 import { getDocuments } from "@/utils/queries/get-documents";
 import Image from "next/image";
 import { FileText, Download } from "lucide-react";

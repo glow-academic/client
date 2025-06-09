@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { PresetSave } from '@/components/common/playground/preset-save';
+import { PresetSave } from '@/components/common/simulation/preset-save';
 
 // Mock external dependencies
 

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { SimulationPlayground } from '@/components/common/playground/simulation-playground';
+import { SimulationPlayground } from '@/components/common/simulation/simulation-playground';
 
 // Mock external dependencies
 

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import { UnifiedSidebar } from '@/components/common/unified-sidebar';
+import { UnifiedSidebar } from '@/components/common/layout/unified-sidebar';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({

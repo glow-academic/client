@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { TopPSelector } from '@/components/common/playground/top-p-selector';
+import { TopPSelector } from '@/components/common/simulation/top-p-selector';
 
 // Mock external dependencies
 

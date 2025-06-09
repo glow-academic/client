@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { logout } from "@/utils/auth/logout"
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils"
-import { useRole } from "@/components/role-context"
+import { useRole } from "@/contexts/role-context"
 import {
   Collapsible,
   CollapsibleContent,

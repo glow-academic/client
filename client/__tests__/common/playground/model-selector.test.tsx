@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { ModelSelector } from '@/components/common/playground/model-selector';
+import { ModelSelector } from '@/components/common/simulation/model-selector';
 
 // Mock external dependencies
 

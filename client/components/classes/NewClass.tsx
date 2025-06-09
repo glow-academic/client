@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 
 import { createClass } from "@/utils/mutations/create-class";
-import ClassForm from "@/components/ClassForm";
+import ClassForm from "@/components/common/class/ClassForm";
 
 type ProcessingStep = 'idle' | 'uploading' | 'extracting' | 'classifying' | 'complete';
 type CreationMode = 'selection' | 'manual' | 'zip';

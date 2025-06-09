@@ -19,9 +19,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UnifiedSidebar } from "@/components/common/unified-sidebar";
-import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
-import { RoleProvider } from "@/components/role-context";
+import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
+import { RoleProvider } from "@/contexts/role-context";
 import { ViewModeProvider } from "@/contexts/view-mode-context";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";

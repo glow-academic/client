@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { ReactQueryClientProvider } from '@/components/ReactQueryClientProvider';
+import { ReactQueryClientProvider } from '@/providers/ReactQueryClientProvider';
 
 // Mock external dependencies
 

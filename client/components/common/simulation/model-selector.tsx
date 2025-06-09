@@ -27,7 +27,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-import { Model, ModelType } from "@/components/common/playground/data/models"
+import { Model, ModelType } from "@/components/common/simulation/data/models"
 
 interface ModelSelectorProps extends PopoverProps {
   types: readonly ModelType[]

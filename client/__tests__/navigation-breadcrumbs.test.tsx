@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { NavigationBreadcrumbs } from '@/components/navigation-breadcrumbs';
+import { NavigationBreadcrumbs } from '@/components/common/layout/navigation-breadcrumbs';
 
 // Mock external dependencies
 

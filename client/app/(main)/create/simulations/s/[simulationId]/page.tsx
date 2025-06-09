@@ -5,7 +5,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import Simulation from "@/components/Simulation";
+import Simulation from "@/components/common/simulation/Simulation";
 
 export default function EditSimulationPage() {
   const params = useParams();

@@ -18,17 +18,17 @@ import {
 } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 
-import { CodeViewer } from "@/components/common/playground/code-viewer"
-import { MaxLengthSelector } from "@/components/common/playground/maxlength-selector"
-import { ModelSelector } from "@/components/common/playground/model-selector"
-import { PresetActions } from "@/components/common/playground/preset-actions"
-import { PresetSave } from "@/components/common/playground/preset-save"
-import { PresetSelector } from "@/components/common/playground/preset-selector"
-import { PresetShare } from "@/components/common/playground/preset-share"
-import { TemperatureSelector } from "@/components/common/playground/temperature-selector"
-import { TopPSelector } from "@/components/common/playground/top-p-selector"
-import { models, types } from "@/components/common/playground/data/models"
-import { presets } from "@/components/common/playground/data/presets"
+import { CodeViewer } from "@/components/common/simulation/code-viewer"
+import { MaxLengthSelector } from "@/components/common/simulation/maxlength-selector"
+import { ModelSelector } from "@/components/common/simulation/model-selector"
+import { PresetActions } from "@/components/common/simulation/preset-actions"
+import { PresetSave } from "@/components/common/simulation/preset-save"
+import { PresetSelector } from "@/components/common/simulation/preset-selector"
+import { PresetShare } from "@/components/common/simulation/preset-share"
+import { TemperatureSelector } from "@/components/common/simulation/temperature-selector"
+import { TopPSelector } from "@/components/common/simulation/top-p-selector"
+import { models, types } from "@/components/common/simulation/data/models"
+import { presets } from "@/components/common/simulation/data/presets"
 
 export const metadata: Metadata = {
   title: "Playground",

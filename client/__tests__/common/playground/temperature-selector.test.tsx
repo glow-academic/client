@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import { TemperatureSelector } from '@/components/common/playground/temperature-selector';
+import { TemperatureSelector } from '@/components/common/simulation/temperature-selector';
 
 // Mock external dependencies
 

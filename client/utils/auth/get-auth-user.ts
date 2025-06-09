@@ -5,9 +5,8 @@ import { users } from "@/drizzle/schema";
 import { db } from "@/utils/drizzle/database";
 import { cookies } from "next/headers";
 import jwt from "jsonwebtoken";
-import { getUser } from "../queries/users/get-user";
 
-export async function getAuthUser() {
+export async function getAuthUserId() {
   // Get the token from cookies
   const token = (await cookies()).get("auth_token")?.value;
 
@@ -21,9 +20,7 @@ export async function getAuthUser() {
       userId: string;
     };
     const userId = decoded.userId;
-
-    const user = await getUser(userId);
-    return user;
+    return userId;
   } catch (error) {
     console.error("Error verifying token:", error);
     return null;

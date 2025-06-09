@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import ClassForm from '@/components/ClassForm';
+import ClassForm from '@/components/common/class/ClassForm';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({

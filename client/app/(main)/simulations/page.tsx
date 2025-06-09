@@ -19,7 +19,7 @@ import { getAgentConfig } from "@/utils/agents";
 import { getSimulations } from "@/utils/queries/get-simulations";
 import { getInteractions } from "@/utils/queries/get-interactions";
 import { getAgents } from "@/utils/queries/get-agents";
-import { useRole } from "@/components/role-context";
+import { useRole } from "@/contexts/role-context";
 import { useViewMode } from "@/contexts/view-mode-context";
 import { useTaskColumns } from "@/components/common/history/columns";
 import { DataTable } from "@/components/common/history/data-table";

@@ -35,8 +35,8 @@ import {
   Activity,
 } from "lucide-react";
 
-import DocumentViewer from "@/components/DocumentViewer";
-import Markdown from "@/components/Markdown";
+import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import Markdown from "@/components/common/chat/Markdown";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getAttemptChats } from "@/utils/queries/get-attempt-chats";
 import { getMessages } from "@/utils/queries/get-messages";

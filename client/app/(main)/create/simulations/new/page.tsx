@@ -4,7 +4,7 @@
  */
 "use client";
 import React from "react";
-import { SimulationPlayground } from "@/components/common/playground/simulation-playground";
+import { SimulationPlayground } from "@/components/common/simulation/simulation-playground";
 
 export default function NewSimulationPage() {
   return <SimulationPlayground />;

@@ -24,7 +24,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, ExternalLink, Activity, Users } from "lucide-react";
-import Markdown from "@/components/Markdown";
+import Markdown from "@/components/common/chat/Markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getAttempt } from "@/utils/queries/get-attempt";
 import { getScenario } from "@/utils/queries/get-scenario";

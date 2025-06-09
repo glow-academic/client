@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import MarkdownImage from '@/components/MarkdownImage';
+import MarkdownImage from '@/components/common/chat/MarkdownImage';
 
 // Mock external dependencies
 

@@ -49,7 +49,7 @@ import { getAgents } from "@/utils/queries/get-agents";
 import { getDocuments } from "@/utils/queries/get-documents";
 import { updateClass } from "@/utils/mutations/update-class";
 import { createClass } from "@/utils/mutations/create-class";
-import DocumentViewer from "@/components/DocumentViewer";
+import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { cn } from "@/lib/utils";
 import { updateDocument } from "@/utils/mutations/update-document";
 interface FileUploadStatus {
