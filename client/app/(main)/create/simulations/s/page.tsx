@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function SimulationsPage() {
-    return redirect("/create/simulations");
+  return redirect("/create/simulations");
 }

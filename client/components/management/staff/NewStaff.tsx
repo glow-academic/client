@@ -30,7 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type UserRole = 'instructional' | 'instructor' | 'ta';
+type UserRole = "instructional" | "instructor" | "ta";
 
 interface CSVUser {
   name: string;
@@ -42,11 +42,11 @@ interface CSVUser {
 
 const getRoleIcon = (role: string) => {
   switch (role) {
-    case 'instructional':
+    case "instructional":
       return Shield;
-    case 'instructor':
+    case "instructor":
       return GraduationCap;
-    case 'ta':
+    case "ta":
       return User;
     default:
       return User;
@@ -55,12 +55,12 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
-    case 'instructional':
-      return 'Instructional Staff';
-    case 'instructor':
-      return 'Instructor';
-    case 'ta':
-      return 'Teaching Assistant';
+    case "instructional":
+      return "Instructional Staff";
+    case "instructor":
+      return "Instructor";
+    case "ta":
+      return "Teaching Assistant";
     default:
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
@@ -68,14 +68,14 @@ const getRoleDisplayName = (role: string) => {
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
-    case 'instructional':
-      return 'default';
-    case 'instructor':
-      return 'secondary';
-    case 'ta':
-      return 'outline';
+    case "instructional":
+      return "default";
+    case "instructor":
+      return "secondary";
+    case "ta":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 };
 
@@ -86,7 +86,7 @@ export default function NewStaff() {
     username: "",
     password: "",
     role: "" as UserRole | "",
-    classIds: [] as string[]
+    classIds: [] as string[],
   });
   const [csvFile, setCsvFile] = React.useState<File | null>(null);
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
@@ -94,13 +94,21 @@ export default function NewStaff() {
 
   // All roles are available since only admins access this screen
   const availableRoles = [
-    { value: 'instructional' as UserRole, label: 'Instructional Staff', icon: Shield },
-    { value: 'instructor' as UserRole, label: 'Instructor', icon: GraduationCap },
-    { value: 'ta' as UserRole, label: 'Teaching Assistant', icon: User },
+    {
+      value: "instructional" as UserRole,
+      label: "Instructional Staff",
+      icon: Shield,
+    },
+    {
+      value: "instructor" as UserRole,
+      label: "Instructor",
+      icon: GraduationCap,
+    },
+    { value: "ta" as UserRole, label: "Teaching Assistant", icon: User },
   ];
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -113,9 +121,9 @@ export default function NewStaff() {
       console.log("Creating staff member:", formData);
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      router.push('/management/staff');
+      router.push("/management/staff");
     } catch (error) {
       console.error("Error creating staff member:", error);
     } finally {
@@ -125,7 +133,7 @@ export default function NewStaff() {
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.type === 'text/csv') {
+    if (file && file.type === "text/csv") {
       setCsvFile(file);
       parseCSV(file);
     }
@@ -135,20 +143,28 @@ export default function NewStaff() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const text = e.target?.result as string;
-      const lines = text.split('\n').filter(line => line.trim());
+      const lines = text.split("\n").filter((line) => line.trim());
 
-      const users: CSVUser[] = lines.slice(1).map(line => {
-        const values = line.split(',').map(v => v.trim());
-        const role = values[3] as UserRole;
+      const users: CSVUser[] = lines
+        .slice(1)
+        .map((line) => {
+          const values = line.split(",").map((v) => v.trim());
+          const role = values[3] as UserRole;
 
-        return {
-          name: values[0] || '',
-          username: values[1] || '',
-          password: values[2] || '',
-          role: role,
-          classIds: values[4] ? values[4].split(';').map(id => id.trim()) : []
-        };
-      }).filter((user): user is CSVUser => Boolean(user.name) && Boolean(user.username));
+          return {
+            name: values[0] || "",
+            username: values[1] || "",
+            password: values[2] || "",
+            role: role,
+            classIds: values[4]
+              ? values[4].split(";").map((id) => id.trim())
+              : [],
+          };
+        })
+        .filter(
+          (user): user is CSVUser =>
+            Boolean(user.name) && Boolean(user.username),
+        );
 
       setCsvPreview(users);
     };
@@ -156,20 +172,36 @@ export default function NewStaff() {
   };
 
   const downloadTemplate = () => {
-    const headers = ['name', 'username', 'password', 'role', 'classIds'];
+    const headers = ["name", "username", "password", "role", "classIds"];
     const examples = [
-      ['Dr. Sarah Johnson', 'sjohnson', 'password123', 'instructional', 'class1;class2'],
-      ['Dr. Jane Smith', 'jsmith', 'password123', 'instructor', 'class1;class2'],
-      ['John Doe', 'jdoe', 'password123', 'ta', 'class1;class2'],
+      [
+        "Dr. Sarah Johnson",
+        "sjohnson",
+        "password123",
+        "instructional",
+        "class1;class2",
+      ],
+      [
+        "Dr. Jane Smith",
+        "jsmith",
+        "password123",
+        "instructor",
+        "class1;class2",
+      ],
+      ["John Doe", "jdoe", "password123", "ta", "class1;class2"],
     ];
 
-    const csvContent = headers.join(',') + '\n' + examples.map(ex => ex.join(',')).join('\n') + '\n';
+    const csvContent =
+      headers.join(",") +
+      "\n" +
+      examples.map((ex) => ex.join(",")).join("\n") +
+      "\n";
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = 'staff_template.csv';
+    a.download = "staff_template.csv";
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -183,9 +215,9 @@ export default function NewStaff() {
       console.log("Creating staff members from CSV:", csvPreview);
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      router.push('/management/staff');
+      router.push("/management/staff");
     } catch (error) {
       console.error("Error creating staff members from CSV:", error);
     } finally {
@@ -205,7 +237,12 @@ export default function NewStaff() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: UserRole) => handleInputChange('role', value)}>
+              <Select
+                value={formData.role}
+                onValueChange={(value: UserRole) =>
+                  handleInputChange("role", value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -231,11 +268,15 @@ export default function NewStaff() {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder={
-                    formData.role === 'instructional' ? "Dr. Sarah Johnson" :
-                      formData.role === 'instructor' ? "Dr. Jane Smith" :
-                        formData.role === 'ta' ? "John Doe" : "Enter full name"
+                    formData.role === "instructional"
+                      ? "Dr. Sarah Johnson"
+                      : formData.role === "instructor"
+                        ? "Dr. Jane Smith"
+                        : formData.role === "ta"
+                          ? "John Doe"
+                          : "Enter full name"
                   }
                   required
                 />
@@ -245,11 +286,17 @@ export default function NewStaff() {
                 <Input
                   id="username"
                   value={formData.username}
-                  onChange={(e) => handleInputChange('username', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("username", e.target.value)
+                  }
                   placeholder={
-                    formData.role === 'instructional' ? "sjohnson" :
-                      formData.role === 'instructor' ? "jsmith" :
-                        formData.role === 'ta' ? "jdoe" : "Enter username"
+                    formData.role === "instructional"
+                      ? "sjohnson"
+                      : formData.role === "instructor"
+                        ? "jsmith"
+                        : formData.role === "ta"
+                          ? "jdoe"
+                          : "Enter username"
                   }
                   required
                 />
@@ -262,7 +309,7 @@ export default function NewStaff() {
                 id="password"
                 type="password"
                 value={formData.password}
-                onChange={(e) => handleInputChange('password', e.target.value)}
+                onChange={(e) => handleInputChange("password", e.target.value)}
                 placeholder="Enter password"
                 required
               />
@@ -280,16 +327,21 @@ export default function NewStaff() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {formData.role === 'instructional' && "Will have permissions to manage instructors and teaching assistants."}
-                  {formData.role === 'instructor' && "Will have permissions to manage assigned classes and teaching assistants."}
-                  {formData.role === 'ta' && "Will have permissions to assist with assigned classes."}
+                  {formData.role === "instructional" &&
+                    "Will have permissions to manage instructors and teaching assistants."}
+                  {formData.role === "instructor" &&
+                    "Will have permissions to manage assigned classes and teaching assistants."}
+                  {formData.role === "ta" &&
+                    "Will have permissions to assist with assigned classes."}
                 </p>
               </div>
             )}
 
             <div className="flex justify-end">
               <Button type="submit" disabled={isSubmitting || !formData.role}>
-                {isSubmitting ? 'Creating...' : `Create ${formData.role ? getRoleDisplayName(formData.role) : 'Staff Member'}`}
+                {isSubmitting
+                  ? "Creating..."
+                  : `Create ${formData.role ? getRoleDisplayName(formData.role) : "Staff Member"}`}
               </Button>
             </div>
           </form>
@@ -305,7 +357,8 @@ export default function NewStaff() {
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground">
-                Include the following columns in the CSV file: name, username, password, role, classIds.
+                Include the following columns in the CSV file: name, username,
+                password, role, classIds.
               </div>
             </div>
 
@@ -315,7 +368,10 @@ export default function NewStaff() {
                 {availableRoles.map((role) => {
                   const RoleIcon = role.icon;
                   return (
-                    <Badge key={role.value} variant={getRoleBadgeVariant(role.value)}>
+                    <Badge
+                      key={role.value}
+                      variant={getRoleBadgeVariant(role.value)}
+                    >
                       <RoleIcon className="h-3 w-3 mr-1" />
                       {role.value}
                     </Badge>
@@ -338,7 +394,9 @@ export default function NewStaff() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium">Selected file:</p>
-                    <p className="text-sm text-muted-foreground">{csvFile.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {csvFile.name}
+                    </p>
                   </div>
                   <Button
                     variant="ghost"
@@ -357,9 +415,12 @@ export default function NewStaff() {
             {csvPreview.length > 0 && (
               <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium">Preview ({csvPreview.length} users)</h3>
+                  <h3 className="text-lg font-medium">
+                    Preview ({csvPreview.length} users)
+                  </h3>
                   <p className="text-sm text-muted-foreground">
-                    Review the staff members that will be created from your CSV file.
+                    Review the staff members that will be created from your CSV
+                    file.
                   </p>
                 </div>
 
@@ -381,7 +442,9 @@ export default function NewStaff() {
                           <TableRow key={index}>
                             <TableCell>{user.name}</TableCell>
                             <TableCell>{user.username}</TableCell>
-                            <TableCell>{'*'.repeat(user.password.length)}</TableCell>
+                            <TableCell>
+                              {"*".repeat(user.password.length)}
+                            </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <RoleIcon className="h-4 w-4" />
@@ -393,7 +456,11 @@ export default function NewStaff() {
                             <TableCell>
                               <div className="flex gap-1 flex-wrap">
                                 {user.classIds.map((classId, i) => (
-                                  <Badge key={i} variant="outline" className="text-xs">
+                                  <Badge
+                                    key={i}
+                                    variant="outline"
+                                    className="text-xs"
+                                  >
                                     {classId}
                                   </Badge>
                                 ))}
@@ -417,7 +484,9 @@ export default function NewStaff() {
                     Cancel
                   </Button>
                   <Button onClick={handleCSVSubmit} disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : `Create ${csvPreview.length} Staff Members`}
+                    {isSubmitting
+                      ? "Creating..."
+                      : `Create ${csvPreview.length} Staff Members`}
                   </Button>
                 </div>
               </div>

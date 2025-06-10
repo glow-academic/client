@@ -23,7 +23,7 @@ import {
   AlertCircle,
   BookOpen,
   Calendar,
-  Target
+  Target,
 } from "lucide-react";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getTopicsByClass } from "@/utils/queries/topics/get-topics-by-class";
@@ -34,9 +34,8 @@ import { Document, Topic } from "@/types";
 import { Schedule } from "@/types";
 import { Event } from "@/types";
 
-
 interface ProcessingStatus {
-  stage: 'extracting' | 'classifying' | 'analyzing' | 'complete';
+  stage: "extracting" | "classifying" | "analyzing" | "complete";
   progress: number;
   message: string;
   documentsProcessed: number;
@@ -52,11 +51,11 @@ type ClassStatusProps = {
 export default function ClassStatus({ classId }: ClassStatusProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
-    stage: 'extracting',
+    stage: "extracting",
     progress: 0,
-    message: 'Extracting files from ZIP...',
+    message: "Extracting files from ZIP...",
     documentsProcessed: 0,
     totalDocuments: 0,
     syllabusFound: false,
@@ -76,14 +75,15 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
     queryFn: () => getTopicsByClass([classId]),
   });
 
-  const {data: schedules = [], isLoading: schedulesLoading} = useQuery({
+  const { data: schedules = [], isLoading: schedulesLoading } = useQuery({
     queryKey: ["schedules", classId],
     queryFn: () => getSchedulesByClass([classId]),
   });
 
-  const {data: events = [], isLoading: eventsLoading} = useQuery({
+  const { data: events = [], isLoading: eventsLoading } = useQuery({
     queryKey: ["events", classId],
-    queryFn: () => getEventsBySchedules(schedules.map((schedule) => schedule.id)),
+    queryFn: () =>
+      getEventsBySchedules(schedules.map((schedule) => schedule.id)),
     enabled: !!schedules,
   });
 
@@ -97,32 +97,34 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
   useEffect(() => {
     if (documents.length === 0) return;
 
-    const syllabusDoc = documents.find((doc: Document) => 
-      doc.type === 'syllabus' || 
-      doc.name.toLowerCase().includes('syllabus')
+    const syllabusDoc = documents.find(
+      (doc: Document) =>
+        doc.type === "syllabus" || doc.name.toLowerCase().includes("syllabus"),
     );
 
-    const classifiedDocs = documents.filter((doc: Document) => 
-      doc.type && doc.type.trim() !== '' && doc.type !== null
+    const classifiedDocs = documents.filter(
+      (doc: Document) =>
+        doc.type && doc.type.trim() !== "" && doc.type !== null,
     );
 
     const totalDocs = documents.length;
     const processedDocs = classifiedDocs.length;
-    const progressPercent = totalDocs > 0 ? Math.round((processedDocs / totalDocs) * 100) : 0;
+    const progressPercent =
+      totalDocs > 0 ? Math.round((processedDocs / totalDocs) * 100) : 0;
 
-    let stage: ProcessingStatus['stage'] = 'extracting';
-    let message = 'Extracting files from ZIP...';
+    let stage: ProcessingStatus["stage"] = "extracting";
+    let message = "Extracting files from ZIP...";
 
     if (totalDocs > 0) {
       if (progressPercent < 50) {
-        stage = 'classifying';
-        message = 'Classifying documents with AI...';
+        stage = "classifying";
+        message = "Classifying documents with AI...";
       } else if (progressPercent < 100) {
-        stage = 'analyzing';
-        message = 'Analyzing document content and structure...';
+        stage = "analyzing";
+        message = "Analyzing document content and structure...";
       } else {
-        stage = 'complete';
-        message = 'Processing complete!';
+        stage = "complete";
+        message = "Processing complete!";
         setIsPolling(false);
       }
     }
@@ -139,23 +141,59 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
   }, [documents]);
 
   const getDocumentTypeInfo = (type: string) => {
-    const typeMap: Record<string, { label: string; icon: string; color: string }> = {
-      homework: { label: "Homework", icon: "📝", color: "bg-blue-100 text-blue-800" },
-      project: { label: "Project", icon: "🚀", color: "bg-purple-100 text-purple-800" },
-      quiz: { label: "Quiz", icon: "❓", color: "bg-yellow-100 text-yellow-800" },
-      midterm: { label: "Midterm", icon: "📊", color: "bg-red-100 text-red-800" },
+    const typeMap: Record<
+      string,
+      { label: string; icon: string; color: string }
+    > = {
+      homework: {
+        label: "Homework",
+        icon: "📝",
+        color: "bg-blue-100 text-blue-800",
+      },
+      project: {
+        label: "Project",
+        icon: "🚀",
+        color: "bg-purple-100 text-purple-800",
+      },
+      quiz: {
+        label: "Quiz",
+        icon: "❓",
+        color: "bg-yellow-100 text-yellow-800",
+      },
+      midterm: {
+        label: "Midterm",
+        icon: "📊",
+        color: "bg-red-100 text-red-800",
+      },
       lab: { label: "Lab", icon: "🧪", color: "bg-green-100 text-green-800" },
-      lecture: { label: "Lecture", icon: "📚", color: "bg-indigo-100 text-indigo-800" },
-      syllabus: { label: "Syllabus", icon: "📋", color: "bg-gray-100 text-gray-800" },
+      lecture: {
+        label: "Lecture",
+        icon: "📚",
+        color: "bg-indigo-100 text-indigo-800",
+      },
+      syllabus: {
+        label: "Syllabus",
+        icon: "📋",
+        color: "bg-gray-100 text-gray-800",
+      },
     };
-    return typeMap[type] || { label: type, icon: "📄", color: "bg-gray-100 text-gray-800" };
+    return (
+      typeMap[type] || {
+        label: type,
+        icon: "📄",
+        color: "bg-gray-100 text-gray-800",
+      }
+    );
   };
 
-  const documentTypeCounts = documents.reduce((acc: Record<string, number>, doc: Document) => {
-    const type = doc.type || 'unknown';
-    acc[type] = (acc[type] || 0) + 1;
-    return acc;
-  }, {});
+  const documentTypeCounts = documents.reduce(
+    (acc: Record<string, number>, doc: Document) => {
+      const type = doc.type || "unknown";
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    },
+    {},
+  );
 
   const handleContinueToClass = () => {
     router.push(`/classes/c/${classId}/edit`);
@@ -186,7 +224,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
           <p className="text-muted-foreground mt-2">
             The requested class could not be found.
           </p>
-          <Button onClick={() => router.push('/classes/new')} className="mt-4">
+          <Button onClick={() => router.push("/classes/new")} className="mt-4">
             Back to Create Class
           </Button>
         </div>
@@ -201,7 +239,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              {processingStatus.stage === 'complete' ? (
+              {processingStatus.stage === "complete" ? (
                 <CheckCircle className="h-5 w-5 text-green-600" />
               ) : (
                 <RefreshCw className="h-5 w-5 animate-spin text-blue-600" />
@@ -217,12 +255,18 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
               </div>
               <Progress value={processingStatus.progress} className="h-2" />
             </div>
-            
+
             {processingStatus.totalDocuments > 0 && (
               <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <span>Documents processed: {processingStatus.documentsProcessed} / {processingStatus.totalDocuments}</span>
+                <span>
+                  Documents processed: {processingStatus.documentsProcessed} /{" "}
+                  {processingStatus.totalDocuments}
+                </span>
                 {processingStatus.syllabusFound && (
-                  <Badge variant="secondary" className="flex items-center gap-1">
+                  <Badge
+                    variant="secondary"
+                    className="flex items-center gap-1"
+                  >
                     <BookOpen className="h-3 w-3" />
                     Syllabus detected
                   </Badge>
@@ -252,12 +296,22 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Term</p>
-                <p className="font-medium capitalize">{classData.term} {classData.year}</p>
+                <p className="font-medium capitalize">
+                  {classData.term} {classData.year}
+                </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Status</p>
-                <Badge variant={processingStatus.stage === 'complete' ? 'default' : 'secondary'}>
-                  {processingStatus.stage === 'complete' ? 'Ready' : 'Processing'}
+                <Badge
+                  variant={
+                    processingStatus.stage === "complete"
+                      ? "default"
+                      : "secondary"
+                  }
+                >
+                  {processingStatus.stage === "complete"
+                    ? "Ready"
+                    : "Processing"}
                 </Badge>
               </div>
             </div>
@@ -278,10 +332,17 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 {Object.entries(documentTypeCounts).map(([type, count]) => {
                   const typeInfo = getDocumentTypeInfo(type);
                   return (
-                    <div key={type} className="text-center p-3 border rounded-lg">
+                    <div
+                      key={type}
+                      className="text-center p-3 border rounded-lg"
+                    >
                       <div className="text-2xl mb-1">{typeInfo.icon}</div>
-                      <div className="text-sm font-medium">{typeInfo.label}</div>
-                      <div className="text-xs text-muted-foreground">{count} files</div>
+                      <div className="text-sm font-medium">
+                        {typeInfo.label}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {count} files
+                      </div>
                     </div>
                   );
                 })}
@@ -307,9 +368,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                   </Badge>
                 ))}
                 {topics.length > 12 && (
-                  <Badge variant="secondary">
-                    +{topics.length - 12} more
-                  </Badge>
+                  <Badge variant="secondary">+{topics.length - 12} more</Badge>
                 )}
               </div>
             </CardContent>
@@ -330,8 +389,13 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 <CardContent>
                   <div className="space-y-2">
                     {schedules.slice(0, 3).map((schedule: Schedule) => (
-                      <div key={schedule.id} className="flex justify-between items-center p-2 border rounded">
-                        <span className="text-sm font-medium">{schedule.name}</span>
+                      <div
+                        key={schedule.id}
+                        className="flex justify-between items-center p-2 border rounded"
+                      >
+                        <span className="text-sm font-medium">
+                          {schedule.name}
+                        </span>
                         <Badge variant="outline" className="text-xs">
                           {schedule.description}
                         </Badge>
@@ -358,8 +422,13 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
                 <CardContent>
                   <div className="space-y-2">
                     {events.slice(0, 3).map((event: Event) => (
-                      <div key={event.id} className="flex justify-between items-center p-2 border rounded">
-                        <span className="text-sm font-medium">{event.name}</span>
+                      <div
+                        key={event.id}
+                        className="flex justify-between items-center p-2 border rounded"
+                      >
+                        <span className="text-sm font-medium">
+                          {event.name}
+                        </span>
                         <span className="text-xs text-muted-foreground">
                           {new Date(event.createdAt).toLocaleDateString()}
                         </span>

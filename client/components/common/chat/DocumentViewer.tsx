@@ -19,7 +19,6 @@ import Image from "next/image";
 import { FileText, Download } from "lucide-react";
 import { Document } from "@/types";
 
-
 interface DocumentViewerProps {
   document?: Document;
   bare?: boolean;
@@ -79,14 +78,16 @@ export default function DocumentViewer({
   // Load selected document
   useEffect(() => {
     if (!docId) return;
-    
+
     const loadDocument = async () => {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/documents/id/${docId}`);
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${docId}`,
+        );
         if (!res.ok) throw new Error("Failed to load document");
-        
+
         const contentType = res.headers.get("content-type") ?? "";
         setType(contentType);
 
@@ -135,7 +136,9 @@ export default function DocumentViewer({
       return (
         <div className="flex flex-col items-center justify-center h-32 gap-2">
           <FileText className="h-8 w-8 text-muted-foreground" />
-          <p className="text-sm text-muted-foreground">Failed to load document</p>
+          <p className="text-sm text-muted-foreground">
+            Failed to load document
+          </p>
         </div>
       );
     }
@@ -149,9 +152,9 @@ export default function DocumentViewer({
             title={current.name ?? ""}
             className="w-full h-full border-0 rounded-md"
             style={{
-              minHeight: '500px',
-              width: '100%',
-              height: '100%'
+              minHeight: "500px",
+              width: "100%",
+              height: "100%",
             }}
           />
         </div>
@@ -215,10 +218,15 @@ export default function DocumentViewer({
       <div className="w-full h-full flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-3 border-b bg-muted/30 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="outline" className={`${typeInfo.color} text-white border-none shrink-0`}>
+            <Badge
+              variant="outline"
+              className={`${typeInfo.color} text-white border-none shrink-0`}
+            >
               {typeInfo.icon}
             </Badge>
-            <span className="text-sm font-medium truncate">{document.name}</span>
+            <span className="text-sm font-medium truncate">
+              {document.name}
+            </span>
           </div>
           <Button size="sm" variant="ghost" asChild className="shrink-0">
             <a href={content ?? ""} download={document.name ?? ""}>
@@ -226,9 +234,7 @@ export default function DocumentViewer({
             </a>
           </Button>
         </div>
-        <ScrollArea className="flex-1 min-h-0">
-          {renderContent()}
-        </ScrollArea>
+        <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
       </div>
     );
   }
@@ -267,9 +273,7 @@ export default function DocumentViewer({
       )}
 
       <CardContent className="flex-1 min-h-0 p-0">
-        <ScrollArea className="h-full">
-          {renderContent()}
-        </ScrollArea>
+        <ScrollArea className="h-full">{renderContent()}</ScrollArea>
       </CardContent>
     </Card>
   );

@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function AgentPage() {
-    return redirect("/management/agents/new");
+  return redirect("/management/agents/new");
 }

@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getEvalRunsByAgents(agentIds: string[]) {
   try {
-    return await db.select().from(evalRuns).where(inArray(evalRuns.agentId, agentIds));
+    return await db
+      .select()
+      .from(evalRuns)
+      .where(inArray(evalRuns.agentId, agentIds));
   } catch (error) {
     console.error("Error fetching eval_runs by agents:", error);
     throw error;

@@ -10,5 +10,9 @@
 import Logs from "@/components/analytics/Logs";
 
 export default function LogsPage() {
-  return <div className="space-y-6"><Logs /></div>;
+  return (
+    <div className="space-y-6">
+      <Logs />
+    </div>
+  );
 }

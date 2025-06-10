@@ -87,19 +87,19 @@ const AGENT_CONFIGS: Record<string, AgentConfig> = {
 // Helper function to get profile configuration by name
 export function getAgentConfig(agentName: string): AgentConfig {
   const normalizedName = agentName.toLowerCase().trim();
-  
+
   // Check for exact matches first
   if (AGENT_CONFIGS[normalizedName]) {
     return AGENT_CONFIGS[normalizedName];
   }
-  
+
   // Check for partial matches (contains)
   for (const [key, config] of Object.entries(AGENT_CONFIGS)) {
     if (normalizedName.includes(key) || key.includes(normalizedName)) {
       return config;
     }
   }
-  
+
   // Return default configuration for unknown profiles
   return DEFAULT_AGENT_CONFIG;
 }

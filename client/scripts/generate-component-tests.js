@@ -1,44 +1,44 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Path configurations
-const COMPONENTS_DIR = path.join(__dirname, '../components');
-const TESTS_DIR = path.join(__dirname, '../__tests__');
-const EXCLUDED_DIRS = ['ui']; // External UI components to skip
+const COMPONENTS_DIR = path.join(__dirname, "../components");
+const TESTS_DIR = path.join(__dirname, "../__tests__");
+const EXCLUDED_DIRS = ["ui"]; // External UI components to skip
 
 /**
  * Recursively scan directory for .tsx files
  */
-function scanComponentFiles(dir, relativePath = '') {
+function scanComponentFiles(dir, relativePath = "") {
   const components = [];
-  
+
   try {
     const items = fs.readdirSync(dir);
-    
+
     for (const item of items) {
       const fullPath = path.join(dir, item);
       const itemRelativePath = path.join(relativePath, item);
       const stat = fs.statSync(fullPath);
-      
+
       if (stat.isDirectory()) {
         // Skip excluded directories
         if (EXCLUDED_DIRS.includes(item)) {
           console.log(`⏭️  Skipping excluded directory: ${itemRelativePath}`);
           continue;
         }
-        
+
         // Recursively scan subdirectories
         const subComponents = scanComponentFiles(fullPath, itemRelativePath);
         components.push(...subComponents);
-      } else if (stat.isFile() && item.endsWith('.tsx')) {
-        const componentName = item.replace('.tsx', '');
+      } else if (stat.isFile() && item.endsWith(".tsx")) {
+        const componentName = item.replace(".tsx", "");
         const testFileName = `${componentName}.test.tsx`;
         const testDir = path.join(TESTS_DIR, relativePath);
         const testFilePath = path.join(testDir, testFileName);
         const componentPath = path.join(relativePath, item);
-        
+
         components.push({
           componentName,
           componentPath,
@@ -46,14 +46,14 @@ function scanComponentFiles(dir, relativePath = '') {
           testFileName,
           testDir,
           testFilePath,
-          relativePath
+          relativePath,
         });
       }
     }
   } catch (error) {
     console.error(`❌ Error scanning directory ${dir}:`, error.message);
   }
-  
+
   return components;
 }
 
@@ -62,8 +62,8 @@ function scanComponentFiles(dir, relativePath = '') {
  */
 function analyzeComponent(componentPath) {
   try {
-    const content = fs.readFileSync(componentPath, 'utf8');
-    
+    const content = fs.readFileSync(componentPath, "utf8");
+
     const analysis = {
       hasDefaultExport: /export default/.test(content),
       namedExports: [],
@@ -71,29 +71,34 @@ function analyzeComponent(componentPath) {
       propsInterface: null,
       usesHooks: [],
       imports: [],
-      isClientComponent: content.includes("'use client'") || content.includes('"use client"'),
+      isClientComponent:
+        content.includes("'use client'") || content.includes('"use client"'),
       hasAsyncComponents: /async\s+function|async\s+\w+\s*=/.test(content),
       usesRouter: /useRouter|usePathname|useSearchParams/.test(content),
       usesState: /useState/.test(content),
       usesEffect: /useEffect/.test(content),
       usesContext: /useContext/.test(content),
       hasApiCalls: /fetch\(|axios\.|useSWR|useQuery/.test(content),
-      hasFormHandling: /onSubmit|useForm|formData/.test(content)
+      hasFormHandling: /onSubmit|useForm|formData/.test(content),
     };
-    
+
     // Extract named exports
-    const namedExportMatches = content.matchAll(/export\s+(?:const|function|class)\s+(\w+)/g);
+    const namedExportMatches = content.matchAll(
+      /export\s+(?:const|function|class)\s+(\w+)/g,
+    );
     for (const match of namedExportMatches) {
       analysis.namedExports.push(match[1]);
     }
-    
+
     // Extract props interface
-    const propsInterfaceMatch = content.match(/interface\s+(\w*Props)\s*\{([^}]+)\}/);
+    const propsInterfaceMatch = content.match(
+      /interface\s+(\w*Props)\s*\{([^}]+)\}/,
+    );
     if (propsInterfaceMatch) {
       analysis.hasProps = true;
       analysis.propsInterface = propsInterfaceMatch[1];
     }
-    
+
     // Extract hooks usage
     const hookMatches = content.matchAll(/use(\w+)/g);
     for (const match of hookMatches) {
@@ -101,16 +106,21 @@ function analyzeComponent(componentPath) {
         analysis.usesHooks.push(match[0]);
       }
     }
-    
+
     // Extract imports
-    const importMatches = content.matchAll(/import\s+.*?from\s+['"]([^'"]+)['"]/g);
+    const importMatches = content.matchAll(
+      /import\s+.*?from\s+['"]([^'"]+)['"]/g,
+    );
     for (const match of importMatches) {
       analysis.imports.push(match[1]);
     }
-    
+
     return analysis;
   } catch (error) {
-    console.error(`❌ Error analyzing component ${componentPath}:`, error.message);
+    console.error(
+      `❌ Error analyzing component ${componentPath}:`,
+      error.message,
+    );
     return {
       hasDefaultExport: true,
       namedExports: [],
@@ -125,7 +135,7 @@ function analyzeComponent(componentPath) {
       usesEffect: false,
       usesContext: false,
       hasApiCalls: false,
-      hasFormHandling: false
+      hasFormHandling: false,
     };
   }
 }
@@ -135,8 +145,9 @@ function analyzeComponent(componentPath) {
  */
 function generateTestTemplate(component, analysis) {
   const { componentName, componentPath, relativePath } = component;
-  const importPath = `@/components/${componentPath.replace(/\\/g, '/')}`.replace('.tsx', '');
-  
+  const importPath =
+    `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
+
   let template = `import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';`;
@@ -159,10 +170,12 @@ import { ReactNode } from 'react';`;
   }
 
   template += `
-import ${analysis.hasDefaultExport ? componentName : `{ ${analysis.namedExports.join(', ')} }`} from '${importPath}';
+import ${analysis.hasDefaultExport ? componentName : `{ ${analysis.namedExports.join(", ")} }`} from '${importPath}';
 
 // Mock external dependencies
-${analysis.usesRouter ? `vi.mock('next/navigation', () => ({
+${
+  analysis.usesRouter
+    ? `vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -172,25 +185,41 @@ ${analysis.usesRouter ? `vi.mock('next/navigation', () => ({
   })),
   usePathname: vi.fn(() => '/'),
   useSearchParams: vi.fn(() => new URLSearchParams()),
-}));` : ''}
+}));`
+    : ""
+}
 
-${analysis.hasApiCalls ? `// Mock API calls
-global.fetch = vi.fn();` : ''}
+${
+  analysis.hasApiCalls
+    ? `// Mock API calls
+global.fetch = vi.fn();`
+    : ""
+}
 
 describe('${componentName}', () => {
-  ${analysis.hasApiCalls ? `let queryClient: QueryClient;
+  ${
+    analysis.hasApiCalls
+      ? `let queryClient: QueryClient;
   
-  ` : ''}beforeEach(() => {
+  `
+      : ""
+  }beforeEach(() => {
     vi.clearAllMocks();
-    ${analysis.hasApiCalls ? `queryClient = new QueryClient({
+    ${
+      analysis.hasApiCalls
+        ? `queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
         mutations: { retry: false },
       },
-    });` : ''}
+    });`
+        : ""
+    }
   });
 
-  ${analysis.hasApiCalls ? `const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+  ${
+    analysis.hasApiCalls
+      ? `const renderWithProviders = (ui: React.ReactElement, options = {}) => {
     const AllProviders = ({ children }: { children: ReactNode }) => (
       <QueryClientProvider client={queryClient}>
         {children}
@@ -199,7 +228,9 @@ describe('${componentName}', () => {
 
     return render(ui, { wrapper: AllProviders, ...options });
   };
-  ` : ''}
+  `
+      : ""
+  }
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
@@ -210,13 +241,17 @@ describe('${componentName}', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ${componentName}
     });
 
-    ${analysis.hasProps ? `it('should render with props', () => {
+    ${
+      analysis.hasProps
+        ? `it('should render with props', () => {
       // TODO: Test component with various props
-      // Props interface: ${analysis.propsInterface || 'Unknown'}
+      // Props interface: ${analysis.propsInterface || "Unknown"}
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Props testing for ${componentName}
-    });` : ''}
+    });`
+        : ""
+    }
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -226,22 +261,32 @@ describe('${componentName}', () => {
     });
   });
 
-  ${analysis.usesState || analysis.hasFormHandling ? `describe('User Interactions', () => {
-    ${analysis.hasFormHandling ? `it('should handle form submissions', async () => {
+  ${
+    analysis.usesState || analysis.hasFormHandling
+      ? `describe('User Interactions', () => {
+    ${
+      analysis.hasFormHandling
+        ? `it('should handle form submissions', async () => {
       // TODO: Test form handling
       const user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Form handling test for ${componentName}
-    });` : ''}
+    });`
+        : ""
+    }
 
-    ${analysis.usesState ? `it('should handle state changes', async () => {
+    ${
+      analysis.usesState
+        ? `it('should handle state changes', async () => {
       // TODO: Test state management
       const user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for ${componentName}
-    });` : ''}
+    });`
+        : ""
+    }
 
     it('should handle user events', async () => {
       // TODO: Test click, hover, focus events
@@ -250,9 +295,13 @@ describe('${componentName}', () => {
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for ${componentName}
     });
-  });` : ''}
+  });`
+      : ""
+  }
 
-  ${analysis.hasApiCalls ? `describe('API Integration', () => {
+  ${
+    analysis.hasApiCalls
+      ? `describe('API Integration', () => {
     it('should handle API calls', async () => {
       // TODO: Test API integration
       
@@ -273,16 +322,22 @@ describe('${componentName}', () => {
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Error handling test for ${componentName}
     });
-  });` : ''}
+  });`
+      : ""
+  }
 
-  ${analysis.usesRouter ? `describe('Navigation', () => {
+  ${
+    analysis.usesRouter
+      ? `describe('Navigation', () => {
     it('should handle navigation', () => {
       // TODO: Test navigation behavior
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Navigation test for ${componentName}
     });
-  });` : ''}
+  });`
+      : ""
+  }
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', () => {
@@ -292,12 +347,16 @@ describe('${componentName}', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ${componentName}
     });
 
-    ${analysis.hasProps ? `it('should handle missing or invalid props', () => {
+    ${
+      analysis.hasProps
+        ? `it('should handle missing or invalid props', () => {
       // TODO: Test with missing/invalid props
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Invalid props test for ${componentName}
-    });` : ''}
+    });`
+        : ""
+    }
   });
 });
 
@@ -307,11 +366,11 @@ describe('${componentName}', () => {
  * 
  * Features detected:
  * - Default export: ${analysis.hasDefaultExport}
- * - Named exports: ${analysis.namedExports.join(', ') || 'None'}
+ * - Named exports: ${analysis.namedExports.join(", ") || "None"}
  * - Has props: ${analysis.hasProps}
- * - Props interface: ${analysis.propsInterface || 'None detected'}
+ * - Props interface: ${analysis.propsInterface || "None detected"}
  * - Client component: ${analysis.isClientComponent}
- * - Uses hooks: ${analysis.usesHooks.join(', ') || 'None'}
+ * - Uses hooks: ${analysis.usesHooks.join(", ") || "None"}
  * - Uses router: ${analysis.usesRouter}
  * - Has API calls: ${analysis.hasApiCalls}
  * - Has form handling: ${analysis.hasFormHandling}
@@ -347,7 +406,7 @@ describe('${componentName}', () => {
  */
 function generateTestWrapper(analysis) {
   if (!analysis.hasApiCalls && !analysis.usesContext) {
-    return '';
+    return "";
   }
 
   let wrapper = `  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -378,7 +437,7 @@ function generateTestWrapper(analysis) {
  */
 function generateBasicRenderTest(component, analysis) {
   const { componentName } = component;
-  
+
   if (analysis.hasApiCalls) {
     return `renderWithProviders(<${componentName} />);`;
   } else {
@@ -391,7 +450,7 @@ function generateBasicRenderTest(component, analysis) {
  */
 function generateRenderExample(component, analysis) {
   const { componentName } = component;
-  
+
   if (analysis.hasProps) {
     return `<${componentName} {...mockProps} />`;
   } else {
@@ -406,10 +465,10 @@ function isTestImplemented(testFilePath) {
   if (!fs.existsSync(testFilePath)) {
     return false;
   }
-  
-  const content = fs.readFileSync(testFilePath, 'utf8').trim();
+
+  const content = fs.readFileSync(testFilePath, "utf8").trim();
   // Consider implemented if it has content and doesn't contain our failing assertion
-  return content.length > 0 && !content.includes('expect(true).toBe(false)');
+  return content.length > 0 && !content.includes("expect(true).toBe(false)");
 }
 
 /**
@@ -420,29 +479,34 @@ function generateTestFiles(components) {
   let updated = 0;
   let skipped = 0;
 
-  components.forEach(component => {
-    const { testDir, testFilePath, componentFullPath, componentName } = component;
-    
+  components.forEach((component) => {
+    const { testDir, testFilePath, componentFullPath, componentName } =
+      component;
+
     // Ensure test directory exists
     if (!fs.existsSync(testDir)) {
       fs.mkdirSync(testDir, { recursive: true });
     }
-    
+
     if (isTestImplemented(testFilePath)) {
-      console.log(`⏭️  Skipping ${component.testFileName} (already implemented)`);
+      console.log(
+        `⏭️  Skipping ${component.testFileName} (already implemented)`,
+      );
       skipped++;
     } else {
       // Analyze component
       const analysis = analyzeComponent(componentFullPath);
-      
+
       // Generate test content
       const testContent = generateTestTemplate(component, analysis);
-      
+
       const existed = fs.existsSync(testFilePath);
       fs.writeFileSync(testFilePath, testContent);
-      
+
       if (existed) {
-        console.log(`✨ Updated ${component.testFileName} (was empty/incomplete)`);
+        console.log(
+          `✨ Updated ${component.testFileName} (was empty/incomplete)`,
+        );
         updated++;
       } else {
         console.log(`📝 Created ${component.testFileName}`);
@@ -458,8 +522,8 @@ function generateTestFiles(components) {
  * Generate coverage report
  */
 function generateCoverageReport(components, stats) {
-  const reportPath = path.join(TESTS_DIR, 'component-test-coverage.md');
-  
+  const reportPath = path.join(TESTS_DIR, "component-test-coverage.md");
+
   let report = `# Component Test Coverage Report
 
 Generated on: ${new Date().toISOString()}
@@ -476,8 +540,10 @@ Generated on: ${new Date().toISOString()}
 |-----------|------|-----------|--------|
 `;
 
-  components.forEach(component => {
-    const status = isTestImplemented(component.testFilePath) ? '✅ Implemented' : '❌ Needs Implementation';
+  components.forEach((component) => {
+    const status = isTestImplemented(component.testFilePath)
+      ? "✅ Implemented"
+      : "❌ Needs Implementation";
     report += `| ${component.componentName} | ${component.componentPath} | ${component.testFileName} | ${status} |\n`;
   });
 
@@ -571,34 +637,34 @@ it('should handle API calls', async () => {
  */
 function generateDirectoryTree(components) {
   const tree = {};
-  
-  components.forEach(component => {
-    const parts = component.relativePath.split(path.sep).filter(p => p);
+
+  components.forEach((component) => {
+    const parts = component.relativePath.split(path.sep).filter((p) => p);
     let current = tree;
-    
-    parts.forEach(part => {
+
+    parts.forEach((part) => {
       if (!current[part]) {
         current[part] = {};
       }
       current = current[part];
     });
-    
+
     current[component.testFileName] = null;
   });
-  
-  function printTree(obj, indent = '') {
-    let result = '';
-    Object.keys(obj).forEach(key => {
+
+  function printTree(obj, indent = "") {
+    let result = "";
+    Object.keys(obj).forEach((key) => {
       if (obj[key] === null) {
         result += `${indent}├── ${key}\n`;
       } else {
         result += `${indent}├── ${key}/\n`;
-        result += printTree(obj[key], indent + '│   ');
+        result += printTree(obj[key], indent + "│   ");
       }
     });
     return result;
   }
-  
+
   return printTree(tree);
 }
 
@@ -606,32 +672,34 @@ function generateDirectoryTree(components) {
  * Main execution function
  */
 function main() {
-  console.log('🚀 Generating Jest/Vitest tests for React components...\n');
-  
+  console.log("🚀 Generating Jest/Vitest tests for React components...\n");
+
   const components = scanComponentFiles(COMPONENTS_DIR);
-  
+
   if (components.length === 0) {
-    console.log('⚠️  No .tsx components found');
+    console.log("⚠️  No .tsx components found");
     return;
   }
-  
+
   console.log(`📊 Found ${components.length} components:`);
-  components.forEach(comp => {
+  components.forEach((comp) => {
     console.log(`  - ${comp.componentPath}`);
   });
-  
-  console.log('\n📁 Generating test files...');
+
+  console.log("\n📁 Generating test files...");
   const stats = generateTestFiles(components);
-  
-  console.log('\n📊 Summary:');
+
+  console.log("\n📊 Summary:");
   console.log(`  ✨ Created: ${stats.created} files`);
   console.log(`  🔄 Updated: ${stats.updated} files`);
   console.log(`  ⏭️  Skipped: ${stats.skipped} files`);
-  
+
   generateCoverageReport(components, stats);
-  
-  console.log('\n✅ Component test generation complete!');
-  console.log('💡 Run "npm run test:components" to execute all component tests');
+
+  console.log("\n✅ Component test generation complete!");
+  console.log(
+    '💡 Run "npm run test:components" to execute all component tests',
+  );
 }
 
 // Run if called directly
@@ -639,4 +707,8 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { scanComponentFiles, generateTestFiles, generateCoverageReport }; 
+module.exports = {
+  scanComponentFiles,
+  generateTestFiles,
+  generateCoverageReport,
+};

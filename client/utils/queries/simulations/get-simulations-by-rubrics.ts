@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getSimulationsByRubrics(rubricIds: string[]) {
   try {
-    return await db.select().from(simulations).where(inArray(simulations.rubricId, rubricIds));
+    return await db
+      .select()
+      .from(simulations)
+      .where(inArray(simulations.rubricId, rubricIds));
   } catch (error) {
     console.error("Error fetching simulations by rubrics:", error);
     throw error;

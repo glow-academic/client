@@ -10,5 +10,9 @@
 import Performance from "@/components/analytics/Performance";
 
 export default function PerformancePage() {
-  return <div className="space-y-6"><Performance /></div>;
+  return (
+    <div className="space-y-6">
+      <Performance />
+    </div>
+  );
 }

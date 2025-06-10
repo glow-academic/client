@@ -3,7 +3,9 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationAttempts } from "@/drizzle/schema";
 
-export async function createSimulationAttempts(data: (typeof simulationAttempts.$inferInsert)[]) {
+export async function createSimulationAttempts(
+  data: (typeof simulationAttempts.$inferInsert)[],
+) {
   try {
     return await db.insert(simulationAttempts).values(data).returning();
   } catch (error) {

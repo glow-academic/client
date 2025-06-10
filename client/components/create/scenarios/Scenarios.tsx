@@ -12,7 +12,12 @@ import { toast } from "sonner";
 import { Edit, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +35,10 @@ import { Scenario } from "@/types";
 export function Scenarios() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch scenarios data
@@ -79,13 +87,19 @@ export function Scenarios() {
                   <CardDescription>{scenario.description}</CardDescription>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(scenario.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(scenario.id)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDeleteClick(scenario.id, scenario.name)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDeleteClick(scenario.id, scenario.name)
+                    }
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -94,7 +108,7 @@ export function Scenarios() {
             </CardHeader>
           </Card>
         ))}
-        
+
         {scenarios.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No scenarios found. Create your first scenario to get started.
@@ -108,7 +122,7 @@ export function Scenarios() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the scenario "{deleteItem?.name}". 
+              This will permanently delete the scenario "{deleteItem?.name}".
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -126,4 +140,4 @@ export function Scenarios() {
       </AlertDialog>
     </div>
   );
-} 
+}

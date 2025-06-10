@@ -1,13 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import { useRouter } from 'next/navigation';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
-import ClassForm from '@/components/common/class/ClassForm';
+import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { useRouter } from "next/navigation";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactNode } from "react";
+import ClassForm from "@/components/common/class/ClassForm";
 
 // Mock external dependencies
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -15,16 +15,16 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn(),
     replace: vi.fn(),
   })),
-  usePathname: vi.fn(() => '/'),
+  usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('ClassForm', () => {
+describe("ClassForm", () => {
   let queryClient: QueryClient;
-  
+
   beforeEach(() => {
     vi.clearAllMocks();
     queryClient = new QueryClient({
@@ -37,109 +37,106 @@ describe('ClassForm', () => {
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
     const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
     return render(ui, { wrapper: AllProviders, ...options });
   };
-  
 
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
+  describe("Rendering", () => {
+    it("should render without crashing", () => {
       // TODO: Implement basic rendering test for ClassForm
       renderWithProviders(<ClassForm />);
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ClassForm
     });
 
-    it('should render with props', () => {
+    it("should render with props", () => {
       // TODO: Test component with various props
       // Props interface: ClassFormProps
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Props testing for ClassForm
     });
 
-    it('should have correct accessibility attributes', () => {
+    it("should have correct accessibility attributes", () => {
       // TODO: Test accessibility features
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ClassForm
     });
   });
 
-  describe('User Interactions', () => {
-    it('should handle form submissions', async () => {
+  describe("User Interactions", () => {
+    it("should handle form submissions", async () => {
       // TODO: Test form handling
       const user = userEvent.setup();
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Form handling test for ClassForm
     });
 
-    it('should handle state changes', async () => {
+    it("should handle state changes", async () => {
       // TODO: Test state management
       const user = userEvent.setup();
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for ClassForm
     });
 
-    it('should handle user events', async () => {
+    it("should handle user events", async () => {
       // TODO: Test click, hover, focus events
       const user = userEvent.setup();
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for ClassForm
     });
   });
 
-  describe('API Integration', () => {
-    it('should handle API calls', async () => {
+  describe("API Integration", () => {
+    it("should handle API calls", async () => {
       // TODO: Test API integration
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: API integration test for ClassForm
     });
 
-    it('should handle loading states', () => {
+    it("should handle loading states", () => {
       // TODO: Test loading states
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Loading states test for ClassForm
     });
 
-    it('should handle error states', () => {
+    it("should handle error states", () => {
       // TODO: Test error handling
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Error handling test for ClassForm
     });
   });
 
-  describe('Navigation', () => {
-    it('should handle navigation', () => {
+  describe("Navigation", () => {
+    it("should handle navigation", () => {
       // TODO: Test navigation behavior
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Navigation test for ClassForm
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
+  describe("Edge Cases", () => {
+    it("should handle edge cases gracefully", () => {
       // TODO: Test edge cases and error scenarios
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ClassForm
     });
 
-    it('should handle missing or invalid props', () => {
+    it("should handle missing or invalid props", () => {
       // TODO: Test with missing/invalid props
-      
+
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Invalid props test for ClassForm
     });
@@ -149,7 +146,7 @@ describe('ClassForm', () => {
 /*
  * Component Analysis for ClassForm:
  * Path: common/class/ClassForm.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: None
@@ -163,20 +160,20 @@ describe('ClassForm', () => {
  * - Uses state: true
  * - Uses effects: true
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<ClassForm {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<ClassForm {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

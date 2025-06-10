@@ -9,5 +9,9 @@
 import NewAgent from "@/components/management/agents/NewAgent";
 
 export default function NewAgentPage() {
-  return <div className="space-y-6"><NewAgent /></div>;
+  return (
+    <div className="space-y-6">
+      <NewAgent />
+    </div>
+  );
 }

@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getStandardGroupsByRubrics(rubricIds: string[]) {
   try {
-    return await db.select().from(standardGroups).where(inArray(standardGroups.rubricId, rubricIds));
+    return await db
+      .select()
+      .from(standardGroups)
+      .where(inArray(standardGroups.rubricId, rubricIds));
   } catch (error) {
     console.error("Error fetching standard_groups by rubrics:", error);
     throw error;

@@ -10,7 +10,15 @@
 import Chat from "@/components/common/chat/Chat";
 import { use } from "react";
 
-export default function ChatPage({ params }: { params: Promise<{ chatId: string }> }) {
+export default function ChatPage({
+  params,
+}: {
+  params: Promise<{ chatId: string }>;
+}) {
   const { chatId } = use(params);
-  return <div className="space-y-6"><Chat chatId={chatId} /></div>;
+  return (
+    <div className="space-y-6">
+      <Chat chatId={chatId} />
+    </div>
+  );
 }

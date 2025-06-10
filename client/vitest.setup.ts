@@ -1,9 +1,9 @@
-import '@testing-library/jest-dom';
-import { vi } from 'vitest';
-import React from 'react';
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
+import React from "react";
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -11,15 +11,15 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn(),
     replace: vi.fn(),
   })),
-  usePathname: vi.fn(() => '/'),
+  usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
 // Mock Next.js image
-vi.mock('next/image', () => ({
+vi.mock("next/image", () => ({
   default: ({ src, alt, ...props }: any) => {
     // eslint-disable-next-line @next/next/no-img-element
-    return React.createElement('img', { src, alt, ...props });
+    return React.createElement("img", { src, alt, ...props });
   },
 }));
 
@@ -31,9 +31,9 @@ global.ResizeObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock window.matchMedia
-Object.defineProperty(window, 'matchMedia', {
+Object.defineProperty(window, "matchMedia", {
   writable: true,
-  value: vi.fn().mockImplementation(query => ({
+  value: vi.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -53,22 +53,22 @@ global.IntersectionObserver = vi.fn().mockImplementation(() => ({
 }));
 
 // Mock DOM APIs for testing
-Object.defineProperty(Element.prototype, 'scrollIntoView', {
+Object.defineProperty(Element.prototype, "scrollIntoView", {
   value: vi.fn(),
   writable: true,
 });
 
-Object.defineProperty(Element.prototype, 'hasPointerCapture', {
+Object.defineProperty(Element.prototype, "hasPointerCapture", {
   value: vi.fn(() => false),
   writable: true,
 });
 
-Object.defineProperty(Element.prototype, 'setPointerCapture', {
+Object.defineProperty(Element.prototype, "setPointerCapture", {
   value: vi.fn(),
   writable: true,
 });
 
-Object.defineProperty(Element.prototype, 'releasePointerCapture', {
+Object.defineProperty(Element.prototype, "releasePointerCapture", {
   value: vi.fn(),
   writable: true,
 });

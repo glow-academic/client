@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function ManagementPage() {
-    return redirect("/management/staff");
+  return redirect("/management/staff");
 }

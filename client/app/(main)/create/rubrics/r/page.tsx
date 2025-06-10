@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function RubricsPage() {
-    return redirect("/create/rubrics");
+  return redirect("/create/rubrics");
 }

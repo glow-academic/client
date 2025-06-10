@@ -25,7 +25,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-
 import {
   Trash2,
   FileText,
@@ -40,7 +39,7 @@ import {
   UploadCloud,
   Brain,
   AlertTriangle,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { cn } from "@/lib/utils";
@@ -67,13 +66,18 @@ interface FormErrors {
 }
 
 interface ClassFormProps {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   classId?: string;
   initialData?: Partial<Class>;
   onSuccess?: (classId: string) => void;
 }
 
-export default function ClassForm({ mode, classId, initialData, onSuccess }: ClassFormProps) {
+export default function ClassForm({
+  mode,
+  classId,
+  initialData,
+  onSuccess,
+}: ClassFormProps) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -82,10 +86,14 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   // Document management state
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+    null,
+  );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
+    null,
+  );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
 
@@ -103,7 +111,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   // Handle course processing
   const handleCourseProcessing = async () => {
     if (!classId) {
-      toast.error("Please save the class first before processing course information");
+      toast.error(
+        "Please save the class first before processing course information",
+      );
       return;
     }
 
@@ -114,17 +124,22 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       const toastId = toast.loading("Processing course information...");
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
-      const response = await fetch(`${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
         },
-        credentials: "include",
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || "Failed to process course information");
+        throw new Error(
+          errorData.message || "Failed to process course information",
+        );
       }
 
       const result = await response.json();
@@ -151,7 +166,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
         throw new Error(result.message || "Course processing failed");
       }
     } catch (error) {
-      toast.error(`Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(
+        `Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       console.error("Course processing error:", error);
     } finally {
       setIsProcessingCourse(false);
@@ -163,7 +180,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     name: initialData?.name || "",
     classCode: initialData?.classCode || "",
     year: initialData?.year || new Date().getFullYear(),
-    term: initialData?.term || 'fall',
+    term: initialData?.term || "fall",
     description: initialData?.description || "",
   });
 
@@ -183,7 +200,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
         name: initialData.name || "",
         classCode: initialData.classCode || "",
         year: initialData.year || new Date().getFullYear(),
-        term: initialData.term || 'fall',
+        term: initialData.term || "fall",
         description: initialData.description || "",
       });
     }
@@ -225,10 +242,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     try {
       let result;
 
-      if (mode === 'create') {
-        result = await createClass(
-          formData as Class
-        );
+      if (mode === "create") {
+        result = await createClass(formData as Class);
 
         queryClient.invalidateQueries({ queryKey: ["classes"] });
         toast.success("Class created successfully!");
@@ -240,10 +255,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       } else {
         if (!classId) throw new Error("Class ID is required for editing");
 
-        result = await updateClass(
-          classId,
-          formData as Class
-        );
+        result = await updateClass(classId, formData as Class);
 
         queryClient.invalidateQueries({ queryKey: ["classes"] });
         queryClient.invalidateQueries({ queryKey: ["class", classId] });
@@ -253,7 +265,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
         }
       }
     } catch (error) {
-      toast.error(`Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.error(
+        `Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
       console.error(`Error ${mode}ing class:`, error);
     } finally {
       setIsSubmitting(false);
@@ -261,234 +275,257 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   };
 
   // File upload handling
-  const handleFiles = useCallback(async (files: FileList) => {
-    if (!files || files.length === 0) return;
-    if (!classId) {
-      if (mode === 'create') {
-        toast.error("Please create the class first before uploading documents");
-      } else {
-        toast.error("Please save the class first before uploading documents");
-      }
-      return;
-    }
-
-    const fileArray = Array.from(files);
-
-    try {
-      setIsUploading(true);
-
-      // Create initial file upload statuses
-      const initialStatuses = fileArray.map((file) => ({
-        id: crypto.randomUUID(),
-        name: file.name,
-        progress: 0,
-        status: "uploading" as const,
-      }));
-
-      setFileUploads(initialStatuses);
-
-      // Show toast for multiple files
-      let toastId: string | number;
-      if (fileArray.length > 1) {
-        toastId = toast.loading(`Uploading ${fileArray.length} files...`);
-      } else {
-        toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
+  const handleFiles = useCallback(
+    async (files: FileList) => {
+      if (!files || files.length === 0) return;
+      if (!classId) {
+        if (mode === "create") {
+          toast.error(
+            "Please create the class first before uploading documents",
+          );
+        } else {
+          toast.error("Please save the class first before uploading documents");
+        }
+        return;
       }
 
-      // Get the API URL from environment
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const fileArray = Array.from(files);
 
-      // Upload each file in parallel
-      const uploadPromises = fileArray.map((file, index) => {
-        return new Promise<void>((resolve, reject) => {
-          // Generate a unique file ID
-          const fileId = initialStatuses[index].id;
+      try {
+        setIsUploading(true);
 
-          const tusMetadata = {
-            filename: file.name,
-            filetype: file.type,
-            class: classId,
-            fileId: fileId,
-            // Add ZIP support with auto-classification
-            ...(file.type === "application/zip" && {
-              zip: "true",
-              autoClassify: "true"
-            })
-          };
+        // Create initial file upload statuses
+        const initialStatuses = fileArray.map((file) => ({
+          id: crypto.randomUUID(),
+          name: file.name,
+          progress: 0,
+          status: "uploading" as const,
+        }));
 
-          // Create a new tus upload
-          const upload = new tus.Upload(file, {
-            endpoint: `${apiUrl}/documents/tus`,
-            retryDelays: [0, 3000, 5000, 10000, 20000],
-            metadata: tusMetadata,
-            onError: (error) => {
-              console.error(`Failed to upload ${file.name}: `, error);
+        setFileUploads(initialStatuses);
 
-              // Update file status
-              setFileUploads((prev) =>
-                prev.map((item) =>
-                  item.id === fileId
-                    ? {
-                      ...item,
-                      status: "error" as const,
-                      error: error.message || "Unknown error",
-                    }
-                    : item,
-                ),
-              );
+        // Show toast for multiple files
+        let toastId: string | number;
+        if (fileArray.length > 1) {
+          toastId = toast.loading(`Uploading ${fileArray.length} files...`);
+        } else {
+          toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
+        }
 
-              toast.error(
-                `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
-              );
+        // Get the API URL from environment
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
 
-              reject(error);
-            },
-            onProgress: (bytesUploaded, bytesTotal) => {
-              const percentage = Math.round((bytesUploaded / bytesTotal) * 100);
+        // Upload each file in parallel
+        const uploadPromises = fileArray.map((file, index) => {
+          return new Promise<void>((resolve, reject) => {
+            // Generate a unique file ID
+            const fileId = initialStatuses[index].id;
 
-              // Update file status
-              setFileUploads((prev) => {
-                const updated = prev.map((item) =>
-                  item.id === fileId ? { ...item, progress: percentage } : item,
-                );
+            const tusMetadata = {
+              filename: file.name,
+              filetype: file.type,
+              class: classId,
+              fileId: fileId,
+              // Add ZIP support with auto-classification
+              ...(file.type === "application/zip" && {
+                zip: "true",
+                autoClassify: "true",
+              }),
+            };
 
-                // Calculate overall progress inline to avoid dependency issues
-                const totalProgress = updated.reduce((sum, file) => sum + file.progress, 0);
-                const overallPercent = Math.round(totalProgress / updated.length);
-                setOverallProgress(overallPercent);
-
-                return updated;
-              });
-            },
-            onSuccess: async () => {
-              // Finalize the upload
-              try {
-                const finalizePayload = {
-                  fileId,
-                  classId: classId,
-                  // Add ZIP support with auto-classification
-                  ...(file.type === "application/zip" && {
-                    zip: true,
-                    autoClassify: true
-                  })
-                };
-
-                const response = await fetch(
-                  `${apiUrl}/documents/tus/finalize`,
-                  {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                    credentials: "include",
-                    body: JSON.stringify(finalizePayload),
-                  },
-                );
-
-                if (!response.ok) {
-                  const errorData = await response.json();
-                  throw new Error(
-                    errorData.message || "Failed to finalize upload",
-                  );
-                }
-
-                // Update file status
-                setFileUploads((prev) =>
-                  prev.map((item) =>
-                    item.id === fileId
-                      ? { ...item, status: "complete" as const, progress: 100 }
-                      : item,
-                  ),
-                );
-
-                toast.success(`${file.name} uploaded successfully!`);
-                resolve();
-              } catch (error) {
-                console.error(`Finalization error for ${file.name}:`, error);
+            // Create a new tus upload
+            const upload = new tus.Upload(file, {
+              endpoint: `${apiUrl}/documents/tus`,
+              retryDelays: [0, 3000, 5000, 10000, 20000],
+              metadata: tusMetadata,
+              onError: (error) => {
+                console.error(`Failed to upload ${file.name}: `, error);
 
                 // Update file status
                 setFileUploads((prev) =>
                   prev.map((item) =>
                     item.id === fileId
                       ? {
-                        ...item,
-                        status: "error" as const,
-                        error:
-                          error instanceof Error
-                            ? error.message
-                            : "Unknown error",
-                      }
+                          ...item,
+                          status: "error" as const,
+                          error: error.message || "Unknown error",
+                        }
                       : item,
                   ),
                 );
 
                 toast.error(
-                  `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
                 );
 
                 reject(error);
+              },
+              onProgress: (bytesUploaded, bytesTotal) => {
+                const percentage = Math.round(
+                  (bytesUploaded / bytesTotal) * 100,
+                );
+
+                // Update file status
+                setFileUploads((prev) => {
+                  const updated = prev.map((item) =>
+                    item.id === fileId
+                      ? { ...item, progress: percentage }
+                      : item,
+                  );
+
+                  // Calculate overall progress inline to avoid dependency issues
+                  const totalProgress = updated.reduce(
+                    (sum, file) => sum + file.progress,
+                    0,
+                  );
+                  const overallPercent = Math.round(
+                    totalProgress / updated.length,
+                  );
+                  setOverallProgress(overallPercent);
+
+                  return updated;
+                });
+              },
+              onSuccess: async () => {
+                // Finalize the upload
+                try {
+                  const finalizePayload = {
+                    fileId,
+                    classId: classId,
+                    // Add ZIP support with auto-classification
+                    ...(file.type === "application/zip" && {
+                      zip: true,
+                      autoClassify: true,
+                    }),
+                  };
+
+                  const response = await fetch(
+                    `${apiUrl}/documents/tus/finalize`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                      },
+                      credentials: "include",
+                      body: JSON.stringify(finalizePayload),
+                    },
+                  );
+
+                  if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(
+                      errorData.message || "Failed to finalize upload",
+                    );
+                  }
+
+                  // Update file status
+                  setFileUploads((prev) =>
+                    prev.map((item) =>
+                      item.id === fileId
+                        ? {
+                            ...item,
+                            status: "complete" as const,
+                            progress: 100,
+                          }
+                        : item,
+                    ),
+                  );
+
+                  toast.success(`${file.name} uploaded successfully!`);
+                  resolve();
+                } catch (error) {
+                  console.error(`Finalization error for ${file.name}:`, error);
+
+                  // Update file status
+                  setFileUploads((prev) =>
+                    prev.map((item) =>
+                      item.id === fileId
+                        ? {
+                            ...item,
+                            status: "error" as const,
+                            error:
+                              error instanceof Error
+                                ? error.message
+                                : "Unknown error",
+                          }
+                        : item,
+                    ),
+                  );
+
+                  toast.error(
+                    `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+                  );
+
+                  reject(error);
+                }
+              },
+            });
+
+            // Start the upload
+            upload.start();
+          });
+        });
+
+        // Wait for all uploads to complete
+        try {
+          await Promise.allSettled(uploadPromises);
+
+          // Dismiss the loading toast
+          toast.dismiss(toastId);
+
+          // Check if all uploads were successful - use current state
+          setFileUploads((currentUploads) => {
+            const allSuccessful = currentUploads.every(
+              (f) => f.status === "complete",
+            );
+
+            // Show final toast
+            if (allSuccessful) {
+              if (fileArray.length > 1) {
+                toast.success(
+                  `All ${fileArray.length} files uploaded successfully!`,
+                );
               }
-            },
+            } else {
+              const failedCount = currentUploads.filter(
+                (f) => f.status === "error",
+              ).length;
+              toast.error(
+                `${failedCount} of ${fileArray.length} files failed to upload.`,
+              );
+            }
+
+            return currentUploads;
           });
 
-          // Start the upload
-          upload.start();
-        });
-      });
-
-      // Wait for all uploads to complete
-      try {
-        await Promise.allSettled(uploadPromises);
-
-        // Dismiss the loading toast
-        toast.dismiss(toastId);
-
-        // Check if all uploads were successful - use current state
-        setFileUploads((currentUploads) => {
-          const allSuccessful = currentUploads.every((f) => f.status === "complete");
-
-          // Show final toast
-          if (allSuccessful) {
-            if (fileArray.length > 1) {
-              toast.success(`All ${fileArray.length} files uploaded successfully!`);
-            }
-          } else {
-            const failedCount = currentUploads.filter((f) => f.status === "error").length;
-            toast.error(
-              `${failedCount} of ${fileArray.length} files failed to upload.`,
-            );
+          // Reset form
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
           }
+          setFileUploads([]);
 
-          return currentUploads;
-        });
-
-        // Reset form
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ["documents", classId] });
+        } catch (error) {
+          console.error("Some uploads failed:", error);
+          // Dismiss the loading toast
+          toast.dismiss(toastId);
+        } finally {
+          setIsUploading(false);
+          setOverallProgress(0);
+          setFileUploads([]);
         }
-        setFileUploads([]);
-
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ["documents", classId] });
-
       } catch (error) {
-        console.error("Some uploads failed:", error);
-        // Dismiss the loading toast
-        toast.dismiss(toastId);
-      } finally {
+        console.error("Upload initialization error:", error);
+        toast.error(
+          `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
         setIsUploading(false);
-        setOverallProgress(0);
         setFileUploads([]);
       }
-    } catch (error) {
-      console.error("Upload initialization error:", error);
-      toast.error(
-        `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`,
-      );
-      setIsUploading(false);
-      setFileUploads([]);
-    }
-  }, [classId, queryClient]);
+    },
+    [classId, queryClient],
+  );
 
   // Drag and drop handlers
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -503,22 +540,28 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     setIsDragOver(false);
   }, []);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragOver(false);
 
-    const files = e.dataTransfer.files;
-    if (files && files.length > 0) {
-      handleFiles(files);
-    }
-  }, [handleFiles]);
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        handleFiles(files);
+      }
+    },
+    [handleFiles],
+  );
 
-  const handleFileInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      handleFiles(e.target.files);
-    }
-  }, [handleFiles]);
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFiles(e.target.files);
+      }
+    },
+    [handleFiles],
+  );
 
   const handleClick = useCallback(() => {
     if (!isUploading) {
@@ -542,14 +585,14 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             "Content-Type": "application/json",
           },
           credentials: "include",
-        }
+        },
       );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           errorData.message ||
-          `Failed to delete document: ${response.status} ${response.statusText}`,
+            `Failed to delete document: ${response.status} ${response.statusText}`,
         );
       }
 
@@ -560,7 +603,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     } catch (error) {
       console.error("Delete document error:", error);
       toast.error(
-        `Failed to delete document: ${error instanceof Error ? error.message : "Unknown error"
+        `Failed to delete document: ${
+          error instanceof Error ? error.message : "Unknown error"
         }`,
       );
     } finally {
@@ -568,8 +612,11 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
     }
   };
 
-  const handleDocumentTypeChange = async (documentId: string, newType: string) => {
-    try { 
+  const handleDocumentTypeChange = async (
+    documentId: string,
+    newType: string,
+  ) => {
+    try {
       await updateDocument(documentId, { type: newType as DocumentType });
       queryClient.invalidateQueries({ queryKey: ["documents", classId] });
       toast.success("Document type updated");
@@ -580,7 +627,10 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   };
 
   const getDocumentTypeInfo = (type: string) => {
-    const typeMap: Record<string, { label: string; icon: string; color: string }> = {
+    const typeMap: Record<
+      string,
+      { label: string; icon: string; color: string }
+    > = {
       homework: { label: "📝 Homework", icon: "📝", color: "bg-blue-500" },
       project: { label: "🚀 Project", icon: "🚀", color: "bg-purple-500" },
       quiz: { label: "❓ Quiz", icon: "❓", color: "bg-yellow-500" },
@@ -600,13 +650,19 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
   const getDocumentIcon = (filename: string, docType?: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
 
-    if (["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")) {
+    if (
+      ["jpg", "jpeg", "png", "gif", "svg", "webp"].includes(extension || "")
+    ) {
       return <ImageIcon className="h-6 w-6 text-blue-500" />;
     } else if (["pdf"].includes(extension || "")) {
       return <FileText className="h-6 w-6 text-red-500" />;
     } else if (["doc", "docx", "txt", "md"].includes(extension || "")) {
       return <File className="h-6 w-6 text-green-500" />;
-    } else if (["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(extension || "")) {
+    } else if (
+      ["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(
+        extension || "",
+      )
+    ) {
       return <FileCode className="h-6 w-6 text-yellow-500" />;
     }
 
@@ -642,7 +698,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="e.g., Introduction to Computer Science"
               className={errors.name ? "border-red-500" : ""}
             />
@@ -657,7 +715,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             <Input
               id="classCode"
               value={formData.classCode}
-              onChange={(e) => setFormData(prev => ({ ...prev, classCode: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, classCode: e.target.value }))
+              }
               placeholder="e.g., CS101"
               className={errors.classCode ? "border-red-500" : ""}
             />
@@ -674,7 +734,12 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                 id="year"
                 type="number"
                 value={formData.year}
-                onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || new Date().getFullYear() }))}
+                onChange={(e) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    year: parseInt(e.target.value) || new Date().getFullYear(),
+                  }))
+                }
                 min="2020"
                 max="2030"
                 className={errors.year ? "border-red-500" : ""}
@@ -688,8 +753,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
               <Label htmlFor="term">Term *</Label>
               <Select
                 value={formData.term}
-                onValueChange={(value: 'fall' | 'spring' | 'summer') =>
-                  setFormData(prev => ({ ...prev, term: value }))
+                onValueChange={(value: "fall" | "spring" | "summer") =>
+                  setFormData((prev) => ({ ...prev, term: value }))
                 }
               >
                 <SelectTrigger className={errors.term ? "border-red-500" : ""}>
@@ -713,7 +778,12 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Describe the class objectives, topics covered, and any other relevant information..."
               rows={4}
               className={errors.description ? "border-red-500" : ""}
@@ -724,7 +794,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
           </div>
 
           {/* Documents Section */}
-          {(
+          {
             <div className="space-y-4">
               <Label>Documents</Label>
 
@@ -764,18 +834,18 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                   <div className="flex border rounded-md">
                     <Button
                       type="button"
-                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      variant={viewMode === "grid" ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setViewMode('grid')}
+                      onClick={() => setViewMode("grid")}
                       className="rounded-r-none"
                     >
                       <Grid3X3 className="h-4 w-4" />
                     </Button>
                     <Button
                       type="button"
-                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      variant={viewMode === "list" ? "default" : "ghost"}
                       size="sm"
-                      onClick={() => setViewMode('list')}
+                      onClick={() => setViewMode("list")}
                       className="rounded-l-none border-l"
                     >
                       <List className="h-4 w-4" />
@@ -821,15 +891,30 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
               </div>
 
               {/* Documents Display Area */}
-              <div className={cn(
-                "min-h-[200px] rounded-lg",
-                documents.length === 0 ? "border-2 border-dashed" : ""
-              )}>
+              <div
+                className={cn(
+                  "min-h-[200px] rounded-lg",
+                  documents.length === 0 ? "border-2 border-dashed" : "",
+                )}
+              >
                 {documentsLoading ? (
                   <div className="p-6">
-                    <div className={viewMode === 'grid' ? 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4' : 'space-y-3'}>
+                    <div
+                      className={
+                        viewMode === "grid"
+                          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"
+                          : "space-y-3"
+                      }
+                    >
                       {[...Array(6)].map((_, i) => (
-                        <div key={i} className={viewMode === 'grid' ? 'aspect-square bg-muted animate-pulse rounded-lg' : 'h-16 bg-muted animate-pulse rounded-lg'} />
+                        <div
+                          key={i}
+                          className={
+                            viewMode === "grid"
+                              ? "aspect-square bg-muted animate-pulse rounded-lg"
+                              : "h-16 bg-muted animate-pulse rounded-lg"
+                          }
+                        />
                       ))}
                     </div>
                   </div>
@@ -837,37 +922,63 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                   <div className="flex flex-col items-center justify-center py-12 text-center">
                     <UploadCloud className="h-12 w-12 text-muted-foreground mb-4" />
                     <p className="text-lg font-medium text-muted-foreground mb-2">
-                      {documents.length === 0 ? "No documents yet" : "No documents match your filters"}
+                      {documents.length === 0
+                        ? "No documents yet"
+                        : "No documents match your filters"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {documents.length === 0 ? "Drag and drop files below to get started" : "Try adjusting your search or filters"}
+                      {documents.length === 0
+                        ? "Drag and drop files below to get started"
+                        : "Try adjusting your search or filters"}
                     </p>
                   </div>
                 ) : (
                   <div className="p-4">
-                    {viewMode === 'grid' ? (
+                    {viewMode === "grid" ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {filteredDocuments.map((doc) => {
                           const typeInfo = getDocumentTypeInfo(doc.type);
                           return (
-                            <div key={doc.id} className="group relative border rounded-lg hover:shadow-md transition-all">
+                            <div
+                              key={doc.id}
+                              className="group relative border rounded-lg hover:shadow-md transition-all"
+                            >
                               {/* Type selector in top left */}
                               <div className="absolute top-2 left-2 z-10">
                                 <Select
                                   value={doc.type}
-                                  onValueChange={(value) => handleDocumentTypeChange(doc.id, value)}
+                                  onValueChange={(value) =>
+                                    handleDocumentTypeChange(doc.id, value)
+                                  }
                                 >
-                                  <SelectTrigger className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center" size="sm">
-                                    <span className="text-sm">{getDocumentTypeIcon(doc.type)}</span>
+                                  <SelectTrigger
+                                    className="text-xs bg-white/90 backdrop-blur-sm border-0 shadow-sm justify-center"
+                                    size="sm"
+                                  >
+                                    <span className="text-sm">
+                                      {getDocumentTypeIcon(doc.type)}
+                                    </span>
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="homework">📝 Homework</SelectItem>
-                                    <SelectItem value="project">🚀 Project</SelectItem>
-                                    <SelectItem value="quiz">❓ Quiz</SelectItem>
-                                    <SelectItem value="midterm">📊 Midterm</SelectItem>
+                                    <SelectItem value="homework">
+                                      📝 Homework
+                                    </SelectItem>
+                                    <SelectItem value="project">
+                                      🚀 Project
+                                    </SelectItem>
+                                    <SelectItem value="quiz">
+                                      ❓ Quiz
+                                    </SelectItem>
+                                    <SelectItem value="midterm">
+                                      📊 Midterm
+                                    </SelectItem>
                                     <SelectItem value="lab">🧪 Lab</SelectItem>
-                                    <SelectItem value="lecture">📚 Lecture</SelectItem>
-                                    <SelectItem value="syllabus">📋 Syllabus</SelectItem>
+                                    <SelectItem value="lecture">
+                                      📚 Lecture
+                                    </SelectItem>
+                                    <SelectItem value="syllabus">
+                                      📋 Syllabus
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -915,13 +1026,19 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                         {filteredDocuments.map((doc) => {
                           const typeInfo = getDocumentTypeInfo(doc.type);
                           return (
-                            <div key={doc.id} className="flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all">
+                            <div
+                              key={doc.id}
+                              className="flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all"
+                            >
                               <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
                                 {getDocumentIcon(doc.name, doc.type)}
                               </div>
 
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium truncate" title={doc.name}>
+                                <p
+                                  className="font-medium truncate"
+                                  title={doc.name}
+                                >
                                   {doc.name}
                                 </p>
                               </div>
@@ -929,19 +1046,33 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                               <div className="flex items-center gap-2">
                                 <Select
                                   value={doc.type}
-                                  onValueChange={(value) => handleDocumentTypeChange(doc.id, value)}
+                                  onValueChange={(value) =>
+                                    handleDocumentTypeChange(doc.id, value)
+                                  }
                                 >
                                   <SelectTrigger className="w-40 h-8">
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="homework">📝 Homework</SelectItem>
-                                    <SelectItem value="project">🚀 Project</SelectItem>
-                                    <SelectItem value="quiz">❓ Quiz</SelectItem>
-                                    <SelectItem value="midterm">📊 Midterm</SelectItem>
+                                    <SelectItem value="homework">
+                                      📝 Homework
+                                    </SelectItem>
+                                    <SelectItem value="project">
+                                      🚀 Project
+                                    </SelectItem>
+                                    <SelectItem value="quiz">
+                                      ❓ Quiz
+                                    </SelectItem>
+                                    <SelectItem value="midterm">
+                                      📊 Midterm
+                                    </SelectItem>
                                     <SelectItem value="lab">🧪 Lab</SelectItem>
-                                    <SelectItem value="lecture">📚 Lecture</SelectItem>
-                                    <SelectItem value="syllabus">📋 Syllabus</SelectItem>
+                                    <SelectItem value="lecture">
+                                      📚 Lecture
+                                    </SelectItem>
+                                    <SelectItem value="syllabus">
+                                      📋 Syllabus
+                                    </SelectItem>
                                   </SelectContent>
                                 </Select>
 
@@ -975,16 +1106,19 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                 )}
               </div>
             </div>
-          )}
+          }
 
           {/* Action Buttons */}
           <div className="flex justify-between">
             <div className="flex-1 flex justify-end">
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (mode === 'create' ? "Creating..." : "Saving...") : (mode === 'create' ? "Create Class" : "Save Changes")}
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting
+                  ? mode === "create"
+                    ? "Creating..."
+                    : "Saving..."
+                  : mode === "create"
+                    ? "Create Class"
+                    : "Save Changes"}
               </Button>
             </div>
           </div>
@@ -998,7 +1132,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             <DialogTitle>{selectedDocument?.name}</DialogTitle>
           </DialogHeader>
           <div className="h-[70vh] overflow-hidden">
-            {selectedDocument && <DocumentViewer document={selectedDocument} bare={true} />}
+            {selectedDocument && (
+              <DocumentViewer document={selectedDocument} bare={true} />
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -1040,7 +1176,10 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       </Dialog>
 
       {/* Course Processing Dialog */}
-      <Dialog open={showCourseProcessDialog} onOpenChange={setShowCourseProcessDialog}>
+      <Dialog
+        open={showCourseProcessDialog}
+        onOpenChange={setShowCourseProcessDialog}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -1048,7 +1187,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
               Process Course Information
             </DialogTitle>
             <DialogDescription>
-              Extract course information from uploaded documents, especially syllabus files.
+              Extract course information from uploaded documents, especially
+              syllabus files.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -1059,7 +1199,8 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
                   Warning: This will override existing information
                 </p>
                 <p className="text-sm text-amber-700 dark:text-amber-300">
-                  Course processing will analyze your documents (especially syllabus files) and may update the following fields:
+                  Course processing will analyze your documents (especially
+                  syllabus files) and may update the following fields:
                 </p>
                 <ul className="text-sm text-amber-700 dark:text-amber-300 list-disc list-inside space-y-1 ml-2">
                   <li>Class name and code</li>
@@ -1072,7 +1213,9 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
             </div>
 
             <p className="text-sm text-muted-foreground">
-              This will analyze all documents in this class and extract course information using AI. Make sure you have uploaded relevant documents (especially a syllabus) before processing.
+              This will analyze all documents in this class and extract course
+              information using AI. Make sure you have uploaded relevant
+              documents (especially a syllabus) before processing.
             </p>
           </div>
           <DialogFooter>
@@ -1101,4 +1244,4 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
       </Dialog>
     </div>
   );
-} 
+}

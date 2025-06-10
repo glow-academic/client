@@ -9,14 +9,32 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Edit, Trash2, Play, Users, Bot, MessageSquare, Plus, FileCheck, Clock, Settings } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Play,
+  Users,
+  Bot,
+  MessageSquare,
+  Plus,
+  FileCheck,
+  Clock,
+  Settings,
+} from "lucide-react";
 
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
 import { deleteEval } from "@/utils/mutations/evals/delete-eval";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +65,10 @@ interface Eval {
 export default function Evals() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch evaluations data
@@ -94,26 +115,29 @@ export default function Evals() {
   };
 
   const getEvalTypeBadge = (evalType: "student" | "ta") => {
-    return evalType === "student" 
+    return evalType === "student"
       ? { variant: "default" as const, text: "Student", icon: Users }
       : { variant: "secondary" as const, text: "TA", icon: Bot };
   };
 
   const getComplexityBadge = (evaluation: Eval) => {
-    const totalItems = evaluation.scenarioIds.filter(id => id !== "RAY").length + 
-                      evaluation.agentIds.filter(id => id !== "RAY").length + 
-                      evaluation.rubricIds.filter(id => id !== "RAY").length;
-    
-    if (totalItems >= 10) return { variant: "destructive" as const, text: "Complex" };
-    if (totalItems >= 5) return { variant: "default" as const, text: "Moderate" };
+    const totalItems =
+      evaluation.scenarioIds.filter((id) => id !== "RAY").length +
+      evaluation.agentIds.filter((id) => id !== "RAY").length +
+      evaluation.rubricIds.filter((id) => id !== "RAY").length;
+
+    if (totalItems >= 10)
+      return { variant: "destructive" as const, text: "Complex" };
+    if (totalItems >= 5)
+      return { variant: "default" as const, text: "Moderate" };
     return { variant: "outline" as const, text: "Simple" };
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
@@ -124,22 +148,25 @@ export default function Evals() {
           const typeBadge = getEvalTypeBadge(evaluation.evalType);
           const complexityBadge = getComplexityBadge(evaluation);
           const TypeIcon = typeBadge.icon;
-          
+
           return (
-            <Card key={evaluation.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={evaluation.id}
+              className="hover:shadow-md transition-shadow"
+            >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                                  <div className="space-y-1">
-                  <CardTitle className="text-base">{evaluation.name}</CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <TypeIcon className="h-3 w-3" />
-                    {typeBadge.text} Evaluation
-                  </CardDescription>
-                </div>
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">
+                      {evaluation.name}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <TypeIcon className="h-3 w-3" />
+                      {typeBadge.text} Evaluation
+                    </CardDescription>
+                  </div>
                   <div className="flex gap-1">
-                    <Badge variant={typeBadge.variant}>
-                      {typeBadge.text}
-                    </Badge>
+                    <Badge variant={typeBadge.variant}>{typeBadge.text}</Badge>
                     <Badge variant={complexityBadge.variant}>
                       {complexityBadge.text}
                     </Badge>
@@ -153,19 +180,29 @@ export default function Evals() {
                       {evaluation.description}
                     </p>
                   )}
-                  
+
                   <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <MessageSquare className="h-3 w-3" />
-                      {evaluation.scenarioIds.filter(id => id !== "RAY").length} scenarios
+                      {
+                        evaluation.scenarioIds.filter((id) => id !== "RAY")
+                          .length
+                      }{" "}
+                      scenarios
                     </div>
                     <div className="flex items-center gap-1">
                       <Bot className="h-3 w-3" />
-                      {evaluation.agentIds.filter(id => id !== "RAY").length} agents
+                      {
+                        evaluation.agentIds.filter((id) => id !== "RAY").length
+                      }{" "}
+                      agents
                     </div>
                     <div className="flex items-center gap-1">
                       <FileCheck className="h-3 w-3" />
-                      {evaluation.rubricIds.filter(id => id !== "RAY").length} rubrics
+                      {
+                        evaluation.rubricIds.filter((id) => id !== "RAY").length
+                      }{" "}
+                      rubrics
                     </div>
                     <div className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
@@ -182,9 +219,9 @@ export default function Evals() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleRun(evaluation.id)}
                   className="text-green-600 hover:text-green-700"
                 >
@@ -192,13 +229,19 @@ export default function Evals() {
                   Run
                 </Button>
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(evaluation.id)}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(evaluation.id)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => handleDeleteClick(evaluation.id, evaluation.name)}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDeleteClick(evaluation.id, evaluation.name)
+                    }
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -207,7 +250,7 @@ export default function Evals() {
             </Card>
           );
         })}
-        
+
         {evals.length === 0 && (
           <div className="col-span-full">
             <Card className="border-dashed">
@@ -215,7 +258,8 @@ export default function Evals() {
                 <Settings className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No evaluations yet</h3>
                 <p className="text-muted-foreground text-center mb-4">
-                  Create your first evaluation to start assessing agent performance
+                  Create your first evaluation to start assessing agent
+                  performance
                 </p>
                 <Button onClick={handleCreateNew}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -233,8 +277,9 @@ export default function Evals() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the evaluation "{deleteItem?.name}". 
-              This action cannot be undone and will remove all associated evaluation runs and results.
+              This will permanently delete the evaluation "{deleteItem?.name}".
+              This action cannot be undone and will remove all associated
+              evaluation runs and results.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

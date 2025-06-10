@@ -4,9 +4,16 @@ import { db } from "@/utils/drizzle/database";
 import { topics } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function updateTopic(id: string, data: Partial<typeof topics.$inferInsert>) {
+export async function updateTopic(
+  id: string,
+  data: Partial<typeof topics.$inferInsert>,
+) {
   try {
-    const result = await db.update(topics).set(data).where(eq(topics.id, id)).returning();
+    const result = await db
+      .update(topics)
+      .set(data)
+      .where(eq(topics.id, id))
+      .returning();
     return result[0];
   } catch (error) {
     console.error("Error updating topic:", error);

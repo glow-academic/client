@@ -9,7 +9,15 @@
 import ClassEdit from "@/components/classes/ClassEdit";
 import { use } from "react";
 
-export default function ClassEditPage({ params }: { params: Promise<{ classId: string }> }) {
+export default function ClassEditPage({
+  params,
+}: {
+  params: Promise<{ classId: string }>;
+}) {
   const { classId } = use(params);
-  return <div className="space-y-6"><ClassEdit classId={classId} /></div>;
+  return (
+    <div className="space-y-6">
+      <ClassEdit classId={classId} />
+    </div>
+  );
 }

@@ -45,26 +45,26 @@ const getInitials = (name?: string): string => {
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
-    case 'admin':
-      return 'destructive';
-    case 'instructional':
-      return 'default';
-    case 'instructor':
-      return 'secondary';
-    case 'ta':
-      return 'outline';
+    case "admin":
+      return "destructive";
+    case "instructional":
+      return "default";
+    case "instructor":
+      return "secondary";
+    case "ta":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 };
 
 const getRoleIcon = (role: string) => {
   switch (role) {
-    case 'instructional':
+    case "instructional":
       return Shield;
-    case 'instructor':
+    case "instructor":
       return GraduationCap;
-    case 'ta':
+    case "ta":
       return UserIcon;
     default:
       return UserIcon;
@@ -73,21 +73,21 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
-    case 'instructional':
-      return 'Instructional Staff';
-    case 'instructor':
-      return 'Instructor';
-    case 'ta':
-      return 'Teaching Assistant';
+    case "instructional":
+      return "Instructional Staff";
+    case "instructor":
+      return "Instructor";
+    case "ta":
+      return "Teaching Assistant";
     default:
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
 };
 
 export default function Staff() {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [roleFilter, setRoleFilter] = React.useState<string>('all');
-  const [sortBy, setSortBy] = React.useState<string>('name');
+  const [searchTerm, setSearchTerm] = React.useState("");
+  const [roleFilter, setRoleFilter] = React.useState<string>("all");
+  const [sortBy, setSortBy] = React.useState<string>("name");
 
   const router = useRouter();
 
@@ -100,7 +100,7 @@ export default function Staff() {
   // Filter staff users (exclude admin and regular users)
   const staffUsers = React.useMemo(() => {
     return allUsers.filter((user: User) =>
-      ['instructional', 'instructor', 'ta'].includes(user.role)
+      ["instructional", "instructor", "ta"].includes(user.role),
     );
   }, [allUsers]);
 
@@ -109,29 +109,30 @@ export default function Staff() {
     let filtered = staffUsers;
 
     // Role filter
-    if (roleFilter !== 'all') {
+    if (roleFilter !== "all") {
       filtered = filtered.filter((user: User) => user.role === roleFilter);
     }
 
     // Search filter
     if (searchTerm) {
-      filtered = filtered.filter((user: User) =>
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(
+        (user: User) =>
+          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          user.role.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Sort
     filtered.sort((a: User, b: User) => {
       switch (sortBy) {
-        case 'name':
+        case "name":
           return a.name.localeCompare(b.name);
-        case 'role':
+        case "role":
           return a.role.localeCompare(b.role);
-        case 'username':
+        case "username":
           return a.username.localeCompare(b.username);
-        case 'classes':
+        case "classes":
           return (b.classIds?.length || 0) - (a.classIds?.length || 0);
         default:
           return 0;
@@ -145,9 +146,11 @@ export default function Staff() {
   const roleCounts = React.useMemo(() => {
     return {
       total: staffUsers.length,
-      instructional: staffUsers.filter((u: User) => u.role === 'instructional').length,
-      instructor: staffUsers.filter((u: User) => u.role === 'instructor').length,
-      ta: staffUsers.filter((u: User) => u.role === 'ta').length,
+      instructional: staffUsers.filter((u: User) => u.role === "instructional")
+        .length,
+      instructor: staffUsers.filter((u: User) => u.role === "instructor")
+        .length,
+      ta: staffUsers.filter((u: User) => u.role === "ta").length,
     };
   }, [staffUsers]);
 
@@ -267,11 +270,13 @@ export default function Staff() {
           <TableBody>
             {filteredUsers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  {searchTerm || roleFilter !== 'all'
+                <TableCell
+                  colSpan={5}
+                  className="text-center py-8 text-muted-foreground"
+                >
+                  {searchTerm || roleFilter !== "all"
                     ? "No staff members match your filters"
-                    : "No staff members found"
-                  }
+                    : "No staff members found"}
                 </TableCell>
               </TableRow>
             ) : (
@@ -299,9 +304,7 @@ export default function Staff() {
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {user.username}
-                    </TableCell>
+                    <TableCell className="text-sm">{user.username}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {user.classIds?.length || 0} classes
                     </TableCell>

@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function getEvalsByBaseAgent(baseAgentId: string) {
   try {
-    return await db.select().from(evals).where(eq(evals.baseAgentId, baseAgentId));
+    return await db
+      .select()
+      .from(evals)
+      .where(eq(evals.baseAgentId, baseAgentId));
   } catch (error) {
     console.error("Error fetching evals by baseAgent:", error);
     throw error;

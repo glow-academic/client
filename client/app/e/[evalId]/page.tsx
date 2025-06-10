@@ -10,7 +10,15 @@
 import Evaluation from "@/components/common/chat/Evaluation";
 import { use } from "react";
 
-export default function EvaluationPage({ params }: { params: Promise<{ evalId: string }> }) {
+export default function EvaluationPage({
+  params,
+}: {
+  params: Promise<{ evalId: string }>;
+}) {
   const { evalId } = use(params);
-  return <div className="space-y-6"><Evaluation evaluationId={evalId} /></div>;
+  return (
+    <div className="space-y-6">
+      <Evaluation evaluationId={evalId} />
+    </div>
+  );
 }

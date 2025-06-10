@@ -22,7 +22,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -38,7 +44,18 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { BookOpen, Target, Clock, Users, MessageSquare, ChevronDown, ChevronUp, Edit, Save, X } from "lucide-react";
+import {
+  BookOpen,
+  Target,
+  Clock,
+  Users,
+  MessageSquare,
+  ChevronDown,
+  ChevronUp,
+  Edit,
+  Save,
+  X,
+} from "lucide-react";
 
 // Icon mapping for different criteria
 const iconMap: Record<string, any> = {
@@ -51,17 +68,17 @@ const iconMap: Record<string, any> = {
 // Color mapping for different criteria
 const colorMap: Record<string, string> = {
   "Facilitates student-driven learning": "blue",
-  "Demonstrates understanding of course objectives": "green", 
+  "Demonstrates understanding of course objectives": "green",
   "Manages session time effectively": "amber",
   "Adapts approach to individual student needs": "purple",
 };
 
 const ratingLabels = {
   5: "Excellent",
-  4: "Good", 
+  4: "Good",
   3: "Acceptable",
   2: "Marginal",
-  1: "Poor"
+  1: "Poor",
 };
 
 const ratingColors = {
@@ -69,7 +86,7 @@ const ratingColors = {
   4: "bg-blue-100 text-blue-800 border-blue-200",
   3: "bg-yellow-100 text-yellow-800 border-yellow-200",
   2: "bg-orange-100 text-orange-800 border-orange-200",
-  1: "bg-red-100 text-red-800 border-red-200"
+  1: "bg-red-100 text-red-800 border-red-200",
 };
 
 interface EditingState {
@@ -105,10 +122,12 @@ export default function Rubric({
   const [editing, setEditing] = useState<EditingState>({
     rubric: false,
     standardGroups: {},
-    standards: {}
+    standards: {},
   });
 
-  const [standardGroupForms, setStandardGroupForms] = useState<Record<string, any>>({});
+  const [standardGroupForms, setStandardGroupForms] = useState<
+    Record<string, any>
+  >({});
   const [standardForms, setStandardForms] = useState<Record<string, any>>({});
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
@@ -127,11 +146,15 @@ export default function Rubric({
 
   const { data: standards, isLoading: standardsLoading } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0 && showAdvancedFeatures,
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    enabled:
+      !!standardGroups && standardGroups.length > 0 && showAdvancedFeatures,
   });
 
-  const isLoading = rubricLoading || (showAdvancedFeatures && (standardGroupsLoading || standardsLoading));
+  const isLoading =
+    rubricLoading ||
+    (showAdvancedFeatures && (standardGroupsLoading || standardsLoading));
 
   // Initialize form values when data loads
   useEffect(() => {
@@ -148,12 +171,12 @@ export default function Rubric({
   useEffect(() => {
     if (standardGroups) {
       const forms: Record<string, any> = {};
-      standardGroups.forEach(group => {
+      standardGroups.forEach((group) => {
         forms[group.id] = {
           name: group.name,
           description: group.description,
           points: group.points,
-          passPoints: group.passPoints
+          passPoints: group.passPoints,
         };
       });
       setStandardGroupForms(forms);
@@ -163,11 +186,11 @@ export default function Rubric({
   useEffect(() => {
     if (standards) {
       const forms: Record<string, any> = {};
-      standards.forEach(standard => {
+      standards.forEach((standard) => {
         forms[standard.id] = {
           name: standard.name,
           description: standard.description,
-          points: standard.points
+          points: standard.points,
         };
       });
       setStandardForms(forms);
@@ -200,13 +223,14 @@ export default function Rubric({
   });
 
   const updateRubricMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateRubric(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateRubric(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       if (showAdvancedFeatures) {
         toast.success("Rubric updated successfully");
-        setEditing(prev => ({ ...prev, rubric: false }));
+        setEditing((prev) => ({ ...prev, rubric: false }));
       } else {
         toast.success("Rubric updated successfully!");
         router.push("/create/rubrics");
@@ -219,35 +243,41 @@ export default function Rubric({
   });
 
   const updateStandardGroupMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateStandardGroup(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateStandardGroup(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
       toast.success("Standard group updated successfully");
     },
     onError: () => {
       toast.error("Failed to update standard group");
-    }
+    },
   });
 
   const updateStandardMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => updateStandard(id, data),
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
+      updateStandard(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["standards", standardGroups?.map((group) => group.id)] });
+      queryClient.invalidateQueries({
+        queryKey: ["standards", standardGroups?.map((group) => group.id)],
+      });
       toast.success("Standard updated successfully");
     },
     onError: () => {
       toast.error("Failed to update standard");
-    }
+    },
   });
 
   // Helper functions
   const getStandardsByGroupAndRating = (groupId: string) => {
     if (!standards) return {};
-    
-    const groupStandards = standards.filter(s => s.standardGroupId === groupId);
+
+    const groupStandards = standards.filter(
+      (s) => s.standardGroupId === groupId,
+    );
     const ratingMap: Record<number, any> = {};
-    
-    groupStandards.forEach(standard => {
+
+    groupStandards.forEach((standard) => {
       // Extract rating from name (e.g., "Excellent (5)" -> 5)
       const ratingMatch = standard.name.match(/\((\d+)\)/);
       if (ratingMatch) {
@@ -255,14 +285,14 @@ export default function Rubric({
         ratingMap[rating] = standard;
       }
     });
-    
+
     return ratingMap;
   };
 
   const toggleCard = (index: number) => {
-    setOpenCards(prev => ({
+    setOpenCards((prev) => ({
       ...prev,
-      [index]: !prev[index]
+      [index]: !prev[index],
     }));
   };
 
@@ -302,8 +332,11 @@ export default function Rubric({
         createMutation.mutate(formData);
       }
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} rubric:`, error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} rubric`);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} rubric:`,
+        error,
+      );
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} rubric`);
     } finally {
       setIsSubmitting(false);
     }
@@ -313,36 +346,39 @@ export default function Rubric({
     router.push("/create/rubrics");
   };
 
-  const handleInputChange = (field: keyof typeof formData, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleInputChange = (
+    field: keyof typeof formData,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSaveRubric = () => {
     updateRubricMutation.mutate({
       id: rubricId!,
-      data: formData
+      data: formData,
     });
   };
 
   const handleSaveStandardGroup = (groupId: string) => {
     updateStandardGroupMutation.mutate({
       id: groupId,
-      data: standardGroupForms[groupId]
+      data: standardGroupForms[groupId],
     });
-    setEditing(prev => ({
+    setEditing((prev) => ({
       ...prev,
-      standardGroups: { ...prev.standardGroups, [groupId]: false }
+      standardGroups: { ...prev.standardGroups, [groupId]: false },
     }));
   };
 
   const handleSaveStandard = (standardId: string) => {
     updateStandardMutation.mutate({
       id: standardId,
-      data: standardForms[standardId]
+      data: standardForms[standardId],
     });
-    setEditing(prev => ({
+    setEditing((prev) => ({
       ...prev,
-      standards: { ...prev.standards, [standardId]: false }
+      standards: { ...prev.standards, [standardId]: false },
     }));
   };
 
@@ -380,17 +416,23 @@ export default function Rubric({
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Rubric Not Found</h1>
-          <p className="text-muted-foreground">The rubric you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground">
+            The rubric you're looking for doesn't exist.
+          </p>
         </div>
-        <Button onClick={handleCancel}>
-          Back to Rubrics
-        </Button>
+        <Button onClick={handleCancel}>Back to Rubrics</Button>
       </div>
     );
   }
 
   // For advanced features, show the full editing interface
-  if (showAdvancedFeatures && isEditMode && rubric && standardGroups && standards) {
+  if (
+    showAdvancedFeatures &&
+    isEditMode &&
+    rubric &&
+    standardGroups &&
+    standards
+  ) {
     return (
       <div className="space-y-6">
         {/* Rubric Header */}
@@ -402,30 +444,48 @@ export default function Rubric({
                   <div className="space-y-4">
                     <Input
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       className="text-2xl font-bold"
                       placeholder="Rubric Name"
                     />
                     <Textarea
                       value={formData.description}
-                      onChange={(e) => handleInputChange("description", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("description", e.target.value)
+                      }
                       placeholder="Rubric Description"
                     />
                     <div className="flex gap-4">
                       <div>
-                        <label className="text-sm font-medium">Total Points</label>
+                        <label className="text-sm font-medium">
+                          Total Points
+                        </label>
                         <Input
                           type="number"
                           value={formData.points}
-                          onChange={(e) => handleInputChange("points", parseInt(e.target.value) || 0)}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "points",
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
                         />
                       </div>
                       <div>
-                        <label className="text-sm font-medium">Pass Points</label>
+                        <label className="text-sm font-medium">
+                          Pass Points
+                        </label>
                         <Input
                           type="number"
                           value={formData.passPoints}
-                          onChange={(e) => handleInputChange("passPoints", parseInt(e.target.value) || 0)}
+                          onChange={(e) =>
+                            handleInputChange(
+                              "passPoints",
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
                         />
                       </div>
                     </div>
@@ -433,10 +493,16 @@ export default function Rubric({
                 ) : (
                   <div>
                     <h1 className="text-2xl font-bold">{rubric.name}</h1>
-                    <p className="text-muted-foreground mt-2">{rubric.description}</p>
+                    <p className="text-muted-foreground mt-2">
+                      {rubric.description}
+                    </p>
                     <div className="flex gap-4 mt-2">
-                      <Badge variant="outline">Total: {rubric.points} points</Badge>
-                      <Badge variant="outline">Pass: {rubric.passPoints} points</Badge>
+                      <Badge variant="outline">
+                        Total: {rubric.points} points
+                      </Badge>
+                      <Badge variant="outline">
+                        Pass: {rubric.passPoints} points
+                      </Badge>
                     </div>
                   </div>
                 )}
@@ -447,16 +513,16 @@ export default function Rubric({
                     <Button onClick={handleSaveRubric} size="sm">
                       <Save className="h-4 w-4" />
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
-                        setEditing(prev => ({ ...prev, rubric: false }));
+                        setEditing((prev) => ({ ...prev, rubric: false }));
                         setFormData({
                           name: rubric.name,
                           description: rubric.description,
                           points: rubric.points,
-                          passPoints: rubric.passPoints
+                          passPoints: rubric.passPoints,
                         });
                       }}
                     >
@@ -464,10 +530,12 @@ export default function Rubric({
                     </Button>
                   </>
                 ) : (
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
-                    onClick={() => setEditing(prev => ({ ...prev, rubric: true }))}
+                    onClick={() =>
+                      setEditing((prev) => ({ ...prev, rubric: true }))
+                    }
                   >
                     <Edit className="h-4 w-4 mr-2" />
                     Edit
@@ -489,65 +557,111 @@ export default function Rubric({
 
             return (
               <Card key={group.id} className="overflow-hidden">
-                <Collapsible open={isOpen} onOpenChange={() => toggleCard(index)}>
+                <Collapsible
+                  open={isOpen}
+                  onOpenChange={() => toggleCard(index)}
+                >
                   <CollapsibleTrigger asChild>
                     <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-3 flex-1">
-                          <div className={`p-2 rounded-lg ${
-                            color === 'blue' ? 'bg-blue-100' :
-                            color === 'green' ? 'bg-green-100' :
-                            color === 'amber' ? 'bg-amber-100' :
-                            'bg-purple-100'
-                          }`}>
-                            <IconComponent className={`h-5 w-5 ${
-                              color === 'blue' ? 'text-blue-600' :
-                              color === 'green' ? 'text-green-600' :
-                              color === 'amber' ? 'text-amber-600' :
-                              'text-purple-600'
-                            }`} />
+                          <div
+                            className={`p-2 rounded-lg ${
+                              color === "blue"
+                                ? "bg-blue-100"
+                                : color === "green"
+                                  ? "bg-green-100"
+                                  : color === "amber"
+                                    ? "bg-amber-100"
+                                    : "bg-purple-100"
+                            }`}
+                          >
+                            <IconComponent
+                              className={`h-5 w-5 ${
+                                color === "blue"
+                                  ? "text-blue-600"
+                                  : color === "green"
+                                    ? "text-green-600"
+                                    : color === "amber"
+                                      ? "text-amber-600"
+                                      : "text-purple-600"
+                              }`}
+                            />
                           </div>
                           <div className="flex-1">
                             {isEditingGroup ? (
-                              <div className="space-y-2 w-full" onClick={(e) => e.stopPropagation()}>
+                              <div
+                                className="space-y-2 w-full"
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <Input
-                                  value={standardGroupForms[group.id]?.name || ""}
-                                  onChange={(e) => setStandardGroupForms(prev => ({
-                                    ...prev,
-                                    [group.id]: { ...prev[group.id], name: e.target.value }
-                                  }))}
+                                  value={
+                                    standardGroupForms[group.id]?.name || ""
+                                  }
+                                  onChange={(e) =>
+                                    setStandardGroupForms((prev) => ({
+                                      ...prev,
+                                      [group.id]: {
+                                        ...prev[group.id],
+                                        name: e.target.value,
+                                      },
+                                    }))
+                                  }
                                   className="text-lg font-semibold w-full"
                                 />
                                 <Textarea
-                                  value={standardGroupForms[group.id]?.description || ""}
-                                  onChange={(e) => setStandardGroupForms(prev => ({
-                                    ...prev,
-                                    [group.id]: { ...prev[group.id], description: e.target.value }
-                                  }))}
+                                  value={
+                                    standardGroupForms[group.id]?.description ||
+                                    ""
+                                  }
+                                  onChange={(e) =>
+                                    setStandardGroupForms((prev) => ({
+                                      ...prev,
+                                      [group.id]: {
+                                        ...prev[group.id],
+                                        description: e.target.value,
+                                      },
+                                    }))
+                                  }
                                   className="text-sm w-full"
                                 />
                               </div>
                             ) : (
                               <div>
-                                <CardTitle className="text-lg">{group.name}</CardTitle>
-                                <CardDescription>{group.description}</CardDescription>
+                                <CardTitle className="text-lg">
+                                  {group.name}
+                                </CardTitle>
+                                <CardDescription>
+                                  {group.description}
+                                </CardDescription>
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {isEditingGroup ? (
-                            <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                              <Button size="sm" onClick={() => handleSaveStandardGroup(group.id)}>
+                            <div
+                              className="flex gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleSaveStandardGroup(group.id)
+                                }
+                              >
                                 <Save className="h-4 w-4" />
                               </Button>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 size="sm"
                                 onClick={() => {
-                                  setEditing(prev => ({
+                                  setEditing((prev) => ({
                                     ...prev,
-                                    standardGroups: { ...prev.standardGroups, [group.id]: false }
+                                    standardGroups: {
+                                      ...prev.standardGroups,
+                                      [group.id]: false,
+                                    },
                                   }));
                                 }}
                               >
@@ -555,14 +669,17 @@ export default function Rubric({
                               </Button>
                             </div>
                           ) : (
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                setEditing(prev => ({
+                                setEditing((prev) => ({
                                   ...prev,
-                                  standardGroups: { ...prev.standardGroups, [group.id]: true }
+                                  standardGroups: {
+                                    ...prev.standardGroups,
+                                    [group.id]: true,
+                                  },
                                 }));
                               }}
                             >
@@ -593,29 +710,44 @@ export default function Rubric({
                           {[5, 4, 3, 2, 1].map((rating) => {
                             const standard = ratings[rating];
                             if (!standard) return null;
-                            
-                            const isEditingStandard = editing.standards[standard.id];
-                            
+
+                            const isEditingStandard =
+                              editing.standards[standard.id];
+
                             return (
                               <TableRow key={standard.id}>
                                 <TableCell>
-                                  <Badge className={`font-semibold ${ratingColors[rating as keyof typeof ratingColors]}`}>
+                                  <Badge
+                                    className={`font-semibold ${ratingColors[rating as keyof typeof ratingColors]}`}
+                                  >
                                     {rating}
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
                                   <span className="font-medium">
-                                    {ratingLabels[rating as keyof typeof ratingLabels]}
+                                    {
+                                      ratingLabels[
+                                        rating as keyof typeof ratingLabels
+                                      ]
+                                    }
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-sm leading-relaxed">
                                   {isEditingStandard ? (
                                     <Textarea
-                                      value={standardForms[standard.id]?.description || ""}
-                                      onChange={(e) => setStandardForms(prev => ({
-                                        ...prev,
-                                        [standard.id]: { ...prev[standard.id], description: e.target.value }
-                                      }))}
+                                      value={
+                                        standardForms[standard.id]
+                                          ?.description || ""
+                                      }
+                                      onChange={(e) =>
+                                        setStandardForms((prev) => ({
+                                          ...prev,
+                                          [standard.id]: {
+                                            ...prev[standard.id],
+                                            description: e.target.value,
+                                          },
+                                        }))
+                                      }
                                       className="min-h-[60px] w-full"
                                     />
                                   ) : (
@@ -625,16 +757,24 @@ export default function Rubric({
                                 <TableCell>
                                   {isEditingStandard ? (
                                     <div className="flex gap-1">
-                                      <Button size="sm" onClick={() => handleSaveStandard(standard.id)}>
+                                      <Button
+                                        size="sm"
+                                        onClick={() =>
+                                          handleSaveStandard(standard.id)
+                                        }
+                                      >
                                         <Save className="h-3 w-3" />
                                       </Button>
-                                      <Button 
-                                        variant="outline" 
+                                      <Button
+                                        variant="outline"
                                         size="sm"
                                         onClick={() => {
-                                          setEditing(prev => ({
+                                          setEditing((prev) => ({
                                             ...prev,
-                                            standards: { ...prev.standards, [standard.id]: false }
+                                            standards: {
+                                              ...prev.standards,
+                                              [standard.id]: false,
+                                            },
                                           }));
                                         }}
                                       >
@@ -642,13 +782,18 @@ export default function Rubric({
                                       </Button>
                                     </div>
                                   ) : (
-                                    <Button 
-                                      variant="ghost" 
+                                    <Button
+                                      variant="ghost"
                                       size="sm"
-                                      onClick={() => setEditing(prev => ({
-                                        ...prev,
-                                        standards: { ...prev.standards, [standard.id]: true }
-                                      }))}
+                                      onClick={() =>
+                                        setEditing((prev) => ({
+                                          ...prev,
+                                          standards: {
+                                            ...prev.standards,
+                                            [standard.id]: true,
+                                          },
+                                        }))
+                                      }
                                     >
                                       <Edit className="h-3 w-3" />
                                     </Button>
@@ -679,11 +824,22 @@ export default function Rubric({
               <div>
                 <h4 className="font-semibold mb-2">Rating Scale</h4>
                 <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• <strong>5 (Excellent):</strong> Exceeds expectations</li>
-                  <li>• <strong>4 (Good):</strong> Meets expectations well</li>
-                  <li>• <strong>3 (Acceptable):</strong> Meets basic expectations</li>
-                  <li>• <strong>2 (Marginal):</strong> Below expectations</li>
-                  <li>• <strong>1 (Poor):</strong> Significantly below expectations</li>
+                  <li>
+                    • <strong>5 (Excellent):</strong> Exceeds expectations
+                  </li>
+                  <li>
+                    • <strong>4 (Good):</strong> Meets expectations well
+                  </li>
+                  <li>
+                    • <strong>3 (Acceptable):</strong> Meets basic expectations
+                  </li>
+                  <li>
+                    • <strong>2 (Marginal):</strong> Below expectations
+                  </li>
+                  <li>
+                    • <strong>1 (Poor):</strong> Significantly below
+                    expectations
+                  </li>
                 </ul>
               </div>
               <div>
@@ -710,13 +866,12 @@ export default function Rubric({
           {isEditMode ? "Edit Rubric" : "Create Rubric"}
         </h1>
         <p className="text-muted-foreground">
-          {isEditMode 
-            ? "Modify the evaluation criteria and scoring for this rubric" 
-            : "Create a new evaluation rubric with scoring criteria"
-          }
+          {isEditMode
+            ? "Modify the evaluation criteria and scoring for this rubric"
+            : "Create a new evaluation rubric with scoring criteria"}
         </p>
       </div>
-      
+
       <div className="container mx-auto max-w-4xl">
         <div className="grid gap-6">
           {/* Main Form */}
@@ -727,10 +882,9 @@ export default function Rubric({
                 Rubric Details
               </CardTitle>
               <CardDescription>
-                {isEditMode 
+                {isEditMode
                   ? "Modify the basic information for this evaluation rubric."
-                  : "Define the basic information for this evaluation rubric."
-                }
+                  : "Define the basic information for this evaluation rubric."}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -741,7 +895,9 @@ export default function Rubric({
                     <Input
                       id="name"
                       value={formData.name}
-                      onChange={(e) => handleInputChange("name", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       placeholder="e.g., Teaching Assistant Evaluation Rubric"
                       required
                     />
@@ -752,7 +908,9 @@ export default function Rubric({
                     <Textarea
                       id="description"
                       value={formData.description}
-                      onChange={(e) => handleInputChange("description", e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("description", e.target.value)
+                      }
                       placeholder="Describe the purpose and scope of this evaluation rubric"
                       rows={4}
                       required
@@ -767,7 +925,12 @@ export default function Rubric({
                         type="number"
                         min="1"
                         value={formData.points}
-                        onChange={(e) => handleInputChange("points", parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "points",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
                         placeholder="100"
                         required
                       />
@@ -784,7 +947,12 @@ export default function Rubric({
                         min="0"
                         max={formData.points}
                         value={formData.passPoints}
-                        onChange={(e) => handleInputChange("passPoints", parseInt(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleInputChange(
+                            "passPoints",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
                         placeholder="70"
                         required
                       />
@@ -805,10 +973,13 @@ export default function Rubric({
                     Cancel
                   </Button>
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting 
-                      ? (isEditMode ? "Updating..." : "Creating...") 
-                      : (isEditMode ? "Update Rubric" : "Create Rubric")
-                    }
+                    {isSubmitting
+                      ? isEditMode
+                        ? "Updating..."
+                        : "Creating..."
+                      : isEditMode
+                        ? "Update Rubric"
+                        : "Create Rubric"}
                   </Button>
                 </div>
               </form>
@@ -844,7 +1015,7 @@ export default function Rubric({
                   </ul>
                 </div>
               </div>
-              
+
               {formData.points > 0 && (
                 <div className="mt-4 p-3 bg-background rounded-lg border">
                   <h4 className="font-semibold mb-2">Current Configuration</h4>
@@ -853,7 +1024,11 @@ export default function Rubric({
                       Total: {formData.points} points
                     </Badge>
                     <Badge variant="outline">
-                      Pass: {formData.passPoints} points ({Math.round((formData.passPoints / formData.points) * 100)}%)
+                      Pass: {formData.passPoints} points (
+                      {Math.round(
+                        (formData.passPoints / formData.points) * 100,
+                      )}
+                      %)
                     </Badge>
                   </div>
                 </div>

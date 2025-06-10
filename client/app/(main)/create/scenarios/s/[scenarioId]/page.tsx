@@ -9,7 +9,11 @@
 import { use } from "react";
 import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
 
-export default function EditScenarioPage({ params }: { params: Promise<{ scenarioId: string }> }) {
+export default function EditScenarioPage({
+  params,
+}: {
+  params: Promise<{ scenarioId: string }>;
+}) {
   const { scenarioId } = use(params);
 
   return (

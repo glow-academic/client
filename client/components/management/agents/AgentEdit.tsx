@@ -8,10 +8,5 @@
 import Agent from "@/components/common/agent/Agent";
 
 export default function AgentEdit({ agentId }: { agentId: string }) {
-  return (
-    <Agent 
-      agentId={agentId} 
-      mode="edit" 
-    />
-  );
+  return <Agent agentId={agentId} mode="edit" />;
 }

@@ -10,5 +10,9 @@
 import NewStaff from "@/components/management/staff/NewStaff";
 
 export default function NewStaffPage() {
-  return <div className="space-y-6"><NewStaff /></div>;
+  return (
+    <div className="space-y-6">
+      <NewStaff />
+    </div>
+  );
 }

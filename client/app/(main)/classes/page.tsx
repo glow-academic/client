@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
 
 export default function ClassesPage() {
-  const {data: classes} = useQuery({
+  const { data: classes } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
   });

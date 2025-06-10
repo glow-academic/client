@@ -40,7 +40,7 @@ export default function Home() {
 
   const handleGuestAccess = () => {
     // Set guest mode in localStorage and redirect
-    localStorage.setItem('guestMode', 'true');
+    localStorage.setItem("guestMode", "true");
     router.push("/home");
   };
 
@@ -117,13 +117,15 @@ export default function Home() {
                     Admin
                   </button>
                 </div>
-                
+
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <div className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">Or</span>
+                    <span className="bg-card px-2 text-muted-foreground">
+                      Or
+                    </span>
                   </div>
                 </div>
 

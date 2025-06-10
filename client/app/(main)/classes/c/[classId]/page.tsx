@@ -9,7 +9,15 @@
 import ClassDetails from "@/components/classes/ClassDetails";
 import { use } from "react";
 
-export default function ClassDetailsPage({ params }: { params: Promise<{ classId: string }> }) {
+export default function ClassDetailsPage({
+  params,
+}: {
+  params: Promise<{ classId: string }>;
+}) {
   const { classId } = use(params);
-  return <div className="space-y-6"><ClassDetails classId={classId} /></div>;
+  return (
+    <div className="space-y-6">
+      <ClassDetails classId={classId} />
+    </div>
+  );
 }

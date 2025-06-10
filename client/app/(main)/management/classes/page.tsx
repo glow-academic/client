@@ -9,5 +9,9 @@
 import Classes from "@/components/management/classes/Classes";
 
 export default function ClassesPage() {
-  return <div className="space-y-6"><Classes /></div>;
+  return (
+    <div className="space-y-6">
+      <Classes />
+    </div>
+  );
 }

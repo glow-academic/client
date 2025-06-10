@@ -61,8 +61,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Growth() {
-
-  const {userId} = useAuth();
+  const { userId } = useAuth();
   // Fetch current user
   const { data: user } = useQuery({
     queryKey: ["user", userId],
@@ -75,24 +74,28 @@ export default function Growth() {
     queryFn: () => getAllAgents(),
   });
 
-  const {data: rubrics, isLoading: isLoadingRubrics} = useQuery({
+  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
-  const {data: standardGroups, isLoading: isLoadingStandardGroups} = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
+  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
+    {
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+      queryFn: () =>
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+      enabled: !!rubrics && rubrics.length > 0,
+    },
+  );
 
-  const {data: standards, isLoading: isLoadingStandards} = useQuery({
+  const { data: standards, isLoading: isLoadingStandards } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
-  const {data: attempts, isLoading: isLoadingAttempts} = useQuery({
+  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", userId],
     queryFn: () => getSimulationAttemptsByUser(userId!),
     enabled: !!userId,
@@ -100,25 +103,31 @@ export default function Growth() {
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () => getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const {data: grades, isLoading: isLoadingGrades} = useQuery({
+  const { data: grades, isLoading: isLoadingGrades } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () => getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
-  const {data: feedbacks, isLoading: isLoadingFeedbacks} = useQuery({
+  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(grades!.map((grade) => grade.id)),
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades!.map((grade) => grade.id),
+      ),
     enabled: !!grades && grades.length > 0,
   });
 
   // Calculate growth metrics for the current user
   const growthData = useMemo(() => {
-    if (!grades || !feedbacks || !standards || !standardGroups || !user) return [];
+    if (!grades || !feedbacks || !standards || !standardGroups || !user)
+      return [];
 
     // For TAs, show only their own performance
     // For admins/instructors, this could show aggregated data, but for now we'll focus on user-specific data
@@ -126,35 +135,47 @@ export default function Growth() {
 
     // Calculate overall score from grades
     const avgScore = Math.round(
-      grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length
+      grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length,
     );
 
     // Calculate skill-based scores from feedbacks and standards
-    const skillScores = standardGroups.reduce((acc, group) => {
-      const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-      const groupFeedbacks = feedbacks.filter(f => 
-        groupStandards.some(s => s.id === f.standardId)
-      );
-      
-      if (groupFeedbacks.length > 0) {
-        const avgScore = Math.round(
-          (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length / 
-           Math.max(...groupStandards.map(s => s.points))) * 100
+    const skillScores = standardGroups.reduce(
+      (acc, group) => {
+        const groupStandards = standards.filter(
+          (s) => s.standardGroupId === group.id,
         );
-        acc[group.name.toLowerCase().replace(/\s+/g, '')] = avgScore;
-      }
-      
-      return acc;
-    }, {} as Record<string, number>);
+        const groupFeedbacks = feedbacks.filter((f) =>
+          groupStandards.some((s) => s.id === f.standardId),
+        );
+
+        if (groupFeedbacks.length > 0) {
+          const avgScore = Math.round(
+            (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+              groupFeedbacks.length /
+              Math.max(...groupStandards.map((s) => s.points))) *
+              100,
+          );
+          acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
+        }
+
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Calculate time management score from grades (inverse of time taken, normalized)
-    const avgTimeTaken = grades.reduce((sum, grade) => sum + grade.timeTaken, 0) / grades.length;
-    const timeManagementScore = Math.max(0, Math.min(100, 100 - (avgTimeTaken / 3600))); // Normalize based on hours
+    const avgTimeTaken =
+      grades.reduce((sum, grade) => sum + grade.timeTaken, 0) / grades.length;
+    const timeManagementScore = Math.max(
+      0,
+      Math.min(100, 100 - avgTimeTaken / 3600),
+    ); // Normalize based on hours
 
     // Calculate engagement score based on interaction frequency and completion
-    const completedChats = chats?.filter(chat => chat.completed).length || 0;
+    const completedChats = chats?.filter((chat) => chat.completed).length || 0;
     const totalChats = chats?.length || 0;
-    const engagementScore = totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
+    const engagementScore =
+      totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
 
     return [
       {
@@ -190,8 +211,9 @@ export default function Growth() {
     if (!grades || grades.length < 2) return { value: 0, isPositive: true };
 
     // Sort grades by creation date
-    const sortedGrades = [...grades].sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    const sortedGrades = [...grades].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
     );
 
     const recentCount = Math.min(5, Math.floor(sortedGrades.length / 2));
@@ -200,8 +222,10 @@ export default function Growth() {
 
     if (previous.length === 0) return { value: 0, isPositive: true };
 
-    const recentAvg = recent.reduce((sum, g) => sum + g.score, 0) / recent.length;
-    const previousAvg = previous.reduce((sum, g) => sum + g.score, 0) / previous.length;
+    const recentAvg =
+      recent.reduce((sum, g) => sum + g.score, 0) / recent.length;
+    const previousAvg =
+      previous.reduce((sum, g) => sum + g.score, 0) / previous.length;
 
     const change = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
     return { value: Math.abs(change), isPositive: change >= 0 };
@@ -212,46 +236,82 @@ export default function Growth() {
     if (!growthData || growthData.length === 0) return [];
 
     const insights = [];
-    
-    const overallScore = growthData.find(d => d.metric === "Overall Score")?.value || 0;
-    const adaptability = growthData.find(d => d.metric === "Adaptability")?.value || 0;
-    const listening = growthData.find(d => d.metric === "Listening Skills")?.value || 0;
-    const timeManagement = growthData.find(d => d.metric === "Time Management")?.value || 0;
-    const engagement = growthData.find(d => d.metric === "Engagement")?.value || 0;
+
+    const overallScore =
+      growthData.find((d) => d.metric === "Overall Score")?.value || 0;
+    const adaptability =
+      growthData.find((d) => d.metric === "Adaptability")?.value || 0;
+    const listening =
+      growthData.find((d) => d.metric === "Listening Skills")?.value || 0;
+    const timeManagement =
+      growthData.find((d) => d.metric === "Time Management")?.value || 0;
+    const engagement =
+      growthData.find((d) => d.metric === "Engagement")?.value || 0;
 
     if (overallScore >= 80) {
-      insights.push({ type: "success", message: "Excellent overall performance!" });
+      insights.push({
+        type: "success",
+        message: "Excellent overall performance!",
+      });
     } else if (overallScore < 60) {
-      insights.push({ type: "warning", message: "Overall performance needs improvement" });
+      insights.push({
+        type: "warning",
+        message: "Overall performance needs improvement",
+      });
     }
 
     if (adaptability < 60) {
-      insights.push({ type: "improvement", message: "Focus on adapting to different student needs" });
+      insights.push({
+        type: "improvement",
+        message: "Focus on adapting to different student needs",
+      });
     }
 
     if (listening < 60) {
-      insights.push({ type: "improvement", message: "Work on active listening skills" });
+      insights.push({
+        type: "improvement",
+        message: "Work on active listening skills",
+      });
     }
 
     if (timeManagement < 60) {
-      insights.push({ type: "improvement", message: "Improve time management during sessions" });
+      insights.push({
+        type: "improvement",
+        message: "Improve time management during sessions",
+      });
     }
 
     if (engagement >= 80) {
-      insights.push({ type: "success", message: "Great student engagement levels!" });
+      insights.push({
+        type: "success",
+        message: "Great student engagement levels!",
+      });
     }
 
     // Add insights based on recent performance trends
     if (growthTrend.isPositive && growthTrend.value > 10) {
-      insights.push({ type: "success", message: `Performance improving by ${growthTrend.value}%!` });
+      insights.push({
+        type: "success",
+        message: `Performance improving by ${growthTrend.value}%!`,
+      });
     } else if (!growthTrend.isPositive && growthTrend.value > 10) {
-      insights.push({ type: "warning", message: "Recent performance shows room for improvement" });
+      insights.push({
+        type: "warning",
+        message: "Recent performance shows room for improvement",
+      });
     }
 
     return insights;
   }, [growthData, growthTrend]);
 
-  const isLoading = isLoadingAttempts || isLoadingChats || isLoadingGrades || isLoadingFeedbacks || isLoadingRubrics || isLoadingStandardGroups || isLoadingStandards;
+  const isLoading =
+    isLoadingAttempts ||
+    isLoadingChats ||
+    isLoadingGrades ||
+    isLoadingFeedbacks ||
+    isLoadingRubrics ||
+    isLoadingStandardGroups ||
+    isLoadingStandards;
 
   if (isLoading) {
     return (
@@ -260,7 +320,7 @@ export default function Growth() {
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-4 w-64" />
         </div>
-        
+
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i}>
@@ -273,7 +333,7 @@ export default function Growth() {
             </Card>
           ))}
         </div>
-        
+
         <Card>
           <CardHeader>
             <Skeleton className="h-6 w-48" />
@@ -322,14 +382,20 @@ export default function Growth() {
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
-              <div className={`text-2xl font-bold ${
-                (growthData.find(d => d.metric === "Overall Score")?.value ?? 0) >= 80 
-                  ? "text-green-600" 
-                  : (growthData.find(d => d.metric === "Overall Score")?.value ?? 0) >= 60
-                  ? "text-amber-600"
-                  : "text-red-600"
-              }`}>
-                {growthData.find(d => d.metric === "Overall Score")?.value ?? 0}%
+              <div
+                className={`text-2xl font-bold ${
+                  (growthData.find((d) => d.metric === "Overall Score")
+                    ?.value ?? 0) >= 80
+                    ? "text-green-600"
+                    : (growthData.find((d) => d.metric === "Overall Score")
+                          ?.value ?? 0) >= 60
+                      ? "text-amber-600"
+                      : "text-red-600"
+                }`}
+              >
+                {growthData.find((d) => d.metric === "Overall Score")?.value ??
+                  0}
+                %
               </div>
               {growthTrend.value > 0 && (
                 <Badge
@@ -362,7 +428,7 @@ export default function Growth() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {growthData.find(d => d.metric === "Adaptability")?.value || 0}%
+              {growthData.find((d) => d.metric === "Adaptability")?.value || 0}%
             </div>
             <p className="text-xs text-muted-foreground">
               Adapting to student needs
@@ -372,12 +438,16 @@ export default function Growth() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Listening Skills</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Listening Skills
+            </CardTitle>
             <MessageSquare className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {growthData.find(d => d.metric === "Listening Skills")?.value || 0}%
+              {growthData.find((d) => d.metric === "Listening Skills")?.value ||
+                0}
+              %
             </div>
             <p className="text-xs text-muted-foreground">
               Active listening ability
@@ -387,12 +457,16 @@ export default function Growth() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Time Management</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Time Management
+            </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {growthData.find(d => d.metric === "Time Management")?.value || 0}%
+              {growthData.find((d) => d.metric === "Time Management")?.value ||
+                0}
+              %
             </div>
             <p className="text-xs text-muted-foreground">
               Session time efficiency
@@ -432,9 +506,11 @@ export default function Growth() {
         </CardContent>
         <CardFooter className="flex-col gap-2 text-sm">
           <div className="flex items-center gap-2 leading-none font-medium">
-            {growthTrend.isPositive ? "Trending up" : "Needs attention"} 
+            {growthTrend.isPositive ? "Trending up" : "Needs attention"}
             {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
-            <TrendingUp className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`} />
+            <TrendingUp
+              className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
+            />
           </div>
           <div className="text-muted-foreground flex items-center gap-2 leading-none">
             Based on recent teaching sessions
@@ -455,13 +531,15 @@ export default function Growth() {
             <div className="space-y-3">
               {insights.map((insight, index) => (
                 <div key={index} className="flex items-start gap-3">
-                  <div className={`h-2 w-2 rounded-full mt-2 ${
-                    insight.type === 'success' 
-                      ? 'bg-green-500' 
-                      : insight.type === 'warning'
-                      ? 'bg-amber-500'
-                      : 'bg-blue-500'
-                  }`} />
+                  <div
+                    className={`h-2 w-2 rounded-full mt-2 ${
+                      insight.type === "success"
+                        ? "bg-green-500"
+                        : insight.type === "warning"
+                          ? "bg-amber-500"
+                          : "bg-blue-500"
+                    }`}
+                  />
                   <p className="text-sm">{insight.message}</p>
                 </div>
               ))}

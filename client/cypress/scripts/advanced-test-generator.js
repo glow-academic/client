@@ -1,63 +1,72 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 
 // Path configurations
-const SCHEMA_PATH = path.join(__dirname, '../../drizzle/schema.ts');
+const SCHEMA_PATH = path.join(__dirname, "../../drizzle/schema.ts");
 
 /**
  * Extract detailed table information including fields and constraints
  */
 function extractDetailedTableInfo() {
   try {
-    const schemaContent = fs.readFileSync(SCHEMA_PATH, 'utf8');
-    
+    const schemaContent = fs.readFileSync(SCHEMA_PATH, "utf8");
+
     // Extract enums first
     const enumRegex = /export const (\w+) = pgEnum\("([^"]+)", \[([^\]]+)\]/g;
     const enums = {};
     let enumMatch;
-    
+
     while ((enumMatch = enumRegex.exec(schemaContent)) !== null) {
       const [, enumName, enumDbName, enumValues] = enumMatch;
-      const values = enumValues.split(',').map(v => v.trim().replace(/['"]/g, ''));
+      const values = enumValues
+        .split(",")
+        .map((v) => v.trim().replace(/['"]/g, ""));
       enums[enumName] = { dbName: enumDbName, values };
     }
-    
+
     // Extract tables with detailed field information
     const tableRegex = /export const (\w+) = pgTable\("([^"]+)", \{([^}]+)\}/gs;
     const tables = [];
     let tableMatch;
-    
+
     while ((tableMatch = tableRegex.exec(schemaContent)) !== null) {
       const [, exportName, tableName, fieldsContent] = tableMatch;
-      
+
       // Parse fields
       const fields = parseFields(fieldsContent, enums);
-      
+
       // Extract foreign keys and constraints
       const constraintsMatch = schemaContent.match(
-        new RegExp(`export const ${exportName} = pgTable\\("${tableName}", \\{[^}]+\\}, \\(table\\) => \\[([^\\]]+)\\]`, 's')
+        new RegExp(
+          `export const ${exportName} = pgTable\\("${tableName}", \\{[^}]+\\}, \\(table\\) => \\[([^\\]]+)\\]`,
+          "s",
+        ),
       );
-      
-      const constraints = constraintsMatch ? parseConstraints(constraintsMatch[1]) : [];
-      
+
+      const constraints = constraintsMatch
+        ? parseConstraints(constraintsMatch[1])
+        : [];
+
       tables.push({
         exportName,
         tableName,
-        testFileName: `${tableName.replace(/_/g, '-')}.cy.ts`,
+        testFileName: `${tableName.replace(/_/g, "-")}.cy.ts`,
         fields,
         constraints,
-        hasTimestamps: fields.some(f => f.name === 'createdAt' || f.name === 'created_at'),
-        hasUuid: fields.some(f => f.type === 'uuid' && f.isPrimaryKey),
-        requiredFields: fields.filter(f => f.isRequired),
-        uniqueFields: fields.filter(f => f.isUnique)
+        hasTimestamps: fields.some(
+          (f) => f.name === "createdAt" || f.name === "created_at",
+        ),
+        hasUuid: fields.some((f) => f.type === "uuid" && f.isPrimaryKey),
+        requiredFields: fields.filter((f) => f.isRequired),
+        uniqueFields: fields.filter((f) => f.isUnique),
       });
     }
-    
+
     return { tables, enums };
   } catch (error) {
-    console.error('❌ Error parsing schema:', error.message);
+    console.error("❌ Error parsing schema:", error.message);
     process.exit(1);
   }
 }
@@ -67,30 +76,36 @@ function extractDetailedTableInfo() {
  */
 function parseFields(fieldsContent, enums) {
   const fields = [];
-  const fieldLines = fieldsContent.split(',').map(line => line.trim()).filter(line => line);
-  
-  fieldLines.forEach(line => {
+  const fieldLines = fieldsContent
+    .split(",")
+    .map((line) => line.trim())
+    .filter((line) => line);
+
+  fieldLines.forEach((line) => {
     const fieldMatch = line.match(/(\w+):\s*([^,]+)/);
     if (fieldMatch) {
       const [, fieldName, fieldDef] = fieldMatch;
-      
+
       const field = {
         name: fieldName,
         definition: fieldDef.trim(),
         type: extractFieldType(fieldDef),
-        isRequired: fieldDef.includes('.notNull()'),
-        isPrimaryKey: fieldDef.includes('.primaryKey()'),
-        isUnique: fieldDef.includes('.unique()'),
-        hasDefault: fieldDef.includes('.default('),
-        isArray: fieldDef.includes('.array()'),
-        isForeignKey: fieldName.endsWith('Id') || fieldName.endsWith('Ids') || fieldName.includes('_id'),
-        enumType: extractEnumType(fieldDef, enums)
+        isRequired: fieldDef.includes(".notNull()"),
+        isPrimaryKey: fieldDef.includes(".primaryKey()"),
+        isUnique: fieldDef.includes(".unique()"),
+        hasDefault: fieldDef.includes(".default("),
+        isArray: fieldDef.includes(".array()"),
+        isForeignKey:
+          fieldName.endsWith("Id") ||
+          fieldName.endsWith("Ids") ||
+          fieldName.includes("_id"),
+        enumType: extractEnumType(fieldDef, enums),
       };
-      
+
       fields.push(field);
     }
   });
-  
+
   return fields;
 }
 
@@ -98,13 +113,13 @@ function parseFields(fieldsContent, enums) {
  * Extract field type from definition
  */
 function extractFieldType(fieldDef) {
-  if (fieldDef.includes('uuid(')) return 'uuid';
-  if (fieldDef.includes('text(')) return 'text';
-  if (fieldDef.includes('integer(')) return 'integer';
-  if (fieldDef.includes('boolean(')) return 'boolean';
-  if (fieldDef.includes('timestamp(')) return 'timestamp';
-  if (fieldDef.includes('pgEnum')) return 'enum';
-  return 'unknown';
+  if (fieldDef.includes("uuid(")) return "uuid";
+  if (fieldDef.includes("text(")) return "text";
+  if (fieldDef.includes("integer(")) return "integer";
+  if (fieldDef.includes("boolean(")) return "boolean";
+  if (fieldDef.includes("timestamp(")) return "timestamp";
+  if (fieldDef.includes("pgEnum")) return "enum";
+  return "unknown";
 }
 
 /**
@@ -124,33 +139,37 @@ function extractEnumType(fieldDef, enums) {
  */
 function parseConstraints(constraintsContent) {
   const constraints = [];
-  
+
   // Foreign key constraints
-  const fkMatches = constraintsContent.matchAll(/foreignKey\(\{[^}]+columns:\s*\[([^\]]+)\][^}]+foreignColumns:\s*\[([^\]]+)\][^}]+name:\s*"([^"]+)"[^}]*\}\)(?:\.onDelete\("([^"]+)"\))?/g);
-  
+  const fkMatches = constraintsContent.matchAll(
+    /foreignKey\(\{[^}]+columns:\s*\[([^\]]+)\][^}]+foreignColumns:\s*\[([^\]]+)\][^}]+name:\s*"([^"]+)"[^}]*\}\)(?:\.onDelete\("([^"]+)"\))?/g,
+  );
+
   for (const match of fkMatches) {
     const [, columns, foreignColumns, name, onDelete] = match;
     constraints.push({
-      type: 'foreignKey',
-      columns: columns.split(',').map(c => c.trim().replace(/table\./, '')),
-      foreignColumns: foreignColumns.split(',').map(c => c.trim()),
+      type: "foreignKey",
+      columns: columns.split(",").map((c) => c.trim().replace(/table\./, "")),
+      foreignColumns: foreignColumns.split(",").map((c) => c.trim()),
       name,
-      onDelete: onDelete || 'restrict'
+      onDelete: onDelete || "restrict",
     });
   }
-  
+
   // Unique constraints
-  const uniqueMatches = constraintsContent.matchAll(/unique\("([^"]+)"\)\.on\(([^)]+)\)/g);
-  
+  const uniqueMatches = constraintsContent.matchAll(
+    /unique\("([^"]+)"\)\.on\(([^)]+)\)/g,
+  );
+
   for (const match of uniqueMatches) {
     const [, name, columns] = match;
     constraints.push({
-      type: 'unique',
+      type: "unique",
       name,
-      columns: columns.split(',').map(c => c.trim().replace(/table\./, ''))
+      columns: columns.split(",").map((c) => c.trim().replace(/table\./, "")),
     });
   }
-  
+
   return constraints;
 }
 
@@ -158,8 +177,17 @@ function parseConstraints(constraintsContent) {
  * Generate advanced test template with field-specific tests
  */
 function generateAdvancedTestTemplate(table, allTables) {
-  const { tableName, exportName, fields, constraints, hasTimestamps, hasUuid, requiredFields, uniqueFields } = table;
-  
+  const {
+    tableName,
+    exportName,
+    fields,
+    constraints,
+    hasTimestamps,
+    hasUuid,
+    requiredFields,
+    uniqueFields,
+  } = table;
+
   let template = `describe('${tableName} Table Tests', () => {
   // Note: These tests are placeholders and will fail until implemented
   // Remove cy.visit('/') to make tests fail faster during development
@@ -188,33 +216,39 @@ function generateAdvancedTestTemplate(table, allTables) {
   if (requiredFields.length > 0) {
     template += `
     it('should enforce required fields', () => {
-      // TODO: Test required fields: ${requiredFields.map(f => f.name).join(', ')}
+      // TODO: Test required fields: ${requiredFields.map((f) => f.name).join(", ")}
       // Required fields that should be validated:
-      ${requiredFields.map(f => `      // - ${f.name} (${f.type})`).join('\n')}
+      ${requiredFields.map((f) => `      // - ${f.name} (${f.type})`).join("\n")}
       
       throw new Error('IMPLEMENT: Required fields validation for ${tableName}');
     });`;
   }
 
   // Unique constraints test
-  if (uniqueFields.length > 0 || constraints.some(c => c.type === 'unique')) {
+  if (uniqueFields.length > 0 || constraints.some((c) => c.type === "unique")) {
     template += `
     it('should enforce unique constraints', () => {
       // TODO: Test unique constraints for ${tableName}
-      ${uniqueFields.length > 0 ? `// Unique fields: ${uniqueFields.map(f => f.name).join(', ')}` : ''}
-      ${constraints.filter(c => c.type === 'unique').map(c => `      // Unique constraint: ${c.name} on ${c.columns.join(', ')}`).join('\n')}
+      ${uniqueFields.length > 0 ? `// Unique fields: ${uniqueFields.map((f) => f.name).join(", ")}` : ""}
+      ${constraints
+        .filter((c) => c.type === "unique")
+        .map(
+          (c) =>
+            `      // Unique constraint: ${c.name} on ${c.columns.join(", ")}`,
+        )
+        .join("\n")}
       
       throw new Error('IMPLEMENT: Unique constraints test for ${tableName}');
     });`;
   }
 
   // Enum validation tests
-  const enumFields = fields.filter(f => f.enumType);
+  const enumFields = fields.filter((f) => f.enumType);
   if (enumFields.length > 0) {
     template += `
     it('should validate enum values', () => {
       // TODO: Test enum field validation for ${tableName}
-      ${enumFields.map(f => `      // ${f.name}: ${f.enumType.values.join(' | ')}`).join('\n')}
+      ${enumFields.map((f) => `      // ${f.name}: ${f.enumType.values.join(" | ")}`).join("\n")}
       
       throw new Error('IMPLEMENT: Enum validation test for ${tableName}');
     });`;
@@ -226,13 +260,15 @@ function generateAdvancedTestTemplate(table, allTables) {
   describe('Foreign Key Relationships', () => {`;
 
   // Foreign key tests
-  const foreignKeyConstraints = constraints.filter(c => c.type === 'foreignKey');
+  const foreignKeyConstraints = constraints.filter(
+    (c) => c.type === "foreignKey",
+  );
   if (foreignKeyConstraints.length > 0) {
-    foreignKeyConstraints.forEach(fk => {
+    foreignKeyConstraints.forEach((fk) => {
       template += `
     it('should maintain foreign key constraint: ${fk.name}', () => {
       // TODO: Test foreign key relationship
-      // Foreign key: ${fk.columns.join(', ')} -> ${fk.foreignColumns.join(', ')}
+      // Foreign key: ${fk.columns.join(", ")} -> ${fk.foreignColumns.join(", ")}
       // On delete: ${fk.onDelete}
       
       throw new Error('IMPLEMENT: Foreign key test for ${fk.name}');
@@ -310,13 +346,13 @@ function generateAdvancedTestTemplate(table, allTables) {
  * Export name: ${exportName}
  * 
  * Fields:
-${fields.map(f => ` * - ${f.name}: ${f.type}${f.isRequired ? ' (required)' : ''}${f.isPrimaryKey ? ' (primary key)' : ''}${f.isUnique ? ' (unique)' : ''}${f.enumType ? ` (enum: ${f.enumType.values.join('|')})` : ''}`).join('\n')}
+${fields.map((f) => ` * - ${f.name}: ${f.type}${f.isRequired ? " (required)" : ""}${f.isPrimaryKey ? " (primary key)" : ""}${f.isUnique ? " (unique)" : ""}${f.enumType ? ` (enum: ${f.enumType.values.join("|")})` : ""}`).join("\n")}
  * 
  * Constraints:
-${constraints.map(c => ` * - ${c.type}: ${c.name}`).join('\n')}
+${constraints.map((c) => ` * - ${c.type}: ${c.name}`).join("\n")}
  * 
  * Foreign Key Relationships:
-${foreignKeyConstraints.map(fk => ` * - ${fk.columns.join(', ')} -> ${fk.foreignColumns.join(', ')} (${fk.onDelete})`).join('\n')}
+${foreignKeyConstraints.map((fk) => ` * - ${fk.columns.join(", ")} -> ${fk.foreignColumns.join(", ")} (${fk.onDelete})`).join("\n")}
  */
 `;
 
@@ -328,43 +364,45 @@ ${foreignKeyConstraints.map(fk => ` * - ${fk.columns.join(', ')} -> ${fk.foreign
  */
 function generateSampleDataComment(fields) {
   const sampleData = {};
-  
-  fields.forEach(field => {
-    if (field.isPrimaryKey && field.type === 'uuid') {
-      sampleData[field.name] = '// Auto-generated UUID';
-    } else if (field.name === 'createdAt' || field.name === 'created_at') {
-      sampleData[field.name] = '// Auto-generated timestamp';
-    } else if (field.type === 'text') {
+
+  fields.forEach((field) => {
+    if (field.isPrimaryKey && field.type === "uuid") {
+      sampleData[field.name] = "// Auto-generated UUID";
+    } else if (field.name === "createdAt" || field.name === "created_at") {
+      sampleData[field.name] = "// Auto-generated timestamp";
+    } else if (field.type === "text") {
       sampleData[field.name] = `"sample ${field.name}"`;
-    } else if (field.type === 'integer') {
-      sampleData[field.name] = '123';
-    } else if (field.type === 'boolean') {
-      sampleData[field.name] = 'true';
+    } else if (field.type === "integer") {
+      sampleData[field.name] = "123";
+    } else if (field.type === "boolean") {
+      sampleData[field.name] = "true";
     } else if (field.enumType) {
       sampleData[field.name] = `"${field.enumType.values[0]}"`;
     } else if (field.isArray) {
-      sampleData[field.name] = '[]';
+      sampleData[field.name] = "[]";
     } else {
       sampleData[field.name] = `"${field.name}_value"`;
     }
   });
-  
+
   return Object.entries(sampleData)
     .map(([key, value]) => `      // ${key}: ${value}`)
-    .join('\n');
+    .join("\n");
 }
 
 /**
  * Generate advanced test files
  */
 function generateAdvancedTests() {
-  console.log('🚀 Generating advanced Cypress tests...\n');
-  
+  console.log("🚀 Generating advanced Cypress tests...\n");
+
   const { tables, enums } = extractDetailedTableInfo();
-  
-  console.log(`📊 Found ${tables.length} tables and ${Object.keys(enums).length} enums`);
-  
-  const E2E_DIR = path.join(__dirname, '../e2e');
+
+  console.log(
+    `📊 Found ${tables.length} tables and ${Object.keys(enums).length} enums`,
+  );
+
+  const E2E_DIR = path.join(__dirname, "../e2e");
   if (!fs.existsSync(E2E_DIR)) {
     fs.mkdirSync(E2E_DIR, { recursive: true });
   }
@@ -373,18 +411,19 @@ function generateAdvancedTests() {
   let updated = 0;
   let skipped = 0;
 
-  tables.forEach(table => {
+  tables.forEach((table) => {
     const testFilePath = path.join(E2E_DIR, table.testFileName);
     const exists = fs.existsSync(testFilePath);
-    const isEmpty = !exists || fs.readFileSync(testFilePath, 'utf8').trim().length === 0;
-    
+    const isEmpty =
+      !exists || fs.readFileSync(testFilePath, "utf8").trim().length === 0;
+
     if (!isEmpty && exists) {
       console.log(`⏭️  Skipping ${table.testFileName} (already implemented)`);
       skipped++;
     } else {
       const testContent = generateAdvancedTestTemplate(table, tables);
       fs.writeFileSync(testFilePath, testContent);
-      
+
       if (exists) {
         console.log(`✨ Updated ${table.testFileName} (was empty)`);
         updated++;
@@ -395,11 +434,11 @@ function generateAdvancedTests() {
     }
   });
 
-  console.log('\n📊 Summary:');
+  console.log("\n📊 Summary:");
   console.log(`  ✨ Created: ${created} files`);
   console.log(`  🔄 Updated: ${updated} files`);
   console.log(`  ⏭️  Skipped: ${skipped} files`);
-  
+
   return { created, updated, skipped, tables, enums };
 }
 
@@ -408,4 +447,4 @@ if (require.main === module) {
   generateAdvancedTests();
 }
 
-module.exports = { generateAdvancedTests, extractDetailedTableInfo }; 
+module.exports = { generateAdvancedTests, extractDetailedTableInfo };

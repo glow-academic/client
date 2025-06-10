@@ -1,47 +1,54 @@
-import { defineConfig } from 'cypress'
+import { defineConfig } from "cypress";
 
 export default defineConfig({
   e2e: {
-    baseUrl: 'http://localhost:3000',
+    baseUrl: "http://localhost:3000",
     setupNodeEvents(on, config) {
       // implement node event listeners here
-      on('task', {
-        assignUserToClass({ username, classId }: { username: string, classId: string }) {
+      on("task", {
+        assignUserToClass({
+          username,
+          classId,
+        }: {
+          username: string;
+          classId: string;
+        }) {
           // Use node-postgres to update the user's class_ids
-          const { Client } = require('pg')
-          
+          const { Client } = require("pg");
+
           return new Promise((resolve, reject) => {
             const client = new Client({
-              host: 'localhost',
+              host: "localhost",
               port: 5432,
-              database: 'mydb',
-              user: 'myuser',
-              password: 'mypassword',
-            })
-            
-            client.connect()
+              database: "mydb",
+              user: "myuser",
+              password: "mypassword",
+            });
+
+            client
+              .connect()
               .then(() => {
                 return client.query(
-                  'UPDATE users SET class_ids = ARRAY[$1]::UUID[] WHERE username = $2',
-                  [classId, username]
-                )
+                  "UPDATE users SET class_ids = ARRAY[$1]::UUID[] WHERE username = $2",
+                  [classId, username],
+                );
               })
               .then((_result: any) => {
-                console.log(`Assigned user ${username} to class ${classId}`)
-                return client.end()
+                console.log(`Assigned user ${username} to class ${classId}`);
+                return client.end();
               })
               .then(() => resolve(null))
               .catch((error: any) => {
-                console.error('Error assigning user to class:', error)
-                client.end()
-                reject(error)
-              })
-          })
-        }
-      })
+                console.error("Error assigning user to class:", error);
+                client.end();
+                reject(error);
+              });
+          });
+        },
+      });
     },
-    supportFile: 'cypress/support/e2e.ts',
-    specPattern: 'cypress/e2e/**/*.cy.{js,jsx,ts,tsx}',
+    supportFile: "cypress/support/e2e.ts",
+    specPattern: "cypress/e2e/**/*.cy.{js,jsx,ts,tsx}",
     viewportWidth: 1280,
     viewportHeight: 720,
     video: false,
@@ -53,9 +60,9 @@ export default defineConfig({
     experimentalStudio: true,
     retries: {
       runMode: 2,
-      openMode: 0
+      openMode: 0,
     },
     chromeWebSecurity: false,
     modifyObstructiveCode: false,
   },
-}) 
+});

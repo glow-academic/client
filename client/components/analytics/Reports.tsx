@@ -16,11 +16,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import {
-  Award,
-  AlertTriangle,
-  ChevronRight,
-} from "lucide-react";
+import { Award, AlertTriangle, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -56,24 +52,28 @@ export default function Reports() {
     queryFn: () => getAllScenarios(),
   });
 
-  const {data: rubrics, isLoading: isLoadingRubrics} = useQuery({
+  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
-  const {data: standardGroups, isLoading: isLoadingStandardGroups} = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
+  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
+    {
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+      queryFn: () =>
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+      enabled: !!rubrics && rubrics.length > 0,
+    },
+  );
 
-  const {data: standards, isLoading: isLoadingStandards} = useQuery({
+  const { data: standards, isLoading: isLoadingStandards } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
-  const {data: attempts, isLoading: isLoadingAttempts} = useQuery({
+  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", users?.map((user) => user.id)],
     queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
     enabled: !!users && users.length > 0,
@@ -81,32 +81,46 @@ export default function Reports() {
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () => getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const {data: grades, isLoading: isLoadingGrades} = useQuery({
+  const { data: grades, isLoading: isLoadingGrades } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () => getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
-  const {data: feedbacks, isLoading: isLoadingFeedbacks} = useQuery({
+  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(grades!.map((grade) => grade.id)),
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades!.map((grade) => grade.id),
+      ),
     enabled: !!grades && grades.length > 0,
   });
 
   // Calculate analytics
   const analytics = useMemo(() => {
-    if (!users || !chats || !grades || !feedbacks || !standards || !standardGroups) return null;
+    if (
+      !users ||
+      !chats ||
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups
+    )
+      return null;
 
     const tas = users.filter((user) => user.role === "ta");
 
     // TA leaderboard based on actual grades
     const taPerformance = tas
       .map((ta) => {
-        const taAttempts = attempts?.filter((attempt) => attempt.userId === ta.id) || [];
+        const taAttempts =
+          attempts?.filter((attempt) => attempt.userId === ta.id) || [];
         const taChats = chats.filter((chat) =>
           taAttempts.some((attempt) => attempt.id === chat.attemptId),
         );
@@ -114,38 +128,50 @@ export default function Reports() {
           taChats.some((chat) => chat.id === grade.simulationChatId),
         );
 
-        const avgScore = taGrades.length > 0
-          ? Math.round(taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length)
-          : 0;
+        const avgScore =
+          taGrades.length > 0
+            ? Math.round(
+                taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
+              )
+            : 0;
 
-        const completedSessions = taChats.filter((chat) => chat.completed).length;
+        const completedSessions = taChats.filter(
+          (chat) => chat.completed,
+        ).length;
         const totalSessions = taChats.length;
 
         // Calculate skill breakdown for this TA
-        const taFeedbacks = feedbacks.filter(f =>
-          taGrades.some(g => g.id === f.simulationChatGradeId)
+        const taFeedbacks = feedbacks.filter((f) =>
+          taGrades.some((g) => g.id === f.simulationChatGradeId),
         );
 
-        const skillBreakdown = standardGroups.map(group => {
-          const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-          const groupFeedbacks = taFeedbacks.filter(f =>
-            groupStandards.some(s => s.id === f.standardId)
+        const skillBreakdown = standardGroups.map((group) => {
+          const groupStandards = standards.filter(
+            (s) => s.standardGroupId === group.id,
           );
-          
-          const avgSkillScore = groupFeedbacks.length > 0
-            ? Math.round((groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length / groupStandards[0]?.points || 1) * 100)
-            : 0;
+          const groupFeedbacks = taFeedbacks.filter((f) =>
+            groupStandards.some((s) => s.id === f.standardId),
+          );
+
+          const avgSkillScore =
+            groupFeedbacks.length > 0
+              ? Math.round(
+                  (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                    groupFeedbacks.length /
+                    groupStandards[0]?.points || 1) * 100,
+                )
+              : 0;
 
           return {
             skill: group.name,
-            score: avgSkillScore
+            score: avgSkillScore,
           };
         });
 
         // Find weakest skill
-        const weakestSkill = skillBreakdown.reduce((min, skill) => 
-          skill.score < min.score ? skill : min, 
-          skillBreakdown[0] || { skill: 'Unknown', score: 100 }
+        const weakestSkill = skillBreakdown.reduce(
+          (min, skill) => (skill.score < min.score ? skill : min),
+          skillBreakdown[0] || { skill: "Unknown", score: 100 },
         );
 
         return {
@@ -159,7 +185,11 @@ export default function Reports() {
             totalSessions > 0
               ? Math.round((completedSessions / totalSessions) * 100)
               : 0,
-          initials: ta.name.split(" ").map((n) => n[0]).join("").toUpperCase(),
+          initials: ta.name
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .toUpperCase(),
           skillBreakdown,
           weakestSkill,
         };
@@ -213,7 +243,8 @@ export default function Reports() {
               TA Performance Leaderboard
             </CardTitle>
             <CardDescription>
-              Ranked by overall training performance based on actual feedback scores
+              Ranked by overall training performance based on actual feedback
+              scores
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -244,8 +275,8 @@ export default function Reports() {
                           ta.avgScore >= 80
                             ? "default"
                             : ta.avgScore >= 70
-                            ? "secondary"
-                            : "destructive"
+                              ? "secondary"
+                              : "destructive"
                         }
                       >
                         {ta.avgScore}%
@@ -331,9 +362,16 @@ export default function Reports() {
                           </h4>
                           <div className="space-y-2">
                             {ta.skillBreakdown.map((skill, index) => (
-                              <div key={index} className="flex items-center justify-between text-sm">
-                                <span className="text-muted-foreground">{skill.skill}:</span>
-                                <span className={`font-medium ${skill.score < 70 ? 'text-red-600' : skill.score < 80 ? 'text-yellow-600' : 'text-green-600'}`}>
+                              <div
+                                key={index}
+                                className="flex items-center justify-between text-sm"
+                              >
+                                <span className="text-muted-foreground">
+                                  {skill.skill}:
+                                </span>
+                                <span
+                                  className={`font-medium ${skill.score < 70 ? "text-red-600" : skill.score < 80 ? "text-yellow-600" : "text-green-600"}`}
+                                >
                                   {skill.score}%
                                 </span>
                               </div>
@@ -345,10 +383,15 @@ export default function Reports() {
                           <h4 className="font-medium">Recommended Actions:</h4>
                           <ul className="text-sm space-y-1 text-muted-foreground">
                             <li>• Schedule one-on-one mentoring session</li>
-                            <li>• Focus on {ta.weakestSkill.skill.toLowerCase()} improvement</li>
+                            <li>
+                              • Focus on {ta.weakestSkill.skill.toLowerCase()}{" "}
+                              improvement
+                            </li>
                             <li>• Review specific feedback patterns</li>
                             <li>• Practice with similar student scenarios</li>
-                            <li>• Pair with high-performing TA for shadowing</li>
+                            <li>
+                              • Pair with high-performing TA for shadowing
+                            </li>
                           </ul>
                         </div>
                       </div>

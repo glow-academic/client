@@ -5,8 +5,12 @@
  * 06/07/2025
  */
 
-import Simulation from "@/components/common/simulation/Simulation"
+import Simulation from "@/components/common/simulation/Simulation";
 
-export default function SimulationEdit({ simulationId }: { simulationId: string }) {
-  return <Simulation mode="create" simulationId={simulationId} />
+export default function SimulationEdit({
+  simulationId,
+}: {
+  simulationId: string;
+}) {
+  return <Simulation mode="create" simulationId={simulationId} />;
 }

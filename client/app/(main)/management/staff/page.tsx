@@ -10,5 +10,9 @@
 import Staff from "@/components/management/staff/Staff";
 
 export default function StaffPage() {
-  return <div className="space-y-6"><Staff /></div>;
+  return (
+    <div className="space-y-6">
+      <Staff />
+    </div>
+  );
 }

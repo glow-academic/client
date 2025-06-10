@@ -8,5 +8,5 @@
 import Eval from "@/components/common/eval/Eval";
 
 export default function NewEval() {
-    return <Eval mode="create" />;
+  return <Eval mode="create" />;
 }

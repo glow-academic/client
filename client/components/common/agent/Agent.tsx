@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -114,8 +114,11 @@ export default function Agent({
 
       router.push("/management/agents");
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} agent:`, error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} agent`);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} agent:`,
+        error,
+      );
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} agent`);
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +160,9 @@ export default function Agent({
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Agent Not Found</h1>
-          <p className="text-muted-foreground">The agent you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground">
+            The agent you're looking for doesn't exist.
+          </p>
         </div>
         <Button onClick={() => router.push("/management/agents")}>
           Back to Agents
@@ -175,7 +180,9 @@ export default function Agent({
             <Input
               id="name"
               value={formData.name}
-              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder="e.g., Enthusiastic Student Agent"
               required
             />
@@ -186,7 +193,9 @@ export default function Agent({
             <Input
               id="subtitle"
               value={formData.subtitle}
-              onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({ ...prev, subtitle: e.target.value }))
+              }
               placeholder="Brief description of the agent"
               required
             />
@@ -197,7 +206,12 @@ export default function Agent({
             <Textarea
               id="description"
               value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  description: e.target.value,
+                }))
+              }
               placeholder="Detailed behavior description and personality traits"
               rows={4}
               required
@@ -209,13 +223,19 @@ export default function Agent({
             <Textarea
               id="systemPrompt"
               value={formData.systemPrompt}
-              onChange={(e) => setFormData(prev => ({ ...prev, systemPrompt: e.target.value }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  systemPrompt: e.target.value,
+                }))
+              }
               placeholder="System prompt that defines how the agent should behave and respond"
               rows={6}
               required
             />
             <p className="text-sm text-muted-foreground">
-              This prompt defines the agent's behavior and personality in conversations.
+              This prompt defines the agent's behavior and personality in
+              conversations.
             </p>
           </div>
 
@@ -224,7 +244,7 @@ export default function Agent({
             <Select
               value={formData.agentType}
               onValueChange={(value: "default" | "student" | "ta") =>
-                setFormData(prev => ({ ...prev, agentType: value }))
+                setFormData((prev) => ({ ...prev, agentType: value }))
               }
             >
               <SelectTrigger>
@@ -246,19 +266,28 @@ export default function Agent({
               min="0"
               max="100"
               value={formData.temperature}
-              onChange={(e) => setFormData(prev => ({ ...prev, temperature: parseInt(e.target.value) || 0 }))}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  temperature: parseInt(e.target.value) || 0,
+                }))
+              }
             />
             <p className="text-sm text-muted-foreground">
-              Temperature value for response randomness (0-100). Lower values are more deterministic.
+              Temperature value for response randomness (0-100). Lower values
+              are more deterministic.
             </p>
           </div>
 
           <div className="flex gap-2 justify-end">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting
-                ? (isEditMode ? "Updating..." : "Creating...")
-                : (isEditMode ? "Update Agent" : "Create Agent")
-              }
+                ? isEditMode
+                  ? "Updating..."
+                  : "Creating..."
+                : isEditMode
+                  ? "Update Agent"
+                  : "Create Agent"}
             </Button>
           </div>
         </form>

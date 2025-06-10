@@ -8,9 +8,5 @@
 import Agent from "@/components/common/agent/Agent";
 
 export default function NewAgent() {
-  return (
-    <Agent 
-      mode="create" 
-    />
-  );
+  return <Agent mode="create" />;
 }

@@ -3,26 +3,34 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { RoleProvider } from "@/contexts/role-context";
 import { getUser } from "@/utils/queries/users/get-user";
-import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+import {
+  generateEnhancedBreadcrumbs,
+  getActiveSectionFromPath,
+} from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { Clock } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
-type WindowWithAttemptTimer = Window & typeof globalThis & {
-  attemptTimer: {
-    timeRemaining: number | null;
-    formatTime: (seconds: number) => string;
-    isActive: boolean;
-    showResults: boolean;
-    hasTimeLimit: boolean;
+type WindowWithAttemptTimer = Window &
+  typeof globalThis & {
+    attemptTimer: {
+      timeRemaining: number | null;
+      formatTime: (seconds: number) => string;
+      isActive: boolean;
+      showResults: boolean;
+      hasTimeLimit: boolean;
+    };
   };
-};
 
 export default function AttemptLayout({
   children,
@@ -32,7 +40,9 @@ export default function AttemptLayout({
   const pathname = usePathname();
   const router = useRouter();
   const activeSection = getActiveSectionFromPath(pathname);
-  const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+  const [breadcrumbs, setBreadcrumbs] = React.useState<
+    Array<{ title: string; section?: string }>
+  >([]);
   const [timerData, setTimerData] = React.useState<{
     timeRemaining: number | null;
     formatTime: (seconds: number) => string;
@@ -41,7 +51,7 @@ export default function AttemptLayout({
     hasTimeLimit: boolean;
   } | null>(null);
 
-  const {userId} = useAuth();
+  const { userId } = useAuth();
 
   // Fetch user data for role context
   const { data: user } = useQuery({
@@ -62,7 +72,10 @@ export default function AttemptLayout({
   // Listen for timer updates from the attempt page
   React.useEffect(() => {
     const checkTimer = () => {
-      if (typeof window !== 'undefined' && (window as WindowWithAttemptTimer).attemptTimer) {
+      if (
+        typeof window !== "undefined" &&
+        (window as WindowWithAttemptTimer).attemptTimer
+      ) {
         setTimerData((window as WindowWithAttemptTimer).attemptTimer);
       }
     };
@@ -90,12 +103,12 @@ export default function AttemptLayout({
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs 
+              <NavigationBreadcrumbs
                 breadcrumbs={breadcrumbs}
                 onSectionChange={handleSectionChange}
               />
             </div>
-            
+
             {/* Timer in top right corner */}
             {timerData && !timerData.showResults && (
               <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full mr-4">
@@ -103,8 +116,7 @@ export default function AttemptLayout({
                 <span className="text-sm font-medium" data-testid="timer">
                   {timerData.hasTimeLimit && timerData.timeRemaining !== null
                     ? timerData.formatTime(timerData.timeRemaining)
-                    : "No time limit"
-                  }
+                    : "No time limit"}
                 </span>
                 {timerData.hasTimeLimit && !timerData.isActive && (
                   <span className="text-xs text-red-500 ml-1">(Expired)</span>
@@ -112,11 +124,9 @@ export default function AttemptLayout({
               </div>
             )}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </RoleProvider>
   );
-} 
+}

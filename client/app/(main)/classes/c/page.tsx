@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function ClassPage() {
-    return redirect("/classes/new");
+  return redirect("/classes/new");
 }

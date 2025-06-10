@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getStandardsByStandardGroups(standardGroupIds: string[]) {
   try {
-    return await db.select().from(standards).where(inArray(standards.standardGroupId, standardGroupIds));
+    return await db
+      .select()
+      .from(standards)
+      .where(inArray(standards.standardGroupId, standardGroupIds));
   } catch (error) {
     console.error("Error fetching standards by standardGroups:", error);
     throw error;

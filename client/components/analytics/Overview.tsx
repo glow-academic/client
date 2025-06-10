@@ -74,24 +74,28 @@ export default function Overview() {
     queryFn: () => getAllAgents(),
   });
 
-  const {data: rubrics, isLoading: isLoadingRubrics} = useQuery({
+  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
-  const {data: standardGroups, isLoading: isLoadingStandardGroups} = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
+  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
+    {
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+      queryFn: () =>
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+      enabled: !!rubrics && rubrics.length > 0,
+    },
+  );
 
-  const {data: standards, isLoading: isLoadingStandards} = useQuery({
+  const { data: standards, isLoading: isLoadingStandards } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
-  const {data: attempts, isLoading: isLoadingAttempts} = useQuery({
+  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", users?.map((user) => user.id)],
     queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
     enabled: !!users && users.length > 0,
@@ -99,25 +103,39 @@ export default function Overview() {
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () => getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
+    queryFn: () =>
+      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
     enabled: !!attempts && attempts.length > 0,
   });
 
-  const {data: grades, isLoading: isLoadingGrades} = useQuery({
+  const { data: grades, isLoading: isLoadingGrades } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () => getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
-  const {data: feedbacks, isLoading: isLoadingFeedbacks} = useQuery({
+  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(grades!.map((grade) => grade.id)),
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades!.map((grade) => grade.id),
+      ),
     enabled: !!grades && grades.length > 0,
   });
 
   // Calculate key metrics
   const analytics = useMemo(() => {
-    if (!users || !chats || !grades || !agents || !feedbacks || !standards || !standardGroups) return null;
+    if (
+      !users ||
+      !chats ||
+      !grades ||
+      !agents ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups
+    )
+      return null;
 
     const tas = users.filter((user) => user.role === "ta");
     const completedChats = chats.filter((chat) => chat.completed);
@@ -126,31 +144,42 @@ export default function Overview() {
       totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
 
     // Group standards by their names to create skill categories
-    const skillCategories = standardGroups.reduce((acc, group: StandardGroup) => {
-      const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-      const groupFeedbacks = feedbacks.filter(f => 
-        groupStandards.some(s => s.id === f.standardId)
-      );
-      
-      if (groupFeedbacks.length > 0) {
-        const avgScore = Math.round(
-          (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length / 
-           Math.max(...groupStandards.map(s => s.points))) * 100
+    const skillCategories = standardGroups.reduce(
+      (acc, group: StandardGroup) => {
+        const groupStandards = standards.filter(
+          (s) => s.standardGroupId === group.id,
         );
-        acc[group.shortName] = avgScore;
-      }
-      
-      return acc;
-    }, {} as Record<string, number>);
+        const groupFeedbacks = feedbacks.filter((f) =>
+          groupStandards.some((s) => s.id === f.standardId),
+        );
+
+        if (groupFeedbacks.length > 0) {
+          const avgScore = Math.round(
+            (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+              groupFeedbacks.length /
+              Math.max(...groupStandards.map((s) => s.points))) *
+              100,
+          );
+          acc[group.shortName] = avgScore;
+        }
+
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
 
     // Calculate overall average score from grades
-    const avgOverallScore = grades.length > 0
-      ? Math.round((grades.reduce((sum, g) => sum + g.score, 0) / grades.length))
-      : 0;
+    const avgOverallScore =
+      grades.length > 0
+        ? Math.round(
+            grades.reduce((sum, g) => sum + g.score, 0) / grades.length,
+          )
+        : 0;
 
     // TA performance for struggling count
     const taPerformance = tas.map((ta) => {
-      const taAttempts = attempts?.filter((attempt) => attempt.userId === ta.id) || [];
+      const taAttempts =
+        attempts?.filter((attempt) => attempt.userId === ta.id) || [];
       const taChats = chats.filter((chat) =>
         taAttempts.some((attempt) => attempt.id === chat.attemptId),
       );
@@ -158,9 +187,12 @@ export default function Overview() {
         taChats.some((chat) => chat.id === grade.simulationChatId),
       );
 
-      const avgScore = taGrades.length > 0
-        ? Math.round(taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length)
-        : 0;
+      const avgScore =
+        taGrades.length > 0
+          ? Math.round(
+              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
+            )
+          : 0;
 
       return { avgScore };
     });
@@ -182,23 +214,30 @@ export default function Overview() {
 
       return {
         date: format(date, "MMM dd"),
-        score: dayGrades.length > 0
-          ? Math.round(dayGrades.reduce((sum, g) => sum + g.score, 0) / dayGrades.length)
-          : 0,
+        score:
+          dayGrades.length > 0
+            ? Math.round(
+                dayGrades.reduce((sum, g) => sum + g.score, 0) /
+                  dayGrades.length,
+              )
+            : 0,
         sessions: dayChats.length,
         completed: dayChats.filter((chat) => chat.completed).length,
       };
     });
 
     // Struggling TAs (score < 70)
-    const strugglingTAs = taPerformance.filter(
-      (ta) => ta.avgScore < 70
-    );
+    const strugglingTAs = taPerformance.filter((ta) => ta.avgScore < 70);
 
     // Calculate average training time from grades (convert seconds to minutes)
-    const avgTrainingTime = grades.length > 0 
-      ? Math.round(grades.reduce((sum, g) => sum + g.timeTaken, 0) / grades.length / 60)
-      : 45;
+    const avgTrainingTime =
+      grades.length > 0
+        ? Math.round(
+            grades.reduce((sum, g) => sum + g.timeTaken, 0) /
+              grades.length /
+              60,
+          )
+        : 45;
 
     return {
       totalTAs: tas.length,
@@ -210,7 +249,16 @@ export default function Overview() {
       strugglingTAs,
       avgTrainingTime,
     };
-  }, [users, chats, grades, agents, attempts, feedbacks, standards, standardGroups]);
+  }, [
+    users,
+    chats,
+    grades,
+    agents,
+    attempts,
+    feedbacks,
+    standards,
+    standardGroups,
+  ]);
 
   // Loading state
   if (
@@ -237,21 +285,34 @@ export default function Overview() {
   if (!analytics) return null;
 
   // Custom tooltip component for better positioning
-  const CustomBarTooltip = ({ active, payload, label }: {active: boolean, payload: {name: string, value: number, color: string}[], label: string}) => {
+  const CustomBarTooltip = ({
+    active,
+    payload,
+    label,
+  }: {
+    active: boolean;
+    payload: { name: string; value: number; color: string }[];
+    label: string;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-gray-800 p-3 border rounded-lg shadow-lg text-sm relative z-50">
           <p className="font-medium mb-2">{label}</p>
-          {payload.map((entry: { name: string, value: number, color: string }, index: number) => (
-            <div key={index} className="flex items-center gap-2">
-              <div 
-                className="w-3 h-3 rounded" 
-                style={{ backgroundColor: entry.color }}
-              />
-              <span className="text-muted-foreground">{entry.name}:</span>
-              <span className="font-medium">{entry.value}</span>
-            </div>
-          ))}
+          {payload.map(
+            (
+              entry: { name: string; value: number; color: string },
+              index: number,
+            ) => (
+              <div key={index} className="flex items-center gap-2">
+                <div
+                  className="w-3 h-3 rounded"
+                  style={{ backgroundColor: entry.color }}
+                />
+                <span className="text-muted-foreground">{entry.name}:</span>
+                <span className="font-medium">{entry.value}</span>
+              </div>
+            ),
+          )}
         </div>
       );
     }
@@ -260,7 +321,7 @@ export default function Overview() {
 
   // Get top skill categories for display
   const topSkills = Object.entries(analytics.skillCategories)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([, a], [, b]) => b - a)
     .slice(0, 4)
     .map(([shortName, score], index) => ({
       shortName,
@@ -289,22 +350,24 @@ export default function Overview() {
 
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Training Sessions</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Training Sessions
+            </CardTitle>
             <MessageSquare className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-700">
               {analytics.totalSessions}
             </div>
-            <p className="text-xs text-green-600 mt-1">
-              This week
-            </p>
+            <p className="text-xs text-green-600 mt-1">This week</p>
           </CardContent>
         </Card>
 
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Training Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Training Hours
+            </CardTitle>
             <Clock className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
@@ -357,8 +420,16 @@ export default function Overview() {
                       x2="0"
                       y2="1"
                     >
-                      <stop offset="5%" stopColor={COLORS.primary} stopOpacity={0.3} />
-                      <stop offset="95%" stopColor={COLORS.primary} stopOpacity={0} />
+                      <stop
+                        offset="5%"
+                        stopColor={COLORS.primary}
+                        stopOpacity={0.3}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={COLORS.primary}
+                        stopOpacity={0}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -399,18 +470,20 @@ export default function Overview() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {topSkills.length > 0 ? topSkills.map((skill) => (
-                <div key={skill.shortName} className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <skill.icon className="h-4 w-4 text-muted-foreground" />
-                      <span>{skill.shortName}</span>
+              {topSkills.length > 0 ? (
+                topSkills.map((skill) => (
+                  <div key={skill.shortName} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <skill.icon className="h-4 w-4 text-muted-foreground" />
+                        <span>{skill.shortName}</span>
+                      </div>
+                      <span className="font-medium">{skill.score}%</span>
                     </div>
-                    <span className="font-medium">{skill.score}%</span>
+                    <Progress value={skill.score} className="h-2" />
                   </div>
-                  <Progress value={skill.score} className="h-2" />
-                </div>
-              )) : (
+                ))
+              ) : (
                 <div className="text-center text-muted-foreground py-4">
                   No skill data available
                 </div>
@@ -435,14 +508,13 @@ export default function Overview() {
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={analytics.timeSeriesData}>
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  className="stroke-muted"
-                />
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip
-                  content={<CustomBarTooltip active={false} payload={[]} label={""} />}
+                  content={
+                    <CustomBarTooltip active={false} payload={[]} label={""} />
+                  }
                   position={{ x: 0, y: 0 }}
                   allowEscapeViewBox={{ x: false, y: true }}
                   offset={20}

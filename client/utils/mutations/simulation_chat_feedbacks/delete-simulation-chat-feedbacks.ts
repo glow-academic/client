@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function deleteSimulationChatFeedbacks(ids: string[]) {
   try {
-    return await db.delete(simulationChatFeedbacks).where(inArray(simulationChatFeedbacks.id, ids)).returning();
+    return await db
+      .delete(simulationChatFeedbacks)
+      .where(inArray(simulationChatFeedbacks.id, ids))
+      .returning();
   } catch (error) {
     console.error("Error deleting multiple simulation_chat_feedbacks:", error);
     throw error;

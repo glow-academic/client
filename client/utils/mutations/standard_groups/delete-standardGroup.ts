@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function deleteStandardGroup(id: string) {
   try {
-    const result = await db.delete(standardGroups).where(eq(standardGroups.id, id)).returning();
+    const result = await db
+      .delete(standardGroups)
+      .where(eq(standardGroups.id, id))
+      .returning();
     return result[0];
   } catch (error) {
     console.error("Error deleting standardGroup:", error);

@@ -3,7 +3,9 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationMessages } from "@/drizzle/schema";
 
-export async function createSimulationMessages(data: (typeof simulationMessages.$inferInsert)[]) {
+export async function createSimulationMessages(
+  data: (typeof simulationMessages.$inferInsert)[],
+) {
   try {
     return await db.insert(simulationMessages).values(data).returning();
   } catch (error) {

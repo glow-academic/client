@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulationsByRubric(rubricId: string) {
   try {
-    return await db.select().from(simulations).where(eq(simulations.rubricId, rubricId));
+    return await db
+      .select()
+      .from(simulations)
+      .where(eq(simulations.rubricId, rubricId));
   } catch (error) {
     console.error("Error fetching simulations by rubric:", error);
     throw error;

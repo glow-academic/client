@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function getEvalChatFeedbacksByStandard(standardId: string) {
   try {
-    return await db.select().from(evalChatFeedbacks).where(eq(evalChatFeedbacks.standardId, standardId));
+    return await db
+      .select()
+      .from(evalChatFeedbacks)
+      .where(eq(evalChatFeedbacks.standardId, standardId));
   } catch (error) {
     console.error("Error fetching eval_chat_feedbacks by standard:", error);
     throw error;

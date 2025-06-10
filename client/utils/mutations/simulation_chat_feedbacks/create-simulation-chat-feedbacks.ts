@@ -3,7 +3,9 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationChatFeedbacks } from "@/drizzle/schema";
 
-export async function createSimulationChatFeedbacks(data: (typeof simulationChatFeedbacks.$inferInsert)[]) {
+export async function createSimulationChatFeedbacks(
+  data: (typeof simulationChatFeedbacks.$inferInsert)[],
+) {
   try {
     return await db.insert(simulationChatFeedbacks).values(data).returning();
   } catch (error) {

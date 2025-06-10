@@ -9,27 +9,25 @@ import { useColumns } from "./columns";
 import { DataTable } from "./data-table";
 
 type SimulationHistoryProps = {
-    showAll: boolean;
-    showChats: boolean;
-}
+  showAll: boolean;
+  showChats: boolean;
+};
 
-export default function SimulationHistory({ showAll, showChats }: SimulationHistoryProps) {
-    const {
-        columns,
-        data,
-        userOptions,
-        classOptions,
-    } = useColumns({
-        showAll,
-        showChats,
-    });
+export default function SimulationHistory({
+  showAll,
+  showChats,
+}: SimulationHistoryProps) {
+  const { columns, data, userOptions, classOptions } = useColumns({
+    showAll,
+    showChats,
+  });
 
-    return (
-        <DataTable<any, any>
-            data={data || []}
-            columns={columns}
-            userOptions={userOptions}
-            classOptions={classOptions}
-        />
-    )
+  return (
+    <DataTable<any, any>
+      data={data || []}
+      columns={columns}
+      userOptions={userOptions}
+      classOptions={classOptions}
+    />
+  );
 }

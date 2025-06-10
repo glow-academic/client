@@ -10,15 +10,11 @@ import SimulationHistory from "../common/history/SimulationHistory";
 import { useViewMode } from "@/contexts/view-mode-context";
 
 export default function Logs() {
-
-  const {viewMode} = useViewMode();
+  const { viewMode } = useViewMode();
 
   return (
     <div className="space-y-6">
-      <SimulationHistory
-        showAll={true}
-        showChats={viewMode === "chats"}
-      />
+      <SimulationHistory showAll={true} showChats={viewMode === "chats"} />
     </div>
   );
 }

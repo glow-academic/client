@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function getEvalMessage(id: string) {
   try {
-    const result = await db.select().from(evalMessages).where(eq(evalMessages.id, id));
+    const result = await db
+      .select()
+      .from(evalMessages)
+      .where(eq(evalMessages.id, id));
     return result[0] || null;
   } catch (error) {
     console.error("Error fetching evalMessage:", error);

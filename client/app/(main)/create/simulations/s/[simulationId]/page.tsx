@@ -3,13 +3,17 @@
  * Simulation editing page
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
-*/
+ */
 "use client";
 
 import { use } from "react";
 import SimulationEdit from "@/components/create/simulations/SimulationEdit";
 
-export default function EditSimulationPage({ params }: { params: Promise<{ simulationId: string }> }) {
+export default function EditSimulationPage({
+  params,
+}: {
+  params: Promise<{ simulationId: string }>;
+}) {
   const { simulationId } = use(params);
 
   return (

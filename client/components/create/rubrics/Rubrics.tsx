@@ -9,14 +9,29 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Edit, Trash2, FileCheck, Users, Star, Plus, BookOpen } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  FileCheck,
+  Users,
+  Star,
+  Plus,
+  BookOpen,
+} from "lucide-react";
 
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +47,10 @@ import { Rubric } from "@/types";
 export default function Rubrics() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch rubrics data
@@ -80,8 +98,10 @@ export default function Rubrics() {
 
   const getStatusBadge = (rubric: Rubric) => {
     const passPercentage = getPassPercentage(rubric);
-    if (passPercentage >= 80) return { variant: "default" as const, text: "High Standard" };
-    if (passPercentage >= 60) return { variant: "secondary" as const, text: "Standard" };
+    if (passPercentage >= 80)
+      return { variant: "default" as const, text: "High Standard" };
+    if (passPercentage >= 60)
+      return { variant: "secondary" as const, text: "Standard" };
     return { variant: "outline" as const, text: "Flexible" };
   };
 
@@ -91,7 +111,7 @@ export default function Rubrics() {
         {rubrics.map((rubric: Rubric) => {
           const statusBadge = getStatusBadge(rubric);
           const passPercentage = getPassPercentage(rubric);
-          
+
           return (
             <Card key={rubric.id} className="hover:shadow-md transition-shadow">
               <CardHeader>
@@ -126,12 +146,16 @@ export default function Rubrics() {
                 </div>
               </CardContent>
               <CardFooter className="flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => handleEdit(rubric.id)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(rubric.id)}
+                >
                   <Edit className="h-4 w-4" />
                 </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => handleDeleteClick(rubric.id, rubric.name)}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -140,7 +164,7 @@ export default function Rubrics() {
             </Card>
           );
         })}
-        
+
         {rubrics.length === 0 && (
           <div className="col-span-full">
             <Card className="border-dashed">
@@ -148,7 +172,8 @@ export default function Rubrics() {
                 <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-medium mb-2">No rubrics yet</h3>
                 <p className="text-muted-foreground text-center mb-4">
-                  Create your first evaluation rubric to define assessment criteria
+                  Create your first evaluation rubric to define assessment
+                  criteria
                 </p>
                 <Button onClick={handleCreateNew}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -166,8 +191,9 @@ export default function Rubrics() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the rubric "{deleteItem?.name}". 
-              This action cannot be undone and will affect any evaluations using this rubric.
+              This will permanently delete the rubric "{deleteItem?.name}". This
+              action cannot be undone and will affect any evaluations using this
+              rubric.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

@@ -8,5 +8,5 @@
 import Eval from "@/components/common/eval/Eval";
 
 export default function EvalEdit({ evalId }: { evalId: string }) {
-    return <Eval evalId={evalId} mode="edit" />;
+  return <Eval evalId={evalId} mode="edit" />;
 }

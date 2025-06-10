@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function deleteDocuments(ids: string[]) {
   try {
-    return await db.delete(documents).where(inArray(documents.id, ids)).returning();
+    return await db
+      .delete(documents)
+      .where(inArray(documents.id, ids))
+      .returning();
   } catch (error) {
     console.error("Error deleting multiple documents:", error);
     throw error;

@@ -8,10 +8,5 @@
 import Scenario from "@/components/common/scenario/Scenario";
 
 export default function ScenarioEdit({ scenarioId }: { scenarioId: string }) {
-  return (
-    <Scenario 
-      scenarioId={scenarioId} 
-      mode="edit" 
-    />
-  );
+  return <Scenario scenarioId={scenarioId} mode="edit" />;
 }

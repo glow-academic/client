@@ -3,25 +3,33 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { RoleProvider } from "@/contexts/role-context";
 import { getUser } from "@/utils/queries/users/get-user";
-import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+import {
+  generateEnhancedBreadcrumbs,
+  getActiveSectionFromPath,
+} from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { Clock, CheckCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/use-auth";
 
-type WindowWithChatData = Window & typeof globalThis & {
-  chatData: {
-    elapsedTime: string;
-    completed: boolean;
-    passed?: boolean;
+type WindowWithChatData = Window &
+  typeof globalThis & {
+    chatData: {
+      elapsedTime: string;
+      completed: boolean;
+      passed?: boolean;
+    };
   };
-};
 
 export default function ChatLayout({
   children,
@@ -31,14 +39,16 @@ export default function ChatLayout({
   const pathname = usePathname();
   const router = useRouter();
   const activeSection = getActiveSectionFromPath(pathname);
-  const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+  const [breadcrumbs, setBreadcrumbs] = React.useState<
+    Array<{ title: string; section?: string }>
+  >([]);
   const [chatData, setChatData] = React.useState<{
     elapsedTime: string;
     completed: boolean;
     passed?: boolean;
   } | null>(null);
 
-  const {userId} = useAuth();
+  const { userId } = useAuth();
 
   // Fetch user data for role context
   const { data: user } = useQuery({
@@ -59,7 +69,10 @@ export default function ChatLayout({
   // Listen for chat data updates from the chat page
   React.useEffect(() => {
     const checkChatData = () => {
-      if (typeof window !== 'undefined' && (window as WindowWithChatData).chatData) {
+      if (
+        typeof window !== "undefined" &&
+        (window as WindowWithChatData).chatData
+      ) {
         setChatData((window as WindowWithChatData).chatData);
       }
     };
@@ -87,12 +100,12 @@ export default function ChatLayout({
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs 
+              <NavigationBreadcrumbs
                 breadcrumbs={breadcrumbs}
                 onSectionChange={handleSectionChange}
               />
             </div>
-            
+
             {/* Timer and Status in top right corner */}
             {chatData && (
               <div className="flex items-center gap-2 mr-4">
@@ -111,11 +124,9 @@ export default function ChatLayout({
               </div>
             )}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </RoleProvider>
   );
-} 
+}

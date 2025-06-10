@@ -66,14 +66,14 @@ interface ExportButtonProps<TData> {
   table: Table<TData>;
   userOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
-  viewMode?: 'chats' | 'attempts';
+  viewMode?: "chats" | "attempts";
 }
 
 export function ExportButton<TData>({
   table,
   userOptions,
   classOptions,
-  viewMode = 'chats',
+  viewMode = "chats",
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -142,8 +142,9 @@ export function ExportButton<TData>({
               const chats = cellValue as ChatData[];
               const original = row.original as AttemptData;
               const interactionIds = original.interactionIds as string[];
-              
-              const completedChats = chats?.filter(chat => chat.completed).length || 0;
+
+              const completedChats =
+                chats?.filter((chat) => chat.completed).length || 0;
               // Use simulation's interactionIds length for total expected chats
               const totalChats = interactionIds?.length || chats?.length || 0;
               return `"${completedChats}/${totalChats}"`;
@@ -151,7 +152,7 @@ export function ExportButton<TData>({
 
             if (column.id === "agentsTested" && cellValue) {
               const agents = cellValue as string[];
-              return `"${agents.join(', ')}"`;
+              return `"${agents.join(", ")}"`;
             }
 
             if (column.id === "averageScore" && cellValue) {
@@ -245,11 +246,7 @@ export function ExportButton<TData>({
               Exports currently visible columns with proper formatting.
             </p>
             <div className="pt-2 flex justify-end">
-              <Button
-                size="sm"
-                className="w-full"
-                onClick={prepareExport}
-              >
+              <Button size="sm" className="w-full" onClick={prepareExport}>
                 Export to CSV
               </Button>
             </div>
@@ -258,4 +255,4 @@ export function ExportButton<TData>({
       </PopoverContent>
     </Popover>
   );
-} 
+}

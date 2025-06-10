@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getSimulationChatsByScenarios(scenarioIds: string[]) {
   try {
-    return await db.select().from(simulationChats).where(inArray(simulationChats.scenarioId, scenarioIds));
+    return await db
+      .select()
+      .from(simulationChats)
+      .where(inArray(simulationChats.scenarioId, scenarioIds));
   } catch (error) {
     console.error("Error fetching simulation_chats by scenarios:", error);
     throw error;

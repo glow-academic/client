@@ -10,5 +10,9 @@
 import Growth from "@/components/growth/Growth";
 
 export default function GrowthPage() {
-  return <div className="space-y-6"><Growth /></div>;
+  return (
+    <div className="space-y-6">
+      <Growth />
+    </div>
+  );
 }

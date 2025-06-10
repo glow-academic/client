@@ -3,7 +3,9 @@
 import { db } from "@/utils/drizzle/database";
 import { evalMessages } from "@/drizzle/schema";
 
-export async function createEvalMessages(data: (typeof evalMessages.$inferInsert)[]) {
+export async function createEvalMessages(
+  data: (typeof evalMessages.$inferInsert)[],
+) {
   try {
     return await db.insert(evalMessages).values(data).returning();
   } catch (error) {

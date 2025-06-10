@@ -9,5 +9,9 @@
 import NewEval from "@/components/management/evals/NewEval";
 
 export default function NewEvalPage() {
-  return <div className="space-y-6"><NewEval /></div>;
+  return (
+    <div className="space-y-6">
+      <NewEval />
+    </div>
+  );
 }

@@ -1,87 +1,87 @@
-describe('rubrics Table Tests', () => {
+describe("rubrics Table Tests", () => {
   // Note: These tests are placeholders and will fail until implemented
   // Remove cy.visit('/') to make tests fail faster during development
 
-  describe('Database Schema Validation', () => {
-    it('should generate UUID primary keys automatically', () => {
+  describe("Database Schema Validation", () => {
+    it("should generate UUID primary keys automatically", () => {
       // TODO: Test UUID generation for rubrics
-      throw new Error('IMPLEMENT: UUID primary key test for rubrics');
+      throw new Error("IMPLEMENT: UUID primary key test for rubrics");
     });
-    it('should automatically set timestamps', () => {
+    it("should automatically set timestamps", () => {
       // TODO: Test timestamp fields (created_at, updated_at) for rubrics
-      throw new Error('IMPLEMENT: Timestamp validation test for rubrics');
+      throw new Error("IMPLEMENT: Timestamp validation test for rubrics");
     });
-    it('should enforce required fields', () => {
+    it("should enforce required fields", () => {
       // TODO: Test required fields: id
       // Required fields that should be validated:
-            // - id (uuid)
-      
-      throw new Error('IMPLEMENT: Required fields validation for rubrics');
+      // - id (uuid)
+
+      throw new Error("IMPLEMENT: Required fields validation for rubrics");
     });
   });
 
-  describe('Foreign Key Relationships', () => {
-    it('should handle relationships correctly', () => {
+  describe("Foreign Key Relationships", () => {
+    it("should handle relationships correctly", () => {
       // TODO: Test table relationships for rubrics
-      throw new Error('IMPLEMENT: Relationship test for rubrics');
+      throw new Error("IMPLEMENT: Relationship test for rubrics");
     });
   });
 
-  describe('CRUD Operations', () => {
-    it('should create rubrics records', () => {
+  describe("CRUD Operations", () => {
+    it("should create rubrics records", () => {
       // TODO: Test record creation
       // Sample data structure:
-            // id: // Auto-generated UUID
+      // id: // Auto-generated UUID
       // createdAt: // Auto-generated timestamp
       // withTimezone: "withTimezone_value"
       // mode: "mode_value"
-      
-      throw new Error('IMPLEMENT: rubrics creation test');
+
+      throw new Error("IMPLEMENT: rubrics creation test");
     });
 
-    it('should read rubrics records', () => {
+    it("should read rubrics records", () => {
       // TODO: Test record retrieval
-      throw new Error('IMPLEMENT: rubrics read test');
+      throw new Error("IMPLEMENT: rubrics read test");
     });
 
-    it('should update rubrics records', () => {
+    it("should update rubrics records", () => {
       // TODO: Test record updates
-      throw new Error('IMPLEMENT: rubrics update test');
+      throw new Error("IMPLEMENT: rubrics update test");
     });
 
-    it('should delete rubrics records', () => {
+    it("should delete rubrics records", () => {
       // TODO: Test record deletion
-      throw new Error('IMPLEMENT: rubrics delete test');
+      throw new Error("IMPLEMENT: rubrics delete test");
     });
   });
 
-  describe('API Endpoints', () => {
-    it('should test rubrics API endpoints', () => {
+  describe("API Endpoints", () => {
+    it("should test rubrics API endpoints", () => {
       // TODO: Test API endpoints for rubrics
       // Example API tests:
       // cy.request('GET', '/api/rubrics').then((response) => {
       //   expect(response.status).to.eq(200);
       //   expect(response.body).to.be.an('array');
       // });
-      
+
       // cy.request('POST', '/api/rubrics', sampleData).then((response) => {
       //   expect(response.status).to.eq(201);
       //   expect(response.body).to.have.property('id');
       // });
-      
-      throw new Error('IMPLEMENT: rubrics API endpoint tests');
+
+      throw new Error("IMPLEMENT: rubrics API endpoint tests");
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle validation errors', () => {
+  describe("Error Handling", () => {
+    it("should handle validation errors", () => {
       // TODO: Test validation error scenarios
-      throw new Error('IMPLEMENT: rubrics validation error test');
+      throw new Error("IMPLEMENT: rubrics validation error test");
     });
 
-    it('should handle constraint violations', () => {
+    it("should handle constraint violations", () => {
       // TODO: Test constraint violation scenarios
-      throw new Error('IMPLEMENT: rubrics constraint violation test');
+      throw new Error("IMPLEMENT: rubrics constraint violation test");
     });
   });
 });

@@ -10,7 +10,15 @@
 import StaffEdit from "@/components/management/staff/StaffEdit";
 import { use } from "react";
 
-export default function StaffEditPage({ params }: { params: Promise<{ userId: string }> }) {
+export default function StaffEditPage({
+  params,
+}: {
+  params: Promise<{ userId: string }>;
+}) {
   const { userId } = use(params);
-  return <div className="space-y-6"><StaffEdit userId={userId} /></div>;
+  return (
+    <div className="space-y-6">
+      <StaffEdit userId={userId} />
+    </div>
+  );
 }

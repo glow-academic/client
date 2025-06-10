@@ -9,7 +9,15 @@
 import EvalEdit from "@/components/management/evals/EvalEdit";
 import { use } from "react";
 
-export default function EvalEditPage({ params }: { params: Promise<{ evalId: string }> }) {
+export default function EvalEditPage({
+  params,
+}: {
+  params: Promise<{ evalId: string }>;
+}) {
   const { evalId } = use(params);
-  return <div className="space-y-6"><EvalEdit evalId={evalId} /></div>;
+  return (
+    <div className="space-y-6">
+      <EvalEdit evalId={evalId} />
+    </div>
+  );
 }

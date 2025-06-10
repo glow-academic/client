@@ -9,7 +9,15 @@
 import ClassStatus from "@/components/management/classes/ClassStatus";
 import { use } from "react";
 
-export default function ClassStatusPage({ params }: { params: Promise<{ classId: string }> }) {
+export default function ClassStatusPage({
+  params,
+}: {
+  params: Promise<{ classId: string }>;
+}) {
   const { classId } = use(params);
-  return <div className="space-y-6"><ClassStatus classId={classId} /></div>;
+  return (
+    <div className="space-y-6">
+      <ClassStatus classId={classId} />
+    </div>
+  );
 }

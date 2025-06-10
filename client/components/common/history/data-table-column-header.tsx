@@ -22,7 +22,7 @@ export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
-  showChats = false ,
+  showChats = false,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
     return <div className={cn(className, showChats && "pl-4")}>{title}</div>;

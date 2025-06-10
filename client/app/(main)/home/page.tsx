@@ -10,5 +10,9 @@
 import Home from "@/components/home/Home";
 
 export default function HomePage() {
-  return <div className="space-y-6"><Home /></div>;
+  return (
+    <div className="space-y-6">
+      <Home />
+    </div>
+  );
 }

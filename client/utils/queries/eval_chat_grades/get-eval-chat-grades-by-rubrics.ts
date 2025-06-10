@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getEvalChatGradesByRubrics(rubricIds: string[]) {
   try {
-    return await db.select().from(evalChatGrades).where(inArray(evalChatGrades.rubricId, rubricIds));
+    return await db
+      .select()
+      .from(evalChatGrades)
+      .where(inArray(evalChatGrades.rubricId, rubricIds));
   } catch (error) {
     console.error("Error fetching eval_chat_grades by rubrics:", error);
     throw error;

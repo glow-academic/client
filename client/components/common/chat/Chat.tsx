@@ -8,16 +8,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, ExternalLink, Activity, Users } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  ExternalLink,
+  Activity,
+  Users,
+} from "lucide-react";
 import Markdown from "@/components/common/chat/Markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSimulationChat } from "@/utils/queries/simulation_chats/get-simulationChat";
@@ -29,15 +30,21 @@ import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-s
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getSimulationChatGradesBySimulationChat } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchat";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { Scenario, StandardGroup, Standard, SimulationChatFeedback } from "@/types";
+import {
+  Scenario,
+  StandardGroup,
+  Standard,
+  SimulationChatFeedback,
+} from "@/types";
 
-type WindowWithChatData = Window & typeof globalThis & {
-  chatData: {
-    elapsedTime: string;
-    completed: boolean;
-    passed: boolean;
+type WindowWithChatData = Window &
+  typeof globalThis & {
+    chatData: {
+      elapsedTime: string;
+      completed: boolean;
+      passed: boolean;
+    };
   };
-};
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -61,11 +68,11 @@ export default function Chat({ chatId }: { chatId: string }) {
     queryFn: () => getSimulationChat(chatId),
   });
 
-  const {data: attempt, isLoading: attemptLoading} = useQuery({
+  const { data: attempt, isLoading: attemptLoading } = useQuery({
     queryKey: ["attempt", chat?.attemptId],
     queryFn: () => getSimulationAttempt(chat!.attemptId),
-    enabled: !!chat
-  })
+    enabled: !!chat,
+  });
 
   const { data: scenario, isLoading: scenarioLoading } = useQuery({
     queryKey: ["scenario", chat?.scenarioId],
@@ -73,7 +80,7 @@ export default function Chat({ chatId }: { chatId: string }) {
     enabled: !!chat?.scenarioId,
   });
 
-  const {data: simulation} = useQuery({
+  const { data: simulation } = useQuery({
     queryKey: ["simulation", attempt?.simulationId],
     queryFn: () => getSimulation(attempt!.simulationId),
     enabled: !!attempt?.simulationId,
@@ -93,7 +100,8 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   const { data: standards } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
@@ -105,43 +113,62 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   const { data: feedbacks } = useQuery({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(grades!.map((grade) => grade.id)),
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades!.map((grade) => grade.id),
+      ),
     enabled: !!grades && grades.length > 0,
   });
 
   // Create dynamic rubric based on grades/feedback
   const dynamicRubric = useMemo((): DynamicRubric | null => {
-    if (!chat?.id || !grades || !feedbacks || !standards || !standardGroups) return null;
+    if (!chat?.id || !grades || !feedbacks || !standards || !standardGroups)
+      return null;
 
-    const chatGrade = grades.find(grade => grade.simulationChatId === chat.id);
+    const chatGrade = grades.find(
+      (grade) => grade.simulationChatId === chat.id,
+    );
     if (!chatGrade) return null;
 
-    const chatFeedbacks = feedbacks.filter(feedback => feedback.simulationChatGradeId === chatGrade.id);
-    
+    const chatFeedbacks = feedbacks.filter(
+      (feedback) => feedback.simulationChatGradeId === chatGrade.id,
+    );
+
     // Calculate skill scores and feedbacks
     const skillScores: Record<string, number> = {};
     const skillFeedbacks: Record<string, string> = {};
     let totalPossiblePoints = 0;
 
     standardGroups.forEach((group: StandardGroup) => {
-      const groupStandards = standards.filter((s: Standard) => s.standardGroupId === group.id);
-      const groupFeedbacks = chatFeedbacks.filter((f: SimulationChatFeedback) => 
-        groupStandards.some((s: Standard) => s.id === f.standardId)
+      const groupStandards = standards.filter(
+        (s: Standard) => s.standardGroupId === group.id,
       );
-      
+      const groupFeedbacks = chatFeedbacks.filter((f: SimulationChatFeedback) =>
+        groupStandards.some((s: Standard) => s.id === f.standardId),
+      );
+
       if (groupFeedbacks.length > 0) {
-        const maxPoints = Math.max(...groupStandards.map((s: Standard) => s.points));
-        const avgScore = groupFeedbacks.reduce((sum: number, f: SimulationChatFeedback) => sum + f.total, 0) / groupFeedbacks.length;
+        const maxPoints = Math.max(
+          ...groupStandards.map((s: Standard) => s.points),
+        );
+        const avgScore =
+          groupFeedbacks.reduce(
+            (sum: number, f: SimulationChatFeedback) => sum + f.total,
+            0,
+          ) / groupFeedbacks.length;
         const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
-        
+
         skillScores[group.name] = normalizedScore;
-        skillFeedbacks[group.name] = groupFeedbacks.map((f: SimulationChatFeedback) => f.feedback || '').filter(Boolean).join('; ');
+        skillFeedbacks[group.name] = groupFeedbacks
+          .map((f: SimulationChatFeedback) => f.feedback || "")
+          .filter(Boolean)
+          .join("; ");
         totalPossiblePoints += maxPoints;
       }
     });
 
     // Calculate if passed (assuming 70% threshold)
-    const passed = chatGrade.score >= (totalPossiblePoints * 0.7);
+    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
 
     return {
       chatId: chat.id,
@@ -201,31 +228,43 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   // Expose chat data to layout
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       (window as WindowWithChatData).chatData = {
         elapsedTime,
         completed: chat?.completed || false,
-        passed: dynamicRubric?.passed || false
+        passed: dynamicRubric?.passed || false,
       };
     }
   }, [elapsedTime, chat?.completed, dynamicRubric?.passed]);
 
-    // Helper function to format interaction attributes
+  // Helper function to format interaction attributes
   const formatScenarioInfo = (scenario: Scenario) => {
-    const crowdednessText = scenario.crowdedness === 1 ? "Low crowdedness" : 
-                           scenario.crowdedness === 2 ? "Moderate crowdedness" :
-                           scenario.crowdedness === 3 ? "High crowdedness" :
-                           scenario.crowdedness === 4 ? "Very high crowdedness" :
-                           scenario.crowdedness === 5 ? "Extremely crowded" :
-                           `Crowdedness: ${scenario.crowdedness}`;
-    
-    const intensityText = scenario.intensity === 1 ? "Low intensity" :
-                         scenario.intensity === 2 ? "Moderate intensity" :
-                         scenario.intensity === 3 ? "High intensity" :
-                         scenario.intensity === 4 ? "Very high intensity" :
-                         scenario.intensity === 5 ? "Extremely intense" :
-                         `Intensity: ${scenario.intensity}`;
-    
+    const crowdednessText =
+      scenario.crowdedness === 1
+        ? "Low crowdedness"
+        : scenario.crowdedness === 2
+          ? "Moderate crowdedness"
+          : scenario.crowdedness === 3
+            ? "High crowdedness"
+            : scenario.crowdedness === 4
+              ? "Very high crowdedness"
+              : scenario.crowdedness === 5
+                ? "Extremely crowded"
+                : `Crowdedness: ${scenario.crowdedness}`;
+
+    const intensityText =
+      scenario.intensity === 1
+        ? "Low intensity"
+        : scenario.intensity === 2
+          ? "Moderate intensity"
+          : scenario.intensity === 3
+            ? "High intensity"
+            : scenario.intensity === 4
+              ? "Very high intensity"
+              : scenario.intensity === 5
+                ? "Extremely intense"
+                : `Intensity: ${scenario.intensity}`;
+
     return (
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1">
@@ -278,14 +317,19 @@ export default function Chat({ chatId }: { chatId: string }) {
   }
 
   return (
-    <div className="flex flex-1 flex-col gap-4" role="main" aria-label="Chat conversation">
+    <div
+      className="flex flex-1 flex-col gap-4"
+      role="main"
+      aria-label="Chat conversation"
+    >
       {/* If chat is not completed, show redirect to attempt */}
       {!chat.completed && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-6 text-center">
             <h3 className="text-lg font-semibold mb-2">Chat In Progress</h3>
             <p className="text-muted-foreground mb-4">
-              This chat is currently active. To continue the conversation, go to the attempt page.
+              This chat is currently active. To continue the conversation, go to
+              the attempt page.
             </p>
             <Button onClick={handleGoToAttempt} className="gap-2">
               <ExternalLink className="h-4 w-4" />
@@ -297,7 +341,9 @@ export default function Chat({ chatId }: { chatId: string }) {
 
       {/* Dynamic Rubric Results Section - Only show for completed chats */}
       {chat?.completed && dynamicRubric && (
-        <Card className={`border-0 ${dynamicRubric.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+        <Card
+          className={`border-0 ${dynamicRubric.passed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+        >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {dynamicRubric.passed ? (
@@ -311,18 +357,24 @@ export default function Chat({ chatId }: { chatId: string }) {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
               <div className="text-center">
-                <div className="text-2xl font-bold">{dynamicRubric.score}/{dynamicRubric.totalPossiblePoints}</div>
+                <div className="text-2xl font-bold">
+                  {dynamicRubric.score}/{dynamicRubric.totalPossiblePoints}
+                </div>
                 <div className="font-medium">Overall Score</div>
               </div>
-              {Object.entries(dynamicRubric.skillScores).slice(0, 4).map(([skillName, score]) => (
-                <div key={skillName} className="text-center">
-                  <div className="text-lg font-semibold">{score}/5</div>
-                  <div className="font-medium">{skillName}</div>
-                  {dynamicRubric.skillFeedbacks[skillName] && (
-                    <div className="text-xs mt-1 opacity-80">{dynamicRubric.skillFeedbacks[skillName]}</div>
-                  )}
-                </div>
-              ))}
+              {Object.entries(dynamicRubric.skillScores)
+                .slice(0, 4)
+                .map(([skillName, score]) => (
+                  <div key={skillName} className="text-center">
+                    <div className="text-lg font-semibold">{score}/5</div>
+                    <div className="font-medium">{skillName}</div>
+                    {dynamicRubric.skillFeedbacks[skillName] && (
+                      <div className="text-xs mt-1 opacity-80">
+                        {dynamicRubric.skillFeedbacks[skillName]}
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
           </CardContent>
         </Card>
@@ -362,7 +414,9 @@ export default function Chat({ chatId }: { chatId: string }) {
                 </>
               ) : messages.length === 0 ? (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground">No messages in this chat yet.</p>
+                  <p className="text-muted-foreground">
+                    No messages in this chat yet.
+                  </p>
                 </div>
               ) : (
                 messages.map((message) => (

@@ -3,33 +3,27 @@ import React from "react";
 import { usePathname } from "next/navigation";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Trash2 } from "lucide-react";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
+import { Pencil, Plus } from "lucide-react";
+import {
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { RoleProvider } from "@/contexts/role-context";
 import { ViewModeProvider } from "@/contexts/view-mode-context";
-import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
+import {
+  generateEnhancedBreadcrumbs,
+  getActiveSectionFromPath,
+} from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
-import { toast } from "sonner";
 import { useAuth } from "@/hooks/use-auth";
 import { getUser } from "@/utils/queries/users/get-user";
-import { getClass } from "@/utils/queries/classes/get-class";
-import { deleteClass } from "@/utils/mutations/classes/delete-class";
 
 export default function MainLayout({
   children,
@@ -40,13 +34,17 @@ export default function MainLayout({
   const router = useRouter();
   const queryClient = useQueryClient();
   const activeSection = getActiveSectionFromPath(pathname);
-  const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
+  const [breadcrumbs, setBreadcrumbs] = React.useState<
+    Array<{ title: string; section?: string }>
+  >([]);
   const [isDeleting, setIsDeleting] = React.useState(false);
-  const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
+  const [viewMode, setViewMode] = React.useState<"chats" | "attempts">(
+    "attempts",
+  );
   const { userId } = useAuth();
 
   // Check if we're on the logs page
-  const isLogsPage = pathname === '/analytics/logs';
+  const isLogsPage = pathname === "/analytics/logs";
 
   // Fetch user data for role context
   const { data: user } = useQuery({
@@ -64,15 +62,22 @@ export default function MainLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router, '/simulations');
+  const handleSectionChange = createSectionChangeHandler(
+    router,
+    "/simulations",
+  );
 
   // Create view mode toggle for history page
   const viewModeToggle = isLogsPage ? (
     <div className="flex items-center space-x-2">
-      <span className="text-sm text-muted-foreground">Show individual chats</span>
+      <span className="text-sm text-muted-foreground">
+        Show individual chats
+      </span>
       <Switch
-        checked={viewMode === 'chats'}
-        onCheckedChange={(checked) => setViewMode(checked ? 'chats' : 'attempts')}
+        checked={viewMode === "chats"}
+        onCheckedChange={(checked) =>
+          setViewMode(checked ? "chats" : "attempts")
+        }
       />
     </div>
   ) : null;
@@ -80,94 +85,110 @@ export default function MainLayout({
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
-    if (pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
+    if (
+      pathname.includes("/t/") ||
+      pathname.includes("/s/") ||
+      pathname.includes("/p/") ||
+      pathname.includes("/u/")
+    ) {
       return null;
     }
     // Check for individual class page pattern: /classes/c/[classId]
     const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
-    if (classPageMatch && !pathname.includes('/edit')) {
+    if (classPageMatch && !pathname.includes("/edit")) {
       const classId = classPageMatch[1];
       return (
-        <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
+        <Button
+          onClick={() => router.push(`/classes/c/${classId}/edit`)}
+          size="sm"
+          variant="default"
+        >
           <Pencil className="h-4 w-4 mr-2" />
           Edit Class
         </Button>
       );
     }
 
-    if (pathname === '/create/scenarios') {
+    if (pathname === "/create/scenarios") {
       return (
-        <Button onClick={() => router.push('/create/scenarios/new')} size="sm">
+        <Button onClick={() => router.push("/create/scenarios/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario
         </Button>
       );
     }
 
-    if (pathname === '/create/simulations') {
+    if (pathname === "/create/simulations") {
       return (
-        <Button onClick={() => router.push('/create/simulations/new')} size="sm">
+        <Button
+          onClick={() => router.push("/create/simulations/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Simulation
         </Button>
       );
     }
 
-    if (pathname === '/create/rubrics') {
+    if (pathname === "/create/rubrics") {
       return (
-        <Button onClick={() => router.push('/create/rubrics/new')} size="sm">
+        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
       );
     }
 
-    if (pathname === '/create/simulations/agents') {
+    if (pathname === "/create/simulations/agents") {
       return (
-        <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
+        <Button
+          onClick={() => router.push("/simulations/agents/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
 
-    if (pathname === '/management/classes') {
+    if (pathname === "/management/classes") {
       return (
-        <Button onClick={() => router.push('/management/classes/new')} size="sm">
+        <Button
+          onClick={() => router.push("/management/classes/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Class
         </Button>
       );
     }
 
-    if (pathname === '/management/staff') {
+    if (pathname === "/management/staff") {
       return (
-        <Button onClick={() => router.push('/management/staff/new')} size="sm">
+        <Button onClick={() => router.push("/management/staff/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add Staff Member
         </Button>
       );
     }
 
-    if (pathname === '/management/agents') {
+    if (pathname === "/management/agents") {
       return (
-        <Button onClick={() => router.push('/management/agents/new')} size="sm">
+        <Button onClick={() => router.push("/management/agents/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Agent
         </Button>
       );
     }
 
-    if (pathname === '/management/evals') {
+    if (pathname === "/management/evals") {
       return (
-        <Button onClick={() => router.push('/management/evals/new')} size="sm">
+        <Button onClick={() => router.push("/management/evals/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Evaluation
         </Button>
       );
     }
-
-
 
     return null;
   };
@@ -192,15 +213,9 @@ export default function MainLayout({
                 rightContent={viewModeToggle}
               />
             </div>
-            {actionButton && (
-              <div className="px-4">
-                {actionButton}
-              </div>
-            )}
+            {actionButton && <div className="px-4">{actionButton}</div>}
           </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            {children}
-          </div>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
         </SidebarInset>
       </SidebarProvider>
     </RoleProvider>
@@ -216,4 +231,4 @@ export default function MainLayout({
   }
 
   return content;
-} 
+}

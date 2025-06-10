@@ -27,7 +27,7 @@ interface DataTableToolbarProps<TData> {
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
-  viewMode?: 'chats' | 'attempts';
+  viewMode?: "chats" | "attempts";
 }
 
 export function DataTableToolbar<TData>({
@@ -37,7 +37,7 @@ export function DataTableToolbar<TData>({
   isAdmin = false,
   dateRange,
   setDateRange,
-  viewMode = 'chats',
+  viewMode = "chats",
 }: DataTableToolbarProps<TData>) {
   // Check if any filters other than the date range are active
   const isFiltered =
@@ -49,10 +49,18 @@ export function DataTableToolbar<TData>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder={viewMode === 'chats' ? "Filter chats..." : "Filter simulations..."}
-            value={(table.getColumn(viewMode === 'chats' ? "title" : "simulationTitle")?.getFilterValue() as string) ?? ""}
+            placeholder={
+              viewMode === "chats" ? "Filter chats..." : "Filter simulations..."
+            }
+            value={
+              (table
+                .getColumn(viewMode === "chats" ? "title" : "simulationTitle")
+                ?.getFilterValue() as string) ?? ""
+            }
             onChange={(event) =>
-              table.getColumn(viewMode === 'chats' ? "title" : "simulationTitle")?.setFilterValue(event.target.value)
+              table
+                .getColumn(viewMode === "chats" ? "title" : "simulationTitle")
+                ?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
@@ -64,27 +72,31 @@ export function DataTableToolbar<TData>({
             />
           )} */}
           {/* Name filter - show for all users in chat mode, and for attempts mode */}
-          {((viewMode === 'chats') || (viewMode === 'attempts')) && table.getColumn("userId") && (
+          {(viewMode === "chats" || viewMode === "attempts") &&
+            table.getColumn("userId") && (
+              <DataTableFacetedFilter
+                column={table.getColumn("userId")}
+                title="Name"
+                options={userOptions}
+              />
+            )}
+          {table.getColumn(viewMode === "chats" ? "classId" : "classCode") && (
             <DataTableFacetedFilter
-              column={table.getColumn("userId")}
-              title="Name"
-              options={userOptions}
-            />
-          )}
-          {table.getColumn(viewMode === 'chats' ? "classId" : "classCode") && (
-            <DataTableFacetedFilter
-              column={table.getColumn(viewMode === 'chats' ? "classId" : "classCode")}
+              column={table.getColumn(
+                viewMode === "chats" ? "classId" : "classCode",
+              )}
               title="Class"
               options={classOptions}
             />
           )}
-          {viewMode === 'chats' && table.getColumn("score") && ( // This is for the score column which uses id as accessor
-            <DataTableFacetedFilter
-              column={table.getColumn("score")}
-              title="Score"
-              options={scoreOptions}
-            />
-          )}
+          {viewMode === "chats" &&
+            table.getColumn("score") && ( // This is for the score column which uses id as accessor
+              <DataTableFacetedFilter
+                column={table.getColumn("score")}
+                title="Score"
+                options={scoreOptions}
+              />
+            )}
           {isFiltered && (
             <Button
               variant="ghost"
@@ -112,11 +124,10 @@ export function DataTableToolbar<TData>({
             classOptions={classOptions}
             viewMode={viewMode}
           />
-          
+
           <DataTableViewOptions table={table} isAdmin={isAdmin} />
         </div>
       </div>
-
     </>
   );
 }

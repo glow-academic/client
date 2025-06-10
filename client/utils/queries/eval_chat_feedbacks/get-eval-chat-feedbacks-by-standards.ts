@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function getEvalChatFeedbacksByStandards(standardIds: string[]) {
   try {
-    return await db.select().from(evalChatFeedbacks).where(inArray(evalChatFeedbacks.standardId, standardIds));
+    return await db
+      .select()
+      .from(evalChatFeedbacks)
+      .where(inArray(evalChatFeedbacks.standardId, standardIds));
   } catch (error) {
     console.error("Error fetching eval_chat_feedbacks by standards:", error);
     throw error;

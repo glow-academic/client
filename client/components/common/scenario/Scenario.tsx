@@ -18,7 +18,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ScenarioProps {
@@ -26,8 +32,8 @@ interface ScenarioProps {
   mode?: "create" | "edit";
 }
 
-export default function Scenario({ 
-  scenarioId, 
+export default function Scenario({
+  scenarioId,
   mode = scenarioId ? "edit" : "create",
 }: ScenarioProps) {
   const router = useRouter();
@@ -81,15 +87,18 @@ export default function Scenario({
           intensity: 1,
           seniority: "freshman" as const,
         };
-        
+
         await createScenario(scenarioData);
         toast.success("Scenario created successfully!");
       }
 
       router.push("/create/scenarios");
     } catch (error) {
-      console.error(`Error ${isEditMode ? 'updating' : 'creating'} scenario:`, error);
-      toast.error(`Failed to ${isEditMode ? 'update' : 'create'} scenario`);
+      console.error(
+        `Error ${isEditMode ? "updating" : "creating"} scenario:`,
+        error,
+      );
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} scenario`);
     } finally {
       setIsSubmitting(false);
     }
@@ -129,11 +138,11 @@ export default function Scenario({
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold">Scenario Not Found</h1>
-          <p className="text-muted-foreground">The scenario you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground">
+            The scenario you're looking for doesn't exist.
+          </p>
         </div>
-        <Button onClick={handleCancel}>
-          Back to Scenarios
-        </Button>
+        <Button onClick={handleCancel}>Back to Scenarios</Button>
       </div>
     );
   }
@@ -145,22 +154,20 @@ export default function Scenario({
           {isEditMode ? "Edit Scenario" : "Create Scenario"}
         </h1>
         <p className="text-muted-foreground">
-          {isEditMode 
-            ? "Modify the context and setting for this conversation scenario" 
-            : "Create a new conversation scenario"
-          }
+          {isEditMode
+            ? "Modify the context and setting for this conversation scenario"
+            : "Create a new conversation scenario"}
         </p>
       </div>
-      
+
       <div className="container mx-auto max-w-2xl">
         <Card>
           <CardHeader>
             <CardTitle>Scenario Details</CardTitle>
             <CardDescription>
-              {isEditMode 
+              {isEditMode
                 ? "Modify the context and setting for this conversation scenario."
-                : "Define the context and setting for this conversation scenario."
-              }
+                : "Define the context and setting for this conversation scenario."}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -170,7 +177,9 @@ export default function Scenario({
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="e.g., Office Hours Help Session"
                   required
                 />
@@ -181,7 +190,12 @@ export default function Scenario({
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
                   placeholder="Describe the scenario context, setting, and expected interactions"
                   rows={6}
                 />
@@ -197,10 +211,13 @@ export default function Scenario({
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting 
-                    ? (isEditMode ? "Updating..." : "Creating...") 
-                    : (isEditMode ? "Update Scenario" : "Create Scenario")
-                  }
+                  {isSubmitting
+                    ? isEditMode
+                      ? "Updating..."
+                      : "Creating..."
+                    : isEditMode
+                      ? "Update Scenario"
+                      : "Create Scenario"}
                 </Button>
               </div>
             </form>

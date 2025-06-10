@@ -15,7 +15,12 @@ import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +36,10 @@ import { Agent } from "@/types";
 export default function Agents() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch agents data
@@ -70,7 +78,6 @@ export default function Agents() {
 
   return (
     <div className="space-y-6">
-
       <div className="grid gap-4">
         {agents.map((agent: Agent) => (
           <Card key={agent.id} className="hover:shadow-md transition-shadow">
@@ -79,16 +86,24 @@ export default function Agents() {
                 <div className="space-y-1">
                   <CardTitle className="text-base">{agent.name}</CardTitle>
                   <CardDescription>{agent.subtitle}</CardDescription>
-                  <p className="text-sm text-muted-foreground">{agent.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {agent.description}
+                  </p>
                 </div>
                 <div className="flex gap-2 items-center">
-                  <Badge variant="outline">Temperature: {agent.temperature}</Badge>
-                  <Button variant="outline" size="sm" onClick={() => handleEdit(agent.id)}>
+                  <Badge variant="outline">
+                    Temperature: {agent.temperature}
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(agent.id)}
+                  >
                     <Edit className="h-4 w-4" />
                   </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => handleDeleteClick(agent.id, agent.name)}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -98,7 +113,7 @@ export default function Agents() {
             </CardHeader>
           </Card>
         ))}
-        
+
         {agents.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             No agents found. Create your first agent to get started.
@@ -112,8 +127,8 @@ export default function Agents() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the agent "{deleteItem?.name}". 
-              This action cannot be undone.
+              This will permanently delete the agent "{deleteItem?.name}". This
+              action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -130,4 +145,4 @@ export default function Agents() {
       </AlertDialog>
     </div>
   );
-} 
+}

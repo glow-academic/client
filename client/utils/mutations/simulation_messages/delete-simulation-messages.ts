@@ -6,7 +6,10 @@ import { inArray } from "drizzle-orm";
 
 export async function deleteSimulationMessages(ids: string[]) {
   try {
-    return await db.delete(simulationMessages).where(inArray(simulationMessages.id, ids)).returning();
+    return await db
+      .delete(simulationMessages)
+      .where(inArray(simulationMessages.id, ids))
+      .returning();
   } catch (error) {
     console.error("Error deleting multiple simulation_messages:", error);
     throw error;

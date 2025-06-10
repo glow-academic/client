@@ -11,7 +11,6 @@ import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 
 // UI Components
@@ -24,7 +23,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,14 +34,7 @@ import {
 } from "@/components/ui/select";
 
 // Icons
-import {
-  ChevronDown,
-  Users,
-  CheckCircle,
-  Activity,
-  Play,
-  RotateCcw,
-} from "lucide-react";
+import { Users, CheckCircle, Activity, Play, RotateCcw } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -59,16 +50,7 @@ import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/g
 import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
-import { 
-  Document, 
-  EvalRun, 
-  EvalChat, 
-  EvalMessage, 
-  EvalChatGrade, 
-  EvalChatFeedback,
-  Scenario,
-  Agent
-} from "@/types";
+import { Document, EvalRun, EvalMessage, Scenario } from "@/types";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -92,12 +74,18 @@ interface EvaluationMessage {
   messageNumber?: number;
 }
 
-export default function EvaluationPage({ evaluationId }: { evaluationId: string }) {
+export default function EvaluationPage({
+  evaluationId,
+}: {
+  evaluationId: string;
+}) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  
+
   // State for eval run selection and AI conversation
-  const [selectedEvalRunId, setSelectedEvalRunId] = useState<string | null>(null);
+  const [selectedEvalRunId, setSelectedEvalRunId] = useState<string | null>(
+    null,
+  );
   const [isRunningEval, setIsRunningEval] = useState(false);
   const [aiConversationData, setAiConversationData] = useState<any[]>([]);
   const [aiConversationComplete, setAiConversationComplete] = useState(false);
@@ -107,13 +95,21 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   // Fetch eval data
-  const { data: evaluation, isLoading: evaluationLoading, error: evaluationError } = useQuery({
+  const {
+    data: evaluation,
+    isLoading: evaluationLoading,
+    error: evaluationError,
+  } = useQuery({
     queryKey: ["evaluation", evaluationId],
     queryFn: () => getEval(evaluationId),
     enabled: !!evaluationId,
   });
 
-  const { data: evalRuns, isLoading: evalRunLoading, error: evalRunError } = useQuery({
+  const {
+    data: evalRuns,
+    isLoading: evalRunLoading,
+    error: evalRunError,
+  } = useQuery({
     queryKey: ["evalRuns", evaluationId],
     queryFn: () => getEvalRunsByEval(evaluationId),
     enabled: !!evaluationId,
@@ -121,7 +117,8 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["evalChats", evalRuns?.map((evalRun) => evalRun.id)],
-    queryFn: () => getEvalChatsByEvalRuns(evalRuns!.map((evalRun) => evalRun.id)),
+    queryFn: () =>
+      getEvalChatsByEvalRuns(evalRuns!.map((evalRun) => evalRun.id)),
     enabled: !!evalRuns && evalRuns.length > 0,
   });
 
@@ -130,15 +127,19 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
     queryFn: () => getAllRubrics(),
   });
 
-  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
+  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
+    {
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+      queryFn: () =>
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+      enabled: !!rubrics && rubrics.length > 0,
+    },
+  );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
@@ -150,19 +151,20 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
 
   const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
     queryKey: ["evalFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () => getEvalChatFeedbacksByEvalChatGrades(grades!.map((grade) => grade.id)),
+    queryFn: () =>
+      getEvalChatFeedbacksByEvalChatGrades(grades!.map((grade) => grade.id)),
     enabled: !!grades && grades.length > 0,
   });
 
   // Get current eval run and its chat
   const currentEvalRun = useMemo(() => {
     if (!selectedEvalRunId || !evalRuns) return null;
-    return evalRuns.find(run => run.id === selectedEvalRunId);
+    return evalRuns.find((run) => run.id === selectedEvalRunId);
   }, [selectedEvalRunId, evalRuns]);
 
   const currentChat = useMemo(() => {
     if (!currentEvalRun || !chats) return null;
-    return chats.find(chat => chat.evalRunId === currentEvalRun.id);
+    return chats.find((chat) => chat.evalRunId === currentEvalRun.id);
   }, [currentEvalRun, chats]);
 
   // Fetch messages for current chat
@@ -193,37 +195,54 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
 
   // Create dynamic rubric for current chat
   const currentDynamicRubric = useMemo((): DynamicRubric | null => {
-    if (!currentChat?.id || !grades || !feedbacks || !standards || !standardGroups) return null;
+    if (
+      !currentChat?.id ||
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups
+    )
+      return null;
 
-    const chatGrade = grades.find(grade => grade.evalChatId === currentChat.id);
+    const chatGrade = grades.find(
+      (grade) => grade.evalChatId === currentChat.id,
+    );
     if (!chatGrade) return null;
 
-    const chatFeedbacks = feedbacks.filter(feedback => feedback.evalChatGradeId === chatGrade.id);
-    
+    const chatFeedbacks = feedbacks.filter(
+      (feedback) => feedback.evalChatGradeId === chatGrade.id,
+    );
+
     // Calculate skill scores and feedbacks
     const skillScores: Record<string, number> = {};
     const skillFeedbacks: Record<string, string> = {};
     let totalPossiblePoints = 0;
 
-    standardGroups.forEach(group => {
-      const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-      const groupFeedbacks = chatFeedbacks.filter(f => 
-        groupStandards.some(s => s.id === f.standardId)
+    standardGroups.forEach((group) => {
+      const groupStandards = standards.filter(
+        (s) => s.standardGroupId === group.id,
       );
-      
+      const groupFeedbacks = chatFeedbacks.filter((f) =>
+        groupStandards.some((s) => s.id === f.standardId),
+      );
+
       if (groupFeedbacks.length > 0) {
-        const maxPoints = Math.max(...groupStandards.map(s => s.points));
-        const avgScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length;
+        const maxPoints = Math.max(...groupStandards.map((s) => s.points));
+        const avgScore =
+          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+          groupFeedbacks.length;
         const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
-        
+
         skillScores[group.name] = normalizedScore;
-        skillFeedbacks[group.name] = groupFeedbacks.map(f => f.feedback).join('; ');
+        skillFeedbacks[group.name] = groupFeedbacks
+          .map((f) => f.feedback)
+          .join("; ");
         totalPossiblePoints += maxPoints;
       }
     });
 
     // Calculate if passed (assuming 70% threshold)
-    const passed = chatGrade.score >= (totalPossiblePoints * 0.7);
+    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
 
     return {
       chatId: currentChat.id,
@@ -240,13 +259,15 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
   const { data: documents = [] } = useQuery({
     queryKey: ["documents", evaluation?.classId],
     queryFn: () => getAllDocuments(),
-    enabled: !!evaluation?.classId
+    enabled: !!evaluation?.classId,
   });
 
   // Filter documents for the current evaluation's class
   const classDocuments = useMemo(() => {
     if (!evaluation?.classId || !documents) return [];
-    return documents.filter((doc: Document) => doc.classId === evaluation.classId);
+    return documents.filter(
+      (doc: Document) => doc.classId === evaluation.classId,
+    );
   }, [documents, evaluation?.classId]);
 
   // Auto-select first eval run when data loads
@@ -258,19 +279,31 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
 
   // Helper function to format scenario attributes
   const formatScenarioInfo = (scenario: Scenario) => {
-    const crowdednessText = scenario.crowdedness === 1 ? "Low crowdedness" :
-      scenario.crowdedness === 2 ? "Moderate crowdedness" :
-        scenario.crowdedness === 3 ? "High crowdedness" :
-          scenario.crowdedness === 4 ? "Very high crowdedness" :
-            scenario.crowdedness === 5 ? "Extremely crowded" :
-              `Crowdedness: ${scenario.crowdedness}`;
+    const crowdednessText =
+      scenario.crowdedness === 1
+        ? "Low crowdedness"
+        : scenario.crowdedness === 2
+          ? "Moderate crowdedness"
+          : scenario.crowdedness === 3
+            ? "High crowdedness"
+            : scenario.crowdedness === 4
+              ? "Very high crowdedness"
+              : scenario.crowdedness === 5
+                ? "Extremely crowded"
+                : `Crowdedness: ${scenario.crowdedness}`;
 
-    const intensityText = scenario.intensity === 1 ? "Low intensity" :
-      scenario.intensity === 2 ? "Moderate intensity" :
-        scenario.intensity === 3 ? "High intensity" :
-          scenario.intensity === 4 ? "Very high intensity" :
-            scenario.intensity === 5 ? "Extremely intense" :
-              `Intensity: ${scenario.intensity}`;
+    const intensityText =
+      scenario.intensity === 1
+        ? "Low intensity"
+        : scenario.intensity === 2
+          ? "Moderate intensity"
+          : scenario.intensity === 3
+            ? "High intensity"
+            : scenario.intensity === 4
+              ? "Very high intensity"
+              : scenario.intensity === 5
+                ? "Extremely intense"
+                : `Intensity: ${scenario.intensity}`;
 
     return (
       <div className="flex items-center gap-3">
@@ -328,60 +361,71 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
           const data = JSON.parse(part.slice(5));
 
           if (data.type === "turn_start") {
-            setAiConversationData(prev => [...prev, {
-              type: 'turn_start',
-              turn: data.turn,
-              speaker: data.speaker,
-              message: data.message
-            }]);
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "turn_start",
+                turn: data.turn,
+                speaker: data.speaker,
+                message: data.message,
+              },
+            ]);
           }
 
           if (data.type === "token") {
-            setAiConversationData(prev => {
+            setAiConversationData((prev) => {
               const newData = [...prev];
               const lastItem = newData[newData.length - 1];
-              
-              if (lastItem && lastItem.type === 'streaming' && lastItem.speaker === data.speaker) {
+
+              if (
+                lastItem &&
+                lastItem.type === "streaming" &&
+                lastItem.speaker === data.speaker
+              ) {
                 lastItem.response += data.token;
               } else {
                 newData.push({
-                  type: 'streaming',
+                  type: "streaming",
                   speaker: data.speaker,
-                  response: data.token
+                  response: data.token,
                 });
               }
-              
+
               return newData;
             });
           }
 
           if (data.type === "turn_complete") {
-            setAiConversationData(prev => {
+            setAiConversationData((prev) => {
               const newData = [...prev];
-              const lastStreamingIndex = newData.findLastIndex(item => 
-                item.type === 'streaming' && item.speaker === data.speaker
+              const lastStreamingIndex = newData.findLastIndex(
+                (item) =>
+                  item.type === "streaming" && item.speaker === data.speaker,
               );
-              
+
               if (lastStreamingIndex !== -1) {
                 newData[lastStreamingIndex] = {
-                  type: 'message',
+                  type: "message",
                   speaker: data.speaker,
                   message: newData[lastStreamingIndex].response,
-                  turn: data.turn
+                  turn: data.turn,
                 };
               }
-              
+
               return newData;
             });
           }
 
           if (data.type === "evaluation_complete") {
-            setAiConversationData(prev => [...prev, {
-              type: 'evaluation',
-              evalGradeId: data.eval_grade_id
-            }]);
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "evaluation",
+                evalGradeId: data.eval_grade_id,
+              },
+            ]);
             setAiConversationComplete(true);
-            
+
             // Invalidate queries to refresh data
             queryClient.invalidateQueries({ queryKey: ["evalChats"] });
             queryClient.invalidateQueries({ queryKey: ["evalGrades"] });
@@ -416,8 +460,11 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
   const LoadingDots = () => (
     <div className="flex space-x-1">
       {[0, 1, 2].map((i) => (
-        <div key={i} className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"
-          style={{ animationDelay: `${i * 0.2}s` }} />
+        <div
+          key={i}
+          className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"
+          style={{ animationDelay: `${i * 0.2}s` }}
+        />
       ))}
     </div>
   );
@@ -440,9 +487,12 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
           <CardContent className="p-8 text-center">
             <h2 className="text-xl font-semibold mb-2">Evaluation Not Found</h2>
             <p className="text-muted-foreground mb-4">
-              The evaluation you're looking for doesn't exist or has no eval runs configured.
+              The evaluation you're looking for doesn't exist or has no eval
+              runs configured.
             </p>
-            <Button onClick={() => router.push("/dashboard/evaluations")}>Return To Evaluations</Button>
+            <Button onClick={() => router.push("/dashboard/evaluations")}>
+              Return To Evaluations
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -453,13 +503,19 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
   if (currentChat?.completedAt && currentDynamicRubric && !isRunningEval) {
     return (
       <div className="flex flex-1 flex-col gap-4">
-        <div className="max-w-4xl mx-auto space-y-6" data-testid="evaluation-results">
+        <div
+          className="max-w-4xl mx-auto space-y-6"
+          data-testid="evaluation-results"
+        >
           {/* Eval Run Selector */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Evaluation Results</span>
-                <Select value={selectedEvalRunId || ""} onValueChange={setSelectedEvalRunId}>
+                <Select
+                  value={selectedEvalRunId || ""}
+                  onValueChange={setSelectedEvalRunId}
+                >
                   <SelectTrigger className="w-80">
                     <SelectValue placeholder="Select eval run" />
                   </SelectTrigger>
@@ -488,8 +544,13 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
-                  <div className="text-2xl font-bold">{currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints}</div>
-                  <div className="text-sm text-muted-foreground">Overall Score</div>
+                  <div className="text-2xl font-bold">
+                    {currentDynamicRubric.score}/
+                    {currentDynamicRubric.totalPossiblePoints}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Overall Score
+                  </div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold">
@@ -497,21 +558,29 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
                   </div>
                   <div className="text-sm text-muted-foreground">Minutes</div>
                 </div>
-                {Object.entries(currentDynamicRubric.skillScores).slice(0, 2).map(([skillName, score]) => (
-                  <div key={skillName} className="text-center">
-                    <div className="text-2xl font-bold">{score}/5</div>
-                    <div className="text-sm text-muted-foreground">{skillName}</div>
-                  </div>
-                ))}
+                {Object.entries(currentDynamicRubric.skillScores)
+                  .slice(0, 2)
+                  .map(([skillName, score]) => (
+                    <div key={skillName} className="text-center">
+                      <div className="text-2xl font-bold">{score}/5</div>
+                      <div className="text-sm text-muted-foreground">
+                        {skillName}
+                      </div>
+                    </div>
+                  ))}
               </div>
 
               <div className="space-y-3">
-                {Object.entries(currentDynamicRubric.skillFeedbacks).map(([skillName, feedback]) => (
-                  <div key={skillName}>
-                    <h4 className="font-medium">{skillName} Feedback</h4>
-                    <p className="text-sm text-muted-foreground">{feedback}</p>
-                  </div>
-                ))}
+                {Object.entries(currentDynamicRubric.skillFeedbacks).map(
+                  ([skillName, feedback]) => (
+                    <div key={skillName}>
+                      <h4 className="font-medium">{skillName} Feedback</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {feedback}
+                      </p>
+                    </div>
+                  ),
+                )}
               </div>
             </CardContent>
           </Card>
@@ -520,7 +589,11 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
             <Button onClick={() => setShowResults(false)}>
               View Conversation
             </Button>
-            <Button variant="outline" onClick={handleRunEvaluation} disabled={isRunningEval}>
+            <Button
+              variant="outline"
+              onClick={handleRunEvaluation}
+              disabled={isRunningEval}
+            >
               <RotateCcw className="h-4 w-4 mr-2" />
               Re-run Evaluation
             </Button>
@@ -538,10 +611,17 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
           <CardHeader className="flex-shrink-0">
             <CardTitle className="flex items-center justify-between">
               <div>
-                <span>{scenario?.description || currentChat?.title || "AI vs AI Evaluation"}</span>
+                <span>
+                  {scenario?.description ||
+                    currentChat?.title ||
+                    "AI vs AI Evaluation"}
+                </span>
                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                   <Users className="h-4 w-4" />
-                  <span>{queryAgent?.name || "Agent 1"} vs {responseAgent?.name || "Agent 2"}</span>
+                  <span>
+                    {queryAgent?.name || "Agent 1"} vs{" "}
+                    {responseAgent?.name || "Agent 2"}
+                  </span>
                   {scenario && (
                     <>
                       <span>•</span>
@@ -560,19 +640,26 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
             {/* Eval Run Selector */}
             <div className="p-4 border-b bg-muted/30">
               <div className="flex items-center gap-4">
-                <Select value={selectedEvalRunId || ""} onValueChange={setSelectedEvalRunId}>
+                <Select
+                  value={selectedEvalRunId || ""}
+                  onValueChange={setSelectedEvalRunId}
+                >
                   <SelectTrigger className="w-80">
                     <SelectValue placeholder="Select eval run to view" />
                   </SelectTrigger>
                   <SelectContent>
                     {evalRuns.map((run: EvalRun, index: number) => {
-                      const runChat = chats?.find(chat => chat.evalRunId === run.id);
+                      const runChat = chats?.find(
+                        (chat) => chat.evalRunId === run.id,
+                      );
                       return (
                         <SelectItem key={run.id} value={run.id}>
                           <div className="flex items-center gap-2">
                             <span>Run {index + 1}</span>
                             {runChat?.completedAt && (
-                              <Badge variant="outline" className="text-xs">Completed</Badge>
+                              <Badge variant="outline" className="text-xs">
+                                Completed
+                              </Badge>
                             )}
                           </div>
                         </SelectItem>
@@ -580,10 +667,10 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
                     })}
                   </SelectContent>
                 </Select>
-                
+
                 {!currentChat?.completedAt && (
-                  <Button 
-                    onClick={handleRunEvaluation} 
+                  <Button
+                    onClick={handleRunEvaluation}
                     disabled={isRunningEval || !currentEvalRun}
                     size="sm"
                   >
@@ -602,7 +689,7 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
                 )}
 
                 {currentChat?.completedAt && (
-                  <Button 
+                  <Button
                     onClick={() => setShowResults(true)}
                     size="sm"
                     variant="outline"
@@ -614,10 +701,7 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
               </div>
             </div>
 
-            <ScrollArea
-              className="flex-1 px-4"
-              ref={scrollAreaRef}
-            >
+            <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
               <div className="space-y-4 py-4">
                 {/* Show existing messages if chat is completed */}
                 {currentChat?.completedAt && messages.length > 0 && (
@@ -653,64 +737,78 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
                 )}
 
                 {/* Show live AI conversation if running */}
-                {isRunningEval && aiConversationData.map((item, index) => {
-                  if (item.type === 'evaluation') {
-                    return (
-                      <div key={index} className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6">
-                        <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
-                          🎯 Evaluation Complete
-                        </h4>
-                        <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
-                          <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                            Evaluation completed successfully. Grade ID: {item.evalGradeId}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  }
-
-                  if (item.type === 'message' || item.type === 'streaming') {
-                    const isQueryAgent = item.speaker === queryAgent?.name;
-                    return (
-                      <div key={index} className="space-y-2">
-                        <div className={`flex ${isQueryAgent ? 'justify-end' : 'justify-start'}`}>
-                          <div className={`max-w-[80%] p-3 rounded-lg ${
-                            isQueryAgent 
-                              ? 'bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100' 
-                              : 'bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100'
-                          }`}>
-                            <div className="text-xs font-medium mb-1">
-                              {item.speaker} {item.turn && `(Turn ${item.turn})`}
+                {isRunningEval &&
+                  aiConversationData.map((item, index) => {
+                    if (item.type === "evaluation") {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6"
+                        >
+                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
+                            🎯 Evaluation Complete
+                          </h4>
+                          <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
+                            <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                              Evaluation completed successfully. Grade ID:{" "}
+                              {item.evalGradeId}
                             </div>
-                            {item.type === 'streaming' ? (
-                              <div className="flex items-center">
-                                <span>{item.response}</span>
-                                <LoadingDots />
-                              </div>
-                            ) : (
-                              <Markdown>{item.message}</Markdown>
-                            )}
                           </div>
                         </div>
-                      </div>
-                    );
-                  }
+                      );
+                    }
 
-                  return null;
-                })}
-                
+                    if (item.type === "message" || item.type === "streaming") {
+                      const isQueryAgent = item.speaker === queryAgent?.name;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div
+                            className={`flex ${isQueryAgent ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[80%] p-3 rounded-lg ${
+                                isQueryAgent
+                                  ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
+                                  : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                              }`}
+                            >
+                              <div className="text-xs font-medium mb-1">
+                                {item.speaker}{" "}
+                                {item.turn && `(Turn ${item.turn})`}
+                              </div>
+                              {item.type === "streaming" ? (
+                                <div className="flex items-center">
+                                  <span>{item.response}</span>
+                                  <LoadingDots />
+                                </div>
+                              ) : (
+                                <Markdown>{item.message}</Markdown>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return null;
+                  })}
+
                 {/* Loading state for new evaluation */}
                 {isRunningEval && aiConversationData.length === 0 && (
                   <div className="text-center py-8">
                     <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">Starting AI vs AI evaluation...</p>
+                    <p className="text-muted-foreground">
+                      Starting AI vs AI evaluation...
+                    </p>
                   </div>
                 )}
 
                 {/* No content state */}
                 {!currentChat?.completedAt && !isRunningEval && (
                   <div className="text-center py-8">
-                    <p className="text-muted-foreground">Select an eval run and click "Run Evaluation" to start</p>
+                    <p className="text-muted-foreground">
+                      Select an eval run and click "Run Evaluation" to start
+                    </p>
                   </div>
                 )}
 
@@ -723,11 +821,21 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
             <div className="w-full text-center">
               {currentChat?.completedAt ? (
                 <div className="space-y-2">
-                  <p className="text-muted-foreground">This evaluation has been completed.</p>
+                  <p className="text-muted-foreground">
+                    This evaluation has been completed.
+                  </p>
                   {currentDynamicRubric && (
                     <div className="text-sm">
-                      <Badge variant={currentDynamicRubric.passed ? "default" : "destructive"}>
-                        Score: {currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints} - {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                      <Badge
+                        variant={
+                          currentDynamicRubric.passed
+                            ? "default"
+                            : "destructive"
+                        }
+                      >
+                        Score: {currentDynamicRubric.score}/
+                        {currentDynamicRubric.totalPossiblePoints} -{" "}
+                        {currentDynamicRubric.passed ? "Passed" : "Failed"}
                       </Badge>
                     </div>
                   )}
@@ -737,9 +845,7 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
                   AI vs AI evaluation in progress...
                 </p>
               ) : (
-                <p className="text-muted-foreground">
-                  Ready to run evaluation
-                </p>
+                <p className="text-muted-foreground">Ready to run evaluation</p>
               )}
             </div>
           </CardFooter>

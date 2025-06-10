@@ -61,7 +61,7 @@ export default function ClassEdit({ classId }: ClassEditProps) {
         name: classData.name || "",
         classCode: classData.classCode || "",
         year: classData.year || new Date().getFullYear(),
-        term: classData.term || 'fall',
+        term: classData.term || "fall",
         description: classData.description || "",
       }}
     />

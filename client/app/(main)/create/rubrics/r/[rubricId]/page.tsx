@@ -9,7 +9,11 @@
 import { use } from "react";
 import RubricEdit from "@/components/create/rubrics/RubricEdit";
 
-export default function EditRubricPage({ params }: { params: Promise<{ rubricId: string }> }) {
+export default function EditRubricPage({
+  params,
+}: {
+  params: Promise<{ rubricId: string }>;
+}) {
   const { rubricId } = use(params);
 
   return (

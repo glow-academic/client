@@ -6,7 +6,10 @@ import { eq } from "drizzle-orm";
 
 export async function deleteEvalChatFeedback(id: string) {
   try {
-    const result = await db.delete(evalChatFeedbacks).where(eq(evalChatFeedbacks.id, id)).returning();
+    const result = await db
+      .delete(evalChatFeedbacks)
+      .where(eq(evalChatFeedbacks.id, id))
+      .returning();
     return result[0];
   } catch (error) {
     console.error("Error deleting evalChatFeedback:", error);

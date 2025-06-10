@@ -10,5 +10,9 @@
 import Overview from "@/components/analytics/Overview";
 
 export default function OverviewPage() {
-  return <div className="space-y-6"><Overview /></div>;
+  return (
+    <div className="space-y-6">
+      <Overview />
+    </div>
+  );
 }

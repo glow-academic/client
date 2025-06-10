@@ -8,10 +8,23 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Save, Trash2, Shield, GraduationCap, User as UserIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Trash2,
+  Shield,
+  GraduationCap,
+  User as UserIcon,
+} from "lucide-react";
 
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,26 +44,26 @@ import { User } from "@/types";
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
-    case 'admin':
-      return 'destructive';
-    case 'instructional':
-      return 'default';
-    case 'instructor':
-      return 'secondary';
-    case 'ta':
-      return 'outline';
+    case "admin":
+      return "destructive";
+    case "instructional":
+      return "default";
+    case "instructor":
+      return "secondary";
+    case "ta":
+      return "outline";
     default:
-      return 'outline';
+      return "outline";
   }
 };
 
 const getRoleIcon = (role: string) => {
   switch (role) {
-    case 'instructional':
+    case "instructional":
       return Shield;
-    case 'instructor':
+    case "instructor":
       return GraduationCap;
-    case 'ta':
+    case "ta":
       return UserIcon;
     default:
       return UserIcon;
@@ -59,12 +72,12 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
-    case 'instructional':
-      return 'Instructional Staff';
-    case 'instructor':
-      return 'Instructor';
-    case 'ta':
-      return 'Teaching Assistant';
+    case "instructional":
+      return "Instructional Staff";
+    case "instructor":
+      return "Instructor";
+    case "ta":
+      return "Teaching Assistant";
     default:
       return role.charAt(0).toUpperCase() + role.slice(1);
   }
@@ -72,14 +85,14 @@ const getRoleDisplayName = (role: string) => {
 
 const getRolePermissions = (role: string) => {
   switch (role) {
-    case 'instructional':
-      return 'Can manage instructors and teaching assistants';
-    case 'instructor':
-      return 'Can manage assigned classes and teaching assistants';
-    case 'ta':
-      return 'Can assist with assigned classes';
+    case "instructional":
+      return "Can manage instructors and teaching assistants";
+    case "instructor":
+      return "Can manage assigned classes and teaching assistants";
+    case "ta":
+      return "Can assist with assigned classes";
     default:
-      return 'Standard user permissions';
+      return "Standard user permissions";
   }
 };
 
@@ -89,7 +102,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
     name: "",
     username: "",
     password: "",
-    classIds: [] as string[]
+    classIds: [] as string[],
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasChanges, setHasChanges] = React.useState(false);
@@ -109,13 +122,13 @@ export default function StaffEdit({ userId }: { userId: string }) {
         name: targetUser.name,
         username: targetUser.username,
         password: "",
-        classIds: targetUser.classIds || []
+        classIds: targetUser.classIds || [],
       });
     }
   }, [targetUser]);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
   };
 
@@ -127,12 +140,12 @@ export default function StaffEdit({ userId }: { userId: string }) {
     try {
       // TODO: Implement API call to update user
       console.log("Updating user:", { userId, ...formData });
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       setHasChanges(false);
-      router.push('/management/staff');
+      router.push("/management/staff");
     } catch (error) {
       console.error("Error updating user:", error);
     } finally {
@@ -147,11 +160,11 @@ export default function StaffEdit({ userId }: { userId: string }) {
     try {
       // TODO: Implement API call to delete user
       console.log("Deleting user:", userId);
-      
+
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      router.push('/management/staff');
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      router.push("/management/staff");
     } catch (error) {
       console.error("Error deleting user:", error);
     } finally {
@@ -176,7 +189,10 @@ export default function StaffEdit({ userId }: { userId: string }) {
             The requested user could not be found.
           </p>
         </div>
-        <Button onClick={() => router.push('/management/staff')} variant="outline">
+        <Button
+          onClick={() => router.push("/management/staff")}
+          variant="outline"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Staff Management
         </Button>
@@ -185,16 +201,21 @@ export default function StaffEdit({ userId }: { userId: string }) {
   }
 
   // Check if user is actually staff
-  if (!['instructional', 'instructor', 'ta'].includes(targetUser.role)) {
+  if (!["instructional", "instructor", "ta"].includes(targetUser.role)) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Invalid User Type</h1>
+          <h1 className="text-2xl font-bold tracking-tight">
+            Invalid User Type
+          </h1>
           <p className="text-muted-foreground">
             This user is not a staff member and cannot be edited here.
           </p>
         </div>
-        <Button onClick={() => router.push('/management/staff')} variant="outline">
+        <Button
+          onClick={() => router.push("/management/staff")}
+          variant="outline"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Staff Management
         </Button>
@@ -218,7 +239,10 @@ export default function StaffEdit({ userId }: { userId: string }) {
             Modify the details for {targetUser.name}.
           </p>
         </div>
-        <Button onClick={() => router.push('/management/staff')} variant="outline">
+        <Button
+          onClick={() => router.push("/management/staff")}
+          variant="outline"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
@@ -240,10 +264,13 @@ export default function StaffEdit({ userId }: { userId: string }) {
                   <Input
                     id="name"
                     value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
+                    onChange={(e) => handleInputChange("name", e.target.value)}
                     placeholder={
-                      targetUser.role === 'instructional' ? "Dr. Sarah Johnson" :
-                      targetUser.role === 'instructor' ? "Dr. Jane Smith" : "John Doe"
+                      targetUser.role === "instructional"
+                        ? "Dr. Sarah Johnson"
+                        : targetUser.role === "instructor"
+                          ? "Dr. Jane Smith"
+                          : "John Doe"
                     }
                     required
                   />
@@ -253,23 +280,30 @@ export default function StaffEdit({ userId }: { userId: string }) {
                   <Input
                     id="username"
                     value={formData.username}
-                    onChange={(e) => handleInputChange('username', e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("username", e.target.value)
+                    }
                     placeholder={
-                      targetUser.role === 'instructional' ? "sjohnson" :
-                      targetUser.role === 'instructor' ? "jsmith" : "jdoe"
+                      targetUser.role === "instructional"
+                        ? "sjohnson"
+                        : targetUser.role === "instructor"
+                          ? "jsmith"
+                          : "jdoe"
                     }
                     required
                   />
                 </div>
               </div>
-              
+
               <div className="space-y-2">
                 <Label htmlFor="password">New Password</Label>
                 <Input
                   id="password"
                   type="password"
                   value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
                   placeholder="Leave blank to keep current password"
                 />
                 <p className="text-sm text-muted-foreground">
@@ -281,13 +315,13 @@ export default function StaffEdit({ userId }: { userId: string }) {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => router.push('/management/staff')}
+                  onClick={() => router.push("/management/staff")}
                 >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isSubmitting || !hasChanges}>
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </Button>
               </div>
             </form>
@@ -330,7 +364,8 @@ export default function StaffEdit({ userId }: { userId: string }) {
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
             <CardDescription>
-              Permanently delete this user account. This action cannot be undone.
+              Permanently delete this user account. This action cannot be
+              undone.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -345,13 +380,17 @@ export default function StaffEdit({ userId }: { userId: string }) {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete the user account for {targetUser.name} ({targetUser.username}).
-                    This action cannot be undone and will remove all associated data.
+                    This will permanently delete the user account for{" "}
+                    {targetUser.name} ({targetUser.username}). This action
+                    cannot be undone and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  <AlertDialogAction
+                    onClick={handleDelete}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
                     Delete User
                   </AlertDialogAction>
                 </AlertDialogFooter>

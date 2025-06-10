@@ -9,14 +9,29 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Edit, Trash2, Timer, Users, FileText, Plus, Sparkles } from "lucide-react";
+import {
+  Edit,
+  Trash2,
+  Timer,
+  Users,
+  FileText,
+  Plus,
+  Sparkles,
+} from "lucide-react";
 
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,7 +47,10 @@ import { Simulation } from "@/types";
 export function Simulations() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-  const [deleteItem, setDeleteItem] = useState<{ id: string; name: string } | null>(null);
+  const [deleteItem, setDeleteItem] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch simulations data
@@ -46,7 +64,7 @@ export function Simulations() {
 
     setIsDeleting(true);
     try {
-        await deleteSimulation(deleteItem.id);
+      await deleteSimulation(deleteItem.id);
 
       toast.success("Simulation deleted successfully");
       refetchSimulations();
@@ -76,11 +94,16 @@ export function Simulations() {
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {simulations.map((simulation: Simulation) => (
-          <Card key={simulation.id} className="hover:shadow-md transition-shadow">
+          <Card
+            key={simulation.id}
+            className="hover:shadow-md transition-shadow"
+          >
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle className="text-base">{simulation.title}</CardTitle>
+                  <CardTitle className="text-base">
+                    {simulation.title}
+                  </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <Timer className="h-3 w-3" />
                     {simulation.timeLimit} minutes
@@ -104,20 +127,26 @@ export function Simulations() {
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => handleEdit(simulation.id)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleEdit(simulation.id)}
+              >
                 <Edit className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => handleDeleteClick(simulation.id, simulation.title)}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  handleDeleteClick(simulation.id, simulation.title)
+                }
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
             </CardFooter>
           </Card>
         ))}
-        
+
         {simulations.length === 0 && (
           <div className="col-span-full">
             <Card className="border-dashed">
@@ -143,7 +172,7 @@ export function Simulations() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the simulation "{deleteItem?.name}". 
+              This will permanently delete the simulation "{deleteItem?.name}".
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -161,4 +190,4 @@ export function Simulations() {
       </AlertDialog>
     </div>
   );
-} 
+}

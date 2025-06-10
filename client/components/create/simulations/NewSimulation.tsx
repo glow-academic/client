@@ -5,8 +5,8 @@
  * 06/07/2025
  */
 
-import Simulation from "@/components/common/simulation/Simulation"
+import Simulation from "@/components/common/simulation/Simulation";
 
 export default function NewSimulation() {
-  return <Simulation mode="create" />
+  return <Simulation mode="create" />;
 }

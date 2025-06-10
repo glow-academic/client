@@ -1,5 +1,5 @@
-import * as React from "react"
-import { useRouter } from "next/navigation"
+import * as React from "react";
+import { useRouter } from "next/navigation";
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -7,20 +7,27 @@ import {
   BreadcrumbLink,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils"
+} from "@/components/ui/breadcrumb";
+import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils";
 
 interface NavigationBreadcrumbsProps {
-  breadcrumbs: Array<{ title: string; section?: string }>
-  onSectionChange?: (section: string) => void
-  rightContent?: React.ReactNode
+  breadcrumbs: Array<{ title: string; section?: string }>;
+  onSectionChange?: (section: string) => void;
+  rightContent?: React.ReactNode;
 }
 
-export function NavigationBreadcrumbs({ breadcrumbs, onSectionChange, rightContent }: NavigationBreadcrumbsProps) {
+export function NavigationBreadcrumbs({
+  breadcrumbs,
+  onSectionChange,
+  rightContent,
+}: NavigationBreadcrumbsProps) {
   const router = useRouter();
   const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(router);
 
-  const handleBreadcrumbClick = (crumb: { title: string; section?: string }) => {
+  const handleBreadcrumbClick = (crumb: {
+    title: string;
+    section?: string;
+  }) => {
     if (crumb.section) {
       if (onSectionChange) {
         // If we have an onSectionChange prop, use it (for layout components)
@@ -64,11 +71,7 @@ export function NavigationBreadcrumbs({ breadcrumbs, onSectionChange, rightConte
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      {rightContent && (
-        <div className="ml-4">
-          {rightContent}
-        </div>
-      )}
+      {rightContent && <div className="ml-4">{rightContent}</div>}
     </div>
-  )
-} 
+  );
+}

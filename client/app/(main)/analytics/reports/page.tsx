@@ -10,5 +10,9 @@
 import Reports from "@/components/analytics/Reports";
 
 export default function ReportsPage() {
-  return <div className="space-y-6"><Reports /></div>;
+  return (
+    <div className="space-y-6">
+      <Reports />
+    </div>
+  );
 }

@@ -8,9 +8,5 @@
 import Scenario from "@/components/common/scenario/Scenario";
 
 export default function NewScenario() {
-  return (
-    <Scenario 
-      mode="create" 
-    />
-  );
+  return <Scenario mode="create" />;
 }

@@ -10,5 +10,5 @@
 import { redirect } from "next/navigation";
 
 export default function EvalPage() {
-    return redirect("/management/evals/new");
+  return redirect("/management/evals/new");
 }
