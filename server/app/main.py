@@ -36,6 +36,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Add specific logger for evaluation
+eval_logger = logging.getLogger("app.agents.generic")
+eval_logger.setLevel(logging.INFO)
+
 
 @app.get("/")
 async def root_info():
