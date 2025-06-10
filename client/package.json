@@ -13,8 +13,8 @@
     "generate:queries": "node scripts/generate-queries-mutations.js --pull",
     "generate:queries:fast": "node scripts/generate-queries-mutations.js --skip-snapshot",
     "test:cypress": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cypress run\"",
-    "test:jest": "vitest run",
-    "test": "npm run test:jest && npm run test:cypress"
+    "test:all": "npm run test && npm run test:cypress",
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.14",

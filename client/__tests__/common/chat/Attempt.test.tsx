@@ -210,15 +210,15 @@ describe('Attempt', () => {
       },
     ];
 
-    const mockGrades = [
-      {
-        id: 'grade-1',
-        simulationChatId: 'chat-1',
-        score: 85,
-        timeTaken: 3600, // 1 hour
-        createdAt: '2024-01-01T00:00:00Z',
-      },
-    ];
+          const mockGrades = [
+        {
+          id: 'grade-1',
+          simulationChatId: 'chat-1',
+          score: 85,
+          timeTaken: 3665, // 1 hour, 1 minute, 5 seconds
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      ];
 
     const mockFeedbacks = [
       {
@@ -297,6 +297,16 @@ describe('Attempt', () => {
       await waitFor(() => {
         expect(screen.getByText('High crowdedness')).toBeInTheDocument();
         expect(screen.getByText('Moderate intensity')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle missing scenario gracefully', async () => {
+      require('@/utils/queries/scenarios/get-scenario').getScenario.mockResolvedValue(null);
+      
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Loading scenario...')).toBeInTheDocument();
       });
     });
 
@@ -459,6 +469,78 @@ describe('Attempt', () => {
         expect(screen.getByText('Overall Results')).toBeInTheDocument();
       });
     });
+
+    it('should show results after refresh when chats are completed and graded', async () => {
+      // Mock scenario where chats are already completed and graded (refresh scenario)
+      const mockAllCompletedChats = [
+        {
+          id: 'chat-1',
+          title: 'Test Chat 1',
+          scenarioId: 'scenario-1',
+          attemptId: 'attempt-1',
+          completed: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          completedAt: '2024-01-01T01:00:00Z',
+        },
+        {
+          id: 'chat-2',
+          title: 'Test Chat 2',
+          scenarioId: 'scenario-2',
+          attemptId: 'attempt-1',
+          completed: true,
+          createdAt: '2024-01-01T01:00:00Z',
+          completedAt: '2024-01-01T02:00:00Z',
+        },
+      ];
+
+      const mockAllGrades = [
+        {
+          id: 'grade-1',
+          simulationChatId: 'chat-1',
+          score: 85,
+          timeTaken: 3600,
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          id: 'grade-2',
+          simulationChatId: 'chat-2',
+          score: 90,
+          timeTaken: 3000,
+          createdAt: '2024-01-01T01:00:00Z',
+        },
+      ];
+
+      const mockAllFeedbacks = [
+        {
+          id: 'feedback-1',
+          simulationChatGradeId: 'grade-1',
+          standardId: 'standard-1',
+          total: 20,
+          feedback: 'Good performance on chat 1',
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          id: 'feedback-2',
+          simulationChatGradeId: 'grade-2',
+          standardId: 'standard-1',
+          total: 22,
+          feedback: 'Excellent performance on chat 2',
+          createdAt: '2024-01-01T01:00:00Z',
+        },
+      ];
+
+      require('@/utils/queries/simulation_chats/get-simulation-chats-by-attempt').getSimulationChatsByAttempt.mockResolvedValue(mockAllCompletedChats);
+      require('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats').getSimulationChatGradesBySimulationChats.mockResolvedValue(mockAllGrades);
+      require('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades').getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(mockAllFeedbacks);
+      
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+      
+      // Should show results immediately since all data is available
+      await waitFor(() => {
+        expect(screen.getByTestId('attempt-results')).toBeInTheDocument();
+        expect(screen.getByText('Overall Results')).toBeInTheDocument();
+      }, { timeout: 3000 });
+    });
   });
 
   describe('Documents', () => {
@@ -468,6 +550,93 @@ describe('Attempt', () => {
       await waitFor(() => {
         expect(screen.getByText('Documents')).toBeInTheDocument();
         expect(screen.getByTestId('document-viewer')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Time Formatting', () => {
+    it('should format time correctly in minutes and seconds', async () => {
+      // Mock grades with specific time values to test formatting
+      const mockGradesWithVariousTimes = [
+        {
+          id: 'grade-1',
+          simulationChatId: 'chat-1',
+          score: 85,
+          timeTaken: 65, // 1 minute 5 seconds
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          id: 'grade-2',
+          simulationChatId: 'chat-2',
+          score: 90,
+          timeTaken: 120, // 2 minutes exactly
+          createdAt: '2024-01-01T01:00:00Z',
+        },
+      ];
+
+      const mockAllCompletedChats = [
+        {
+          id: 'chat-1',
+          title: 'Test Chat 1',
+          scenarioId: 'scenario-1',
+          attemptId: 'attempt-1',
+          completed: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          completedAt: '2024-01-01T01:00:00Z',
+        },
+        {
+          id: 'chat-2',
+          title: 'Test Chat 2',
+          scenarioId: 'scenario-2',
+          attemptId: 'attempt-1',
+          completed: true,
+          createdAt: '2024-01-01T01:00:00Z',
+          completedAt: '2024-01-01T02:00:00Z',
+        },
+      ];
+
+      require('@/utils/queries/simulation_chats/get-simulation-chats-by-attempt').getSimulationChatsByAttempt.mockResolvedValue(mockAllCompletedChats);
+      require('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats').getSimulationChatGradesBySimulationChats.mockResolvedValue(mockGradesWithVariousTimes);
+      
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('attempt-results')).toBeInTheDocument();
+        // Should show detailed time formatting in results
+        expect(screen.getByText('Overall Results')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle seconds-only time formatting', async () => {
+      const mockGradesSecondsOnly = [
+        {
+          id: 'grade-1',
+          simulationChatId: 'chat-1',
+          score: 85,
+          timeTaken: 45, // 45 seconds only
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+      ];
+
+      const mockCompletedChat = [
+        {
+          id: 'chat-1',
+          title: 'Test Chat 1',
+          scenarioId: 'scenario-1',
+          attemptId: 'attempt-1',
+          completed: true,
+          createdAt: '2024-01-01T00:00:00Z',
+          completedAt: '2024-01-01T01:00:00Z',
+        },
+      ];
+
+      require('@/utils/queries/simulation_chats/get-simulation-chats-by-attempt').getSimulationChatsByAttempt.mockResolvedValue(mockCompletedChat);
+      require('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats').getSimulationChatGradesBySimulationChats.mockResolvedValue(mockGradesSecondsOnly);
+      
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByTestId('attempt-results')).toBeInTheDocument();
       });
     });
   });

@@ -177,12 +177,12 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
     //   });
     // }
 
-    // Simulations - Only for TAs and guests
+    // Home - Only for TAs and guests
     if (effectiveRole === 'ta' || effectiveRole === 'guest') {
       menu.push({
-        title: "Simulations",
+        title: "Home",
         url: "#",
-        icon: MessageSquare,
+        icon: Home,
         section: "home",
       });
     }

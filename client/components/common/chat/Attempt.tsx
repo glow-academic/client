@@ -156,6 +156,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         enabled: !!currentChat?.id,
     });
 
+    // Fetch scenario for current chat
+    const { data: scenario, isLoading: scenarioLoading } = useQuery({
+        queryKey: ["interaction", currentChat?.scenarioId],
+        queryFn: () => getScenario(currentChat!.scenarioId),
+        enabled: !!currentChat?.scenarioId,
+    });
+
+    // Helper function to calculate actual time taken from database timestamps
+    const calculateActualTimeTaken = (chat: SimulationChat): number => {
+        return grades?.find(grade => grade.simulationChatId === chat.id)?.timeTaken || 0;
+    };
+
     // Create dynamic rubric for current chat based on grades/feedback
     const currentDynamicRubric = useMemo((): DynamicRubric | null => {
         if (!currentChat?.id || !grades || !feedbacks || !standards || !standardGroups) return null;
@@ -177,13 +189,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             );
             
             if (groupFeedbacks.length > 0) {
-                const maxPoints = Math.max(...groupStandards.map(s => s.points));
+                // Use group.points instead of max standard points for correct total calculation
+                const groupMaxPoints = group.points;
+                const maxStandardPoints = Math.max(...groupStandards.map(s => s.points));
                 const avgScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length;
-                const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
+                const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5); // Convert to 1-5 scale
                 
                 skillScores[group.name] = normalizedScore;
-                skillFeedbacks[group.name] = groupFeedbacks.map(f => f.feedback).join('; ');
-                totalPossiblePoints += maxPoints;
+                skillFeedbacks[group.shortName] = groupFeedbacks.map(f => f.feedback).join('; ');
+                totalPossiblePoints += groupMaxPoints; // Use group points for total
             }
         });
 
@@ -200,13 +214,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             totalPossiblePoints,
         };
     }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
-
-    // Fetch scenario for current chat
-    const { data: scenario, isLoading: scenarioLoading } = useQuery({
-        queryKey: ["interaction", currentChat?.scenarioId],
-        queryFn: () => getScenario(currentChat!.scenarioId),
-        enabled: !!currentChat?.scenarioId,
-    });
 
     // Create dynamic rubrics for all completed chats
     const allDynamicRubrics = useMemo((): DynamicRubric[] => {
@@ -232,13 +239,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                 );
                 
                 if (groupFeedbacks.length > 0) {
-                    const maxPoints = Math.max(...groupStandards.map(s => s.points));
+                    // Use group.points instead of max standard points for correct total calculation
+                    const groupMaxPoints = group.points;
+                    const maxStandardPoints = Math.max(...groupStandards.map(s => s.points));
                     const avgScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length;
-                    const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
+                    const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5); // Convert to 1-5 scale
                     
                     skillScores[group.name] = normalizedScore;
                     skillFeedbacks[group.name] = groupFeedbacks.map(f => f.feedback).join('; ');
-                    totalPossiblePoints += maxPoints;
+                    totalPossiblePoints += groupMaxPoints; // Use group points for total
                 }
             });
 
@@ -355,12 +364,41 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             const totalExpectedChats = simulation.scenarioIds.length;
             const completedChats = chats.filter((chat: SimulationChat) => chat.completed).length;
 
+            // For completed chats, also check if we have grading data available
             if (completedChats === totalExpectedChats) {
-                setShowResults(true);
-                setIsActive(false);
+                // If we have completed chats, wait for grading data to be available before showing results
+                const completedChatIds = chats.filter((chat: SimulationChat) => chat.completed).map(chat => chat.id);
+                const hasGradingData = completedChatIds.length === 0 || 
+                    (grades && grades.some(grade => completedChatIds.includes(grade.simulationChatId)));
+                
+                if (hasGradingData) {
+                    setShowResults(true);
+                    setIsActive(false);
+                }
             }
         }
-    }, [chats, simulation?.scenarioIds, showResults]);
+    }, [chats, simulation?.scenarioIds, showResults, grades, feedbacks]);
+
+    // Handle case where grading data becomes available after chats are already loaded as completed (refresh scenario)
+    useEffect(() => {
+        if (chats && chats.length > 0 && simulation?.scenarioIds && !showResults && grades && grades.length > 0) {
+            const totalExpectedChats = simulation.scenarioIds.length;
+            const completedChats = chats.filter((chat: SimulationChat) => chat.completed).length;
+            
+            // If all chats are completed and we now have grading data, show results
+            if (completedChats === totalExpectedChats) {
+                const completedChatIds = chats.filter((chat: SimulationChat) => chat.completed).map(chat => chat.id);
+                const hasGradingForAllCompleted = completedChatIds.every(chatId => 
+                    grades.some(grade => grade.simulationChatId === chatId)
+                );
+                
+                if (hasGradingForAllCompleted) {
+                    setShowResults(true);
+                    setIsActive(false);
+                }
+            }
+        }
+    }, [grades, feedbacks, chats, simulation?.scenarioIds, showResults]);
 
     const formatTime = (seconds: number): string => {
         const minutes = Math.floor(seconds / 60);
@@ -369,7 +407,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
 
     // Helper function to format interaction attributes
-    const formatScenarioInfo = (scenario: Scenario) => {
+    const formatScenarioInfo = (scenario: Scenario | null | undefined) => {
+        if (!scenario) {
+            return (
+                <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />
+                        <span>Loading scenario...</span>
+                    </div>
+                </div>
+            );
+        }
+
         const crowdednessText = scenario.crowdedness === 1 ? "Low crowdedness" :
             scenario.crowdedness === 2 ? "Moderate crowdedness" :
                 scenario.crowdedness === 3 ? "High crowdedness" :
@@ -444,13 +493,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             formData.append("chat_id", currentChat.id);
             formData.append("message", userMsg.query);
 
-            // Add test_data flag if running in test environment
-            if (typeof window !== 'undefined' && (window as any).Cypress) {
-                formData.append("test_data", "true");
-            }
-
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/attempt/message`,
+                `${process.env.NEXT_PUBLIC_API_URL}/simulations/message`,
                 {
                     method: "POST",
                     headers: { Accept: "text/event-stream" },
@@ -530,12 +574,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             const formData = new FormData();
             formData.append("chat_id", currentChat.id);
             formData.append("attempt_id", attemptId);
-
-            // Add test_data flag if running in test environment
-            if (typeof window !== 'undefined' && (window as any).Cypress) {
-                formData.append("test_data", "true");
-            }
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/attempt/continue`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/simulations/continue`, {
                 method: "POST",
                 body: formData,
             });
@@ -550,7 +589,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                 // Mark this chat as freshly completed
                 setFreshlyCompletedChats(prev => new Set(prev).add(currentChat.id));
 
-                queryClient.invalidateQueries({ queryKey: ["chats", attemptId] });
+                queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+                queryClient.invalidateQueries({ queryKey: ["simulationChats", attemptId] });
                 queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
                 queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
                 toast.success("Chat ended successfully");
@@ -583,12 +623,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         }
     }, [messages.length]);
 
-    // Helper function to calculate actual time taken from database timestamps
-    const calculateActualTimeTaken = (chat: SimulationChat): number => {
-        if (!chat.createdAt || !chat.completedAt) return 0;
-        const startTime = new Date(chat.createdAt).getTime();
-        const endTime = new Date(chat.completedAt).getTime();
-        return Math.round((endTime - startTime) / 1000); // Return seconds
+    // Helper function to format time in minutes and seconds
+    const formatTimeDetailed = (seconds: number): string => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (minutes === 0) {
+            return `${remainingSeconds}s`;
+        } else if (remainingSeconds === 0) {
+            return `${minutes}m`;
+        } else {
+            return `${minutes}m ${remainingSeconds}s`;
+        }
     };
 
     // Calculate aggregated results for final display
@@ -610,7 +655,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             totalChats: allDynamicRubrics.length,
             passedChats,
             averageScore: Math.round(averageScore * 10) / 10,
-            totalTime: Math.round(totalTime / 60), // Convert to minutes
+            totalTime: totalTime, // Keep in seconds for detailed formatting
             overallPassed: passedChats === allDynamicRubrics.length,
         };
     }, [allDynamicRubrics, chats]);
@@ -687,11 +732,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     </div>
                                     <div>
                                         <div className="font-medium">Average Score</div>
-                                        <div>{aggregatedResults.averageScore}/100</div>
+                                        <div>{aggregatedResults.averageScore}/{rubrics?.find(r => r.id === simulation?.rubricId)?.points}</div>
                                     </div>
                                     <div>
                                         <div className="font-medium">Total Time</div>
-                                        <div>{aggregatedResults.totalTime} min</div>
+                                        <div>{formatTimeDetailed(aggregatedResults.totalTime)}</div>
                                     </div>
                                     <div>
                                         <div className="font-medium">Status</div>
@@ -724,22 +769,22 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                                 </CardTitle>
                                             </CardHeader>
                                             <CardContent>
-                                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                                                    <div>
-                                                        <div className="font-medium">Score</div>
-                                                        <div>{rubric.score}/{rubric.totalPossiblePoints}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="font-medium">Time Taken</div>
-                                                        <div>{Math.round(actualTimeTaken / 60)} min</div>
-                                                    </div>
-                                                    {skillEntries.slice(0, 2).map(([skillName, score]) => (
-                                                        <div key={skillName}>
-                                                            <div className="font-medium">{skillName}</div>
-                                                            <div>{score}/5</div>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                                                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+                                    <div>
+                                        <div className="font-medium">Score</div>
+                                        <div>{rubric.score}/{rubric.totalPossiblePoints}</div>
+                                    </div>
+                                    <div>
+                                        <div className="font-medium">Time Taken</div>
+                                        <div>{formatTimeDetailed(actualTimeTaken)}</div>
+                                    </div>
+                                    {skillEntries.map(([skillName, score]) => (
+                                        <div key={skillName}>
+                                            <div className="font-medium">{skillName}</div>
+                                            <div>{score}/5</div>
+                                        </div>
+                                    ))}
+                                </div>
                                             </CardContent>
                                         </Card>
                                     </Link>
@@ -755,18 +800,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 <CardTitle>Detailed Results</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                     <div className="text-center">
                                         <div className="text-2xl font-bold">{currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints}</div>
                                         <div className="text-sm text-muted-foreground">Overall Score</div>
                                     </div>
                                     <div className="text-center">
                                         <div className="text-2xl font-bold">
-                                            {Math.round((currentChat ? calculateActualTimeTaken(currentChat) : currentDynamicRubric.timeTaken) / 60)}
+                                            {formatTimeDetailed(currentChat ? calculateActualTimeTaken(currentChat) : currentDynamicRubric.timeTaken)}
                                         </div>
-                                        <div className="text-sm text-muted-foreground">Minutes</div>
+                                        <div className="text-sm text-muted-foreground">Time Taken</div>
                                     </div>
-                                    {Object.entries(currentDynamicRubric.skillScores).slice(0, 2).map(([skillName, score]) => (
+                                    {Object.entries(currentDynamicRubric.skillScores).map(([skillName, score]) => (
                                         <div key={skillName} className="text-center">
                                             <div className="text-2xl font-bold">{score}/5</div>
                                             <div className="text-sm text-muted-foreground">{skillName}</div>
@@ -777,7 +822,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 <div className="space-y-3">
                                     {Object.entries(currentDynamicRubric.skillFeedbacks).map(([skillName, feedback]) => (
                                         <div key={skillName}>
-                                            <h4 className="font-medium">{skillName} Feedback</h4>
+                                            <h4 className="font-medium">{skillName}</h4>
                                             <p className="text-sm text-muted-foreground">{feedback}</p>
                                         </div>
                                     ))}
@@ -791,17 +836,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
 
     return (
-        <div className="flex flex-1 gap-4">
+        <div className="flex h-screen gap-4 p-4">
             {/* Main Chat Area */}
-            <div className="flex-1">
-                <Card className="h-full flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0">
+                <Card className="flex-1 flex flex-col min-h-0">
                     <CardHeader className="flex-shrink-0">
                         <CardTitle className="flex items-center justify-between">
                             <div>
                                 <span>{scenario?.description || currentChat?.title}</span>
                                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
                                     {isSingleChatAttempt ? (
-                                        formatScenarioInfo(scenario!)
+                                        formatScenarioInfo(scenario)
                                     ) : (
                                         <>
                                             <Users className="h-4 w-4" />
@@ -809,7 +854,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                             {scenario && (
                                                 <>
                                                     <span>•</span>
-                                                    {formatScenarioInfo(scenario!)}
+                                                    {formatScenarioInfo(scenario)}
                                                 </>
                                             )}
                                         </>
@@ -822,9 +867,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         </CardTitle>
                     </CardHeader>
 
-                    <CardContent className="flex-1 flex flex-col p-0">
+                    <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
                         <ScrollArea
-                            className="flex-1 px-4"
+                            className="flex-1 px-4 min-h-0"
                             ref={scrollAreaRef}
                             onScrollCapture={handleScroll}
                         >
@@ -879,12 +924,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                         {/* Scroll to bottom button */}
                         {showScrollButton && (
-                            <div className="absolute bottom-20 right-8">
+                            <div className="absolute bottom-4 right-8 z-10">
                                 <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={scrollToBottom}
-                                    className="rounded-full h-10 w-10 p-0"
+                                    className="rounded-full h-10 w-10 p-0 shadow-lg"
                                 >
                                     <ChevronDown className="h-4 w-4" />
                                 </Button>
@@ -946,12 +991,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             {/* Right Panel - Documents */}
             {classDocuments.length > 0 && (
                 <div className="w-80 flex-shrink-0">
-                    <Card className="h-full">
-                        <CardHeader>
+                    <Card className="h-full flex flex-col">
+                        <CardHeader className="flex-shrink-0">
                             <CardTitle className="text-lg">Documents</CardTitle>
                         </CardHeader>
-                        <CardContent className="p-0">
-                            <ScrollArea className="h-[calc(100vh-12rem)]">
+                        <CardContent className="flex-1 p-0 min-h-0">
+                            <ScrollArea className="h-full">
                                 <div className="p-4 space-y-4">
                                     {classDocuments.map((doc: Document) => (
                                         <DocumentViewer key={doc.id} document={doc} />

@@ -244,8 +244,7 @@ class TestRunEval:
             "id": uuid4(),
             "eval_id": uuid4(),
             "scenario_id": sample_scenarios_data[0]["id"],
-            "query_agent_id": sample_agents_data[0]["id"],
-            "response_agent_id": sample_agents_data[1]["id"],
+            "agent_id": sample_agents_data[1]["id"],
             "class_id": uuid4(),
             "rubric_id": uuid4()
         }

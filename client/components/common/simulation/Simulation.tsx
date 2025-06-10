@@ -63,6 +63,7 @@ import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 
 interface SimulationProps {
   mode?: "list" | "create";
@@ -115,6 +116,11 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: rubrics = [] } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
   });
 
   const { data: scenarios = [] } = useQuery({
@@ -246,6 +252,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
         documents: formData.documents.length > 0 ? formData.documents : ["RAY"],
         scenarioIds: formData.scenarioIds.length > 0 ? formData.scenarioIds : ["RAY"],
         active: formData.active,
+        rubricId: rubrics[0].id, // TODO: change to having a rubric selection
       };
 
       let result;

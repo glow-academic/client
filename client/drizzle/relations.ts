@@ -89,12 +89,7 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 export const agentsRelations = relations(agents, ({many}) => ({
 	scenarios: many(scenarios),
 	evals: many(evals),
-	evalRuns_queryAgentId: many(evalRuns, {
-		relationName: "evalRuns_queryAgentId_agents_id"
-	}),
-	evalRuns_responseAgentId: many(evalRuns, {
-		relationName: "evalRuns_responseAgentId_agents_id"
-	}),
+	evalRuns: many(evalRuns),
 }));
 
 export const simulationAttemptsRelations = relations(simulationAttempts, ({one, many}) => ({
@@ -181,15 +176,9 @@ export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
 		fields: [evalRuns.evalId],
 		references: [evals.id]
 	}),
-	agent_queryAgentId: one(agents, {
-		fields: [evalRuns.queryAgentId],
-		references: [agents.id],
-		relationName: "evalRuns_queryAgentId_agents_id"
-	}),
-	agent_responseAgentId: one(agents, {
-		fields: [evalRuns.responseAgentId],
-		references: [agents.id],
-		relationName: "evalRuns_responseAgentId_agents_id"
+	agent: one(agents, {
+		fields: [evalRuns.agentId],
+		references: [agents.id]
 	}),
 	scenario: one(scenarios, {
 		fields: [evalRuns.scenarioId],

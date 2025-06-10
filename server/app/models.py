@@ -25,8 +25,7 @@ class Agents(_Base, table=True):
 
     evals: List['Evals'] = Relationship(back_populates='base_agent')
     scenarios: List['Scenarios'] = Relationship(back_populates='agent')
-    eval_runs: List['EvalRuns'] = Relationship(back_populates='query_agent')
-    eval_runs_: List['EvalRuns'] = Relationship(back_populates='response_agent')
+    eval_runs: List['EvalRuns'] = Relationship(back_populates='agent')
 
 
 class Classes(_Base, table=True):
@@ -170,7 +169,7 @@ class Schedules(_Base, table=True):
 class Simulations(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='simulations_class_id_fkey'),
-        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='SET NULL', name='simulations_rubric_id_fkey'),
+        ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='simulations_pkey')
     )
 
@@ -180,9 +179,9 @@ class Simulations(_Base, table=True):
     documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
     class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
-    rubric_id: Optional[UUID] = Field(default=None, sa_column=Column('rubric_id', Uuid))
 
     class_: Optional['Classes'] = Relationship(back_populates='simulations')
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
@@ -228,10 +227,9 @@ class Topics(_Base, table=True):
 class EvalRuns(_Base, table=True):
     __tablename__ = 'eval_runs'
     __table_args__ = (
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='eval_runs_agent_id_fkey'),
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='eval_runs_class_id_fkey'),
         ForeignKeyConstraint(['eval_id'], ['evals.id'], ondelete='CASCADE', name='eval_runs_eval_id_fkey'),
-        ForeignKeyConstraint(['query_agent_id'], ['agents.id'], ondelete='CASCADE', name='eval_runs_query_agent_id_fkey'),
-        ForeignKeyConstraint(['response_agent_id'], ['agents.id'], ondelete='CASCADE', name='eval_runs_response_agent_id_fkey'),
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='eval_runs_rubric_id_fkey'),
         ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='eval_runs_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='eval_runs_pkey')
@@ -241,15 +239,13 @@ class EvalRuns(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     class_id: UUID = Field(sa_column=Column('class_id', Uuid))
     eval_id: UUID = Field(sa_column=Column('eval_id', Uuid))
-    query_agent_id: UUID = Field(sa_column=Column('query_agent_id', Uuid))
-    response_agent_id: UUID = Field(sa_column=Column('response_agent_id', Uuid))
+    agent_id: UUID = Field(sa_column=Column('agent_id', Uuid))
     scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
     rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
 
+    agent: Optional['Agents'] = Relationship(back_populates='eval_runs')
     class_: Optional['Classes'] = Relationship(back_populates='eval_runs')
     eval: Optional['Evals'] = Relationship(back_populates='eval_runs')
-    query_agent: Optional['Agents'] = Relationship(back_populates='eval_runs')
-    response_agent: Optional['Agents'] = Relationship(back_populates='eval_runs_')
     rubric: Optional['Rubrics'] = Relationship(back_populates='eval_runs')
     scenario: Optional['Scenarios'] = Relationship(back_populates='eval_runs')
     eval_chats: List['EvalChats'] = Relationship(back_populates='eval_run')

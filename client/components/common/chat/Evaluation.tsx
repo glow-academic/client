@@ -180,15 +180,15 @@ export default function EvaluationPage({ evaluationId }: { evaluationId: string 
   });
 
   const { data: queryAgent, isLoading: queryAgentLoading } = useQuery({
-    queryKey: ["agent", currentEvalRun?.queryAgentId],
-    queryFn: () => getAgent(currentEvalRun!.queryAgentId),
-    enabled: !!currentEvalRun?.queryAgentId,
+    queryKey: ["agent", evaluation?.baseAgentId],
+    queryFn: () => getAgent(evaluation!.baseAgentId),
+    enabled: !!evaluation?.baseAgentId,
   });
 
   const { data: responseAgent, isLoading: responseAgentLoading } = useQuery({
-    queryKey: ["agent", currentEvalRun?.responseAgentId],
-    queryFn: () => getAgent(currentEvalRun!.responseAgentId),
-    enabled: !!currentEvalRun?.responseAgentId,
+    queryKey: ["agent", currentEvalRun?.agentId],
+    queryFn: () => getAgent(currentEvalRun!.agentId),
+    enabled: !!currentEvalRun?.agentId,
   });
 
   // Create dynamic rubric for current chat

@@ -13,7 +13,7 @@ import logging
 from app.services.agents.scenario import run_scenario_agent
 from typing import Optional
 import random
-
+from datetime import datetime, timezone
 from app.services.agents.grade import run_grade_agent
 from app.services.agents.generic import run_generic_agent
 from app.services.agents.evaluate import run_evaluate_agent
@@ -31,7 +31,6 @@ async def start_attempt(
     simulation_id: str = Form(...),
     user_id: Optional[str] = Form(None),
     class_id: str = Form(...),
-    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -40,6 +39,10 @@ async def start_attempt(
     Handles both permanent individual practice simulations and dynamic quiz simulations.
     """
     try:
+        # Handle empty string user_id as None for guest mode
+        if user_id == "" or user_id == "null":
+            user_id = None
+
         # Get the simulation
         simulation = session.exec(
             select(Simulations).where(Simulations.id == simulation_id)
@@ -59,7 +62,7 @@ async def start_attempt(
 
         logger.info(f"Created attempt {new_attempt.id} for simulation {simulation_id}")
 
-        # Get interaction IDs for this simulation and filter out invalid ones
+        # Get scenario IDs for this simulation and filter out invalid ones
         scenario_ids = simulation.scenario_ids or []
 
         if not scenario_ids:
@@ -68,50 +71,35 @@ async def start_attempt(
             )
 
         # Get the first scenario
-        scenario_id = scenario_ids[0]
+        first_scenario_id = scenario_ids[0]
         scenario = session.exec(
-            select(Scenarios).where(Scenarios.id == scenario_id)
+            select(Scenarios).where(Scenarios.id == first_scenario_id)
         ).one_or_none()
 
         if not scenario:
             raise HTTPException(
-                status_code=400, detail=f"Scenario {scenario_id} not found"
+                status_code=400, detail=f"Scenario {first_scenario_id} not found"
             )
 
-        # Handle scenario creation or selection
-        if not scenario.scenario_id:
-            scenario_id, chat_title = await run_scenario_agent(
-                agent_id=scenario.agent_id,
-                user_id=user_id,  # Pass actual_user_id (can be None for guest)
-                class_id=class_id,
-                test_data=test_data,
-                session=session,
-            )
+        # For dynamic scenarios, run the scenario agent to create a new scenario
+        # For static scenarios, use the existing scenario directly
+        # Note: The database shows scenarios don't have a separate scenario_id field
+        # They use their primary key 'id' as the scenario identifier
+        
+        # Use agent-specific default titles for simulations
+        agent = session.exec(
+            select(Agents).where(Agents.id == scenario.agent_id)
+        ).one_or_none()
+        if agent:
+            chat_title = f"{agent.name} Student Session"
         else:
-            scenario_id = scenario.id
-            # Use agent-specific default titles for permanent simulations
-            agent = session.exec(
-                select(Agents).where(Agents.id == scenario.agent_id)
-            ).one_or_none()
-            if agent:
-                chat_title = f"{agent.name} Student Session"
-            else:
-                chat_title = "Practice Session"
-
-        # Handle agent selection
-        if not scenario.agent_id:
-            # get all agents
-            agents = session.exec(select(Agents)).all()
-            if not agents:
-                raise HTTPException(status_code=400, detail="No agents found")
-            agent_id = random.choice(agents).id
-        else:
-            agent_id = scenario.agent_id
+            chat_title = "Practice Session"
 
         # Create the chat with the scenario and link it to this attempt
         chat = SimulationChats(
+            created_at=datetime.now(timezone.utc),
             title=chat_title,
-            scenario_id=scenario_id,
+            scenario_id=first_scenario_id,  # Use the scenario's primary key
             attempt_id=new_attempt.id,
             completed=False,
         )
@@ -127,6 +115,10 @@ async def start_attempt(
             "chat_id": str(chat.id),
         }
 
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        session.rollback()
+        raise
     except Exception as e:
         session.rollback()
         logger.error(f"Error starting attempt: {str(e)}")
@@ -139,7 +131,6 @@ async def start_attempt(
 async def message(
     chat_id: str = Form(...),
     message: str = Form(...),
-    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -167,7 +158,6 @@ async def message(
                     chat_id=chat_id,
                     input_text=message,
                     session=session,
-                    test_data=test_data,
                 ):
                     yield f"data: {json.dumps({'text': token})}\n\n"
 
@@ -198,7 +188,6 @@ async def message(
 async def continue_attempt(
     attempt_id: str = Form(...),
     chat_id: str = Form(...),
-    test_data: Optional[bool] = Form(False),
     session: Session = Depends(get_session),
 ):
     """
@@ -249,30 +238,20 @@ async def continue_attempt(
             if not next_scenario:
                 raise HTTPException(status_code=404, detail="Next scenario not found")
 
-            # if no scenario_id, create a new one
-            if not next_scenario.scenario_id:
-                scenario_id, chat_title = await run_scenario_agent(
-                    agent_id=next_scenario.agent_id,
-                    user_id=simulation_attempt.user_id,
-                    class_id=simulation_attempt.class_id,
-                    test_data=test_data,
-                    session=session,
-                )
+            # Use agent name for title if available
+            agent = session.exec(
+                select(Agents).where(Agents.id == next_scenario.agent_id)
+            ).one_or_none()
+            if agent:
+                chat_title = f"{agent.name} Student Session"
             else:
-                scenario_id = next_scenario.id
-                # Use agent name for title if available
-                agent = session.exec(
-                    select(Agents).where(Agents.id == next_scenario.agent_id)
-                ).one_or_none()
-                if agent:
-                    chat_title = f"{agent.name} Student Session"
-                else:
-                    chat_title = "Practice Session"
+                chat_title = "Practice Session"
 
             # Create the chat with the scenario and link it to this attempt
             next_chat = SimulationChats(
+                created_at=datetime.now(timezone.utc),
                 title=chat_title,
-                scenario_id=scenario_id,
+                scenario_id=next_scenario_id,  # Use the scenario's primary key
                 attempt_id=attempt_id,
                 completed=False,
             )
@@ -284,7 +263,7 @@ async def continue_attempt(
             next_chat_id = next_chat.id
 
         # Run logic to end the current chat
-        rubric_id = await run_grade_agent(chat_id, test_data, session)
+        rubric_id = await run_grade_agent(chat_id, session)
 
         return {
             "success": True,
@@ -294,6 +273,10 @@ async def continue_attempt(
             "completed": next_chat_id == chat_id,
         }
 
+    except HTTPException:
+        # Re-raise HTTP exceptions as-is
+        session.rollback()
+        raise
     except Exception as e:
         session.rollback()
         logger.error(f"Error continuing attempt: {str(e)}")

@@ -13,7 +13,7 @@ from app.utils.chat import get_conversation_history
 from app.utils.rubric import get_dynamic_rubric
 from sqlmodel import select
 from pydantic import BaseModel, Field, create_model
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any, List, Optional
 from uuid import UUID
 import re
@@ -157,17 +157,20 @@ async def run_grade_agent(
         grading_result = result.final_output_as(DynamicRubric)
         logger.info("Grading agent completed successfully")
 
-        # Calculate time taken
-        current_time = datetime.now()
+        # Calculate time taken - ensure both times are in UTC
+        current_time = datetime.now(timezone.utc)
         chat_created_at = chat.created_at
 
-        # Ensure both times have the same timezone information
+        # Convert chat_created_at to UTC if it has timezone info
         if chat_created_at.tzinfo is not None:
-            current_time = current_time.replace(tzinfo=chat_created_at.tzinfo)
-        elif current_time.tzinfo is not None:
-            chat_created_at = chat_created_at.replace(tzinfo=current_time.tzinfo)
-
-        time_taken = max(0, int((current_time - chat_created_at).total_seconds()))
+            chat_created_at = chat_created_at.astimezone(timezone.utc)
+        else:
+            # If timezone-naive, assume it's already UTC and make it timezone-aware
+            chat_created_at = chat_created_at.replace(tzinfo=timezone.utc)
+        
+        # Now both times are timezone-aware and in UTC
+        time_taken = max(1, int((current_time - chat_created_at).total_seconds()))
+        logger.info(f"Time calculation: current={current_time}, created={chat_created_at}, taken={time_taken}s")
 
         # Extract overall grading data
         overall_score = grading_result.overall_score

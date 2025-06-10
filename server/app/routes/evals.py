@@ -78,19 +78,17 @@ async def start_eval(
         selected_scenarios = scenario_ids[:max_runs]
         
         for scenario_id in selected_scenarios:
-            for query_agent_id in agent_ids:
-                for response_agent_id in agent_ids:
-                    for rubric_id in rubric_ids:
-                        eval_run = EvalRuns(
-                            class_id=class_id,
-                            eval_id=eval_id,
-                            query_agent_id=query_agent_id,
-                            response_agent_id=response_agent_id,
-                            scenario_id=scenario_id,
-                            rubric_id=rubric_id
-                        )
-                        session.add(eval_run)
-                        eval_runs_created.append(eval_run)
+            for agent_id in agent_ids:
+                for rubric_id in rubric_ids:
+                    eval_run = EvalRuns(
+                        class_id=class_id,
+                        eval_id=eval_id,
+                        agent_id=agent_id,
+                        scenario_id=scenario_id,
+                        rubric_id=rubric_id
+                    )
+                    session.add(eval_run)
+                    eval_runs_created.append(eval_run)
 
         session.commit()
         
@@ -135,8 +133,8 @@ async def run_eval(
         # Get related entities
         eval_obj = session.exec(select(Evals).where(Evals.id == eval_run.eval_id)).one()
         scenario = session.exec(select(Scenarios).where(Scenarios.id == eval_run.scenario_id)).one()
-        query_agent = session.exec(select(Agents).where(Agents.id == eval_run.query_agent_id)).one()
-        response_agent = session.exec(select(Agents).where(Agents.id == eval_run.response_agent_id)).one()
+        query_agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
+        response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
 
         async def event_stream() -> AsyncIterator[str]:
             yield ":\n\n"  # Initial heartbeat

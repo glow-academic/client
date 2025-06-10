@@ -155,7 +155,7 @@ export const simulations = pgTable("simulations", {
 	timeLimit: integer("time_limit"),
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
-	rubricId: uuid("rubric_id"),
+	rubricId: uuid("rubric_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.classId],
@@ -166,7 +166,7 @@ export const simulations = pgTable("simulations", {
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
 			name: "simulations_rubric_id_fkey"
-		}).onDelete("set null"),
+		}).onDelete("cascade"),
 ]);
 
 export const scenarios = pgTable("scenarios", {
@@ -318,8 +318,7 @@ export const evalRuns = pgTable("eval_runs", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	classId: uuid("class_id").notNull(),
 	evalId: uuid("eval_id").notNull(),
-	queryAgentId: uuid("query_agent_id").notNull(),
-	responseAgentId: uuid("response_agent_id").notNull(),
+	agentId: uuid("agent_id").notNull(),
 	scenarioId: uuid("scenario_id").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
 }, (table) => [
@@ -334,14 +333,9 @@ export const evalRuns = pgTable("eval_runs", {
 			name: "eval_runs_eval_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
-			columns: [table.queryAgentId],
+			columns: [table.agentId],
 			foreignColumns: [agents.id],
-			name: "eval_runs_query_agent_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.responseAgentId],
-			foreignColumns: [agents.id],
-			name: "eval_runs_response_agent_id_fkey"
+			name: "eval_runs_agent_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.scenarioId],
