@@ -1,4 +1,4 @@
-// utils/queries/eval_chats/get-eval-chats-by-eval-runs.ts
+// utils/queries/eval_chats/get-eval-chats-by-evalruns.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { evalChats } from "@/drizzle/schema";
