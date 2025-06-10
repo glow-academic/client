@@ -35,7 +35,6 @@ import Markdown from "@/components/common/chat/Markdown";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulationAttempt";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
 import { Document, Scenario, SimulationChat, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
@@ -44,6 +43,7 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 
 type WindowWithAttemptTimer = Window &
   typeof globalThis & {

@@ -21,8 +21,6 @@ import {
 } from "lucide-react";
 import Markdown from "@/components/common/chat/Markdown";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getSimulationChat } from "@/utils/queries/simulation_chats/get-simulationChat";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulationAttempt";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
@@ -36,6 +34,8 @@ import {
   Standard,
   SimulationChatFeedback,
 } from "@/types";
+import { getSimulationChat } from "@/utils/queries/simulation_chats/get-simulation-chat";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 
 type WindowWithChatData = Window &
   typeof globalThis & {

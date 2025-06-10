@@ -288,12 +288,31 @@ function isForeignKeyColumn(columnName, foreignKeys) {
 }
 
 /**
+ * Convert any string to consistent kebab-case
+ */
+function toKebabCase(str) {
+  return str
+    .replace(/([a-z])([A-Z])/g, '$1-$2') // camelCase to kebab-case
+    .replace(/_/g, '-') // snake_case to kebab-case
+    .toLowerCase();
+}
+
+/**
+ * Convert any string to consistent camelCase
+ */
+function toCamelCase(str) {
+  return str
+    .replace(/_([a-z])/g, (_, letter) => letter.toUpperCase()) // snake_case to camelCase
+    .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase()); // kebab-case to camelCase
+}
+
+/**
  * Convert database column name to TypeScript property name
  * e.g., "agent_id" -> "agentId", "class_id" -> "classId"
  */
 function getTsPropertyName(dbColumnName) {
   // Convert snake_case to camelCase
-  return dbColumnName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+  return toCamelCase(dbColumnName);
 }
 
 /**
@@ -340,7 +359,7 @@ function generateQueries(tables) {
     const getAllQuery = generateGetAllQuery(exportName, tableName);
     const getAllResult = writeQueryFile(
       tableName,
-      `get-all-${tableName.replace(/_/g, "-")}.ts`,
+      `get-all-${toKebabCase(tableName)}.ts`,
       getAllQuery,
     );
     if (getAllResult.created) created++;
@@ -355,7 +374,7 @@ function generateQueries(tables) {
     );
     const getByIdResult = writeQueryFile(
       tableName,
-      `get-${singularName.replace(/_/g, "-")}.ts`,
+      `get-${toKebabCase(singularName)}.ts`,
       getByIdQuery,
     );
     if (getByIdResult.created) created++;
@@ -372,12 +391,10 @@ function generateQueries(tables) {
         .replace(/Id$/, "")
         .replace(/_id$/, "")
         .replace(/_/g, "");
-      const cleanParamName = paramName
-        .replace(/([a-z])([A-Z])/g, "$1-$2")
-        .toLowerCase();
+      const cleanParamName = toKebabCase(paramName);
       const getByFkResult = writeQueryFile(
         tableName,
-        `get-${tableName.replace(/_/g, "-")}-by-${cleanParamName}.ts`,
+        `get-${toKebabCase(tableName)}-by-${cleanParamName}.ts`,
         getByFkQuery,
       );
       if (getByFkResult.created) created++;
@@ -398,12 +415,10 @@ function generateQueries(tables) {
       const pluralParamName = paramName.endsWith("s")
         ? paramName
         : paramName + "s";
-      const cleanPluralParamName = pluralParamName
-        .replace(/([a-z])([A-Z])/g, "$1-$2")
-        .toLowerCase();
+      const cleanPluralParamName = toKebabCase(pluralParamName);
       const getByFkPluralResult = writeQueryFile(
         tableName,
-        `get-${tableName.replace(/_/g, "-")}-by-${cleanPluralParamName}.ts`,
+        `get-${toKebabCase(tableName)}-by-${cleanPluralParamName}.ts`,
         getByFkPluralQuery,
       );
       if (getByFkPluralResult.created) created++;
@@ -447,7 +462,7 @@ function generateMutations(tables) {
     );
     const createResult = writeMutationFile(
       tableName,
-      `create-${singularName.replace(/_/g, "-")}.ts`,
+      `create-${toKebabCase(singularName)}.ts`,
       createMutation,
     );
     if (createResult.created) created++;
@@ -462,7 +477,7 @@ function generateMutations(tables) {
     );
     const createMultipleResult = writeMutationFile(
       tableName,
-      `create-${tableName.replace(/_/g, "-")}.ts`,
+      `create-${toKebabCase(tableName)}.ts`,
       createMultipleMutation,
     );
     if (createMultipleResult.created) created++;
@@ -478,7 +493,7 @@ function generateMutations(tables) {
     );
     const updateResult = writeMutationFile(
       tableName,
-      `update-${singularName.replace(/_/g, "-")}.ts`,
+      `update-${toKebabCase(singularName)}.ts`,
       updateMutation,
     );
     if (updateResult.created) created++;
@@ -494,7 +509,7 @@ function generateMutations(tables) {
     );
     const updateMultipleResult = writeMutationFile(
       tableName,
-      `update-${tableName.replace(/_/g, "-")}.ts`,
+      `update-${toKebabCase(tableName)}.ts`,
       updateMultipleMutation,
     );
     if (updateMultipleResult.created) created++;
@@ -509,7 +524,7 @@ function generateMutations(tables) {
     );
     const deleteResult = writeMutationFile(
       tableName,
-      `delete-${singularName.replace(/_/g, "-")}.ts`,
+      `delete-${toKebabCase(singularName)}.ts`,
       deleteMutation,
     );
     if (deleteResult.created) created++;
@@ -524,7 +539,7 @@ function generateMutations(tables) {
     );
     const deleteMultipleResult = writeMutationFile(
       tableName,
-      `delete-${tableName.replace(/_/g, "-")}.ts`,
+      `delete-${toKebabCase(tableName)}.ts`,
       deleteMultipleMutation,
     );
     if (deleteMultipleResult.created) created++;
@@ -540,7 +555,7 @@ function generateMutations(tables) {
  * Generate get all query
  */
 function generateGetAllQuery(exportName, tableName) {
-  return `// utils/queries/${tableName}/get-all-${tableName.replace(/_/g, "-")}.ts
+  return `// utils/queries/${tableName}/get-all-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -560,7 +575,7 @@ export async function getAll${capitalize(exportName)}() {
  * Generate get by ID query
  */
 function generateGetByIdQuery(exportName, tableName, singularName, primaryKey) {
-  return `// utils/queries/${tableName}/get-${singularName.replace(/_/g, "-")}.ts
+  return `// utils/queries/${tableName}/get-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -584,11 +599,9 @@ export async function get${capitalize(singularName)}(${primaryKey}: string) {
 function generateGetByForeignKeyQuery(exportName, tableName, foreignKey) {
   // Get the TypeScript property name from the schema (camelCase)
   const tsPropertyName = getTsPropertyName(foreignKey.columnName);
-  const paramName = tsPropertyName.replace(/Id$/, "");
-  const cleanParamName = paramName
-    .replace(/([a-z])([A-Z])/g, "$1-$2")
-    .toLowerCase();
-  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, "-")}-by-${cleanParamName}.ts
+  const paramName = toCamelCase(tsPropertyName.replace(/Id$/, ""));
+  const cleanParamName = toKebabCase(paramName);
+  return `// utils/queries/${tableName}/get-${toKebabCase(tableName)}-by-${cleanParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -611,12 +624,10 @@ export async function get${capitalize(exportName)}By${capitalize(paramName)}(${p
 function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
   // Get the TypeScript property name from the schema (camelCase)
   const tsPropertyName = getTsPropertyName(foreignKey.columnName);
-  const paramName = tsPropertyName.replace(/Id$/, "");
+  const paramName = toCamelCase(tsPropertyName.replace(/Id$/, ""));
   const pluralParamName = paramName.endsWith("s") ? paramName : paramName + "s";
-  const cleanPluralParamName = pluralParamName
-    .replace(/([a-z])([A-Z])/g, "$1-$2")
-    .toLowerCase();
-  return `// utils/queries/${tableName}/get-${tableName.replace(/_/g, "-")}-by-${cleanPluralParamName}.ts
+  const cleanPluralParamName = toKebabCase(pluralParamName);
+  return `// utils/queries/${tableName}/get-${toKebabCase(tableName)}-by-${cleanPluralParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -637,7 +648,7 @@ export async function get${capitalize(exportName)}By${capitalize(pluralParamName
  * Generate create mutation
  */
 function generateCreateMutation(exportName, tableName, singularName, fields) {
-  return `// utils/mutations/${tableName}/create-${singularName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/create-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -663,7 +674,7 @@ function generateCreateMultipleMutation(
   singularName,
   fields,
 ) {
-  return `// utils/mutations/${tableName}/create-${tableName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/create-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -689,7 +700,7 @@ function generateUpdateMutation(
   fields,
   primaryKey,
 ) {
-  return `// utils/mutations/${tableName}/update-${singularName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/update-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -717,7 +728,7 @@ function generateUpdateMultipleMutation(
   fields,
   primaryKey,
 ) {
-  return `// utils/mutations/${tableName}/update-${tableName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/update-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -743,7 +754,7 @@ function generateDeleteMutation(
   singularName,
   primaryKey,
 ) {
-  return `// utils/mutations/${tableName}/delete-${singularName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/delete-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
@@ -770,7 +781,7 @@ function generateDeleteMultipleMutation(
   singularName,
   primaryKey,
 ) {
-  return `// utils/mutations/${tableName}/delete-${tableName.replace(/_/g, "-")}.ts
+  return `// utils/mutations/${tableName}/delete-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";

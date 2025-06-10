@@ -16,7 +16,6 @@ import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-s
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
 import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
-import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standardGroup";
 import { updateStandard } from "@/utils/mutations/standards/update-standard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +55,7 @@ import {
   Save,
   X,
 } from "lucide-react";
+import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
 
 // Icon mapping for different criteria
 const iconMap: Record<string, any> = {
