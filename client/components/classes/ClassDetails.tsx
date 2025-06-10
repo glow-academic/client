@@ -4,6 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
+"use client";
 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";

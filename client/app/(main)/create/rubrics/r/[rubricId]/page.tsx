@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-"use client";
 
 import { use } from "react";
 import RubricEdit from "@/components/create/rubrics/RubricEdit";

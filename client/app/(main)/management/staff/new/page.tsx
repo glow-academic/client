@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import NewStaff from "@/components/management/staff/NewStaff";
 
 export default function NewStaffPage() {

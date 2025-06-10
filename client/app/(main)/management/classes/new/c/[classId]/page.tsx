@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
 
 import ClassStatus from "@/components/management/classes/ClassStatus";
 import { use } from "react";

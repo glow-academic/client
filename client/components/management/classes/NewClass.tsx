@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";

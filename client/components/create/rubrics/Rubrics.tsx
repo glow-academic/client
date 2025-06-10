@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Rubric } from "@/types";
 
-export default function Rubrics() {
+export default function   Rubrics() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{

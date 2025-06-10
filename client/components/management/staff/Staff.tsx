@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import React from "react";
 import { Shield, GraduationCap, User as UserIcon, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

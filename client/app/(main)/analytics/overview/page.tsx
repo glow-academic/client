@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Overview from "@/components/analytics/Overview";
 
 export default function OverviewPage() {

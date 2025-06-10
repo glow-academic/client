@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import { redirect } from "next/navigation";
 
 export default function EvalPage() {

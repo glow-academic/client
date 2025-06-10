@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import Eval from "@/components/common/eval/Eval";
 
 export default function EvalEdit({ evalId }: { evalId: string }) {

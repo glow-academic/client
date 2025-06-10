@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-
+"use client";
 import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

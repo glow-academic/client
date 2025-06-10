@@ -4,8 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
-
 import NewClass from "@/components/management/classes/NewClass";
 
 export default function NewClassPage() {

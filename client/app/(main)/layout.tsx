@@ -7,7 +7,6 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus } from "lucide-react";
 import {
   SidebarProvider,
@@ -20,15 +19,12 @@ import { Switch } from "@/components/ui/switch";
 
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
-import { RoleProvider } from "@/contexts/role-context";
 import { ViewModeProvider } from "@/contexts/view-mode-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
-import { useAuth } from "@/hooks/use-auth";
-import { getUser } from "@/utils/queries/users/get-user";
 
 export default function MainLayout({
   children,
@@ -37,26 +33,16 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const queryClient = useQueryClient();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
   >([]);
-  const [isDeleting, setIsDeleting] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<"chats" | "attempts">(
     "attempts",
   );
-  const { userId } = useAuth();
 
   // Check if we're on the logs page
   const isLogsPage = pathname === "/analytics/logs";
-
-  // Fetch user data for role context
-  const { data: user } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
-    enabled: !!userId,
-  });
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -201,29 +187,27 @@ export default function MainLayout({
   const actionButton = getActionButton();
 
   const content = (
-    <RoleProvider userRole={user?.role}>
-      <SidebarProvider>
-        <UnifiedSidebar
-          activeSection={activeSection}
-          onSectionChange={handleSectionChange}
-        />
-        <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4 flex-1">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs
-                breadcrumbs={breadcrumbs}
-                onSectionChange={handleSectionChange}
-                rightContent={viewModeToggle}
-              />
-            </div>
-            {actionButton && <div className="px-4">{actionButton}</div>}
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
-        </SidebarInset>
-      </SidebarProvider>
-    </RoleProvider>
+    <SidebarProvider>
+      <UnifiedSidebar
+        activeSection={activeSection}
+        onSectionChange={handleSectionChange}
+      />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+          <div className="flex items-center gap-2 px-4 flex-1">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <NavigationBreadcrumbs
+              breadcrumbs={breadcrumbs}
+              onSectionChange={handleSectionChange}
+              rightContent={viewModeToggle}
+            />
+          </div>
+          {actionButton && <div className="px-4">{actionButton}</div>}
+        </header>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 
   // Only provide ViewModeProvider context for logs page

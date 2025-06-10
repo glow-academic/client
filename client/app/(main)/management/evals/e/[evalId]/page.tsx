@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
 
 import EvalEdit from "@/components/management/evals/EvalEdit";
 import { use } from "react";

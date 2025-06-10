@@ -4,8 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
-
 import ClassDetails from "@/components/classes/ClassDetails";
 import { use } from "react";
 

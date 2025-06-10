@@ -4,9 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-
-"use client";
-
 import Reports from "@/components/analytics/Reports";
 
 export default function ReportsPage() {

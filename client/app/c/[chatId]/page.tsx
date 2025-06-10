@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Chat from "@/components/common/chat/Chat";
 import { use } from "react";
 

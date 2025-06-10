@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import Scenario from "@/components/common/scenario/Scenario";
 
 export default function NewScenario() {

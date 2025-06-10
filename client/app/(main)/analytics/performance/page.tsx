@@ -4,9 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-
-"use client";
-
 import Performance from "@/components/analytics/Performance";
 
 export default function PerformancePage() {

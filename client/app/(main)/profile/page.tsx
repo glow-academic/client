@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import { Profile } from "@/components/profile/Profile";
 
 export default function ProfilePage() {

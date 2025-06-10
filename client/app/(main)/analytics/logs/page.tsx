@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Logs from "@/components/analytics/Logs";
 
 export default function LogsPage() {

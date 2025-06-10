@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
 
 import ClassEdit from "@/components/classes/ClassEdit";
 import { use } from "react";

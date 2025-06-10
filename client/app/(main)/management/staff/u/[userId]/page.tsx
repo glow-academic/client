@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import StaffEdit from "@/components/management/staff/StaffEdit";
 import { use } from "react";
 

@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Home from "@/components/home/Home";
 
 export default function HomePage() {

@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Staff from "@/components/management/staff/Staff";
 
 export default function StaffPage() {

@@ -5,6 +5,7 @@
  * 06/07/2025
  */
 
+"use client";
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {

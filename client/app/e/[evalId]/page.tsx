@@ -5,8 +5,6 @@
  * 06/08/2025
  */
 
-"use client";
-
 import Evaluation from "@/components/common/chat/Evaluation";
 import { use } from "react";
 

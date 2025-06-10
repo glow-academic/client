@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
-
+"use client";
 import Agent from "@/components/common/agent/Agent";
 
 export default function AgentEdit({ agentId }: { agentId: string }) {

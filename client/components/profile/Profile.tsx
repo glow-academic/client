@@ -1,3 +1,10 @@
+/**
+ * Profile.tsx
+ * Used to display the profile page.
+ * @AshokSaravanan222 & @siladiea
+ * 06/07/2025
+ */
+"use client";
 import * as React from "react";
 import { User, Shield, Mail, Building, GraduationCap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

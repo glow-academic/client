@@ -5,6 +5,7 @@
  * 06/07/2025
  */
 
+"use client";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { Download, X, Shield, GraduationCap, User } from "lucide-react";

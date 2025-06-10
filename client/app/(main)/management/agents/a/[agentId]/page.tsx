@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
-"use client";
 
 import AgentEdit from "@/components/management/agents/AgentEdit";
 import { use } from "react";
