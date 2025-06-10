@@ -1,32 +1,32 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T14:58:38.083Z
+Generated on: 2025-06-10T15:36:11.849Z
 
 ## Summary
 - **Total Components**: 54
-- **Tests Created**: 1
-- **Tests Updated**: 20
-- **Tests Skipped** (already implemented): 33
+- **Tests Created**: 0
+- **Tests Updated**: 6
+- **Tests Skipped** (already implemented): 48
 
 ## Component Coverage
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
-| Logs | analytics/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
+| Logs | analytics/Logs.tsx | Logs.test.tsx | ✅ Implemented |
 | Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
 | Performance | analytics/Performance.tsx | Performance.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
-| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ❌ Needs Implementation |
+| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
-| DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ❌ Needs Implementation |
+| DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Evaluation | common/chat/Evaluation.tsx | Evaluation.test.tsx | ✅ Implemented |
-| Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ❌ Needs Implementation |
-| MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ❌ Needs Implementation |
-| ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ❌ Needs Implementation |
-| Eval | common/eval/Eval.tsx | Eval.test.tsx | ❌ Needs Implementation |
+| Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
+| MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
+| ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
+| Eval | common/eval/Eval.tsx | Eval.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
 | data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ✅ Implemented |
@@ -43,29 +43,29 @@ Generated on: 2025-06-10T14:58:38.083Z
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
-| RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ❌ Needs Implementation |
+| RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
 | Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ❌ Needs Implementation |
 | NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ❌ Needs Implementation |
-| SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ❌ Needs Implementation |
+| SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ❌ Needs Implementation |
 | Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
-| Home | home/Home.tsx | Home.test.tsx | ❌ Needs Implementation |
+| Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
-| Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
+| Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
-| ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
+| ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
-| NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
+| NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
-| NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
+| NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ✅ Implemented |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
-| Profile | profile/Profile.tsx | Profile.test.tsx | ❌ Needs Implementation |
+| Profile | profile/Profile.tsx | Profile.test.tsx | ✅ Implemented |
 
 ## Directory Structure
 
