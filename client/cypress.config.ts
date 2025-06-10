@@ -59,10 +59,21 @@ export default defineConfig({
     pageLoadTimeout: 30000,
     experimentalStudio: true,
     retries: {
-      runMode: 2,
+      runMode: 0,
       openMode: 0,
     },
     chromeWebSecurity: false,
     modifyObstructiveCode: false,
+    // Enable parallel execution for concurrent testing
+    numTestsKeptInMemory: 0,
+    // Increase test isolation for thread safety
+    testIsolation: true,
+  },
+  // Component testing configuration (if needed)
+  component: {
+    devServer: {
+      framework: "next",
+      bundler: "webpack",
+    },
   },
 });

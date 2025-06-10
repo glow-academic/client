@@ -85,15 +85,15 @@ export default function Agents() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle className="text-base">{agent.name}</CardTitle>
-                  <CardDescription>{agent.subtitle}</CardDescription>
+                  <CardTitle className="text-base">{agent.name || 'Unnamed Agent'}</CardTitle>
+                  <CardDescription>{agent.subtitle || 'No subtitle'}</CardDescription>
                   <p className="text-sm text-muted-foreground">
-                    {agent.description}
+                    {agent.description || 'No description available'}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
                   <Badge variant="outline">
-                    Temperature: {agent.temperature}
+                    Temperature: {agent.temperature ?? 0}
                   </Badge>
                   <Button
                     variant="outline"
@@ -105,7 +105,7 @@ export default function Agents() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteClick(agent.id, agent.name)}
+                    onClick={() => handleDeleteClick(agent.id, agent.name || 'Unnamed Agent')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

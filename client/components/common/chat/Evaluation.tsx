@@ -489,9 +489,6 @@ export default function EvaluationPage({
               The evaluation you're looking for doesn't exist or has no eval
               runs configured.
             </p>
-            <Button onClick={() => router.push("/dashboard/evaluations")}>
-              Return To Evaluations
-            </Button>
           </CardContent>
         </Card>
       </div>

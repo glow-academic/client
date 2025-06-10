@@ -12,7 +12,9 @@
     "generate:types": "node scripts/generate-types.js",
     "generate:queries": "node scripts/generate-queries-mutations.js --pull",
     "generate:queries:fast": "node scripts/generate-queries-mutations.js --skip-snapshot",
-    "test:cypress": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cypress run\"",
+    "test:cypress": "node cypress/scripts/parallel-runner.js",
+    "test:cypress:original": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cypress run\"",
+    "test:cypress:stress": "CYPRESS_WORKERS=6 node cypress/scripts/parallel-runner.js",
     "test:all": "npm run test && npm run test:cypress",
     "test": "vitest run"
   },

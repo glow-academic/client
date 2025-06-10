@@ -8,7 +8,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { getAgent } from "@/utils/queries/agents/get-agent";
@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -48,6 +49,7 @@ export default function Agent({
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!agentId;
+  const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<AgentFormData>({
@@ -106,9 +108,13 @@ export default function Agent({
     try {
       if (isEditMode) {
         await updateAgent(agentId!, formData);
+        queryClient.invalidateQueries({ queryKey: ["agents"] });
+        queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
         toast.success("Agent updated successfully!");
       } else {
-        await createAgent(formData);
+        const newAgent = await createAgent(formData);
+        queryClient.invalidateQueries({ queryKey: ["agents"] });
+        queryClient.invalidateQueries({ queryKey: ["agent", newAgent.id] });
         toast.success("Agent created successfully!");
       }
 
@@ -259,20 +265,26 @@ export default function Agent({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="temperature">Temperature</Label>
-            <Input
+            <Label htmlFor="temperature">Temperature: {formData.temperature}</Label>
+            <Slider
               id="temperature"
-              type="number"
-              min="0"
-              max="100"
-              value={formData.temperature}
-              onChange={(e) =>
+              data-testid="temperature-slider"
+              min={0}
+              max={100}
+              step={1}
+              value={[formData.temperature]}
+              onValueChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,
-                  temperature: parseInt(e.target.value) || 0,
+                  temperature: value[0],
                 }))
               }
+              className="w-full"
             />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>0 (Deterministic)</span>
+              <span>100 (Creative)</span>
+            </div>
             <p className="text-sm text-muted-foreground">
               Temperature value for response randomness (0-100). Lower values
               are more deterministic.
