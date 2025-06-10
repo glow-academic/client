@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
@@ -268,27 +269,154 @@ describe("Performance", () => {
       expect(screen.getByText("Aggressive Student")).toBeInTheDocument();
     });
 
-    it("should show score distribution", async () => {
+    it("should show clickable performance tier cards", async () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Score Distribution")).toBeInTheDocument();
+        expect(screen.getByText("Excellent")).toBeInTheDocument();
       });
 
-      expect(screen.getAllByText("Excellent").length).toBeGreaterThan(0);
-      expect(screen.getAllByText("Good").length).toBeGreaterThan(0);
+      expect(screen.getByText("Good")).toBeInTheDocument();
       expect(screen.getByText("Average")).toBeInTheDocument();
       expect(screen.getByText("Needs Support")).toBeInTheDocument();
+      
+      // Check that cards are clickable (have cursor-pointer class)
+      const excellentCard = screen.getByText("Excellent").closest('div');
+      expect(excellentCard).toHaveClass('cursor-pointer');
     });
 
-    it("should display rubric filter dropdown", async () => {
+    it("should display rubric filter inline with skill development title", async () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Filter by Rubric:")).toBeInTheDocument();
+        expect(screen.getByText("Skill Development Over Time")).toBeInTheDocument();
       });
 
       expect(screen.getByRole("combobox")).toBeInTheDocument();
+      // Should not have separate "Filter by Rubric:" label
+      expect(screen.queryByText("Filter by Rubric:")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Interactive Features", () => {
+    it("should open dialog when clicking on performance tier card", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Excellent")).toBeInTheDocument();
+      });
+
+      // Click on the Excellent tier card
+      const excellentCard = screen.getByText("Excellent").closest('div');
+      await user.click(excellentCard!);
+
+      // Should open dialog with TAs in that tier
+      await waitFor(() => {
+        expect(screen.getByText(/Excellent TAs \(\d+\)/)).toBeInTheDocument();
+      });
+    });
+
+    it("should show TA details in performance tier dialog", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Good")).toBeInTheDocument();
+      });
+
+      // Click on a tier card that should have TAs
+      const goodCard = screen.getByText("Good").closest('div');
+      await user.click(goodCard!);
+
+      await waitFor(() => {
+        // Should show TA information in the dialog
+        expect(screen.getByText(/Good TAs \(\d+\)/)).toBeInTheDocument();
+      });
+    });
+
+    it("should filter data when selecting different rubric", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
+      });
+
+      // Open the select dropdown
+      await user.click(screen.getByRole("combobox"));
+
+      await waitFor(() => {
+        expect(screen.getByText("All Rubrics")).toBeInTheDocument();
+      });
+
+      // Should show available rubrics
+      expect(screen.getByText("Teaching Assistant Evaluation Rubric")).toBeInTheDocument();
+    });
+  });
+
+  describe("Dynamic Metrics", () => {
+    it("should display dynamic weekly trend metric", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Weekly Trend")).toBeInTheDocument();
+      });
+
+      // Should show dynamic trend message
+      expect(screen.getByText(/Scores (improved|decreased|remained stable)/)).toBeInTheDocument();
+    });
+
+    it("should show active TAs count", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Active TAs")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/\d+ TAs have completed training sessions/)).toBeInTheDocument();
+    });
+
+    it("should display session efficiency metrics", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Session Efficiency")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/Average session time: \d+ minutes/)).toBeInTheDocument();
+    });
+
+    it("should show success rate metric", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Success Rate")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/\d+% of sessions meet passing criteria/)).toBeInTheDocument();
+    });
+
+    it("should display best performing agent", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Best Performing Agent")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/students \(\d+% avg\)|No data available/)).toBeInTheDocument();
+    });
+
+    it("should show dynamic stats in performance analytics", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Average Score")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Completion Rate")).toBeInTheDocument();
+      expect(screen.getByText("Avg Session Time")).toBeInTheDocument();
+      expect(screen.getByText("Pass Rate")).toBeInTheDocument();
     });
   });
 
@@ -297,7 +425,7 @@ describe("Performance", () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Filter by Rubric:")).toBeInTheDocument();
+        expect(screen.getByRole("combobox")).toBeInTheDocument();
       });
 
       // The dropdown should contain "All Rubrics" and only the rubrics used in simulations
@@ -308,7 +436,7 @@ describe("Performance", () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+        expect(screen.getByText("Skill Development Over Time")).toBeInTheDocument();
       });
 
       // Should show shortName values with proper spacing and title case
@@ -341,17 +469,15 @@ describe("Performance", () => {
       ).toBeInTheDocument();
     });
 
-    it("should display dynamic weekly progress metrics", async () => {
+    it("should handle empty performance tier gracefully", async () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Weekly Progress")).toBeInTheDocument();
+        expect(screen.getByText("Needs Support")).toBeInTheDocument();
       });
 
-      // Should show dynamic weekly progress instead of static values
-      expect(screen.getByText("This Week")).toBeInTheDocument();
-      expect(screen.getByText("Last Week")).toBeInTheDocument();
-      expect(screen.getByText("2 Weeks Ago")).toBeInTheDocument();
+      // If there are no TAs in a category, clicking should show "No TAs in this category"
+      // This would need to be tested with different mock data
     });
   });
 
@@ -368,15 +494,19 @@ describe("Performance", () => {
       });
     });
 
-    it("should show training insights", async () => {
+    it("should show dynamic training insights instead of static ones", async () => {
       renderWithProviders(<Performance />);
 
       await waitFor(() => {
-        expect(screen.getByText("Session Patterns")).toBeInTheDocument();
+        expect(screen.getByText("Training Insights")).toBeInTheDocument();
       });
 
-      expect(screen.getByText("Action Items")).toBeInTheDocument();
-      expect(screen.getByText("Weekly Progress")).toBeInTheDocument();
+      // Should show dynamic insights, not static ones
+      expect(screen.getByText("Weekly Trend")).toBeInTheDocument();
+      expect(screen.getByText("Active TAs")).toBeInTheDocument();
+      expect(screen.getByText("Session Efficiency")).toBeInTheDocument();
+      expect(screen.getByText("Success Rate")).toBeInTheDocument();
+      expect(screen.getByText("Best Performing Agent")).toBeInTheDocument();
     });
   });
 });

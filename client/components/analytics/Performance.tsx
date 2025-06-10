@@ -24,6 +24,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   TrendingUp,
   Target,
   Brain,
@@ -33,6 +40,7 @@ import {
   AlertTriangle,
   Award,
   MessageSquare,
+  Users,
 } from "lucide-react";
 import {
   LineChart,
@@ -343,13 +351,6 @@ export default function Performance() {
       return gradeDate >= twoWeeksAgo && gradeDate < weekAgo;
     });
 
-    const twoWeeksAgoGrades = filteredGrades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const threeWeeksAgo = subDays(new Date(), 21);
-      const twoWeeksAgo = subDays(new Date(), 14);
-      return gradeDate >= threeWeeksAgo && gradeDate < twoWeeksAgo;
-    });
-
     const currentWeekAvg =
       currentWeekGrades.length > 0
         ? Math.round(
@@ -366,37 +367,23 @@ export default function Performance() {
         )
         : 0;
 
-    const twoWeeksAgoAvg =
-      twoWeeksAgoGrades.length > 0
-        ? Math.round(
-          twoWeeksAgoGrades.reduce((sum, g) => sum + g.score, 0) /
-          twoWeeksAgoGrades.length,
+    // Calculate additional dynamic metrics
+    const avgSessionTime = filteredGrades.length > 0
+      ? Math.round(
+          filteredGrades
+            .filter(g => g.timeTaken)
+            .reduce((sum, g) => sum + (g.timeTaken || 0), 0) / 
+          filteredGrades.filter(g => g.timeTaken).length / 60
         )
-        : 0;
+      : 0;
 
-    const weeklyProgress = [
-      {
-        week: "This Week",
-        score: currentWeekAvg,
-        change:
-          lastWeekAvg > 0
-            ? `${currentWeekAvg >= lastWeekAvg ? "+" : ""}${currentWeekAvg - lastWeekAvg}%`
-            : "N/A",
-      },
-      {
-        week: "Last Week",
-        score: lastWeekAvg,
-        change:
-          twoWeeksAgoAvg > 0
-            ? `${lastWeekAvg >= twoWeeksAgoAvg ? "+" : ""}${lastWeekAvg - twoWeeksAgoAvg}%`
-            : "N/A",
-      },
-      {
-        week: "2 Weeks Ago",
-        score: twoWeeksAgoAvg,
-        change: "Baseline",
-      },
-    ];
+    const passRate = filteredGrades.length > 0
+      ? Math.round((filteredGrades.filter(g => g.passed).length / filteredGrades.length) * 100)
+      : 0;
+
+    const activeTAs = taPerformance.filter(ta => ta.totalSessions > 0).length;
+
+    const weeklyTrend = currentWeekAvg - lastWeekAvg;
 
     return {
       skillCategories,
@@ -405,7 +392,12 @@ export default function Performance() {
       skillProgressionData,
       taPerformance,
       completionRate,
-      weeklyProgress,
+      avgSessionTime,
+      passRate,
+      activeTAs,
+      weeklyTrend,
+      currentWeekAvg,
+      lastWeekAvg,
     };
   }, [
     users,
@@ -455,6 +447,42 @@ export default function Performance() {
     COLORS.success,
     COLORS.warning,
     COLORS.purple,
+  ];
+
+  // Performance tier data with TAs
+  const performanceTiers = [
+    {
+      label: "Excellent",
+      range: "90-100%",
+      tas: analytics.taPerformance.filter((ta) => ta.avgScore >= 90),
+      color: COLORS.success,
+      bgColor: "bg-green-50",
+      borderColor: "border-green-200",
+    },
+    {
+      label: "Good",
+      range: "80-89%",
+      tas: analytics.taPerformance.filter((ta) => ta.avgScore >= 80 && ta.avgScore < 90),
+      color: COLORS.primary,
+      bgColor: "bg-blue-50",
+      borderColor: "border-blue-200",
+    },
+    {
+      label: "Average",
+      range: "70-79%",
+      tas: analytics.taPerformance.filter((ta) => ta.avgScore >= 70 && ta.avgScore < 80),
+      color: COLORS.warning,
+      bgColor: "bg-yellow-50",
+      borderColor: "border-yellow-200",
+    },
+    {
+      label: "Needs Support",
+      range: "<70%",
+      tas: analytics.taPerformance.filter((ta) => ta.avgScore < 70),
+      color: COLORS.danger,
+      bgColor: "bg-red-50",
+      borderColor: "border-red-200",
+    },
   ];
 
   return (
@@ -535,15 +563,16 @@ export default function Performance() {
       {/* Skill Development Over Time */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Skill Development Over Time
-          </CardTitle>
-          <CardDescription>
-            Track improvement in key competencies across all TAs
-          </CardDescription>
-          <div className="flex items-center gap-4 mt-4">
-            <label className="text-sm font-medium">Filter by Rubric:</label>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Skill Development Over Time
+              </CardTitle>
+              <CardDescription>
+                Track improvement in key competencies across all TAs
+              </CardDescription>
+            </div>
             <Select
               value={selectedRubricId}
               onValueChange={setSelectedRubricId}
@@ -623,70 +652,76 @@ export default function Performance() {
             {/* Score Distribution */}
             <div>
               <div className="grid grid-cols-2 gap-4 mb-4">
-                {[
-                  {
-                    label: "Excellent",
-                    range: "90-100%",
-                    count: analytics.taPerformance.filter(
-                      (ta) => ta.avgScore >= 90,
-                    ).length,
-                    color: COLORS.success,
-                    bgColor: "bg-green-50",
-                  },
-                  {
-                    label: "Good",
-                    range: "80-89%",
-                    count: analytics.taPerformance.filter(
-                      (ta) => ta.avgScore >= 80 && ta.avgScore < 90,
-                    ).length,
-                    color: COLORS.primary,
-                    bgColor: "bg-blue-50",
-                  },
-                  {
-                    label: "Average",
-                    range: "70-79%",
-                    count: analytics.taPerformance.filter(
-                      (ta) => ta.avgScore >= 70 && ta.avgScore < 80,
-                    ).length,
-                    color: COLORS.warning,
-                    bgColor: "bg-yellow-50",
-                  },
-                  {
-                    label: "Needs Support",
-                    range: "<70%",
-                    count: analytics.taPerformance.filter(
-                      (ta) => ta.avgScore < 70,
-                    ).length,
-                    color: COLORS.danger,
-                    bgColor: "bg-red-50",
-                  },
-                ].map((tier) => (
-                  <div
-                    key={tier.label}
-                    className={`p-3 rounded-lg border ${tier.bgColor}`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium">{tier.label}</span>
-                      <span
-                        className="text-lg font-bold"
-                        style={{ color: tier.color }}
-                      >
-                        {tier.count}
-                      </span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {tier.range}
-                    </div>
-                    <div className="mt-2 h-1 bg-gray-200 rounded">
+                {performanceTiers.map((tier) => (
+                  <Dialog key={tier.label}>
+                    <DialogTrigger asChild>
                       <div
-                        className="h-1 rounded transition-all duration-200"
-                        style={{
-                          backgroundColor: tier.color,
-                          width: `${analytics.taPerformance.length > 0 ? (tier.count / analytics.taPerformance.length) * 100 : 0}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
+                        className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${tier.bgColor} ${tier.borderColor}`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium">{tier.label}</span>
+                          <span
+                            className="text-lg font-bold"
+                            style={{ color: tier.color }}
+                          >
+                            {tier.tas.length}
+                          </span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {tier.range}
+                        </div>
+                        <div className="mt-2 h-1 bg-gray-200 rounded">
+                          <div
+                            className="h-1 rounded transition-all duration-200"
+                            style={{
+                              backgroundColor: tier.color,
+                              width: `${analytics.taPerformance.length > 0 ? (tier.tas.length / analytics.taPerformance.length) * 100 : 0}%`,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" />
+                          {tier.label} TAs ({tier.tas.length})
+                        </DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-3 max-h-[400px] overflow-y-auto">
+                        {tier.tas.length > 0 ? (
+                          tier.tas.map((ta) => (
+                            <div
+                              key={ta.id}
+                              className="flex items-center justify-between p-3 rounded-lg border"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                                  {ta.initials}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{ta.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {ta.username}@purdue.edu
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-lg font-bold">{ta.avgScore}%</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {ta.completedSessions}/{ta.totalSessions} sessions
+                                </p>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-center text-muted-foreground py-4">
+                            No TAs in this category
+                          </p>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                 ))}
               </div>
             </div>
@@ -694,7 +729,7 @@ export default function Performance() {
             {/* Divider */}
             <div className="h-px bg-gray-200 my-4"></div>
 
-            {/* Quick Stats */}
+            {/* Dynamic Stats */}
             <div className="grid grid-cols-2 gap-3">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
@@ -708,17 +743,17 @@ export default function Performance() {
                 </div>
                 <div className="text-xs text-green-600">Completion Rate</div>
               </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {Math.round(analytics.completionRate)}%
+              <div className="text-center p-3 bg-purple-50 rounded-lg">
+                <div className="text-2xl font-bold text-purple-600">
+                  {analytics.avgSessionTime}m
                 </div>
-                <div className="text-xs text-green-600">Completion Rate</div>
+                <div className="text-xs text-purple-600">Avg Session Time</div>
               </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">
-                  {Math.round(analytics.completionRate)}%
+              <div className="text-center p-3 bg-orange-50 rounded-lg">
+                <div className="text-2xl font-bold text-orange-600">
+                  {analytics.passRate}%
                 </div>
-                <div className="text-xs text-green-600">Completion Rate</div>
+                <div className="text-xs text-orange-600">Pass Rate</div>
               </div>
             </div>
           </CardContent>
@@ -731,23 +766,27 @@ export default function Performance() {
               Training Insights
             </CardTitle>
             <CardDescription>
-              Patterns and recommendations from training data
+              Dynamic patterns and recommendations from training data
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* Session Completion Insights */}
+            {/* Dynamic Insights */}
             <div>
               <div className="space-y-3">
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5" />
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-yellow-800">
-                        Peak Difficulty: Aggressive Students
+                      <div className="text-sm font-medium text-blue-800">
+                        Weekly Trend
                       </div>
-                      <div className="text-xs text-yellow-700 mt-1">
-                        TAs score 15% lower when handling aggressive
-                        personalities
+                      <div className="text-xs text-blue-700 mt-1">
+                        {analytics.weeklyTrend > 0 
+                          ? `Scores improved by ${analytics.weeklyTrend}% this week`
+                          : analytics.weeklyTrend < 0
+                          ? `Scores decreased by ${Math.abs(analytics.weeklyTrend)}% this week`
+                          : "Scores remained stable this week"
+                        }
                       </div>
                     </div>
                   </div>
@@ -755,55 +794,62 @@ export default function Performance() {
 
                 <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <Award className="h-4 w-4 text-green-600 mt-0.5" />
+                    <Users className="h-4 w-4 text-green-600 mt-0.5" />
                     <div>
                       <div className="text-sm font-medium text-green-800">
-                        Strength: Happy Students
+                        Active TAs
                       </div>
                       <div className="text-xs text-green-700 mt-1">
-                        Highest success rate (88%) with positive personalities
+                        {analytics.activeTAs} TAs have completed training sessions
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-blue-800">
-                        Improvement Trend
+                      <div className="text-sm font-medium text-yellow-800">
+                        Session Efficiency
                       </div>
-                      <div className="text-xs text-blue-700 mt-1">
-                        Overall scores increased 8% over the last month
+                      <div className="text-xs text-yellow-700 mt-1">
+                        Average session time: {analytics.avgSessionTime} minutes
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <Award className="h-4 w-4 text-purple-600 mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-blue-800">
-                        Improvement Trend
+                      <div className="text-sm font-medium text-purple-800">
+                        Success Rate
                       </div>
-                      <div className="text-xs text-blue-700 mt-1">
-                        Overall scores increased 8% over the last month
+                      <div className="text-xs text-purple-700 mt-1">
+                        {analytics.passRate}% of sessions meet passing criteria
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
                   <div className="flex items-start gap-2">
-                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
                     <div>
-                      <div className="text-sm font-medium text-blue-800">
-                        Improvement Trend
+                      <div className="text-sm font-medium text-orange-800">
+                        Best Performing Agent
                       </div>
-                      <div className="text-xs text-blue-700 mt-1">
-                        Overall scores increased 8% over the last month
+                      <div className="text-xs text-orange-700 mt-1">
+                        {analytics.performanceByType.length > 0 
+                          ? `${analytics.performanceByType.reduce((best, current) => 
+                              current.score > best.score ? current : best
+                            ).name} students (${analytics.performanceByType.reduce((best, current) => 
+                              current.score > best.score ? current : best
+                            ).score}% avg)`
+                          : "No data available"
+                        }
                       </div>
                     </div>
                   </div>
