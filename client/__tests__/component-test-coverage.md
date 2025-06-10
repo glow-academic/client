@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T14:45:54.418Z
+Generated on: 2025-06-10T14:58:38.083Z
 
 ## Summary
 - **Total Components**: 54
-- **Tests Created**: 0
-- **Tests Updated**: 22
-- **Tests Skipped** (already implemented): 32
+- **Tests Created**: 1
+- **Tests Updated**: 20
+- **Tests Skipped** (already implemented): 33
 
 ## Component Coverage
 
@@ -59,7 +59,7 @@ Generated on: 2025-06-10T14:45:54.418Z
 | ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
 | Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
-| EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
+| EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
