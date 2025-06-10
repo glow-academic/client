@@ -6,7 +6,7 @@
  */
 "use client";
 
-import NewClass from "@/components/classes/NewClass";
+import NewClass from "@/components/management/classes/NewClass";
 
 export default function NewClassPage() {
   return <div className="space-y-6"><NewClass /></div>;

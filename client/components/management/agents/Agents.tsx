@@ -65,7 +65,7 @@ export default function Agents() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/chat/agents/a/${id}`);
+    router.push(`/management/agents/a/${id}`);
   };
 
   return (

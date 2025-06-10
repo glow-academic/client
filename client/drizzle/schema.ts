@@ -107,6 +107,7 @@ export const standardGroups = pgTable("standard_groups", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
+	shortName: text("short_name").notNull(),
 	description: text().notNull(),
 	points: integer().notNull(),
 	passPoints: integer("pass_points").notNull(),

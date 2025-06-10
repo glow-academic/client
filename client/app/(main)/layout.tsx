@@ -45,11 +45,6 @@ export default function MainLayout({
   const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
   const { userId } = useAuth();
 
-  // Extract classId from edit page path or new class status page path
-  const classEditPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)\/edit$/);
-  const newClassPageMatch = pathname.match(/^\/classes\/new\/c\/([^\/]+)$/);
-  const classId = classEditPageMatch?.[1] || newClassPageMatch?.[1];
-
   // Check if we're on the logs page
   const isLogsPage = pathname === '/analytics/logs';
 
@@ -58,13 +53,6 @@ export default function MainLayout({
     queryKey: ["user", userId],
     queryFn: () => getUser(userId!),
     enabled: !!userId,
-  });
-
-  // Fetch class data for delete confirmation
-  const { data: classData } = useQuery({
-    queryKey: ["class", classId],
-    queryFn: () => getClass(classId!),
-    enabled: !!classId,
   });
 
   // Load enhanced breadcrumbs with async ID resolution
@@ -89,23 +77,6 @@ export default function MainLayout({
     </div>
   ) : null;
 
-  const handleDeleteClass = async () => {
-    if (!classId) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteClass(classId);
-      queryClient.invalidateQueries({ queryKey: ["classes"] });
-      toast.success("Class deleted successfully!");
-      router.push('/classes');
-    } catch (error) {
-      toast.error(`Failed to delete class: ${error instanceof Error ? error.message : "Unknown error"}`);
-      console.error("Error deleting class:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
@@ -121,50 +92,6 @@ export default function MainLayout({
           <Pencil className="h-4 w-4 mr-2" />
           Edit Class
         </Button>
-      );
-    }
-
-    // Check for new class status page pattern: /classes/new/[classId]
-    if (newClassPageMatch) {
-      const classId = newClassPageMatch[1];
-      return (
-        <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit Class
-        </Button>
-      );
-    }
-
-    // Check for class edit page pattern: /classes/c/[classId]/edit
-    if (classEditPageMatch && classData) {
-      return (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button size="sm" variant="destructive" disabled={isDeleting}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isDeleting ? "Deleting..." : "Delete Class"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the class
-                "{classData.classCode}" and remove all associated data.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteClass}
-                disabled={isDeleting}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {isDeleting ? "Deleting..." : "Delete Class"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       );
     }
 
@@ -186,7 +113,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/rubrics')) {
+    if (pathname.startsWith('/create/rubrics') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/create/rubrics/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -195,7 +122,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/simulations/agents')) {
+    if (pathname.startsWith('/create/simulations/agents') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -213,7 +140,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/management/staff')) {
+    if (pathname.startsWith('/management/staff') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/management/staff/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -222,7 +149,16 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/management/agents')) {
+    if (pathname.startsWith('/management/classes') && !pathname.includes('/new')) {
+      return (
+        <Button onClick={() => router.push('/management/classes/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Class
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/management/agents') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/management/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />

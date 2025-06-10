@@ -43,6 +43,13 @@
       "when": 1749482864100,
       "tag": "0005_light_puff_adder",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1749512200091,
+      "tag": "0006_grey_slapstick",
+      "breakpoints": true
     }
   ]
 }

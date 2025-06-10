@@ -19,6 +19,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
+    short_name TEXT        NOT NULL,
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
@@ -44,18 +45,18 @@ INSERT INTO rubrics (id, name, description, points, pass_points) VALUES
   ('44444444-4444-4444-4444-444444444444', 'AI Student Performance Evaluation Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 100, 70);
 
 -- Insert Standard Groups for Teaching Assistant Rubric
-INSERT INTO standard_groups (id, name, description, points, pass_points, rubric_id) VALUES
-  ('11111111-aaaa-bbbb-cccc-333333333333', 'Facilitates student-driven learning', 'Ability to guide students to discover solutions independently through questioning', 25, 18, '33333333-3333-3333-3333-333333333333'),
-  ('22222222-aaaa-bbbb-cccc-333333333333', 'Demonstrates understanding of course objectives', 'Knowledge and articulation of course goals and learning outcomes', 25, 18, '33333333-3333-3333-3333-333333333333'),
-  ('33333333-aaaa-bbbb-cccc-333333333333', 'Manages session time effectively', 'Efficient use of session time and respect for scheduling', 25, 18, '33333333-3333-3333-3333-333333333333'),
-  ('44444444-aaaa-bbbb-cccc-333333333333', 'Adapts approach to individual student needs', 'Flexibility in teaching approach based on student personality and needs', 25, 18, '33333333-3333-3333-3333-333333333333');
+INSERT INTO standard_groups (id, name, short_name, description, points, pass_points, rubric_id) VALUES
+  ('11111111-aaaa-bbbb-cccc-333333333333', 'Facilitates student-driven learning', 'Active Listening', 'Ability to guide students to discover solutions independently through questioning', 25, 18, '33333333-3333-3333-3333-333333333333'),
+  ('22222222-aaaa-bbbb-cccc-333333333333', 'Demonstrates understanding of course objectives', 'Content Mastery', 'Knowledge and articulation of course goals and learning outcomes', 25, 18, '33333333-3333-3333-3333-333333333333'),
+  ('33333333-aaaa-bbbb-cccc-333333333333', 'Manages session time effectively', 'Time Management', 'Efficient use of session time and respect for scheduling', 25, 18, '33333333-3333-3333-3333-333333333333'),
+  ('44444444-aaaa-bbbb-cccc-333333333333', 'Adapts approach to individual student needs', 'Adaptability', 'Flexibility in teaching approach based on student personality and needs', 25, 18, '33333333-3333-3333-3333-333333333333');
 
 -- Insert Standard Groups for AI Student Performance Rubric
-INSERT INTO standard_groups (id, name, description, points, pass_points, rubric_id) VALUES
-  ('11111111-aaaa-bbbb-cccc-444444444444', 'Maintains character consistency', 'Ability to consistently portray assigned personality traits throughout the conversation', 25, 18, '44444444-4444-4444-4444-444444444444'),
-  ('22222222-aaaa-bbbb-cccc-444444444444', 'Demonstrates realistic learning progression', 'Shows appropriate confusion, understanding, and growth patterns typical of real students', 25, 18, '44444444-4444-4444-4444-444444444444'),
-  ('33333333-aaaa-bbbb-cccc-444444444444', 'Engages appropriately with content', 'Asks relevant questions and responds at appropriate academic level for the course', 25, 18, '44444444-4444-4444-4444-444444444444'),
-  ('44444444-aaaa-bbbb-cccc-444444444444', 'Maintains conversational flow', 'Responds with appropriate timing and depth to keep the educational conversation productive', 25, 18, '44444444-4444-4444-4444-444444444444');
+INSERT INTO standard_groups (id, name, short_name, description, points, pass_points, rubric_id) VALUES
+  ('11111111-aaaa-bbbb-cccc-444444444444', 'Maintains character consistency', 'Character Consistency', 'Ability to consistently portray assigned personality traits throughout the conversation', 25, 18, '44444444-4444-4444-4444-444444444444'),
+  ('22222222-aaaa-bbbb-cccc-444444444444', 'Demonstrates realistic learning progression', 'Learning Progression', 'Shows appropriate confusion, understanding, and growth patterns typical of real students', 25, 18, '44444444-4444-4444-4444-444444444444'),
+  ('33333333-aaaa-bbbb-cccc-444444444444', 'Engages appropriately with content', 'Content Engagement', 'Asks relevant questions and responds at appropriate academic level for the course', 25, 18, '44444444-4444-4444-4444-444444444444'),
+  ('44444444-aaaa-bbbb-cccc-444444444444', 'Maintains conversational flow', 'Conversational Flow', 'Responds with appropriate timing and depth to keep the educational conversation productive', 25, 18, '44444444-4444-4444-4444-444444444444');
 
 -- Insert Standards for Teaching Assistant Rubric with rating descriptions
 INSERT INTO standards (id, name, description, points, standard_group_id) VALUES

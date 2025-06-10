@@ -6,7 +6,7 @@
  */
 "use client";
 
-import ClassStatus from "@/components/classes/ClassStatus";
+import ClassStatus from "@/components/management/classes/ClassStatus";
 import { use } from "react";
 
 export default function ClassStatusPage({ params }: { params: Promise<{ classId: string }> }) {

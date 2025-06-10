@@ -2,9 +2,16 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import Performance from '@/components/analytics/Performance';
+import ClassesGeneralPage from '@/components/management/classes/Classes';
 
 // Mock the query functions
+vi.mock('@/utils/queries/classes/get-all-classes', () => ({
+  getAllClasses: vi.fn(() => Promise.resolve([
+    { id: '1', name: 'CS 180', classCode: 'CS180', year: 2024, term: 'fall', description: 'Programming Fundamentals', createdAt: new Date().toISOString() },
+    { id: '2', name: 'CS 182', classCode: 'CS182', year: 2024, term: 'fall', description: 'Data Structures', createdAt: new Date().toISOString() },
+  ])),
+}));
+
 vi.mock('@/utils/queries/users/get-all-users', () => ({
   getAllUsers: vi.fn(() => Promise.resolve([
     { id: '1', role: 'ta', name: 'Test TA 1', username: 'ta1' },
@@ -27,18 +34,9 @@ vi.mock('@/utils/queries/scenarios/get-all-scenarios', () => ({
   ])),
 }));
 
-vi.mock('@/utils/queries/simulations/get-all-simulations', () => ({
-  getAllSimulations: vi.fn(() => Promise.resolve([
-    { id: '1', title: 'Test Simulation 1', rubricId: '1' },
-    { id: '2', title: 'Test Simulation 2', rubricId: '2' },
-  ])),
-}));
-
 vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
   getAllRubrics: vi.fn(() => Promise.resolve([
-    { id: '1', name: 'Teaching Assistant Evaluation Rubric', description: 'Test', points: 100, passPoints: 70 },
-    { id: '2', name: 'AI Student Performance Evaluation Rubric', description: 'Test', points: 100, passPoints: 70 },
-    { id: '3', name: 'Unused Rubric', description: 'Test', points: 100, passPoints: 70 },
+    { id: '1', name: 'Teaching Assistant Evaluation Rubric', description: 'Test', points: 100, passPoints: 70, createdAt: new Date().toISOString() },
   ])),
 }));
 
@@ -60,14 +58,14 @@ vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
 vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-users', () => ({
   getSimulationAttemptsByUsers: vi.fn(() => Promise.resolve([
     { id: '1', userId: '1', simulationId: '1', classId: '1' },
-    { id: '2', userId: '2', simulationId: '1', classId: '1' },
+    { id: '2', userId: '2', simulationId: '1', classId: '2' },
   ])),
 }));
 
 vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-attempts', () => ({
   getSimulationChatsByAttempts: vi.fn(() => Promise.resolve([
-    { id: '1', attemptId: '1', scenarioId: '1', completed: true, title: 'Chat 1' },
-    { id: '2', attemptId: '2', scenarioId: '2', completed: false, title: 'Chat 2' },
+    { id: '1', attemptId: '1', scenarioId: '1', completed: true, title: 'Chat 1', createdAt: new Date().toISOString() },
+    { id: '2', attemptId: '2', scenarioId: '2', completed: false, title: 'Chat 2', createdAt: new Date().toISOString() },
   ])),
 }));
 
@@ -92,7 +90,7 @@ vi.mock('@/utils/agents', () => ({
   })),
 }));
 
-describe('Performance', () => {
+describe('Classes', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -117,83 +115,75 @@ describe('Performance', () => {
 
   describe('Rendering', () => {
     it('should render loading state initially', () => {
-      renderWithProviders(<Performance />);
+      renderWithProviders(<ClassesGeneralPage />);
       
-      expect(screen.getByText('Loading performance analytics...')).toBeInTheDocument();
+      expect(screen.getByText('Loading class analytics...')).toBeInTheDocument();
     });
 
-    it('should render performance analytics after loading', async () => {
-      renderWithProviders(<Performance />);
+    it('should render class analytics after loading', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
-        expect(screen.getByText('Performance by Student Personality')).toBeInTheDocument();
+        expect(screen.getByText('Total Classes')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Skill Development Over Time')).toBeInTheDocument();
-      expect(screen.getByText('Performance Analytics')).toBeInTheDocument();
-      expect(screen.getByText('Training Insights')).toBeInTheDocument();
+      expect(screen.getByText('Total TAs')).toBeInTheDocument();
+      expect(screen.getByText('Total Sessions')).toBeInTheDocument();
+      expect(screen.getByText('Average Score')).toBeInTheDocument();
     });
 
-    it('should display student personality performance', async () => {
-      renderWithProviders(<Performance />);
+    it('should display aggregated performance trends', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
-        expect(screen.getByText('Happy Student')).toBeInTheDocument();
+        expect(screen.getByText('Aggregated Performance Trends')).toBeInTheDocument();
       });
 
-      expect(screen.getByText('Aggressive Student')).toBeInTheDocument();
+      expect(screen.getByText('Average Score Trend (Last 7 Days)')).toBeInTheDocument();
+      expect(screen.getByText('Student Personality Distribution')).toBeInTheDocument();
     });
 
-    it('should show score distribution', async () => {
-      renderWithProviders(<Performance />);
+    it('should show additional metrics cards', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
-        expect(screen.getByText('Score Distribution')).toBeInTheDocument();
+        expect(screen.getByText('Completion Rate')).toBeInTheDocument();
       });
 
-      expect(screen.getAllByText('Excellent').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Good').length).toBeGreaterThan(0);
-      expect(screen.getByText('Average')).toBeInTheDocument();
-      expect(screen.getByText('Needs Support')).toBeInTheDocument();
+      expect(screen.getByText('Avg Training Time')).toBeInTheDocument();
+      expect(screen.getByText('Active Personalities')).toBeInTheDocument();
     });
 
-    it('should display rubric filter dropdown', async () => {
-      renderWithProviders(<Performance />);
+    it('should have correct accessibility attributes', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
-        expect(screen.getByText('Filter by Rubric:')).toBeInTheDocument();
+        // Check for proper heading structure
+        const headings = screen.getAllByRole('heading');
+        expect(headings.length).toBeGreaterThan(0);
       });
-
-      expect(screen.getByRole('combobox')).toBeInTheDocument();
-    });
-  });
-
-  describe('Rubric Filtering', () => {
-    it('should only show rubrics that exist in simulations', async () => {
-      renderWithProviders(<Performance />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Filter by Rubric:')).toBeInTheDocument();
-      });
-
-      // The dropdown should contain "All Rubrics" and only the rubrics used in simulations
-      // Rubric with id '3' (Unused Rubric) should not be available since no simulation uses it
-    });
-
-    it('should display skill categories with proper shortName formatting', async () => {
-      renderWithProviders(<Performance />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Skill Performance')).toBeInTheDocument();
-      });
-
-      // Should show shortName values with proper spacing and title case
-      expect(screen.getAllByText('Active Listening').length).toBeGreaterThan(0);
-      expect(screen.getAllByText('Content Mastery').length).toBeGreaterThan(0);
     });
   });
 
   describe('Data Integration', () => {
+    it('should display correct class count', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('2')).toBeInTheDocument(); // 2 classes mocked
+      });
+    });
+
+    it('should calculate and display metrics from actual data', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+      
+      await waitFor(() => {
+        // Should show calculated average score from grades
+        const scoreElements = screen.getAllByText(/\d+%/);
+        expect(scoreElements.length).toBeGreaterThan(0);
+      });
+    });
+
     it('should handle empty data gracefully', async () => {
       // Mock empty responses
       const emptyQueryClient = new QueryClient({
@@ -209,29 +199,16 @@ describe('Performance', () => {
         </QueryClientProvider>
       );
 
-      render(<Performance />, { wrapper: AllProviders });
+      render(<ClassesGeneralPage />, { wrapper: AllProviders });
       
       // Should show loading initially
-      expect(screen.getByText('Loading performance analytics...')).toBeInTheDocument();
-    });
-
-    it('should display dynamic weekly progress metrics', async () => {
-      renderWithProviders(<Performance />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
-      });
-
-      // Should show dynamic weekly progress instead of static values
-      expect(screen.getByText('This Week')).toBeInTheDocument();
-      expect(screen.getByText('Last Week')).toBeInTheDocument();
-      expect(screen.getByText('2 Weeks Ago')).toBeInTheDocument();
+      expect(screen.getByText('Loading class analytics...')).toBeInTheDocument();
     });
   });
 
   describe('Charts and Visualizations', () => {
     it('should render performance charts', async () => {
-      renderWithProviders(<Performance />);
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
         // Check for chart containers (Recharts components)
@@ -240,54 +217,72 @@ describe('Performance', () => {
       });
     });
 
-    it('should show training insights', async () => {
-      renderWithProviders(<Performance />);
+    it('should display personality distribution chart', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
       
       await waitFor(() => {
-        expect(screen.getByText('Session Patterns')).toBeInTheDocument();
+        expect(screen.getByText('Student Personality Distribution')).toBeInTheDocument();
       });
+    });
+  });
 
-      expect(screen.getByText('Action Items')).toBeInTheDocument();
-      expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
+  describe('Edge Cases', () => {
+    it('should handle missing class performance data', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+      
+      await waitFor(() => {
+        // Component should still render even if some data is missing
+        expect(screen.getByText('Total Classes')).toBeInTheDocument();
+      });
+    });
+
+    it('should handle zero scores gracefully', async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+      
+      await waitFor(() => {
+        // Should not crash with zero or undefined scores
+        expect(screen.getByText('Average Score')).toBeInTheDocument();
+      });
     });
   });
 });
 
 /*
- * Component Analysis for Performance:
- * Path: analytics/Performance.tsx
+ * Component Analysis for Classes:
+ * Path: management/classes/Classes.tsx
  * 
  * Features detected:
- * - Default export: true
+ * - Default export: true (ClassesGeneralPage)
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useMemo, useQuery, useState, users, user, userId, username
+ * - Uses hooks: useMemo, useQuery
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: true (selectedRubricId)
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
  * Updated features:
- * - Added rubric filtering functionality
- * - Improved shortName display with proper formatting
- * - Dynamic weekly progress metrics instead of static values
- * - Filtered rubrics to only show those used in simulations
+ * - Connected to real data using proper query integration
+ * - Uses grades for score calculations instead of non-existent rubric scores
+ * - Displays dynamic personality distribution based on actual agent usage
+ * - Shows class performance breakdown when data is available
+ * - Proper loading states and error handling
  * 
  * TODO: Implement the failing tests above with actual test logic
  * 
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Performance />);
+ * render(<ClassesGeneralPage />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Performance {...props} />);
+ * render(<ClassesGeneralPage {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

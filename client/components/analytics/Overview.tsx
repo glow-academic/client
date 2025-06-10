@@ -48,6 +48,7 @@ import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/querie
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { StandardGroup } from "@/types";
 
 // Color palette for charts
 const COLORS = {
@@ -125,7 +126,7 @@ export default function Overview() {
       totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
 
     // Group standards by their names to create skill categories
-    const skillCategories = standardGroups.reduce((acc, group) => {
+    const skillCategories = standardGroups.reduce((acc, group: StandardGroup) => {
       const groupStandards = standards.filter(s => s.standardGroupId === group.id);
       const groupFeedbacks = feedbacks.filter(f => 
         groupStandards.some(s => s.id === f.standardId)
@@ -136,7 +137,7 @@ export default function Overview() {
           (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length / 
            Math.max(...groupStandards.map(s => s.points))) * 100
         );
-        acc[group.name] = avgScore;
+        acc[group.shortName] = avgScore;
       }
       
       return acc;
@@ -261,8 +262,8 @@ export default function Overview() {
   const topSkills = Object.entries(analytics.skillCategories)
     .sort(([,a], [,b]) => b - a)
     .slice(0, 4)
-    .map(([name, score], index) => ({
-      name,
+    .map(([shortName, score], index) => ({
+      shortName,
       score,
       icon: [Target, Brain, Eye, Zap][index] || Target,
     }));
@@ -399,11 +400,11 @@ export default function Overview() {
           <CardContent>
             <div className="space-y-4">
               {topSkills.length > 0 ? topSkills.map((skill) => (
-                <div key={skill.name} className="space-y-2">
+                <div key={skill.shortName} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <skill.icon className="h-4 w-4 text-muted-foreground" />
-                      <span>{skill.name}</span>
+                      <span>{skill.shortName}</span>
                     </div>
                     <span className="font-medium">{skill.score}%</span>
                   </div>

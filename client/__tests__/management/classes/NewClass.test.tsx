@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import ClassStatus from '@/components/management/classes/ClassStatus';
+import NewClass from '@/components/management/classes/NewClass';
 
 // Mock external dependencies
 vi.mock('next/navigation', () => ({
@@ -22,7 +22,7 @@ vi.mock('next/navigation', () => ({
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('ClassStatus', () => {
+describe('NewClass', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -48,11 +48,11 @@ describe('ClassStatus', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for ClassStatus
-      renderWithProviders(<ClassStatus />);
+      // TODO: Implement basic rendering test for NewClass
+      renderWithProviders(<NewClass />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for NewClass
     });
 
     
@@ -61,7 +61,7 @@ describe('ClassStatus', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for NewClass
     });
   });
 
@@ -73,7 +73,7 @@ describe('ClassStatus', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: State management test for NewClass
     });
 
     it('should handle user events', async () => {
@@ -81,7 +81,7 @@ describe('ClassStatus', () => {
       const user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: User events test for NewClass
     });
   });
 
@@ -90,21 +90,21 @@ describe('ClassStatus', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: API integration test for NewClass
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for NewClass
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for NewClass
     });
   });
 
@@ -113,7 +113,7 @@ describe('ClassStatus', () => {
       // TODO: Test navigation behavior
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Navigation test for NewClass
     });
   });
 
@@ -122,7 +122,7 @@ describe('ClassStatus', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ClassStatus
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for NewClass
     });
 
     
@@ -130,8 +130,8 @@ describe('ClassStatus', () => {
 });
 
 /*
- * Component Analysis for ClassStatus:
- * Path: classes/ClassStatus.tsx
+ * Component Analysis for NewClass:
+ * Path: management/classes/NewClass.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -139,12 +139,12 @@ describe('ClassStatus', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useState, useEffect, useRouter, useQuery, useQueryClient
+ * - Uses hooks: useState, useRef, useRouter, useQueryClient
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
- * - Uses effects: true
+ * - Uses effects: false
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -152,12 +152,12 @@ describe('ClassStatus', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ClassStatus />);
+ * render(<NewClass />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ClassStatus {...props} />);
+ * render(<NewClass {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

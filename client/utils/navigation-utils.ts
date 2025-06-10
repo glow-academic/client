@@ -29,10 +29,6 @@ export const getSectionRoute = (section: string): string => {
     case 'rubrics':
       return '/create/rubrics';
 
-    // Classes routes
-    case 'new-class':
-      return '/classes/new';
-
     // Management routes
     case 'staff':
       return '/management/staff';
@@ -40,6 +36,8 @@ export const getSectionRoute = (section: string): string => {
       return '/management/agents';
     case 'evals':
       return '/management/evals';
+    case 'classes':
+      return '/management/classes';
 
     // Profile route
     case 'profile':

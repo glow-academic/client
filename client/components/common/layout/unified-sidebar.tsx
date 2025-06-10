@@ -271,13 +271,6 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         });
       }
 
-      // Add general classes section
-      classItems.push({
-        title: "New Class",
-        url: "#",
-        section: "new-class",
-      });
-
       menu.push({
         title: "Classes",
         url: "#",
@@ -295,6 +288,13 @@ export function UnifiedSidebar({ activeSection, onSectionChange, ...props }: Uni
         title: "Staff",
         url: "#",
         section: "staff",
+      });
+
+      // Classes - available for instructional and admin
+      managementItems.push({
+        title: "Classes",
+        url: "#",
+        section: "classes",
       });
 
       // Agents - available for instructional and admin

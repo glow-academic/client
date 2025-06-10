@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-09T22:53:48.724Z
+Generated on: 2025-06-09T23:42:15.151Z
 
 ## Summary
-- **Total Components**: 52
-- **Tests Created**: 0
-- **Tests Updated**: 27
+- **Total Components**: 53
+- **Tests Created**: 3
+- **Tests Updated**: 25
 - **Tests Skipped** (already implemented): 25
 
 ## Component Coverage
@@ -18,8 +18,6 @@ Generated on: 2025-06-09T22:53:48.724Z
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
 | ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ❌ Needs Implementation |
-| ClassStatus | classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
-| NewClass | classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
@@ -57,6 +55,9 @@ Generated on: 2025-06-09T22:53:48.724Z
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
+| Classes | management/classes/Classes.tsx | Classes.test.tsx | ❌ Needs Implementation |
+| NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
@@ -77,8 +78,6 @@ __tests__/
 ├── classes/
 │   ├── ClassDetails.test.tsx
 │   ├── ClassEdit.test.tsx
-│   ├── ClassStatus.test.tsx
-│   ├── NewClass.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
@@ -134,6 +133,10 @@ __tests__/
 │   │   ├── AgentEdit.test.tsx
 │   │   ├── Agents.test.tsx
 │   │   ├── NewAgent.test.tsx
+│   ├── classes/
+│   │   ├── ClassStatus.test.tsx
+│   │   ├── Classes.test.tsx
+│   │   ├── NewClass.test.tsx
 │   ├── evals/
 │   │   ├── EvalEdit.test.tsx
 │   │   ├── Evals.test.tsx

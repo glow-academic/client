@@ -131,7 +131,7 @@ describe('ClassStatus', () => {
 
 /*
  * Component Analysis for ClassStatus:
- * Path: classes/ClassStatus.tsx
+ * Path: management/classes/ClassStatus.tsx
  * 
  * Features detected:
  * - Default export: true
