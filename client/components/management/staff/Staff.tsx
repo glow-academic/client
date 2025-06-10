@@ -6,10 +6,10 @@
  */
 
 import React from "react";
-import { Shield, GraduationCap, User as UserIcon, Search, MoreHorizontal } from "lucide-react";
+import { Shield, GraduationCap, User as UserIcon, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,17 +28,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getUser } from "@/utils/queries/users/get-user";
-import { useAuth } from "@/hooks/use-auth";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { User } from "@/types";
 
@@ -99,15 +89,7 @@ export default function Staff() {
   const [roleFilter, setRoleFilter] = React.useState<string>('all');
   const [sortBy, setSortBy] = React.useState<string>('name');
 
-  const {userId} = useAuth();
   const router = useRouter();
-
-  // Fetch current user to check permissions
-  const { data: currentUser } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
-    enabled: !!userId,
-  });
 
   // Fetch all users
   const { data: allUsers = [], isLoading } = useQuery({
@@ -117,7 +99,7 @@ export default function Staff() {
 
   // Filter staff users (exclude admin and regular users)
   const staffUsers = React.useMemo(() => {
-    return allUsers.filter((user: User) => 
+    return allUsers.filter((user: User) =>
       ['instructional', 'instructor', 'ta'].includes(user.role)
     );
   }, [allUsers]);
@@ -172,10 +154,6 @@ export default function Staff() {
   const handleEditUser = (userId: string) => {
     router.push(`/management/staff/u/${userId}`);
   };
-
-  // Check if current user can edit users
-  const canEdit = currentUser?.role === 'admin' ||
-    (currentUser?.role === 'instructional');
 
   if (isLoading) {
     return (
@@ -239,137 +217,110 @@ export default function Staff() {
         </Card>
       </div>
 
-      {/* Main content */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <UserIcon className="h-5 w-5" />
-            Staff Management
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Filters and Search */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search staff by name, username, or role..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={roleFilter} onValueChange={setRoleFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="instructional">Instructional Staff</SelectItem>
-                <SelectItem value="instructor">Instructors</SelectItem>
-                <SelectItem value="ta">Teaching Assistants</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="Sort by" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="role">Role</SelectItem>
-                <SelectItem value="username">Username</SelectItem>
-                <SelectItem value="classes">Classes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      {/* Filters and Search */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search staff by name, username, or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="Filter by role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="instructional">Instructional Staff</SelectItem>
+            <SelectItem value="instructor">Instructors</SelectItem>
+            <SelectItem value="ta">Teaching Assistants</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={sortBy} onValueChange={setSortBy}>
+          <SelectTrigger className="w-full sm:w-40">
+            <SelectValue placeholder="Sort by" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="name">Name</SelectItem>
+            <SelectItem value="role">Role</SelectItem>
+            <SelectItem value="username">Username</SelectItem>
+            <SelectItem value="classes">Classes</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          {/* Results count */}
-          <div className="mb-4">
-            <p className="text-sm text-muted-foreground">
-              Showing {filteredUsers.length} of {staffUsers.length} staff members
-            </p>
-          </div>
-
-          {/* Staff Table */}
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Staff Member</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Classes</TableHead>
-                  {canEdit && <TableHead className="w-[100px]">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredUsers.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={canEdit ? 5 : 4} className="text-center py-8 text-muted-foreground">
-                      {searchTerm || roleFilter !== 'all' 
-                        ? "No staff members match your filters" 
-                        : "No staff members found"
-                      }
+      {/* Staff Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Staff Member</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Username</TableHead>
+              <TableHead>Classes</TableHead>
+              <TableHead className="w-[100px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  {searchTerm || roleFilter !== 'all'
+                    ? "No staff members match your filters"
+                    : "No staff members found"
+                  }
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredUsers.map((user: User) => {
+                const RoleIcon = getRoleIcon(user.role);
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="text-xs">
+                            {getInitials(user.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-medium">{user.name}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <RoleIcon className="h-4 w-4" />
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {getRoleDisplayName(user.role)}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {user.username}
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {user.classIds?.length || 0} classes
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditUser(user.id)}
+                      >
+                        Edit
+                      </Button>
                     </TableCell>
                   </TableRow>
-                ) : (
-                  filteredUsers.map((user: User) => {
-                    const RoleIcon = getRoleIcon(user.role);
-                    return (
-                      <TableRow key={user.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="text-xs">
-                                {getInitials(user.name)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="font-medium">{user.name}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <RoleIcon className="h-4 w-4" />
-                            <Badge variant={getRoleBadgeVariant(user.role)}>
-                              {getRoleDisplayName(user.role)}
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-sm">
-                          {user.username}
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {user.classIds?.length || 0} classes
-                        </TableCell>
-                        {canEdit && (
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleEditUser(user.id)}>
-                                  Edit User
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    );
-                  })
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

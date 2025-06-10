@@ -8,5 +8,5 @@
 import Simulation from "@/components/common/simulation/Simulation"
 
 export default function SimulationEdit({ simulationId }: { simulationId: string }) {
-  return <Simulation mode="list" simulationId={simulationId} />
+  return <Simulation mode="create" simulationId={simulationId} />
 }

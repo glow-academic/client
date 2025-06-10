@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
@@ -19,11 +19,9 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-// Mock API calls
-global.fetch = vi.fn();
-
 describe('NewStaff', () => {
   let queryClient: QueryClient;
+  const mockPush = vi.fn();
   
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,6 +30,14 @@ describe('NewStaff', () => {
         queries: { retry: false },
         mutations: { retry: false },
       },
+    });
+
+    (useRouter as any).mockReturnValue({
+      push: mockPush,
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
     });
   });
 
@@ -44,94 +50,375 @@ describe('NewStaff', () => {
 
     return render(ui, { wrapper: AllProviders, ...options });
   };
-  
 
   describe('Rendering', () => {
-    it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for NewStaff
+    it('should render tabs for single user and CSV import', () => {
       renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for NewStaff
+      expect(screen.getByRole('tab', { name: /single user/i })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: /csv import/i })).toBeInTheDocument();
     });
 
-    
-
-    it('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
+    it('should render single user form by default', () => {
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for NewStaff
+      expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
     });
-  });
 
-  describe('User Interactions', () => {
-    it('should handle form submissions', async () => {
-      // TODO: Test form handling
+    it('should show all available roles for admin users', async () => {
       const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for NewStaff
-    });
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
 
-    it('should handle state changes', async () => {
-      // TODO: Test state management
+      expect(screen.getByText('Instructional Staff')).toBeInTheDocument();
+      expect(screen.getByText('Instructor')).toBeInTheDocument();
+      expect(screen.getByText('Teaching Assistant')).toBeInTheDocument();
+    });
+  });
+
+  describe('Single User Form', () => {
+    it('should handle form submission for creating staff', async () => {
       const user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for NewStaff
+      renderWithProviders(<NewStaff />);
+
+      // Fill out the form
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      const nameInput = screen.getByLabelText(/full name/i);
+      const usernameInput = screen.getByLabelText(/username/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+
+      await user.type(nameInput, 'Dr. Jane Smith');
+      await user.type(usernameInput, 'jsmith');
+      await user.type(passwordInput, 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /create instructor/i });
+      await user.click(submitButton);
+
+      expect(submitButton).toHaveTextContent('Creating...');
     });
 
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
+    it('should show role-specific placeholders', async () => {
       const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Teaching Assistant'));
+
+      const nameInput = screen.getByLabelText(/full name/i);
+      const usernameInput = screen.getByLabelText(/username/i);
+
+      expect(nameInput).toHaveAttribute('placeholder', 'John Doe');
+      expect(usernameInput).toHaveAttribute('placeholder', 'jdoe');
+    });
+
+    it('should show role information when role is selected', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructional Staff'));
+
+      expect(screen.getByText('Will have permissions to manage instructors and teaching assistants.')).toBeInTheDocument();
+    });
+
+    it('should disable submit button when no role is selected', () => {
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for NewStaff
+      expect(screen.getByRole('button', { name: /create staff member/i })).toBeDisabled();
+    });
+
+    it('should enable submit button when role is selected', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      expect(screen.getByRole('button', { name: /create instructor/i })).not.toBeDisabled();
     });
   });
 
-  describe('API Integration', () => {
-    it('should handle API calls', async () => {
-      // TODO: Test API integration
+  describe('CSV Import', () => {
+    it('should render CSV import tab', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for NewStaff
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      expect(screen.getByRole('button', { name: /download template/i })).toBeInTheDocument();
+      expect(screen.getByText('Include the following columns in the CSV file: name, username, password, role, classIds.')).toBeInTheDocument();
     });
 
-    it('should handle loading states', () => {
-      // TODO: Test loading states
+    it('should show available roles for CSV import', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for NewStaff
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      expect(screen.getByText('Available Roles:')).toBeInTheDocument();
+      expect(screen.getByText('instructional')).toBeInTheDocument();
+      expect(screen.getByText('instructor')).toBeInTheDocument();
+      expect(screen.getByText('ta')).toBeInTheDocument();
     });
 
-    it('should handle error states', () => {
-      // TODO: Test error handling
+    it('should handle file selection', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for NewStaff
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      const fileInput = screen.getByRole('textbox', { hidden: true });
+      expect(fileInput).toHaveAttribute('type', 'file');
+      expect(fileInput).toHaveAttribute('accept', '.csv');
+    });
+
+    it('should download template when button is clicked', async () => {
+      // Mock URL.createObjectURL and related methods
+      const mockCreateObjectURL = vi.fn(() => 'mock-url');
+      const mockRevokeObjectURL = vi.fn();
+      const mockClick = vi.fn();
+      
+      Object.defineProperty(window, 'URL', {
+        value: {
+          createObjectURL: mockCreateObjectURL,
+          revokeObjectURL: mockRevokeObjectURL,
+        },
+      });
+
+      const mockCreateElement = vi.fn(() => ({
+        href: '',
+        download: '',
+        click: mockClick,
+      }));
+
+      Object.defineProperty(document, 'createElement', {
+        value: mockCreateElement,
+      });
+
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+      
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      const downloadButton = screen.getByRole('button', { name: /download template/i });
+      await user.click(downloadButton);
+
+      expect(mockCreateElement).toHaveBeenCalledWith('a');
+      expect(mockClick).toHaveBeenCalled();
+    });
+
+    it('should show CSV preview when file is selected', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+      
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      // Mock FileReader
+      const mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null as any,
+        result: 'name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2'
+      };
+
+      vi.spyOn(window, 'FileReader').mockImplementation(() => mockFileReader as any);
+
+      const fileInput = screen.getByRole('textbox', { hidden: true });
+      const file = new File(['test'], 'test.csv', { type: 'text/csv' });
+      
+      await user.upload(fileInput, file);
+
+      // Simulate FileReader onload
+      if (mockFileReader.onload) {
+        mockFileReader.onload({ target: { result: mockFileReader.result } } as any);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText('Preview (1 users)')).toBeInTheDocument();
+        expect(screen.getByText('Dr. Jane Smith')).toBeInTheDocument();
+        expect(screen.getByText('jsmith')).toBeInTheDocument();
+      });
     });
   });
 
-  describe('Navigation', () => {
-    it('should handle navigation', () => {
-      // TODO: Test navigation behavior
+  describe('Form Validation and Error Handling', () => {
+    it('should require all form fields', () => {
+      renderWithProviders(<NewStaff />);
       
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for NewStaff
+      expect(screen.getByLabelText(/full name/i)).toHaveAttribute('required');
+      expect(screen.getByLabelText(/username/i)).toHaveAttribute('required');
+      expect(screen.getByLabelText(/password/i)).toHaveAttribute('required');
+    });
+
+    it('should navigate to staff page after successful creation', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      // Fill and submit form
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      await user.type(screen.getByLabelText(/full name/i), 'Dr. Jane Smith');
+      await user.type(screen.getByLabelText(/username/i), 'jsmith');
+      await user.type(screen.getByLabelText(/password/i), 'password123');
+
+      const submitButton = screen.getByRole('button', { name: /create instructor/i });
+      await user.click(submitButton);
+
+      // Wait for navigation
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/management/staff');
+      }, { timeout: 2000 });
+    });
+
+    it('should handle CSV submission', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+      
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      // Mock FileReader and file upload
+      const mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null as any,
+        result: 'name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2'
+      };
+
+      vi.spyOn(window, 'FileReader').mockImplementation(() => mockFileReader as any);
+
+      const fileInput = screen.getByRole('textbox', { hidden: true });
+      const file = new File(['test'], 'test.csv', { type: 'text/csv' });
+      
+      await user.upload(fileInput, file);
+
+      // Simulate FileReader onload
+      if (mockFileReader.onload) {
+        mockFileReader.onload({ target: { result: mockFileReader.result } } as any);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /create 1 staff members/i })).toBeInTheDocument();
+      });
+
+      const submitButton = screen.getByRole('button', { name: /create 1 staff members/i });
+      await user.click(submitButton);
+
+      expect(submitButton).toHaveTextContent('Creating...');
+    });
+
+    it('should handle CSV file removal', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+      
+      const csvTab = screen.getByRole('tab', { name: /csv import/i });
+      await user.click(csvTab);
+
+      // Mock FileReader and file upload
+      const mockFileReader = {
+        readAsText: vi.fn(),
+        onload: null as any,
+        result: 'name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2'
+      };
+
+      vi.spyOn(window, 'FileReader').mockImplementation(() => mockFileReader as any);
+
+      const fileInput = screen.getByRole('textbox', { hidden: true });
+      const file = new File(['test'], 'test.csv', { type: 'text/csv' });
+      
+      await user.upload(fileInput, file);
+
+      // Simulate FileReader onload
+      if (mockFileReader.onload) {
+        mockFileReader.onload({ target: { result: mockFileReader.result } } as any);
+      }
+
+      await waitFor(() => {
+        expect(screen.getByText('Selected file:')).toBeInTheDocument();
+      });
+
+      // Remove file
+      const removeButton = screen.getByRole('button', { name: '' }); // X button
+      await user.click(removeButton);
+
+      expect(screen.queryByText('Selected file:')).not.toBeInTheDocument();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for NewStaff
+  describe('Role-specific Functionality', () => {
+    it('should show different placeholders for different roles', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      // Test instructional staff
+      const roleSelect = screen.getByLabelText(/role/i);
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructional Staff'));
+
+      expect(screen.getByLabelText(/full name/i)).toHaveAttribute('placeholder', 'Dr. Sarah Johnson');
+      expect(screen.getByLabelText(/username/i)).toHaveAttribute('placeholder', 'sjohnson');
+
+      // Test instructor
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      expect(screen.getByLabelText(/full name/i)).toHaveAttribute('placeholder', 'Dr. Jane Smith');
+      expect(screen.getByLabelText(/username/i)).toHaveAttribute('placeholder', 'jsmith');
     });
 
-    
+    it('should show role-specific permissions text', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      const roleSelect = screen.getByLabelText(/role/i);
+      
+      // Test instructor permissions
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      expect(screen.getByText('Will have permissions to manage assigned classes and teaching assistants.')).toBeInTheDocument();
+
+      // Test TA permissions
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Teaching Assistant'));
+
+      expect(screen.getByText('Will have permissions to assist with assigned classes.')).toBeInTheDocument();
+    });
+
+    it('should update submit button text based on selected role', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<NewStaff />);
+
+      const roleSelect = screen.getByLabelText(/role/i);
+      
+      // Test instructor
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Instructor'));
+
+      expect(screen.getByRole('button', { name: /create instructor/i })).toBeInTheDocument();
+
+      // Test TA
+      await user.click(roleSelect);
+      await user.click(screen.getByText('Teaching Assistant'));
+
+      expect(screen.getByRole('button', { name: /create teaching assistant/i })).toBeInTheDocument();
+    });
   });
 });
 
@@ -145,29 +432,14 @@ describe('NewStaff', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useRouter, useQuery, users, user, useAuth, username, userId, useState, useMemo
+ * - Uses hooks: useRouter, useState, useMemo
  * - Uses router: true
- * - Has API calls: true
+ * - Has API calls: false (simulated)
  * - Has form handling: true
  * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<NewStaff />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<NewStaff {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
+ * The component supports both single user creation and CSV bulk import,
+ * with simplified access control since only admins can access this screen.
  */

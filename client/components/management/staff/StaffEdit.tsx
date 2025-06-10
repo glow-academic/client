@@ -10,7 +10,6 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Save, Trash2, Shield, GraduationCap, User as UserIcon } from "lucide-react";
 
-import { getUser } from "@/utils/queries/users/get-user";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,6 @@ const getRolePermissions = (role: string) => {
 };
 
 export default function StaffEdit({ userId }: { userId: string }) {
-
   const router = useRouter();
   const [formData, setFormData] = React.useState({
     name: "",
@@ -96,13 +94,6 @@ export default function StaffEdit({ userId }: { userId: string }) {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasChanges, setHasChanges] = React.useState(false);
 
-  // Fetch current user to check permissions
-  const { data: currentUser } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(userId),
-    enabled: !!userId,
-  });
-
   // Fetch all users to find the target user
   const { data: allUsers = [], isLoading } = useQuery({
     queryKey: ["users"],
@@ -110,35 +101,6 @@ export default function StaffEdit({ userId }: { userId: string }) {
   });
 
   const targetUser = allUsers.find((user: User) => user.id === userId);
-
-  // Dynamic permission checking based on target user's role
-  const getPermissions = () => {
-    if (!currentUser || !targetUser) return { canEdit: false, canChangePassword: false, canDelete: false };
-
-    const isAdmin = currentUser.role === 'admin';
-    const isInstructional = currentUser.role === 'instructional';
-    const targetRole = targetUser.role;
-
-    // Admin can do everything
-    if (isAdmin) {
-      return { canEdit: true, canChangePassword: true, canDelete: true };
-    }
-
-    // Instructional staff can manage instructors and TAs, but not other instructional staff
-    if (isInstructional) {
-      const canManage = targetRole === 'instructor' || targetRole === 'ta';
-      return { 
-        canEdit: canManage, 
-        canChangePassword: false, // Only admin can change passwords
-        canDelete: canManage 
-      };
-    }
-
-    // Others can't edit staff
-    return { canEdit: false, canChangePassword: false, canDelete: false };
-  };
-
-  const { canEdit, canChangePassword, canDelete } = getPermissions();
 
   // Initialize form data when user is loaded
   React.useEffect(() => {
@@ -159,7 +121,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canEdit || !targetUser) return;
+    if (!targetUser) return;
 
     setIsSubmitting(true);
     try {
@@ -179,7 +141,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
   };
 
   const handleDelete = async () => {
-    if (!canDelete || !targetUser) return;
+    if (!targetUser) return;
 
     setIsSubmitting(true);
     try {
@@ -230,25 +192,6 @@ export default function StaffEdit({ userId }: { userId: string }) {
           <h1 className="text-2xl font-bold tracking-tight">Invalid User Type</h1>
           <p className="text-muted-foreground">
             This user is not a staff member and cannot be edited here.
-          </p>
-        </div>
-        <Button onClick={() => router.push('/management/staff')} variant="outline">
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Staff Management
-        </Button>
-      </div>
-    );
-  }
-
-  if (!canEdit) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Access Denied</h1>
-          <p className="text-muted-foreground">
-            You don't have permission to edit this staff member.
-            {targetUser.role === 'instructional' && currentUser?.role === 'instructional' && 
-              " Only administrators can edit instructional staff."}
           </p>
         </div>
         <Button onClick={() => router.push('/management/staff')} variant="outline">
@@ -320,21 +263,19 @@ export default function StaffEdit({ userId }: { userId: string }) {
                 </div>
               </div>
               
-              {canChangePassword && (
-                <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    placeholder="Leave blank to keep current password"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Leave blank to keep the current password.
-                  </p>
-                </div>
-              )}
+              <div className="space-y-2">
+                <Label htmlFor="password">New Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  placeholder="Leave blank to keep current password"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Leave blank to keep the current password.
+                </p>
+              </div>
 
               <div className="flex justify-end gap-2">
                 <Button
@@ -385,41 +326,39 @@ export default function StaffEdit({ userId }: { userId: string }) {
           </CardContent>
         </Card>
 
-        {canDelete && (
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Danger Zone</CardTitle>
-              <CardDescription>
-                Permanently delete this user account. This action cannot be undone.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isSubmitting}>
-                    <Trash2 className="h-4 w-4 mr-2" />
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Danger Zone</CardTitle>
+            <CardDescription>
+              Permanently delete this user account. This action cannot be undone.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" disabled={isSubmitting}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete User
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete the user account for {targetUser.name} ({targetUser.username}).
+                    This action cannot be undone and will remove all associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                     Delete User
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete the user account for {targetUser.name} ({targetUser.username}).
-                      This action cannot be undone and will remove all associated data.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                      Delete User
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </CardContent>
-          </Card>
-        )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

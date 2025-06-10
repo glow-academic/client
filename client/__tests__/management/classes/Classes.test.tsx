@@ -134,10 +134,6 @@ describe('Classes', () => {
 
     it('should display aggregated performance trends', async () => {
       renderWithProviders(<ClassesGeneralPage />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Aggregated Performance Trends')).toBeInTheDocument();
-      });
 
       expect(screen.getByText('Average Score Trend (Last 7 Days)')).toBeInTheDocument();
       expect(screen.getByText('Student Personality Distribution')).toBeInTheDocument();

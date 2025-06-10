@@ -130,8 +130,9 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
 
   // Load simulation data if editing
   useEffect(() => {
-    if (editingSimulationId) {
-      const simulationToEdit = simulations.find((s: any) => s.id === editingSimulationId);
+    const targetSimulationId = simulationId || editingSimulationId;
+    if (targetSimulationId) {
+      const simulationToEdit = simulations.find((s: any) => s.id === targetSimulationId);
       if (simulationToEdit) {
         setFormData({
           title: simulationToEdit.title || "",
@@ -142,7 +143,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
         });
       }
     }
-  }, [editingSimulationId, simulations]);
+  }, [simulationId, editingSimulationId, simulations]);
 
   const handleInputChange = (field: keyof SimulationFormData, value: string | number | boolean | string[] | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -256,17 +257,19 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
       };
 
       let result;
-      if (editingSimulationId) {
-        result = await updateSimulation(editingSimulationId, payload);
+      const targetSimulationId = simulationId || editingSimulationId;
+      if (targetSimulationId) {
+        result = await updateSimulation(targetSimulationId, payload);
       } else {
         result = await createSimulation(payload);
       }
       
       resetFormAndState();
       queryClient.invalidateQueries({ queryKey: ["simulations"] });
-      toast.success(editingSimulationId ? "Simulation updated successfully!" : "Simulation created successfully!");
-    } catch (error) {
-      toast.error(`Failed to ${editingSimulationId ? 'update' : 'create'} simulation: ${error instanceof Error ? error.message : "Unknown error"}`);
+      toast.success(targetSimulationId ? "Simulation updated successfully!" : "Simulation created successfully!");
+              } catch (error) {
+      const targetSimulationId = simulationId || editingSimulationId;
+      toast.error(`Failed to ${targetSimulationId ? 'update' : 'create'} simulation: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -612,7 +615,7 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
-          {editingSimulationId && (
+          {(simulationId || editingSimulationId) && (
             <Button
               type="button"
               variant="outline"
@@ -630,10 +633,10 @@ export default function Simulation({ mode = "create", simulationId }: Simulation
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                {editingSimulationId ? "Updating..." : "Creating..."}
+                {(simulationId || editingSimulationId) ? "Updating..." : "Creating..."}
               </>
             ) : (
-              editingSimulationId ? "Update Simulation" : "Create Simulation"
+              (simulationId || editingSimulationId) ? "Update Simulation" : "Create Simulation"
             )}
           </Button>
         </div>

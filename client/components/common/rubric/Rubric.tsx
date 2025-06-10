@@ -396,7 +396,7 @@ export default function Rubric({
         {/* Rubric Header */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div className="flex-1">
                 {editing.rubric ? (
                   <div className="space-y-4">
@@ -445,8 +445,7 @@ export default function Rubric({
                 {editing.rubric ? (
                   <>
                     <Button onClick={handleSaveRubric} size="sm">
-                      <Save className="h-4 w-4 mr-2" />
-                      Save
+                      <Save className="h-4 w-4" />
                     </Button>
                     <Button 
                       variant="outline" 
@@ -493,8 +492,8 @@ export default function Rubric({
                 <Collapsible open={isOpen} onOpenChange={() => toggleCard(index)}>
                   <CollapsibleTrigger asChild>
                     <CardHeader className="cursor-pointer hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <div className="flex items-center gap-3 flex-1">
                           <div className={`p-2 rounded-lg ${
                             color === 'blue' ? 'bg-blue-100' :
                             color === 'green' ? 'bg-green-100' :
@@ -510,14 +509,14 @@ export default function Rubric({
                           </div>
                           <div className="flex-1">
                             {isEditingGroup ? (
-                              <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                              <div className="space-y-2 w-full" onClick={(e) => e.stopPropagation()}>
                                 <Input
                                   value={standardGroupForms[group.id]?.name || ""}
                                   onChange={(e) => setStandardGroupForms(prev => ({
                                     ...prev,
                                     [group.id]: { ...prev[group.id], name: e.target.value }
                                   }))}
-                                  className="text-lg font-semibold"
+                                  className="text-lg font-semibold w-full"
                                 />
                                 <Textarea
                                   value={standardGroupForms[group.id]?.description || ""}
@@ -525,7 +524,7 @@ export default function Rubric({
                                     ...prev,
                                     [group.id]: { ...prev[group.id], description: e.target.value }
                                   }))}
-                                  className="text-sm"
+                                  className="text-sm w-full"
                                 />
                               </div>
                             ) : (
@@ -536,7 +535,7 @@ export default function Rubric({
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-shrink-0">
                           {isEditingGroup ? (
                             <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                               <Button size="sm" onClick={() => handleSaveStandardGroup(group.id)}>
@@ -617,7 +616,7 @@ export default function Rubric({
                                         ...prev,
                                         [standard.id]: { ...prev[standard.id], description: e.target.value }
                                       }))}
-                                      className="min-h-[60px]"
+                                      className="min-h-[60px] w-full"
                                     />
                                   ) : (
                                     standard.description

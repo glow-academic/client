@@ -6,8 +6,16 @@
  */
 "use client";
 
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { useQuery } from "@tanstack/react-query";
 import { redirect } from "next/navigation";
 
 export default function ClassesPage() {
-  return redirect("/classes/new");
+  const {data: classes} = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+  // get the id of the first class
+  const firstClassId = classes?.[0]?.id;
+  return redirect(`/classes/c/${firstClassId}`);
 }

@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T05:17:39.336Z
+Generated on: 2025-06-10T14:13:34.437Z
 
 ## Summary
 - **Total Components**: 54
 - **Tests Created**: 0
-- **Tests Updated**: 27
-- **Tests Skipped** (already implemented): 27
+- **Tests Updated**: 22
+- **Tests Skipped** (already implemented): 32
 
 ## Component Coverage
 
@@ -37,8 +37,8 @@ Generated on: 2025-06-10T05:17:39.336Z
 | data-table-view-options | common/history/data-table-view-options.tsx | data-table-view-options.test.tsx | ✅ Implemented |
 | data-table | common/history/data-table.tsx | data-table.test.tsx | ✅ Implemented |
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
-| navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ❌ Needs Implementation |
-| unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ❌ Needs Implementation |
+| navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
+| unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ❌ Needs Implementation |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
@@ -62,9 +62,9 @@ Generated on: 2025-06-10T05:17:39.336Z
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
-| NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ❌ Needs Implementation |
-| Staff | management/staff/Staff.tsx | Staff.test.tsx | ❌ Needs Implementation |
-| StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ❌ Needs Implementation |
+| NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
+| Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
+| StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
 | Profile | profile/Profile.tsx | Profile.test.tsx | ❌ Needs Implementation |
 
 ## Directory Structure

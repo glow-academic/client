@@ -10,10 +10,10 @@ export const getSectionRoute = (section: string): string => {
     case 'growth':
       return '/growth';
 
-
     // Analytics routes
+    case 'analytics':
     case 'overview':
-      return '/analytics';
+      return '/analytics/overview';
     case 'performance':
       return '/analytics/performance';
     case 'reports':
@@ -21,7 +21,9 @@ export const getSectionRoute = (section: string): string => {
     case 'logs':
       return '/analytics/logs';
 
-    // Simulations routes
+    // Create routes
+    case 'create':
+      return '/create';
     case 'scenarios':
       return '/create/scenarios';
     case 'simulations':
@@ -29,7 +31,12 @@ export const getSectionRoute = (section: string): string => {
     case 'rubrics':
       return '/create/rubrics';
 
+    case 'class':
+      return '/classes';
+
     // Management routes
+    case 'management':
+      return '/management';
     case 'staff':
       return '/management/staff';
     case 'agents':
@@ -51,15 +58,19 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith('simulation-')) {
         const simulationId = section.replace('simulation-', '');
-        return `/simulations/s/${simulationId}`;
+        return `/create/simulations/s/${simulationId}`;
       }
       if (section.startsWith('agent-')) {
         const agentId = section.replace('agent-', '');
-        return `/simulations/agents/a/${agentId}`;
+        return `/management/agents/a/${agentId}`;
       }
       if (section.startsWith('scenario-')) {
         const scenarioId = section.replace('scenario-', '');
-        return `/simulations/scenarios/s/${scenarioId}`;
+        return `/create/scenarios/s/${scenarioId}`;
+      }
+      if (section.startsWith('rubric-')) {
+        const rubricId = section.replace('rubric-', '');
+        return `/create/rubrics/r/${rubricId}`;
       }
       if (section.startsWith('chat-')) {
         const chatId = section.replace('chat-', '');
@@ -73,8 +84,27 @@ export const getSectionRoute = (section: string): string => {
         const userId = section.replace('user-', '');
         return `/management/staff/u/${userId}`;
       }
+      if (section.startsWith('eval-')) {
+        const evalId = section.replace('eval-', '');
+        return `/management/evals/e/${evalId}`;
+      }
 
-      return '/home'; // Default fallback to home instead of dashboard
+      return '/home'; // Default fallback to home
+  }
+};
+
+/**
+ * Maps a section identifier to its corresponding route path for breadcrumb navigation
+ * This is different from getSectionRoute because breadcrumb "Classes" should go to first class, not management
+ */
+export const getBreadcrumbSectionRoute = (section: string): string => {
+  switch (section) {
+    case 'classes':
+      // For breadcrumbs, "Classes" should go to the first class, not management
+      return '/classes';
+    default:
+      // Use the regular section route for everything else
+      return getSectionRoute(section);
   }
 };
 
@@ -87,6 +117,20 @@ export const createSectionChangeHandler = (
 ) => {
   return (section: string) => {
     const route = getSectionRoute(section);
+    router.push(route);
+  };
+};
+
+/**
+ * Creates a breadcrumb-specific section change handler
+ * This handles the special case where "Classes" breadcrumb should go to first class, not management
+ */
+export const createBreadcrumbSectionChangeHandler = (
+  router: AppRouterInstance,
+  defaultRoute: string = '/home'
+) => {
+  return (section: string) => {
+    const route = getBreadcrumbSectionRoute(section);
     router.push(route);
   };
 };

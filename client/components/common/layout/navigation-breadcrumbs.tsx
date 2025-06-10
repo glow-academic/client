@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useRouter } from "next/navigation"
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -7,6 +8,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils"
 
 interface NavigationBreadcrumbsProps {
   breadcrumbs: Array<{ title: string; section?: string }>
@@ -15,9 +17,18 @@ interface NavigationBreadcrumbsProps {
 }
 
 export function NavigationBreadcrumbs({ breadcrumbs, onSectionChange, rightContent }: NavigationBreadcrumbsProps) {
-  const handleBreadcrumbClick = (section?: string) => {
-    if (section && onSectionChange) {
-      onSectionChange(section);
+  const router = useRouter();
+  const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(router);
+
+  const handleBreadcrumbClick = (crumb: { title: string; section?: string }) => {
+    if (crumb.section) {
+      if (onSectionChange) {
+        // If we have an onSectionChange prop, use it (for layout components)
+        onSectionChange(crumb.section);
+      } else {
+        // Otherwise, handle navigation directly with breadcrumb-specific logic
+        breadcrumbNavigate(crumb.section);
+      }
     }
   };
 
@@ -42,7 +53,7 @@ export function NavigationBreadcrumbs({ breadcrumbs, onSectionChange, rightConte
                 ) : (
                   <BreadcrumbLink
                     className="cursor-pointer"
-                    onClick={() => handleBreadcrumbClick(crumb.section)}
+                    onClick={() => handleBreadcrumbClick(crumb)}
                   >
                     {crumb.title}
                   </BreadcrumbLink>

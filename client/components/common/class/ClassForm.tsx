@@ -250,8 +250,6 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
         toast.success("Class updated successfully!");
         if (onSuccess) {
           onSuccess(classId);
-        } else {
-          router.push(`/classes/c/${classId}`);
         }
       }
     } catch (error) {
@@ -980,7 +978,7 @@ export default function ClassForm({ mode, classId, initialData, onSuccess }: Cla
           )}
 
           {/* Action Buttons */}
-          <div className="flex justify-between pt-6">
+          <div className="flex justify-between">
             <div className="flex-1 flex justify-end">
               <Button
                 type="submit"

@@ -306,13 +306,26 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     );
   }
 
+  const formatClassTerm = (term: string) => {
+    switch (term) {
+      case "fall":
+        return "Fall";
+      case "spring":
+        return "Spring";
+      case "summer":
+        return "Summer";
+      default:
+        return term;
+    }
+  }
+
   return (
     <div className="space-y-6">
       {/* Class Header */}
       <div>
         <h1 className="text-2xl font-bold">{classData.name}</h1>
         <p className="text-muted-foreground">
-          {classData.classCode} • {classData.term} {classData.year}
+          {classData.classCode} • {formatClassTerm(classData.term)} {classData.year}
         </p>
         <p className="text-sm text-muted-foreground mt-1">{classData.description}</p>
       </div>

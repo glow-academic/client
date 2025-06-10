@@ -42,13 +42,13 @@ interface AgentFormData {
   temperature: number;
 }
 
-export default function Agent({ 
-  agentId, 
+export default function Agent({
+  agentId,
   mode = agentId ? "edit" : "create",
 }: AgentProps) {
   const router = useRouter();
   const isEditMode = mode === "edit" && !!agentId;
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<AgentFormData>({
     name: "",
@@ -80,7 +80,7 @@ export default function Agent({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error("Agent name is required");
       return;
@@ -102,7 +102,7 @@ export default function Agent({
     }
 
     setIsSubmitting(true);
-    
+
     try {
       if (isEditMode) {
         await updateAgent(agentId!, formData);
@@ -167,131 +167,101 @@ export default function Agent({
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">
-          {isEditMode ? "Edit Agent" : "Create Agent"}
-        </h1>
-        <p className="text-muted-foreground">
-          {isEditMode 
-            ? "Modify the personality and behavior characteristics for this AI student agent"
-            : "Create a new AI student agent with specific personality and behavior characteristics"
-          }
-        </p>
-      </div>
-      
-      <div className="container mx-auto max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Agent Details</CardTitle>
-            <CardDescription>
-              Define the personality and behavior characteristics for this AI student agent.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Agent Name *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                  placeholder="e.g., Enthusiastic Student Agent"
-                  required
-                />
-              </div>
+    <div className="space-y-6 py-4 px-4">
+      <div className="w-full">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Agent Name *</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+              placeholder="e.g., Enthusiastic Student Agent"
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="subtitle">Subtitle *</Label>
-                <Input
-                  id="subtitle"
-                  value={formData.subtitle}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
-                  placeholder="Brief description of the agent"
-                  required
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="subtitle">Subtitle *</Label>
+            <Input
+              id="subtitle"
+              value={formData.subtitle}
+              onChange={(e) => setFormData(prev => ({ ...prev, subtitle: e.target.value }))}
+              placeholder="Brief description of the agent"
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">Description *</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Detailed behavior description and personality traits"
-                  rows={4}
-                  required
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Description *</Label>
+            <Textarea
+              id="description"
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Detailed behavior description and personality traits"
+              rows={4}
+              required
+            />
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="systemPrompt">System Prompt *</Label>
-                <Textarea
-                  id="systemPrompt"
-                  value={formData.systemPrompt}
-                  onChange={(e) => setFormData(prev => ({ ...prev, systemPrompt: e.target.value }))}
-                  placeholder="System prompt that defines how the agent should behave and respond"
-                  rows={6}
-                  required
-                />
-                <p className="text-sm text-muted-foreground">
-                  This prompt defines the agent's behavior and personality in conversations.
-                </p>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="systemPrompt">System Prompt *</Label>
+            <Textarea
+              id="systemPrompt"
+              value={formData.systemPrompt}
+              onChange={(e) => setFormData(prev => ({ ...prev, systemPrompt: e.target.value }))}
+              placeholder="System prompt that defines how the agent should behave and respond"
+              rows={6}
+              required
+            />
+            <p className="text-sm text-muted-foreground">
+              This prompt defines the agent's behavior and personality in conversations.
+            </p>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="agentType">Agent Type</Label>
-                <Select
-                  value={formData.agentType}
-                  onValueChange={(value: "default" | "student" | "ta") => 
-                    setFormData(prev => ({ ...prev, agentType: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select agent type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="ta">Teaching Assistant</SelectItem>
-                    <SelectItem value="default">Default</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="agentType">Agent Type</Label>
+            <Select
+              value={formData.agentType}
+              onValueChange={(value: "default" | "student" | "ta") =>
+                setFormData(prev => ({ ...prev, agentType: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select agent type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="student">Student</SelectItem>
+                <SelectItem value="ta">Teaching Assistant</SelectItem>
+                <SelectItem value="default">Default</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="temperature">Temperature</Label>
-                <Input
-                  id="temperature"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.temperature}
-                  onChange={(e) => setFormData(prev => ({ ...prev, temperature: parseInt(e.target.value) || 0 }))}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Temperature value for response randomness (0-100). Lower values are more deterministic.
-                </p>
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="temperature">Temperature</Label>
+            <Input
+              id="temperature"
+              type="number"
+              min="0"
+              max="100"
+              value={formData.temperature}
+              onChange={(e) => setFormData(prev => ({ ...prev, temperature: parseInt(e.target.value) || 0 }))}
+            />
+            <p className="text-sm text-muted-foreground">
+              Temperature value for response randomness (0-100). Lower values are more deterministic.
+            </p>
+          </div>
 
-              <div className="flex gap-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={isSubmitting}>
-                  {isSubmitting 
-                    ? (isEditMode ? "Updating..." : "Creating...") 
-                    : (isEditMode ? "Update Agent" : "Create Agent")
-                  }
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <div className="flex gap-2 justify-end">
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting
+                ? (isEditMode ? "Updating..." : "Creating...")
+                : (isEditMode ? "Update Agent" : "Create Agent")
+              }
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );

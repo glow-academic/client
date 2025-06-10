@@ -318,12 +318,6 @@ export default function ClassesGeneralPage() {
 
             {/* Performance Trend Charts */}
             <Card>
-                <CardHeader>
-                    <CardTitle>Aggregated Performance Trends</CardTitle>
-                    <CardDescription>
-                        Overall TA performance metrics and student interaction data across all classes
-                    </CardDescription>
-                </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Line Chart - Score Trends */}
                     <div className="h-80">

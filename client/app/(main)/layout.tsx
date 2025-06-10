@@ -95,7 +95,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/scenarios')) {
+    if (pathname === '/create/scenarios') {
       return (
         <Button onClick={() => router.push('/create/scenarios/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -104,7 +104,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/simulations')) {
+    if (pathname === '/create/simulations') {
       return (
         <Button onClick={() => router.push('/create/simulations/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -113,7 +113,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/rubrics') && !pathname.includes('/new')) {
+    if (pathname === '/create/rubrics') {
       return (
         <Button onClick={() => router.push('/create/rubrics/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -122,7 +122,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/create/simulations/agents') && !pathname.includes('/new')) {
+    if (pathname === '/create/simulations/agents') {
       return (
         <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -131,25 +131,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/classes') && !pathname.includes('/new')) {
-      return (
-        <Button onClick={() => router.push('/classes/new')} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Class
-        </Button>
-      );
-    }
-
-    if (pathname.startsWith('/management/staff') && !pathname.includes('/new')) {
-      return (
-        <Button onClick={() => router.push('/management/staff/new')} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Staff
-        </Button>
-      );
-    }
-
-    if (pathname.startsWith('/management/classes') && !pathname.includes('/new')) {
+    if (pathname === '/management/classes') {
       return (
         <Button onClick={() => router.push('/management/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -158,7 +140,16 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/management/agents') && !pathname.includes('/new')) {
+    if (pathname === '/management/staff') {
+      return (
+        <Button onClick={() => router.push('/management/staff/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Staff Member
+        </Button>
+      );
+    }
+
+    if (pathname === '/management/agents') {
       return (
         <Button onClick={() => router.push('/management/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -167,7 +158,7 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith('/management/evals')) {
+    if (pathname === '/management/evals') {
       return (
         <Button onClick={() => router.push('/management/evals/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
