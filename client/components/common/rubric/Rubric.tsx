@@ -811,49 +811,6 @@ export default function Rubric({
             );
           })}
         </div>
-
-        <Card className="bg-muted/20">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              How to Use This Rubric
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid gap-3 md:grid-cols-2">
-              <div>
-                <h4 className="font-semibold mb-2">Rating Scale</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>
-                    • <strong>5 (Excellent):</strong> Exceeds expectations
-                  </li>
-                  <li>
-                    • <strong>4 (Good):</strong> Meets expectations well
-                  </li>
-                  <li>
-                    • <strong>3 (Acceptable):</strong> Meets basic expectations
-                  </li>
-                  <li>
-                    • <strong>2 (Marginal):</strong> Below expectations
-                  </li>
-                  <li>
-                    • <strong>1 (Poor):</strong> Significantly below
-                    expectations
-                  </li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Evaluation Focus</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Student-centered teaching approach</li>
-                  <li>• Knowledge of course material</li>
-                  <li>• Time management skills</li>
-                  <li>• Adaptability to student needs</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     );
   }

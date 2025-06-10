@@ -202,11 +202,11 @@ export default function Performance() {
         const avgScore =
           groupFeedbacks.length > 0
             ? Math.round(
-                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                  groupFeedbacks.length /
-                  (groupStandards[0]?.points || 1)) *
-                  100,
-              )
+              (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                groupFeedbacks.length /
+                (groupStandards[0]?.points || 1)) *
+              100,
+            )
             : 0;
 
         // Use shortName with proper title case formatting
@@ -221,9 +221,9 @@ export default function Performance() {
     const overallScore =
       filteredGrades.length > 0
         ? Math.round(
-            filteredGrades.reduce((sum, g) => sum + g.score, 0) /
-              filteredGrades.length,
-          )
+          filteredGrades.reduce((sum, g) => sum + g.score, 0) /
+          filteredGrades.length,
+        )
         : 0;
 
     // Performance by student type (scenario-based)
@@ -241,9 +241,9 @@ export default function Performance() {
         const avgScore =
           agentGrades.length > 0
             ? Math.round(
-                agentGrades.reduce((sum, g) => sum + g.score, 0) /
-                  agentGrades.length,
-              )
+              agentGrades.reduce((sum, g) => sum + g.score, 0) /
+              agentGrades.length,
+            )
             : 0;
 
         return {
@@ -295,8 +295,8 @@ export default function Performance() {
         const avgScore =
           taGrades.length > 0
             ? Math.round(
-                taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
-              )
+              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
+            )
             : 0;
 
         const completedSessions = taChats.filter(
@@ -353,25 +353,25 @@ export default function Performance() {
     const currentWeekAvg =
       currentWeekGrades.length > 0
         ? Math.round(
-            currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              currentWeekGrades.length,
-          )
+          currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+          currentWeekGrades.length,
+        )
         : 0;
 
     const lastWeekAvg =
       lastWeekGrades.length > 0
         ? Math.round(
-            lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              lastWeekGrades.length,
-          )
+          lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+          lastWeekGrades.length,
+        )
         : 0;
 
     const twoWeeksAgoAvg =
       twoWeeksAgoGrades.length > 0
         ? Math.round(
-            twoWeeksAgoGrades.reduce((sum, g) => sum + g.score, 0) /
-              twoWeeksAgoGrades.length,
-          )
+          twoWeeksAgoGrades.reduce((sum, g) => sum + g.score, 0) /
+          twoWeeksAgoGrades.length,
+        )
         : 0;
 
     const weeklyProgress = [
@@ -622,10 +622,6 @@ export default function Performance() {
           <CardContent className="space-y-6">
             {/* Score Distribution */}
             <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Award className="h-4 w-4" />
-                Score Distribution
-              </h4>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 {[
                   {
@@ -695,47 +691,8 @@ export default function Performance() {
               </div>
             </div>
 
-            {/* Competency Breakdown */}
-            <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Brain className="h-4 w-4" />
-                Skill Performance
-              </h4>
-              <div className="space-y-3">
-                {skillCategoryEntries.map(([skill, score], index) => (
-                  <div
-                    key={skill}
-                    className="flex items-center justify-between p-2 rounded border"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-2 h-2 rounded-full"
-                        style={{
-                          backgroundColor:
-                            skillColors[index % skillColors.length],
-                        }}
-                      ></div>
-                      <span className="text-sm font-medium">{skill}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold">{score}%</span>
-                      <div
-                        className={`flex items-center gap-1 text-xs ${
-                          score >= 75 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {score >= 75 ? (
-                          <TrendingUp className="h-3 w-3" />
-                        ) : (
-                          <TrendingDown className="h-3 w-3" />
-                        )}
-                        {score >= 75 ? "+2%" : "-1%"}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            {/* Divider */}
+            <div className="h-px bg-gray-200 my-4"></div>
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 gap-3">
@@ -744,6 +701,18 @@ export default function Performance() {
                   {analytics.overallScore}%
                 </div>
                 <div className="text-xs text-blue-600">Average Score</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {Math.round(analytics.completionRate)}%
+                </div>
+                <div className="text-xs text-green-600">Completion Rate</div>
+              </div>
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <div className="text-2xl font-bold text-green-600">
+                  {Math.round(analytics.completionRate)}%
+                </div>
+                <div className="text-xs text-green-600">Completion Rate</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
@@ -768,10 +737,6 @@ export default function Performance() {
           <CardContent className="space-y-6">
             {/* Session Completion Insights */}
             <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
-                Session Patterns
-              </h4>
               <div className="space-y-3">
                 <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="flex items-start gap-2">
@@ -815,59 +780,34 @@ export default function Performance() {
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Recommendations */}
-            <div>
-              <h4 className="font-medium mb-3 flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Action Items
-              </h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 text-sm bg-purple-50 rounded border">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>Focus training on de-escalation techniques</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 text-sm bg-orange-50 rounded border">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                  <span>Review time management strategies</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 text-sm bg-teal-50 rounded border">
-                  <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
-                  <span>Pair struggling TAs with high performers</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Performance Trends */}
-            <div>
-              <h4 className="font-medium mb-3">Weekly Progress</h4>
-              <div className="space-y-2">
-                {analytics.weeklyProgress.map((week, index) => (
-                  <div
-                    key={week.week}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span className="text-muted-foreground">{week.week}</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {week.score > 0 ? `${week.score}%` : "N/A"}
-                      </span>
-                      <span
-                        className={`text-xs ${
-                          week.change.startsWith("+")
-                            ? "text-green-600"
-                            : week.change.startsWith("-")
-                              ? "text-red-600"
-                              : "text-gray-600"
-                        }`}
-                      >
-                        {week.change}
-                      </span>
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <div>
+                      <div className="text-sm font-medium text-blue-800">
+                        Improvement Trend
+                      </div>
+                      <div className="text-xs text-blue-700 mt-1">
+                        Overall scores increased 8% over the last month
+                      </div>
                     </div>
                   </div>
-                ))}
+                </div>
+
+                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                    <div>
+                      <div className="text-sm font-medium text-blue-800">
+                        Improvement Trend
+                      </div>
+                      <div className="text-xs text-blue-700 mt-1">
+                        Overall scores increased 8% over the last month
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>

@@ -227,26 +227,6 @@ export default function StaffEdit({ userId }: { userId: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <RoleIcon className="h-6 w-6" />
-            <h1 className="text-2xl font-bold tracking-tight">
-              Edit {getRoleDisplayName(targetUser.role)}
-            </h1>
-          </div>
-          <p className="text-muted-foreground">
-            Modify the details for {targetUser.name}.
-          </p>
-        </div>
-        <Button
-          onClick={() => router.push("/management/staff")}
-          variant="outline"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
-        </Button>
-      </div>
 
       <div className="grid gap-6">
         <Card>

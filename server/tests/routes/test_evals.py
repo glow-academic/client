@@ -223,6 +223,169 @@ class TestStartEval:
         assert "no scenarios configured" in response.json()["detail"]
 
 
+class TestRunMultipleEvals:
+    """Tests for run_multiple_evals endpoint."""
+    
+    @patch('app.services.agents.advanced.run_advanced_agent_parallel')
+    @patch('app.routes.evals.EvalChats')
+    def test_run_multiple_evals_success(self, mock_eval_chats_class, mock_parallel_agent, 
+                                       sample_eval_data, sample_agents_data, sample_scenarios_data):
+        """Test successful run_multiple_evals request."""
+        # Setup mocks
+        mock_session = MagicMock()
+        
+        from app.main import app
+        from app.db import get_session
+        
+        # Override the dependency
+        def override_get_session():
+            return mock_session
+        
+        app.dependency_overrides[get_session] = override_get_session
+        
+        # Create mock objects from data
+        eval_mock = MagicMock()
+        for key, value in sample_eval_data.items():
+            setattr(eval_mock, key, value)
+        
+        # Mock eval runs
+        eval_run_1 = MagicMock()
+        eval_run_1.id = uuid4()
+        eval_run_1.eval_id = sample_eval_data["id"]
+        eval_run_1.scenario_id = sample_scenarios_data[0]["id"]
+        eval_run_1.agent_id = sample_agents_data[0]["id"]
+        
+        eval_run_2 = MagicMock()
+        eval_run_2.id = uuid4()
+        eval_run_2.eval_id = sample_eval_data["id"]
+        eval_run_2.scenario_id = sample_scenarios_data[0]["id"]
+        eval_run_2.agent_id = sample_agents_data[1]["id"]
+        
+        eval_runs = [eval_run_1, eval_run_2]
+        
+        # Mock scenarios and agents
+        scenario_mock = MagicMock()
+        for key, value in sample_scenarios_data[0].items():
+            setattr(scenario_mock, key, value)
+        
+        agent1_mock = MagicMock()
+        for key, value in sample_agents_data[0].items():
+            setattr(agent1_mock, key, value)
+        
+        agent2_mock = MagicMock()
+        for key, value in sample_agents_data[1].items():
+            setattr(agent2_mock, key, value)
+        
+        # Mock database queries
+        mock_session.exec.side_effect = [
+            MagicMock(one_or_none=MagicMock(return_value=eval_mock)),      # eval query
+            MagicMock(all=MagicMock(return_value=eval_runs)),              # eval runs query
+            MagicMock(one=MagicMock(return_value=scenario_mock)),          # scenario query (first)
+            MagicMock(one=MagicMock(return_value=agent1_mock)),            # query agent query (first)
+            MagicMock(one=MagicMock(return_value=agent2_mock)),            # response agent query (first)
+            MagicMock(one=MagicMock(return_value=scenario_mock)),          # scenario query (second)
+            MagicMock(one=MagicMock(return_value=agent1_mock)),            # query agent query (second)
+            MagicMock(one=MagicMock(return_value=agent2_mock)),            # response agent query (second)
+        ]
+        
+        # Mock eval chat creation
+        def mock_add(obj):
+            if hasattr(obj, 'id') and obj.id is None:
+                obj.id = uuid4()
+        
+        mock_session.add.side_effect = mock_add
+        mock_session.refresh.side_effect = lambda x: None
+        
+        # Mock parallel agent execution
+        async def mock_parallel_events():
+            yield {'type': 'parallel_start', 'total_runs': 2, 'parallel_count': 1}
+            yield {'type': 'turn_start', 'chat_id': 'chat1', 'turn': 1, 'speaker': 'Agent1'}
+            yield {'type': 'token', 'chat_id': 'chat1', 'speaker': 'Agent1', 'token': 'Hello'}
+            yield {'type': 'turn_complete', 'chat_id': 'chat1', 'turn': 1, 'speaker': 'Agent1'}
+            yield {'type': 'evaluation_complete', 'chat_id': 'chat1', 'eval_grade_id': 'grade1'}
+            yield {'type': 'all_complete', 'total_runs': 2}
+        
+        mock_parallel_agent.return_value = mock_parallel_events()
+        
+        try:
+            client = TestClient(app)
+            
+            response = client.post(
+                "/evals/run-multiple",
+                data={"eval_id": str(sample_eval_data["id"])}
+            )
+            
+            assert response.status_code == 200
+            assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
+        finally:
+            # Clean up
+            app.dependency_overrides.clear()
+    
+    def test_run_multiple_evals_not_found(self):
+        """Test run_multiple_evals with non-existent eval."""
+        mock_session = MagicMock()
+        mock_session.exec.return_value.one_or_none.return_value = None
+        
+        from app.main import app
+        from app.db import get_session
+        
+        # Override the dependency
+        def override_get_session():
+            return mock_session
+        
+        app.dependency_overrides[get_session] = override_get_session
+        
+        try:
+            client = TestClient(app)
+            
+            response = client.post(
+                "/evals/run-multiple",
+                data={"eval_id": str(uuid4())}
+            )
+            
+            assert response.status_code == 404
+            assert "Evaluation not found" in response.json()["detail"]
+        finally:
+            # Clean up
+            app.dependency_overrides.clear()
+    
+    def test_run_multiple_evals_no_eval_runs(self, sample_eval_data):
+        """Test run_multiple_evals with eval that has no eval runs."""
+        mock_session = MagicMock()
+        
+        eval_mock = MagicMock()
+        for key, value in sample_eval_data.items():
+            setattr(eval_mock, key, value)
+        
+        mock_session.exec.side_effect = [
+            MagicMock(one_or_none=MagicMock(return_value=eval_mock)),  # eval query
+            MagicMock(all=MagicMock(return_value=[]))                  # no eval runs
+        ]
+        
+        from app.main import app
+        from app.db import get_session
+        
+        # Override the dependency
+        def override_get_session():
+            return mock_session
+        
+        app.dependency_overrides[get_session] = override_get_session
+        
+        try:
+            client = TestClient(app)
+            
+            response = client.post(
+                "/evals/run-multiple",
+                data={"eval_id": str(sample_eval_data["id"])}
+            )
+            
+            assert response.status_code == 400
+            assert "No eval runs found" in response.json()["detail"]
+        finally:
+            # Clean up
+            app.dependency_overrides.clear()
+
+
 class TestRunEval:
     """Tests for run_eval endpoint."""
     

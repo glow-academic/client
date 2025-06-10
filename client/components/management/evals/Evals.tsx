@@ -272,7 +272,6 @@ export default function Evals() {
 
       {/* Evaluations Grid */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">Available Evaluations</h2>
         {evals && evals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
             {evals.map((evaluation: Eval) => {

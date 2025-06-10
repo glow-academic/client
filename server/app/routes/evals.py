@@ -112,13 +112,129 @@ async def start_eval(
             status_code=500, detail=f"Failed to start eval: {str(e)}"
         )
 
-@router.post("run-multiple")
+@router.post("/run-multiple")
 async def run_multiple_evals(
-    eval_ids: List[str] = Form(...),
+    eval_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    Run multiple evals in parallel."""
+    Run all eval runs for a specific evaluation in parallel based on the eval's configuration.
+    Uses the advanced agent to handle multiple conversations simultaneously.
+    """
+    try:
+        # Get the eval
+        eval_obj = session.exec(
+            select(Evals).where(Evals.id == eval_id)
+        ).one_or_none()
+        if not eval_obj:
+            raise HTTPException(status_code=404, detail="Evaluation not found")
+
+        # Get all eval runs for this evaluation
+        eval_runs = session.exec(
+            select(EvalRuns).where(EvalRuns.eval_id == eval_id)
+        ).all()
+        
+        if not eval_runs:
+            raise HTTPException(status_code=400, detail="No eval runs found for this evaluation")
+
+        # Group eval runs by scenario (since we run scenarios in parallel)
+        scenario_groups = {}
+        for eval_run in eval_runs:
+            if eval_run.scenario_id not in scenario_groups:
+                scenario_groups[eval_run.scenario_id] = []
+            scenario_groups[eval_run.scenario_id].append(eval_run)
+
+        # Limit parallel runs based on num_parallel_runs
+        max_parallel = min(eval_obj.num_parallel_runs, len(scenario_groups))
+        scenario_ids_to_run = list(scenario_groups.keys())[:max_parallel]
+
+        async def event_stream() -> AsyncIterator[str]:
+            yield ":\n\n"  # Initial heartbeat
+
+            try:
+                # Prepare all eval runs to be executed
+                runs_to_execute = []
+                for scenario_id in scenario_ids_to_run:
+                    runs_to_execute.extend(scenario_groups[scenario_id])
+
+                yield f"data: {json.dumps({'type': 'parallel_start', 'total_runs': len(runs_to_execute), 'parallel_count': len(scenario_ids_to_run)})}\n\n"
+
+                # Create chats for all eval runs
+                chat_ids = []
+                eval_run_chat_map = {}
+                
+                for eval_run in runs_to_execute:
+                    # Get related entities
+                    scenario = session.exec(select(Scenarios).where(Scenarios.id == eval_run.scenario_id)).one()
+                    query_agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
+                    response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
+                    
+                    # Create the eval chat
+                    chat_title = f"{query_agent.name} vs {response_agent.name} - {scenario.name}"
+                    eval_chat = EvalChats(
+                        title=chat_title,
+                        eval_run_id=eval_run.id
+                    )
+                    session.add(eval_chat)
+                    session.commit()
+                    session.refresh(eval_chat)
+                    
+                    chat_ids.append(str(eval_chat.id))
+                    eval_run_chat_map[str(eval_chat.id)] = {
+                        'eval_run': eval_run,
+                        'scenario': scenario,
+                        'query_agent': query_agent,
+                        'response_agent': response_agent
+                    }
+                    
+                    yield f"data: {json.dumps({'type': 'chat_created', 'chat_id': str(eval_chat.id), 'title': chat_title, 'eval_run_id': str(eval_run.id)})}\n\n"
+
+                # Prepare input messages for all chats
+                input_texts = []
+                for chat_id in chat_ids:
+                    chat_info = eval_run_chat_map[chat_id]
+                    scenario = chat_info['scenario']
+                    query_agent = chat_info['query_agent']
+                    opening_message = _generate_natural_opening(scenario, query_agent)
+                    input_texts.append(opening_message)
+
+                yield f"data: {json.dumps({'type': 'conversations_start', 'chat_count': len(chat_ids)})}\n\n"
+
+                # Import and use the advanced agent for parallel processing
+                from app.services.agents.advanced import run_advanced_agent_parallel
+                
+                # Run all conversations in parallel
+                async for event_data in run_advanced_agent_parallel(
+                    chat_ids=chat_ids,
+                    input_texts=input_texts,
+                    eval_obj=eval_obj,
+                    eval_run_chat_map=eval_run_chat_map,
+                    session=session
+                ):
+                    yield f"data: {json.dumps(event_data)}\n\n"
+
+                yield f"data: {json.dumps({'type': 'all_complete', 'total_runs': len(runs_to_execute)})}\n\n"
+                yield f"data: {json.dumps({'type': 'done', 'success': True})}\n\n"
+
+            except Exception as exc:
+                error_msg = str(exc)
+                logger.exception("Error in parallel eval run: %s", error_msg)
+                yield f"data: {json.dumps({'type': 'error', 'error': error_msg})}\n\n"
+                raise
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream; charset=utf-8",
+            headers={"Cache-Control": "no-store"},
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error in run multiple evals endpoint: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to run multiple evals: {str(e)}"
+        )
 
 
 @router.post("/run")
@@ -313,14 +429,23 @@ async def run_agent_conversation(
             if msg.response:
                 conversation_context.append(f"Response: {msg.response}")
         
-        # Add scenario context and current input
-        scenario_context = f"Scenario: {scenario.name} - {scenario.description}"
-        input_items = [scenario_context] + conversation_context + [f"Current message: {input_message}"]
+        # Build the complete input message with context
+        context_parts = []
+        if scenario:
+            context_parts.append(f"Scenario: {scenario.name} - {scenario.description}")
+        
+        if conversation_context:
+            context_parts.extend(conversation_context)
+        
+        context_parts.append(f"Current message: {input_message}")
+        
+        # Join all context into a single string
+        full_input = "\n\n".join(context_parts)
         
         # Run the agent
         result = Runner.run_streamed(
             agent_instance.agent(),
-            input=input_items,
+            input=full_input,
             run_config=RunConfig(workflow_name=f"{agent_name} Conversation"),
         )
 

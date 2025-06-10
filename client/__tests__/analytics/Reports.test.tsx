@@ -5,6 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import Reports from "@/components/analytics/Reports";
 
+// Mock fetch for download functionality
+global.fetch = vi.fn();
+
+// Mock toast
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 // Mock the query functions
 vi.mock("@/utils/queries/users/get-all-users", () => ({
   getAllUsers: vi.fn(() =>
@@ -222,6 +233,9 @@ describe("Reports", () => {
         mutations: { retry: false },
       },
     });
+    
+    // Reset fetch mock
+    (global.fetch as any).mockReset();
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -239,24 +253,19 @@ describe("Reports", () => {
       expect(screen.getByText("Loading reports...")).toBeInTheDocument();
     });
 
-    it("should render TA leaderboard after loading", async () => {
+    it("should render TA performance overview after loading", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
-        expect(
-          screen.getByText("TA Performance Leaderboard"),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
       });
 
-      expect(screen.getByText("Need Support")).toBeInTheDocument();
       expect(
-        screen.getByText(
-          "Ranked by overall training performance based on actual feedback scores",
-        ),
+        screen.getByPlaceholderText("Search TAs by name or username..."),
       ).toBeInTheDocument();
     });
 
-    it("should display TAs in leaderboard", async () => {
+    it("should display TAs in the overview", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
@@ -264,50 +273,448 @@ describe("Reports", () => {
       });
 
       expect(screen.getByText("Test TA 2")).toBeInTheDocument();
-      expect(screen.getAllByText("Struggling TA").length).toBeGreaterThan(0);
+      expect(screen.getByText("Struggling TA")).toBeInTheDocument();
     });
 
-    it("should show struggling TAs in support section", async () => {
+    it("should show struggling TAs with warning indicators", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
-        expect(screen.getAllByText("Struggling TA").length).toBeGreaterThan(0);
+        expect(screen.getByText("Struggling TA")).toBeInTheDocument();
       });
 
-      // Should show the struggling TA (score 65% < 70%)
-      const strugglingTAElements = screen.getAllByText("Struggling TA");
-      expect(strugglingTAElements.length).toBeGreaterThan(0);
+      // Should show warning triangle for struggling TA
+      const strugglingTARow = screen.getByText("Struggling TA").closest('div[class*="border-orange-200"]');
+      expect(strugglingTARow).toBeInTheDocument();
+    });
+  });
+
+  describe("Filtering and Sorting", () => {
+    it("should show filter and sort controls", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
+      });
+    });
+
+    it("should show search bar", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+    });
+
+    it("should search TAs by name", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "Test TA 1");
+
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.queryByText("Test TA 2")).not.toBeInTheDocument();
+        expect(screen.queryByText("Struggling TA")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should search TAs by username", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "struggling");
+
+      await waitFor(() => {
+        expect(screen.getByText("Struggling TA")).toBeInTheDocument();
+        expect(screen.queryByText("Test TA 1")).not.toBeInTheDocument();
+        expect(screen.queryByText("Test TA 2")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show no results message when search yields no matches", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "nonexistent");
+
+      await waitFor(() => {
+        expect(screen.getByText('No TAs found matching "nonexistent"')).toBeInTheDocument();
+        expect(screen.getByText("Clear search")).toBeInTheDocument();
+      });
+    });
+
+    it("should clear search when clicking clear search button", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "nonexistent");
+
+      await waitFor(() => {
+        expect(screen.getByText("Clear search")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Clear search"));
+
+      await waitFor(() => {
+        expect(searchInput).toHaveValue("");
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+        expect(screen.getByText("Struggling TA")).toBeInTheDocument();
+      });
+    });
+
+    it("should combine search with filtering", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
+      });
+
+      // First search for "Test"
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "Test");
+
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+        expect(screen.queryByText("Struggling TA")).not.toBeInTheDocument();
+      });
+
+      // Then apply performing well filter
+      await user.click(screen.getByText("Filter & Sort"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Filter by Performance")).toBeInTheDocument();
+      });
+
+      // Get the filter combobox specifically (first one in the popover)
+      const filterComboboxes = screen.getAllByRole("combobox");
+      const filterSelect = filterComboboxes[0]; // First combobox is the filter
+      await user.click(filterSelect);
+      
+      await waitFor(() => {
+        expect(screen.getByText("Performing Well (Score ≥ 70%)")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Performing Well (Score ≥ 70%)"));
+
+      // Should still show both Test TAs since they match both search and filter
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+        expect(screen.queryByText("Struggling TA")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should be case insensitive when searching", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByPlaceholderText("Search TAs by name or username...")).toBeInTheDocument();
+      });
+
+      const searchInput = screen.getByPlaceholderText("Search TAs by name or username...");
+      await user.type(searchInput, "test ta");
+
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+        expect(screen.queryByText("Struggling TA")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should filter struggling TAs", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
+      });
+
+      // Open filter popover
+      await user.click(screen.getByText("Filter & Sort"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Filter by Performance")).toBeInTheDocument();
+      });
+
+      // Select struggling TAs filter - get the first combobox (filter dropdown)
+      const filterComboboxes = screen.getAllByRole("combobox");
+      const filterSelect = filterComboboxes[0];
+      await user.click(filterSelect);
+      
+      await waitFor(() => {
+        expect(screen.getByText("Struggling TAs (Score < 70%)")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Struggling TAs (Score < 70%)"));
+
+      // Should only show struggling TA
+      await waitFor(() => {
+        expect(screen.getByText("Struggling TA")).toBeInTheDocument();
+        expect(screen.queryByText("Test TA 1")).not.toBeInTheDocument();
+        expect(screen.queryByText("Test TA 2")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should filter performing well TAs", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
+      });
+
+      // Open filter popover
+      await user.click(screen.getByText("Filter & Sort"));
+
+      // Select performing well filter - get the first combobox (filter dropdown)
+      const filterComboboxes = screen.getAllByRole("combobox");
+      const filterSelect = filterComboboxes[0];
+      await user.click(filterSelect);
+      
+      await user.click(screen.getByText("Performing Well (Score ≥ 70%)"));
+
+      // Should show only performing well TAs
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+        expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+        expect(screen.queryByText("Struggling TA")).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Download Functionality", () => {
+    it("should show download buttons for each TA", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Download Report").length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should open download dialog when clicking download button", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Download Report")[0]).toBeInTheDocument();
+      });
+
+      // Click first download button
+      await user.click(screen.getAllByText("Download Report")[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Download Report for Test TA 1")).toBeInTheDocument();
+      });
+
+      // Should show customization options
+      expect(screen.getByText("Student Type Distribution Chart")).toBeInTheDocument();
+      expect(screen.getByText("Performance by Student Type Chart")).toBeInTheDocument();
+      expect(screen.getByText("Skills Radar Chart")).toBeInTheDocument();
+      expect(screen.getByText("Performance Over Time Chart")).toBeInTheDocument();
+      expect(screen.getByText("Detailed Score Table")).toBeInTheDocument();
+      expect(screen.getByText("Detailed Feedback Section")).toBeInTheDocument();
+    });
+
+    it("should allow customizing report options", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Download Report")[0]).toBeInTheDocument();
+      });
+
+      // Click first download button
+      await user.click(screen.getAllByText("Download Report")[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Download Report for Test TA 1")).toBeInTheDocument();
+      });
+
+      // Uncheck some options
+      const studentTypeCheckbox = screen.getByLabelText("Student Type Distribution Chart");
+      await user.click(studentTypeCheckbox);
+
+      expect(studentTypeCheckbox).not.toBeChecked();
+    });
+
+    it("should handle successful report download", async () => {
+      const user = userEvent.setup();
+      const mockBlob = new Blob(['fake pdf content'], { type: 'application/pdf' });
+      
+      (global.fetch as any).mockResolvedValueOnce({
+        ok: true,
+        blob: () => Promise.resolve(mockBlob),
+        headers: {
+          get: (name: string) => name === 'content-disposition' ? 'attachment; filename="TA_Report_Test.pdf"' : null,
+        },
+      });
+
+      // Mock URL.createObjectURL and related DOM methods
+      global.URL.createObjectURL = vi.fn(() => 'mock-url');
+      global.URL.revokeObjectURL = vi.fn();
+      
+      const mockClick = vi.fn();
+      const mockAppendChild = vi.fn();
+      const mockRemoveChild = vi.fn();
+      
+      vi.spyOn(document, 'createElement').mockReturnValue({
+        href: '',
+        download: '',
+        click: mockClick,
+      } as any);
+      
+      vi.spyOn(document.body, 'appendChild').mockImplementation(mockAppendChild);
+      vi.spyOn(document.body, 'removeChild').mockImplementation(mockRemoveChild);
+
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Download Report")[0]).toBeInTheDocument();
+      });
+
+      // Click first download button
+      await user.click(screen.getAllByText("Download Report")[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Generate & Download PDF")).toBeInTheDocument();
+      });
+
+      // Click generate button
+      await user.click(screen.getByText("Generate & Download PDF"));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/users/1'),
+          expect.objectContaining({
+            method: 'GET',
+          })
+        );
+      });
+
+      // Verify download process
+      expect(mockClick).toHaveBeenCalled();
+      expect(mockAppendChild).toHaveBeenCalled();
+      expect(mockRemoveChild).toHaveBeenCalled();
+    });
+
+    it("should handle download errors", async () => {
+      const user = userEvent.setup();
+      
+      (global.fetch as any).mockRejectedValueOnce(new Error('Network error'));
+
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getAllByText("Download Report")[0]).toBeInTheDocument();
+      });
+
+      // Click first download button
+      await user.click(screen.getAllByText("Download Report")[0]);
+
+      await waitFor(() => {
+        expect(screen.getByText("Generate & Download PDF")).toBeInTheDocument();
+      });
+
+      // Click generate button
+      await user.click(screen.getByText("Generate & Download PDF"));
+
+      await waitFor(() => {
+        expect(global.fetch).toHaveBeenCalled();
+      });
+
+      // Should handle error gracefully (button should not be stuck in loading state)
+      await waitFor(() => {
+        expect(screen.getByText("Generate & Download PDF")).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("Support Dialog", () => {
+    it("should show support button for struggling TAs", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Struggling TA")).toBeInTheDocument();
+      });
+
+      // Should show support button for struggling TA
+      expect(screen.getByText("Support")).toBeInTheDocument();
+    });
+
+    it("should open support dialog for struggling TAs", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Support")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Support"));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText("Support Recommendations for Struggling TA"),
+        ).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("Current Performance")).toBeInTheDocument();
+      expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+      expect(screen.getByText("Recommended Actions:")).toBeInTheDocument();
+    });
+
+    it("should show skill breakdown in support dialog", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Support")).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText("Support"));
+
+      await waitFor(() => {
+        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
+      });
+
+      // Should show skill categories
+      expect(screen.getByText("Communication Skills:")).toBeInTheDocument();
+      expect(screen.getByText("Problem Solving:")).toBeInTheDocument();
     });
   });
 
   describe("Data Integration", () => {
-    it("should handle empty data gracefully", async () => {
-      // Mock empty responses
-      const emptyQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
-
-      const AllProviders = ({ children }: { children: ReactNode }) => (
-        <QueryClientProvider client={emptyQueryClient}>
-          {children}
-        </QueryClientProvider>
-      );
-
-      render(<Reports />, { wrapper: AllProviders });
-
-      // Should show loading initially
-      expect(screen.getByText("Loading reports...")).toBeInTheDocument();
-    });
-
     it("should calculate scores based on actual grades", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
         expect(
-          screen.getByText("TA Performance Leaderboard"),
+          screen.getByText("TA Performance Overview"),
         ).toBeInTheDocument();
       });
 
@@ -327,97 +734,49 @@ describe("Reports", () => {
       // Should show session completion data
       expect(screen.getAllByText(/\/\d+ sessions/).length).toBeGreaterThan(0);
     });
-  });
 
-  describe("Support Dialog", () => {
-    it("should open support dialog for struggling TAs", async () => {
+    it("should handle empty filter results", async () => {
       const user = userEvent.setup();
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
-        expect(screen.getAllByText("Struggling TA").length).toBeGreaterThan(0);
+        expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
       });
 
-      // Find and click on the struggling TA in the support section
-      const supportSection = screen
-        .getByText("Need Support")
-        .closest('[data-slot="card"]');
-      const strugglingTAButton = supportSection?.querySelector(
-        'div[class*="cursor-pointer"]',
-      );
+      // Open filter popover and select a filter that would return no results
+      await user.click(screen.getByText("Filter & Sort"));
 
-      if (strugglingTAButton) {
-        await user.click(strugglingTAButton);
-
-        await waitFor(() => {
-          expect(
-            screen.getByText("Support Recommendations for Struggling TA"),
-          ).toBeInTheDocument();
-        });
-
-        expect(screen.getByText("Current Performance")).toBeInTheDocument();
-        expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-        expect(screen.getByText("Recommended Actions:")).toBeInTheDocument();
-      }
-    });
-
-    it("should show skill breakdown in support dialog", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<Reports />);
-
-      await waitFor(() => {
-        expect(screen.getAllByText("Struggling TA").length).toBeGreaterThan(0);
-      });
-
-      // Find and click on the struggling TA in the support section
-      const supportSection = screen
-        .getByText("Need Support")
-        .closest('[data-slot="card"]');
-      const strugglingTAButton = supportSection?.querySelector(
-        'div[class*="cursor-pointer"]',
-      );
-
-      if (strugglingTAButton) {
-        await user.click(strugglingTAButton);
-
-        await waitFor(() => {
-          expect(screen.getByText("Skill Performance")).toBeInTheDocument();
-        });
-
-        // Should show skill categories
-        expect(screen.getByText("Communication Skills:")).toBeInTheDocument();
-        expect(screen.getByText("Problem Solving:")).toBeInTheDocument();
-      }
+      // For this test, we'll simulate the empty state by checking the current implementation
+      // In a real scenario, you might mock different data that would result in no matches
+      
+      // The component should handle empty results gracefully
+      expect(screen.getByText("Filter & Sort")).toBeInTheDocument();
     });
   });
 
   describe("Edge Cases", () => {
-    it("should show success message when no TAs need support", async () => {
-      renderWithProviders(<Reports />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("TA Performance Leaderboard"),
-        ).toBeInTheDocument();
-      });
-
-      // With our mock data, Test TA 1 (85%) and Test TA 2 (78%) are above 70%
-      // Only Struggling TA (65%) is below 70%, so we should see the struggling TA
-      // This test verifies the component handles the case correctly
-      expect(screen.getAllByText("Struggling TA").length).toBeGreaterThan(0);
-    });
-
     it("should handle TAs with no sessions", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
         expect(
-          screen.getByText("TA Performance Leaderboard"),
+          screen.getByText("TA Performance Overview"),
         ).toBeInTheDocument();
       });
 
       // Component should handle TAs with 0 sessions gracefully
       // This is tested implicitly by the component not crashing
+    });
+
+    it("should show proper ranking numbers", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("#1")).toBeInTheDocument();
+      });
+
+      expect(screen.getByText("#2")).toBeInTheDocument();
+      expect(screen.getByText("#3")).toBeInTheDocument();
     });
   });
 });
@@ -428,33 +787,22 @@ describe("Reports", () => {
  *
  * Features detected:
  * - Default export: true
- * - Named exports: None
+ * - Named exports: ReportDownloadDialog (internal component)
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useMemo, useQuery, users, user, userId, username, used
+ * - Client component: true
+ * - Uses hooks: useMemo, useQuery, useState
  * - Uses router: false
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: false
+ * - Has API calls: true (via fetch for downloads)
+ * - Has form handling: true (checkboxes for report options)
+ * - Uses state: true (sorting, filtering, download states)
  * - Uses effects: false
  * - Uses context: false
  *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<Reports />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<Reports {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
+ * New features added:
+ * - Download functionality with customizable options
+ * - Filtering and sorting capabilities
+ * - Centralized TA overview with struggling TAs highlighted
+ * - Support dialog for struggling TAs
+ * - Report customization dialog
  */

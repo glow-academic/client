@@ -35,7 +35,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 // Icons
-import { Users, Activity, Play, RotateCcw } from "lucide-react";
+import { Users, Activity, Play } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -446,6 +446,175 @@ export default function EvaluationPage({
     }
   };
 
+  // Run all evaluations in parallel
+  const handleRunAllEvaluations = async () => {
+    if (!evaluation) return;
+
+    setIsRunningEval(true);
+    setAiConversationData([]);
+    setAiConversationComplete(false);
+
+    try {
+      const formData = new FormData();
+      formData.append("eval_id", evaluation.id);
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/evals/run-multiple`,
+        {
+          method: "POST",
+          headers: { Accept: "text/event-stream" },
+          cache: "no-cache",
+          body: formData,
+        },
+      );
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop()!;
+
+        for (const part of parts) {
+          if (!part.startsWith("data:")) continue;
+
+          const data = JSON.parse(part.slice(5));
+
+          // Handle parallel execution events
+          if (data.type === "parallel_start") {
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "parallel_info",
+                message: `Starting ${data.total_runs} evaluations in ${data.parallel_count} parallel groups`,
+              },
+            ]);
+          }
+
+          if (data.type === "chat_created") {
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "chat_info",
+                message: `Created chat: ${data.title}`,
+                chatId: data.chat_id,
+              },
+            ]);
+          }
+
+          if (data.type === "turn_start") {
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "turn_start",
+                turn: data.turn,
+                speaker: data.speaker,
+                message: data.message,
+                chatId: data.chat_id,
+                chatIndex: data.chat_index,
+              },
+            ]);
+          }
+
+          if (data.type === "token") {
+            setAiConversationData((prev) => {
+              const newData = [...prev];
+              const lastItem = newData[newData.length - 1];
+
+              if (
+                lastItem &&
+                lastItem.type === "streaming" &&
+                lastItem.speaker === data.speaker &&
+                lastItem.chatId === data.chat_id
+              ) {
+                lastItem.response += data.token;
+              } else {
+                newData.push({
+                  type: "streaming",
+                  speaker: data.speaker,
+                  response: data.token,
+                  chatId: data.chat_id,
+                  chatIndex: data.chat_index,
+                });
+              }
+
+              return newData;
+            });
+          }
+
+          if (data.type === "turn_complete") {
+            setAiConversationData((prev) => {
+              const newData = [...prev];
+              const lastStreamingIndex = newData.findLastIndex(
+                (item) =>
+                  item.type === "streaming" && 
+                  item.speaker === data.speaker &&
+                  item.chatId === data.chat_id,
+              );
+
+              if (lastStreamingIndex !== -1) {
+                newData[lastStreamingIndex] = {
+                  type: "message",
+                  speaker: data.speaker,
+                  message: newData[lastStreamingIndex].response,
+                  turn: data.turn,
+                  chatId: data.chat_id,
+                  chatIndex: data.chat_index,
+                };
+              }
+
+              return newData;
+            });
+          }
+
+          if (data.type === "evaluation_complete") {
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "evaluation",
+                evalGradeId: data.eval_grade_id,
+                chatId: data.chat_id,
+                chatIndex: data.chat_index,
+              },
+            ]);
+          }
+
+          if (data.type === "all_complete") {
+            setAiConversationData((prev) => [
+              ...prev,
+              {
+                type: "all_complete",
+                message: `All ${data.total_runs} evaluations completed successfully!`,
+              },
+            ]);
+            setAiConversationComplete(true);
+
+            // Invalidate queries to refresh data
+            queryClient.invalidateQueries({ queryKey: ["evalChats"] });
+            queryClient.invalidateQueries({ queryKey: ["evalGrades"] });
+            queryClient.invalidateQueries({ queryKey: ["evalFeedbacks"] });
+          }
+
+          if (data.type === "done") {
+            setAiConversationComplete(true);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error running all evaluations:", error);
+      toast.error("Failed to run all evaluations");
+    } finally {
+      setIsRunningEval(false);
+    }
+  };
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -564,26 +733,6 @@ export default function EvaluationPage({
                       })}
                     </SelectContent>
                   </Select>
-
-                  {!currentChat?.completedAt && (
-                    <Button
-                      onClick={handleRunEvaluation}
-                      disabled={isRunningEval || !currentEvalRun}
-                      size="sm"
-                    >
-                      {isRunningEval ? (
-                        <>
-                          <LoadingDots />
-                          <span className="ml-2">Running...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-2" />
-                          Run Evaluation
-                        </>
-                      )}
-                    </Button>
-                  )}
                 </div>
 
                 <div className="flex items-center gap-4">
@@ -600,16 +749,26 @@ export default function EvaluationPage({
                     </div>
                   )}
 
-                  {currentChat?.completedAt && (
-                    <Button
-                      variant="outline"
-                      onClick={handleRunEvaluation}
-                      disabled={isRunningEval}
-                      size="sm"
-                    >
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Re-run
-                    </Button>
+                  {!currentChat?.completedAt && !isRunningEval && (
+                    <>
+                      <Button
+                        onClick={handleRunEvaluation}
+                        disabled={!currentEvalRun}
+                        size="sm"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Run
+                      </Button>
+                      <Button
+                        onClick={handleRunAllEvaluations}
+                        disabled={!evaluation}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        Run All
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
@@ -718,62 +877,117 @@ export default function EvaluationPage({
                       </>
                     )}
 
-                    {/* Show live AI conversation if running */}
-                    {isRunningEval &&
-                      aiConversationData.map((item, index) => {
-                        if (item.type === "evaluation") {
-                          return (
+                                    {/* Show live AI conversation if running */}
+                {isRunningEval &&
+                  aiConversationData.map((item, index) => {
+                    if (item.type === "parallel_info") {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800 text-center"
+                        >
+                          <div className="text-blue-800 dark:text-blue-200 font-medium">
+                            🚀 {item.message}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (item.type === "chat_info") {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-gray-50 dark:bg-gray-900/20 p-2 rounded border border-gray-200 dark:border-gray-800"
+                        >
+                          <div className="text-xs text-gray-600 dark:text-gray-400">
+                            ✅ {item.message}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (item.type === "all_complete") {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-green-50 dark:bg-green-900/20 p-6 rounded-lg border border-green-200 dark:border-green-800 mt-6"
+                        >
+                          <h4 className="font-semibold text-green-800 dark:text-green-200 mb-3 text-lg">
+                            🎉 All Evaluations Complete
+                          </h4>
+                          <div className="bg-white dark:bg-green-950/30 p-4 rounded border border-green-300 dark:border-green-700">
+                            <div className="text-sm text-green-700 dark:text-green-300">
+                              {item.message}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (item.type === "evaluation") {
+                      return (
+                        <div
+                          key={index}
+                          className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6"
+                        >
+                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
+                            🎯 Evaluation Complete
+                          </h4>
+                          <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
+                            <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                              Evaluation completed successfully. Grade ID:{" "}
+                              {item.evalGradeId}
+                              {item.chatId && (
+                                <span className="block mt-1">
+                                  Chat: {item.chatId.slice(0, 8)}...
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    if (item.type === "message" || item.type === "streaming") {
+                      const isQueryAgent = item.speaker === queryAgent?.name;
+                      return (
+                        <div key={index} className="space-y-2">
+                          <div
+                            className={`flex ${isQueryAgent ? "justify-end" : "justify-start"}`}
+                          >
                             <div
-                              key={index}
-                              className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6"
+                              className={`max-w-[80%] p-3 rounded-lg ${
+                                isQueryAgent
+                                  ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
+                                  : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                              }`}
                             >
-                              <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
-                                🎯 Evaluation Complete
-                              </h4>
-                              <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
-                                <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                                  Evaluation completed successfully. Grade ID:{" "}
-                                  {item.evalGradeId}
-                                </div>
+                              <div className="text-xs font-medium mb-1">
+                                {item.speaker}{" "}
+                                {item.turn && `(Turn ${item.turn})`}
+                                {item.chatIndex !== undefined && (
+                                  <span className="text-muted-foreground">
+                                    {" "}
+                                    - Chat {item.chatIndex + 1}
+                                  </span>
+                                )}
                               </div>
-                            </div>
-                          );
-                        }
-
-                        if (item.type === "message" || item.type === "streaming") {
-                          const isQueryAgent = item.speaker === queryAgent?.name;
-                          return (
-                            <div key={index} className="space-y-2">
-                              <div
-                                className={`flex ${isQueryAgent ? "justify-end" : "justify-start"}`}
-                              >
-                                <div
-                                  className={`max-w-[80%] p-3 rounded-lg ${
-                                    isQueryAgent
-                                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
-                                      : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
-                                  }`}
-                                >
-                                  <div className="text-xs font-medium mb-1">
-                                    {item.speaker}{" "}
-                                    {item.turn && `(Turn ${item.turn})`}
-                                  </div>
-                                  {item.type === "streaming" ? (
-                                    <div className="flex items-center">
-                                      <span>{item.response}</span>
-                                      <LoadingDots />
-                                    </div>
-                                  ) : (
-                                    <Markdown>{item.message}</Markdown>
-                                  )}
+                              {item.type === "streaming" ? (
+                                <div className="flex items-center">
+                                  <span>{item.response}</span>
+                                  <LoadingDots />
                                 </div>
-                              </div>
+                              ) : (
+                                <Markdown>{item.message}</Markdown>
+                              )}
                             </div>
-                          );
-                        }
+                          </div>
+                        </div>
+                      );
+                    }
 
-                        return null;
-                      })}
+                    return null;
+                  })}
 
                     {/* Loading state for new evaluation */}
                     {isRunningEval && aiConversationData.length === 0 && (

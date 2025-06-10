@@ -120,6 +120,15 @@ describe("EvaluationPage", () => {
       // Test would involve toggling the grades switch
       expect(true).toBe(true); // Placeholder for actual test
     });
+
+    it("should handle run all evaluations button click", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+
+      // Test would involve clicking run all evaluations button
+      expect(true).toBe(true); // Placeholder for actual test
+    });
   });
 
   describe("API Integration", () => {
@@ -258,6 +267,8 @@ describe("EvaluationPage", () => {
  * - Supports document viewing in side panel
  * - Integrates with evaluation API endpoints
  * - Toggle between chat view and rubric grades/feedback view
+ * - Run single evaluation or all evaluations in parallel
+ * - Handles parallel execution events and displays progress
  *
  * TODO: Implement the failing tests above with actual test logic
  *

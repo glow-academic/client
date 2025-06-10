@@ -369,17 +369,6 @@ describe('Rubric', () => {
       });
     });
 
-    it('should display rating scale information', async () => {
-      renderWithProviders(<Rubric rubricId="rubric-1" mode="edit" showAdvancedFeatures={true} />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('How to Use This Rubric')).toBeInTheDocument();
-        expect(screen.getByText('5 (Excellent):')).toBeInTheDocument();
-        expect(screen.getByText('4 (Good):')).toBeInTheDocument();
-        expect(screen.getByText('3 (Acceptable):')).toBeInTheDocument();
-      });
-    });
-
     it('should handle collapsible standard groups', async () => {
       const user = userEvent.setup();
       renderWithProviders(<Rubric rubricId="rubric-1" mode="edit" showAdvancedFeatures={true} />);
