@@ -1,3 +1,9 @@
+/**
+ * app/c/layout.tsx
+ * Layout for the c section.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
 "use client";
 import React from "react";
 import { usePathname } from "next/navigation";

@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T15:36:11.849Z
+Generated on: 2025-06-10T15:49:20.887Z
 
 ## Summary
 - **Total Components**: 54
 - **Tests Created**: 0
-- **Tests Updated**: 6
-- **Tests Skipped** (already implemented): 48
+- **Tests Updated**: 0
+- **Tests Skipped** (already implemented): 54
 
 ## Component Coverage
 
@@ -39,18 +39,18 @@ Generated on: 2025-06-10T15:36:11.849Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
-| Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ❌ Needs Implementation |
+| Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
-| Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
-| NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
+| Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
+| NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
 | NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
 | ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
-| Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ❌ Needs Implementation |
-| NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ❌ Needs Implementation |
+| Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ✅ Implemented |
+| NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ✅ Implemented |
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
-| Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ❌ Needs Implementation |
+| Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |

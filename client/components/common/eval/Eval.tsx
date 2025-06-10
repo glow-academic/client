@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
-"use client";
 
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";

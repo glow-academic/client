@@ -1,7 +1,12 @@
+/**
+ * app/e/layout.tsx
+ * Layout for the eval section.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
 "use client";
 import React from "react";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   SidebarProvider,

@@ -1,7 +1,12 @@
+/**
+ * app/(main)/layout.tsx
+ * Layout for the main section.
+ * @AshokSaravanan222 & @siladiea
+ * 06/08/2025
+ */
 "use client";
 import React from "react";
-import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus } from "lucide-react";
 import {
