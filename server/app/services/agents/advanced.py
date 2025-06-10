@@ -1,0 +1,267 @@
+from typing import AsyncGenerator, Literal, Union, List
+from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
+from openai.types import Reasoning
+from datetime import datetime
+from app.extensions import get_gemini
+from app.utils.chat import get_conversation_history, get_chat_scenario
+from app.utils.classes import get_class_info
+from app.db import get_session
+from sqlmodel import Session, select
+from app.models import (
+    SimulationMessages, 
+    SimulationChats, 
+    SimulationAttempts, 
+    EvalMessages,
+    EvalChats,
+    EvalRuns,
+    Agents,
+    Scenarios
+)
+from app.utils.agents import gta_prompt, student_prompt
+from fastapi import Depends
+from openai.types.responses import (
+    ResponseTextDeltaEvent,
+)
+
+
+async def run_advanced_agent(
+    chat_ids: List[str],
+    input_texts: List[str] = [],
+    session: Session = Depends(get_session),
+) -> AsyncGenerator[str, None]:
+    """
+    This function is used to run the generic agent using the OpenAI Agents SDK.
+    Returns a streamable result that yields clean text chunks as they're generated.
+    The agent behavior is customized based on the agent's description.
+    
+    Now supports both simulation chats and eval chats by detecting the chat type.
+
+    Args:
+        chat_id: The ID of the chat session (can be simulation_chat_id or eval_chat_id)
+        input_text: Optional input text to send to the agent
+        test_data: Whether to use test data
+    Yields:
+        Text chunks from the agent's response
+    """
+    
+    # If test_data is True, stream back a dummy response
+    if test_data:
+        dummy_response = "This is a test response for debugging purposes. The agent is working correctly."
+
+        # Try to determine chat type and add appropriate message
+        simulation_chat = session.exec(
+            select(SimulationChats).where(SimulationChats.id == chat_id)
+        ).one_or_none()
+        
+        if simulation_chat:
+            message = SimulationMessages(chat_id=chat_id, query=input_text, response=dummy_response)
+        else:
+            message = EvalMessages(chat_id=chat_id, query=input_text, response=dummy_response)
+        
+        session.add(message)
+        session.commit()
+
+        # Stream the dummy response character by character to simulate real streaming
+        for char in dummy_response:
+            yield char
+        return
+    
+    # Try to get simulation chat first
+    simulation_chat = session.exec(
+        select(SimulationChats).where(SimulationChats.id == chat_id)
+    ).one_or_none()
+    
+    if simulation_chat:
+        # Handle simulation chat
+        async for token in _handle_simulation_chat(simulation_chat, input_text, session):
+            yield token
+    else:
+        # Try to get eval chat
+        eval_chat = session.exec(
+            select(EvalChats).where(EvalChats.id == chat_id)
+        ).one_or_none()
+        
+        if eval_chat:
+            # Handle eval chat
+            async for token in _handle_eval_chat(eval_chat, input_text, session):
+                yield token
+        else:
+            raise ValueError(f"Chat not found with ID: {chat_id}")
+
+
+async def _handle_simulation_chat(
+    chat: SimulationChats,
+    input_text: str,
+    session: Session
+) -> AsyncGenerator[str, None]:
+    """Handle simulation chat processing."""
+    
+    # Find attempt from chat
+    attempt = session.exec(
+        select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
+    ).one()
+    if not attempt:
+        raise ValueError(f"Attempt not found for chat {chat.id}")
+
+    # Get the agent through the scenario relationship
+    scenario = session.exec(
+        select(Scenarios).where(Scenarios.id == chat.scenario_id)
+    ).one()
+    if not scenario:
+        raise ValueError(f"Scenario not found for chat {chat.id}")
+        
+    agent = session.exec(
+        select(Agents).where(Agents.id == scenario.agent_id)
+    ).one()
+    if not agent:
+        raise ValueError(f"Agent not found for scenario {scenario.id}")
+
+    # Add a new message with an empty response
+    message = SimulationMessages(chat_id=chat.id, query=input_text, response="")
+    session.add(message)
+
+    # Get all the messages for the chat_id, including the new one, order by created_at
+    messages = session.exec(
+        select(SimulationMessages)
+        .where(SimulationMessages.chat_id == chat.id)
+        .order_by(SimulationMessages.created_at)
+    ).all()
+
+    # Prepare conversation history from chat_id
+    conversation_history = get_conversation_history(messages)
+    chat_scenario = get_chat_scenario(chat, session)
+    class_info = get_class_info(attempt.class_id, session)
+
+    input_items = [chat_scenario, class_info] + conversation_history
+
+    # Define the agent with agent-specific behavior
+    agent_instance = GenericAgent(
+        agent_name=agent.name, 
+        agent_prompt=agent.system_prompt, 
+        agent_type=agent.agent_type, 
+        temperature=agent.temperature
+    )
+
+    result = Runner.run_streamed(
+        agent_instance.agent(),
+        input=input_items,
+        run_config=RunConfig(workflow_name=chat.title),
+    )
+
+    # Process streaming events
+    full_response = ""
+    async for event in result.stream_events():
+        if event.type == "raw_response_event":
+            if isinstance(event.data, ResponseTextDeltaEvent):
+                chunk = event.data.delta
+                full_response += chunk
+                yield chunk
+
+    # Update the message with the full response
+    message.response = full_response
+    session.add(message)
+    session.commit()
+
+
+async def _handle_eval_chat(
+    chat: EvalChats,
+    input_text: str,
+    session: Session
+) -> AsyncGenerator[str, None]:
+    """Handle eval chat processing."""
+    
+    # Get the eval run
+    eval_run = session.exec(
+        select(EvalRuns).where(EvalRuns.id == chat.eval_run_id)
+    ).one()
+    if not eval_run:
+        raise ValueError(f"Eval run not found for chat {chat.id}")
+
+    # Get the agent from the eval run
+    agent = session.exec(
+        select(Agents).where(Agents.id == eval_run.agent_id)
+    ).one()
+    if not agent:
+        raise ValueError(f"Agent not found for eval run {eval_run.id}")
+
+    # Add a new message with an empty response
+    message = EvalMessages(chat_id=chat.id, query=input_text, response="")
+    session.add(message)
+
+    # Get all the messages for the chat_id, including the new one, order by created_at
+    messages = session.exec(
+        select(EvalMessages)
+        .where(EvalMessages.chat_id == chat.id)
+        .order_by(EvalMessages.created_at)
+    ).all()
+
+    # Prepare conversation history - need to adapt for eval messages
+    conversation_history = get_conversation_history(messages)
+    
+    # Get scenario info for context
+    scenario = session.exec(
+        select(Scenarios).where(Scenarios.id == eval_run.scenario_id)
+    ).one()
+    scenario_context = f"Scenario: {scenario.name} - {scenario.description}"
+    
+    # Get class info
+    class_info = get_class_info(eval_run.class_id, session)
+
+    input_items = [scenario_context, class_info] + conversation_history
+
+    # Define the agent with agent-specific behavior
+    agent_instance = AdvancedAgent(
+        agent_name=agent.name, 
+        agent_prompt=agent.system_prompt, 
+        agent_type=agent.agent_type, 
+        temperature=agent.temperature
+    )
+
+    result = Runner.run_streamed(
+        agent_instance.agent(),
+        input=input_items,
+        run_config=RunConfig(workflow_name=chat.title),
+    )
+
+    # Process streaming events
+    full_response = ""
+    async for event in result.stream_events():
+        if event.type == "raw_response_event":
+            if isinstance(event.data, ResponseTextDeltaEvent):
+                chunk = event.data.delta
+                full_response += chunk
+                yield chunk
+
+    # Update the message with the full response
+    message.response = full_response
+    session.add(message)
+    session.commit()
+
+
+class AdvancedAgent:
+    def __init__(self, agent_name: str, agent_prompt: str, agent_type: str, temperature: float = 0.0):
+        self.gemini_client = get_gemini()
+        self.agent_name = agent_name
+        self.agent_prompt = agent_prompt
+        if agent_type == "ta":
+            self.system_prompt = gta_prompt(agent_name, agent_prompt)
+        elif agent_type == "student":
+            self.system_prompt = student_prompt(agent_name, agent_prompt)
+        else:
+            self.system_prompt = agent_prompt
+        self.temperature = temperature
+
+    def agent(self):
+        return Agent(
+            name=f"{self.agent_name} Agent",
+            instructions=self.system_prompt,
+            model=OpenAIChatCompletionsModel(
+                model="gemini-2.5-flash-preview-04-17",
+                openai_client=self.gemini_client,
+            ),
+            model_settings=ModelSettings(
+                temperature=self.temperature,
+                include_usage=True,
+                reasoning=Reasoning(effort="low"),
+            ),
+        ) 

@@ -111,6 +111,15 @@ describe("EvaluationPage", () => {
       // Test would involve clicking run evaluation button
       expect(true).toBe(true); // Placeholder for actual test
     });
+
+    it("should handle grades toggle switch", async () => {
+      const user = userEvent.setup();
+
+      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+
+      // Test would involve toggling the grades switch
+      expect(true).toBe(true); // Placeholder for actual test
+    });
   });
 
   describe("API Integration", () => {
@@ -165,6 +174,29 @@ describe("EvaluationPage", () => {
     });
   });
 
+  describe("Rubric Overlay Display", () => {
+    it("should display rubric grades when toggle is enabled", () => {
+      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+
+      // Should show rubric grades/feedback overlay when toggle is on
+      expect(true).toBe(true); // Placeholder for rubric overlay test
+    });
+
+    it("should hide chat messages when showing rubric grades", () => {
+      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+
+      // Should hide chat messages when rubric overlay is active
+      expect(true).toBe(true); // Placeholder for chat hiding test
+    });
+
+    it("should display skill feedback in alternating layout", () => {
+      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+
+      // Should display skill feedback cards in alternating left/right layout
+      expect(true).toBe(true); // Placeholder for alternating layout test
+    });
+  });
+
   describe("Edge Cases", () => {
     it("should handle missing evaluation ID", () => {
       renderWithProviders(<EvaluationPage evaluationId="" />);
@@ -214,7 +246,7 @@ describe("EvaluationPage", () => {
  * - Uses router: true (useRouter)
  * - Has API calls: true (multiple eval-related endpoints)
  * - Has form handling: false
- * - Uses state: true (multiple state variables)
+ * - Uses state: true (multiple state variables including showGrades toggle)
  * - Uses effects: true (multiple useEffect hooks)
  * - Uses context: false
  *
@@ -222,9 +254,10 @@ describe("EvaluationPage", () => {
  * - Displays evaluation runs and AI vs AI conversations
  * - Handles eval run selection via dropdown
  * - Streams real-time AI conversation data
- * - Shows evaluation results and dynamic rubrics
+ * - Shows evaluation results with toggle switch for grades/feedback overlay
  * - Supports document viewing in side panel
  * - Integrates with evaluation API endpoints
+ * - Toggle between chat view and rubric grades/feedback view
  *
  * TODO: Implement the failing tests above with actual test logic
  *
@@ -243,4 +276,9 @@ describe("EvaluationPage", () => {
  * const button = screen.getByRole('button', { name: /run evaluation/i });
  * await user.click(button);
  * expect(mockRunEvaluation).toHaveBeenCalled();
+ *
+ * Toggle interaction:
+ * const toggle = screen.getByRole('switch', { name: /show grades/i });
+ * await user.click(toggle);
+ * expect(screen.getByText(/overall results/i)).toBeInTheDocument();
  */

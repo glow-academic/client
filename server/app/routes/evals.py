@@ -112,6 +112,14 @@ async def start_eval(
             status_code=500, detail=f"Failed to start eval: {str(e)}"
         )
 
+@router.post("run-multiple")
+async def run_multiple_evals(
+    eval_ids: List[str] = Form(...),
+    session: Session = Depends(get_session),
+):
+    """
+    Run multiple evals in parallel."""
+
 
 @router.post("/run")
 async def run_eval(

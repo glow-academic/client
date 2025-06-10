@@ -31,9 +31,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Icons
-import { Users, CheckCircle, Activity, Play, RotateCcw } from "lucide-react";
+import { Users, Activity, Play, RotateCcw } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -88,7 +90,7 @@ export default function EvaluationPage({
   const [isRunningEval, setIsRunningEval] = useState(false);
   const [aiConversationData, setAiConversationData] = useState<any[]>([]);
   const [aiConversationComplete, setAiConversationComplete] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [showGrades, setShowGrades] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -495,109 +497,7 @@ export default function EvaluationPage({
     );
   }
 
-  // Show results screen if current chat is completed
-  if (currentChat?.completedAt && currentDynamicRubric && !isRunningEval) {
-    return (
-      <div className="flex flex-1 flex-col gap-4">
-        <div
-          className="max-w-4xl mx-auto space-y-6"
-          data-testid="evaluation-results"
-        >
-          {/* Eval Run Selector */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Evaluation Results</span>
-                <Select
-                  value={selectedEvalRunId || ""}
-                  onValueChange={setSelectedEvalRunId}
-                >
-                  <SelectTrigger className="w-80">
-                    <SelectValue placeholder="Select eval run" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {evalRuns.map((run: EvalRun) => (
-                      <SelectItem key={run.id} value={run.id}>
-                        <div className="flex items-center gap-2">
-                          <span>Run {evalRuns.indexOf(run) + 1}</span>
-                          <span className="text-muted-foreground">
-                            ({queryAgent?.name} vs {responseAgent?.name})
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </CardTitle>
-            </CardHeader>
-          </Card>
 
-          {/* Detailed Results */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Detailed Results</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {currentDynamicRubric.score}/
-                    {currentDynamicRubric.totalPossiblePoints}
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Overall Score
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold">
-                    {Math.round(currentDynamicRubric.timeTaken / 60)}
-                  </div>
-                  <div className="text-sm text-muted-foreground">Minutes</div>
-                </div>
-                {Object.entries(currentDynamicRubric.skillScores)
-                  .slice(0, 2)
-                  .map(([skillName, score]) => (
-                    <div key={skillName} className="text-center">
-                      <div className="text-2xl font-bold">{score}/5</div>
-                      <div className="text-sm text-muted-foreground">
-                        {skillName}
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-              <div className="space-y-3">
-                {Object.entries(currentDynamicRubric.skillFeedbacks).map(
-                  ([skillName, feedback]) => (
-                    <div key={skillName}>
-                      <h4 className="font-medium">{skillName} Feedback</h4>
-                      <p className="text-sm text-muted-foreground">
-                        {feedback}
-                      </p>
-                    </div>
-                  ),
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-2">
-            <Button onClick={() => setShowResults(false)}>
-              View Conversation
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleRunEvaluation}
-              disabled={isRunningEval}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Re-run Evaluation
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-1 gap-4">
@@ -635,177 +535,265 @@ export default function EvaluationPage({
           <CardContent className="flex-1 flex flex-col p-0">
             {/* Eval Run Selector */}
             <div className="p-4 border-b bg-muted/30">
-              <div className="flex items-center gap-4">
-                <Select
-                  value={selectedEvalRunId || ""}
-                  onValueChange={setSelectedEvalRunId}
-                >
-                  <SelectTrigger className="w-80">
-                    <SelectValue placeholder="Select eval run to view" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {evalRuns.map((run: EvalRun, index: number) => {
-                      const runChat = chats?.find(
-                        (chat) => chat.evalRunId === run.id,
-                      );
-                      return (
-                        <SelectItem key={run.id} value={run.id}>
-                          <div className="flex items-center gap-2">
-                            <span>Run {index + 1}</span>
-                            {runChat?.completedAt && (
-                              <Badge variant="outline" className="text-xs">
-                                Completed
-                              </Badge>
-                            )}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-
-                {!currentChat?.completedAt && (
-                  <Button
-                    onClick={handleRunEvaluation}
-                    disabled={isRunningEval || !currentEvalRun}
-                    size="sm"
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Select
+                    value={selectedEvalRunId || ""}
+                    onValueChange={setSelectedEvalRunId}
                   >
-                    {isRunningEval ? (
-                      <>
-                        <LoadingDots />
-                        <span className="ml-2">Running...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="h-4 w-4 mr-2" />
-                        Run Evaluation
-                      </>
-                    )}
-                  </Button>
-                )}
+                    <SelectTrigger className="w-80">
+                      <SelectValue placeholder="Select eval run to view" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {evalRuns.map((run: EvalRun, index: number) => {
+                        const runChat = chats?.find(
+                          (chat) => chat.evalRunId === run.id,
+                        );
+                        return (
+                          <SelectItem key={run.id} value={run.id}>
+                            <div className="flex items-center gap-2">
+                              <span>Run {index + 1}</span>
+                              {runChat?.completedAt && (
+                                <Badge variant="outline" className="text-xs">
+                                  Completed
+                                </Badge>
+                              )}
+                            </div>
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
 
-                {currentChat?.completedAt && (
-                  <Button
-                    onClick={() => setShowResults(true)}
-                    size="sm"
-                    variant="outline"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    View Results
-                  </Button>
-                )}
+                  {!currentChat?.completedAt && (
+                    <Button
+                      onClick={handleRunEvaluation}
+                      disabled={isRunningEval || !currentEvalRun}
+                      size="sm"
+                    >
+                      {isRunningEval ? (
+                        <>
+                          <LoadingDots />
+                          <span className="ml-2">Running...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="h-4 w-4 mr-2" />
+                          Run Evaluation
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                  {currentChat?.completedAt && currentDynamicRubric && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="show-grades" className="text-sm">
+                        Show Grades
+                      </Label>
+                      <Switch
+                        id="show-grades"
+                        checked={showGrades}
+                        onCheckedChange={setShowGrades}
+                      />
+                    </div>
+                  )}
+
+                  {currentChat?.completedAt && (
+                    <Button
+                      variant="outline"
+                      onClick={handleRunEvaluation}
+                      disabled={isRunningEval}
+                      size="sm"
+                    >
+                      <RotateCcw className="h-4 w-4 mr-2" />
+                      Re-run
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
 
             <ScrollArea className="flex-1 px-4" ref={scrollAreaRef}>
               <div className="space-y-4 py-4">
-                {/* Show existing messages if chat is completed */}
-                {currentChat?.completedAt && messages.length > 0 && (
-                  <>
-                    {messages.map((message: EvalMessage) => (
-                      <div key={message.id} className="space-y-4">
-                        {/* Query Message */}
-                        {message.query && (
-                          <div className="flex justify-end">
-                            <div className="max-w-[80%] bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 rounded-lg p-3">
-                              <div className="text-xs font-medium mb-1">
-                                {queryAgent?.name || "Query Agent"}
-                              </div>
-                              <Markdown>{message.query}</Markdown>
+                {/* Show rubric grades/feedback overlay when toggle is on */}
+                {showGrades && currentChat?.completedAt && currentDynamicRubric ? (
+                  <div className="space-y-4">
+                    {/* Overall Score Card */}
+                    <div className="flex justify-center">
+                      <div className="bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 rounded-lg p-4 max-w-[80%]">
+                        <div className="text-xs font-medium mb-2">Overall Results</div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold">
+                              {currentDynamicRubric.score}/
+                              {currentDynamicRubric.totalPossiblePoints}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Overall Score
                             </div>
                           </div>
-                        )}
-
-                        {/* Response Message */}
-                        {message.response && (
-                          <div className="flex justify-start">
-                            <div className="max-w-[80%] bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100 rounded-lg p-3">
-                              <div className="text-xs font-medium mb-1">
-                                {responseAgent?.name || "Response Agent"}
-                              </div>
-                              <Markdown>{message.response}</Markdown>
+                          <div>
+                            <div className="text-2xl font-bold">
+                              {Math.round(currentDynamicRubric.timeTaken / 60)}
                             </div>
+                            <div className="text-xs text-muted-foreground">Minutes</div>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {/* Show live AI conversation if running */}
-                {isRunningEval &&
-                  aiConversationData.map((item, index) => {
-                    if (item.type === "evaluation") {
-                      return (
-                        <div
-                          key={index}
-                          className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6"
-                        >
-                          <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
-                            🎯 Evaluation Complete
-                          </h4>
-                          <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
-                            <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                              Evaluation completed successfully. Grade ID:{" "}
-                              {item.evalGradeId}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    if (item.type === "message" || item.type === "streaming") {
-                      const isQueryAgent = item.speaker === queryAgent?.name;
-                      return (
-                        <div key={index} className="space-y-2">
-                          <div
-                            className={`flex ${isQueryAgent ? "justify-end" : "justify-start"}`}
-                          >
-                            <div
-                              className={`max-w-[80%] p-3 rounded-lg ${
-                                isQueryAgent
-                                  ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
-                                  : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
-                              }`}
-                            >
-                              <div className="text-xs font-medium mb-1">
-                                {item.speaker}{" "}
-                                {item.turn && `(Turn ${item.turn})`}
-                              </div>
-                              {item.type === "streaming" ? (
-                                <div className="flex items-center">
-                                  <span>{item.response}</span>
-                                  <LoadingDots />
+                          {Object.entries(currentDynamicRubric.skillScores)
+                            .slice(0, 2)
+                            .map(([skillName, score]) => (
+                              <div key={skillName}>
+                                <div className="text-2xl font-bold">{score}/5</div>
+                                <div className="text-xs text-muted-foreground">
+                                  {skillName}
                                 </div>
-                              ) : (
-                                <Markdown>{item.message}</Markdown>
-                              )}
+                              </div>
+                            ))}
+                        </div>
+                        <div className="mt-3 text-center">
+                          <Badge
+                            variant={
+                              currentDynamicRubric.passed
+                                ? "default"
+                                : "destructive"
+                            }
+                          >
+                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Skill Feedback Cards */}
+                    {Object.entries(currentDynamicRubric.skillFeedbacks).map(
+                      ([skillName, feedback], index) => (
+                        <div key={skillName} className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}>
+                          <div className={`max-w-[80%] p-3 rounded-lg ${
+                            index % 2 === 0
+                              ? "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                              : "bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100"
+                          }`}>
+                            <div className="text-xs font-medium mb-1">
+                              {skillName} - Score: {currentDynamicRubric.skillScores[skillName]}/5
                             </div>
+                            <div className="text-sm">{feedback}</div>
                           </div>
                         </div>
-                      );
-                    }
-
-                    return null;
-                  })}
-
-                {/* Loading state for new evaluation */}
-                {isRunningEval && aiConversationData.length === 0 && (
-                  <div className="text-center py-8">
-                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">
-                      Starting AI vs AI evaluation...
-                    </p>
+                      ),
+                    )}
                   </div>
-                )}
+                ) : (
+                  <>
+                    {/* Show existing messages if chat is completed */}
+                    {currentChat?.completedAt && messages.length > 0 && (
+                      <>
+                        {messages.map((message: EvalMessage) => (
+                          <div key={message.id} className="space-y-4">
+                            {/* Query Message */}
+                            {message.query && (
+                              <div className="flex justify-end">
+                                <div className="max-w-[80%] bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 rounded-lg p-3">
+                                  <div className="text-xs font-medium mb-1">
+                                    {queryAgent?.name || "Query Agent"}
+                                  </div>
+                                  <Markdown>{message.query}</Markdown>
+                                </div>
+                              </div>
+                            )}
 
-                {/* No content state */}
-                {!currentChat?.completedAt && !isRunningEval && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">
-                      Select an eval run and click "Run Evaluation" to start
-                    </p>
-                  </div>
+                            {/* Response Message */}
+                            {message.response && (
+                              <div className="flex justify-start">
+                                <div className="max-w-[80%] bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100 rounded-lg p-3">
+                                  <div className="text-xs font-medium mb-1">
+                                    {responseAgent?.name || "Response Agent"}
+                                  </div>
+                                  <Markdown>{message.response}</Markdown>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </>
+                    )}
+
+                    {/* Show live AI conversation if running */}
+                    {isRunningEval &&
+                      aiConversationData.map((item, index) => {
+                        if (item.type === "evaluation") {
+                          return (
+                            <div
+                              key={index}
+                              className="bg-yellow-50 dark:bg-yellow-900/20 p-6 rounded-lg border border-yellow-200 dark:border-yellow-800 mt-6"
+                            >
+                              <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-3 text-lg">
+                                🎯 Evaluation Complete
+                              </h4>
+                              <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
+                                <div className="text-sm text-yellow-700 dark:text-yellow-300">
+                                  Evaluation completed successfully. Grade ID:{" "}
+                                  {item.evalGradeId}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (item.type === "message" || item.type === "streaming") {
+                          const isQueryAgent = item.speaker === queryAgent?.name;
+                          return (
+                            <div key={index} className="space-y-2">
+                              <div
+                                className={`flex ${isQueryAgent ? "justify-end" : "justify-start"}`}
+                              >
+                                <div
+                                  className={`max-w-[80%] p-3 rounded-lg ${
+                                    isQueryAgent
+                                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
+                                      : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
+                                  }`}
+                                >
+                                  <div className="text-xs font-medium mb-1">
+                                    {item.speaker}{" "}
+                                    {item.turn && `(Turn ${item.turn})`}
+                                  </div>
+                                  {item.type === "streaming" ? (
+                                    <div className="flex items-center">
+                                      <span>{item.response}</span>
+                                      <LoadingDots />
+                                    </div>
+                                  ) : (
+                                    <Markdown>{item.message}</Markdown>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return null;
+                      })}
+
+                    {/* Loading state for new evaluation */}
+                    {isRunningEval && aiConversationData.length === 0 && (
+                      <div className="text-center py-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                        <p className="text-muted-foreground">
+                          Starting AI vs AI evaluation...
+                        </p>
+                      </div>
+                    )}
+
+                    {/* No content state */}
+                    {!currentChat?.completedAt && !isRunningEval && (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Select an eval run and click "Run Evaluation" to start
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
 
                 <div ref={messagesEndRef} />
@@ -820,7 +808,7 @@ export default function EvaluationPage({
                   <p className="text-muted-foreground">
                     This evaluation has been completed.
                   </p>
-                  {currentDynamicRubric && (
+                  {currentDynamicRubric && !showGrades && (
                     <div className="text-sm">
                       <Badge
                         variant={

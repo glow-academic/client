@@ -16,6 +16,8 @@ vi.mock("sonner", () => ({
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn(),
+    loading: vi.fn(),
+    dismiss: vi.fn(),
   },
 }));
 
@@ -27,9 +29,49 @@ vi.mock("@/utils/mutations/evals/delete-eval", () => ({
   deleteEval: vi.fn(),
 }));
 
+vi.mock("@/utils/queries/classes/get-all-classes", () => ({
+  getAllClasses: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/eval_runs/get-eval-runs-by-evals", () => ({
+  getEvalRunsByEvals: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
+  getAllRubrics: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics", () => ({
+  getStandardGroupsByRubrics: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
+  getStandardsByStandardGroups: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/eval_chats/get-eval-chats-by-evalruns", () => ({
+  getEvalChatsByEvalRuns: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats", () => ({
+  getEvalChatGradesByEvalChats: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades", () => ({
+  getEvalChatFeedbacksByEvalChatGrades: vi.fn(),
+}));
+
 // Import mocked functions
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
 import { deleteEval } from "@/utils/mutations/evals/delete-eval";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getEvalRunsByEvals } from "@/utils/queries/eval_runs/get-eval-runs-by-evals";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
+import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
+import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 
 const mockPush = vi.fn();
 const mockRouter = {
@@ -78,6 +120,15 @@ const mockEvals = [
   },
 ];
 
+const mockClasses = [
+  {
+    id: "class-1",
+    name: "Computer Science 101",
+    classCode: "CS101",
+    description: "Introduction to Computer Science",
+  },
+];
+
 const renderWithQueryClient = (component: React.ReactElement) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -95,6 +146,14 @@ describe("Evals", () => {
     vi.clearAllMocks();
     (useRouter as any).mockReturnValue(mockRouter);
     (getAllEvals as any).mockResolvedValue(mockEvals);
+    (getAllClasses as any).mockResolvedValue(mockClasses);
+    (getEvalRunsByEvals as any).mockResolvedValue([]);
+    (getAllRubrics as any).mockResolvedValue([]);
+    (getStandardGroupsByRubrics as any).mockResolvedValue([]);
+    (getStandardsByStandardGroups as any).mockResolvedValue([]);
+    (getEvalChatsByEvalRuns as any).mockResolvedValue([]);
+    (getEvalChatGradesByEvalChats as any).mockResolvedValue([]);
+    (getEvalChatFeedbacksByEvalChatGrades as any).mockResolvedValue([]);
     (deleteEval as any).mockResolvedValue(undefined);
   });
 
@@ -186,11 +245,11 @@ describe("Evals", () => {
         const runButtons = screen.getAllByRole("button", { name: /run/i });
         expect(runButtons.length).toBe(2);
 
-        const editButtons = screen.getAllByRole("button", { name: /edit/i });
+        const editButtons = screen.getAllByRole("button", { name: /edit evaluation/i });
         expect(editButtons.length).toBe(2);
 
         const deleteButtons = screen.getAllByRole("button", {
-          name: /delete/i,
+          name: /delete evaluation/i,
         });
         expect(deleteButtons.length).toBe(2);
       });
@@ -218,27 +277,38 @@ describe("Evals", () => {
         expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
       });
 
-      const editButtons = screen.getAllByRole("button", { name: /edit/i });
+      const editButtons = screen.getAllByRole("button", { name: /edit evaluation/i });
       await user.click(editButtons[0]);
 
       expect(mockPush).toHaveBeenCalledWith("/management/evals/e/eval-1");
     });
 
-    it("should show info toast when run button is clicked", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Evals />);
+      it("should start evaluation when run button is clicked", async () => {
+    const user = userEvent.setup();
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true }),
+    });
 
-      await waitFor(() => {
-        expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
-      });
+    renderWithQueryClient(<Evals />);
 
-      const runButtons = screen.getAllByRole("button", { name: /run/i });
-      await user.click(runButtons[0]);
+    await waitFor(() => {
+      expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
+    });
 
-      expect(toast.info).toHaveBeenCalledWith(
-        "Evaluation run functionality coming soon!",
+    const runButtons = screen.getAllByRole("button", { name: /run/i });
+    await user.click(runButtons[0]);
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining("/evals/start"),
+        expect.objectContaining({
+          method: "POST",
+          body: expect.any(FormData),
+        }),
       );
     });
+  });
 
     it("should open delete dialog when delete button is clicked", async () => {
       const user = userEvent.setup();
@@ -248,7 +318,7 @@ describe("Evals", () => {
         expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete evaluation/i });
       await user.click(deleteButtons[0]);
 
       expect(screen.getByText("Are you sure?")).toBeInTheDocument();
@@ -267,7 +337,7 @@ describe("Evals", () => {
         expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete evaluation/i });
       await user.click(deleteButtons[0]);
 
       const cancelButton = screen.getByRole("button", { name: /cancel/i });
@@ -284,7 +354,7 @@ describe("Evals", () => {
         expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete evaluation/i });
       await user.click(deleteButtons[0]);
 
       const confirmButton = screen.getByRole("button", { name: /^delete$/i });
@@ -308,7 +378,7 @@ describe("Evals", () => {
         expect(screen.getByText("Student Assessment 1")).toBeInTheDocument();
       });
 
-      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete evaluation/i });
       await user.click(deleteButtons[0]);
 
       const confirmButton = screen.getByRole("button", { name: /^delete$/i });
