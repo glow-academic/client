@@ -3,9 +3,7 @@
 import { db } from "@/utils/drizzle/database";
 import { standardGroups } from "@/drizzle/schema";
 
-export async function createStandardGroup(
-  data: typeof standardGroups.$inferInsert,
-) {
+export async function createStandardGroup(data: typeof standardGroups.$inferInsert) {
   try {
     const result = await db.insert(standardGroups).values(data).returning();
     return result[0];

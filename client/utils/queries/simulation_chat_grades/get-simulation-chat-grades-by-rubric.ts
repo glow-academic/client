@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulationChatGradesByRubric(rubricId: string) {
   try {
-    return await db
-      .select()
-      .from(simulationChatGrades)
-      .where(eq(simulationChatGrades.rubricId, rubricId));
+    return await db.select().from(simulationChatGrades).where(eq(simulationChatGrades.rubricId, rubricId));
   } catch (error) {
     console.error("Error fetching simulation_chat_grades by rubric:", error);
     throw error;

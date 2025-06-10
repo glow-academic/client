@@ -6,10 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getSimulationsByClass(classIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(simulations)
-      .where(inArray(simulations.classId, classIds));
+    return await db.select().from(simulations).where(inArray(simulations.classId, classIds));
   } catch (error) {
     console.error("Error fetching simulations by class:", error);
     throw error;

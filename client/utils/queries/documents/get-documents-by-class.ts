@@ -6,10 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getDocumentsByClass(classIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(documents)
-      .where(inArray(documents.classId, classIds));
+    return await db.select().from(documents).where(inArray(documents.classId, classIds));
   } catch (error) {
     console.error("Error fetching documents by class:", error);
     throw error;

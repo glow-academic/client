@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function deleteSimulation(id: string) {
   try {
-    const result = await db
-      .delete(simulations)
-      .where(eq(simulations.id, id))
-      .returning();
+    const result = await db.delete(simulations).where(eq(simulations.id, id)).returning();
     return result[0];
   } catch (error) {
     console.error("Error deleting simulation:", error);

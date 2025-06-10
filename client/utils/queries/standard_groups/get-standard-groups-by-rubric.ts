@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getStandardGroupsByRubric(rubricId: string) {
   try {
-    return await db
-      .select()
-      .from(standardGroups)
-      .where(eq(standardGroups.rubricId, rubricId));
+    return await db.select().from(standardGroups).where(eq(standardGroups.rubricId, rubricId));
   } catch (error) {
     console.error("Error fetching standard_groups by rubric:", error);
     throw error;

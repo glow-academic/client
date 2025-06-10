@@ -1,9 +1,8 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T14:13:34.437Z
+Generated on: 2025-06-10T14:45:54.418Z
 
 ## Summary
-
 - **Total Components**: 54
 - **Tests Created**: 0
 - **Tests Updated**: 22
@@ -11,62 +10,62 @@ Generated on: 2025-06-10T14:13:34.437Z
 
 ## Component Coverage
 
-| Component                 | Path                                         | Test File                          | Status                  |
-| ------------------------- | -------------------------------------------- | ---------------------------------- | ----------------------- |
-| Logs                      | analytics/Logs.tsx                           | Logs.test.tsx                      | ❌ Needs Implementation |
-| Overview                  | analytics/Overview.tsx                       | Overview.test.tsx                  | ✅ Implemented          |
-| Performance               | analytics/Performance.tsx                    | Performance.test.tsx               | ✅ Implemented          |
-| Reports                   | analytics/Reports.tsx                        | Reports.test.tsx                   | ✅ Implemented          |
-| ClassDetails              | classes/ClassDetails.tsx                     | ClassDetails.test.tsx              | ✅ Implemented          |
-| ClassEdit                 | classes/ClassEdit.tsx                        | ClassEdit.test.tsx                 | ❌ Needs Implementation |
-| Agent                     | common/agent/Agent.tsx                       | Agent.test.tsx                     | ✅ Implemented          |
-| Attempt                   | common/chat/Attempt.tsx                      | Attempt.test.tsx                   | ✅ Implemented          |
-| Chat                      | common/chat/Chat.tsx                         | Chat.test.tsx                      | ✅ Implemented          |
-| DocumentViewer            | common/chat/DocumentViewer.tsx               | DocumentViewer.test.tsx            | ❌ Needs Implementation |
-| Evaluation                | common/chat/Evaluation.tsx                   | Evaluation.test.tsx                | ✅ Implemented          |
-| Markdown                  | common/chat/Markdown.tsx                     | Markdown.test.tsx                  | ❌ Needs Implementation |
-| MarkdownImage             | common/chat/MarkdownImage.tsx                | MarkdownImage.test.tsx             | ❌ Needs Implementation |
-| ClassForm                 | common/class/ClassForm.tsx                   | ClassForm.test.tsx                 | ❌ Needs Implementation |
-| Eval                      | common/eval/Eval.tsx                         | Eval.test.tsx                      | ❌ Needs Implementation |
-| SimulationHistory         | common/history/SimulationHistory.tsx         | SimulationHistory.test.tsx         | ✅ Implemented          |
-| columns                   | common/history/columns.tsx                   | columns.test.tsx                   | ✅ Implemented          |
-| data-table-column-header  | common/history/data-table-column-header.tsx  | data-table-column-header.test.tsx  | ✅ Implemented          |
-| data-table-faceted-filter | common/history/data-table-faceted-filter.tsx | data-table-faceted-filter.test.tsx | ✅ Implemented          |
-| data-table-pagination     | common/history/data-table-pagination.tsx     | data-table-pagination.test.tsx     | ✅ Implemented          |
-| data-table-row-actions    | common/history/data-table-row-actions.tsx    | data-table-row-actions.test.tsx    | ✅ Implemented          |
-| data-table-toolbar        | common/history/data-table-toolbar.tsx        | data-table-toolbar.test.tsx        | ✅ Implemented          |
-| data-table-view-options   | common/history/data-table-view-options.tsx   | data-table-view-options.test.tsx   | ✅ Implemented          |
-| data-table                | common/history/data-table.tsx                | data-table.test.tsx                | ✅ Implemented          |
-| export-button             | common/history/export-button.tsx             | export-button.test.tsx             | ✅ Implemented          |
-| navigation-breadcrumbs    | common/layout/navigation-breadcrumbs.tsx     | navigation-breadcrumbs.test.tsx    | ✅ Implemented          |
-| unified-sidebar           | common/layout/unified-sidebar.tsx            | unified-sidebar.test.tsx           | ✅ Implemented          |
-| Rubric                    | common/rubric/Rubric.tsx                     | Rubric.test.tsx                    | ❌ Needs Implementation |
-| Scenario                  | common/scenario/Scenario.tsx                 | Scenario.test.tsx                  | ✅ Implemented          |
-| Simulation                | common/simulation/Simulation.tsx             | Simulation.test.tsx                | ❌ Needs Implementation |
-| NewRubric                 | create/rubrics/NewRubric.tsx                 | NewRubric.test.tsx                 | ❌ Needs Implementation |
-| RubricEdit                | create/rubrics/RubricEdit.tsx                | RubricEdit.test.tsx                | ❌ Needs Implementation |
-| Rubrics                   | create/rubrics/Rubrics.tsx                   | Rubrics.test.tsx                   | ✅ Implemented          |
-| NewScenario               | create/scenarios/NewScenario.tsx             | NewScenario.test.tsx               | ✅ Implemented          |
-| ScenarioEdit              | create/scenarios/ScenarioEdit.tsx            | ScenarioEdit.test.tsx              | ✅ Implemented          |
-| Scenarios                 | create/scenarios/Scenarios.tsx               | Scenarios.test.tsx                 | ❌ Needs Implementation |
-| NewSimulation             | create/simulations/NewSimulation.tsx         | NewSimulation.test.tsx             | ❌ Needs Implementation |
-| SimulationEdit            | create/simulations/SimulationEdit.tsx        | SimulationEdit.test.tsx            | ❌ Needs Implementation |
-| Simulations               | create/simulations/Simulations.tsx           | Simulations.test.tsx               | ❌ Needs Implementation |
-| Growth                    | growth/Growth.tsx                            | Growth.test.tsx                    | ✅ Implemented          |
-| Home                      | home/Home.tsx                                | Home.test.tsx                      | ❌ Needs Implementation |
-| AgentEdit                 | management/agents/AgentEdit.tsx              | AgentEdit.test.tsx                 | ✅ Implemented          |
-| Agents                    | management/agents/Agents.tsx                 | Agents.test.tsx                    | ❌ Needs Implementation |
-| NewAgent                  | management/agents/NewAgent.tsx               | NewAgent.test.tsx                  | ✅ Implemented          |
-| ClassStatus               | management/classes/ClassStatus.tsx           | ClassStatus.test.tsx               | ❌ Needs Implementation |
-| Classes                   | management/classes/Classes.tsx               | Classes.test.tsx                   | ✅ Implemented          |
-| NewClass                  | management/classes/NewClass.tsx              | NewClass.test.tsx                  | ❌ Needs Implementation |
-| EvalEdit                  | management/evals/EvalEdit.tsx                | EvalEdit.test.tsx                  | ❌ Needs Implementation |
-| Evals                     | management/evals/Evals.tsx                   | Evals.test.tsx                     | ✅ Implemented          |
-| NewEval                   | management/evals/NewEval.tsx                 | NewEval.test.tsx                   | ❌ Needs Implementation |
-| NewStaff                  | management/staff/NewStaff.tsx                | NewStaff.test.tsx                  | ✅ Implemented          |
-| Staff                     | management/staff/Staff.tsx                   | Staff.test.tsx                     | ✅ Implemented          |
-| StaffEdit                 | management/staff/StaffEdit.tsx               | StaffEdit.test.tsx                 | ✅ Implemented          |
-| Profile                   | profile/Profile.tsx                          | Profile.test.tsx                   | ❌ Needs Implementation |
+| Component | Path | Test File | Status |
+|-----------|------|-----------|--------|
+| Logs | analytics/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
+| Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
+| Performance | analytics/Performance.tsx | Performance.test.tsx | ✅ Implemented |
+| Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
+| ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
+| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ❌ Needs Implementation |
+| Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
+| Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
+| DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ❌ Needs Implementation |
+| Evaluation | common/chat/Evaluation.tsx | Evaluation.test.tsx | ✅ Implemented |
+| Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ❌ Needs Implementation |
+| MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ❌ Needs Implementation |
+| ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ❌ Needs Implementation |
+| Eval | common/eval/Eval.tsx | Eval.test.tsx | ❌ Needs Implementation |
+| SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
+| columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
+| data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ✅ Implemented |
+| data-table-faceted-filter | common/history/data-table-faceted-filter.tsx | data-table-faceted-filter.test.tsx | ✅ Implemented |
+| data-table-pagination | common/history/data-table-pagination.tsx | data-table-pagination.test.tsx | ✅ Implemented |
+| data-table-row-actions | common/history/data-table-row-actions.tsx | data-table-row-actions.test.tsx | ✅ Implemented |
+| data-table-toolbar | common/history/data-table-toolbar.tsx | data-table-toolbar.test.tsx | ✅ Implemented |
+| data-table-view-options | common/history/data-table-view-options.tsx | data-table-view-options.test.tsx | ✅ Implemented |
+| data-table | common/history/data-table.tsx | data-table.test.tsx | ✅ Implemented |
+| export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
+| navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
+| unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
+| Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ❌ Needs Implementation |
+| Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
+| Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ❌ Needs Implementation |
+| NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ❌ Needs Implementation |
+| RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ❌ Needs Implementation |
+| Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
+| NewScenario | create/scenarios/NewScenario.tsx | NewScenario.test.tsx | ✅ Implemented |
+| ScenarioEdit | create/scenarios/ScenarioEdit.tsx | ScenarioEdit.test.tsx | ✅ Implemented |
+| Scenarios | create/scenarios/Scenarios.tsx | Scenarios.test.tsx | ❌ Needs Implementation |
+| NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ❌ Needs Implementation |
+| SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ❌ Needs Implementation |
+| Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ❌ Needs Implementation |
+| Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
+| Home | home/Home.tsx | Home.test.tsx | ❌ Needs Implementation |
+| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
+| Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
+| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
+| Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
+| NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
+| EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
+| Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
+| NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ❌ Needs Implementation |
+| NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
+| Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
+| StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
+| Profile | profile/Profile.tsx | Profile.test.tsx | ❌ Needs Implementation |
 
 ## Directory Structure
 
@@ -181,7 +180,6 @@ npm run test:coverage
 ## Testing Guidelines
 
 ### Basic Component Test
-
 ```typescript
 it('should render without crashing', () => {
   render(<ComponentName />);
@@ -190,7 +188,6 @@ it('should render without crashing', () => {
 ```
 
 ### Props Testing
-
 ```typescript
 it('should render with props', () => {
   const props = { title: 'Test Title' };
@@ -200,20 +197,18 @@ it('should render with props', () => {
 ```
 
 ### User Interaction Testing
-
 ```typescript
 it('should handle user interactions', async () => {
   const user = userEvent.setup();
   const mockFn = vi.fn();
   render(<ComponentName onClick={mockFn} />);
-
+  
   await user.click(screen.getByRole('button'));
   expect(mockFn).toHaveBeenCalled();
 });
 ```
 
 ### API Testing
-
 ```typescript
 it('should handle API calls', async () => {
   const mockData = { id: 1, name: 'Test' };
@@ -221,7 +216,7 @@ it('should handle API calls', async () => {
     ok: true,
     json: () => Promise.resolve(mockData),
   });
-
+  
   render(<ComponentName />);
   await waitFor(() => {
     expect(screen.getByText('Test')).toBeInTheDocument();

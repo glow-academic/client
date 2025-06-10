@@ -4,16 +4,9 @@ import { db } from "@/utils/drizzle/database";
 import { evalMessages } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function updateEvalMessage(
-  id: string,
-  data: Partial<typeof evalMessages.$inferInsert>,
-) {
+export async function updateEvalMessage(id: string, data: Partial<typeof evalMessages.$inferInsert>) {
   try {
-    const result = await db
-      .update(evalMessages)
-      .set(data)
-      .where(eq(evalMessages.id, id))
-      .returning();
+    const result = await db.update(evalMessages).set(data).where(eq(evalMessages.id, id)).returning();
     return result[0];
   } catch (error) {
     console.error("Error updating evalMessage:", error);

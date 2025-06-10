@@ -4,19 +4,11 @@ import { db } from "@/utils/drizzle/database";
 import { simulationChatFeedbacks } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function getSimulationChatFeedbacksByStandards(
-  standardIds: string[],
-) {
+export async function getSimulationChatFeedbacksByStandards(standardIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(simulationChatFeedbacks)
-      .where(inArray(simulationChatFeedbacks.standardId, standardIds));
+    return await db.select().from(simulationChatFeedbacks).where(inArray(simulationChatFeedbacks.standardId, standardIds));
   } catch (error) {
-    console.error(
-      "Error fetching simulation_chat_feedbacks by standards:",
-      error,
-    );
+    console.error("Error fetching simulation_chat_feedbacks by standards:", error);
     throw error;
   }
 }

@@ -4,16 +4,9 @@ import { db } from "@/utils/drizzle/database";
 import { evalChatGrades } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function updateEvalChatGrades(
-  ids: string[],
-  data: Partial<typeof evalChatGrades.$inferInsert>,
-) {
+export async function updateEvalChatGrades(ids: string[], data: Partial<typeof evalChatGrades.$inferInsert>) {
   try {
-    return await db
-      .update(evalChatGrades)
-      .set(data)
-      .where(inArray(evalChatGrades.id, ids))
-      .returning();
+    return await db.update(evalChatGrades).set(data).where(inArray(evalChatGrades.id, ids)).returning();
   } catch (error) {
     console.error("Error updating multiple eval_chat_grades:", error);
     throw error;

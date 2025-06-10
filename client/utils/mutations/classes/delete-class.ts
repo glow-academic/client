@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function deleteClass(id: string) {
   try {
-    const result = await db
-      .delete(classes)
-      .where(eq(classes.id, id))
-      .returning();
+    const result = await db.delete(classes).where(eq(classes.id, id)).returning();
     return result[0];
   } catch (error) {
     console.error("Error deleting class:", error);
