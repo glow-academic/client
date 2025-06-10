@@ -21,6 +21,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/init.sql:/init.sql
+      - ./database/init:/init
       - ./database/custom-entrypoint.sh:/custom-entrypoint.sh
     command: ["/custom-entrypoint.sh"]
     ports:
