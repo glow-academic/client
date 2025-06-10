@@ -1,11 +1,11 @@
 from typing import List
-from app.models import SimulationMessages, SimulationChats, Scenarios
+from app.models import SimulationMessages, SimulationChats, Scenarios, EvalMessages, EvalChats
 from agents.items import TResponseInputItem
 from sqlmodel import Session, select
 
 
 def get_conversation_history(
-    messages: List[SimulationMessages],
+    messages: List[SimulationMessages | EvalMessages],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -29,7 +29,7 @@ def get_conversation_history(
     return conversation_history
 
 
-def get_chat_scenario(chat: SimulationChats, session: Session) -> str:
+def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> dict:
     """
     Get the scenario for a given chat.
     """

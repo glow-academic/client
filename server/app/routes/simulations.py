@@ -1,7 +1,7 @@
-# app/routes/attempt.py
+# app/routes/simulation_attempts.py
 from fastapi import APIRouter, Form, HTTPException, Depends
 from app.models import (
-    Attempts,
+    SimulationAttempts,
     Simulations,
     SimulationChats,
     Agents,
@@ -14,8 +14,8 @@ from app.services.agents.scenario import run_scenario_agent
 from typing import Optional
 import random
 
-from app.agents.grading import run_grading_agent
-from app.agents.generic import run_generic_agent, run_evaluation_agent
+from app.services.agents.grade import run_grade_agent
+from app.services.agents.generic import run_generic_agent, run_evaluation_agent
 from app.services.agents.evaluate import run_evaluate_agent
 from app.services.agents.generic import run_generic_agent
 from fastapi.responses import StreamingResponse
@@ -49,7 +49,7 @@ async def start_attempt(
             raise HTTPException(status_code=404, detail="Simulation not found")
 
         # Create the attempt
-        new_attempt = Attempts(
+        new_attempt = SimulationAttempts(
             user_id=user_id,  # Will be None for guest mode
             class_id=class_id,
             simulation_id=simulation_id,

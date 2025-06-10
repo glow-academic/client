@@ -1,4 +1,4 @@
-# app/routes/documents.py
+# app/routes/document.py
 import os
 import uuid
 import json
@@ -284,7 +284,7 @@ async def tus_creation(request: Request):
     )
     base_url = f"{forwarded_proto}://{forwarded_host}"
 
-    location = f"{base_url}/documents/tus/{upload_id}"
+    location = f"{base_url}/document/tus/{upload_id}"
 
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":

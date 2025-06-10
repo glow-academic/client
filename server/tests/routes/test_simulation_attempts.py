@@ -1,7 +1,7 @@
 """
-Tests for app.routes.attempt
+Tests for app.routes.simulation_attempts
 
-Auto-generated on: 2025-06-08T19:06:21.672650
+Auto-generated on: 2025-06-09T21:12:28.699560
 """
 
 import pytest
@@ -65,4 +65,18 @@ class TestContinue_Attempt:
         """Test continue_attempt error handling."""
         # TODO: Implement error test for continue_attempt
         assert False, "IMPLEMENT: Error test for continue_attempt"
+
+
+class TestStart_Ai_Conversation:
+    """Tests for start_ai_conversation endpoint."""
+    
+    def test_start_ai_conversation_success(self, client):
+        """Test successful start_ai_conversation request."""
+        # TODO: Implement test for start_ai_conversation
+        assert False, "IMPLEMENT: Test for start_ai_conversation"
+    
+    def test_start_ai_conversation_error(self, client):
+        """Test start_ai_conversation error handling."""
+        # TODO: Implement error test for start_ai_conversation
+        assert False, "IMPLEMENT: Error test for start_ai_conversation"
 

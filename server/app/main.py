@@ -11,14 +11,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
-from app.routes.report import router as report_router
-from app.routes.attempt import router as attempt_router
+from app.routes.users import router as users_router
+from server.app.routes.simulations import router as simulation_attempts_router
+from server.app.routes.evals import router as eval_runs_router
 from app.db import init_db, get_session
 
 app = FastAPI(title="GLOW API", on_startup=[init_db])
 app.include_router(documents_router, prefix="/documents")
-app.include_router(report_router, prefix="/report")
-app.include_router(attempt_router, prefix="/attempt")
+app.include_router(simulation_attempts_router, prefix="/simulation-attempts")
+app.include_router(users_router, prefix="/users")
+app.include_router(eval_runs_router, prefix="/eval-runs")
 
 # Add CORS middleware
 app.add_middleware(

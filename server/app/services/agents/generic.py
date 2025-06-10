@@ -7,7 +7,7 @@ from app.utils.chat import get_conversation_history, get_chat_scenario
 from app.utils.classes import get_class_info
 from app.db import get_session
 from sqlmodel import Session, select
-from app.models import SimulationMessages, SimulationChats, Attempts, Agents
+from app.models import SimulationMessages, SimulationChats, SimulationAttempts, Agents
 from fastapi import Depends
 from openai.types.responses import (
     ResponseTextDeltaEvent,
@@ -15,11 +15,11 @@ from openai.types.responses import (
 
 
 async def run_generic_agent(
-    chat_id: str, input_text: str = "", test_data: bool = False, session: Session = Depends(get_session), agent_mode: str = "student"
     chat_id: str,
     input_text: str = "",
     test_data: bool = False,
     session: Session = Depends(get_session),
+    agent_mode: str = "student"
 ) -> AsyncGenerator[str, None]:
     """
     This function is used to run the generic agent using the OpenAI Agents SDK.
@@ -55,7 +55,7 @@ async def run_generic_agent(
     ).one()
 
     # find attempt from chat_id
-    attempt = session.exec(select(Attempts).where(Attempts.id == chat.attempt_id)).one()
+    attempt = session.exec(select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)).one()
     if not attempt:
         raise ValueError(f"Attempt not found for chat {chat_id}")
 
@@ -110,7 +110,7 @@ async def run_generic_agent(
 
 
 class GenericAgent:
-    def __init__(self, agent_name: str, agent_prompt: str):
+    def __init__(self, agent_name: str, agent_prompt: str, ):
         self.gemini_client = get_gemini()
         self.agent_name = agent_name
         self.agent_prompt = agent_prompt
@@ -264,19 +264,19 @@ async def run_evaluation_agent(
         logger.info(f"Starting evaluation for chat {chat_id}")
         
         # get the chat from the chat_id
-        chat = session.exec(select(Chats).where(Chats.id == chat_id)).one()
+        chat = session.exec(select(SimulationChats).where(SimulationChats.id == chat_id)).one()
         
         # find attempt from chat_id
-        attempt = session.exec(select(Attempts).where(Attempts.id == chat.attempt_id)).one()
+        attempt = session.exec(select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)).one()
         
         # get the agent from the chat
         agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one()
 
         # get all the messages for the chat_id
         messages = session.exec(
-            select(Messages)
-            .where(Messages.chat_id == chat_id)
-            .order_by(Messages.created_at)
+            select(SimulationMessages)
+            .where(SimulationMessages.chat_id == chat_id)
+            .order_by(SimulationMessages.created_at)
         ).all()
 
         logger.info(f"Found {len(messages)} messages for evaluation")
@@ -332,4 +332,3 @@ async def run_evaluation_agent(
             "score": 0,
             "timestamp": str(datetime.now())
         }
-        )

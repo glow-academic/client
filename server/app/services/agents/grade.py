@@ -1,8 +1,8 @@
 from app.db import get_session
 from sqlmodel import Session
 from app.models import (
-    Rubrics, EvalChats, EvalMessages, EvalRuns, StandardGroups, Standards,
-    EvalChatGrades, EvalChatFeedbacks
+    SimulationChats, SimulationMessages, Rubrics, StandardGroups, Standards,
+    SimulationChatGrades, SimulationChatFeedbacks, Simulations, SimulationAttempts
 )
 from fastapi import Depends
 import logging
@@ -65,46 +65,52 @@ def create_dynamic_rubric_model(standard_groups: List[StandardGroups]) -> type[B
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
     
-    return create_model("DynamicRubricEvaluation", **fields)
+    return create_model("DynamicRubricGrade", **fields)
 
 
-async def run_evaluate_agent(
-    eval_chat_id: str, session: Session = Depends(get_session)
+async def run_grade_agent(
+    simulation_chat_id: str, session: Session = Depends(get_session)
 ) -> str:
     """
-    This function is used to run the evaluate agent.
-    Returns a string of the eval_chat_grade id.
+    This function is used to run the grading agent for simulation chats.
+    Returns a string of the simulation_chat_grade id.
 
     Args:
-        eval_chat_id: The ID of the evaluation chat
+        simulation_chat_id: The ID of the simulation chat
 
     Returns:
-        A string of the eval_chat_grade id.
+        A string of the simulation_chat_grade id.
     """
     try:
-        # get the chat from the chat_id
+        # get the chat from the simulation_chat_id
         chat = session.exec(
-            select(EvalChats).where(EvalChats.id == eval_chat_id)
+            select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
         ).one()
 
         # get all the messages for the chat_id, order by created_at
         messages = session.exec(
-            select(EvalMessages)
-            .where(EvalMessages.chat_id == eval_chat_id)
-            .order_by(EvalMessages.created_at)
+            select(SimulationMessages)
+            .where(SimulationMessages.chat_id == simulation_chat_id)
+            .order_by(SimulationMessages.created_at)
         ).all()
 
         # prepare conversation history from chat_id
         conversation_history = get_conversation_history(messages)
 
-        eval_run_id = chat.eval_run_id
-
-        # get the rubric from the eval_run_id
-        eval_run = session.exec(
-            select(EvalRuns).where(EvalRuns.id == eval_run_id)
+        # Get the simulation attempt to find the simulation
+        attempt = session.exec(
+            select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
         ).one()
 
-        rubric_id = eval_run.rubric_id
+        # Get the simulation to find the rubric
+        simulation = session.exec(
+            select(Simulations).where(Simulations.id == attempt.simulation_id)
+        ).one()
+
+        if not simulation.rubric_id:
+            raise ValueError(f"Simulation {simulation.id} does not have a rubric assigned")
+
+        rubric_id = simulation.rubric_id
 
         # get rubric from rubric_id
         rubric = session.exec(
@@ -122,7 +128,7 @@ async def run_evaluate_agent(
             select(Standards).where(Standards.standard_group_id.in_(standard_group_ids))
         ).all()
 
-        logger.info(f"Starting evaluation for chat {eval_chat_id} with rubric {rubric.name}")
+        logger.info(f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric.name}")
         logger.info(f"Found {len(standard_groups)} standard groups and {len(standards)} standards")
 
         # Build dynamic rubric using utility function
@@ -138,18 +144,18 @@ async def run_evaluate_agent(
             expected_fields.extend([f"{safe_name}_score", f"{safe_name}_feedback"])
         logger.info(f"Expected model fields: {expected_fields}")
 
-        # Create and run the evaluation agent
-        evaluate_agent = EvaluateAgent()
-        agent = evaluate_agent.agent(DynamicRubric)
+        # Create and run the grading agent
+        grading_agent = GradingAgent()
+        agent = grading_agent.agent(DynamicRubric)
         
         # Prepare input with rubric and conversation history
         input_items = [rubric_input] + conversation_history
 
-        # Run the evaluation
-        logger.info("Running evaluation agent...")
+        # Run the grading
+        logger.info("Running grading agent...")
         result = await Runner.run(agent, input=input_items)
-        evaluation_result = result.final_output_as(DynamicRubric)
-        logger.info("Evaluation agent completed successfully")
+        grading_result = result.final_output_as(DynamicRubric)
+        logger.info("Grading agent completed successfully")
 
         # Calculate time taken
         current_time = datetime.now()
@@ -163,22 +169,22 @@ async def run_evaluate_agent(
 
         time_taken = max(0, int((current_time - chat_created_at).total_seconds()))
 
-        # Extract overall evaluation data
-        overall_score = evaluation_result.overall_score
-        passed = evaluation_result.passed
+        # Extract overall grading data
+        overall_score = grading_result.overall_score
+        passed = grading_result.passed
         
-        logger.info(f"Evaluation results: score={overall_score}, passed={passed}")
+        logger.info(f"Grading results: score={overall_score}, passed={passed}")
         
-        # Create the eval chat grade record
-        eval_chat_grade = EvalChatGrades(
+        # Create the simulation chat grade record
+        simulation_chat_grade = SimulationChatGrades(
             passed=passed,
             score=overall_score,
             time_taken=time_taken,
             rubric_id=rubric_id,
-            eval_chat_id=eval_chat_id
+            simulation_chat_id=simulation_chat_id
         )
         
-        session.add(eval_chat_grade)
+        session.add(simulation_chat_grade)
         session.flush()  # Get the ID without committing
         
         # Create feedback records for each standard group
@@ -192,8 +198,8 @@ async def run_evaluate_agent(
             feedback_field = f"{safe_name}_feedback"
             
             try:
-                group_score = getattr(evaluation_result, score_field, 0)
-                group_feedback = getattr(evaluation_result, feedback_field, "")
+                group_score = getattr(grading_result, score_field, 0)
+                group_feedback = getattr(grading_result, feedback_field, "")
                 
                 logger.info(f"Group {group.short_name}: score={group_score}, feedback_length={len(group_feedback)}")
                 
@@ -207,47 +213,48 @@ async def run_evaluate_agent(
                 
                 if matching_standard:
                     # Create feedback record
-                    eval_chat_feedback = EvalChatFeedbacks(
+                    simulation_chat_feedback = SimulationChatFeedbacks(
                         standard_id=matching_standard.id,
-                        eval_chat_grade_id=eval_chat_grade.id,
+                        simulation_chat_grade_id=simulation_chat_grade.id,
                         total=group_score,
                         feedback=group_feedback
                     )
-                    session.add(eval_chat_feedback)
+                    session.add(simulation_chat_feedback)
                     feedback_count += 1
                 else:
                     logger.warning(f"No matching standard found for group {group.short_name} with score {group_score}")
                     
             except AttributeError as e:
-                logger.error(f"Failed to get evaluation data for group {group.short_name}: {e}")
+                logger.error(f"Failed to get grading data for group {group.short_name}: {e}")
                 continue
 
         logger.info(f"Created {feedback_count} feedback records")
 
         # Mark chat as completed
+        chat.completed = True
         chat.completed_at = current_time
         session.add(chat)
 
         # Commit all changes
         session.commit()
-        session.refresh(eval_chat_grade)
+        session.refresh(simulation_chat_grade)
 
-        logger.info(f"Evaluation completed successfully with grade ID: {eval_chat_grade.id}")
-        return str(eval_chat_grade.id)
+        logger.info(f"Grading completed successfully with grade ID: {simulation_chat_grade.id}")
+        return str(simulation_chat_grade.id)
         
     except Exception as e:
-        logger.error(f"Error in run_evaluate_agent: {str(e)}", exc_info=True)
+        logger.error(f"Error in run_grade_agent: {str(e)}", exc_info=True)
         session.rollback()
         raise
 
 
-class EvaluateAgent:
+class GradingAgent:
     def __init__(self):
         self.gemini_client = get_gemini()
-        self.system_prompt = """You are an expert evaluator tasked with assessing conversations based on provided rubrics. 
+        self.system_prompt = """You are an expert grader tasked with evaluating conversations between students and teaching assistants based on provided rubrics.
 
 Your role is to:
-1. Carefully analyze the conversation between participants
+1. Carefully analyze the conversation between the student and TA
 2. Apply the rubric criteria objectively and consistently
 3. Provide specific, actionable feedback for each criterion
 4. Assign appropriate scores based on the evidence in the conversation
@@ -259,11 +266,17 @@ For each criterion:
 - Provide specific feedback citing examples from the conversation
 - Keep feedback concise but specific (1-2 sentences)
 
+Focus on evaluating the TA's performance in:
+- How well they facilitated student learning
+- Their demonstration of subject matter knowledge
+- Their time management and session structure
+- Their ability to adapt to the student's needs and learning style
+
 Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation."""
 
     def agent(self, output_type: type[BaseModel]):
         return Agent(
-            name="Evaluate Agent",
+            name="Grading Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
                 model="gemini-2.5-flash-preview-04-17",

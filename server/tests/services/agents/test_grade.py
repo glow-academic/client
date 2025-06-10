@@ -1,7 +1,7 @@
 """
-Tests for app.services.agents.evaluate
+Tests for app.services.agents.grade
 
-Auto-generated on: 2025-06-09T21:12:28.746657
+Auto-generated on: 2025-06-09T21:12:28.747744
 """
 
 import pytest
@@ -12,10 +12,10 @@ from datetime import datetime, timezone
 from pydantic import BaseModel
 
 # Import the module being tested
-from app.services.agents.evaluate import *
+from app.services.agents.grade import *
 from app.models import (
-    EvalChats, EvalMessages, EvalRuns, Rubrics, StandardGroups, Standards,
-    EvalChatGrades, EvalChatFeedbacks
+    SimulationChats, SimulationMessages, Rubrics, StandardGroups, Standards,
+    SimulationChatGrades, SimulationChatFeedbacks, Simulations, SimulationAttempts
 )
 
 
@@ -26,27 +26,42 @@ def mock_session():
 
 
 @pytest.fixture
-def sample_eval_chat():
-    """Create a sample eval chat."""
-    return EvalChats(
+def sample_simulation_chat():
+    """Create a sample simulation chat."""
+    return SimulationChats(
         id=UUID("11111111-1111-1111-1111-111111111111"),
         created_at=datetime.now(timezone.utc),
-        title="Test Chat",
-        eval_run_id=UUID("22222222-2222-2222-2222-222222222222")
+        title="Test Simulation Chat",
+        scenario_id=UUID("22222222-2222-2222-2222-222222222222"),
+        attempt_id=UUID("33333333-3333-3333-3333-333333333333"),
+        completed=False
     )
 
 
 @pytest.fixture
-def sample_eval_run():
-    """Create a sample eval run."""
-    return EvalRuns(
-        id=UUID("22222222-2222-2222-2222-222222222222"),
+def sample_simulation_attempt():
+    """Create a sample simulation attempt."""
+    return SimulationAttempts(
+        id=UUID("33333333-3333-3333-3333-333333333333"),
         created_at=datetime.now(timezone.utc),
-        class_id=UUID("33333333-3333-3333-3333-333333333333"),
-        eval_id=UUID("44444444-4444-4444-4444-444444444444"),
-        query_agent_id=UUID("55555555-5555-5555-5555-555555555555"),
-        response_agent_id=UUID("66666666-6666-6666-6666-666666666666"),
-        scenario_id=UUID("77777777-7777-7777-7777-777777777777"),
+        class_id=UUID("44444444-4444-4444-4444-444444444444"),
+        simulation_id=UUID("55555555-5555-5555-5555-555555555555"),
+        user_id=UUID("66666666-6666-6666-6666-666666666666")
+    )
+
+
+@pytest.fixture
+def sample_simulation():
+    """Create a sample simulation."""
+    return Simulations(
+        id=UUID("55555555-5555-5555-5555-555555555555"),
+        created_at=datetime.now(timezone.utc),
+        title="Test Simulation",
+        class_id=UUID("44444444-4444-4444-4444-444444444444"),
+        documents=[],
+        time_limit=30,
+        active=True,
+        scenario_ids=[UUID("22222222-2222-2222-2222-222222222222")],
         rubric_id=UUID("88888888-8888-8888-8888-888888888888")
     )
 
@@ -57,8 +72,8 @@ def sample_rubric():
     return Rubrics(
         id=UUID("88888888-8888-8888-8888-888888888888"),
         created_at=datetime.now(timezone.utc),
-        name="Test Rubric",
-        description="A test rubric",
+        name="Teaching Assistant Evaluation Rubric",
+        description="A rubric for evaluating TA performance",
         points=20,
         pass_points=14
     )
@@ -131,23 +146,23 @@ def sample_standards():
 
 
 @pytest.fixture
-def sample_messages():
-    """Create sample eval messages."""
+def sample_simulation_messages():
+    """Create sample simulation messages."""
     return [
-        EvalMessages(
+        SimulationMessages(
             id=UUID("11111111-1111-1111-1111-111111111111"),
             created_at=datetime.now(timezone.utc),
             chat_id=UUID("11111111-1111-1111-1111-111111111111"),
-            query="Can you help me with this problem?",
-            response="Of course! Let's work through it together.",
+            query="I'm having trouble with this programming assignment.",
+            response="Let's work through it step by step. What specific part is giving you trouble?",
             completed=True
         ),
-        EvalMessages(
+        SimulationMessages(
             id=UUID("22222222-2222-2222-2222-222222222222"),
             created_at=datetime.now(timezone.utc),
             chat_id=UUID("11111111-1111-1111-1111-111111111111"),
-            query="I'm getting an error in my code.",
-            response="Let's look at the error message. What does it say?",
+            query="I keep getting a null pointer exception.",
+            response="That's a common issue. Can you show me the line where the error occurs?",
             completed=True
         )
     ]
@@ -234,32 +249,34 @@ class TestCreateDynamicRubricModel:
             )
 
 
-class TestRunEvaluateAgent:
-    """Tests for run_evaluate_agent function."""
+class TestRunGradeAgent:
+    """Tests for run_grade_agent function."""
     
-    @patch('app.services.agents.evaluate.get_conversation_history')
-    @patch('app.services.agents.evaluate.get_dynamic_rubric')
-    @patch('app.services.agents.evaluate.Runner.run')
-    async def test_run_evaluate_agent_success(
+    @patch('app.services.agents.grade.get_conversation_history')
+    @patch('app.services.agents.grade.get_dynamic_rubric')
+    @patch('app.services.agents.grade.Runner.run')
+    async def test_run_grade_agent_success(
         self, 
         mock_runner, 
         mock_get_rubric, 
         mock_get_history,
         mock_session,
-        sample_eval_chat,
-        sample_eval_run,
+        sample_simulation_chat,
+        sample_simulation_attempt,
+        sample_simulation,
         sample_rubric,
         sample_standard_groups,
         sample_standards,
-        sample_messages
+        sample_simulation_messages
     ):
-        """Test successful run_evaluate_agent execution."""
+        """Test successful run_grade_agent execution."""
         
         # Setup mock session queries
         mock_session.exec.side_effect = [
-            MagicMock(one=MagicMock(return_value=sample_eval_chat)),  # chat query
-            MagicMock(all=MagicMock(return_value=sample_messages)),   # messages query
-            MagicMock(one=MagicMock(return_value=sample_eval_run)),   # eval_run query
+            MagicMock(one=MagicMock(return_value=sample_simulation_chat)),  # chat query
+            MagicMock(all=MagicMock(return_value=sample_simulation_messages)),   # messages query
+            MagicMock(one=MagicMock(return_value=sample_simulation_attempt)),   # attempt query
+            MagicMock(one=MagicMock(return_value=sample_simulation)),   # simulation query
             MagicMock(one=MagicMock(return_value=sample_rubric)),     # rubric query
             MagicMock(all=MagicMock(return_value=sample_standard_groups)),  # standard_groups query
             MagicMock(all=MagicMock(return_value=sample_standards))   # standards query
@@ -271,17 +288,17 @@ class TestRunEvaluateAgent:
         # Setup mock rubric
         mock_get_rubric.return_value = "rubric_string"
         
-        # Setup mock evaluation result
+        # Setup mock grading result
         mock_result = MagicMock()
-        mock_evaluation_result = MagicMock()
-        mock_evaluation_result.overall_score = 18
-        mock_evaluation_result.passed = True
-        mock_evaluation_result.active_listening_score = 4
-        mock_evaluation_result.active_listening_feedback = "Good listening skills"
-        mock_evaluation_result.content_mastery_score = 5
-        mock_evaluation_result.content_mastery_feedback = "Excellent content knowledge"
+        mock_grading_result = MagicMock()
+        mock_grading_result.overall_score = 18
+        mock_grading_result.passed = True
+        mock_grading_result.active_listening_score = 4
+        mock_grading_result.active_listening_feedback = "Good listening skills"
+        mock_grading_result.content_mastery_score = 5
+        mock_grading_result.content_mastery_feedback = "Excellent content knowledge"
         
-        mock_result.final_output_as.return_value = mock_evaluation_result
+        mock_result.final_output_as.return_value = mock_grading_result
         mock_runner.return_value = mock_result
         
         # Setup mock grade creation
@@ -291,67 +308,69 @@ class TestRunEvaluateAgent:
         mock_session.refresh.return_value = None
         
         # Run the function
-        result = await run_evaluate_agent("11111111-1111-1111-1111-111111111111", mock_session)
+        result = await run_grade_agent("11111111-1111-1111-1111-111111111111", mock_session)
         
         # Assertions
         assert result == str(mock_grade.id)
         mock_session.commit.assert_called_once()
         mock_runner.assert_called_once()
     
-    async def test_run_evaluate_agent_chat_not_found(self, mock_session):
-        """Test run_evaluate_agent when chat is not found."""
+    async def test_run_grade_agent_chat_not_found(self, mock_session):
+        """Test run_grade_agent when chat is not found."""
         # Setup mock to raise exception
         mock_session.exec.side_effect = Exception("Chat not found")
         
         with pytest.raises(Exception):
-            await run_evaluate_agent("nonexistent-id", mock_session)
+            await run_grade_agent("nonexistent-id", mock_session)
         
         mock_session.rollback.assert_called_once()
     
-    @patch('app.services.agents.evaluate.get_conversation_history')
-    async def test_run_evaluate_agent_no_rubric(
+    @patch('app.services.agents.grade.get_conversation_history')
+    async def test_run_grade_agent_no_rubric(
         self,
         mock_get_history,
         mock_session,
-        sample_eval_chat,
-        sample_eval_run,
-        sample_messages
+        sample_simulation_chat,
+        sample_simulation_attempt,
+        sample_simulation,
+        sample_simulation_messages
     ):
-        """Test run_evaluate_agent when eval_run has no rubric."""
+        """Test run_grade_agent when simulation has no rubric."""
         
-        # Setup eval_run without rubric
-        sample_eval_run.rubric_id = None
+        # Setup simulation without rubric
+        sample_simulation.rubric_id = None
         
         mock_session.exec.side_effect = [
-            MagicMock(one=MagicMock(return_value=sample_eval_chat)),  # chat query
-            MagicMock(all=MagicMock(return_value=sample_messages)),   # messages query
-            MagicMock(one=MagicMock(return_value=sample_eval_run)),   # eval_run query
+            MagicMock(one=MagicMock(return_value=sample_simulation_chat)),  # chat query
+            MagicMock(all=MagicMock(return_value=sample_simulation_messages)),   # messages query
+            MagicMock(one=MagicMock(return_value=sample_simulation_attempt)),   # attempt query
+            MagicMock(one=MagicMock(return_value=sample_simulation)),   # simulation query
         ]
         
         mock_get_history.return_value = ["conversation", "history"]
         
-        with pytest.raises(Exception):
-            await run_evaluate_agent("11111111-1111-1111-1111-111111111111", mock_session)
+        with pytest.raises(ValueError, match="does not have a rubric assigned"):
+            await run_grade_agent("11111111-1111-1111-1111-111111111111", mock_session)
         
         mock_session.rollback.assert_called_once()
 
 
-class TestEvaluateAgent:
-    """Tests for EvaluateAgent class."""
+class TestGradingAgent:
+    """Tests for GradingAgent class."""
     
-    @patch('app.services.agents.evaluate.get_gemini')
+    @patch('app.services.agents.grade.get_gemini')
     def test_agent_initialization(self, mock_get_gemini):
-        """Test EvaluateAgent initialization."""
+        """Test GradingAgent initialization."""
         mock_client = MagicMock()
         mock_get_gemini.return_value = mock_client
         
-        agent = EvaluateAgent()
+        agent = GradingAgent()
         
         assert agent.gemini_client == mock_client
-        assert "expert evaluator" in agent.system_prompt.lower()
+        assert "expert grader" in agent.system_prompt.lower()
     
-    @patch('app.services.agents.evaluate.get_gemini')
-    @patch('app.services.agents.evaluate.Agent')
+    @patch('app.services.agents.grade.get_gemini')
+    @patch('app.services.agents.grade.Agent')
     def test_agent_creation(self, mock_agent_class, mock_get_gemini):
         """Test agent creation with dynamic output type."""
         mock_client = MagicMock()
@@ -361,41 +380,42 @@ class TestEvaluateAgent:
         class TestModel(BaseModel):
             test_field: str
         
-        evaluate_agent = EvaluateAgent()
-        agent = evaluate_agent.agent(TestModel)
+        grading_agent = GradingAgent()
+        agent = grading_agent.agent(TestModel)
         
         # Verify Agent was called with correct parameters
         mock_agent_class.assert_called_once()
         call_args = mock_agent_class.call_args
         
-        assert call_args[1]['name'] == "Evaluate Agent"
+        assert call_args[1]['name'] == "Grading Agent"
         assert call_args[1]['output_type'] == TestModel
         assert call_args[1]['model_settings'].temperature == 0.0
 
 
 # Integration test with mocked external dependencies
-class TestEvaluateIntegration:
-    """Integration tests for the evaluate module."""
+class TestGradeIntegration:
+    """Integration tests for the grade module."""
     
-    @patch('app.services.agents.evaluate.get_gemini')
-    @patch('app.services.agents.evaluate.Runner.run')
-    @patch('app.services.agents.evaluate.get_conversation_history')
-    @patch('app.services.agents.evaluate.get_dynamic_rubric')
-    async def test_full_evaluation_flow(
+    @patch('app.services.agents.grade.get_gemini')
+    @patch('app.services.agents.grade.Runner.run')
+    @patch('app.services.agents.grade.get_conversation_history')
+    @patch('app.services.agents.grade.get_dynamic_rubric')
+    async def test_full_grading_flow(
         self,
         mock_get_rubric,
         mock_get_history,
         mock_runner,
         mock_get_gemini,
         mock_session,
-        sample_eval_chat,
-        sample_eval_run,
+        sample_simulation_chat,
+        sample_simulation_attempt,
+        sample_simulation,
         sample_rubric,
         sample_standard_groups,
         sample_standards,
-        sample_messages
+        sample_simulation_messages
     ):
-        """Test the complete evaluation flow."""
+        """Test the complete grading flow."""
         
         # Setup all mocks
         mock_get_gemini.return_value = MagicMock()
@@ -404,25 +424,26 @@ class TestEvaluateIntegration:
         
         # Setup database queries
         mock_session.exec.side_effect = [
-            MagicMock(one=MagicMock(return_value=sample_eval_chat)),
-            MagicMock(all=MagicMock(return_value=sample_messages)),
-            MagicMock(one=MagicMock(return_value=sample_eval_run)),
+            MagicMock(one=MagicMock(return_value=sample_simulation_chat)),
+            MagicMock(all=MagicMock(return_value=sample_simulation_messages)),
+            MagicMock(one=MagicMock(return_value=sample_simulation_attempt)),
+            MagicMock(one=MagicMock(return_value=sample_simulation)),
             MagicMock(one=MagicMock(return_value=sample_rubric)),
             MagicMock(all=MagicMock(return_value=sample_standard_groups)),
             MagicMock(all=MagicMock(return_value=sample_standards))
         ]
         
-        # Setup evaluation result
+        # Setup grading result
         mock_result = MagicMock()
-        mock_evaluation_result = MagicMock()
-        mock_evaluation_result.overall_score = 18
-        mock_evaluation_result.passed = True
-        mock_evaluation_result.active_listening_score = 4
-        mock_evaluation_result.active_listening_feedback = "Good listening"
-        mock_evaluation_result.content_mastery_score = 5
-        mock_evaluation_result.content_mastery_feedback = "Excellent knowledge"
+        mock_grading_result = MagicMock()
+        mock_grading_result.overall_score = 18
+        mock_grading_result.passed = True
+        mock_grading_result.active_listening_score = 4
+        mock_grading_result.active_listening_feedback = "Good listening"
+        mock_grading_result.content_mastery_score = 5
+        mock_grading_result.content_mastery_feedback = "Excellent knowledge"
         
-        mock_result.final_output_as.return_value = mock_evaluation_result
+        mock_result.final_output_as.return_value = mock_grading_result
         mock_runner.return_value = mock_result
         
         # Setup grade creation
@@ -430,12 +451,46 @@ class TestEvaluateIntegration:
         mock_grade.id = UUID("99999999-9999-9999-9999-999999999999")
         mock_session.add.side_effect = lambda obj: setattr(obj, 'id', mock_grade.id)
         
-        # Run the evaluation
-        result = await run_evaluate_agent("11111111-1111-1111-1111-111111111111", mock_session)
+        # Run the grading
+        result = await run_grade_agent("11111111-1111-1111-1111-111111111111", mock_session)
         
         # Verify the complete flow
         assert result == str(mock_grade.id)
         assert mock_session.add.call_count >= 2  # Grade + feedbacks
         mock_session.commit.assert_called_once()
         mock_runner.assert_called_once()
+
+
+class TestGradeVsEvaluateConsistency:
+    """Tests to ensure grade.py and evaluate.py have consistent behavior."""
+    
+    def test_field_name_generation_consistency(self, sample_standard_groups):
+        """Test that both modules generate the same field names."""
+        from app.services.agents.evaluate import create_safe_field_name as eval_create_safe_field_name
+        from app.services.agents.grade import create_safe_field_name as grade_create_safe_field_name
+        
+        test_names = [
+            "Active Listening",
+            "Content-Mastery & Skills",
+            "Time   Management",
+            "_Adaptability_"
+        ]
+        
+        for name in test_names:
+            eval_result = eval_create_safe_field_name(name)
+            grade_result = grade_create_safe_field_name(name)
+            assert eval_result == grade_result, f"Field name mismatch for '{name}'"
+    
+    def test_dynamic_model_structure_consistency(self, sample_standard_groups):
+        """Test that both modules create models with the same structure."""
+        from app.services.agents.evaluate import create_dynamic_rubric_model as eval_create_model
+        from app.services.agents.grade import create_dynamic_rubric_model as grade_create_model
+        
+        eval_model = eval_create_model(sample_standard_groups)
+        grade_model = grade_create_model(sample_standard_groups)
+        
+        eval_fields = set(eval_model.model_fields.keys())
+        grade_fields = set(grade_model.model_fields.keys())
+        
+        assert eval_fields == grade_fields, "Model fields should be identical"
 

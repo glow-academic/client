@@ -76,3 +76,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "asyncio: mark test as async")
     config.addinivalue_line("markers", "integration: mark test as integration test")
     config.addinivalue_line("markers", "unit: mark test as unit test")
+
+
+# Configure pytest-asyncio
+pytest_plugins = ('pytest_asyncio',)

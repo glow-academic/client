@@ -1,4 +1,4 @@
-# app/routes/report.py
+# app/routes/users.py
 from fastapi import APIRouter, Depends, HTTPException, Response
 from app.db import get_session
 from sqlmodel import Session, select
@@ -211,9 +211,9 @@ async def get_report(
         raise HTTPException(status_code=404, detail="User not found")
 
     # Get the chats for the user through attempts
-    from app.models import Attempts
+    from app.models import SimulationAttempts
 
-    attempts = session.exec(select(Attempts).where(Attempts.user_id == user_id)).all()
+    attempts = session.exec(select(SimulationAttempts).where(SimulationAttempts.user_id == user_id)).all()
     if not attempts:
         raise HTTPException(status_code=404, detail="No attempts found for this user")
 
