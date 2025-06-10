@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulationMessagesByChat(chatId: string) {
   try {
-    return await db
-      .select()
-      .from(simulationMessages)
-      .where(eq(simulationMessages.chatId, chatId));
+    return await db.select().from(simulationMessages).where(eq(simulationMessages.chatId, chatId));
   } catch (error) {
     console.error("Error fetching simulation_messages by chat:", error);
     throw error;

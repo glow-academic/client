@@ -4,16 +4,9 @@ import { db } from "@/utils/drizzle/database";
 import { agents } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function updateAgents(
-  ids: string[],
-  data: Partial<typeof agents.$inferInsert>,
-) {
+export async function updateAgents(ids: string[], data: Partial<typeof agents.$inferInsert>) {
   try {
-    return await db
-      .update(agents)
-      .set(data)
-      .where(inArray(agents.id, ids))
-      .returning();
+    return await db.update(agents).set(data).where(inArray(agents.id, ids)).returning();
   } catch (error) {
     console.error("Error updating multiple agents:", error);
     throw error;

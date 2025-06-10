@@ -3,9 +3,7 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationChats } from "@/drizzle/schema";
 
-export async function createSimulationChats(
-  data: (typeof simulationChats.$inferInsert)[],
-) {
+export async function createSimulationChats(data: (typeof simulationChats.$inferInsert)[]) {
   try {
     return await db.insert(simulationChats).values(data).returning();
   } catch (error) {

@@ -6,10 +6,7 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulation(id: string) {
   try {
-    const result = await db
-      .select()
-      .from(simulations)
-      .where(eq(simulations.id, id));
+    const result = await db.select().from(simulations).where(eq(simulations.id, id));
     return result[0] || null;
   } catch (error) {
     console.error("Error fetching simulation:", error);

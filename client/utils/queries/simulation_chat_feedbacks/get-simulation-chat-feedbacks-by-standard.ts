@@ -6,15 +6,9 @@ import { eq } from "drizzle-orm";
 
 export async function getSimulationChatFeedbacksByStandard(standardId: string) {
   try {
-    return await db
-      .select()
-      .from(simulationChatFeedbacks)
-      .where(eq(simulationChatFeedbacks.standardId, standardId));
+    return await db.select().from(simulationChatFeedbacks).where(eq(simulationChatFeedbacks.standardId, standardId));
   } catch (error) {
-    console.error(
-      "Error fetching simulation_chat_feedbacks by standard:",
-      error,
-    );
+    console.error("Error fetching simulation_chat_feedbacks by standard:", error);
     throw error;
   }
 }

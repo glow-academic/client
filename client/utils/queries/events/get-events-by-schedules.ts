@@ -6,10 +6,7 @@ import { inArray } from "drizzle-orm";
 
 export async function getEventsBySchedules(scheduleIds: string[]) {
   try {
-    return await db
-      .select()
-      .from(events)
-      .where(inArray(events.scheduleId, scheduleIds));
+    return await db.select().from(events).where(inArray(events.scheduleId, scheduleIds));
   } catch (error) {
     console.error("Error fetching events by schedules:", error);
     throw error;

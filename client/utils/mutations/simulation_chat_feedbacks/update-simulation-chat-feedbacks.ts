@@ -4,16 +4,9 @@ import { db } from "@/utils/drizzle/database";
 import { simulationChatFeedbacks } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function updateSimulationChatFeedbacks(
-  ids: string[],
-  data: Partial<typeof simulationChatFeedbacks.$inferInsert>,
-) {
+export async function updateSimulationChatFeedbacks(ids: string[], data: Partial<typeof simulationChatFeedbacks.$inferInsert>) {
   try {
-    return await db
-      .update(simulationChatFeedbacks)
-      .set(data)
-      .where(inArray(simulationChatFeedbacks.id, ids))
-      .returning();
+    return await db.update(simulationChatFeedbacks).set(data).where(inArray(simulationChatFeedbacks.id, ids)).returning();
   } catch (error) {
     console.error("Error updating multiple simulation_chat_feedbacks:", error);
     throw error;
