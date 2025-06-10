@@ -39,6 +39,9 @@ make run
 ```
 
 
+## Notes
+Each file in the components folder should have a corresponding jest test case
+Each table should have a corresponding test case in cypress
 
 ## Tech Stack
 

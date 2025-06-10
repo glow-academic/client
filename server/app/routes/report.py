@@ -7,7 +7,7 @@ import os
 import tempfile
 from datetime import datetime
 import statistics
-from app.models import Users, Chats, Rubrics, Agents
+from app.models import Users, SimulationChats, Rubrics, Agents
 from typing import Dict, List, Tuple
 from collections import defaultdict
 
@@ -212,13 +212,16 @@ async def get_report(
 
     # Get the chats for the user through attempts
     from app.models import Attempts
+
     attempts = session.exec(select(Attempts).where(Attempts.user_id == user_id)).all()
     if not attempts:
         raise HTTPException(status_code=404, detail="No attempts found for this user")
-    
+
     # Get all chats from the user's attempts
     attempt_ids = [attempt.id for attempt in attempts]
-    chats = session.exec(select(Chats).where(Chats.attempt_id.in_(attempt_ids))).all()
+    chats = session.exec(
+        select(SimulationChats).where(SimulationChats.attempt_id.in_(attempt_ids))
+    ).all()
     if not chats:
         raise HTTPException(status_code=404, detail="No chats found for this user")
 
@@ -234,7 +237,9 @@ async def get_report(
         chat_agents = defaultdict(int)
         for chat in chats:
             # Get the agent name from the agent_id
-            agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one_or_none()
+            agent = session.exec(
+                select(Agents).where(Agents.id == chat.agent_id)
+            ).one_or_none()
             if agent:
                 chat_agents[agent.name] += 1
 
@@ -242,7 +247,9 @@ async def get_report(
         performance_by_type = defaultdict(list)
         for chat in chats:
             # Get the agent name from the agent_id
-            agent = session.exec(select(Agents).where(Agents.id == chat.agent_id)).one_or_none()
+            agent = session.exec(
+                select(Agents).where(Agents.id == chat.agent_id)
+            ).one_or_none()
             if agent:
                 for rubric in rubrics:
                     if rubric.chat_id == chat.id:

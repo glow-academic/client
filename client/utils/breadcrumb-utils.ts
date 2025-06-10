@@ -1,9 +1,11 @@
-import { getClass } from "@/utils/queries/get-class";
-import { getAttempt } from "@/utils/queries/get-attempt";
-import { getScenario } from "@/utils/queries/get-scenario";
-import { getAgent } from "@/utils/queries/get-agent";
-import { getSimulation } from "@/utils/queries/get-simulation";
-import { getChat } from "@/utils/queries/get-chat";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulationAttempt";
+import { getSimulationChat } from "@/utils/queries/simulation_chats/get-simulationChat";
+import { getUser } from "@/utils/queries/users/get-user";
+
 
 interface BreadcrumbItem {
   title: string;
@@ -12,7 +14,7 @@ interface BreadcrumbItem {
 
 // Helper function to determine if a segment should be dropped (single digit or single letter)
 const shouldDropSegment = (segment: string): boolean => {
-  return /^\d$/.test(segment) || /^\w$/.test(segment); // Single digit or single letter
+  return /^[a-z]$/.test(segment); // Single letter segments like 'c', 'a', 's', 'u'
 };
 
 // Helper function to fetch actual name for an ID based on context
@@ -24,7 +26,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return classData?.classCode || `Class ${id.substring(0, 8)}...`;
       
       case 'attempt':
-        const attemptData = await getAttempt(id);
+        const attemptData = await getSimulationAttempt(id);
         // get simulation for attempt
         const attemptSimulation = await getSimulation(attemptData?.simulationId);
         // Attempts don't have a title, so we'll use a generic name with timestamp
@@ -43,8 +45,12 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return simulationData?.title || `Simulation ${id.substring(0, 8)}...`;
       
       case 'chat':
-        const chatData = await getChat(id);
+        const chatData = await getSimulationChat(id);
         return chatData?.title || `Chat ${id.substring(0, 8)}...`;
+      
+      case 'user':
+        const userData = await getUser(id);
+        return userData?.name || `User ${id.substring(0, 8)}...`;
       
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -62,8 +68,10 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
   
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
+    const prevSegment = i > 0 ? segments[i - 1] : '';
+    const nextSegment = i < segments.length - 1 ? segments[i + 1] : '';
     
-    // Skip single digit segments
+    // Skip single letter segments that are just route markers
     if (shouldDropSegment(segment)) {
       continue;
     }
@@ -76,25 +84,21 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
     const isLikelyId = segment.length > 10 || /^[a-f0-9-]{8,}/.test(segment);
     
     if (isLikelyId) {
-      // Determine context based on previous segments or route structure
-      const prevSegment = i > 0 ? segments[i - 1] : '';
-      const route = segments[0];
-      
-      switch (route) {
-        case 'classes':
-          if (prevSegment === 'c') context = 'class';
-          break;
-        case 'chat':
-          if (prevSegment === 't') context = 'simulation';
-          else if (prevSegment === 'p') context = 'agent';
-          else if (prevSegment === 's') context = 'scenario';
-          break;
-        case 'c':
-          context = 'chat';
-          break;
-        case 'a':
-          context = 'attempt';
-          break;
+      // Determine context based on route structure
+      if (prevSegment === 'c' && segments[0] === 'classes') {
+        context = 'class';
+      } else if (prevSegment === 'c' && segments[0] === 'c') {
+        context = 'chat';
+      } else if (prevSegment === 'a' && segments[0] === 'a') {
+        context = 'attempt';
+      } else if (prevSegment === 's' && segments.includes('simulations')) {
+        context = 'simulation';
+      } else if (prevSegment === 'a' && segments.includes('agents')) {
+        context = 'agent';
+      } else if (prevSegment === 's' && segments.includes('scenarios')) {
+        context = 'scenario';
+      } else if (prevSegment === 'u' && segments.includes('staff')) {
+        context = 'user';
       }
       
       if (context) {
@@ -103,52 +107,70 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
     } else {
       // Convert segment to readable title for non-IDs
       switch (segment) {
-        case 'chat':
-          title = 'Chat';
+        // Main sections (now standalone)
+        case 'home':
+          title = 'Home';
+          break;
+        case 'growth':
+          title = 'Growth';
+          break;
+        case 'history':
+          title = 'History';
+          break;
+        case 'rubric':
+          title = 'Rubric';
+          break;
+        case 'analytics':
+          title = 'Analytics';
           break;
         case 'simulations':
           title = 'Simulations';
           break;
-        case 'profiles':
+        case 'classes':
+          title = 'Classes';
+          break;
+        case 'management':
+          title = 'Management';
+          break;
+        case 'profile':
+          title = 'Profile';
+          break;
+        
+        // Analytics subsections
+        case 'performance':
+          title = 'Performance';
+          break;
+        case 'reports':
+          title = 'Reports';
+          break;
+        case 'logs':
+          title = 'Logs';
+          break;
+        
+        // Simulations subsections
         case 'agents':
           title = 'Agents';
           break;
         case 'scenarios':
           title = 'Scenarios';
           break;
-        case 'classes':
-          title = 'Classes';
+        
+        // Management subsections
+        case 'staff':
+          title = 'Staff';
           break;
-        case 'general':
-          title = 'General';
+        case 'evals':
+          title = 'Evaluations';
           break;
-        case 'management':
-          title = 'Management';
-          break;
-        case 'instructional':
-          title = 'Instructional Staff';
-          break;
-        case 'instructor':
-          title = 'Instructors';
-          break;
-        case 'ta':
-          title = 'Teaching Assistants';
-          break;
-        case 'profile':
-          title = 'Profile';
-          break;
+        
+        // Common actions
         case 'new':
           title = 'New';
           break;
-        case 's':
-          title = 'Simulation';
+        case 'edit':
+          title = 'Edit';
           break;
-        case 'a':
-          title = 'Agent';
-          break;
-        case 's':
-          title = 'Scenario';
-          break;
+        
         default:
           title = segment.charAt(0).toUpperCase() + segment.slice(1);
       }
@@ -163,36 +185,83 @@ export const generateEnhancedBreadcrumbs = async (pathname: string): Promise<Bre
   return breadcrumbs;
 };
 
-// Helper function to get section from path segments (same as before)
-const getSectionFromSegments = (segments: string[]) => {
-  if (segments.length === 0) return 'home';
+// Helper function to get section from path segments
+const getSectionFromSegments = (segments: string[]): string => {
+  if (segments.length === 0) return 'dashboard';
   
-  const [first, second, third] = segments;
+  const [first, second, third, fourth] = segments;
   
-  // Handle special cases
-  if (first === 'classes' && second === 'general') {
-    return 'add-class';
+  // Handle main routes (now standalone)
+  switch (first) {
+    case 'home':
+      return 'dashboard'; // Home maps to dashboard section
+    
+    case 'growth':
+      return 'growth';
+    
+    case 'history':
+      return 'history';
+    
+    case 'rubric':
+      return 'rubric';
+    
+    case 'analytics':
+      if (second) {
+        return second; // performance, leaderboard, logs
+      }
+      return 'analytics';
+    
+    case 'simulations':
+      if (second === 'agents') {
+        if (third === 'a' && fourth) {
+          return `agent-${fourth}`;
+        }
+        return 'agents';
+      }
+      if (second === 'scenarios') {
+        if (third === 's' && fourth) {
+          return `scenario-${fourth}`;
+        }
+        return 'scenarios';
+      }
+      if (second === 's' && third) {
+        return `simulation-${third}`;
+      }
+      return 'simulations';
+    
+    case 'classes':
+      if (second === 'c' && third) {
+        return `class-${third}`;
+      }
+      if (second === 'new' && third === 'c' && fourth) {
+        return `class-${fourth}`;
+      }
+      return 'classes';
+    
+    case 'management':
+      if (second) {
+        return second; // staff, reports, evals
+      }
+      return 'staff'; // Default to staff
+    
+    case 'c':
+      if (second) {
+        return `chat-${second}`;
+      }
+      return 'history'; // Chat pages should be under history section
+    
+    case 'a':
+      if (second) {
+        return `attempt-${second}`;
+      }
+      return 'simulations'; // Attempt pages should be under simulations section
+    
+    case 'profile':
+      return 'profile';
+    
+    default:
+      return segments.join('-');
   }
-  if (first === 'classes' && second === 'c') {
-    return `class-${third}`;
-  }
-  if (first === 'chat') {
-    return `chat-${second}`;
-  }
-  if (first === 'c') {
-    return 'history'; // Chat pages should be under history section
-  }
-  if (first === 'a') {
-    return 'simulations'; // Attempt pages should be under simulations section
-  }
-  if (first === 'management') {
-    return `manage-${second}`;
-  }
-  if (first === 'profile') {
-    return 'profile';
-  }
-  
-  return segments.join('-');
 };
 
 // Synchronous version for cases where async isn't possible (fallback)
@@ -203,7 +272,7 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
     
-    // Skip single digit segments
+    // Skip single letter segments
     if (shouldDropSegment(segment)) {
       continue;
     }
@@ -211,47 +280,71 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
     // Convert segment to readable title
     let title = segment;
     switch (segment) {
-      case 'chat':
-        title = 'Chat';
+      // Main sections (now standalone)
+      case 'home':
+        title = 'Home';
+        break;
+      case 'growth':
+        title = 'Growth';
+        break;
+      case 'history':
+        title = 'History';
+        break;
+      case 'rubric':
+        title = 'Rubric';
+        break;
+      case 'analytics':
+        title = 'Analytics';
         break;
       case 'simulations':
         title = 'Simulations';
         break;
-      case 'profiles':
+      case 'classes':
+        title = 'Classes';
+        break;
+      case 'management':
+        title = 'Management';
+        break;
+      case 'profile':
+        title = 'Profile';
+        break;
+      
+      // Subsections
+      case 'performance':
+        title = 'Performance';
+        break;
+      case 'leaderboard':
+        title = 'Leaderboard';
+        break;
+      case 'logs':
+        title = 'Logs';
+        break;
       case 'agents':
         title = 'Agents';
         break;
       case 'scenarios':
         title = 'Scenarios';
         break;
-      case 'classes':
-        title = 'Classes';
+      case 'staff':
+        title = 'Staff';
         break;
-      case 'general':
-        title = 'General';
+      case 'reports':
+        title = 'Reports';
         break;
-      case 'management':
-        title = 'Management';
-        break;
-      case 'instructional':
-        title = 'Instructional Staff';
-        break;
-      case 'instructor':
-        title = 'Instructors';
-        break;
-      case 'ta':
-        title = 'Teaching Assistants';
-        break;
-      case 'profile':
-        title = 'Profile';
+      case 'evals':
+        title = 'Evaluations';
         break;
       case 'new':
         title = 'New';
         break;
+      case 'edit':
+        title = 'Edit';
+        break;
+      
       default:
         // For IDs, try to make them more readable
         if (segment.length > 10) {
-          title = `ID: ${segment.substring(0, 8)}...`;
+          title = `${segment.substring(0, 8)}...`;
         } else {
           title = segment.charAt(0).toUpperCase() + segment.slice(1);
         }

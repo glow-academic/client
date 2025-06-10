@@ -7,6 +7,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,15 +19,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
-import { RoleProvider } from "@/components/role-context";
-import { getUser } from "@/utils/queries/get-user";
-import { getClass } from "@/utils/queries/get-class";
-import { deleteClass } from "@/utils/mutations/delete-class";
+import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
+import { RoleProvider } from "@/contexts/role-context";
+import { ViewModeProvider } from "@/contexts/view-mode-context";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/use-auth";
+import { getUser } from "@/utils/queries/users/get-user";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { deleteClass } from "@/utils/mutations/classes/delete-class";
 
 export default function MainLayout({
   children,
@@ -39,22 +42,17 @@ export default function MainLayout({
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<Array<{ title: string; section?: string }>>([]);
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [viewMode, setViewMode] = React.useState<'chats' | 'attempts'>('attempts');
+  const { userId } = useAuth();
 
-  // Extract classId from edit page path
-  const classEditPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)\/edit$/);
-  const classId = classEditPageMatch?.[1];
+  // Check if we're on the logs page
+  const isLogsPage = pathname === '/analytics/logs';
 
   // Fetch user data for role context
   const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(),
-  });
-
-  // Fetch class data for delete confirmation
-  const { data: classData } = useQuery({
-    queryKey: ["class", classId],
-    queryFn: () => getClass(classId!),
-    enabled: !!classId,
+    queryKey: ["user", userId],
+    queryFn: () => getUser(userId!),
+    enabled: !!userId,
   });
 
   // Load enhanced breadcrumbs with async ID resolution
@@ -66,33 +64,23 @@ export default function MainLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(router, '/dashboard/chats');
+  const handleSectionChange = createSectionChangeHandler(router, '/simulations');
 
-  const handleDeleteClass = async () => {
-    if (!classId) return;
-    
-    setIsDeleting(true);
-    try {
-      const result = await deleteClass(classId);
-      if (result.success) {
-        queryClient.invalidateQueries({ queryKey: ["classes"] });
-        toast.success("Class deleted successfully!");
-        router.push('/classes/general');
-      } else {
-        toast.error(`Failed to delete class: ${result.error}`);
-      }
-    } catch (error) {
-      toast.error(`Failed to delete class: ${error instanceof Error ? error.message : "Unknown error"}`);
-      console.error("Error deleting class:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  };
+  // Create view mode toggle for history page
+  const viewModeToggle = isLogsPage ? (
+    <div className="flex items-center space-x-2">
+      <span className="text-sm text-muted-foreground">Show individual chats</span>
+      <Switch
+        checked={viewMode === 'chats'}
+        onCheckedChange={(checked) => setViewMode(checked ? 'chats' : 'attempts')}
+      />
+    </div>
+  ) : null;
 
   // Determine action button based on current path
   const getActionButton = () => {
     // Don't show create buttons on the creation pages themselves
-    if (pathname.includes('/new') || pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
+    if (pathname.includes('/t/') || pathname.includes('/s/') || pathname.includes('/p/') || pathname.includes('/u/')) {
       return null;
     }
     // Check for individual class page pattern: /classes/c/[classId]
@@ -102,72 +90,48 @@ export default function MainLayout({
       return (
         <Button onClick={() => router.push(`/classes/c/${classId}/edit`)} size="sm" variant="default">
           <Pencil className="h-4 w-4 mr-2" />
-          Edit Class  
+          Edit Class
         </Button>
       );
     }
-    
-    // Check for class edit page pattern: /classes/c/[classId]/edit
-    if (classEditPageMatch && classData) {
+
+    if (pathname.startsWith('/create/scenarios')) {
       return (
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button size="sm" variant="destructive" disabled={isDeleting}>
-              <Trash2 className="h-4 w-4 mr-2" />
-              {isDeleting ? "Deleting..." : "Delete Class"}
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the class
-                "{classData.classCode}" and remove all associated data.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteClass}
-                disabled={isDeleting}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {isDeleting ? "Deleting..." : "Delete Class"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      );
-    }
-    
-    if (pathname.startsWith('/chat/simulations')) {
-      return (
-        <Button onClick={() => router.push('/chat/simulations/new')} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Simulation
-        </Button>
-      );
-    }
-    
-    if (pathname.startsWith('/chat/agents')) {
-      return (
-        <Button onClick={() => router.push('/chat/agents/new')} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
-        </Button>
-      );
-    }
-    
-    if (pathname.startsWith('/chat/scenarios')) {
-      return (
-        <Button onClick={() => router.push('/chat/scenarios/new')} size="sm">
+        <Button onClick={() => router.push('/create/scenarios/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Scenario
         </Button>
       );
     }
-    
-    if (pathname.startsWith('/classes/general')) {
+
+    if (pathname.startsWith('/create/simulations')) {
+      return (
+        <Button onClick={() => router.push('/create/simulations/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Simulation
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/create/rubrics') && !pathname.includes('/new')) {
+      return (
+        <Button onClick={() => router.push('/create/rubrics/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Rubric
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/create/simulations/agents') && !pathname.includes('/new')) {
+      return (
+        <Button onClick={() => router.push('/simulations/agents/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Agent
+        </Button>
+      );
+    }
+
+    if (pathname.startsWith('/classes') && !pathname.includes('/new')) {
       return (
         <Button onClick={() => router.push('/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
@@ -175,40 +139,51 @@ export default function MainLayout({
         </Button>
       );
     }
-    
-    if (pathname.startsWith('/management/instructional')) {
+
+    if (pathname.startsWith('/management/staff') && !pathname.includes('/new')) {
       return (
-        <Button onClick={() => router.push('/management/instructional/new')} size="sm">
+        <Button onClick={() => router.push('/management/staff/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Instructional Staff
+          Add Staff
         </Button>
       );
     }
-    
-    if (pathname.startsWith('/management/instructor')) {
+
+    if (pathname.startsWith('/management/classes') && !pathname.includes('/new')) {
       return (
-        <Button onClick={() => router.push('/management/instructor/new')} size="sm">
+        <Button onClick={() => router.push('/management/classes/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Instructor
+          Create Class
         </Button>
       );
     }
-    
-    if (pathname.startsWith('/management/ta')) {
+
+    if (pathname.startsWith('/management/agents') && !pathname.includes('/new')) {
       return (
-        <Button onClick={() => router.push('/management/ta/new')} size="sm">
+        <Button onClick={() => router.push('/management/agents/new')} size="sm">
           <Plus className="h-4 w-4 mr-2" />
-          Add Teaching Assistant
+          Create Agent
         </Button>
       );
     }
-    
+
+    if (pathname.startsWith('/management/evals')) {
+      return (
+        <Button onClick={() => router.push('/management/evals/new')} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Evaluation
+        </Button>
+      );
+    }
+
+
+
     return null;
   };
 
   const actionButton = getActionButton();
 
-  return (
+  const content = (
     <RoleProvider userRole={user?.role}>
       <SidebarProvider>
         <UnifiedSidebar
@@ -220,9 +195,10 @@ export default function MainLayout({
             <div className="flex items-center gap-2 px-4 flex-1">
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mr-2 h-4" />
-              <NavigationBreadcrumbs 
+              <NavigationBreadcrumbs
                 breadcrumbs={breadcrumbs}
                 onSectionChange={handleSectionChange}
+                rightContent={viewModeToggle}
               />
             </div>
             {actionButton && (
@@ -238,4 +214,15 @@ export default function MainLayout({
       </SidebarProvider>
     </RoleProvider>
   );
+
+  // Only provide ViewModeProvider context for logs page
+  if (isLogsPage) {
+    return (
+      <ViewModeProvider viewMode={viewMode} setViewMode={setViewMode}>
+        {content}
+      </ViewModeProvider>
+    );
+  }
+
+  return content;
 } 

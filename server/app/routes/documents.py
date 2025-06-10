@@ -22,7 +22,8 @@ from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
 import mimetypes
 
-from app.agents.classify import run_classify_agent
+from app.services.agents.classify import run_classify_agent
+from app.services.agents.course import run_course_agent
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -46,7 +47,7 @@ async def classify_documents(
     try:
         # Run the classification agent
         result = await run_classify_agent(class_id, session)
-        
+
         if result["success"]:
             return JSONResponse(
                 status_code=200,
@@ -55,25 +56,18 @@ async def classify_documents(
                     "message": result["message"],
                     "classified_count": result["classified_count"],
                     "total_count": result["total_count"],
-                    "classification_results": result.get("classification_results", {})
-                }
+                    "classification_results": result.get("classification_results", {}),
+                },
             )
         else:
             return JSONResponse(
                 status_code=400,
-                content={
-                    "status": "error",
-                    "message": result["message"]
-                }
+                content={"status": "error", "message": result["message"]},
             )
-            
+
     except ValueError as e:
         return JSONResponse(
-            status_code=404,
-            content={
-                "status": "error", 
-                "message": str(e)
-            }
+            status_code=404, content={"status": "error", "message": str(e)}
         )
     except Exception as e:
         logger.error(f"Error classifying documents: {str(e)}")
@@ -81,8 +75,53 @@ async def classify_documents(
             status_code=500,
             content={
                 "status": "error",
-                "message": f"Failed to classify documents: {str(e)}"
-            }
+                "message": f"Failed to classify documents: {str(e)}",
+            },
+        )
+
+
+@router.post("/course")
+async def course_processing(
+    class_id: str,
+    session: Session = Depends(get_session),
+):
+    """
+    Process a course using the course agent to extract course information
+    """
+    try:
+        # Run the course agent
+        result = await run_course_agent(class_id, session)
+
+        if result["success"]:
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": result["message"],
+                    "updates_made": result["updates_made"],
+                    "documents_count": result["documents_count"],
+                    "course_info": result["course_info"],
+                    "debug_info": result.get("debug_info", ""),
+                },
+            )
+        else:
+            return JSONResponse(
+                status_code=400,
+                content={"status": "error", "message": result["message"]},
+            )
+
+    except ValueError as e:
+        return JSONResponse(
+            status_code=404, content={"status": "error", "message": str(e)}
+        )
+    except Exception as e:
+        logger.error(f"Error processing course: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "error",
+                "message": f"Failed to process course: {str(e)}",
+            },
         )
 
 
@@ -103,7 +142,7 @@ async def upload_document(
         raise HTTPException(status_code=400, detail="No files provided")
 
     uploaded_documents = []
-    
+
     for file in files:
         # Generate a unique ID for the document
         document_id = str(uuid.uuid4())
@@ -132,18 +171,20 @@ async def upload_document(
         )
 
         session.add(document)
-        uploaded_documents.append({
-            "document_id": document_id,
-            "name": file.filename,
-            "mime_type": file.content_type
-        })
+        uploaded_documents.append(
+            {
+                "document_id": document_id,
+                "name": file.filename,
+                "mime_type": file.content_type,
+            }
+        )
 
     session.commit()
 
     return {
-        "message": f"Successfully uploaded {len(uploaded_documents)} document(s)", 
+        "message": f"Successfully uploaded {len(uploaded_documents)} document(s)",
         "documents": uploaded_documents,
-        "count": len(uploaded_documents)
+        "count": len(uploaded_documents),
     }
 
 
@@ -429,8 +470,9 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
             # Process CSV file
             try:
                 from app.utils.csv import process_csv_file
+
                 result = process_csv_file(file_path, session)
-                
+
                 # Clean up the TUS upload directory
                 try:
                     shutil.rmtree(upload_dir)
@@ -450,7 +492,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                             "users_skipped": result["users_skipped"],
                             "errors": result.get("errors", []),
                             "created_users": result.get("created_users", []),
-                            "skipped_users": result.get("skipped_users", [])
+                            "skipped_users": result.get("skipped_users", []),
                         },
                     )
                 else:
@@ -461,7 +503,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                             "message": result["error"],
                         },
                     )
-                    
+
             except Exception as csv_error:
                 logger.error(f"Error processing CSV file: {str(csv_error)}")
                 return JSONResponse(
@@ -511,43 +553,50 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
             # Process ZIP file
             try:
                 extracted_documents = []
-                
+
                 # Extract ZIP file
-                with zipfile.ZipFile(file_path, 'r') as zip_ref:
+                with zipfile.ZipFile(file_path, "r") as zip_ref:
                     # Create a temporary directory for extraction
                     extract_dir = os.path.join(TUS_UPLOADS_DIR, f"extract_{file_id}")
                     os.makedirs(extract_dir, exist_ok=True)
-                    
+
                     # Extract all files
                     zip_ref.extractall(extract_dir)
-                    
+
                     # Process each extracted file
                     for root, dirs, files in os.walk(extract_dir):
                         for filename in files:
                             # Skip hidden files and directories
-                            if filename.startswith('.') or filename.startswith('__MACOSX'):
+                            if filename.startswith(".") or filename.startswith(
+                                "__MACOSX"
+                            ):
                                 continue
-                                
+
                             extracted_file_path = os.path.join(root, filename)
-                            
+
                             # Generate document ID
                             document_id = str(uuid.uuid4())
-                            
+
                             # Get file extension
                             _, ext = os.path.splitext(filename)
                             if not ext:
                                 ext = ".bin"
-                            
+
                             # Create final file path
                             final_file_path = f"{document_id}{ext}"
-                            final_full_path = os.path.join(UPLOAD_FOLDER, final_file_path)
-                            
+                            final_full_path = os.path.join(
+                                UPLOAD_FOLDER, final_file_path
+                            )
+
                             # Copy file to final location
                             shutil.copy2(extracted_file_path, final_full_path)
-                            
+
                             # Determine MIME type
-                            mime_type = mimetypes.guess_type(filename)[0] or "application/octet-stream"
-                            
+                            mime_type = (
+                                mimetypes.guess_type(filename)[0]
+                                or "application/octet-stream"
+                            )
+
                             # Create document record
                             document = Documents(
                                 id=document_id,
@@ -556,19 +605,21 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                                 mime_type=mime_type,
                                 class_id=class_id,
                             )
-                            
+
                             session.add(document)
-                            extracted_documents.append({
-                                "id": document_id,
-                                "name": filename,
-                                "mime_type": mime_type
-                            })
-                    
+                            extracted_documents.append(
+                                {
+                                    "id": document_id,
+                                    "name": filename,
+                                    "mime_type": mime_type,
+                                }
+                            )
+
                     # Clean up extraction directory
                     shutil.rmtree(extract_dir)
-                
+
                 session.commit()
-                
+
                 # Clean up the TUS upload directory
                 try:
                     shutil.rmtree(upload_dir)
@@ -577,20 +628,48 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                     logger.warning(
                         f"Failed to clean up TUS upload directory: {str(cleanup_error)}"
                     )
-                
+
                 # Automatically classify the documents if requested
                 auto_classify = body.get("autoClassify", False)
+                auto_course_process = body.get("autoCourseProcess", False)
                 classification_result = None
-                
+                course_result = None
+
                 if auto_classify and class_id:
                     try:
                         # Call the classify agent directly
-                        from app.agents.classify import run_classify_agent
-                        classification_result = await run_classify_agent(class_id, session)
-                        logger.info(f"Auto-classification completed: {classification_result}")
+                        from app.services.agents.classify import run_classify_agent
+
+                        classification_result = await run_classify_agent(
+                            class_id, session
+                        )
+                        logger.info(
+                            f"Auto-classification completed: {classification_result}"
+                        )
+
+                        # If classification was successful and course processing is requested, run course agent
+                        if (
+                            auto_course_process
+                            and classification_result
+                            and classification_result.get("success")
+                        ):
+                            try:
+                                course_result = await run_course_agent(
+                                    class_id, session
+                                )
+                                logger.info(
+                                    f"Auto-course processing completed: {course_result}"
+                                )
+                            except Exception as course_error:
+                                logger.warning(
+                                    f"Auto-course processing error: {str(course_error)}"
+                                )
+
                     except Exception as classify_error:
-                        logger.warning(f"Auto-classification error: {str(classify_error)}")
-                
+                        logger.warning(
+                            f"Auto-classification error: {str(classify_error)}"
+                        )
+
                 return JSONResponse(
                     status_code=200,
                     content={
@@ -598,10 +677,11 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                         "message": f"ZIP file processed successfully. Extracted {len(extracted_documents)} documents.",
                         "extracted_count": len(extracted_documents),
                         "documents": extracted_documents,
-                        "classification_result": classification_result
+                        "classification_result": classification_result,
+                        "course_result": course_result,
                     },
                 )
-                
+
             except zipfile.BadZipFile:
                 return JSONResponse(
                     status_code=400,

@@ -5,38 +5,76 @@ import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.share
  */
 export const getSectionRoute = (section: string): string => {
   switch (section) {
-    case 'chats':
-      return '/dashboard/chats';
-    case 'history':
-      return '/dashboard/history';
-    case 'analytics':
-      return '/dashboard/analytics';
+    case 'home':
+      return '/home';
     case 'growth':
-      return '/dashboard/growth';
-    case 'rubric':
-      return '/dashboard/rubric';
+      return '/growth';
+
+
+    // Analytics routes
+    case 'overview':
+      return '/analytics';
+    case 'performance':
+      return '/analytics/performance';
+    case 'reports':
+      return '/analytics/reports';
+    case 'logs':
+      return '/analytics/logs';
+
+    // Simulations routes
+    case 'scenarios':
+      return '/create/scenarios';
+    case 'simulations':
+      return '/create/simulations';
+    case 'rubrics':
+      return '/create/rubrics';
+
+    // Management routes
+    case 'staff':
+      return '/management/staff';
+    case 'agents':
+      return '/management/agents';
+    case 'evals':
+      return '/management/evals';
+    case 'classes':
+      return '/management/classes';
+
+    // Profile route
     case 'profile':
       return '/profile';
-    case 'chat-simulations':
-      return '/chat/simulations';
-    case 'chat-agents':
-      return '/chat/agents';
-    case 'chat-scenarios':
-      return '/chat/scenarios';
-    case 'add-class':
-      return '/classes/general';
-    case 'manage-instructional':
-      return '/management/instructional';
-    case 'manage-instructors':
-      return '/management/instructor';
-    case 'manage-tas':
-      return '/management/ta';
+
     default:
+      // Handle dynamic routes with IDs
       if (section.startsWith('class-')) {
         const classId = section.replace('class-', '');
         return `/classes/c/${classId}`;
       }
-      return '/dashboard/chats'; // Default fallback
+      if (section.startsWith('simulation-')) {
+        const simulationId = section.replace('simulation-', '');
+        return `/simulations/s/${simulationId}`;
+      }
+      if (section.startsWith('agent-')) {
+        const agentId = section.replace('agent-', '');
+        return `/simulations/agents/a/${agentId}`;
+      }
+      if (section.startsWith('scenario-')) {
+        const scenarioId = section.replace('scenario-', '');
+        return `/simulations/scenarios/s/${scenarioId}`;
+      }
+      if (section.startsWith('chat-')) {
+        const chatId = section.replace('chat-', '');
+        return `/c/${chatId}`;
+      }
+      if (section.startsWith('attempt-')) {
+        const attemptId = section.replace('attempt-', '');
+        return `/a/${attemptId}`;
+      }
+      if (section.startsWith('user-')) {
+        const userId = section.replace('user-', '');
+        return `/management/staff/u/${userId}`;
+      }
+
+      return '/home'; // Default fallback to home instead of dashboard
   }
 };
 
@@ -45,7 +83,7 @@ export const getSectionRoute = (section: string): string => {
  */
 export const createSectionChangeHandler = (
   router: AppRouterInstance,
-  defaultRoute: string = '/dashboard/chats'
+  defaultRoute: string = '/home'
 ) => {
   return (section: string) => {
     const route = getSectionRoute(section);
@@ -60,7 +98,7 @@ export const createSectionChangeHandler = (
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
   onSectionChange?: (section: string) => void,
-  defaultRoute: string = '/dashboard/chats'
+  defaultRoute: string = '/home'
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)

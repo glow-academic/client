@@ -9,7 +9,7 @@ from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
-from app.models import Chats
+from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.report import router as report_router
 from app.routes.attempt import router as attempt_router
@@ -83,7 +83,7 @@ async def test_db_connection(session: Session = Depends(get_session)):
     """Test database connection"""
     try:
         # Try a simple query
-        session.exec(select(Chats)).first()
+        session.exec(select(SimulationChats)).first()
         return {"status": "Database connection successful"}
     except Exception as e:
         logger.exception(f"Database connection error: {str(e)}")

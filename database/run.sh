@@ -28,6 +28,7 @@ done
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
 USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 INIT_SQL=${INIT_SQL:-init.sql}
+INIT_DIR=${INIT_DIR:-init}
 
 # --- OPTIONAL: install PostgreSQL if missing -------------------------
 if ! command -v psql &>/dev/null; then
@@ -118,10 +119,25 @@ if [[ $TABLES -eq 0 ]]; then
     echo "Restoring $LATEST …"
     psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$LATEST"
   elif [[ -f $INIT_SQL ]]; then
-    echo "Applying $INIT_SQL …"
-    psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
+    echo "Applying database schema using modular approach…"
+    
+    # Check if we have the modular structure
+    if [[ -d $INIT_DIR ]]; then
+      echo "Found modular SQL files in $INIT_DIR directory"
+      echo "Executing master init.sql which will load all modules in correct order…"
+      
+      # Set the search path for \i commands to work properly
+      export PGPASSWORD="$DB_PASSWORD"
+      
+      # Execute the master init.sql file which orchestrates the modular loading
+      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
+    else
+      echo "No modular structure found, applying single $INIT_SQL file…"
+      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
+    fi
   else
     echo "No schema or backup to apply (DB is empty)."
+    echo "Expected files: $INIT_SQL or backup files in $__DATA_DIR/"
   fi
 fi
 

@@ -6,13 +6,17 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# 2 – bring in TeX Live *and* the Latin-Modern fonts & macros
-RUN apt-get update && apt-get install -y \
+# 2 – bring in TeX Live, fonts, and document processing tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
     texlive-latex-base \
     texlive-latex-recommended \
     texlive-latex-extra \
     texlive-fonts-recommended \
     fonts-lmodern \
+    # Document processing dependencies
+    libreoffice-core \
+    libreoffice-writer \
+    poppler-utils \
  && rm -rf /var/lib/apt/lists/*
 
 # 3 – copy your code

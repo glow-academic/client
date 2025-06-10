@@ -7,7 +7,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/utils/mutations/login";
+import { login } from "@/utils/auth/login";
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -23,9 +23,9 @@ export default function Home() {
       if (success) {
         // Both admin and regular users go to the dashboard home page
         if (admin) {
-          router.push("/dashboard/analytics");
+          router.push("/analytics");
         } else {
-          router.push("/dashboard/chats");
+          router.push("/home");
         }
       } else {
         setError(error || "An error occurred during login");
@@ -41,7 +41,7 @@ export default function Home() {
   const handleGuestAccess = () => {
     // Set guest mode in localStorage and redirect
     localStorage.setItem('guestMode', 'true');
-    router.push("/dashboard/chats");
+    router.push("/home");
   };
 
   return (

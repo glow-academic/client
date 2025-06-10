@@ -15,12 +15,20 @@ if [ "$CLEAN_DB" = "true" ] || [ ! -f "/var/lib/postgresql/data/PG_VERSION" ]; t
   touch /tmp/run_init_sql
 fi
 
-# Copy init.sql to the standard initialization directory
-# This ensures it runs during the standard PostgreSQL initialization process
+# Copy init.sql and all modular SQL files to the standard initialization directory
+# This ensures they run during the standard PostgreSQL initialization process
 if [ -f "/init.sql" ] && [ -d "/docker-entrypoint-initdb.d" ]; then
+  # Copy the master init.sql file
   cp /init.sql /docker-entrypoint-initdb.d/
   chmod 755 /docker-entrypoint-initdb.d/init.sql
-  echo "Copied init.sql to standard initialization directory"
+  echo "Copied master init.sql to standard initialization directory"
+  
+  # Copy the entire init directory structure if it exists
+  if [ -d "/init" ]; then
+    cp -r /init /docker-entrypoint-initdb.d/
+    chmod -R 755 /docker-entrypoint-initdb.d/init
+    echo "Copied modular SQL files to standard initialization directory"
+  fi
 fi
 
 # Execute the original entrypoint script

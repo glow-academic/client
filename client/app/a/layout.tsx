@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
-import { UnifiedSidebar } from "@/components/unified-sidebar";
-import { NavigationBreadcrumbs } from "@/components/navigation-breadcrumbs";
-import { RoleProvider } from "@/components/role-context";
-import { getUser } from "@/utils/queries/get-user";
+import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
+import { RoleProvider } from "@/contexts/role-context";
+import { getUser } from "@/utils/queries/users/get-user";
 import { generateEnhancedBreadcrumbs, getActiveSectionFromPath } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 import { Clock } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 type WindowWithAttemptTimer = Window & typeof globalThis & {
   attemptTimer: {
@@ -40,10 +41,13 @@ export default function AttemptLayout({
     hasTimeLimit: boolean;
   } | null>(null);
 
+  const {userId} = useAuth();
+
   // Fetch user data for role context
   const { data: user } = useQuery({
-    queryKey: ["user"],
-    queryFn: () => getUser(),
+    queryKey: ["user", userId],
+    queryFn: () => getUser(userId!),
+    enabled: !!userId,
   });
 
   // Load enhanced breadcrumbs with async ID resolution

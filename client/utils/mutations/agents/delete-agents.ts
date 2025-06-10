@@ -1,0 +1,14 @@
+// utils/mutations/agents/delete-agents.ts
+"use server";
+import { db } from "@/utils/drizzle/database";
+import { agents } from "@/drizzle/schema";
+import { inArray } from "drizzle-orm";
+
+export async function deleteAgents(ids: string[]) {
+  try {
+    return await db.delete(agents).where(inArray(agents.id, ids)).returning();
+  } catch (error) {
+    console.error("Error deleting multiple agents:", error);
+    throw error;
+  }
+}
