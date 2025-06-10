@@ -1,7 +1,7 @@
 """
 Tests for app.routes.users
 
-Auto-generated on: 2025-06-09T21:12:28.703473
+Auto-generated on: 2025-06-09T22:07:49.563231
 """
 
 import pytest

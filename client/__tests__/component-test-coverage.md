@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-09T23:42:15.151Z
+Generated on: 2025-06-10T03:28:43.818Z
 
 ## Summary
-- **Total Components**: 53
-- **Tests Created**: 3
-- **Tests Updated**: 25
-- **Tests Skipped** (already implemented): 25
+- **Total Components**: 54
+- **Tests Created**: 0
+- **Tests Updated**: 27
+- **Tests Skipped** (already implemented): 27
 
 ## Component Coverage
 
@@ -22,6 +22,7 @@ Generated on: 2025-06-09T23:42:15.151Z
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ❌ Needs Implementation |
+| Evaluation | common/chat/Evaluation.tsx | Evaluation.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ❌ Needs Implementation |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ❌ Needs Implementation |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ❌ Needs Implementation |
@@ -56,7 +57,7 @@ Generated on: 2025-06-09T23:42:15.151Z
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
 | ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ❌ Needs Implementation |
-| Classes | management/classes/Classes.tsx | Classes.test.tsx | ❌ Needs Implementation |
+| Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ❌ Needs Implementation |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ❌ Needs Implementation |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
@@ -85,6 +86,7 @@ __tests__/
 │   │   ├── Attempt.test.tsx
 │   │   ├── Chat.test.tsx
 │   │   ├── DocumentViewer.test.tsx
+│   │   ├── Evaluation.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx
 │   ├── class/

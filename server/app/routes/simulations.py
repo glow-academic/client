@@ -15,9 +15,8 @@ from typing import Optional
 import random
 
 from app.services.agents.grade import run_grade_agent
-from app.services.agents.generic import run_generic_agent, run_evaluation_agent
-from app.services.agents.evaluate import run_evaluate_agent
 from app.services.agents.generic import run_generic_agent
+from app.services.agents.evaluate import run_evaluate_agent
 from fastapi.responses import StreamingResponse
 import json
 from typing import AsyncIterator
@@ -214,15 +213,15 @@ async def continue_attempt(
             raise HTTPException(status_code=404, detail="Chat not found")
 
         # Get the attempt
-        attempt = session.exec(
-            select(Attempts).where(Attempts.id == attempt_id)
+        simulation_attempt = session.exec(
+            select(SimulationAttempts).where(SimulationAttempts.id == attempt_id)
         ).one_or_none()
-        if not attempt:
+        if not simulation_attempt:
             raise HTTPException(status_code=404, detail="Attempt not found")
 
         # get the simulation
         simulation = session.exec(
-            select(Simulations).where(Simulations.id == attempt.simulation_id)
+            select(Simulations).where(Simulations.id == simulation_attempt.simulation_id)
         ).one_or_none()
         if not simulation:
             raise HTTPException(status_code=404, detail="Simulation not found")
@@ -254,8 +253,8 @@ async def continue_attempt(
             if not next_scenario.scenario_id:
                 scenario_id, chat_title = await run_scenario_agent(
                     agent_id=next_scenario.agent_id,
-                    user_id=attempt.user_id,
-                    class_id=attempt.class_id,
+                    user_id=simulation_attempt.user_id,
+                    class_id=simulation_attempt.class_id,
                     test_data=test_data,
                     session=session,
                 )
@@ -285,9 +284,7 @@ async def continue_attempt(
             next_chat_id = next_chat.id
 
         # Run logic to end the current chat
-        rubric_id = await run_grading_agent(chat_id, test_data, session)
-        
-        rubric_id = await run_evaluate_agent(chat_id, test_data, session)
+        rubric_id = await run_grade_agent(chat_id, test_data, session)
 
         return {
             "success": True,
@@ -301,91 +298,3 @@ async def continue_attempt(
         session.rollback()
         logger.error(f"Error continuing attempt: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to continue attempt: {str(e)}")
-
-@router.post("/ai-conversation")
-async def start_ai_conversation(
-    chat_id: str = Form(...),
-    test_data: Optional[bool] = Form(False),
-    session: Session = Depends(get_session),
-):
-    """
-    Start an AI-to-AI conversation between Generic and GTA agents.
-    """
-    try:
-        chat = session.exec(select(Chats).where(Chats.id == chat_id)).one_or_none()
-        if not chat:
-            raise HTTPException(status_code=404, detail="Chat not found")
-
-        # Check if chat is completed
-        if chat.completed:
-            raise HTTPException(status_code=400, detail="Cannot start AI conversation on completed chat")
-
-        async def event_stream() -> AsyncIterator[str]:
-            yield ":\n\n"
-
-            try:
-                # Start conversation with "Hello, how are you?" from GTA to Generic
-                current_message = "Hello, how are you?"
-                sender = "GTA"
-                
-                for i in range(8):  # Changed from 10 to 8 messages
-                    yield f"data: {json.dumps({'sender': sender, 'message': current_message, 'message_number': i + 1})}\n\n"
-                    
-                    # Get response from the appropriate agent
-                    if sender == "GTA":
-                        # GTA is asking, Generic responds
-                        response = ""
-                        async for token in run_generic_agent(
-                            chat_id=chat_id, 
-                            input_text=current_message, 
-                            session=session, 
-                            test_data=test_data,
-                            agent_mode="student"
-                        ):
-                            response += token
-                        
-                        current_message = response
-                        sender = "Generic"
-                        
-                    else:
-                        # Generic asked, GTA responds
-                        response = ""
-                        async for token in run_generic_agent(
-                            chat_id=chat_id, 
-                            input_text=current_message, 
-                            session=session, 
-                            test_data=test_data,
-                            agent_mode="gta"
-                        ):
-                            response += token
-                        
-                        current_message = response
-                        sender = "GTA"
-
-                # After 8 messages, run evaluation
-                logger.info(f"Starting evaluation for chat {chat_id}")
-                evaluation_result = await run_evaluation_agent(chat_id, test_data, session)
-                logger.info(f"Evaluation completed for chat {chat_id}: {evaluation_result}")
-                
-                yield f"data: {json.dumps({'evaluation': evaluation_result['evaluation'], 'done': True})}\n\n"
-
-            except Exception as exc:
-                err_msg = str(exc)
-                logger.exception("AI conversation error: %s", err_msg)
-                yield f"data: {json.dumps({'error': err_msg})}\n\n"
-                raise
-
-        return StreamingResponse(
-            event_stream(),
-            media_type="text/event-stream; charset=utf-8",
-            headers={"Cache-Control": "no-store"},
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error in AI conversation endpoint: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to start AI conversation: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to continue attempt: {str(e)}"
-        )

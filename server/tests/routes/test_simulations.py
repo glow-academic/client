@@ -1,7 +1,7 @@
 """
-Tests for app.routes.attempt
+Tests for app.routes.simulations
 
-Auto-generated on: 2025-06-08T19:06:21.672650
+Auto-generated on: 2025-06-09T22:07:49.570558
 """
 
 import pytest
@@ -11,7 +11,7 @@ from sqlmodel import Session
 from uuid import uuid4
 
 # Import the router being tested
-from server.app.routes.simulations import router
+from app.routes.simulations import router
 
 @pytest.fixture
 def client():
