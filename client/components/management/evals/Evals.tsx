@@ -20,12 +20,8 @@ import {
   FileCheck,
   Clock,
   Settings,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   CheckCircle,
-  XCircle,
-  TrendingUp,
 } from "lucide-react";
 
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";

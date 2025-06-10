@@ -33,11 +33,7 @@ import {
 import {
   TrendingUp,
   Target,
-  Brain,
-  Zap,
   Clock,
-  TrendingDown,
-  AlertTriangle,
   Award,
   MessageSquare,
   Users,
