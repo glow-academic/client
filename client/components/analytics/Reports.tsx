@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, AlertTriangle, Download, Search, Loader2, TrendingDown, Clock, Target, Users } from "lucide-react";
+import { Award, AlertTriangle, Download, Search, Loader2, Clock, Target, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
