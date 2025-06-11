@@ -153,7 +153,7 @@ export default function Growth() {
             (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length /
               Math.max(...groupStandards.map((s) => s.points))) *
-              100,
+            100,
           );
           acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
         }
@@ -347,32 +347,8 @@ export default function Growth() {
     );
   }
 
-  if (!growthData || growthData.length === 0) {
-    return (
-      <div className="space-y-6">
-        <Card>
-          <CardContent className="p-8 text-center">
-            <Brain className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No Data Available</h3>
-            <p className="text-muted-foreground">
-              Complete some teaching sessions to see your growth metrics.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Growth & Performance</h1>
-        <p className="text-muted-foreground">
-          Track your teaching skills and performance over time
-        </p>
-      </div>
-
       {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -383,15 +359,14 @@ export default function Growth() {
           <CardContent>
             <div className="flex items-center">
               <div
-                className={`text-2xl font-bold ${
-                  (growthData.find((d) => d.metric === "Overall Score")
+                className={`text-2xl font-bold ${(growthData.find((d) => d.metric === "Overall Score")
                     ?.value ?? 0) >= 80
                     ? "text-green-600"
                     : (growthData.find((d) => d.metric === "Overall Score")
-                          ?.value ?? 0) >= 60
+                      ?.value ?? 0) >= 60
                       ? "text-amber-600"
                       : "text-red-600"
-                }`}
+                  }`}
               >
                 {growthData.find((d) => d.metric === "Overall Score")?.value ??
                   0}
@@ -504,7 +479,7 @@ export default function Growth() {
             </RadarChart>
           </ChartContainer>
         </CardContent>
-        <CardFooter className="flex-col gap-2 text-sm">
+        {growthData.length > 0 && <CardFooter className="flex-col gap-2 text-sm">
           <div className="flex items-center gap-2 leading-none font-medium">
             {growthTrend.isPositive ? "Trending up" : "Needs attention"}
             {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
@@ -515,7 +490,7 @@ export default function Growth() {
           <div className="text-muted-foreground flex items-center gap-2 leading-none">
             Based on recent teaching sessions
           </div>
-        </CardFooter>
+        </CardFooter>}
       </Card>
 
       {/* Insights */}
@@ -532,13 +507,12 @@ export default function Growth() {
               {insights.map((insight, index) => (
                 <div key={index} className="flex items-start gap-3">
                   <div
-                    className={`h-2 w-2 rounded-full mt-2 ${
-                      insight.type === "success"
+                    className={`h-2 w-2 rounded-full mt-2 ${insight.type === "success"
                         ? "bg-green-500"
                         : insight.type === "warning"
                           ? "bg-amber-500"
                           : "bg-blue-500"
-                    }`}
+                      }`}
                   />
                   <p className="text-sm">{insight.message}</p>
                 </div>

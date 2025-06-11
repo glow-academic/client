@@ -247,3 +247,7 @@ INSERT INTO simulation_chat_feedbacks (id, standard_id, simulation_chat_grade_id
   ('cccc0018-1111-2222-3333-444444444444', '22222222-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Clear demonstration of not knowing the course material'),
   ('cccc0019-1111-2222-3333-444444444444', '33333333-4444-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 2, 'Frequently mismanaged time leading to rushed explanations'),
   ('cccc0020-1111-2222-3333-444444444444', '44444444-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Failed to adapt to different student types, uniform responses');
+
+
+
+-- GPT GENERATED DATA
