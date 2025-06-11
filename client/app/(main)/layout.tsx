@@ -7,7 +7,7 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Pencil, Plus, Clock } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -26,18 +26,6 @@ import {
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 
-type WindowWithAttemptTimer = Window &
-  typeof globalThis & {
-    attemptTimer: {
-      timeRemaining: number | null;
-      formatTime: (seconds: number) => string;
-      isActive: boolean;
-      showResults: boolean;
-      hasTimeLimit: boolean;
-      elapsedTime?: number;
-    };
-  };
-
 export default function MainLayout({
   children,
 }: {
@@ -52,20 +40,9 @@ export default function MainLayout({
   const [viewMode, setViewMode] = React.useState<"chats" | "attempts">(
     "attempts",
   );
-  const [timerData, setTimerData] = React.useState<{
-    timeRemaining: number | null;
-    formatTime: (seconds: number) => string;
-    isActive: boolean;
-    showResults: boolean;
-    hasTimeLimit: boolean;
-    elapsedTime?: number;
-  } | null>(null);
 
   // Check if we're on the logs page
   const isLogsPage = pathname === "/analytics/logs";
-
-  // Check if we're on an attempt page
-  const isAttemptPage = /^\/home\/a\/[^\/]+(?:\/.*)?$/.test(pathname);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -75,31 +52,6 @@ export default function MainLayout({
     };
     loadBreadcrumbs();
   }, [pathname]);
-
-  // Listen for timer updates from the attempt page
-  React.useEffect(() => {
-    if (!isAttemptPage) {
-      setTimerData(null);
-      return;
-    }
-
-    const checkTimer = () => {
-      if (
-        typeof window !== "undefined" &&
-        (window as WindowWithAttemptTimer).attemptTimer
-      ) {
-        setTimerData((window as WindowWithAttemptTimer).attemptTimer);
-      }
-    };
-
-    // Check immediately
-    checkTimer();
-
-    // Set up interval to check for timer updates
-    const interval = setInterval(checkTimer, 1000);
-
-    return () => clearInterval(interval);
-  }, [isAttemptPage]);
 
   const handleSectionChange = createSectionChangeHandler(
     router,
@@ -251,23 +203,6 @@ export default function MainLayout({
               rightContent={viewModeToggle}
             />
           </div>
-
-          {/* Timer in top right corner for attempt pages */}
-          {isAttemptPage && timerData && !timerData.showResults && (
-            <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full mr-4">
-              <Clock className="h-4 w-4" />
-              <span className="text-sm font-medium" data-testid="timer">
-                {timerData.hasTimeLimit && timerData.timeRemaining !== null
-                  ? timerData.formatTime(timerData.timeRemaining)
-                  : timerData.elapsedTime !== undefined
-                    ? timerData.formatTime(timerData.elapsedTime)
-                    : "No time limit"}
-              </span>
-              {timerData.hasTimeLimit && !timerData.isActive && (
-                <span className="text-xs text-red-500 ml-1">(Expired)</span>
-              )}
-            </div>
-          )}
 
           {actionButton && <div className="px-4">{actionButton}</div>}
         </header>

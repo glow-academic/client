@@ -36,7 +36,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 // Icons
-import { Send, ChevronDown, Users } from "lucide-react";
+import { Send, ChevronDown, Users, Clock } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -54,17 +54,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 
-type WindowWithAttemptTimer = Window &
-  typeof globalThis & {
-    attemptTimer: {
-      timeRemaining: number | null;
-      formatTime: (seconds: number) => string;
-      isActive: boolean;
-      showResults: boolean;
-      hasTimeLimit: boolean;
-      elapsedTime?: number;
-    };
-  };
+// Timer is now integrated directly into the component layout
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -822,21 +812,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     </div>
   );
 
-  // Expose timer data to parent layout via context or custom hook
-  useEffect(() => {
-    // Store timer data in a way that the layout can access it
-    if (typeof window !== "undefined") {
-      (window as WindowWithAttemptTimer).attemptTimer = {
-        timeRemaining: timeRemaining,
-        formatTime: formatTime,
-        isActive,
-        showResults,
-        hasTimeLimit:
-          simulation?.timeLimit !== null && simulation?.timeLimit !== undefined,
-        elapsedTime: elapsedTime,
-      };
-    }
-  }, [timeRemaining, elapsedTime, isActive, showResults, simulation?.timeLimit]);
+  // Timer is now displayed directly in the component, no need for layout integration
 
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (
@@ -901,7 +877,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           />
                         </div>
                       )}
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
+                          <Clock className="h-4 w-4" />
+                          <span className="text-sm font-medium" data-testid="timer">
+                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
+                              ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
+                              : aggregatedResults?.totalTime !== undefined
+                                ? formatTime(aggregatedResults.totalTime)
+                                : "No time limit"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Show completion status for completed attempts */}
                     {!isSingleChatAttempt && (
                       <Select
                         value={selectedChatId || ""}
@@ -917,11 +907,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               <SelectItem key={chat.id} value={chat.id}>
                                 <div className="flex items-center gap-2">
                                   <span>{chat.title}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-xs" color={allDynamicRubrics.find(rubric => rubric.chatId === chat.id)?.passed ? "green" : "red"}>
-                                    {allDynamicRubrics.find(rubric => rubric.chatId === chat.id)?.passed ? "Passed" : "Failed"}
-                                  </Badge>
                                 </div>
                               </SelectItem>
                             ))}
@@ -1012,27 +997,46 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-h-0">
         <Card className="flex-1 flex flex-col min-h-0">
-          <CardHeader className="flex-shrink-0">
-            <CardTitle className="flex items-center justify-between">
-              <div>
-                <span>{scenario?.description || currentChat?.title}</span>
-                <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
+          {/* Timer and Controls Header - consistent with results layout */}
+          <div className="p-4 pt-0 border-b flex flex-col gap-2">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-4">
+                {/* Show scenario information */}
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">
+                    {scenario?.description || currentChat?.title}
+                  </span>
                   {!isSingleChatAttempt && (
-                    <>
+                    <div className="text-sm text-muted-foreground flex items-center gap-2">
                       <Users className="h-4 w-4" />
                       <span data-testid="chat-counter">
                         Chat {currentChatIndex + 1} of{" "}
                         {simulation?.scenarioIds?.length || 0}
                       </span>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
-              {currentChat?.completed && (
-                <Badge variant="default">Completed</Badge>
-              )}
-            </CardTitle>
-          </CardHeader>
+              <div className="flex items-start justify-end gap-2">
+                <div className="flex items-center gap-4">
+                  {currentChat?.completed && (
+                    <Badge variant="default">Completed</Badge>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-sm font-medium" data-testid="timer">
+                    {simulation?.timeLimit && timeRemaining !== null
+                      ? formatTime(timeRemaining)
+                      : formatTime(elapsedTime)}
+                  </span>
+                  {simulation?.timeLimit && !isActive && (
+                    <span className="text-xs text-red-500 ml-1">(Expired)</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
 
           <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
             <ScrollArea
