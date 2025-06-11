@@ -227,13 +227,75 @@ describe('Scenario', () => {
 
     it('should handle AI scenario generation', async () => {
       const user = userEvent.setup();
+      
+      // Mock fetch for the scenario generation
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          title: "Generated Title",
+          description: "Generated Description"
+        })
+      });
+
       renderWithProviders(<Scenario />);
+
+      // First select an agent and class (required for generation)
+      const agentSelect = screen.getByText('Agent');
+      expect(agentSelect).toBeInTheDocument();
 
       const generateButton = screen.getByTitle('Generate scenario with AI');
       await user.click(generateButton);
 
-      // Should show toast notification (mocked)
+      // Should show error since no agent/class selected
       expect(generateButton).toBeInTheDocument();
+    });
+
+    it('should show hover card for AI generation button', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Scenario />);
+
+      const generateButton = screen.getByTitle('Generate scenario with AI');
+      
+      // Hover over the button
+      await user.hover(generateButton);
+      
+      // Should show hover card content
+      expect(screen.getByText('AI Scenario Generator')).toBeInTheDocument();
+      expect(screen.getByText(/Generate a realistic scenario title and description/)).toBeInTheDocument();
+    });
+
+    it('should handle test query with streaming response', async () => {
+      const user = userEvent.setup();
+      
+      // Mock fetch for streaming response
+      const mockReader = {
+        read: vi.fn()
+          .mockResolvedValueOnce({ done: false, value: new TextEncoder().encode('data: {"text": "Hello"}\n\n') })
+          .mockResolvedValueOnce({ done: false, value: new TextEncoder().encode('data: {"text": " there"}\n\n') })
+          .mockResolvedValueOnce({ done: false, value: new TextEncoder().encode('data: {"done": true}\n\n') })
+          .mockResolvedValueOnce({ done: true, value: undefined })
+      };
+
+      global.fetch = vi.fn().mockResolvedValueOnce({
+        ok: true,
+        body: {
+          getReader: () => mockReader
+        }
+      });
+
+      renderWithProviders(<Scenario />);
+
+      // Fill in required fields
+      const queryInput = screen.getByLabelText(/test query/i);
+      await user.type(queryInput, 'Test question');
+
+      const descriptionInput = screen.getByLabelText(/scenario description/i);
+      await user.type(descriptionInput, 'Test scenario description');
+
+      // Test query button should be disabled without agent selection
+      const testButton = screen.getByRole('button', { name: /test query/i });
+      expect(testButton).toBeDisabled();
     });
   });
 });

@@ -20,15 +20,15 @@ async def new_scenario(
     class_id: str = Form(...),
     document_ids: List[str] = Form(...),
     seniority: str = Form(...),
-    crowdedness: str = Form(...),
-    intensity: str = Form(...),
+    crowdedness: int = Form(...),
+    intensity: int = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    This endpoint creates a new scenario.
+    This endpoint creates a new scenario using AI generation.
     """
     try:
-        # run the scenario agent
+        # Run the scenario agent to generate title and description
         title, description = await run_scenario_agent(
             agent_id=agent_id,
             class_id=class_id,
@@ -36,26 +36,23 @@ async def new_scenario(
             seniority=seniority,
             crowdedness=crowdedness,
             intensity=intensity,
+            session=session,
         )
 
         return {
             "success": True,
-            "message": "Scenario created successfully",
+            "message": "Scenario generated successfully",
             "title": title,
             "description": description,
         }
 
-
-
     except HTTPException:
         # Re-raise HTTP exceptions as-is
-        session.rollback()
         raise
     except Exception as e:
-        session.rollback()
-        logger.error(f"Error creating new scenario: {str(e)}")
+        logger.error(f"Error generating new scenario: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to create new scenario: {str(e)}"
+            status_code=500, detail=f"Failed to generate new scenario: {str(e)}"
         )
 
 
@@ -63,26 +60,34 @@ async def new_scenario(
 async def test_scenario(
     agent_id: str = Form(...),
     description: str = Form(...),
+    query: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
-    Streams assistant tokens back to the frontend via Server-Sent Events.
+    Streams assistant tokens back to the frontend via Server-Sent Events for testing a scenario.
     """
     try:
 
         async def event_stream() -> AsyncIterator[str]:
-            # initial heartbeat so proxies flush headers
+            # Initial heartbeat so proxies flush headers
             yield ":\n\n"
 
             try:
+                # Create input items with scenario context and user query
+                input_items = [
+                    {
+                        "role": "assistant",
+                        "content": f"The following is the scenario description for the chat: {description}",
+                    },
+                    {
+                        "role": "user",
+                        "content": query,
+                    }
+                ]
+
                 async for token in run_generic_agent_bare(
                     agent_id=agent_id,
-                    input_items=[
-                        {
-                            "role": "assistant",
-                            "content": f"The following is the scenario description for the chat: {description}",
-                        }
-                    ],
+                    input_items=input_items,
                     session=session,
                 ):
                     yield f"data: {json.dumps({'text': token})}\n\n"
@@ -104,7 +109,7 @@ async def test_scenario(
         # Re-raise HTTP exceptions as-is
         raise
     except Exception as e:
-        logger.error(f"Error in message endpoint: {str(e)}")
+        logger.error(f"Error in test scenario endpoint: {str(e)}")
         raise HTTPException(
-            status_code=500, detail=f"Failed to process message: {str(e)}"
+            status_code=500, detail=f"Failed to process test query: {str(e)}"
         )

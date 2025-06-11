@@ -63,7 +63,7 @@ import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 
 interface ScenarioProps {
     scenarioId?: string;
-    mode?: "create" | "edit" | "list";
+    mode?: "create" | "edit"
 }
 
 interface ScenarioFormData {
@@ -366,9 +366,115 @@ export default function Scenario({
         }
     };
 
-    const handleGenerateScenario = () => {
-        // TODO: Implement AI scenario generation
-        toast.info("AI scenario generation coming soon!");
+    const handleGenerateScenario = async () => {
+        if (!formData.agentId || !formData.classId) {
+            toast.error("Please select an agent and class before generating a scenario");
+            return;
+        }
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('agent_id', formData.agentId);
+            formDataToSend.append('class_id', formData.classId);
+            formData.documents.forEach(docId => {
+                formDataToSend.append('document_ids', docId);
+            });
+            formDataToSend.append('seniority', formData.seniority);
+            formDataToSend.append('crowdedness', formData.crowdedness.toString());
+            formDataToSend.append('intensity', formData.intensity.toString());
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/new`, {
+                method: 'POST',
+                body: formDataToSend,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                setFormData(prev => ({
+                    ...prev,
+                    name: result.title,
+                    description: result.description,
+                }));
+                toast.success("Scenario generated successfully!");
+            } else {
+                throw new Error(result.message || "Failed to generate scenario");
+            }
+        } catch (error) {
+            console.error("Error generating scenario:", error);
+            toast.error(`Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`);
+        }
+    };
+
+    const handleTestQuery = async () => {
+        if (!query.trim() || !selectedAgent || !formData.description.trim()) {
+            toast.error("Please enter a query, select an agent, and provide a scenario description");
+            return;
+        }
+
+        setIsGenerating(true);
+        setResponse("");
+
+        try {
+            const formDataToSend = new FormData();
+            formDataToSend.append('agent_id', formData.agentId);
+            formDataToSend.append('description', formData.description);
+            formDataToSend.append('query', query);
+
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/test`, {
+                method: 'POST',
+                body: formDataToSend,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const reader = response.body?.getReader();
+            if (!reader) {
+                throw new Error("No response body");
+            }
+
+            let fullResponse = "";
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = new TextDecoder().decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (data.text) {
+                                fullResponse += data.text;
+                                setResponse(fullResponse);
+                            } else if (data.error) {
+                                throw new Error(data.error);
+                            } else if (data.done) {
+                                // Stream completed successfully
+                                break;
+                            }
+                        } catch (parseError) {
+                            // Skip malformed JSON lines
+                            continue;
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error testing scenario:", error);
+            toast.error(`Failed to test scenario: ${error instanceof Error ? error.message : "Unknown error"}`);
+            setResponse("Error: Failed to generate response. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     // Loading state for edit mode
@@ -398,113 +504,9 @@ export default function Scenario({
         );
     }
 
-    if (mode === "list") {
-        return (
-            <div className="space-y-6">
-                <div className="grid gap-4">
-                    {scenarios.length === 0 ? (
-                        <Card>
-                            <CardContent className="flex flex-col items-center justify-center py-12">
-                                <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                                <h3 className="text-lg font-semibold mb-2">No scenarios found</h3>
-                                <p className="text-muted-foreground text-center mb-4">
-                                    Create your first scenario to get started with student interactions.
-                                </p>
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        scenarios.map((scenario: any) => (
-                            <Card key={scenario.id} className="hover:shadow-md transition-shadow">
-                                <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <div className="space-y-1">
-                                            <CardTitle className="text-lg">{scenario.name}</CardTitle>
-                                            <CardDescription>
-                                                {scenario.description && (
-                                                    <p className="text-sm mb-2">{scenario.description}</p>
-                                                )}
-                                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                                    <span>Crowdedness: {scenario.crowdedness}/10</span>
-                                                    <span>Intensity: {scenario.intensity}/10</span>
-                                                </div>
-                                            </CardDescription>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            <Badge variant="outline">
-                                                {scenario.seniority.charAt(0).toUpperCase() + scenario.seniority.slice(1)}
-                                            </Badge>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => handleEditScenarioClick(scenario.id)}
-                                            >
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setScenarioToDelete(scenario.id);
-                                                    setShowDeleteDialog(true);
-                                                }}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                            </Card>
-                        ))
-                    )}
-                </div>
-
-                {/* Delete confirmation dialog */}
-                <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Scenario</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                Are you sure you want to delete this scenario? This action cannot be undone.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleDeleteScenario}
-                                disabled={isDeleting}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                                {isDeleting ? "Deleting..." : "Delete"}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </div>
-        );
-    }
-
     const selectedAgent = agents.find(agent => agent.id === formData.agentId);
     const selectedClass = classes.find(cls => cls.id === formData.classId);
     const selectedDocuments = documents.filter(doc => formData.documents.includes(doc.id));
-
-    const handleTestQuery = async () => {
-        if (!query.trim() || !selectedAgent) {
-            toast.error("Please enter a query and select an agent");
-            return;
-        }
-
-        setIsGenerating(true);
-        try {
-            // TODO: Implement actual API call to test the scenario
-            // For now, simulate a response
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            setResponse(`Agent Response: This is a simulated response to "${query}". The ${selectedAgent.name} agent would respond based on the scenario context: ${formData.description || "No scenario description provided"}.`);
-        } catch {
-            toast.error("Failed to generate response");
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     // Create/Edit mode - render the playground-style layout with insert mode
     return (
@@ -623,15 +625,31 @@ export default function Scenario({
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2">
                                             <Label htmlFor="description">Scenario</Label>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={handleGenerateScenario}
-                                                className="h-6 w-6 p-0"
-                                                title="Generate scenario with AI"
-                                            >
-                                                <Sparkles className="h-4 w-4" />
-                                            </Button>
+                                            <HoverCard openDelay={200}>
+                                                <HoverCardTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={handleGenerateScenario}
+                                                        className="h-6 w-6 p-0"
+                                                        title="Generate scenario with AI"
+                                                    >
+                                                        <Sparkles className="h-4 w-4" />
+                                                    </Button>
+                                                </HoverCardTrigger>
+                                                <HoverCardContent
+                                                    align="start"
+                                                    className="w-[280px] text-sm"
+                                                    side="right"
+                                                >
+                                                    <div className="space-y-2">
+                                                        <h4 className="font-medium">AI Scenario Generator</h4>
+                                                        <p className="text-muted-foreground">
+                                                            Generate a realistic scenario title and description based on your selected agent, class, documents, and parameters. The AI will create contextually appropriate scenarios for student-GTA interactions.
+                                                        </p>
+                                                    </div>
+                                                </HoverCardContent>
+                                            </HoverCard>
                                         </div>
                                         <Textarea
                                             id="description"
@@ -679,66 +697,66 @@ export default function Scenario({
                                     </div>
 
                                     {/* Action Buttons - Aligned horizontally */}
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <Button
-                                                onClick={handleTestQuery}
-                                                disabled={isGenerating || !query.trim() || !selectedAgent}
-                                            >
-                                                {isGenerating ? "Generating..." : "Test Query"}
-                                            </Button>
-                                            <Button
-                                                variant="secondary"
-                                                onClick={() => {
-                                                    setQuery("");
-                                                    setResponse("");
-                                                }}
-                                                disabled={isGenerating}
-                                            >
-                                                <span className="sr-only">Clear</span>
-                                                <RotateCcw />
-                                            </Button>
-                                        </div>
-                                        <Button
-                                            onClick={handleSubmit}
-                                            disabled={isSubmitting}
-                                        >
-                                            {isSubmitting
-                                                ? isEditMode
-                                                    ? "Updating..."
-                                                    : "Creating..."
-                                                : isEditMode
-                                                    ? "Update Scenario"
-                                                    : "Save Scenario"}
-                                        </Button>
-                                    </div>
-                                </div>
 
-                                {/* Selected Documents Display */}
-                                {selectedDocuments.length > 0 && (
-                                    <div className="space-y-2">
-                                        <Label>Selected Documents ({selectedDocuments.length})</Label>
-                                        <div className="flex flex-wrap gap-2">
-                                            {selectedDocuments.map((doc) => (
-                                                <div
-                                                    key={doc.id}
-                                                    className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-md text-sm"
-                                                >
-                                                    <span>{doc.name}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeDocument(doc.id)}
-                                                        className="text-muted-foreground hover:text-destructive"
+                                    {/* Selected Documents Display */}
+                                    {selectedDocuments.length > 0 && (
+                                        <div className="space-y-2">
+                                            <Label>Selected Documents ({selectedDocuments.length})</Label>
+                                            <div className="flex flex-wrap gap-2">
+                                                {selectedDocuments.map((doc) => (
+                                                    <div
+                                                        key={doc.id}
+                                                        className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-md text-sm"
                                                     >
-                                                        ×
-                                                    </button>
-                                                </div>
-                                            ))}
+                                                        <span>{doc.name}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeDocument(doc.id)}
+                                                            className="text-muted-foreground hover:text-destructive"
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
                         </div>
+                    </div>
+                    <div className="flex items-center justify-between mt-4">
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                onClick={handleTestQuery}
+                                disabled={isGenerating || !query.trim() || !selectedAgent}
+                            >
+                                {isGenerating ? "Generating..." : "Test Query"}
+                            </Button>
+                            <Button
+                                variant="secondary"
+                                onClick={() => {
+                                    setQuery("");
+                                    setResponse("");
+                                }}
+                                disabled={isGenerating}
+                            >
+                                <span className="sr-only">Clear</span>
+                                <RotateCcw />
+                            </Button>
+                        </div>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                        >
+                            {isSubmitting
+                                ? isEditMode
+                                    ? "Updating..."
+                                    : "Creating..."
+                                : isEditMode
+                                    ? "Update Scenario"
+                                    : "Save Scenario"}
+                        </Button>
                     </div>
                 </div>
             </div>
