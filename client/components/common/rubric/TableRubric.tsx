@@ -159,12 +159,12 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                 <Table className="min-w-[800px]">
                     <TableHeader className="sticky top-0 z-10">
                         <TableRow>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[100px]">
+                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[80px]">
                                 Criteria
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
                                 <TableHead key={i} className="bg-primary text-primary-foreground font-semibold">
-                                    Level {maxStandards - i}
+                                    {groupedStandards[0].standards[i].name}
                                 </TableHead>
                             ))}
                         </TableRow>
@@ -172,7 +172,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                     <TableBody>
                         {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
                             <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
-                                <TableCell className="font-medium align-top p-3">{group.name}</TableCell>
+                                <TableCell className="font-medium align-top p-2 text-sm">{group.name}</TableCell>
                                 {Array.from({ length: maxStandards }, (_, standardIndex) => {
                                     const standard = groupStandards[standardIndex];
                                     if (!standard) {
@@ -194,10 +194,6 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                                             }`}
                                         >
                                             <div className="space-y-2">
-                                                <div className="font-medium text-xs">
-                                                    {standard.name}
-                                                </div>
-
                                                 {isAchieved && feedback ? (
                                                     <div>{feedback.feedback}</div>
                                                 ) : <div className="text-xs">
@@ -212,29 +208,6 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                     </TableBody>
                 </Table>
             </div>
-
-            {chatGrade && (
-                <div className="mt-4 p-4 bg-muted rounded-lg">
-                    <h4 className="font-semibold mb-2">Overall Results</h4>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                            <div className="font-medium">Total Score</div>
-                            <div>{chatGrade.score}/{rubric.points}</div>
-                        </div>
-                        <div>
-                            <div className="font-medium">Time Taken</div>
-                            <div>{Math.round(chatGrade.timeTaken / 60)} minutes</div>
-                        </div>
-                        <div>
-                            <div className="font-medium">Status</div>
-                            <div className={`font-medium ${chatGrade.score >= rubric.points * 0.7 ? "text-green-600" : "text-red-600"
-                                }`}>
-                                {chatGrade.score >= rubric.points * 0.7 ? "Passed" : "Failed"}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
