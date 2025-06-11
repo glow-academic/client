@@ -70,3 +70,24 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     ('c5abc003-aaaa-bbbb-cccc-dddddddddddd', true, 'ta', 'Emma Rodriguez', 'emma_rodriguez_multi', 'hashed_password_multi3', ARRAY['66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
     ('c5abc004-aaaa-bbbb-cccc-dddddddddddd', false, 'ta', 'Lucas Thompson', 'lucas_thompson_multi', 'hashed_password_multi4', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
     ('c5abc005-aaaa-bbbb-cccc-dddddddddddd', true, 'ta', 'Chloe Anderson', 'chloe_anderson_multi', 'hashed_password_multi5', ARRAY['55555555-2222-2222-2222-222222222222', '77777777-4444-4444-4444-444444444444']::UUID[]);
+
+
+-- ===== NEW TA ACCOUNTS FOR BULK TESTING =====
+INSERT INTO users (id, viewed_intro, role, name, username, password, class_ids) VALUES
+-- CS-180  -------------------------------------------------------------------
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916601', true , 'ta', 'Harper Nguyen',    'harper_nguyen',    'hashed_pw_test1', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916602', false, 'ta', 'Diego Alvarez',    'diego_alvarez',    'hashed_pw_test2', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+-- CS-182  -------------------------------------------------------------------
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916603', true , 'ta', 'Lila Banerjee',    'lila_banerjee',    'hashed_pw_test3', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916604', false, 'ta', 'Owen Foster',      'owen_foster',      'hashed_pw_test4', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+-- CS-251  -------------------------------------------------------------------
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916605', true , 'ta', 'Sofia Lombardi',   'sofia_lombardi',   'hashed_pw_test5', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916606', false, 'ta', 'Noah Rasmussen',  'noah_rasmussen',   'hashed_pw_test6', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
+-- CS-381  -------------------------------------------------------------------
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916607', true , 'ta', 'Mei Chen',         'mei_chen',         'hashed_pw_test7', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916608', false, 'ta', 'Henry Carter',     'henry_carter',     'hashed_pw_test8', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+-- multi-class ---------------------------------------------------------------
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916609', true , 'ta', 'Ava Petrova',      'ava_petrova',      'hashed_pw_test9',
+     ARRAY['44444444-1111-1111-1111-111111111111','55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916610', false, 'ta', 'Leo Müller',       'leo_muller',       'hashed_pw_test10',
+     ARRAY['66666666-3333-3333-3333-333333333333','77777777-4444-4444-4444-444444444444']::UUID[]);

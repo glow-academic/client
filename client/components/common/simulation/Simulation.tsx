@@ -423,226 +423,182 @@ export default function Simulation({
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Simulation Information */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-start">
-              <div>
-                <CardTitle>Simulation Information</CardTitle>
-                <CardDescription>
-                  Configure the basic settings for this simulation
-                </CardDescription>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Label htmlFor="active-toggle" className="text-sm font-medium">
-                  {formData.active ? "Active" : "Inactive"}
-                </Label>
-                <Switch
-                  id="active-toggle"
-                  checked={formData.active}
-                  onCheckedChange={(checked: boolean) =>
-                    handleInputChange("active", checked)
-                  }
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Simulation Title</Label>
-              <Input
-                id="title"
-                value={formData.title}
-                onChange={(e) => handleInputChange("title", e.target.value)}
-                placeholder="Enter simulation title"
-                className={errors.title ? "border-destructive" : ""}
-              />
-              {errors.title && (
-                <p className="text-sm text-destructive">{errors.title}</p>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
-              <Input
-                id="timeLimit"
-                type="number"
-                min="1"
-                max="120"
-                value={formData.timeLimit || ""}
-                onChange={(e) =>
-                  handleInputChange(
-                    "timeLimit",
-                    parseInt(e.target.value) || null,
-                  )
-                }
-                className={errors.timeLimit ? "border-destructive" : ""}
-                placeholder="Leave empty for no time limit"
-              />
-              {errors.timeLimit && (
-                <p className="text-sm text-destructive">{errors.timeLimit}</p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <Label htmlFor="title">Simulation Title</Label>
+          <Input
+            id="title"
+            value={formData.title}
+            onChange={(e) => handleInputChange("title", e.target.value)}
+            placeholder="Enter simulation title"
+            className={errors.title ? "border-destructive" : ""}
+          />
+          {errors.title && (
+            <p className="text-sm text-destructive">{errors.title}</p>
+          )}
+        </div>
 
-        {/* Scenario Configuration */}
-        <Card>
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Scenarios</CardTitle>
-                <CardDescription>
-                  Select and arrange the scenarios for this simulation
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Select
-                  value=""
-                  onValueChange={(value: string) => {
-                    if (value) addScenario(value);
-                  }}
+        <div className="space-y-2">
+          <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+          <Input
+            id="timeLimit"
+            type="number"
+            min="1"
+            max="120"
+            value={formData.timeLimit || ""}
+            onChange={(e) =>
+              handleInputChange(
+                "timeLimit",
+                parseInt(e.target.value) || null,
+              )
+            }
+            className={errors.timeLimit ? "border-destructive" : ""}
+            placeholder="Leave empty for no time limit"
+          />
+          {errors.timeLimit && (
+            <p className="text-sm text-destructive">{errors.timeLimit}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+
+          <div className="flex justify-between items-center">
+            <Label htmlFor="scenarios">Scenarios</Label>
+            <div className="flex gap-2">
+              <Select
+                value=""
+                onValueChange={(value: string) => {
+                  if (value) addScenario(value);
+                }}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Add scenario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {scenarios
+                    .filter(
+                      (scenario: Scenario) =>
+                        !formData.scenarioIds.includes(scenario.id),
+                    )
+                    .map((scenario: Scenario) => (
+                      <SelectItem key={scenario.id} value={scenario.id}>
+                        {scenario.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              {formData.scenarioIds.length > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={randomizeScenarios}
+                  className="flex items-center gap-2"
                 >
-                  <SelectTrigger className="w-48">
-                    <SelectValue placeholder="Add scenario" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {scenarios
-                      .filter(
-                        (scenario: Scenario) =>
-                          !formData.scenarioIds.includes(scenario.id),
-                      )
-                      .map((scenario: Scenario) => (
-                        <SelectItem key={scenario.id} value={scenario.id}>
-                          {scenario.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                {formData.scenarioIds.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={randomizeScenarios}
-                    className="flex items-center gap-2"
-                  >
-                    <Shuffle className="h-4 w-4" />
-                    Randomize
-                  </Button>
-                )}
+                  <Shuffle className="h-4 w-4" />
+                  Randomize
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {errors.scenarios && (
+            <p className="text-sm text-destructive">{errors.scenarios}</p>
+          )}
+
+          {formData.scenarioIds.length === 0 ? (
+            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
+              <div>
+                <p className="text-red-500 font-medium mb-1">
+                  No scenarios selected
+                </p>
+                <p className="text-sm">
+                  You must add at least one scenario to create a simulation
+                </p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {errors.scenarios && (
-              <p className="text-sm text-destructive">{errors.scenarios}</p>
-            )}
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {formData.scenarioIds.map((scenarioId, index) => {
+                const scenario = scenarios.find(
+                  (s: Scenario) => s.id === scenarioId,
+                );
+                if (!scenario) return null;
 
-            {formData.scenarioIds.length === 0 ? (
-              <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-                <div>
-                  <p className="text-red-500 font-medium mb-1">
-                    No scenarios selected
-                  </p>
-                  <p className="text-sm">
-                    You must add at least one scenario to create a simulation
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {formData.scenarioIds.map((scenarioId, index) => {
-                  const scenario = scenarios.find(
-                    (s: Scenario) => s.id === scenarioId,
-                  );
-                  if (!scenario) return null;
-
-                  return (
-                    <Card
-                      key={scenarioId}
-                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                        draggedScenario === scenarioId ? "opacity-50" : ""
+                return (
+                  <Card
+                    key={scenarioId}
+                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${draggedScenario === scenarioId ? "opacity-50" : ""
                       }`}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, scenarioId)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, scenarioId)}
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4 text-blue-500" />
-                            <span className="text-sm font-medium">
-                              #{index + 1}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeScenario(scenarioId)}
-                              className="h-6 w-6 p-0"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                            <GripVertical className="h-4 w-4 text-muted-foreground" />
-                          </div>
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, scenarioId)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, scenarioId)}
+                  >
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare className="h-4 w-4 text-blue-500" />
+                          <span className="text-sm font-medium">
+                            #{index + 1}
+                          </span>
                         </div>
-
-                        <div className="space-y-2">
-                          <h4 className="font-medium text-sm">
-                            {scenario.name}
-                          </h4>
-                          <p className="text-xs text-muted-foreground line-clamp-3">
-                            {scenario.description}
-                          </p>
-
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <Badge variant="outline" className="text-xs">
-                              Crowdedness: {scenario.crowdedness}
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              Intensity: {scenario.intensity}
-                            </Badge>
-                          </div>
-
-                          <Badge
-                            className={`text-xs ${
-                              scenario.seniority === "freshman"
-                                ? "bg-blue-100 text-blue-800"
-                                : scenario.seniority === "sophomore"
-                                  ? "bg-green-100 text-green-800"
-                                  : scenario.seniority === "junior"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-red-100 text-red-800"
-                            }`}
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeScenario(scenarioId)}
+                            className="h-6 w-6 p-0"
                           >
-                            {scenario.seniority.charAt(0).toUpperCase() +
-                              scenario.seniority.slice(1)}
-                          </Badge>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                          <GripVertical className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+
+                      <div className="space-y-2">
+                        <h4 className="font-medium text-sm">
+                          {scenario.name}
+                        </h4>
+                        <p className="text-xs text-muted-foreground line-clamp-3">
+                          {scenario.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">
+                            Crowdedness: {scenario.crowdedness}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            Intensity: {scenario.intensity}
+                          </Badge>
+                        </div>
+
+                        <Badge
+                          className={`text-xs ${scenario.seniority === "freshman"
+                            ? "bg-blue-100 text-blue-800"
+                            : scenario.seniority === "sophomore"
+                              ? "bg-green-100 text-green-800"
+                              : scenario.seniority === "junior"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                        >
+                          {scenario.seniority.charAt(0).toUpperCase() +
+                            scenario.seniority.slice(1)}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+
+        </div>
 
         {/* Submit Button */}
         <div className="flex justify-end gap-4">
-          {(simulationId || editingSimulationId) && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={resetFormAndState}
-              disabled={isSubmitting}
-            >
-              Cancel
-            </Button>
-          )}
           <Button
             type="submit"
             disabled={isSubmitting}

@@ -143,6 +143,17 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
     };
   });
 
+  // Debug logging to help identify rubric data issues
+  console.log('RubricModal Debug:', {
+    simulationId,
+    rubrics: rubrics?.length || 0,
+    standardGroups: standardGroups?.length || 0,
+    standards: standards?.length || 0,
+    simulationRubric,
+    rubricStandardGroups: rubricStandardGroups.length,
+    rubricData: rubricData.length
+  });
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -189,9 +200,9 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
                     </TableHead>
                   </TableRow>
                 </TableHeader>
-                                 <TableBody>
-                   {rubricData.map((group: any, groupIndex: number) => 
-                     group.standards.map((standard: any, standardIndex: number) => (
+                <TableBody>
+                  {rubricData.map((group: any, groupIndex: number) => 
+                    group.standards.map((standard: any, standardIndex: number) => (
                       <TableRow 
                         key={`${group.groupName}-${standard.id}`}
                         className={standardIndex % 2 === 0 ? "" : "bg-secondary/20"}
@@ -410,14 +421,19 @@ export default function Home() {
 
   const handleCardFlip = useCallback((simulationId: string, event: React.MouseEvent) => {
     event.stopPropagation();
-    setFlippedCards((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(simulationId)) {
-        newSet.delete(simulationId);
-      } else {
-        newSet.add(simulationId);
-      }
-      return newSet;
+    event.preventDefault();
+    
+    // Use requestAnimationFrame for smoother animation
+    requestAnimationFrame(() => {
+      setFlippedCards((prev) => {
+        const newSet = new Set(prev);
+        if (newSet.has(simulationId)) {
+          newSet.delete(simulationId);
+        } else {
+          newSet.add(simulationId);
+        }
+        return newSet;
+      });
     });
   }, []);
 
@@ -834,7 +850,7 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rubricData.attempts.map((attemptData, index) => (
+                    {rubricData.attempts.map((attemptData: AttemptData, index: number) => (
                       <tr
                         key={index}
                         className="border-b border-gray-100 dark:border-gray-800"
@@ -901,9 +917,11 @@ export default function Home() {
           }
           .transform-style-preserve-3d {
             transform-style: preserve-3d;
+            will-change: transform;
           }
           .backface-hidden {
             backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
           }
           .rotate-y-180 {
             transform: rotateY(180deg);
@@ -1119,7 +1137,7 @@ export default function Home() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rubricData.attempts.map((attemptData, index) => (
+                    {rubricData.attempts.map((attemptData: AttemptData, index: number) => (
                       <tr
                         key={index}
                         className="border-b border-gray-100 dark:border-gray-800"
@@ -1186,9 +1204,11 @@ export default function Home() {
           }
           .transform-style-preserve-3d {
             transform-style: preserve-3d;
+            will-change: transform;
           }
           .backface-hidden {
             backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
           }
           .rotate-y-180 {
             transform: rotateY(180deg);
