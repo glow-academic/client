@@ -34,7 +34,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Trash2, Calendar, Users, TrendingUp, Activity } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Trash2, Calendar, Users, TrendingUp, Activity, Clock, Target, Award } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -48,6 +55,8 @@ import {
   PieChart,
   Pie,
   Cell,
+  AreaChart,
+  Area,
 } from "recharts";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
@@ -84,6 +93,7 @@ export default function ClassesGeneralPage() {
   const [personalityTimeRange, setPersonalityTimeRange] = useState<"7d" | "30d" | "90d">("30d");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
 
   // Delete class mutation
   const deleteClassMutation = useMutation({
@@ -207,14 +217,45 @@ export default function ClassesGeneralPage() {
         )
         : 0;
 
+    // Calculate pass rate
+    const passRate = grades.length > 0
+      ? Math.round((grades.filter(g => g.passed).length / grades.length) * 100)
+      : 0;
+
+    // Calculate active classes (classes with recent activity)
+    const activeClasses = classes.filter(classItem => {
+      const classAttempts = attempts?.filter(attempt => attempt.classId === classItem.id) || [];
+      return classAttempts.length > 0;
+    }).length;
+
+    // Calculate struggling TAs (below 70% average)
+    const strugglingTAs = tas.filter(ta => {
+      const taAttempts = attempts?.filter(attempt => attempt.userId === ta.id) || [];
+      const taChats = chats.filter(chat =>
+        taAttempts.some(attempt => attempt.id === chat.attemptId)
+      );
+      const taGrades = grades.filter(grade =>
+        taChats.some(chat => chat.id === grade.simulationChatId)
+      );
+      
+      const avgScore = taGrades.length > 0
+        ? taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
+        : 0;
+      
+      return avgScore < 70;
+    }).length;
+
     return {
       totalTAs: tas.length,
       totalSessions,
       completionRate,
       avgOverallScore,
       avgTrainingTime,
+      passRate,
+      activeClasses,
+      strugglingTAs,
     };
-  }, [
+      }, [
     users,
     chats,
     grades,
@@ -223,6 +264,8 @@ export default function ClassesGeneralPage() {
     feedbacks,
     standards,
     standardGroups,
+    classes,
+    attempts,
   ]);
 
   // Generate aggregated score trend data using grades
@@ -343,6 +386,130 @@ export default function ClassesGeneralPage() {
       .filter((item) => item.sessions > 0); // Only show classes with activity
   }, [classes, attempts, grades, chats]);
 
+  // Generate detailed metric data for dialogs
+  const getMetricDetails = (metricType: string) => {
+    if (!analytics || !users || !grades || !chats || !attempts) return null;
+
+    switch (metricType) {
+      case 'totalTAs':
+        const taDetails = users
+          .filter(user => user.role === "ta")
+          .map(ta => {
+            const taAttempts = attempts.filter(attempt => attempt.userId === ta.id);
+            const taChats = chats.filter(chat =>
+              taAttempts.some(attempt => attempt.id === chat.attemptId)
+            );
+            const taGrades = grades.filter(grade =>
+              taChats.some(chat => chat.id === grade.simulationChatId)
+            );
+            
+            const avgScore = taGrades.length > 0
+              ? Math.round(taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length)
+              : 0;
+            
+            return {
+              name: ta.name,
+              sessions: taChats.length,
+              avgScore,
+              status: avgScore >= 80 ? 'Excellent' : avgScore >= 70 ? 'Good' : 'Needs Support'
+            };
+          })
+          .sort((a, b) => b.avgScore - a.avgScore);
+        
+        return { type: 'ta-breakdown', data: taDetails };
+
+      case 'totalSessions':
+        const sessionTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+          
+          const dayChats = chats.filter(chat => {
+            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
+            return chatDate === dateStr;
+          });
+          
+          return {
+            date: format(date, "MM/dd"),
+            sessions: dayChats.length,
+            completed: dayChats.filter(chat => chat.completed).length
+          };
+        });
+        
+        return { type: 'session-trend', data: sessionTrend };
+
+      case 'avgOverallScore':
+        const scoreDistribution = [
+          { range: '90-100%', count: grades.filter(g => g.score >= 90).length, color: COLORS.success },
+          { range: '80-89%', count: grades.filter(g => g.score >= 80 && g.score < 90).length, color: COLORS.primary },
+          { range: '70-79%', count: grades.filter(g => g.score >= 70 && g.score < 80).length, color: COLORS.warning },
+          { range: '60-69%', count: grades.filter(g => g.score >= 60 && g.score < 70).length, color: COLORS.orange },
+          { range: '<60%', count: grades.filter(g => g.score < 60).length, color: COLORS.danger }
+        ].filter(item => item.count > 0);
+        
+        return { type: 'score-distribution', data: scoreDistribution };
+
+      case 'completionRate':
+        const completionTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+          
+          const dayChats = chats.filter(chat => {
+            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
+            return chatDate === dateStr;
+          });
+          
+          const completionRate = dayChats.length > 0
+            ? Math.round((dayChats.filter(chat => chat.completed).length / dayChats.length) * 100)
+            : 0;
+          
+          return {
+            date: format(date, "MM/dd"),
+            rate: completionRate,
+            total: dayChats.length
+          };
+        });
+        
+        return { type: 'completion-trend', data: completionTrend };
+
+      case 'avgTrainingTime':
+        const timeDistribution = [
+          { range: '<15 min', count: grades.filter(g => g.timeTaken < 900).length, color: COLORS.success },
+          { range: '15-30 min', count: grades.filter(g => g.timeTaken >= 900 && g.timeTaken < 1800).length, color: COLORS.primary },
+          { range: '30-45 min', count: grades.filter(g => g.timeTaken >= 1800 && g.timeTaken < 2700).length, color: COLORS.warning },
+          { range: '45+ min', count: grades.filter(g => g.timeTaken >= 2700).length, color: COLORS.danger }
+        ].filter(item => item.count > 0);
+        
+        return { type: 'time-distribution', data: timeDistribution };
+
+      case 'passRate':
+        const passFailTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+          
+          const dayGrades = grades.filter(grade => {
+            const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
+            return gradeDate === dateStr;
+          });
+          
+          const passRate = dayGrades.length > 0
+            ? Math.round((dayGrades.filter(g => g.passed).length / dayGrades.length) * 100)
+            : 0;
+          
+          return {
+            date: format(date, "MM/dd"),
+            passRate,
+            passed: dayGrades.filter(g => g.passed).length,
+            failed: dayGrades.filter(g => !g.passed).length
+          };
+        });
+        
+        return { type: 'pass-trend', data: passFailTrend };
+
+      default:
+        return null;
+    }
+  };
+
   // Helper functions
   const handleDeleteClass = (classId: string) => {
     setClassToDelete(classId);
@@ -396,59 +563,6 @@ export default function ClassesGeneralPage() {
 
   return (
     <div className="space-y-6">
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Classes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{classes.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Active classes in system
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total TAs</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalTAs}</div>
-            <p className="text-xs text-muted-foreground">Teaching assistants</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Sessions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{analytics.totalSessions}</div>
-            <p className="text-xs text-muted-foreground">
-              Training interactions
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Score</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {analytics.avgOverallScore}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Overall TA performance
-            </p>
-          </CardContent>
-        </Card>
-      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {classes.map((classItem) => (
@@ -636,49 +750,210 @@ export default function ClassesGeneralPage() {
         </Card>
       )}
 
-      {/* Additional Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Completion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">
-              {Math.round(analytics.completionRate)}%
+      {/* Clickable Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Dialog open={selectedMetric === 'totalTAs'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('totalTAs')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total TAs</CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">{analytics.totalTAs}</div>
+                <p className="text-xs text-muted-foreground">Teaching assistants</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>TA Performance Breakdown</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              {getMetricDetails('totalTAs')?.data.map((ta: any, index: number) => (
+                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div>
+                    <p className="font-medium">{ta.name}</p>
+                    <p className="text-sm text-muted-foreground">{ta.sessions} sessions</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{ta.avgScore}%</p>
+                    <Badge variant={ta.status === 'Excellent' ? 'default' : ta.status === 'Good' ? 'secondary' : 'destructive'}>
+                      {ta.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Sessions completed successfully
-            </p>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Avg Training Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {analytics.avgTrainingTime}min
+        <Dialog open={selectedMetric === 'totalSessions'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('totalSessions')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+                <Activity className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">{analytics.totalSessions}</div>
+                <p className="text-xs text-muted-foreground">Training interactions</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Session Activity (Last 7 Days)</DialogTitle>
+            </DialogHeader>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={getMetricDetails('totalSessions')?.data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="sessions" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} name="Total Sessions" />
+                  <Area type="monotone" dataKey="completed" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.6} name="Completed" />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Per training session
-            </p>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Active Personalities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">
-              {personalityData.length}
+        <Dialog open={selectedMetric === 'avgOverallScore'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('avgOverallScore')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-purple-600">{analytics.avgOverallScore}%</div>
+                <p className="text-xs text-muted-foreground">Overall TA performance</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Score Distribution</DialogTitle>
+            </DialogHeader>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={getMetricDetails('avgOverallScore')?.data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="range" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [value, "Sessions"]} />
+                  <Bar dataKey="count" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                </RechartsBarChart>
+              </ResponsiveContainer>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Student types in use
-            </p>
-          </CardContent>
-        </Card>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={selectedMetric === 'completionRate'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('completionRate')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-orange-600">{Math.round(analytics.completionRate)}%</div>
+                <p className="text-xs text-muted-foreground">Sessions completed successfully</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Completion Rate Trend (Last 7 Days)</DialogTitle>
+            </DialogHeader>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={getMetricDetails('completionRate')?.data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis domain={[0, 100]} />
+                  <Tooltip formatter={(value: number) => [`${value}%`, "Completion Rate"]} />
+                  <Line type="monotone" dataKey="rate" stroke={COLORS.success} strokeWidth={2} dot={{ r: 4 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={selectedMetric === 'avgTrainingTime'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('avgTrainingTime')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Avg Training Time</CardTitle>
+                <Clock className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-teal-600">{analytics.avgTrainingTime}min</div>
+                <p className="text-xs text-muted-foreground">Per training session</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Training Time Distribution</DialogTitle>
+            </DialogHeader>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={getMetricDetails('avgTrainingTime')?.data}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ range, count, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                  >
+                    {getMetricDetails('avgTrainingTime')?.data.map((entry: any, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number) => [value, "Sessions"]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={selectedMetric === 'passRate'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+          <DialogTrigger asChild>
+            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('passRate')}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
+                <Award className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-emerald-600">{analytics.passRate}%</div>
+                <p className="text-xs text-muted-foreground">Sessions meeting criteria</p>
+              </CardContent>
+            </Card>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Pass/Fail Trend (Last 7 Days)</DialogTitle>
+            </DialogHeader>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={getMetricDetails('passRate')?.data}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="passed" fill={COLORS.success} name="Passed" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="failed" fill={COLORS.danger} name="Failed" radius={[4, 4, 0, 0]} />
+                </RechartsBarChart>
+              </ResponsiveContainer>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Delete Confirmation Dialog */}
