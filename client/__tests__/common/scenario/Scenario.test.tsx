@@ -130,7 +130,7 @@ describe('Scenario', () => {
       const user = userEvent.setup();
       renderWithProviders(<Scenario />);
 
-      const submitButton = screen.getByRole('button', { name: /create scenario/i });
+      const submitButton = screen.getByRole('button', { name: /save scenario/i });
       await user.click(submitButton);
 
       // Should show validation errors (handled by toast)
@@ -191,6 +191,30 @@ describe('Scenario', () => {
       
       expect(screen.getByText('Crowdedness')).toBeInTheDocument();
       expect(screen.getByText('Intensity')).toBeInTheDocument();
+    });
+  });
+
+  describe('Playground Functionality', () => {
+    it('should render playground interface with query and response areas', () => {
+      renderWithProviders(<Scenario />);
+      
+      expect(screen.getByLabelText(/test query/i)).toBeInTheDocument();
+      expect(screen.getByText('Agent Response')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /test query/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
+    });
+
+    it('should show placeholder text in response area initially', () => {
+      renderWithProviders(<Scenario />);
+      
+      expect(screen.getByText('Agent response will appear here after you submit a query')).toBeInTheDocument();
+    });
+
+    it('should disable test query button when no agent is selected', () => {
+      renderWithProviders(<Scenario />);
+      
+      const testButton = screen.getByRole('button', { name: /test query/i });
+      expect(testButton).toBeDisabled();
     });
   });
 });
