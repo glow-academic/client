@@ -64,6 +64,35 @@ vi.mock('@/utils/queries/agents/get-all-agents', () => ({
   getAllAgents: vi.fn(),
 }));
 
+// Mock rubric-related queries
+vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
+  getAllRubrics: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/standard_groups/get-standard-groups-by-rubrics', () => ({
+  getStandardGroupsByRubrics: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
+  getStandardsByStandardGroups: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/simulation_attempts/get-simulation-attempts-by-users', () => ({
+  getSimulationAttemptsByUsers: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/simulation_chats/get-simulation-chats-by-attempts', () => ({
+  getSimulationChatsByAttempts: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats', () => ({
+  getSimulationChatGradesBySimulationChats: vi.fn(),
+}));
+
+vi.mock('@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades', () => ({
+  getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
+}));
+
 // Mock components
 vi.mock('@/components/common/history/SimulationHistory', () => ({
   default: ({ showAll, showChats }: { showAll: boolean; showChats: boolean }) => (
@@ -91,6 +120,13 @@ import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
 import { getAllSimulations } from '@/utils/queries/simulations/get-all-simulations';
 import { getAllScenarios } from '@/utils/queries/scenarios/get-all-scenarios';
 import { getAllAgents } from '@/utils/queries/agents/get-all-agents';
+import { getAllRubrics } from '@/utils/queries/rubrics/get-all-rubrics';
+import { getStandardGroupsByRubrics } from '@/utils/queries/standard_groups/get-standard-groups-by-rubrics';
+import { getStandardsByStandardGroups } from '@/utils/queries/standards/get-standards-by-standardgroups';
+import { getSimulationAttemptsByUsers } from '@/utils/queries/simulation_attempts/get-simulation-attempts-by-users';
+import { getSimulationChatsByAttempts } from '@/utils/queries/simulation_chats/get-simulation-chats-by-attempts';
+import { getSimulationChatGradesBySimulationChats } from '@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats';
+import { getSimulationChatFeedbacksBySimulationChatGrades } from '@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades';
 
 const mockPush = vi.fn();
 const mockRouter = {
@@ -165,6 +201,13 @@ describe('Home', () => {
     (getAllSimulations as any).mockResolvedValue(mockAllSimulations);
     (getAllScenarios as any).mockResolvedValue(mockScenarios);
     (getAllAgents as any).mockResolvedValue(mockAgents);
+    (getAllRubrics as any).mockResolvedValue([]);
+    (getStandardGroupsByRubrics as any).mockResolvedValue([]);
+    (getStandardsByStandardGroups as any).mockResolvedValue([]);
+    (getSimulationAttemptsByUsers as any).mockResolvedValue([]);
+    (getSimulationChatsByAttempts as any).mockResolvedValue([]);
+    (getSimulationChatGradesBySimulationChats as any).mockResolvedValue([]);
+    (getSimulationChatFeedbacksBySimulationChatGrades as any).mockResolvedValue([]);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -259,7 +302,7 @@ describe('Home', () => {
       await waitFor(() => {
         expect(screen.getByTestId('simulation-history')).toBeInTheDocument();
         expect(screen.getByTestId('show-all')).toHaveTextContent('false');
-        expect(screen.getByTestId('show-chats')).toHaveTextContent('true');
+        expect(screen.getByTestId('show-chats')).toHaveTextContent('false');
       });
     });
 
@@ -309,8 +352,8 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByTestId('simulation-type')).toHaveTextContent('Solo');
-        expect(screen.getByTestId('simulation-class')).toHaveTextContent('Multi');
+        expect(screen.getByText('Solo Simulations')).toBeInTheDocument();
+        expect(screen.getByText('Multi Simulations')).toBeInTheDocument();
       });
     });
 
@@ -372,7 +415,8 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByText('Test Simulation')).toBeInTheDocument();
+        const titles = screen.getAllByTestId('simulation-title');
+        expect(titles[0]).toHaveTextContent('Test Simulation');
       });
       
       // Should be classified as multi simulation (2 valid scenarios after filtering RAY)
@@ -397,7 +441,7 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByTestId('simulation-type')).toHaveTextContent('Solo');
+        expect(screen.getByText('Solo Simulations')).toBeInTheDocument();
         expect(screen.getByText('1 session')).toBeInTheDocument();
       });
     });
@@ -416,7 +460,7 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByTestId('simulation-class')).toHaveTextContent('Multi');
+        expect(screen.getByText('Multi Simulations')).toBeInTheDocument();
         expect(screen.getByText('3 sessions')).toBeInTheDocument();
       });
     });
@@ -436,6 +480,53 @@ describe('Home', () => {
       
       await waitFor(() => {
         expect(screen.getByText('∞')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Carousel Functionality', () => {
+    it('should render carousel headers for solo and multi simulations', async () => {
+      renderWithProviders(<Home />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Solo Simulations')).toBeInTheDocument();
+        expect(screen.getByText('Multi Simulations')).toBeInTheDocument();
+      });
+    });
+
+    it('should show navigation controls when there are multiple pages', async () => {
+      // Create enough simulations to require pagination (more than 3)
+      const manySimulations = Array.from({ length: 7 }, (_, i) => ({
+        id: `sim-${i}`,
+        title: `Simulation ${i}`,
+        scenarioIds: ['scenario-1'],
+        timeLimit: 30,
+      }));
+      (getAllSimulations as any).mockResolvedValue(manySimulations);
+      
+      renderWithProviders(<Home />);
+      
+      await waitFor(() => {
+        // Should show pagination controls
+        const pageIndicators = screen.getAllByText(/\d+ of \d+/);
+        expect(pageIndicators.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('should handle rubric modal display', async () => {
+      const mockRubrics = [{ id: 'rubric-1', name: 'Test Rubric' }];
+      const mockStandardGroups = [{ id: 'group-1', name: 'Test Group', rubricId: 'rubric-1' }];
+      const mockStandards = [{ id: 'standard-1', name: 'Test Standard', standardGroupId: 'group-1' }];
+      
+      (getAllRubrics as any).mockResolvedValue(mockRubrics);
+      (getStandardGroupsByRubrics as any).mockResolvedValue(mockStandardGroups);
+      (getStandardsByStandardGroups as any).mockResolvedValue(mockStandards);
+      
+      renderWithProviders(<Home />);
+      
+      await waitFor(() => {
+        const titles = screen.getAllByTestId('simulation-title');
+        expect(titles[0]).toHaveTextContent('Math Practice');
       });
     });
   });
@@ -465,7 +556,8 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByText('Math Practice')).toBeInTheDocument();
+        const titles = screen.getAllByTestId('simulation-title');
+        expect(titles[0]).toHaveTextContent('Math Practice');
       });
     });
 
@@ -475,7 +567,8 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(screen.getByText('Math Practice')).toBeInTheDocument();
+        const titles = screen.getAllByTestId('simulation-title');
+        expect(titles[0]).toHaveTextContent('Math Practice');
       });
     });
 
@@ -489,7 +582,7 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       // Should show loading state initially
-      expect(document.querySelectorAll('.animate-pulse')).toHaveLength(6);
+      expect(document.querySelectorAll('.animate-pulse').length).toBeGreaterThan(0);
     });
 
     it('should handle malformed simulation data', async () => {

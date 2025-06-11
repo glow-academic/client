@@ -5,7 +5,7 @@
  * 05/14/2025
  */
 "use client";
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -31,6 +31,14 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { getAgentConfig } from "@/utils/agents";
 import { useRole } from "@/contexts/role-context";
 import SimulationHistory from "../common/history/SimulationHistory";
@@ -48,6 +56,14 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { Agent, Scenario, Simulation } from "@/types";
+
+// Type for attempt data
+interface AttemptData {
+  attempt: number;
+  overallScore: number;
+  skillScores: Record<string, number>;
+  createdAt: string;
+}
 
 // Progress Circle Component
 const ProgressCircle = ({ percentage, size = 40 }: { percentage: number; size?: number }) => {
@@ -107,13 +123,25 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
 }) => {
   // Find the rubric associated with this simulation
   const simulationRubric = rubrics?.find(rubric => 
-    // You may need to adjust this logic based on how simulations are linked to rubrics
     rubric.simulationId === simulationId || rubrics.length === 1
   ) || rubrics?.[0];
 
   const rubricStandardGroups = standardGroups?.filter(
     group => group.rubricId === simulationRubric?.id
   ) || [];
+
+  // Create rubric data structure for table display
+  const rubricData = rubricStandardGroups.map(group => {
+    const groupStandards = standards?.filter(
+      standard => standard.standardGroupId === group.id
+    ) || [];
+    
+    return {
+      groupName: group.name,
+      groupDescription: group.description,
+      standards: groupStandards
+    };
+  });
 
   return (
     <Dialog>
@@ -131,39 +159,67 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
           </Tooltip>
         </TooltipProvider>
       </DialogTrigger>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Simulation Rubric</DialogTitle>
         </DialogHeader>
-        <div className="space-y-6">
-          {rubricStandardGroups.length > 0 ? (
-            rubricStandardGroups.map((group) => {
-              const groupStandards = standards?.filter(
-                standard => standard.standardGroupId === group.id
-              ) || [];
-
-              return (
-                <div key={group.id} className="border rounded-lg p-4">
-                  <h3 className="font-semibold text-lg mb-2">{group.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    {group.description}
-                  </p>
-                  <div className="space-y-3">
-                    {groupStandards.map((standard) => (
-                      <div key={standard.id} className="border-l-4 border-blue-500 pl-4">
-                        <h4 className="font-medium">{standard.name}</h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {standard.description}
-                        </p>
-                        <div className="text-xs text-blue-600 mt-1">
-                          Max Points: {standard.points}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })
+        <div className="space-y-6 w-full">
+          {rubricData.length > 0 ? (
+            <div className="overflow-auto max-h-[70vh]">
+              <Table className="min-w-[800px]">
+                <TableHeader className="sticky top-0 z-10">
+                  <TableRow>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold w-[120px]">
+                      Criteria
+                    </TableHead>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold">
+                      Excellent (5)
+                    </TableHead>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold">
+                      Good (4)
+                    </TableHead>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold">
+                      Acceptable (3)
+                    </TableHead>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold">
+                      Marginal (2)
+                    </TableHead>
+                    <TableHead className="bg-primary text-primary-foreground font-semibold">
+                      Poor (1)
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                                 <TableBody>
+                   {rubricData.map((group: any, groupIndex: number) => 
+                     group.standards.map((standard: any, standardIndex: number) => (
+                      <TableRow 
+                        key={`${group.groupName}-${standard.id}`}
+                        className={standardIndex % 2 === 0 ? "" : "bg-secondary/20"}
+                      >
+                        <TableCell className="font-medium">
+                          {standard.name || group.groupName}
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-xs">
+                          {standard.description || "Excellent performance in this criteria"}
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-xs">
+                          Good performance with minor areas for improvement
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-xs">
+                          Acceptable performance meeting basic requirements
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-xs">
+                          Marginal performance with significant areas needing improvement
+                        </TableCell>
+                        <TableCell className="whitespace-normal text-xs">
+                          Poor performance not meeting minimum standards
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="text-center py-8">
               <p className="text-gray-500 dark:text-gray-400">
@@ -171,6 +227,24 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
               </p>
             </div>
           )}
+
+          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-800 dark:text-blue-200 mb-2">Scoring System</h4>
+            <p className="text-sm mb-2 text-blue-700 dark:text-blue-300">
+              Your interactions are scored based on the criteria above:
+            </p>
+            <ul className="list-disc list-inside text-sm space-y-1 text-blue-700 dark:text-blue-300">
+              <li>
+                <span className="font-medium">Pass:</span> Score of 85%+ overall
+              </li>
+              <li>
+                <span className="font-medium">Fail:</span> Score below 85%
+              </li>
+              <li>
+                Each criterion must score at least 3 points to pass
+              </li>
+            </ul>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -334,7 +408,7 @@ export default function Home() {
     }
   };
 
-  const handleCardFlip = (simulationId: string, event: React.MouseEvent) => {
+  const handleCardFlip = useCallback((simulationId: string, event: React.MouseEvent) => {
     event.stopPropagation();
     setFlippedCards((prev) => {
       const newSet = new Set(prev);
@@ -345,7 +419,7 @@ export default function Home() {
       }
       return newSet;
     });
-  };
+  }, []);
 
   // Separate simulations into solo and multi based on interaction count
   const soloSimulations =
@@ -362,93 +436,107 @@ export default function Home() {
       return validInteractionIds.length > 1;
     }) || [];
 
-  // Get real rubric data for a simulation
-  const getRealRubricData = (simulationId: string) => {
+  // Memoize rubric data calculation to prevent unnecessary recalculations
+  const rubricDataCache = useMemo(() => {
     if (!attempts || !chats || !grades || !feedbacks || !standards || !standardGroups) {
-      return { attempts: [], highestScore: 0 };
+      return new Map();
     }
 
-    // Get attempts for this simulation
-    const simulationAttempts = attempts.filter(
-      (attempt) => attempt.simulationId === simulationId,
-    );
-
-    // Get chats for these attempts
-    const simulationChats = chats.filter((chat) =>
-      simulationAttempts.some((attempt) => attempt.id === chat.attemptId),
-    );
-
-    // Get grades for these chats
-    const simulationGrades = grades.filter((grade) =>
-      simulationChats.some((chat) => chat.id === grade.simulationChatId),
-    );
-
-    // Get feedbacks for these grades
-    const simulationFeedbacks = feedbacks.filter((feedback) =>
-      simulationGrades.some((grade) => grade.id === feedback.simulationChatGradeId),
-    );
-
-    // Group by attempt and calculate scores
-    const attemptData = simulationAttempts.map((attempt, index) => {
-      const attemptChats = simulationChats.filter(
-        (chat) => chat.attemptId === attempt.id,
-      );
-      const attemptGrades = simulationGrades.filter((grade) =>
-        attemptChats.some((chat) => chat.id === grade.simulationChatId),
-      );
-      const attemptFeedbacks = simulationFeedbacks.filter((feedback) =>
-        attemptGrades.some((grade) => grade.id === feedback.simulationChatGradeId),
+    const cache = new Map();
+    
+    // Pre-calculate for all simulations to avoid recalculation on each render
+    const allSimulationIds = [...new Set(attempts.map(a => a.simulationId))];
+    
+    allSimulationIds.forEach(simulationId => {
+      // Get attempts for this simulation
+      const simulationAttempts = attempts.filter(
+        (attempt) => attempt.simulationId === simulationId,
       );
 
-      // Calculate skill scores similar to Overview.tsx
-      const skillScores = standardGroups.reduce(
-        (acc, group) => {
-          const groupStandards = standards.filter(
-            (s) => s.standardGroupId === group.id,
-          );
-          const groupFeedbacks = attemptFeedbacks.filter((f) =>
-            groupStandards.some((s) => s.id === f.standardId),
-          );
+      // Get chats for these attempts
+      const simulationChats = chats.filter((chat) =>
+        simulationAttempts.some((attempt) => attempt.id === chat.attemptId),
+      );
 
-          if (groupFeedbacks.length > 0) {
-            const maxPoints = Math.max(...groupStandards.map((s) => s.points));
-            const avgScore = Math.round(
-              (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                groupFeedbacks.length /
-                maxPoints) *
-                100,
+      // Get grades for these chats
+      const simulationGrades = grades.filter((grade) =>
+        simulationChats.some((chat) => chat.id === grade.simulationChatId),
+      );
+
+      // Get feedbacks for these grades
+      const simulationFeedbacks = feedbacks.filter((feedback) =>
+        simulationGrades.some((grade) => grade.id === feedback.simulationChatGradeId),
+      );
+
+      // Group by attempt and calculate scores
+      const attemptData = simulationAttempts.map((attempt, index) => {
+        const attemptChats = simulationChats.filter(
+          (chat) => chat.attemptId === attempt.id,
+        );
+        const attemptGrades = simulationGrades.filter((grade) =>
+          attemptChats.some((chat) => chat.id === grade.simulationChatId),
+        );
+        const attemptFeedbacks = simulationFeedbacks.filter((feedback) =>
+          attemptGrades.some((grade) => grade.id === feedback.simulationChatGradeId),
+        );
+
+        // Calculate skill scores similar to Overview.tsx
+        const skillScores = standardGroups.reduce(
+          (acc, group) => {
+            const groupStandards = standards.filter(
+              (s) => s.standardGroupId === group.id,
             );
-            acc[group.shortName] = avgScore;
-          }
+            const groupFeedbacks = attemptFeedbacks.filter((f) =>
+              groupStandards.some((s) => s.id === f.standardId),
+            );
 
-          return acc;
-        },
-        {} as Record<string, number>,
-      );
+            if (groupFeedbacks.length > 0) {
+              const maxPoints = Math.max(...groupStandards.map((s) => s.points));
+              const avgScore = Math.round(
+                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                  groupFeedbacks.length /
+                  maxPoints) *
+                  100,
+              );
+              acc[group.shortName] = avgScore;
+            }
 
-      // Calculate overall score
-      const overallScore =
-        attemptGrades.length > 0
-          ? Math.round(
-              attemptGrades.reduce((sum, g) => sum + g.score, 0) /
-                attemptGrades.length,
-            )
-          : 0;
+            return acc;
+          },
+          {} as Record<string, number>,
+        );
 
-      return {
-        attempt: index + 1,
-        overallScore,
-        skillScores,
-        createdAt: attempt.createdAt,
-      };
+        // Calculate overall score
+        const overallScore =
+          attemptGrades.length > 0
+            ? Math.round(
+                attemptGrades.reduce((sum, g) => sum + g.score, 0) /
+                  attemptGrades.length,
+              )
+            : 0;
+
+        return {
+          attempt: index + 1,
+          overallScore,
+          skillScores,
+          createdAt: attempt.createdAt,
+        };
+      });
+
+      const highestScore = attemptData.length > 0 
+        ? Math.max(...attemptData.map((a) => a.overallScore))
+        : 0;
+
+      cache.set(simulationId, { attempts: attemptData, highestScore });
     });
 
-    const highestScore = attemptData.length > 0 
-      ? Math.max(...attemptData.map((a) => a.overallScore))
-      : 0;
+    return cache;
+  }, [attempts, chats, grades, feedbacks, standards, standardGroups]);
 
-    return { attempts: attemptData, highestScore };
-  };
+  // Get real rubric data for a simulation
+  const getRealRubricData = useCallback((simulationId: string) => {
+    return rubricDataCache.get(simulationId) || { attempts: [], highestScore: 0 };
+  }, [rubricDataCache]);
 
   const renderCarousel = (simulations: Simulation[], type: "solo" | "multi") => {
     const carouselIndex = type === "solo" ? soloCarouselIndex : multiCarouselIndex;

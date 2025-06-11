@@ -1,7 +1,7 @@
 """
 Tests for app.routes.scenarios
 
-Auto-generated on: 2025-06-11T07:28:56.814625
+Auto-generated on: 2025-06-11T08:42:35.776861
 """
 
 import pytest
