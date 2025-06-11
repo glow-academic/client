@@ -38,6 +38,14 @@ import { Label } from "@/components/ui/label";
 // Icons
 import { Send, ChevronDown, Users, Clock } from "lucide-react";
 
+// Tooltip
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
@@ -878,16 +886,47 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         </div>
                       )}
                       <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
-                          <Clock className="h-4 w-4" />
-                          <span className="text-sm font-medium" data-testid="timer">
-                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
-                              ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
-                              : aggregatedResults?.totalTime !== undefined
-                                ? formatTime(aggregatedResults.totalTime)
-                                : "No time limit"}
-                          </span>
-                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
+                                  ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-red-100 dark:bg-red-900/30"
+                                  : aggregatedResults
+                                    ? aggregatedResults.overallPassed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : "bg-muted"
+                              }`}>
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm font-medium" data-testid="timer">
+                                  {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
+                                    ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
+                                    : aggregatedResults?.totalTime !== undefined
+                                      ? formatTime(aggregatedResults.totalTime)
+                                      : "No time limit"}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
+                              <TooltipContent>
+                                <p>
+                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
+                                  ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
+                                </p>
+                              </TooltipContent>
+                            ) : aggregatedResults ? (
+                              <TooltipContent>
+                                <p>
+                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
+                                  ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
+                                </p>
+                              </TooltipContent>
+                            ) : null}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
 
@@ -1023,17 +1062,37 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     <Badge variant="default">Completed</Badge>
                   )}
                 </div>
-                <div className="flex items-center gap-2 bg-muted px-3 py-1 rounded-full">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-medium" data-testid="timer">
-                    {simulation?.timeLimit && timeRemaining !== null
-                      ? formatTime(timeRemaining)
-                      : formatTime(elapsedTime)}
-                  </span>
-                  {simulation?.timeLimit && !isActive && (
-                    <span className="text-xs text-red-500 ml-1">(Expired)</span>
-                  )}
-                </div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                        currentChat?.completed && currentDynamicRubric
+                          ? currentDynamicRubric.passed
+                            ? "bg-green-100 dark:bg-green-900/30"
+                            : "bg-red-100 dark:bg-red-900/30"
+                          : "bg-muted"
+                      }`}>
+                        <Clock className="h-4 w-4" />
+                        <span className="text-sm font-medium" data-testid="timer">
+                          {simulation?.timeLimit && timeRemaining !== null
+                            ? formatTime(timeRemaining)
+                            : formatTime(elapsedTime)}
+                        </span>
+                        {simulation?.timeLimit && !isActive && (
+                          <span className="text-xs text-red-500 ml-1">(Expired)</span>
+                        )}
+                      </div>
+                    </TooltipTrigger>
+                    {currentChat?.completed && currentDynamicRubric && (
+                      <TooltipContent>
+                        <p>
+                          {currentDynamicRubric.passed ? "Passed" : "Failed"} 
+                          ({currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints})
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>

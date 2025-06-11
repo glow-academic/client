@@ -109,7 +109,7 @@ export const generateEnhancedBreadcrumbs = async (
         context = "class";
       } else if (prevSegment === "c" && segments[0] === "c") {
         context = "chat";
-      } else if (prevSegment === "a" && segments[0] === "a") {
+      } else if (prevSegment === "a" && segments.includes("home")) {
         context = "attempt";
       } else if (prevSegment === "s" && segments.includes("simulations")) {
         context = "simulation";
@@ -121,10 +121,7 @@ export const generateEnhancedBreadcrumbs = async (
         context = "user";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
-      } else if (
-        prevSegment === "e" &&
-        (segments.includes("evals") || segments[0] === "e")
-      ) {
+      } else if (prevSegment === "e" && segments.includes("evals")) {
         context = "eval";
       }
 
