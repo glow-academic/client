@@ -731,7 +731,7 @@ export default function Home() {
     simulations?.filter((simulation: Simulation) => {
       const validInteractionIds =
         simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-      return validInteractionIds.length === 1;
+      return validInteractionIds.length === 1 || validInteractionIds.length === 0;
     }) || [], [simulations]);
 
   const multiSimulations = useMemo(() =>

@@ -15,7 +15,7 @@ import random
 from datetime import datetime, timezone
 from app.services.agents.grade import run_grade_agent
 from app.services.agents.generic import run_generic_agent
-from app.services.agents.evaluate import run_evaluate_agent
+from app.services.agents.scenario import run_scenario_agent
 from fastapi.responses import StreamingResponse
 import json
 from typing import AsyncIterator
@@ -64,13 +64,22 @@ async def start_attempt(
         # Get scenario IDs for this simulation and filter out invalid ones
         scenario_ids = simulation.scenario_ids or []
 
+        # If no scenarios are configured, pick a random scenario from all available scenarios
         if not scenario_ids:
-            raise HTTPException(
-                status_code=400, detail="Simulation has no valid scenarios configured"
-            )
-
-        # Get the first scenario
-        first_scenario_id = scenario_ids[0]
+            logger.info(f"No scenarios configured for simulation {simulation_id}, selecting random scenario")
+            all_scenarios = session.exec(select(Scenarios)).all()
+            if not all_scenarios:
+                raise HTTPException(
+                    status_code=400, detail="No scenarios available in the system"
+                )
+            # Pick a random scenario
+            import random
+            random_scenario = random.choice(all_scenarios)
+            first_scenario_id = random_scenario.id
+            logger.info(f"Selected random scenario {first_scenario_id} for simulation {simulation_id}")
+        else:
+            # Get the first scenario from the configured list
+            first_scenario_id = scenario_ids[0]
         scenario = session.exec(
             select(Scenarios).where(Scenarios.id == first_scenario_id)
         ).one_or_none()
@@ -79,11 +88,35 @@ async def start_attempt(
             raise HTTPException(
                 status_code=400, detail=f"Scenario {first_scenario_id} not found"
             )
+        
+        # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
+        if not scenario.description or scenario.description == "":
+            name, description = await run_scenario_agent(
+                agent_id=scenario.agent_id,
+                class_id=scenario.class_id,
+                document_ids=scenario.document_ids,
+                seniority=scenario.seniority,
+                crowdedness=scenario.crowdedness,
+                intensity=scenario.intensity,
+                session=session,
+            )
 
-        # For dynamic scenarios, run the scenario agent to create a new scenario
-        # For static scenarios, use the existing scenario directly
-        # Note: The database shows scenarios don't have a separate scenario_id field
-        # They use their primary key 'id' as the scenario identifier
+            new_scenario = Scenarios(
+                name=name,
+                description=description,
+                agent_id=scenario.agent_id,
+                class_id=scenario.class_id,
+                document_ids=scenario.document_ids,
+                seniority=scenario.seniority,
+                crowdedness=scenario.crowdedness,
+                intensity=scenario.intensity,
+            )
+
+            session.add(new_scenario)
+            session.commit()
+            session.refresh(new_scenario)
+
+            first_scenario_id = new_scenario.id
         
         # Use agent-specific default titles for simulations
         agent = session.exec(
@@ -217,49 +250,55 @@ async def continue_attempt(
         # get all the scenarios for this simulation and filter out invalid ones
         scenario_ids = simulation.scenario_ids or []
 
-        # Find the current scenario index and get the next one
-        current_scenario_id = chat.scenario_id
-        if current_scenario_id not in scenario_ids:
-            raise HTTPException(
-                status_code=400, detail="Current scenario not found in simulation"
-            )
+        # If no scenarios are configured, this was a random scenario selection
+        # In this case, we don't continue to another scenario
+        if not scenario_ids:
+            logger.info(f"No scenarios configured for simulation {simulation.id}, ending attempt")
+            next_chat_id = chat_id
+        else:
+            # Find the current scenario index and get the next one
+            current_scenario_id = chat.scenario_id
+            if current_scenario_id not in scenario_ids:
+                raise HTTPException(
+                    status_code=400, detail="Current scenario not found in simulation"
+                )
 
-        current_index = scenario_ids.index(current_scenario_id)
-        next_index = current_index + 1
+            current_index = scenario_ids.index(current_scenario_id)
+            next_index = current_index + 1
 
-        # do not continue if we do not have any scenarios left
-        next_chat_id = chat_id
-        if next_index < len(scenario_ids):
-            next_scenario_id = scenario_ids[next_index]
-            next_scenario = session.exec(
-                select(Scenarios).where(Scenarios.id == next_scenario_id)
-            ).one_or_none()
-            if not next_scenario:
-                raise HTTPException(status_code=404, detail="Next scenario not found")
+            # do not continue if we do not have any scenarios left
+            next_chat_id = chat_id
+            if next_index < len(scenario_ids):
+                next_scenario_id = scenario_ids[next_index]
+                next_scenario = session.exec(
+                    select(Scenarios).where(Scenarios.id == next_scenario_id)
+                ).one_or_none()
+                if not next_scenario:
+                    raise HTTPException(status_code=404, detail="Next scenario not found")
 
-            # Use agent name for title if available
-            agent = session.exec(
-                select(Agents).where(Agents.id == next_scenario.agent_id)
-            ).one_or_none()
-            if agent:
-                chat_title = f"{agent.name} Student Session"
-            else:
-                chat_title = "Practice Session"
+                # Use agent name for title if available
+                agent = session.exec(
+                    select(Agents).where(Agents.id == next_scenario.agent_id)
+                ).one_or_none()
+                if agent:
+                    chat_title = f"{agent.name} Student Session"
+                else:
+                    chat_title = "Practice Session"
 
-            # Create the chat with the scenario and link it to this attempt
-            next_chat = SimulationChats(
-                created_at=datetime.now(timezone.utc),
-                title=chat_title,
-                scenario_id=next_scenario_id,  # Use the scenario's primary key
-                attempt_id=attempt_id,
-                completed=False,
-            )
+                # Create the chat with the scenario and link it to this attempt
+                next_chat = SimulationChats(
+                    created_at=datetime.now(timezone.utc),
+                    title=chat_title,
+                    scenario_id=next_scenario_id,  # Use the scenario's primary key
+                    attempt_id=attempt_id,
+                    completed=False,
+                )
 
-            # Add and commit the new chat to the database
-            session.add(next_chat)
-            session.commit()
-            session.refresh(next_chat)
-            next_chat_id = next_chat.id
+                # Add and commit the new chat to the database
+                session.add(next_chat)
+                session.commit()
+                session.refresh(next_chat)
+                next_chat_id = next_chat.id
 
         # Run logic to end the current chat
         rubric_id = await run_grade_agent(chat_id, session)

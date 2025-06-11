@@ -43,6 +43,7 @@ class Classes(_Base, table=True):
 
     documents: List['Documents'] = Relationship(back_populates='class_')
     evals: List['Evals'] = Relationship(back_populates='class_')
+    scenarios: List['Scenarios'] = Relationship(back_populates='class_')
     schedules: List['Schedules'] = Relationship(back_populates='class_')
     simulations: List['Simulations'] = Relationship(back_populates='class_')
     topics: List['Topics'] = Relationship(back_populates='class_')
@@ -133,6 +134,7 @@ class Evals(_Base, table=True):
 class Scenarios(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='scenarios_agent_id_fkey'),
+        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
@@ -145,8 +147,10 @@ class Scenarios(_Base, table=True):
     intensity: int = Field(sa_column=Column('intensity', Integer))
     seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
     documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
+    class_: Optional['Classes'] = Relationship(back_populates='scenarios')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='scenario')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 

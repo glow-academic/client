@@ -78,7 +78,6 @@ interface SimulationFormData {
 interface FormErrors {
   title?: string;
   timeLimit?: string;
-  scenarios?: string;
 }
 
 export default function Simulation({
@@ -224,10 +223,6 @@ export default function Simulation({
       newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
     }
 
-    if (formData.scenarioIds.length === 0) {
-      newErrors.scenarios = "At least one scenario must be selected";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -246,11 +241,7 @@ export default function Simulation({
     e.preventDefault();
 
     if (!validateForm()) {
-      if (errors.scenarios) {
-        toast.error(errors.scenarios);
-      } else {
-        toast.error("Please fill in all required fields");
-      }
+      toast.error("Please fill in all required fields");
       return;
     }
 
@@ -357,7 +348,9 @@ export default function Simulation({
                           {simulation.scenarioIds?.filter(
                             (id: string) => id !== "RAY",
                           ).length || 0}{" "}
-                          scenarios
+                          {simulation.scenarioIds?.filter(
+                            (id: string) => id !== "RAY",
+                          ).length === 0 ? "scenarios (random selection)" : "scenarios"}
                         </span>
                       </CardDescription>
                     </div>
@@ -463,7 +456,12 @@ export default function Simulation({
         <div className="space-y-2">
 
           <div className="flex justify-between items-center">
-            <Label htmlFor="scenarios">Scenarios</Label>
+            <div>
+              <Label htmlFor="scenarios">Scenarios</Label>
+              <p className="text-sm text-muted-foreground mt-1">
+                If no scenarios are selected, a random scenario will be chosen automatically
+              </p>
+            </div>
             <div className="flex gap-2">
               <Select
                 value=""
@@ -502,18 +500,14 @@ export default function Simulation({
             </div>
           </div>
 
-          {errors.scenarios && (
-            <p className="text-sm text-destructive">{errors.scenarios}</p>
-          )}
-
           {formData.scenarioIds.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
-                <p className="text-red-500 font-medium mb-1">
+                <p className="font-medium mb-1">
                   No scenarios selected
                 </p>
                 <p className="text-sm">
-                  You must add at least one scenario to create a simulation
+                  A random scenario will be automatically chosen when the simulation starts
                 </p>
               </div>
             </div>

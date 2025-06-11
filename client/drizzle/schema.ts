@@ -171,19 +171,25 @@ export const simulations = pgTable("simulations", {
 export const scenarios = pgTable("scenarios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	agentId: uuid("agent_id").notNull(),
-	crowdedness: integer().notNull(),
-	intensity: integer().notNull(),
-	seniority: seniorityLevels().default('freshman').notNull(),
+	name: text(),
+	description: text(),
+	agentId: uuid("agent_id"),
+	classId: uuid("class_id"),
+	crowdedness: integer(),
+	intensity: integer(),
+	seniority: seniorityLevels(),
 	documents: uuid().array().default(["RAY"]).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.agentId],
 			foreignColumns: [agents.id],
 			name: "scenarios_agent_id_fkey"
-		}).onDelete("cascade"),
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.classId],
+			foreignColumns: [classes.id],
+			name: "scenarios_class_id_fkey"
+		}).onDelete("set null"),
 ]);
 
 export const simulationAttempts = pgTable("simulation_attempts", {

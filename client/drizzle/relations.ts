@@ -13,6 +13,7 @@ export const classesRelations = relations(classes, ({many}) => ({
 	schedules: many(schedules),
 	documents: many(documents),
 	simulations: many(simulations),
+	scenarios: many(scenarios),
 	simulationAttempts: many(simulationAttempts),
 	evals: many(evals),
 	evalRuns: many(evalRuns),
@@ -81,6 +82,10 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 	agent: one(agents, {
 		fields: [scenarios.agentId],
 		references: [agents.id]
+	}),
+	class: one(classes, {
+		fields: [scenarios.classId],
+		references: [classes.id]
 	}),
 	simulationChats: many(simulationChats),
 	evalRuns: many(evalRuns),

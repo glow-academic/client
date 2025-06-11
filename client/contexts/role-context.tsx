@@ -15,6 +15,27 @@ import {
 
 type UserRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
+// Helper function to check if a user can simulate a specific role
+const canUserSimulateRole = (userRole: UserRole, targetRole: UserRole): boolean => {
+  // Admin can simulate all roles
+  if (userRole === "admin") return true;
+  
+  // Instructional staff can simulate instructor and ta roles
+  if (userRole === "instructional") {
+    return ["instructor", "ta"].includes(targetRole);
+  }
+  
+  // Instructor can simulate ta role
+  if (userRole === "instructor") {
+    return targetRole === "ta";
+  }
+  
+  // TA cannot simulate any other roles
+  if (userRole === "ta") return false;
+  
+  return false;
+};
+
 interface RoleContextType {
   effectiveRole: UserRole;
   simulatedRole: UserRole | null;
@@ -75,15 +96,12 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
       localStorage.removeItem("guestMode");
       setIsGuestMode(false);
       
-      // Only load simulated role if it's not guest mode
-      const storedRole = localStorage.getItem("simulatedRole");
-      if (
-        storedRole &&
-        storedRole !== "guest" &&
-        ["admin", "instructional", "instructor", "ta"].includes(storedRole)
-      ) {
-        setSimulatedRole(storedRole as UserRole);
-      }
+      // IMPORTANT: When a user has just logged in with their actual credentials,
+      // we should NOT load any simulated roles from localStorage.
+      // This prevents old simulated roles from interfering with fresh logins.
+      // Users can explicitly switch roles using the role switcher if needed.
+      localStorage.removeItem("simulatedRole");
+      setSimulatedRole(null);
       return;
     }
 

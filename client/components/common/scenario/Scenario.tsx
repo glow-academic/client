@@ -67,7 +67,6 @@ interface FormErrors {
     name?: string;
     description?: string;
     agentId?: string;
-    classId?: string;
     documents?: string;
     crowdedness?: string;
     intensity?: string;
@@ -268,10 +267,6 @@ export default function Scenario({
             newErrors.agentId = "An agent must be selected";
         }
 
-        if (!formData.classId) {
-            newErrors.classId = "A class must be selected";
-        }
-
         if (formData.crowdedness < 1 || formData.crowdedness > 10) {
             newErrors.crowdedness = "Crowdedness must be between 1 and 10";
         }
@@ -313,7 +308,7 @@ export default function Scenario({
                 name: formData.name,
                 description: formData.description,
                 agentId: formData.agentId,
-                classId: formData.classId,
+                classId: formData.classId || null,
                 documents: formData.documents,
                 crowdedness: formData.crowdedness,
                 intensity: formData.intensity,
@@ -575,7 +570,7 @@ export default function Scenario({
                                 types={["Classes"]}
                                 label="Class"
                                 placeholder="Select a class..."
-                                description="Choose the class that this scenario will be used in."
+                                description="Choose the class that this scenario will be used in. If no class is selected, the scenario will be available globally across all classes."
                                 onSelect={handleClassSelect}
                                 selectedModel={selectedClass ? {
                                     id: selectedClass.id,
@@ -585,9 +580,6 @@ export default function Scenario({
                                     strengths: selectedClass.description || "",
                                 } : undefined}
                             />
-                            {errors.classId && (
-                                <p className="text-sm text-destructive">{errors.classId}</p>
-                            )}
 
                             {/* Document Selection */}
                             <ScenarioPicker

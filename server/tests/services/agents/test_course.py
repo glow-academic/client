@@ -1,7 +1,7 @@
 """
 Tests for app.services.agents.course
 
-Auto-generated on: 2025-06-11T09:30:58.454077
+Auto-generated on: 2025-06-11T13:31:55.331191
 """
 
 import pytest
