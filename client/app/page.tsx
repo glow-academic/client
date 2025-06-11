@@ -19,6 +19,10 @@ export default function Home() {
   const handleLogin = async (admin: boolean) => {
     setLoading(true);
     try {
+      // Clear any guest mode before attempting login
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedRole");
+      
       const { success, error } = await login(username, password, admin);
       if (success) {
         // Both admin and regular users go to the dashboard home page
@@ -41,6 +45,7 @@ export default function Home() {
   const handleGuestAccess = () => {
     // Set guest mode in localStorage and redirect
     localStorage.setItem("guestMode", "true");
+    localStorage.setItem("simulatedRole", "guest");
     router.push("/home");
   };
 

@@ -64,24 +64,43 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     setIsClient(true);
   }, []);
 
-  // Load initial state from localStorage
+  // Load initial state from localStorage - but only if no actual user is logged in
   useEffect(() => {
     if (!isClient) return;
 
+    // If we have an actual user role, don't load guest mode from localStorage
+    // This prevents guest mode from interfering with actual authentication
+    if (userRole && userRole !== "guest") {
+      // Clear any guest mode that might be lingering
+      localStorage.removeItem("guestMode");
+      setIsGuestMode(false);
+      
+      // Only load simulated role if it's not guest mode
+      const storedRole = localStorage.getItem("simulatedRole");
+      if (
+        storedRole &&
+        storedRole !== "guest" &&
+        ["admin", "instructional", "instructor", "ta"].includes(storedRole)
+      ) {
+        setSimulatedRole(storedRole as UserRole);
+      }
+      return;
+    }
+
+    // Only load guest mode if no actual user is logged in
     const storedRole = localStorage.getItem("simulatedRole");
     const storedGuestMode = localStorage.getItem("guestMode") === "true";
 
-    if (
+    if (storedGuestMode || storedRole === "guest") {
+      setIsGuestMode(true);
+      setSimulatedRole("guest");
+    } else if (
       storedRole &&
-      ["admin", "instructional", "instructor", "ta", "guest"].includes(
-        storedRole,
-      )
+      ["admin", "instructional", "instructor", "ta"].includes(storedRole)
     ) {
       setSimulatedRole(storedRole as UserRole);
     }
-
-    setIsGuestMode(storedGuestMode);
-  }, [isClient]);
+  }, [isClient, userRole]);
 
   // Calculate effective role
   const effectiveRole: UserRole = React.useMemo(() => {
@@ -107,7 +126,7 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     router.push(route);
   }, [router]);
 
-  const setRole = React.useCallback((role: UserRole | null, shouldNavigate: boolean = true) => {
+  const setRole = React.useCallback((role: UserRole | null, shouldNavigate: boolean = false) => {
     if (!isClient) return;
 
     const previousRole = effectiveRole;
@@ -131,7 +150,7 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     // Invalidate all queries to force re-fetch with new role
     queryClient.invalidateQueries();
 
-    // Navigate to the appropriate page for the new role if requested
+    // Navigate to the appropriate page for the new role ONLY if explicitly requested
     if (shouldNavigate && role && role !== previousRole) {
       // Small delay to ensure state updates are processed
       setTimeout(() => {

@@ -129,7 +129,7 @@ export function UnifiedSidebar({
   const [searchTerm, setSearchTerm] = React.useState("");
 
   // Use the role context instead of local state
-  const { effectiveRole, setRole, isGuestMode, getFirstAvailableSection, isSectionAvailable } = useRole();
+  const { effectiveRole, setRole } = useRole();
   const { userId } = useAuth();
 
   // Fetch user data
@@ -342,20 +342,8 @@ export function UnifiedSidebar({
     return menu;
   }, [effectiveRole, availableClasses, searchTerm]);
 
-  // Check if current active section is available for the current role
-  const isCurrentSectionAvailable = React.useMemo(() => {
-    return isSectionAvailable(activeSection);
-  }, [isSectionAvailable, activeSection]);
-
-  // Navigate to first available section if current section is not available
-  React.useEffect(() => {
-    if (!isCurrentSectionAvailable && navMain.length > 0) {
-      const firstAvailableSection = getFirstAvailableSection(effectiveRole);
-      if (firstAvailableSection !== activeSection) {
-        handleSectionChange(firstAvailableSection);
-      }
-    }
-  }, [isCurrentSectionAvailable, navMain, effectiveRole, activeSection, getFirstAvailableSection]);
+  // Note: Removed automatic navigation when section is not available
+  // This was causing unwanted redirects. Let the parent component handle navigation logic.
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
