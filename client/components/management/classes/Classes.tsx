@@ -5,8 +5,8 @@
  * 06/09/2025
  */
 "use client";
-import React, { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, compareAsc, startOfDay, subDays } from "date-fns";
 import {
   Card,
@@ -15,6 +15,26 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Trash2, Calendar, Users, TrendingUp, Activity } from "lucide-react";
 import {
   LineChart,
   Line,
@@ -41,6 +61,8 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAgentConfig } from "@/utils/agents";
+import { deleteClass } from "@/utils/mutations/classes/delete-class";
+import { Separator } from "@/components/ui/separator";
 
 // Color palette for charts
 const COLORS = {
@@ -55,6 +77,27 @@ const COLORS = {
 };
 
 export default function ClassesGeneralPage() {
+  const queryClient = useQueryClient();
+
+  // State for time range filters and delete dialog
+  const [scoreTrendTimeRange, setScoreTrendTimeRange] = useState<"7d" | "30d" | "90d">("7d");
+  const [personalityTimeRange, setPersonalityTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<string | null>(null);
+
+  // Delete class mutation
+  const deleteClassMutation = useMutation({
+    mutationFn: deleteClass,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
+      setDeleteDialogOpen(false);
+      setClassToDelete(null);
+    },
+    onError: (error) => {
+      console.error("Failed to delete class:", error);
+    },
+  });
+
   // Fetch all data for aggregated view
   const { data: classes = [], isLoading: isLoadingClasses } = useQuery({
     queryKey: ["classes"],
@@ -150,18 +193,18 @@ export default function ClassesGeneralPage() {
     const avgOverallScore =
       grades.length > 0
         ? Math.round(
-            grades.reduce((sum, g) => sum + g.score, 0) / grades.length,
-          )
+          grades.reduce((sum, g) => sum + g.score, 0) / grades.length,
+        )
         : 0;
 
     // Calculate average training time from grades (convert seconds to minutes)
     const avgTrainingTime =
       grades.length > 0
         ? Math.round(
-            grades.reduce((sum, g) => sum + g.timeTaken, 0) /
-              grades.length /
-              60,
-          )
+          grades.reduce((sum, g) => sum + g.timeTaken, 0) /
+          grades.length /
+          60,
+        )
         : 0;
 
     return {
@@ -182,15 +225,16 @@ export default function ClassesGeneralPage() {
     standardGroups,
   ]);
 
-  // Generate aggregated score trend data (last 7 days) using grades
+  // Generate aggregated score trend data using grades
   const scoreTrendData = useMemo(() => {
     if (!grades || grades.length === 0) return [];
 
+    const days = scoreTrendTimeRange === "7d" ? 7 : scoreTrendTimeRange === "30d" ? 30 : 90;
     const today = startOfDay(new Date());
     const dates: Record<string, { date: Date; scores: number[] }> = {};
 
-    // Initialize last 7 days
-    for (let i = 0; i < 7; i++) {
+    // Initialize date range
+    for (let i = 0; i < days; i++) {
       const date = subDays(today, i);
       const dateStr = format(date, "yyyy-MM-dd");
       dates[dateStr] = { date, scores: [] };
@@ -212,32 +256,36 @@ export default function ClassesGeneralPage() {
         const avgScore =
           data.scores.length > 0
             ? Math.round(
-                data.scores.reduce((sum, score) => sum + score, 0) /
-                  data.scores.length,
-              )
+              data.scores.reduce((sum, score) => sum + score, 0) /
+              data.scores.length,
+            )
             : 0;
 
         return {
-          date: format(data.date, "MM-dd"),
+          date: format(data.date, scoreTrendTimeRange === "7d" ? "MM/dd" : "MM/dd"),
           avgScore,
         };
       })
       .sort((a, b) =>
         compareAsc(new Date(`2024-${a.date}`), new Date(`2024-${b.date}`)),
       );
-  }, [grades]);
+  }, [grades, scoreTrendTimeRange]);
 
   // Generate student personality distribution data based on actual agent usage
   const personalityData = useMemo(() => {
     if (!chats || !agents || !scenarios) return [];
 
-    // Count sessions by agent personality
+    const days = personalityTimeRange === "7d" ? 7 : personalityTimeRange === "30d" ? 30 : 90;
+    const cutoffDate = subDays(new Date(), days);
+
+    // Count sessions by agent personality within time range
     const personalityCounts = agents
       .filter((agent) => agent.agentType === "student")
       .map((agent) => {
         const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
         const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId),
+          agentScenarios.some((scenario) => scenario.id === chat.scenarioId) &&
+          new Date(chat.createdAt) >= cutoffDate,
         );
 
         const config = getAgentConfig(agent.name);
@@ -258,7 +306,7 @@ export default function ClassesGeneralPage() {
       .filter((item) => item.value > 0); // Only include personalities that have been used
 
     return personalityCounts;
-  }, [chats, agents, scenarios]);
+  }, [chats, agents, scenarios, personalityTimeRange]);
 
   // Performance by class data
   const classPerformanceData = useMemo(() => {
@@ -279,16 +327,14 @@ export default function ClassesGeneralPage() {
         const avgScore =
           classGrades.length > 0
             ? Math.round(
-                classGrades.reduce((sum, g) => sum + g.score, 0) /
-                  classGrades.length,
-              )
+              classGrades.reduce((sum, g) => sum + g.score, 0) /
+              classGrades.length,
+            )
             : 0;
 
         return {
-          className:
-            classItem.name ||
-            classItem.classCode ||
-            `Class ${classItem.id.slice(0, 8)}`,
+          className: classItem.classCode || `Class ${classItem.id.slice(0, 8)}`,
+          fullName: classItem.name,
           avgScore,
           sessions: classChats.length,
           completedSessions: classChats.filter((chat) => chat.completed).length,
@@ -296,6 +342,31 @@ export default function ClassesGeneralPage() {
       })
       .filter((item) => item.sessions > 0); // Only show classes with activity
   }, [classes, attempts, grades, chats]);
+
+  // Helper functions
+  const handleDeleteClass = (classId: string) => {
+    setClassToDelete(classId);
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteClass = () => {
+    if (classToDelete) {
+      deleteClassMutation.mutate(classToDelete);
+    }
+  };
+
+  const formatClassTerm = (term: string) => {
+    switch (term) {
+      case "fall":
+        return "Fall";
+      case "spring":
+        return "Spring";
+      case "summer":
+        return "Summer";
+      default:
+        return term;
+    }
+  };
 
   // Loading state
   if (
@@ -325,6 +396,7 @@ export default function ClassesGeneralPage() {
 
   return (
     <div className="space-y-6">
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -378,14 +450,68 @@ export default function ClassesGeneralPage() {
         </Card>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {classes.map((classItem) => (
+          <Card key={classItem.id} className="relative">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="outline">{classItem.classCode}</Badge>
+                    <Badge variant="secondary">
+                      {formatClassTerm(classItem.term)} {classItem.year}
+                    </Badge>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteClass(classItem.id)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <p className="text-sm text-muted-foreground line-clamp-2">
+                {classItem.description}
+              </p>
+              <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                <Calendar className="h-3 w-3" />
+                Created {format(new Date(classItem.createdAt), "MMM dd, yyyy")}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       {/* Performance Trend Charts */}
       <Card>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Line Chart - Score Trends */}
           <div className="h-80">
-            <h3 className="text-sm font-medium mb-2">
-              Average Score Trend (Last 7 Days)
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">
+                Average Score
+              </h3>
+              <Select
+                value={scoreTrendTimeRange}
+                onValueChange={(value: "7d" | "30d" | "90d") =>
+                  setScoreTrendTimeRange(value)
+                }
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">7 days</SelectItem>
+                  <SelectItem value="30d">30 days</SelectItem>
+                  <SelectItem value="90d">90 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <ResponsiveContainer width="100%" height="90%">
               <LineChart data={scoreTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -409,9 +535,26 @@ export default function ClassesGeneralPage() {
 
           {/* Pie Chart - Student Personality Distribution */}
           <div className="h-80">
-            <h3 className="text-sm font-medium mb-2">
-              Student Personality Distribution
-            </h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">
+                Agent Distribution
+              </h3>
+              <Select
+                value={personalityTimeRange}
+                onValueChange={(value: "7d" | "30d" | "90d") =>
+                  setPersonalityTimeRange(value)
+                }
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="7d">7 days</SelectItem>
+                  <SelectItem value="30d">30 days</SelectItem>
+                  <SelectItem value="90d">90 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <ResponsiveContainer width="100%" height="90%">
               <PieChart>
                 <Pie
@@ -475,7 +618,10 @@ export default function ClassesGeneralPage() {
                           ? "Total Sessions"
                           : "Completed Sessions",
                     ]}
-                    labelFormatter={(label) => `Class: ${label}`}
+                    labelFormatter={(label) => {
+                      const classData = classPerformanceData.find(item => item.className === label);
+                      return `${classData?.fullName || label} (${label})`;
+                    }}
                   />
                   <Bar
                     dataKey="avgScore"
@@ -534,6 +680,28 @@ export default function ClassesGeneralPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Class</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this class? This action cannot be undone and will remove all associated data including simulations, attempts, and grades.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteClass}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={deleteClassMutation.isPending}
+            >
+              {deleteClassMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

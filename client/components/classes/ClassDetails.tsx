@@ -8,7 +8,6 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
 import { format, compareAsc, startOfDay, subDays, isAfter } from "date-fns";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,9 +29,6 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   Calendar,
@@ -50,20 +46,17 @@ import { getSimulationsByClass } from "@/utils/queries/simulations/get-simulatio
 import { getSimulationAttemptsByClass } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-class";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getAllSchedules } from "@/utils/queries/schedules/get-all-schedules";
+import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
 import { getAllEvents } from "@/utils/queries/events/get-all-events";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 
 type ClassDetailsProps = {
   classId: string;
 };
 
 export default function ClassDetails({ classId }: ClassDetailsProps) {
-  const router = useRouter();
   const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
   const [topicSort, setTopicSort] = useState<
     "all" | "prerequisites" | "non-prerequisites"
@@ -76,15 +69,12 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
   });
 
   // Fetch all users to filter by class
-  const { data: allUsers = [], isLoading: isLoadingUsers } = useQuery({
+  const { data: _allUsers = [], isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
     queryFn: () => getAllUsers(),
   });
 
-  // Filter users assigned to this class
-  const classUsers = useMemo(() => {
-    return allUsers.filter((user) => user.classIds?.includes(classId));
-  }, [allUsers, classId]);
+
 
   // Fetch class-specific data
   const { data: topics = [], isLoading: isLoadingTopics } = useQuery({
@@ -116,14 +106,7 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     enabled: !!chats && chats.length > 0,
   });
 
-  const { data: feedbacks = [], isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
-      ),
-    enabled: !!grades && grades.length > 0,
-  });
+
 
   // Fetch rubrics and standards for dynamic rubric data
   const { data: allRubrics = [], isLoading: isLoadingRubrics } = useQuery({
@@ -131,7 +114,7 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     queryFn: () => getAllRubrics(),
   });
 
-  const { data: standardGroups = [], isLoading: isLoadingStandardGroups } =
+  const { data: _standardGroups = [], isLoading: isLoadingStandardGroups } =
     useQuery({
       queryKey: ["standardGroups", allRubrics?.map((rubric) => rubric.id)],
       queryFn: () =>
@@ -139,17 +122,12 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
       enabled: !!allRubrics && allRubrics.length > 0,
     });
 
-  const { data: standards = [], isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
+
 
   // Fetch schedules and events
   const { data: schedules = [], isLoading: isLoadingSchedules } = useQuery({
-    queryKey: ["schedules"],
-    queryFn: () => getAllSchedules(),
+    queryKey: ["schedules", classId],
+    queryFn: () => getSchedulesByClass([classId]),
   });
 
   const { data: events = [], isLoading: isLoadingEvents } = useQuery({
@@ -252,39 +230,15 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     return topics.filter((topic) => !topic.prerequisite);
   }, [topics, topicSort]);
 
-  // Student engagement metrics
-  const engagementData = useMemo(() => {
-    // Get user IDs from attempts that have chats
-    const chatUserIds = chats
-      .map((chat) => {
-        const attempt = attempts.find((a) => a.id === chat.attemptId);
-        return attempt?.userId;
-      })
-      .filter(Boolean) as string[];
-
-    const totalStudents = new Set(chatUserIds).size;
-
-    const activeStudents = new Set(
-      chats
-        .filter((chat) =>
-          isAfter(new Date(chat.createdAt), subDays(new Date(), 7)),
-        )
-        .map((chat) => {
-          const attempt = attempts.find((a) => a.id === chat.attemptId);
-          return attempt?.userId;
-        })
-        .filter(Boolean) as string[],
-    ).size;
-
-    return [
-      { name: "Active", value: activeStudents, fill: "#10b981" },
-      {
-        name: "Inactive",
-        value: totalStudents - activeStudents,
-        fill: "#e5e7eb",
-      },
-    ];
-  }, [chats, attempts]);
+  // Class schedules data
+  const classSchedules = useMemo(() => {
+    return schedules.map((schedule) => ({
+      id: schedule.id,
+      name: schedule.name,
+      description: schedule.description,
+      createdAt: schedule.createdAt,
+    }));
+  }, [schedules]);
 
   const totalStudents = useMemo(() => {
     const chatUserIds = chats
@@ -309,10 +263,8 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||
-    isLoadingFeedbacks ||
     isLoadingRubrics ||
     isLoadingStandardGroups ||
-    isLoadingStandards ||
     isLoadingSchedules ||
     isLoadingEvents
   ) {
@@ -472,46 +424,43 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
 
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Student Engagement */}
+        {/* Schedules */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Student Activity
+              <Calendar className="h-5 w-5" />
+              Schedules
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie
-                  data={engagementData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
-                  paddingAngle={5}
-                  dataKey="value"
-                >
-                  {engagementData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.fill} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="flex justify-center gap-4 mt-4">
-              {engagementData.map((entry, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <div
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: entry.fill }}
-                  />
-                  <span className="text-sm">
-                    {entry.name}: {entry.value}
-                  </span>
-                </div>
-              ))}
-            </div>
+            <ScrollArea className="h-48">
+              <div className="space-y-3">
+                {classSchedules.length > 0 ? (
+                  classSchedules.map((schedule) => (
+                    <div
+                      key={schedule.id}
+                      className="p-3 border rounded-lg"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-medium text-sm">
+                          {schedule.name}
+                        </h4>
+                        <Badge variant="outline" className="text-xs">
+                          {format(new Date(schedule.createdAt), "MMM dd")}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {schedule.description}
+                      </p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-8 text-sm">
+                    No schedules found
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
 

@@ -16,18 +16,29 @@ router = APIRouter()
 
 @router.post("/new")
 async def new_scenario(
-    agent_id: str = Form(...),
-    class_id: str = Form(...),
-    document_ids: List[str] = Form(...),
-    seniority: str = Form(...),
-    crowdedness: int = Form(...),
-    intensity: int = Form(...),
+    agent_id: str | None = Form(None),
+    class_id: str | None = Form(None),
+    document_ids: List[str] | None = Form(None),
+    seniority: str | None = Form(None),
+    crowdedness: int | None = Form(None),
+    intensity: int | None = Form(None),
     session: Session = Depends(get_session),
 ):
     """
     This endpoint creates a new scenario using AI generation.
     """
     try:
+        # Convert empty strings to None for better handling
+        agent_id = agent_id if agent_id and agent_id.strip() else None
+        class_id = class_id if class_id and class_id.strip() else None
+        seniority = seniority if seniority and seniority.strip() else None
+        
+        # Filter out empty document IDs
+        if document_ids:
+            document_ids = [doc_id for doc_id in document_ids if doc_id and doc_id.strip()]
+            if not document_ids:
+                document_ids = None
+
         # Run the scenario agent to generate title and description
         title, description = await run_scenario_agent(
             agent_id=agent_id,
@@ -59,7 +70,7 @@ async def new_scenario(
 @router.post("/test")
 async def test_scenario(
     agent_id: str = Form(...),
-    description: str = Form(...),
+    description: str = Form(""),
     query: str = Form(...),
     session: Session = Depends(get_session),
 ):
@@ -67,6 +78,12 @@ async def test_scenario(
     Streams assistant tokens back to the frontend via Server-Sent Events for testing a scenario.
     """
     try:
+        # Validate required fields
+        if not agent_id or not agent_id.strip():
+            raise HTTPException(status_code=400, detail="Agent ID is required")
+        
+        if not query or not query.strip():
+            raise HTTPException(status_code=400, detail="Query is required")
 
         async def event_stream() -> AsyncIterator[str]:
             # Initial heartbeat so proxies flush headers
@@ -74,19 +91,22 @@ async def test_scenario(
 
             try:
                 # Create input items with scenario context and user query
-                input_items = [
-                    {
+                input_items = []
+                
+                # Only add scenario description if it's provided and not empty
+                if description and description.strip():
+                    input_items.append({
                         "role": "assistant",
-                        "content": f"The following is the scenario description for the chat: {description}",
-                    },
-                    {
-                        "role": "user",
-                        "content": query,
-                    }
-                ]
+                        "content": f"The following is the scenario description for the chat: {description.strip()}",
+                    })
+                
+                input_items.append({
+                    "role": "user",
+                    "content": query.strip(),
+                })
 
                 async for token in run_generic_agent_bare(
-                    agent_id=agent_id,
+                    agent_id=agent_id.strip(),
                     input_items=input_items,
                     session=session,
                 ):

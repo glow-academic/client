@@ -16,7 +16,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, AlertTriangle, Download, Filter, Search } from "lucide-react";
+import { Award, AlertTriangle, Download, Filter, Search, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -598,8 +598,7 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" disabled={isDownloading}>
-          <Download className="h-4 w-4 mr-2" />
-          {isDownloading ? "Generating..." : "Download Report"}
+          {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

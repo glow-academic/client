@@ -195,14 +195,6 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
     {},
   );
 
-  const handleContinueToClass = () => {
-    router.push(`/classes/c/${classId}/edit`);
-  };
-
-  const handleEditClassDetails = () => {
-    setShowClassForm(true);
-  };
-
   if (classLoading) {
     return (
       <div className="min-h-screen py-8 px-4">
@@ -224,9 +216,6 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
           <p className="text-muted-foreground mt-2">
             The requested class could not be found.
           </p>
-          <Button onClick={() => router.push("/classes/new")} className="mt-4">
-            Back to Create Class
-          </Button>
         </div>
       </div>
     );

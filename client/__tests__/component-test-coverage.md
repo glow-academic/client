@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-10T23:42:41.809Z
+Generated on: 2025-06-11T03:56:06.276Z
 
 ## Summary
-- **Total Components**: 57
-- **Tests Created**: 3
+- **Total Components**: 56
+- **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 54
+- **Tests Skipped** (already implemented): 56
 
 ## Component Coverage
 
@@ -40,10 +40,9 @@ Generated on: 2025-06-10T23:42:41.809Z
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
-| OldScenario | common/scenario/OldScenario.tsx | OldScenario.test.tsx | ✅ Implemented |
-| Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ❌ Needs Implementation |
-| ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ❌ Needs Implementation |
-| ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ❌ Needs Implementation |
+| Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
+| ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
+| ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
@@ -113,7 +112,6 @@ __tests__/
 │   ├── rubric/
 │   │   ├── Rubric.test.tsx
 │   ├── scenario/
-│   │   ├── OldScenario.test.tsx
 │   │   ├── Scenario.test.tsx
 │   │   ├── ScenarioPicker.test.tsx
 │   │   ├── ScenarioSlider.test.tsx

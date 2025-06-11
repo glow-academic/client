@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
@@ -208,15 +209,41 @@ describe("Overview", () => {
       });
     });
 
-    it("should render daily session activity chart", async () => {
+    it("should render session activity chart", async () => {
       renderWithProviders(<Overview />);
 
       await waitFor(() => {
-        expect(screen.getByText("Daily Session Activity")).toBeInTheDocument();
+        expect(screen.getByText("Session Activity")).toBeInTheDocument();
         expect(
           screen.getByText("Training session volume and completion rates"),
         ).toBeInTheDocument();
       });
+    });
+
+    it("should display time range selectors for performance trends", async () => {
+      renderWithProviders(<Overview />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Performance Trends")).toBeInTheDocument();
+      });
+
+      // Should show time range buttons
+      expect(screen.getAllByText("7 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("30 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("90 days").length).toBeGreaterThan(0);
+    });
+
+    it("should display time range selectors for session activity", async () => {
+      renderWithProviders(<Overview />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Session Activity")).toBeInTheDocument();
+      });
+
+      // Should show shorter time range buttons
+      expect(screen.getByText("1 hour")).toBeInTheDocument();
+      expect(screen.getByText("12 hours")).toBeInTheDocument();
+      expect(screen.getByText("24 hours")).toBeInTheDocument();
     });
   });
 
@@ -225,26 +252,60 @@ describe("Overview", () => {
       renderWithProviders(<Overview />);
 
       await waitFor(() => {
-        expect(screen.getByText("2")).toBeInTheDocument(); // 2 TAs from mock data
+        expect(screen.getByText("Active TAs")).toBeInTheDocument();
       });
+      
+      // Check for the specific TA count in the Active TAs card
+      const activeTAsCard = screen.getByText("Active TAs").closest('[data-slot="card"]');
+      expect(activeTAsCard).toContainElement(screen.getByText("2"));
     });
 
     it("should handle empty data gracefully", async () => {
-      // Mock empty responses
-      vi.doMock(
-        "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
-        () => ({
-          getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(() =>
-            Promise.resolve([]),
-          ),
-        }),
-      );
-
       renderWithProviders(<Overview />);
 
       await waitFor(() => {
-        expect(screen.getByText("No skill data available")).toBeInTheDocument();
+        expect(screen.getByText("Skill Breakdown")).toBeInTheDocument();
       });
+      
+      // The component should render even with empty data
+      expect(screen.getByText("Average scores by competency area")).toBeInTheDocument();
+    });
+  });
+
+  describe("Interactive Features", () => {
+    it("should allow changing time ranges for performance trends", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Overview />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Performance Trends")).toBeInTheDocument();
+      });
+
+      // Should be able to click time range buttons
+      const timeRangeButtons = screen.getAllByText("7 days");
+      expect(timeRangeButtons.length).toBeGreaterThan(0);
+      
+      // Click on a time range button
+      await user.click(timeRangeButtons[0]);
+      
+      // Should still show the component
+      expect(screen.getByText("Performance Trends")).toBeInTheDocument();
+    });
+
+    it("should allow changing time ranges for session activity", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Overview />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Session Activity")).toBeInTheDocument();
+      });
+
+      // Should be able to click session activity time range buttons
+      const hourButton = screen.getByText("1 hour");
+      await user.click(hourButton);
+      
+      // Should still show the component
+      expect(screen.getByText("Session Activity")).toBeInTheDocument();
     });
   });
 

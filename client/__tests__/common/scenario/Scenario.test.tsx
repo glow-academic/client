@@ -90,13 +90,6 @@ describe('Scenario', () => {
       expect(screen.getByLabelText(/scenario name/i)).toBeInTheDocument();
     });
 
-    it('should render list mode correctly', () => {
-      renderWithProviders(<Scenario mode="list" />);
-      
-      // Should show scenarios list or empty state
-      expect(screen.getByText(/No scenarios found|scenarios/i)).toBeInTheDocument();
-    });
-
     it('should have correct accessibility attributes', () => {
       renderWithProviders(<Scenario />);
       

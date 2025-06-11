@@ -7,7 +7,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
@@ -39,7 +39,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { format, subDays } from "date-fns";
+import { format, subDays, subHours, isAfter, startOfDay, startOfHour } from "date-fns";
 import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
@@ -64,6 +64,9 @@ const COLORS = {
 };
 
 export default function Overview() {
+  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<"1h" | "12h" | "24h">("24h");
+
   // Fetch data
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["users"],
@@ -198,9 +201,10 @@ export default function Overview() {
       return { avgScore };
     });
 
-    // Time series data (last 7 days)
-    const timeSeriesData = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(new Date(), 6 - i);
+    // Time series data for performance trends
+    const performanceDays = performanceTrendTimeRange === "7d" ? 7 : performanceTrendTimeRange === "30d" ? 30 : 90;
+    const performanceTrendData = Array.from({ length: performanceDays }, (_, i) => {
+      const date = subDays(new Date(), performanceDays - 1 - i);
       const dateStr = format(date, "yyyy-MM-dd");
 
       const dayGrades = grades.filter((grade) => {
@@ -208,13 +212,8 @@ export default function Overview() {
         return gradeDate === dateStr;
       });
 
-      const dayChats = chats.filter((chat) => {
-        const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-        return chatDate === dateStr;
-      });
-
       return {
-        date: format(date, "MMM dd"),
+        date: format(date, performanceDays === 7 ? "MMM dd" : performanceDays === 30 ? "MM/dd" : "M/d"),
         score:
           dayGrades.length > 0
             ? Math.round(
@@ -222,10 +221,69 @@ export default function Overview() {
                   dayGrades.length,
               )
             : 0,
-        sessions: dayChats.length,
-        completed: dayChats.filter((chat) => chat.completed).length,
       };
     });
+
+    // Session activity data with different time ranges
+    const getSessionActivityData = () => {
+      if (sessionActivityTimeRange === "1h") {
+        // Last hour in 10-minute intervals
+        return Array.from({ length: 6 }, (_, i) => {
+          const time = subHours(new Date(), (5 - i) * (1/6)); // 10-minute intervals
+          const timeStr = format(time, "yyyy-MM-dd HH:mm");
+          
+          const intervalChats = chats.filter((chat) => {
+            const chatTime = new Date(chat.createdAt);
+            const intervalStart = subHours(new Date(), (6 - i) * (1/6));
+            const intervalEnd = subHours(new Date(), (5 - i) * (1/6));
+            return chatTime >= intervalStart && chatTime < intervalEnd;
+          });
+
+          return {
+            date: format(time, "HH:mm"),
+            sessions: intervalChats.length,
+            completed: intervalChats.filter((chat) => chat.completed).length,
+          };
+        });
+      } else if (sessionActivityTimeRange === "12h") {
+        // Last 12 hours in hourly intervals
+        return Array.from({ length: 12 }, (_, i) => {
+          const time = subHours(new Date(), 11 - i);
+          const timeStr = format(time, "yyyy-MM-dd HH");
+          
+          const hourChats = chats.filter((chat) => {
+            const chatTime = format(new Date(chat.createdAt), "yyyy-MM-dd HH");
+            return chatTime === timeStr;
+          });
+
+          return {
+            date: format(time, "HH:mm"),
+            sessions: hourChats.length,
+            completed: hourChats.filter((chat) => chat.completed).length,
+          };
+        });
+      } else {
+        // Last 24 hours in 2-hour intervals
+        return Array.from({ length: 12 }, (_, i) => {
+          const time = subHours(new Date(), (11 - i) * 2);
+          const startTime = subHours(new Date(), (12 - i) * 2);
+          const endTime = subHours(new Date(), (11 - i) * 2);
+          
+          const intervalChats = chats.filter((chat) => {
+            const chatTime = new Date(chat.createdAt);
+            return chatTime >= startTime && chatTime < endTime;
+          });
+
+          return {
+            date: format(time, "HH:mm"),
+            sessions: intervalChats.length,
+            completed: intervalChats.filter((chat) => chat.completed).length,
+          };
+        });
+      }
+    };
+
+    const sessionActivityData = getSessionActivityData();
 
     // Struggling TAs (score < 70)
     const strugglingTAs = taPerformance.filter((ta) => ta.avgScore < 70);
@@ -246,7 +304,8 @@ export default function Overview() {
       completionRate,
       avgOverallScore,
       skillCategories,
-      timeSeriesData,
+      performanceTrendData,
+      sessionActivityData,
       strugglingTAs,
       avgTrainingTime,
     };
@@ -259,6 +318,8 @@ export default function Overview() {
     feedbacks,
     standards,
     standardGroups,
+    performanceTrendTimeRange,
+    sessionActivityTimeRange,
   ]);
 
   // Loading state
@@ -401,18 +462,37 @@ export default function Overview() {
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Performance Trends
-            </CardTitle>
-            <CardDescription>
-              Training scores and session completion over time
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5" />
+                  Performance Trends
+                </CardTitle>
+                <CardDescription>
+                  Training scores and session completion over time
+                </CardDescription>
+              </div>
+              <div className="flex gap-1">
+                {(["7d", "30d", "90d"] as const).map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setPerformanceTrendTimeRange(range)}
+                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                      performanceTrendTimeRange === range
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={analytics.timeSeriesData}>
+                <AreaChart data={analytics.performanceTrendData}>
                   <defs>
                     <linearGradient
                       id="scoreGradient"
@@ -497,18 +577,37 @@ export default function Overview() {
       {/* Session Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Daily Session Activity
-          </CardTitle>
-          <CardDescription>
-            Training session volume and completion rates
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Session Activity
+              </CardTitle>
+              <CardDescription>
+                Training session volume and completion rates
+              </CardDescription>
+            </div>
+            <div className="flex gap-1">
+              {(["1h", "12h", "24h"] as const).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setSessionActivityTimeRange(range)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    sessionActivityTimeRange === range
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {range === "1h" ? "1 hour" : range === "12h" ? "12 hours" : "24 hours"}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.timeSeriesData}>
+              <BarChart data={analytics.sessionActivityData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                 <XAxis dataKey="date" className="text-xs" />
                 <YAxis className="text-xs" />

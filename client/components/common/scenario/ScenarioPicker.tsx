@@ -66,7 +66,7 @@ export function ScenarioPicker({
   ...props 
 }: ScenarioPickerProps) {
   const [open, setOpen] = React.useState(false)
-  const [internalSelectedModel, setInternalSelectedModel] = React.useState<Model | undefined>(models[0])
+  const [internalSelectedModel, setInternalSelectedModel] = React.useState<Model | undefined>(undefined)
   const [peekedModel, setPeekedModel] = React.useState<Model | undefined>(models[0])
 
   // Use external selectedModel if provided, otherwise use internal state
@@ -77,6 +77,16 @@ export function ScenarioPicker({
       setInternalSelectedModel(model)
     }
     onSelect?.(model)
+    setOpen(false)
+  }
+
+  // Allow clearing selection
+  const handleClear = () => {
+    if (!externalSelectedModel) {
+      setInternalSelectedModel(undefined)
+    }
+    // Call onSelect with a special "clear" model to indicate clearing
+    onSelect?.({ id: "", name: "", description: "", type: types[0] })
     setOpen(false)
   }
 
@@ -137,6 +147,16 @@ export function ScenarioPicker({
                 <CommandInput placeholder="Search Models..." />
                 <CommandEmpty>No Models found.</CommandEmpty>
                 <HoverCardTrigger />
+                {selectedModel && (
+                  <CommandGroup heading="Actions">
+                    <CommandItem
+                      onSelect={handleClear}
+                      className="text-muted-foreground"
+                    >
+                      Clear Selection
+                    </CommandItem>
+                  </CommandGroup>
+                )}
                 {types.map((type) => (
                   <CommandGroup key={type} heading={type}>
                     {models

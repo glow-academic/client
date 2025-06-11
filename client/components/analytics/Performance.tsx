@@ -49,7 +49,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { format, subDays } from "date-fns";
+import { format, subDays, isAfter, startOfDay } from "date-fns";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -77,6 +77,8 @@ const COLORS = {
 
 export default function Performance() {
   const [selectedRubricId, setSelectedRubricId] = useState<string>("all");
+  const [personalityTimeRange, setPersonalityTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">("30d");
 
   // Fetch data
   const { data: users, isLoading: isLoadingUsers } = useQuery({
@@ -189,7 +191,25 @@ export default function Performance() {
         ? grades
         : grades.filter((grade) => grade.rubricId === selectedRubricId);
 
+    // Filter data by time ranges
+    const personalityDays = personalityTimeRange === "7d" ? 7 : personalityTimeRange === "30d" ? 30 : 90;
+    const skillDays = skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
+    const personalityCutoff = startOfDay(subDays(new Date(), personalityDays));
+    const skillCutoff = startOfDay(subDays(new Date(), skillDays));
+
+    const personalityFilteredGrades = filteredGrades.filter((grade) =>
+      isAfter(new Date(grade.createdAt), personalityCutoff)
+    );
+
+    const skillFilteredGrades = filteredGrades.filter((grade) =>
+      isAfter(new Date(grade.createdAt), skillCutoff)
+    );
+
     const filteredFeedbacks = feedbacks.filter((f) =>
+      filteredStandards.some((s) => s.id === f.standardId),
+    );
+
+    const skillFilteredFeedbacks = feedbacks.filter((f) =>
       filteredStandards.some((s) => s.id === f.standardId),
     );
 
@@ -199,7 +219,7 @@ export default function Performance() {
         const groupStandards = filteredStandards.filter(
           (s) => s.standardGroupId === group.id,
         );
-        const groupFeedbacks = filteredFeedbacks.filter((f) =>
+        const groupFeedbacks = skillFilteredFeedbacks.filter((f) =>
           groupStandards.some((s) => s.id === f.standardId),
         );
 
@@ -230,7 +250,7 @@ export default function Performance() {
         )
         : 0;
 
-    // Performance by student type (scenario-based)
+    // Performance by student type (scenario-based) - use personality filtered data
     const performanceByType = agents
       .filter((agent) => agent.agentType === "student")
       .map((agent) => {
@@ -238,7 +258,7 @@ export default function Performance() {
         const agentChats = chats.filter((chat) =>
           agentScenarios.some((scenario) => scenario.id === chat.scenarioId),
         );
-        const agentGrades = filteredGrades.filter((grade) =>
+        const agentGrades = personalityFilteredGrades.filter((grade) =>
           agentChats.some((chat) => chat.id === grade.simulationChatId),
         );
 
@@ -258,13 +278,13 @@ export default function Performance() {
         };
       });
 
-    // Skill progression data (based on actual feedback over time)
-    const skillProgressionData = Array.from({ length: 7 }, (_, i) => {
-      const date = subDays(new Date(), 6 - i);
+    // Skill progression data (based on actual feedback over time) - use skill time range
+    const skillProgressionData = Array.from({ length: skillDays }, (_, i) => {
+      const date = subDays(new Date(), skillDays - 1 - i);
 
       // Get feedbacks for this date range (simulate progression based on actual data)
       const dayData: Record<string, string | number> = {
-        date: format(date, "MMM dd"),
+        date: format(date, skillDays === 7 ? "MMM dd" : skillDays === 30 ? "MM/dd" : "M/d"),
       };
 
       // Add skill categories with realistic progression based on current scores
@@ -272,7 +292,7 @@ export default function Performance() {
         ([skill, currentScore], index) => {
           // Create realistic progression that trends toward current score
           const baseVariation = Math.sin((i + index) * 0.5) * 3; // Natural variation
-          const progressionTrend = (i / 6) * 5; // Gradual improvement over time
+          const progressionTrend = (i / (skillDays - 1)) * 5; // Gradual improvement over time
           const targetScore = Math.max(
             60,
             Math.min(95, currentScore - 8 + progressionTrend + baseVariation),
@@ -406,6 +426,8 @@ export default function Performance() {
     scenarios,
     attempts,
     selectedRubricId,
+    personalityTimeRange,
+    skillTimeRange,
   ]);
 
   // Loading state
@@ -486,10 +508,29 @@ export default function Performance() {
       {/* Performance by Student Type */}
       <Card>
         <CardHeader>
-          <CardTitle>Performance by Student Personality</CardTitle>
-          <CardDescription>
-            How TAs handle different student types during training
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Performance by Student Personality</CardTitle>
+              <CardDescription>
+                How TAs handle different student types during training
+              </CardDescription>
+            </div>
+            <div className="flex gap-1">
+              {(["7d", "30d", "90d"] as const).map((range) => (
+                <button
+                  key={range}
+                  onClick={() => setPersonalityTimeRange(range)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    personalityTimeRange === range
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-2">
@@ -569,22 +610,39 @@ export default function Performance() {
                 Track improvement in key competencies across all TAs
               </CardDescription>
             </div>
-            <Select
-              value={selectedRubricId}
-              onValueChange={setSelectedRubricId}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select rubric" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Rubrics</SelectItem>
-                {rubrics.map((rubric) => (
-                  <SelectItem key={rubric.id} value={rubric.id}>
-                    {rubric.name}
-                  </SelectItem>
+            <div className="flex items-center gap-3">
+              <div className="flex gap-1">
+                {(["7d", "30d", "90d"] as const).map((range) => (
+                  <button
+                    key={range}
+                    onClick={() => setSkillTimeRange(range)}
+                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                      skillTimeRange === range
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+                  </button>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+              <Select
+                value={selectedRubricId}
+                onValueChange={setSelectedRubricId}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select rubric" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Rubrics</SelectItem>
+                  {rubrics.map((rubric) => (
+                    <SelectItem key={rubric.id} value={rubric.id}>
+                      {rubric.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

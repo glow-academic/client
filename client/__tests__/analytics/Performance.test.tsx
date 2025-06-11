@@ -297,6 +297,32 @@ describe("Performance", () => {
       // Should not have separate "Filter by Rubric:" label
       expect(screen.queryByText("Filter by Rubric:")).not.toBeInTheDocument();
     });
+
+    it("should display time range selectors for performance by student personality", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Performance by Student Personality")).toBeInTheDocument();
+      });
+
+      // Should show time range buttons
+      expect(screen.getAllByText("7 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("30 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("90 days").length).toBeGreaterThan(0);
+    });
+
+    it("should display time range selectors for skill development", async () => {
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Skill Development Over Time")).toBeInTheDocument();
+      });
+
+      // Should show time range buttons for skill development
+      expect(screen.getAllByText("7 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("30 days").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("90 days").length).toBeGreaterThan(0);
+    });
   });
 
   describe("Interactive Features", () => {
@@ -360,6 +386,25 @@ describe("Performance", () => {
 
       // Should show available rubrics
       expect(screen.getByText("Teaching Assistant Evaluation Rubric")).toBeInTheDocument();
+    });
+
+    it("should allow changing time ranges for different sections", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Performance />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Performance by Student Personality")).toBeInTheDocument();
+      });
+
+      // Should be able to click time range buttons
+      const timeRangeButtons = screen.getAllByText("7 days");
+      expect(timeRangeButtons.length).toBeGreaterThan(0);
+      
+      // Click on a time range button
+      await user.click(timeRangeButtons[0]);
+      
+      // Should still show the component
+      expect(screen.getByText("Performance by Student Personality")).toBeInTheDocument();
     });
   });
 

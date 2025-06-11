@@ -78,6 +78,7 @@ async def run_scenario_agent(
     scenario_agent = ScenarioAgent()
 
     input_items = [agent_info, class_info, document_info, seniority_info, crowdedness_info, intensity_info]
+    input_items = [item for item in input_items if item is not None]
 
     result = await Runner.run(scenario_agent.agent(), input=input_items)
 

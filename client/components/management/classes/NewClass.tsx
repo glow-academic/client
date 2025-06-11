@@ -349,7 +349,7 @@ export default function NewClass() {
           <ClassForm
             mode="create"
             onSuccess={(classId) => {
-              router.push(`/classes/c/${classId}/edit`);
+              router.push(`/management/classes/c/${classId}/edit`);
             }}
           />
         )}

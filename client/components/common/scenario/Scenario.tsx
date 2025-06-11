@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Edit, FileText, RotateCcw, Sparkles } from "lucide-react";
+import { Trash2, Edit, FileText, RotateCcw, Sparkles, Loader2 } from "lucide-react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -122,6 +122,8 @@ export default function Scenario({
     const [query, setQuery] = useState("");
     const [response, setResponse] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
+    const [seniorityExplicitlySet, setSeniorityExplicitlySet] = useState(false);
 
     // Data fetching
     const { data: documents = [] } = useQuery({
@@ -223,6 +225,8 @@ export default function Scenario({
                 intensity: scenarioData.intensity || 1,
                 seniority: scenarioData.seniority || "freshman",
             });
+            // Mark seniority as explicitly set if we're loading existing data
+            setSeniorityExplicitlySet(true);
         }
     }, [scenarioId, editingScenarioId, scenario]);
 
@@ -238,21 +242,29 @@ export default function Scenario({
     };
 
     const handleAgentSelect = (model: Model) => {
-        handleInputChange("agentId", model.id);
+        handleInputChange("agentId", model.id === "" ? "" : model.id);
     };
 
     const handleClassSelect = (model: Model) => {
-        handleInputChange("classId", model.id);
+        handleInputChange("classId", model.id === "" ? "" : model.id);
     };
 
     const handleDocumentSelect = (model: Model) => {
+        if (model.id === "") return; // Don't add empty selections for documents
         if (!formData.documents.includes(model.id)) {
             handleInputChange("documents", [...formData.documents, model.id]);
         }
     };
 
     const handleSenioritySelect = (model: Model) => {
-        handleInputChange("seniority", model.id as "freshman" | "sophomore" | "junior" | "senior");
+        if (model.id === "") {
+            // Clearing selection - reset to default but mark as not explicitly set
+            handleInputChange("seniority", "freshman");
+            setSeniorityExplicitlySet(false);
+        } else {
+            handleInputChange("seniority", model.id as "freshman" | "sophomore" | "junior" | "senior");
+            setSeniorityExplicitlySet(true);
+        }
     };
 
     const removeDocument = (documentId: string) => {
@@ -286,10 +298,16 @@ export default function Scenario({
         return Object.keys(newErrors).length === 0;
     };
 
+    // Separate validation for testing - more permissive
+    const validateForTesting = (): boolean => {
+        return !!formData.agentId && !!query.trim();
+    };
+
     const resetFormAndState = () => {
         setFormData(initialFormData);
         setEditingScenarioId(null);
         setErrors({});
+        setSeniorityExplicitlySet(false);
     };
 
     const handleEditScenarioClick = (scenarioId: string) => {
@@ -367,17 +385,23 @@ export default function Scenario({
     };
 
     const handleGenerateScenario = async () => {
-        if (!formData.agentId || !formData.classId) {
-            toast.error("Please select an agent and class before generating a scenario");
-            return;
-        }
-
+        // Allow generation with incomplete data - the AI can work with what's available
+        setIsGeneratingScenario(true);
+        
         try {
             const formDataToSend = new FormData();
-            formDataToSend.append('agent_id', formData.agentId);
-            formDataToSend.append('class_id', formData.classId);
+            
+            // Only append non-empty values
+            if (formData.agentId) {
+                formDataToSend.append('agent_id', formData.agentId);
+            }
+            if (formData.classId) {
+                formDataToSend.append('class_id', formData.classId);
+            }
             formData.documents.forEach(docId => {
-                formDataToSend.append('document_ids', docId);
+                if (docId) {
+                    formDataToSend.append('document_ids', docId);
+                }
             });
             formDataToSend.append('seniority', formData.seniority);
             formDataToSend.append('crowdedness', formData.crowdedness.toString());
@@ -407,12 +431,19 @@ export default function Scenario({
         } catch (error) {
             console.error("Error generating scenario:", error);
             toast.error(`Failed to generate scenario: ${error instanceof Error ? error.message : "Unknown error"}`);
+        } finally {
+            setIsGeneratingScenario(false);
         }
     };
 
     const handleTestQuery = async () => {
-        if (!query.trim() || !selectedAgent || !formData.description.trim()) {
-            toast.error("Please enter a query, select an agent, and provide a scenario description");
+        if (!query.trim()) {
+            toast.error("Please enter a query to test");
+            return;
+        }
+        
+        if (!formData.agentId) {
+            toast.error("Please select an agent to test with");
             return;
         }
 
@@ -422,7 +453,7 @@ export default function Scenario({
         try {
             const formDataToSend = new FormData();
             formDataToSend.append('agent_id', formData.agentId);
-            formDataToSend.append('description', formData.description);
+            formDataToSend.append('description', formData.description || "");
             formDataToSend.append('query', query);
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/test`, {
@@ -512,10 +543,10 @@ export default function Scenario({
     return (
         <>
             <div className="h-full flex flex-col">
-                <div className="container h-full py-6">
+                <div className="container h-full px-2 py-2">
                     <div className="grid h-full items-stretch gap-6 lg:grid-cols-[1fr_280px]">
                         {/* Configuration Sidebar */}
-                        <div className="hidden flex-col space-y-4 lg:flex lg:order-2">
+                        <div className="hidden flex-col space-y-4 lg:flex lg:order-2 pt-3">
 
                             <div className="space-y-2">
                                 <Label htmlFor="name">Name</Label>
@@ -590,7 +621,7 @@ export default function Scenario({
                                 placeholder="Select seniority level..."
                                 description="Choose the student seniority level for this scenario."
                                 onSelect={handleSenioritySelect}
-                                selectedModel={seniorityModels.find(model => model.id === formData.seniority)}
+                                selectedModel={seniorityExplicitlySet ? seniorityModels.find(model => model.id === formData.seniority) : undefined}
                             />
 
                             {/* Scenario Parameters */}
@@ -631,10 +662,15 @@ export default function Scenario({
                                                         variant="ghost"
                                                         size="sm"
                                                         onClick={handleGenerateScenario}
+                                                        disabled={isGeneratingScenario}
                                                         className="h-6 w-6 p-0"
                                                         title="Generate scenario with AI"
                                                     >
-                                                        <Sparkles className="h-4 w-4" />
+                                                        {isGeneratingScenario ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            <Sparkles className="h-4 w-4" />
+                                                        )}
                                                     </Button>
                                                 </HoverCardTrigger>
                                                 <HoverCardContent
@@ -663,7 +699,7 @@ export default function Scenario({
                                 </div>
 
                                 {/* Playground Area - Match sidebar height */}
-                                <div className="flex-1 flex flex-col space-y-4 min-h-[600px]">
+                                <div className="flex-1 flex flex-col space-y-4">
                                     <div className="grid h-full gap-4 grid-rows-2 lg:grid-cols-2 lg:grid-rows-1">
                                         {/* Query Input */}
                                         <div className="flex flex-col space-y-2">
@@ -672,13 +708,13 @@ export default function Scenario({
                                                 value={query}
                                                 onChange={(e) => setQuery(e.target.value)}
                                                 placeholder="Enter a question or prompt to test how the agent responds in this scenario..."
-                                                className="h-full min-h-[200px] lg:min-h-[500px] resize-none"
+                                                className="h-full resize-none"
                                             />
                                         </div>
 
                                         {/* Response Output */}
                                         <div className="flex flex-col space-y-2">
-                                            <div className="h-full min-h-[200px] lg:min-h-[500px] rounded-md border bg-muted p-4 overflow-auto">
+                                            <div className="h-full rounded-md border bg-muted p-4 overflow-auto">
                                                 {isGenerating ? (
                                                     <div className="flex items-center justify-center h-full">
                                                         <div className="text-sm text-muted-foreground">Generating response...</div>
@@ -729,7 +765,7 @@ export default function Scenario({
                         <div className="flex items-center space-x-2">
                             <Button
                                 onClick={handleTestQuery}
-                                disabled={isGenerating || !query.trim() || !selectedAgent}
+                                disabled={isGenerating || !validateForTesting()}
                             >
                                 {isGenerating ? "Generating..." : "Test Query"}
                             </Button>

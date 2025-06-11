@@ -78,8 +78,8 @@ vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
   getStandardsByStandardGroups: vi.fn(),
 }));
 
-vi.mock("@/utils/queries/schedules/get-all-schedules", () => ({
-  getAllSchedules: vi.fn(),
+vi.mock("@/utils/queries/schedules/get-schedules-by-class", () => ({
+  getSchedulesByClass: vi.fn(),
 }));
 
 vi.mock("@/utils/queries/events/get-all-events", () => ({
@@ -194,10 +194,19 @@ describe("ClassDetails", () => {
       },
     ];
 
+    const mockSchedules = [
+      {
+        id: "schedule-1",
+        name: "Weekly Schedule",
+        description: "Main class schedule",
+        classId: "test-class-id",
+        createdAt: "2024-01-01T00:00:00Z",
+      },
+    ];
+
     // Apply mocks
-    require("@/utils/queries/classes/get-class").getClass.mockResolvedValue(
-      mockClass,
-    );
+    const { getClass } = await import("@/utils/queries/classes/get-class");
+    vi.mocked(getClass).mockResolvedValue(mockClass);
     require("@/utils/queries/topics/get-topics-by-class").getTopicsByClass.mockResolvedValue(
       mockTopics,
     );
@@ -228,8 +237,8 @@ describe("ClassDetails", () => {
     require("@/utils/queries/standards/get-standards-by-standardgroups").getStandardsByStandardGroups.mockResolvedValue(
       [],
     );
-    require("@/utils/queries/schedules/get-all-schedules").getAllSchedules.mockResolvedValue(
-      [],
+    require("@/utils/queries/schedules/get-schedules-by-class").getSchedulesByClass.mockResolvedValue(
+      mockSchedules,
     );
     require("@/utils/queries/events/get-all-events").getAllEvents.mockResolvedValue(
       [],
@@ -269,6 +278,7 @@ describe("ClassDetails", () => {
       await waitFor(() => {
         expect(screen.getByText("Performance Trend")).toBeInTheDocument();
         expect(screen.getByText("Course Topics")).toBeInTheDocument();
+        expect(screen.getByText("Schedules")).toBeInTheDocument();
       });
     });
   });
@@ -288,6 +298,10 @@ describe("ClassDetails", () => {
         expect(
           require("@/utils/queries/simulations/get-simulations-by-class")
             .getSimulationsByClass,
+        ).toHaveBeenCalledWith(["test-class-id"]);
+        expect(
+          require("@/utils/queries/schedules/get-schedules-by-class")
+            .getSchedulesByClass,
         ).toHaveBeenCalledWith(["test-class-id"]);
       });
     });
@@ -359,12 +373,13 @@ describe("ClassDetails", () => {
       });
     });
 
-    it("should render charts", async () => {
+    it("should render charts and schedules", async () => {
       renderWithProviders(<ClassDetails classId="test-class-id" />);
 
       await waitFor(() => {
         expect(screen.getByTestId("area-chart")).toBeInTheDocument();
-        expect(screen.getByTestId("pie-chart")).toBeInTheDocument();
+        expect(screen.getByText("Weekly Schedule")).toBeInTheDocument();
+        expect(screen.getByText("Main class schedule")).toBeInTheDocument();
       });
     });
   });

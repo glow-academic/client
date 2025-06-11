@@ -106,7 +106,13 @@ export function Simulations() {
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <Timer className="h-3 w-3" />
-                    {simulation.timeLimit} minutes
+                    {simulation.timeLimit ? `${simulation.timeLimit} minutes` : "No time limit"}
+
+
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Users className="h-3 w-3" />
+                      {simulation.scenarioIds?.length || 0} scenarios
+                    </div>
                   </CardDescription>
                 </div>
                 <Badge variant={simulation.active ? "default" : "secondary"}>
@@ -114,14 +120,6 @@ export function Simulations() {
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Users className="h-3 w-3" />
-                  {simulation.scenarioIds?.length || 0} scenarios
-                </div>
-              </div>
-            </CardContent>
             <CardFooter className="flex justify-end gap-2">
               <Button
                 variant="outline"

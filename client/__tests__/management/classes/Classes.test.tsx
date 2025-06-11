@@ -217,6 +217,10 @@ vi.mock("@/utils/agents", () => ({
   })),
 }));
 
+vi.mock("@/utils/mutations/classes/delete-class", () => ({
+  deleteClass: vi.fn(() => Promise.resolve({ id: "1" })),
+}));
+
 describe("Classes", () => {
   let queryClient: QueryClient;
 
@@ -262,12 +266,41 @@ describe("Classes", () => {
     it("should display aggregated performance trends", async () => {
       renderWithProviders(<ClassesGeneralPage />);
 
-      expect(
-        screen.getByText("Average Score Trend (Last 7 Days)"),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText("Student Personality Distribution"),
-      ).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText("Average Score Trend")).toBeInTheDocument();
+        expect(
+          screen.getByText("Student Personality Distribution"),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("should display class cards with delete functionality", async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("All Classes")).toBeInTheDocument();
+        expect(screen.getByText("CS 180")).toBeInTheDocument();
+        expect(screen.getByText("CS 182")).toBeInTheDocument();
+        expect(screen.getByText("CS180")).toBeInTheDocument();
+        expect(screen.getByText("CS182")).toBeInTheDocument();
+      });
+
+      // Check for delete buttons
+      const deleteButtons = screen.getAllByRole("button");
+      const trashButtons = deleteButtons.filter(button => 
+        button.querySelector('svg')?.getAttribute('class')?.includes('lucide')
+      );
+      expect(trashButtons.length).toBeGreaterThan(0);
+    });
+
+    it("should have time range selectors for charts", async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        // Should have time range selectors for both charts
+        const selectors = screen.getAllByRole("combobox");
+        expect(selectors.length).toBeGreaterThanOrEqual(2);
+      });
     });
 
     it("should show additional metrics cards", async () => {
@@ -297,7 +330,10 @@ describe("Classes", () => {
       renderWithProviders(<ClassesGeneralPage />);
 
       await waitFor(() => {
-        expect(screen.getByText("2")).toBeInTheDocument(); // 2 classes mocked
+        // Look for the specific "Total Classes" card with value "2"
+        expect(screen.getByText("Total Classes")).toBeInTheDocument();
+        const classesCard = screen.getByText("Total Classes").closest('[data-slot="card"]');
+        expect(classesCard).toContainElement(screen.getByText("2"));
       });
     });
 
@@ -355,6 +391,43 @@ describe("Classes", () => {
         expect(
           screen.getByText("Student Personality Distribution"),
         ).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe("User Interactions", () => {
+    it("should handle delete class functionality", async () => {
+      const user = require("@testing-library/user-event").default.setup();
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText("CS 180")).toBeInTheDocument();
+      });
+
+      // Find and click a delete button
+      const deleteButtons = screen.getAllByRole("button");
+      const trashButton = deleteButtons.find(button => 
+        button.querySelector('svg')?.getAttribute('class')?.includes('lucide')
+      );
+      
+      if (trashButton) {
+        await user.click(trashButton);
+        
+        // Should show confirmation dialog
+        await waitFor(() => {
+          expect(screen.getByText("Delete Class")).toBeInTheDocument();
+          expect(screen.getByText(/Are you sure you want to delete this class/)).toBeInTheDocument();
+        });
+      }
+    });
+
+    it("should handle time range changes", async () => {
+      const user = require("@testing-library/user-event").default.setup();
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        const selectors = screen.getAllByRole("combobox");
+        expect(selectors.length).toBeGreaterThanOrEqual(2);
       });
     });
   });

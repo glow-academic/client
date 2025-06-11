@@ -44,7 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Rubric } from "@/types";
 
-export default function   Rubrics() {
+export default function Rubrics() {
   const router = useRouter();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
@@ -129,38 +129,36 @@ export default function   Rubrics() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-2 flex flex-col justify-between">
                   {rubric.description && (
-                    <p className="text-sm text-muted-foreground line-clamp-2">
+                    <p className="text-sm text-muted-foreground line-clamp-4">
                       {rubric.description}
                     </p>
                   )}
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <FileCheck className="h-3 w-3" />
-                    Pass: {rubric.passPoints} pts ({passPercentage}%)
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-3 w-3" />
-                    Assessment criteria
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <FileCheck className="h-3 w-3" />
+                      Pass: {rubric.passPoints} pts ({passPercentage}%)
+                    </div>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(rubric.id)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteClick(rubric.id, rubric.name)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleEdit(rubric.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDeleteClick(rubric.id, rubric.name)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </CardFooter>
             </Card>
           );
         })}
