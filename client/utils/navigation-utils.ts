@@ -159,7 +159,7 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("attempt-")) {
         const attemptId = section.replace("attempt-", "");
-        return `/a/${attemptId}`;
+        return `/home/a/${attemptId}`;
       }
       if (section.startsWith("user-")) {
         const userId = section.replace("user-", "");

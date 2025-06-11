@@ -9,7 +9,6 @@ import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { toast } from "sonner";
 
 // UI Components
@@ -26,12 +25,22 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 // Icons
 import { Send, ChevronDown, Users, CheckCircle } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
+import TableRubric from "@/components/common/rubric/TableRubric";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -85,6 +94,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [endChatLoading, setEndChatLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [showGrades, setShowGrades] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -334,6 +345,22 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
   const isSingleChatAttempt = simulation?.scenarioIds?.length === 1;
+
+  // Get selected chat for rubric display
+  const selectedChat = useMemo(() => {
+    if (!selectedChatId || !chats) return null;
+    return chats.find((chat: SimulationChat) => chat.id === selectedChatId);
+  }, [selectedChatId, chats]);
+
+  // Auto-select first completed chat when results show
+  useEffect(() => {
+    if (showResults && chats && chats.length > 0 && !selectedChatId) {
+      const completedChats = chats.filter((chat: SimulationChat) => chat.completed);
+      if (completedChats.length > 0) {
+        setSelectedChatId(completedChats[0].id);
+      }
+    }
+  }, [showResults, chats, selectedChatId]);
 
   // Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
@@ -825,170 +852,259 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Show results screen
   if (showResults) {
     return (
-      <div className="flex flex-1 flex-col gap-4">
-        <div
-          className="max-w-4xl mx-auto space-y-6"
-          data-testid="attempt-results"
-        >
-          {/* Aggregated Results */}
-          {aggregatedResults && (
-            <Card className="border-2 border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  Overall Results
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <div className="font-medium">
-                      {isSingleChatAttempt ? "Session" : "Chats"} Completed
-                    </div>
-                    <div>{aggregatedResults.totalChats}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Average Score</div>
-                    <div>
-                      {aggregatedResults.averageScore}/
-                      {
-                        rubrics?.find((r) => r.id === simulation?.rubricId)
-                          ?.points
-                      }
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Total Time</div>
-                    <div>{formatTimeDetailed(aggregatedResults.totalTime)}</div>
-                  </div>
-                  <div>
-                    <div className="font-medium">Status</div>
-                    <Badge
-                      variant={
-                        aggregatedResults.overallPassed
-                          ? "default"
-                          : "destructive"
-                      }
+      <div className="flex flex-1 gap-4">
+        {/* Main Results Area */}
+        <div className="flex-1">
+          <Card className="h-full flex flex-col">
+            <CardContent className="flex-1 flex flex-col p-0">
+              {/* Chat Selector and Controls */}
+              <div className="p-4 border-b bg-muted/30">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <Select
+                      value={selectedChatId || ""}
+                      onValueChange={setSelectedChatId}
                     >
-                      {aggregatedResults.overallPassed ? "Passed" : "Failed"}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Individual Chat Results - only show for multi-chat attempts */}
-          {!isSingleChatAttempt && (
-            <div className="grid gap-4">
-              <h2 className="text-xl font-semibold">Individual Chat Results</h2>
-              {allDynamicRubrics.map((rubric: DynamicRubric, index: number) => {
-                const chat = chats?.find(
-                  (c: SimulationChat) => c.id === rubric.chatId,
-                );
-                const actualTimeTaken = chat
-                  ? calculateActualTimeTaken(chat)
-                  : rubric.timeTaken;
-                const skillEntries = Object.entries(rubric.skillScores);
-                return (
-                  <Link href={`/c/${rubric.chatId}`} key={rubric.chatId}>
-                    <Card className="hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>
-                            Chat {index + 1}: {chat?.title}
-                          </span>
-                          <Badge
-                            variant={rubric.passed ? "default" : "destructive"}
-                          >
-                            {rubric.passed ? "Passed" : "Failed"}
-                          </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
-                          <div>
-                            <div className="font-medium">Score</div>
-                            <div>
-                              {rubric.score}/{rubric.totalPossiblePoints}
-                            </div>
-                          </div>
-                          <div>
-                            <div className="font-medium">Time Taken</div>
-                            <div>{formatTimeDetailed(actualTimeTaken)}</div>
-                          </div>
-                          {skillEntries.map(([skillName, score]) => (
-                            <div key={skillName}>
-                              <div className="font-medium">{skillName}</div>
-                              <div>{score}/5</div>
-                            </div>
+                      <SelectTrigger className="w-80">
+                        <SelectValue placeholder="Select chat to view results" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {chats
+                          ?.filter((chat: SimulationChat) => chat.completed)
+                          .map((chat: SimulationChat, index: number) => (
+                            <SelectItem key={chat.id} value={chat.id}>
+                              <div className="flex items-center gap-2">
+                                <span>
+                                  {isSingleChatAttempt
+                                    ? "Session Results"
+                                    : `Chat ${index + 1}: ${chat.title}`}
+                                </span>
+                                <Badge variant="outline" className="text-xs">
+                                  Completed
+                                </Badge>
+                              </div>
+                            </SelectItem>
                           ))}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          )}
-
-          {/* Single Chat Detailed Results */}
-          {isSingleChatAttempt && currentDynamicRubric && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Detailed Results</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">
-                      {currentDynamicRubric.score}/
-                      {currentDynamicRubric.totalPossiblePoints}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Overall Score
-                    </div>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold">
-                      {formatTimeDetailed(
-                        currentChat
-                          ? calculateActualTimeTaken(currentChat)
-                          : currentDynamicRubric.timeTaken,
+
+                  <div className="flex items-center gap-4">
+                    {selectedChat && (
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor="show-grades" className="text-sm">
+                          Show Rubric
+                        </Label>
+                        <Switch
+                          id="show-grades"
+                          checked={showGrades}
+                          onCheckedChange={setShowGrades}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <ScrollArea className="flex-1 px-4">
+                <div className="space-y-4 py-4">
+                  {/* Show rubric when toggle is on */}
+                  {showGrades && selectedChat && simulation?.rubricId ? (
+                    <TableRubric
+                      rubricId={simulation.rubricId}
+                      simulationChatId={selectedChat.id}
+                    />
+                  ) : (
+                    <>
+                      {/* Aggregated Results */}
+                      {aggregatedResults && (
+                        <Card className="border-2 border-primary/20">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              <CheckCircle className="h-5 w-5 text-green-500" />
+                              Overall Results
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <div className="font-medium">
+                                  {isSingleChatAttempt ? "Session" : "Chats"} Completed
+                                </div>
+                                <div>{aggregatedResults.totalChats}</div>
+                              </div>
+                              <div>
+                                <div className="font-medium">Average Score</div>
+                                <div>
+                                  {aggregatedResults.averageScore}/
+                                  {
+                                    rubrics?.find((r) => r.id === simulation?.rubricId)
+                                      ?.points
+                                  }
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-medium">Total Time</div>
+                                <div>{formatTimeDetailed(aggregatedResults.totalTime)}</div>
+                              </div>
+                              <div>
+                                <div className="font-medium">Status</div>
+                                <Badge
+                                  variant={
+                                    aggregatedResults.overallPassed
+                                      ? "default"
+                                      : "destructive"
+                                  }
+                                >
+                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
                       )}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Time Taken
-                    </div>
-                  </div>
-                  {Object.entries(currentDynamicRubric.skillScores).map(
-                    ([skillName, score]) => (
-                      <div key={skillName} className="text-center">
-                        <div className="text-2xl font-bold">{score}/5</div>
-                        <div className="text-sm text-muted-foreground">
-                          {skillName}
-                        </div>
-                      </div>
-                    ),
-                  )}
-                </div>
 
-                <div className="space-y-3">
-                  {Object.entries(currentDynamicRubric.skillFeedbacks).map(
-                    ([skillName, feedback]) => (
-                      <div key={skillName}>
-                        <h4 className="font-medium">{skillName}</h4>
-                        <p className="text-sm text-muted-foreground">
-                          {feedback}
-                        </p>
-                      </div>
-                    ),
+                      {/* Individual Chat Results - only show for multi-chat attempts */}
+                      {!isSingleChatAttempt && (
+                        <div className="grid gap-4">
+                          <h2 className="text-xl font-semibold">Individual Chat Results</h2>
+                          {allDynamicRubrics.map((rubric: DynamicRubric, index: number) => {
+                            const chat = chats?.find(
+                              (c: SimulationChat) => c.id === rubric.chatId,
+                            );
+                            const actualTimeTaken = chat
+                              ? calculateActualTimeTaken(chat)
+                              : rubric.timeTaken;
+                            const skillEntries = Object.entries(rubric.skillScores);
+                            return (
+                              <Card 
+                                key={rubric.chatId}
+                                className={`hover:shadow-md transition-shadow cursor-pointer ${
+                                  selectedChatId === rubric.chatId ? "ring-2 ring-primary" : ""
+                                }`}
+                                onClick={() => setSelectedChatId(rubric.chatId)}
+                              >
+                                <CardHeader>
+                                  <CardTitle className="flex items-center justify-between">
+                                    <span>
+                                      Chat {index + 1}: {chat?.title}
+                                    </span>
+                                    <Badge
+                                      variant={rubric.passed ? "default" : "destructive"}
+                                    >
+                                      {rubric.passed ? "Passed" : "Failed"}
+                                    </Badge>
+                                  </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+                                    <div>
+                                      <div className="font-medium">Score</div>
+                                      <div>
+                                        {rubric.score}/{rubric.totalPossiblePoints}
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <div className="font-medium">Time Taken</div>
+                                      <div>{formatTimeDetailed(actualTimeTaken)}</div>
+                                    </div>
+                                    {skillEntries.map(([skillName, score]) => (
+                                      <div key={skillName}>
+                                        <div className="font-medium">{skillName}</div>
+                                        <div>{score}/5</div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Single Chat Detailed Results */}
+                      {isSingleChatAttempt && currentDynamicRubric && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle>Detailed Results</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                              <div className="text-center">
+                                <div className="text-2xl font-bold">
+                                  {currentDynamicRubric.score}/
+                                  {currentDynamicRubric.totalPossiblePoints}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Overall Score
+                                </div>
+                              </div>
+                              <div className="text-center">
+                                <div className="text-2xl font-bold">
+                                  {formatTimeDetailed(
+                                    currentChat
+                                      ? calculateActualTimeTaken(currentChat)
+                                      : currentDynamicRubric.timeTaken,
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  Time Taken
+                                </div>
+                              </div>
+                              {Object.entries(currentDynamicRubric.skillScores).map(
+                                ([skillName, score]) => (
+                                  <div key={skillName} className="text-center">
+                                    <div className="text-2xl font-bold">{score}/5</div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {skillName}
+                                    </div>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+
+                            <div className="space-y-3">
+                              {Object.entries(currentDynamicRubric.skillFeedbacks).map(
+                                ([skillName, feedback]) => (
+                                  <div key={skillName}>
+                                    <h4 className="font-medium">{skillName}</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      {feedback}
+                                    </p>
+                                  </div>
+                                ),
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+                    </>
                   )}
                 </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Panel - Documents */}
+        {classDocuments.length > 0 && (
+          <div className="w-80 flex-shrink-0">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Documents</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <ScrollArea className="h-[calc(100vh-12rem)]">
+                  <div className="p-4 space-y-4">
+                    {classDocuments.map((doc: Document) => (
+                      <DocumentViewer key={doc.id} document={doc} />
+                    ))}
+                  </div>
+                </ScrollArea>
               </CardContent>
             </Card>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     );
   }

@@ -18,60 +18,140 @@ import { useQuery } from "@tanstack/react-query";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { StandardGroup } from "@/types";
-import { getSimulationChatGrade } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grade";
-import { getEvalChatGrade } from "@/utils/queries/eval_chat_grades/get-eval-chat-grade";
-import { getSimulationChatFeedback } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedback";
-import { getEvalChatFeedback } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedback";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
+import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
+import { StandardGroup, Standard } from "@/types";
 
 interface TableRubricProps {
     rubricId: string;
-    feedback?: string[];
-    simulationChatGradeId?: string;
-    evaluationChatGradeId?: string;
+    simulationChatId?: string;
+    evaluationChatId?: string;
 }
 
-export default function TableRubric({ rubricId, simulationChatGradeId, evaluationChatGradeId, feedback }: TableRubricProps) {
-
-
+export default function TableRubric({ rubricId, simulationChatId, evaluationChatId }: TableRubricProps) {
     const { data: rubric, isLoading: loadingRubric } = useQuery({
         queryKey: ["rubric", rubricId],
         queryFn: () => getRubric(rubricId),
+        enabled: !!rubricId,
     });
 
-    const {data: standardGroups, isLoading: loadingStandardGroups} = useQuery({
+    const { data: standardGroups, isLoading: loadingStandardGroups } = useQuery({
         queryKey: ["standardGroups", rubricId],
         queryFn: () => getStandardGroupsByRubric(rubricId),
+        enabled: !!rubricId,
     });
 
-    const {data: standards, isLoading: loadingStandards} = useQuery({
-        queryKey: ["standards", rubricId],
+    const { data: standards, isLoading: loadingStandards } = useQuery({
+        queryKey: ["standards", standardGroups?.map((group: StandardGroup) => group.id)],
         queryFn: () => getStandardsByStandardGroups(standardGroups!.map((group: StandardGroup) => group.id)),
+        enabled: !!standardGroups && standardGroups.length > 0,
     });
 
-    const {data: simulationChatGrade, isLoading: loadingSimulationChatGrade} = useQuery({
-        queryKey: ["simulationChatGrade", simulationChatGradeId],
-        queryFn: () => getSimulationChatGrade(simulationChatGradeId!),
-        enabled: !!simulationChatGradeId,
+    // Fetch grades and feedback for simulation chats
+    const { data: simulationGrades, isLoading: loadingSimulationGrades } = useQuery({
+        queryKey: ["simulationGrades", simulationChatId],
+        queryFn: () => getSimulationChatGradesBySimulationChats([simulationChatId!]),
+        enabled: !!simulationChatId,
     });
 
-    const {data: simulationChatFeedback, isLoading: loadingSimulationChatFeedback} = useQuery({
-        queryKey: ["simulationChatFeedback", simulationChatGradeId],
-        queryFn: () => getSimulationChatFeedback(simulationChatGradeId!),
-        enabled: !!simulationChatGradeId,
+    const { data: simulationFeedbacks, isLoading: loadingSimulationFeedbacks } = useQuery({
+        queryKey: ["simulationFeedbacks", simulationGrades?.map((grade) => grade.id)],
+        queryFn: () => getSimulationChatFeedbacksBySimulationChatGrades(simulationGrades!.map((grade) => grade.id)),
+        enabled: !!simulationGrades && simulationGrades.length > 0,
     });
 
-    const {data: evaluationChatGrade, isLoading: loadingEvaluationChatGrade} = useQuery({
-        queryKey: ["evaluationChatGrade", evaluationChatGradeId],
-        queryFn: () => getEvalChatGrade(evaluationChatGradeId!),
-        enabled: !!evaluationChatGradeId,
+    // Fetch grades and feedback for evaluation chats
+    const { data: evaluationGrades, isLoading: loadingEvaluationGrades } = useQuery({
+        queryKey: ["evaluationGrades", evaluationChatId],
+        queryFn: () => getEvalChatGradesByEvalChats([evaluationChatId!]),
+        enabled: !!evaluationChatId,
     });
 
-    const {data: evaluationChatFeedback, isLoading: loadingEvaluationChatFeedback} = useQuery({
-        queryKey: ["evaluationChatFeedback", evaluationChatGradeId],
-        queryFn: () => getEvalChatFeedback(evaluationChatGradeId!),
-        enabled: !!evaluationChatGradeId,
+    const { data: evaluationFeedbacks, isLoading: loadingEvaluationFeedbacks } = useQuery({
+        queryKey: ["evaluationFeedbacks", evaluationGrades?.map((grade) => grade.id)],
+        queryFn: () => getEvalChatFeedbacksByEvalChatGrades(evaluationGrades!.map((grade) => grade.id)),
+        enabled: !!evaluationGrades && evaluationGrades.length > 0,
     });
+
+    // Get the appropriate grade and feedback data
+    const grades = simulationChatId ? simulationGrades : evaluationGrades;
+    const feedbacks = simulationChatId ? simulationFeedbacks : evaluationFeedbacks;
+    const chatGrade = grades?.[0]; // Assuming one grade per chat
+
+    // Helper function to get feedback for a specific standard
+    const getFeedbackForStandard = (standardId: string) => {
+        if (!feedbacks || !chatGrade) return null;
+        return feedbacks.find(feedback => {
+            if (feedback.standardId !== standardId) return false;
+
+            if (simulationChatId) {
+                return 'simulationChatGradeId' in feedback && feedback.simulationChatGradeId === chatGrade.id;
+            } else {
+                return 'evalChatGradeId' in feedback && feedback.evalChatGradeId === chatGrade.id;
+            }
+        });
+    };
+
+    // Helper function to determine if a standard was achieved
+    const isStandardAchieved = (standard: Standard, groupStandards: Standard[]) => {
+        const feedback = getFeedbackForStandard(standard.id);
+        if (!feedback) return false;
+
+        // Find the highest achieved standard in this group
+        const groupFeedbacks = groupStandards
+            .map(s => getFeedbackForStandard(s.id))
+            .filter(Boolean);
+
+        if (groupFeedbacks.length === 0) return false;
+
+        const maxScore = Math.max(...groupFeedbacks.map(f => f!.total));
+        return feedback.total === maxScore;
+    };
+
+    // Helper function to determine if a standard should be highlighted (achieved or below achieved)
+    const shouldHighlight = (standard: Standard, groupStandards: Standard[]) => {
+        const feedback = getFeedbackForStandard(standard.id);
+        if (!feedback) return false;
+
+        // Find the achieved standard in this group
+        const achievedStandard = groupStandards.find(s => isStandardAchieved(s, groupStandards));
+        if (!achievedStandard) return false;
+
+        // Highlight if this standard's points are <= achieved standard's points
+        return standard.points <= achievedStandard.points;
+    };
+
+    if (loadingRubric || loadingStandardGroups || loadingStandards) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <div className="text-center space-y-2">
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                    <p className="text-sm text-muted-foreground">Loading rubric...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!rubric || !standardGroups || !standards) {
+        return (
+            <div className="text-center p-8">
+                <p className="text-muted-foreground">Unable to load rubric data</p>
+            </div>
+        );
+    }
+
+    // Group standards by standard group
+    const groupedStandards = standardGroups.map((group: StandardGroup) => ({
+        group,
+        standards: standards
+            .filter((standard: Standard) => standard.standardGroupId === group.id)
+            .sort((a, b) => a.points - b.points), // Sort by points ascending
+    }));
+
+    // Determine the maximum number of standards across all groups for consistent column count
+    const maxStandards = Math.max(...groupedStandards.map(g => g.standards.length));
 
     return (
         <div className="space-y-6 w-full">
@@ -82,119 +162,79 @@ export default function TableRubric({ rubricId, simulationChatGradeId, evaluatio
                             <TableHead className="bg-primary text-primary-foreground font-semibold w-[120px]">
                                 Criteria
                             </TableHead>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold">
-                                Excellent (5)
-                            </TableHead>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold">
-                                Good (4)
-                            </TableHead>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold">
-                                Acceptable (3)
-                            </TableHead>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold">
-                                Marginal (2)
-                            </TableHead>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold">
-                                Poor (1)
-                            </TableHead>
+                            {Array.from({ length: maxStandards }, (_, i) => (
+                                <TableHead key={i} className="bg-primary text-primary-foreground font-semibold">
+                                    Level {i + 1}
+                                </TableHead>
+                            ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        <TableRow>
-                            <TableCell className="font-medium">Active Listening</TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Consistently employs open-ended questions that empower students
-                                to discover solutions independently.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Regularly uses guided questioning, encouraging student reasoning
-                                with occasional prompts.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Occasionally guides students with questions but sometimes
-                                provides direct answers.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Rarely uses questioning techniques, often resorting to hints or
-                                partial solutions.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Directly provided the answer
-                            </TableCell>
-                        </TableRow>
-                        <TableRow className="bg-secondary/20">
-                            <TableCell className="font-medium">Course Objectives</TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Clearly articulates course objectives and aligns explanations
-                                with learning goals, ensuring conceptual clarity.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Explains course objectives accurately and relates examples to
-                                key learning outcomes.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Provides a basic overview of objectives but with occasional
-                                inaccuracies or lack of depth.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Demonstrates limited awareness of course goals and offers
-                                explanations with minor misconceptions.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Didn't know the course material, had to ask students, or clear
-                                demonstration of not knowing
-                            </TableCell>
-                        </TableRow>
-                        <TableRow>
-                            <TableCell className="font-medium">Time Management</TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Begins and concludes sessions within scheduled times, maximizing
-                                productivity and respecting student availability.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Generally adheres to time allocations with minor deviations that
-                                do not impact session quality.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Sometimes exceeds or finishes early, slightly affecting pacing
-                                yet maintaining core engagement.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Frequently mismanages time, leading to rushed explanations or
-                                unnecessary prolongation.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Ended the conversation really early, or made it last longer than
-                                needed
-                            </TableCell>
-                        </TableRow>
-                        <TableRow className="bg-secondary/20">
-                            <TableCell className="font-medium">Adaptability</TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Perfectly adapts approach to diverse student emotional and
-                                attitude types
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Mostly seamlessly adjusted communication and teaching style to
-                                effectively engage students across a wide range of emotional
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Demonstrates thoughtful adjustments to support most student
-                                types, maintaining a supportive and responsive demeanor.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Shows minimal ability to adjust to varied student behaviors,
-                                occasionally missing cues or responding inappropriately.
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                                Fails to adapt to different student types, responding uniformly
-                                without consideration of individual emotional or behavioral
-                                needs.
-                            </TableCell>
-                        </TableRow>
+                        {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
+                            <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
+                                <TableCell className="font-medium">{group.name}</TableCell>
+                                {Array.from({ length: maxStandards }, (_, standardIndex) => {
+                                    const standard = groupStandards[standardIndex];
+                                    if (!standard) {
+                                        return <TableCell key={standardIndex} className="whitespace-normal text-xs"></TableCell>;
+                                    }
+
+                                    const feedback = getFeedbackForStandard(standard.id);
+                                    const isAchieved = isStandardAchieved(standard, groupStandards);
+                                    const shouldHighlightCell = shouldHighlight(standard, groupStandards);
+
+                                    return (
+                                        <TableCell
+                                            key={standard.id}
+                                            className={`whitespace-normal text-xs relative ${shouldHighlightCell
+                                                ? isAchieved
+                                                    ? "bg-green-200 dark:bg-green-900/40"
+                                                    : "bg-green-100 dark:bg-green-900/20"
+                                                : ""
+                                                }`}
+                                        >
+                                            <div className="space-y-2">
+                                                <div className="font-medium text-xs">
+                                                    {standard.name}
+                                                </div>
+
+                                                {isAchieved && feedback ? (
+                                                    <div>{feedback.feedback}</div>
+                                                ) : <div className="text-xs">
+                                                    {standard.description}
+                                                </div>}
+                                            </div>
+                                        </TableCell>
+                                    );
+                                })}
+                            </TableRow>
+                        ))}
                     </TableBody>
                 </Table>
             </div>
+
+            {chatGrade && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <h4 className="font-semibold mb-2">Overall Results</h4>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <div className="font-medium">Total Score</div>
+                            <div>{chatGrade.score}/{rubric.points}</div>
+                        </div>
+                        <div>
+                            <div className="font-medium">Time Taken</div>
+                            <div>{Math.round(chatGrade.timeTaken / 60)} minutes</div>
+                        </div>
+                        <div>
+                            <div className="font-medium">Status</div>
+                            <div className={`font-medium ${chatGrade.score >= rubric.points * 0.7 ? "text-green-600" : "text-red-600"
+                                }`}>
+                                {chatGrade.score >= rubric.points * 0.7 ? "Passed" : "Failed"}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

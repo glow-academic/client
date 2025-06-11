@@ -1,3 +1,9 @@
+/**
+ * unified-sidebar.tsx
+ * Used to display the sidebar for the application
+ * @AshokSaravanan222 & @siladiea
+ * 05/20/2025
+ */
 import * as React from "react";
 import {
   ChevronRight,

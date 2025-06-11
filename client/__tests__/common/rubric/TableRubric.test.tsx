@@ -114,7 +114,7 @@ describe('TableRubric', () => {
  * - Has props: true
  * - Props interface: TableRubricProps
  * - Client component: true
- * - Uses hooks: useQuery, uses
+ * - Uses hooks: useQuery
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
