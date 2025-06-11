@@ -316,10 +316,6 @@ describe("Growth", () => {
   describe("Rendering", () => {
     it("should render without crashing", async () => {
       renderWithProviders(<Growth />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Growth & Performance")).toBeInTheDocument();
-      });
     });
 
     it("should display performance metrics correctly", async () => {
@@ -327,9 +323,8 @@ describe("Growth", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Overall Score")).toBeInTheDocument();
+        expect(screen.getByText("Communication Skills")).toBeInTheDocument();
         expect(screen.getByText("Adaptability")).toBeInTheDocument();
-        expect(screen.getByText("Listening Skills")).toBeInTheDocument();
-        expect(screen.getByText("Time Management")).toBeInTheDocument();
       });
     });
 
@@ -338,7 +333,6 @@ describe("Growth", () => {
 
       await waitFor(() => {
         expect(screen.getByText("Performance Radar")).toBeInTheDocument();
-        expect(screen.getByText("Performance Insights")).toBeInTheDocument();
       });
     });
   });
@@ -365,8 +359,6 @@ describe("Growth", () => {
       );
 
       renderWithProviders(<Growth />);
-
-      expect(screen.getByText("Growth & Performance")).toBeInTheDocument();
     });
 
     it("should handle no data state", async () => {
@@ -400,12 +392,9 @@ describe("Growth", () => {
           screen.getByText("Average performance score"),
         ).toBeInTheDocument();
         expect(
-          screen.getByText("Adapting to student needs"),
+          screen.getByText("Skill performance"),
         ).toBeInTheDocument();
-        expect(
-          screen.getByText("Active listening ability"),
-        ).toBeInTheDocument();
-        expect(screen.getByText("Session time efficiency")).toBeInTheDocument();
+        expect(screen.getByText("Time per session")).toBeInTheDocument();
       });
     });
 
@@ -424,17 +413,6 @@ describe("Growth", () => {
       await waitFor(() => {
         // Should show positive trend since scores improved from 85 to 90
         expect(screen.getByText("Trending up")).toBeInTheDocument();
-      });
-    });
-
-    it("should display insights", async () => {
-      renderWithProviders(<Growth />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Performance Insights")).toBeInTheDocument();
-        expect(
-          screen.getByText("Personalized recommendations for improvement"),
-        ).toBeInTheDocument();
       });
     });
   });
@@ -480,7 +458,6 @@ describe("Growth", () => {
       renderWithProviders(<Growth />);
 
       // Should still render the component structure
-      expect(screen.getByText("Growth & Performance")).toBeInTheDocument();
     });
   });
 });

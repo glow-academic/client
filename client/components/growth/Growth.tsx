@@ -492,35 +492,6 @@ export default function Growth() {
           </div>
         </CardFooter>}
       </Card>
-
-      {/* Insights */}
-      {insights.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Performance Insights</CardTitle>
-            <CardDescription>
-              Personalized recommendations for improvement
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {insights.map((insight, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div
-                    className={`h-2 w-2 rounded-full mt-2 ${insight.type === "success"
-                        ? "bg-green-500"
-                        : insight.type === "warning"
-                          ? "bg-amber-500"
-                          : "bg-blue-500"
-                      }`}
-                  />
-                  <p className="text-sm">{insight.message}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }
