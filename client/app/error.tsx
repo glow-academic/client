@@ -33,10 +33,10 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
                 </div>
 
                 {/* Action Button */}
-                <div>
+                <div className="flex flex-col gap-2">
                     <button
                         onClick={reset}
-                        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors"
+                        className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90 transition-colors"
                     >
                         Try Again
                     </button>

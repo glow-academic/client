@@ -285,7 +285,7 @@ export default function Chat({ chatId }: { chatId: string }) {
 
   const handleGoToAttempt = () => {
     if (attempt?.id) {
-      router.push(`/a/${attempt.id}`);
+      router.push(`/home/a/${attempt.id}`);
     }
   };
 

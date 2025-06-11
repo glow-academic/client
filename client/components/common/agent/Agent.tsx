@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AgentType } from "@/types";
 
 interface AgentProps {
   agentId?: string;
@@ -39,7 +40,7 @@ interface AgentFormData {
   subtitle: string;
   description: string;
   systemPrompt: string;
-  agentType: "default" | "student" | "ta";
+  agentType: AgentType;
   temperature: number;
 }
 
@@ -249,7 +250,7 @@ export default function Agent({
             <Label htmlFor="agentType">Agent Type</Label>
             <Select
               value={formData.agentType}
-              onValueChange={(value: "default" | "student" | "ta") =>
+              onValueChange={(value: AgentType) =>
                 setFormData((prev) => ({ ...prev, agentType: value }))
               }
             >

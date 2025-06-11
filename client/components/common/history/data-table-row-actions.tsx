@@ -21,7 +21,7 @@ export function DataTableRowActions({
   if (showChats) {
     if (!completed && isOwnUser) {
       return (
-        <Link href={`/a/${id}`}>
+        <Link href={`/home/a/${id}`}>
           <Button variant="outline" size="sm" className="h-8">
             Continue
           </Button>
@@ -38,7 +38,7 @@ export function DataTableRowActions({
     }
   } else {
     return (
-      <Link href={`/a/${id}`}>
+      <Link href={`/home/a/${id}`}>
         <Button variant="outline" size="sm" className="h-8">
           View
         </Button>

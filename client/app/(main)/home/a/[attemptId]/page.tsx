@@ -1,5 +1,5 @@
 /**
- * app/a/[attemptId]/page.tsx
+ * app/home/a/[attemptId]/page.tsx
  * Attempt page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

@@ -28,7 +28,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 
 // Icons
-import { Send, ChevronDown, Users, CheckCircle, Activity } from "lucide-react";
+import { Send, ChevronDown, Users, CheckCircle } from "lucide-react";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -36,7 +36,7 @@ import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
-import { Document, Scenario, SimulationChat, SimulationMessage } from "@/types";
+import { Document, SimulationChat, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
@@ -53,6 +53,7 @@ type WindowWithAttemptTimer = Window &
       isActive: boolean;
       showResults: boolean;
       hasTimeLimit: boolean;
+      elapsedTime?: number;
     };
   };
 
@@ -73,8 +74,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
   const [isActive, setIsActive] = useState(true);
-  const [sessionStartTime, setSessionStartTime] = useState<Date | null>(null);
   const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<
     Set<string>
   >(new Set());
@@ -334,47 +335,64 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
   const isSingleChatAttempt = simulation?.scenarioIds?.length === 1;
 
-  // Initialize session timer
+  // Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
-    if (simulation && !sessionStartTime) {
-      setSessionStartTime(new Date());
-      setTimeRemaining(simulation.timeLimit ? simulation.timeLimit * 60 : null); // Convert to seconds
-    }
-  }, [simulation, sessionStartTime]);
+    if (!attempt?.createdAt || !simulation || showResults) return;
 
-  // Timer countdown - only run if there's a time limit
-  useEffect(() => {
-    // Don't run timer if there's no time limit
-    if (
-      !simulation?.timeLimit ||
-      !isActive ||
-      timeRemaining === null ||
-      timeRemaining <= 0 ||
-      showResults
-    )
+    // Calculate time based on actual attempt creation timestamp
+    const calculateTimerValues = () => {
+      const attemptStartTime = new Date(attempt.createdAt);
+      const currentTime = new Date();
+      const elapsedSeconds = Math.floor((currentTime.getTime() - attemptStartTime.getTime()) / 1000);
+
+      if (simulation.timeLimit) {
+        // For time-limited attempts, calculate remaining time
+        const totalTimeSeconds = simulation.timeLimit * 60;
+        const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
+        return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
+      } else {
+        // For unlimited attempts, just track elapsed time
+        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+      }
+    };
+
+    // Initial calculation
+    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } = calculateTimerValues();
+    setElapsedTime(initialElapsed);
+    setTimeRemaining(initialRemaining);
+
+    // Check if time has already expired
+    if (simulation.timeLimit && initialRemaining === 0) {
+      setIsActive(false);
+      setShowResults(true);
+      toast.success(
+        isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+      );
       return;
+    }
 
     const timer = setInterval(() => {
-      setTimeRemaining((prev) => {
-        if (prev === null || prev <= 1) {
-          setIsActive(false);
-          setShowResults(true);
-          toast.success(
-            isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
-          );
-          return 0;
-        }
-        return prev - 1;
-      });
+      const { elapsedTime: newElapsed, timeRemaining: newRemaining } = calculateTimerValues();
+      setElapsedTime(newElapsed);
+      setTimeRemaining(newRemaining);
+
+      // Check if time limit reached
+      if (simulation.timeLimit && newRemaining === 0 && isActive) {
+        setIsActive(false);
+        setShowResults(true);
+        toast.success(
+          isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+        );
+      }
     }, 1000);
 
     return () => clearInterval(timer);
   }, [
-    isActive,
-    timeRemaining,
-    showResults,
-    isSingleChatAttempt,
+    attempt?.createdAt,
     simulation?.timeLimit,
+    showResults,
+    isActive,
+    isSingleChatAttempt,
   ]);
 
   // Reset chat state when moving to next chat
@@ -769,9 +787,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         showResults,
         hasTimeLimit:
           simulation?.timeLimit !== null && simulation?.timeLimit !== undefined,
+        elapsedTime: elapsedTime,
       };
     }
-  }, [timeRemaining, isActive, showResults, simulation?.timeLimit]);
+  }, [timeRemaining, elapsedTime, isActive, showResults, simulation?.timeLimit]);
 
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (

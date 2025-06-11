@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node cypress/scripts/advanced-test-generator.js && node scripts/generate-component-tests.js && next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",

@@ -708,7 +708,7 @@ export default function Home() {
         const data = await response.json();
         toast.dismiss();
         toast.success("Simulation started");
-        router.push(`/a/${data.attempt_id}`);
+        router.push(`/home/a/${data.attempt_id}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
