@@ -185,7 +185,7 @@ export default function Reports() {
               : 0;
 
           return {
-            skill: group.name,
+            skill: group.shortName,
             score: avgSkillScore,
             feedbackCount: groupFeedbacks.length,
           };

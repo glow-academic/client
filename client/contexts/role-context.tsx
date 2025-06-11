@@ -6,6 +6,12 @@
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { 
+  getFirstAvailableSectionForRole, 
+  getSectionRoute,
+  isSectionAvailableForRole 
+} from "@/utils/navigation-utils";
 
 type UserRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
@@ -13,10 +19,13 @@ interface RoleContextType {
   effectiveRole: UserRole;
   simulatedRole: UserRole | null;
   isGuestMode: boolean;
-  setRole: (role: UserRole | null) => void;
+  setRole: (role: UserRole | null, shouldNavigate?: boolean) => void;
   enableGuestMode: () => void;
   disableGuestMode: () => void;
   refreshRole: () => void;
+  getFirstAvailableSection: (role: UserRole) => string;
+  navigateToRoleDefault: (role: UserRole) => void;
+  isSectionAvailable: (section: string, role?: UserRole) => boolean;
   // Debug utilities
   debug: {
     userRole?: UserRole;
@@ -48,6 +57,7 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   // Handle client-side mounting
   useEffect(() => {
@@ -82,9 +92,25 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     return userRole || "guest";
   }, [isClient, isGuestMode, simulatedRole, userRole]);
 
-  const setRole = (role: UserRole | null) => {
+  const getFirstAvailableSection = React.useCallback((role: UserRole) => {
+    return getFirstAvailableSectionForRole(role);
+  }, []);
+
+  const isSectionAvailable = React.useCallback((section: string, role?: UserRole) => {
+    const targetRole = role || effectiveRole;
+    return isSectionAvailableForRole(section, targetRole);
+  }, [effectiveRole]);
+
+  const navigateToRoleDefault = React.useCallback((role: UserRole) => {
+    const defaultSection = getFirstAvailableSectionForRole(role);
+    const route = getSectionRoute(defaultSection);
+    router.push(route);
+  }, [router]);
+
+  const setRole = React.useCallback((role: UserRole | null, shouldNavigate: boolean = true) => {
     if (!isClient) return;
 
+    const previousRole = effectiveRole;
     setSimulatedRole(role);
 
     if (role) {
@@ -105,13 +131,21 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     // Invalidate all queries to force re-fetch with new role
     queryClient.invalidateQueries();
 
+    // Navigate to the appropriate page for the new role if requested
+    if (shouldNavigate && role && role !== previousRole) {
+      // Small delay to ensure state updates are processed
+      setTimeout(() => {
+        navigateToRoleDefault(role);
+      }, 100);
+    }
+
     // Force a small delay to ensure all components re-render
     setTimeout(() => {
       queryClient.invalidateQueries();
-    }, 100);
-  };
+    }, 200);
+  }, [isClient, effectiveRole, queryClient, navigateToRoleDefault]);
 
-  const enableGuestMode = () => {
+  const enableGuestMode = React.useCallback(() => {
     if (!isClient) return;
 
     setIsGuestMode(true);
@@ -119,11 +153,14 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     localStorage.setItem("guestMode", "true");
     localStorage.setItem("simulatedRole", "guest");
 
+    // Navigate to guest default page
+    navigateToRoleDefault("guest");
+
     // Invalidate all queries
     queryClient.invalidateQueries();
-  };
+  }, [isClient, queryClient, navigateToRoleDefault]);
 
-  const disableGuestMode = () => {
+  const disableGuestMode = React.useCallback(() => {
     if (!isClient) return;
 
     setIsGuestMode(false);
@@ -133,18 +170,23 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     if (simulatedRole === "guest") {
       setSimulatedRole(null);
       localStorage.removeItem("simulatedRole");
+      
+      // Navigate to the user's actual role default page
+      if (userRole) {
+        navigateToRoleDefault(userRole);
+      }
     }
 
     // Invalidate all queries
     queryClient.invalidateQueries();
-  };
+  }, [isClient, simulatedRole, userRole, queryClient, navigateToRoleDefault]);
 
-  const refreshRole = () => {
+  const refreshRole = React.useCallback(() => {
     if (!isClient) return;
 
     // Force a refresh by invalidating queries
     queryClient.invalidateQueries();
-  };
+  }, [isClient, queryClient]);
 
   // Debug information
   const debug = React.useMemo(
@@ -167,6 +209,9 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
     enableGuestMode,
     disableGuestMode,
     refreshRole,
+    getFirstAvailableSection,
+    navigateToRoleDefault,
+    isSectionAvailable,
     debug,
   };
 

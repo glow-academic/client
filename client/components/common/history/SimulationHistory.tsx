@@ -11,15 +11,18 @@ import { DataTable } from "./data-table";
 type SimulationHistoryProps = {
   showAll: boolean;
   showChats: boolean;
+  showExport?: boolean;
 };
 
 export default function SimulationHistory({
   showAll,
   showChats,
+  showExport = true,
 }: SimulationHistoryProps) {
-  const { columns, data, userOptions, classOptions } = useColumns({
+  const { columns, data, userOptions, classOptions, scoreOptions } = useColumns({
     showAll,
     showChats,
+    showExport,
   });
 
   return (
@@ -28,6 +31,9 @@ export default function SimulationHistory({
       columns={columns}
       userOptions={userOptions}
       classOptions={classOptions}
+      showChats={showChats}
+      showExport={showExport}
+      scoreOptions={scoreOptions}
     />
   );
 }

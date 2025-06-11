@@ -623,7 +623,7 @@ export default function Home() {
         </div>
       )}
 
-      <SimulationHistory showAll={false} showChats={true} />
+      <SimulationHistory showAll={false} showChats={false} showExport={false} />
 
       {/* No simulations message */}
       {soloSimulations.length === 0 && multiSimulations.length === 0 && (

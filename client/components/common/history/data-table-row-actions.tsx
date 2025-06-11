@@ -8,16 +8,18 @@ interface DataTableRowActionsProps {
   id: string;
   completed: boolean;
   showChats?: boolean;
+  isOwnUser?: boolean;
 }
 
 export function DataTableRowActions({
   id,
   completed,
   showChats = false,
+  isOwnUser = false,
 }: DataTableRowActionsProps) {
   // For non-admin view, render a simple button instead of dropdown
   if (showChats) {
-    if (!completed) {
+    if (!completed && isOwnUser) {
       return (
         <Link href={`/a/${id}`}>
           <Button variant="outline" size="sm" className="h-8">

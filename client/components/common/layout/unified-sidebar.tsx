@@ -129,7 +129,7 @@ export function UnifiedSidebar({
   const [searchTerm, setSearchTerm] = React.useState("");
 
   // Use the role context instead of local state
-  const { effectiveRole, setRole, isGuestMode } = useRole();
+  const { effectiveRole, setRole, isGuestMode, getFirstAvailableSection, isSectionAvailable } = useRole();
   const { userId } = useAuth();
 
   // Fetch user data
@@ -181,15 +181,6 @@ export function UnifiedSidebar({
   const navMain = React.useMemo(() => {
     const menu: NavSection[] = [];
 
-    // if (['instructor', 'instructional', 'admin'].includes(effectiveRole)) {
-    //   menu.push({
-    //     title: "Home",
-    //     url: "#",
-    //     icon: Home,
-    //     section: "home",
-    //   });
-    // }
-
     // Home - Only for TAs and guests
     if (effectiveRole === "ta" || effectiveRole === "guest") {
       menu.push({
@@ -210,7 +201,7 @@ export function UnifiedSidebar({
       });
     }
 
-    // Analytics - Available from TA level and up
+    // Analytics - Available from instructor level and up
     if (["instructor", "instructional", "admin"].includes(effectiveRole)) {
       menu.push({
         title: "Analytics",
@@ -241,7 +232,7 @@ export function UnifiedSidebar({
       });
     }
 
-    // Simulations - Available from instructor level and up
+    // Create - Available from instructor level and up
     if (["instructor", "instructional", "admin"].includes(effectiveRole)) {
       menu.push({
         title: "Create",
@@ -291,32 +282,32 @@ export function UnifiedSidebar({
       });
     }
 
-    // Management - Available from admin level and up
+    // Management - Available from admin level only
     if (["admin"].includes(effectiveRole)) {
       const managementItems: MenuItem[] = [];
 
-      // Staff management - always available for instructional and admin
+      // Staff management - always available for admin
       managementItems.push({
         title: "Staff",
         url: "#",
         section: "staff",
       });
 
-      // Classes - available for instructional and admin
+      // Classes - available for admin
       managementItems.push({
         title: "Classes",
         url: "#",
         section: "classes",
       });
 
-      // Agents - available for instructional and admin
+      // Agents - available for admin
       managementItems.push({
         title: "Agents",
         url: "#",
         section: "agents",
       });
 
-      // Evaluations - available for instructional and admin
+      // Evaluations - available for admin
       managementItems.push({
         title: "Evaluations",
         url: "#",
@@ -351,6 +342,21 @@ export function UnifiedSidebar({
     return menu;
   }, [effectiveRole, availableClasses, searchTerm]);
 
+  // Check if current active section is available for the current role
+  const isCurrentSectionAvailable = React.useMemo(() => {
+    return isSectionAvailable(activeSection);
+  }, [isSectionAvailable, activeSection]);
+
+  // Navigate to first available section if current section is not available
+  React.useEffect(() => {
+    if (!isCurrentSectionAvailable && navMain.length > 0) {
+      const firstAvailableSection = getFirstAvailableSection(effectiveRole);
+      if (firstAvailableSection !== activeSection) {
+        handleSectionChange(firstAvailableSection);
+      }
+    }
+  }, [isCurrentSectionAvailable, navMain, effectiveRole, activeSection, getFirstAvailableSection]);
+
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
     onSectionChange,
@@ -368,11 +374,11 @@ export function UnifiedSidebar({
 
   const handleModeChange = (mode: string) => {
     if (mode === "guest") {
-      setRole("guest");
+      setRole("guest", true); // Navigate to guest default page
     } else if (mode === user?.role) {
-      setRole(null); // Reset to actual user role
+      setRole(null, true); // Reset to actual user role and navigate
     } else {
-      setRole(mode as UserRole);
+      setRole(mode as UserRole, true); // Set simulated role and navigate
     }
   };
 

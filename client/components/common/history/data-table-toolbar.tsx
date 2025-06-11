@@ -12,14 +12,6 @@ import { DatePickerWithRange } from "@/components/ui/date-picker-range";
 
 import { DataTableFacetedFilter } from "@/components/common/history/data-table-faceted-filter";
 
-// Define score options
-const scoreOptions = [
-  { value: "adaptability", label: "Adaptability" },
-  { value: "listening", label: "Listening" },
-  { value: "objectives", label: "Objectives" },
-  { value: "timeManagement", label: "Time Management" },
-];
-
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   userOptions: { value: string; label: string }[];
@@ -28,6 +20,8 @@ interface DataTableToolbarProps<TData> {
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
   viewMode?: "chats" | "attempts";
+  showExport?: boolean;
+  scoreOptions?: { value: string; label: string }[];
 }
 
 export function DataTableToolbar<TData>({
@@ -38,6 +32,8 @@ export function DataTableToolbar<TData>({
   dateRange,
   setDateRange,
   viewMode = "chats",
+  showExport = true,
+  scoreOptions = [],
 }: DataTableToolbarProps<TData>) {
   // Check if any filters other than the date range are active
   const isFiltered =
@@ -90,7 +86,8 @@ export function DataTableToolbar<TData>({
             />
           )}
           {viewMode === "chats" &&
-            table.getColumn("score") && ( // This is for the score column which uses id as accessor
+            table.getColumn("score") &&
+            scoreOptions.length > 0 && ( // Only show if we have score options
               <DataTableFacetedFilter
                 column={table.getColumn("score")}
                 title="Score"
@@ -118,12 +115,14 @@ export function DataTableToolbar<TData>({
             />
           )}
 
-          <ExportButton
-            table={table}
-            userOptions={userOptions}
-            classOptions={classOptions}
-            viewMode={viewMode}
-          />
+          {showExport && (
+            <ExportButton
+              table={table}
+              userOptions={userOptions}
+              classOptions={classOptions}
+              viewMode={viewMode}
+            />
+          )}
 
           <DataTableViewOptions table={table} isAdmin={isAdmin} />
         </div>

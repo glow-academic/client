@@ -25,11 +25,11 @@ export function DataTableColumnHeader<TData, TValue>({
   showChats = false,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <div className={cn(className, showChats && "pl-4")}>{title}</div>;
+    return <div className={cn(className, showChats && "ml-4")}>{title}</div>;
   }
 
   return (
-    <div className={cn("flex items-center space-x-2", className)}>
+    <div className={cn("flex items-center space-x-2", className, showChats && "ml-4")}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -37,7 +37,6 @@ export function DataTableColumnHeader<TData, TValue>({
             size="sm"
             className={cn(
               "-ml-3 h-8 data-[state=open]:bg-accent",
-              showChats && "ml-1",
             )}
           >
             <span>{title}</span>

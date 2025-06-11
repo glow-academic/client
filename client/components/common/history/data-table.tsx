@@ -35,6 +35,8 @@ interface DataTableProps<TData, TValue> {
   userOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   showChats?: boolean;
+  showExport?: boolean;
+  scoreOptions?: { value: string; label: string }[];
 }
 
 export function DataTable<TData, TValue>({
@@ -43,6 +45,8 @@ export function DataTable<TData, TValue>({
   userOptions,
   classOptions,
   showChats,
+  showExport = true,
+  scoreOptions = [],
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
@@ -105,6 +109,9 @@ export function DataTable<TData, TValue>({
         classOptions={classOptions}
         dateRange={dateRange}
         setDateRange={setDateRange}
+        showExport={showExport}
+        scoreOptions={scoreOptions}
+        viewMode={showChats ? "chats" : "attempts"}
       />
       <div className="rounded-md border">
         <Table>

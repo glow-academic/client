@@ -1,5 +1,86 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
+type UserRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
+
+/**
+ * Get the first available section for a given role
+ * This determines where users should be navigated when switching roles
+ */
+export const getFirstAvailableSectionForRole = (role: UserRole): string => {
+  switch (role) {
+    case "guest":
+    case "ta":
+      return "home";
+    case "instructor":
+      return "overview"; // Analytics overview
+    case "instructional":
+      return "overview"; // Analytics overview
+    case "admin":
+      return "overview"; // Analytics overview
+    default:
+      return "home";
+  }
+};
+
+/**
+ * Get all available sections for a given role
+ * This helps determine what sections a user can access
+ */
+export const getAvailableSectionsForRole = (role: UserRole): string[] => {
+  const sections: string[] = [];
+
+  switch (role) {
+    case "guest":
+      sections.push("home");
+      break;
+    case "ta":
+      sections.push("home", "growth");
+      break;
+    case "instructor":
+      sections.push(
+        "overview", "performance", "reports", "logs", // Analytics
+        "scenarios", "simulations", "rubrics", // Create
+        "classes" // Classes (filtered by assignment)
+      );
+      break;
+    case "instructional":
+      sections.push(
+        "overview", "performance", "reports", "logs", // Analytics
+        "scenarios", "simulations", "rubrics", // Create
+        "classes" // Classes (all)
+      );
+      break;
+    case "admin":
+      sections.push(
+        "overview", "performance", "reports", "logs", // Analytics
+        "scenarios", "simulations", "rubrics", // Create
+        "classes", // Classes (all)
+        "staff", "agents", "evals" // Management
+      );
+      break;
+  }
+
+  // All roles can access profile
+  sections.push("profile");
+
+  return sections;
+};
+
+/**
+ * Check if a section is available for a given role
+ */
+export const isSectionAvailableForRole = (section: string, role: UserRole): boolean => {
+  const availableSections = getAvailableSectionsForRole(role);
+  
+  // Handle dynamic sections (class-*, agent-*, etc.)
+  if (section.includes("-")) {
+    const baseSection = section.split("-")[0];
+    return availableSections.some(s => s.startsWith(baseSection));
+  }
+  
+  return availableSections.includes(section);
+};
+
 /**
  * Maps a section identifier to its corresponding route path
  */
@@ -136,7 +217,35 @@ export const createBreadcrumbSectionChangeHandler = (
 };
 
 /**
- * Creates a section change handler with custom onSectionChange callback support
+ * Creates a role-aware section change handler that ensures users can only navigate to allowed sections
+ */
+export const createRoleAwareSectionChangeHandler = (
+  router: AppRouterInstance,
+  currentRole: UserRole,
+  onSectionChange?: (section: string) => void,
+) => {
+  return (section: string) => {
+    // Check if the section is available for the current role
+    if (!isSectionAvailableForRole(section, currentRole)) {
+      // If not available, navigate to the first available section for this role
+      const fallbackSection = getFirstAvailableSectionForRole(currentRole);
+      section = fallbackSection;
+    }
+
+    // If onSectionChange prop is provided, use it (for layout components)
+    if (onSectionChange) {
+      onSectionChange(section);
+      return;
+    }
+
+    // Otherwise, handle navigation internally
+    const route = getSectionRoute(section);
+    router.push(route);
+  };
+};
+
+/**
+ * Creates a flexible section change handler with custom onSectionChange callback support
  * This is useful for components that might want to handle section changes differently
  */
 export const createFlexibleSectionChangeHandler = (
