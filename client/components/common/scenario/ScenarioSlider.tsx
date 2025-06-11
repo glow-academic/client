@@ -26,6 +26,7 @@ interface ScenarioSliderProps {
   step?: number
   onValueChange?: (value: number[]) => void
   value?: number[]
+  disabled?: boolean
 }
 
 export function ScenarioSlider({
@@ -37,6 +38,7 @@ export function ScenarioSlider({
   step = 0.1,
   onValueChange: externalOnValueChange,
   value: externalValue,
+  disabled = false,
 }: ScenarioSliderProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue)
 
@@ -44,6 +46,7 @@ export function ScenarioSlider({
   const value = externalValue || internalValue
 
   const handleValueChange = (newValue: number[]) => {
+    if (disabled) return;
     if (!externalValue) {
       setInternalValue(newValue)
     }
@@ -56,9 +59,9 @@ export function ScenarioSlider({
         <HoverCardTrigger asChild>
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="slider">{label}</Label>
-              <span className="w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm text-muted-foreground hover:border-border">
-                {value}
+              <Label htmlFor="slider" className={disabled ? "text-muted-foreground" : ""}>{label}</Label>
+              <span className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}>
+                {disabled ? "N/A" : value}
               </span>
             </div>
             <Slider
@@ -68,8 +71,9 @@ export function ScenarioSlider({
               defaultValue={value}
               step={step}
               onValueChange={handleValueChange}
-              className="[&_[role=slider]]:h-4 [&_[role=slider]]:w-4"
+              className={`[&_[role=slider]]:h-4 [&_[role=slider]]:w-4 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               aria-label={label}
+              disabled={disabled}
             />
           </div>
         </HoverCardTrigger>

@@ -133,7 +133,7 @@ class Evals(_Base, table=True):
 
 class Scenarios(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='scenarios_agent_id_fkey'),
+        ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='SET NULL', name='scenarios_agent_id_fkey'),
         ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='scenarios_class_id_fkey'),
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
@@ -142,12 +142,12 @@ class Scenarios(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    agent_id: UUID = Field(sa_column=Column('agent_id', Uuid))
-    crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
-    intensity: int = Field(sa_column=Column('intensity', Integer))
-    seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
-    documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    agent_id: Optional[UUID] = Field(default=None, sa_column=Column('agent_id', Uuid))
     class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
+    crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
+    intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
+    seniority: Optional[str] = Field(default=None, sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels')))
+    documents: Optional[list] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid())))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')

@@ -55,12 +55,12 @@ interface ScenarioProps {
 interface ScenarioFormData {
     name: string;
     description: string;
-    agentId: string;
-    classId: string;
+    agentId: string | null;
+    classId: string | null;
     documents: string[];
-    crowdedness: number;
-    intensity: number;
-    seniority: "freshman" | "sophomore" | "junior" | "senior";
+    crowdedness: number | null;
+    intensity: number | null;
+    seniority: "freshman" | "sophomore" | "junior" | "senior" | null;
 }
 
 interface FormErrors {
@@ -92,12 +92,12 @@ export default function Scenario({
     const initialFormData: ScenarioFormData = {
         name: "",
         description: "",
-        agentId: "",
-        classId: "",
+        agentId: null,
+        classId: null,
         documents: [],
-        crowdedness: 1,
-        intensity: 1,
-        seniority: "freshman",
+        crowdedness: null,
+        intensity: null,
+        seniority: null,
     };
 
     const [formData, setFormData] = useState<ScenarioFormData>(initialFormData);
@@ -203,22 +203,22 @@ export default function Scenario({
             setFormData({
                 name: scenarioData.name || "",
                 description: scenarioData.description || "",
-                agentId: scenarioData.agentId || "",
-                classId: scenarioData.classId || "",
+                agentId: scenarioData.agentId,
+                classId: scenarioData.classId,
                 documents: scenarioData.documents || [],
-                crowdedness: scenarioData.crowdedness || 1,
-                intensity: scenarioData.intensity || 1,
-                seniority: scenarioData.seniority || "freshman",
+                crowdedness: scenarioData.crowdedness,
+                intensity: scenarioData.intensity,
+                seniority: scenarioData.seniority,
             });
-            // Mark seniority as explicitly set if we're loading existing data
-            setSeniorityExplicitlySet(true);
+            // Mark seniority as explicitly set if we're loading existing data and seniority is not null
+            setSeniorityExplicitlySet(!!scenarioData.seniority);
         }
     }, [scenarioId, editingScenarioId, scenario]);
 
     // Event handlers
     const handleInputChange = (
         field: keyof ScenarioFormData,
-        value: string | number | boolean | string[],
+        value: string | number | boolean | string[] | null,
     ) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
         if (errors[field as keyof FormErrors]) {
@@ -259,19 +259,12 @@ export default function Scenario({
     const validateForm = (): boolean => {
         const newErrors: FormErrors = {};
 
-        if (!formData.name.trim()) {
-            newErrors.name = "Name is required";
-        }
-
-        if (!formData.agentId) {
-            newErrors.agentId = "An agent must be selected";
-        }
-
-        if (formData.crowdedness < 1 || formData.crowdedness > 10) {
+        // All fields are now optional, so we only validate format/range constraints
+        if (formData.crowdedness && (formData.crowdedness < 1 || formData.crowdedness > 10)) {
             newErrors.crowdedness = "Crowdedness must be between 1 and 10";
         }
 
-        if (formData.intensity < 1 || formData.intensity > 10) {
+        if (formData.intensity && (formData.intensity < 1 || formData.intensity > 10)) {
             newErrors.intensity = "Intensity must be between 1 and 10";
         }
 
@@ -281,7 +274,7 @@ export default function Scenario({
 
     // Separate validation for testing - more permissive
     const validateForTesting = (): boolean => {
-        return !!formData.agentId && !!query.trim();
+        return !!query.trim();
     };
 
     const resetFormAndState = () => {
@@ -305,14 +298,14 @@ export default function Scenario({
 
         try {
             const payload = {
-                name: formData.name,
-                description: formData.description,
-                agentId: formData.agentId,
+                name: formData.name.trim() || "",
+                description: formData.description.trim() || "",
+                agentId: formData.agentId || null,
                 classId: formData.classId || null,
                 documents: formData.documents,
-                crowdedness: formData.crowdedness,
-                intensity: formData.intensity,
-                seniority: formData.seniority,
+                crowdedness: formData.crowdedness || null,
+                intensity: formData.intensity || null,
+                seniority: formData.seniority || null,
             };
 
             const targetScenarioId = scenarioId || editingScenarioId;
@@ -372,7 +365,7 @@ export default function Scenario({
         try {
             const formDataToSend = new FormData();
             
-            // Only append non-empty values
+            // Only append non-null values
             if (formData.agentId) {
                 formDataToSend.append('agent_id', formData.agentId);
             }
@@ -384,9 +377,15 @@ export default function Scenario({
                     formDataToSend.append('document_ids', docId);
                 }
             });
-            formDataToSend.append('seniority', formData.seniority);
-            formDataToSend.append('crowdedness', formData.crowdedness.toString());
-            formDataToSend.append('intensity', formData.intensity.toString());
+            if (formData.seniority) {
+                formDataToSend.append('seniority', formData.seniority);
+            }
+            if (formData.crowdedness) {
+                formDataToSend.append('crowdedness', formData.crowdedness.toString());
+            }
+            if (formData.intensity) {
+                formDataToSend.append('intensity', formData.intensity.toString());
+            }
 
             const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/new`, {
                 method: 'POST',
@@ -537,7 +536,6 @@ export default function Scenario({
                                     onChange={(e) => handleInputChange("name", e.target.value)}
                                     placeholder="e.g., Office Hours Help Session"
                                     className={errors.name ? "border-destructive" : ""}
-                                    required
                                 />
                                 {errors.name && (
                                     <p className="text-sm text-destructive">{errors.name}</p>
@@ -603,27 +601,83 @@ export default function Scenario({
                             />
 
                             {/* Scenario Parameters */}
-                            <ScenarioSlider
-                                label="Crowdedness"
-                                description="How busy or crowded the scenario environment should be"
-                                min={1}
-                                max={10}
-                                step={1}
-                                defaultValue={[formData.crowdedness]}
-                                value={[formData.crowdedness]}
-                                onValueChange={(value) => handleInputChange("crowdedness", value[0])}
-                            />
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label>Crowdedness</Label>
+                                        {formData.crowdedness !== null && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleInputChange("crowdedness", null)}
+                                                className="h-6 px-2 text-xs"
+                                            >
+                                                Clear
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {formData.crowdedness !== null ? (
+                                        <ScenarioSlider
+                                            label=""
+                                            description="How busy or crowded the scenario environment should be"
+                                            min={1}
+                                            max={10}
+                                            step={1}
+                                            defaultValue={[formData.crowdedness]}
+                                            value={[formData.crowdedness]}
+                                            onValueChange={(value) => handleInputChange("crowdedness", value[0])}
+                                        />
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleInputChange("crowdedness", 1)}
+                                            className="w-full"
+                                        >
+                                            Set Crowdedness
+                                        </Button>
+                                    )}
+                                </div>
 
-                            <ScenarioSlider
-                                label="Intensity"
-                                description="How intense or challenging the scenario should be"
-                                min={1}
-                                max={10}
-                                step={1}
-                                defaultValue={[formData.intensity]}
-                                value={[formData.intensity]}
-                                onValueChange={(value) => handleInputChange("intensity", value[0])}
-                            />
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <Label>Intensity</Label>
+                                        {formData.intensity !== null && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleInputChange("intensity", null)}
+                                                className="h-6 px-2 text-xs"
+                                            >
+                                                Clear
+                                            </Button>
+                                        )}
+                                    </div>
+                                    {formData.intensity !== null ? (
+                                        <ScenarioSlider
+                                            label=""
+                                            description="How intense or challenging the scenario should be"
+                                            min={1}
+                                            max={10}
+                                            step={1}
+                                            defaultValue={[formData.intensity]}
+                                            value={[formData.intensity]}
+                                            onValueChange={(value) => handleInputChange("intensity", value[0])}
+                                        />
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            onClick={() => handleInputChange("intensity", 1)}
+                                            className="w-full"
+                                        >
+                                            Set Intensity
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
                         </div>
 
                         {/* Main Content Area */}
@@ -669,7 +723,7 @@ export default function Scenario({
                                             id="description"
                                             value={formData.description}
                                             onChange={(e) => handleInputChange("description", e.target.value)}
-                                            placeholder="Describe the scenario context, setting, and expected interactions..."
+                                            placeholder="Describe the scenario context, setting, and expected interactions... If left blank, the AI will generate a scenario for you."
                                             className="min-h-[80px] resize-none"
                                             rows={3}
                                         />

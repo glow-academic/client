@@ -171,14 +171,14 @@ export const simulations = pgTable("simulations", {
 export const scenarios = pgTable("scenarios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text(),
-	description: text(),
+	name: text().notNull(),
+	description: text().notNull(),
 	agentId: uuid("agent_id"),
 	classId: uuid("class_id"),
 	crowdedness: integer(),
 	intensity: integer(),
 	seniority: seniorityLevels(),
-	documents: uuid().array().default(["RAY"]).notNull(),
+	documents: uuid().array(),
 }, (table) => [
 	foreignKey({
 			columns: [table.agentId],

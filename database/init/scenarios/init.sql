@@ -10,14 +10,14 @@ CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophomore', 'junior', 'senior
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  name       TEXT        NULL,
-  description TEXT        NULL,
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL,
   agent_id UUID         NULL REFERENCES agents(id)  ON DELETE SET NULL,
   class_id   UUID        NULL REFERENCES classes(id) ON DELETE SET NULL,
   crowdedness INTEGER     NULL,
   intensity INTEGER     NULL,
   seniority seniority_levels NULL,
-  documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[]
+  documents UUID[]       NULL
 );
 
 -- ============================================================================
@@ -41,7 +41,8 @@ INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, i
 
 -- Insert Practice Scenarios (for individual practice without specific scenarios)
 INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, intensity, seniority, documents) VALUES
-  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Scenario', NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[]::UUID[]),
-  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Scenario', NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[]::UUID[]),
-  ('cccccccc-1111-2222-3333-444444444444', 'Confused Scenario', NULL, NULL, NULL, NULL, NULL, NULL, ARRAY[]::UUID[])
+  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Scenario', '', '11111111-aaaa-aaaa-aaaa-111111111111', NULL, NULL, NULL, NULL, NULL),
+  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Scenario', '', '22222222-bbbb-bbbb-bbbb-222222222222', NULL, NULL, NULL, NULL, NULL),
+  ('cccccccc-1111-2222-3333-444444444444', 'Confused Scenario', '', '33333333-cccc-cccc-cccc-333333333333', NULL, NULL, NULL, NULL, NULL)
 ON CONFLICT (id) DO NOTHING;
+

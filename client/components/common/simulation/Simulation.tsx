@@ -62,6 +62,7 @@ import { createSimulation } from "@/utils/mutations/simulations/create-simulatio
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 
 interface SimulationProps {
   mode?: "list" | "create";
@@ -73,11 +74,15 @@ interface SimulationFormData {
   timeLimit: number | null;
   scenarioIds: string[];
   active: boolean;
+  classId: string | null;
+  rubricId: string;
 }
 
 interface FormErrors {
   title?: string;
   timeLimit?: string;
+  classId?: string;
+  rubricId?: string;
 }
 
 export default function Simulation({
@@ -104,6 +109,8 @@ export default function Simulation({
     timeLimit: 15,
     scenarioIds: [],
     active: true,
+    classId: null,
+    rubricId: "",
   };
 
   const [formData, setFormData] = useState<SimulationFormData>(initialFormData);
@@ -130,6 +137,11 @@ export default function Simulation({
     queryFn: () => getAllScenarios(),
   });
 
+  const { data: classes = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
   // Load simulation data if editing
   useEffect(() => {
     const targetSimulationId = simulationId || editingSimulationId;
@@ -143,6 +155,8 @@ export default function Simulation({
           timeLimit: simulationToEdit.timeLimit || 15,
           scenarioIds: simulationToEdit.scenarioIds || [],
           active: simulationToEdit.active ?? true,
+          classId: simulationToEdit.classId || null,
+          rubricId: simulationToEdit.rubricId || "",
         });
       }
     }
@@ -223,6 +237,10 @@ export default function Simulation({
       newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
     }
 
+    if (!formData.rubricId) {
+      newErrors.rubricId = "Rubric is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -253,7 +271,8 @@ export default function Simulation({
         timeLimit: formData.timeLimit,
         scenarioIds: formData.scenarioIds,
         active: formData.active,
-        rubricId: rubrics[0].id, // TODO: change to having a rubric selection
+        classId: formData.classId,
+        rubricId: formData.rubricId,
       };
 
       let result;
@@ -351,6 +370,17 @@ export default function Simulation({
                           {simulation.scenarioIds?.filter(
                             (id: string) => id !== "RAY",
                           ).length === 0 ? "scenarios (random selection)" : "scenarios"}
+                        </span>
+                        <br />
+                        <span className="inline-flex items-center text-sm text-muted-foreground">
+                          Class: {simulation.classId ? 
+                            classes.find((cls: any) => cls.id === simulation.classId)?.classCode || 
+                            classes.find((cls: any) => cls.id === simulation.classId)?.name || 
+                            "Unknown" 
+                            : "Global"}
+                        </span>
+                        <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
+                          Rubric: {rubrics.find((rubric: any) => rubric.id === simulation.rubricId)?.name || "Unknown"}
                         </span>
                       </CardDescription>
                     </div>
@@ -454,6 +484,51 @@ export default function Simulation({
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="classId">Class (Optional)</Label>
+          <Select
+            value={formData.classId || ""}
+            onValueChange={(value) => handleInputChange("classId", value || null)}
+          >
+            <SelectTrigger className={errors.classId ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select a class..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">No class (global simulation)</SelectItem>
+              {classes.map((cls: any) => (
+                <SelectItem key={cls.id} value={cls.id}>
+                  {cls.classCode || cls.name} - {cls.term} {cls.year}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.classId && (
+            <p className="text-sm text-destructive">{errors.classId}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="rubricId">Rubric</Label>
+          <Select
+            value={formData.rubricId}
+            onValueChange={(value) => handleInputChange("rubricId", value)}
+          >
+            <SelectTrigger className={errors.rubricId ? "border-destructive" : ""}>
+              <SelectValue placeholder="Select a rubric..." />
+            </SelectTrigger>
+            <SelectContent>
+              {rubrics.map((rubric: any) => (
+                <SelectItem key={rubric.id} value={rubric.id}>
+                  {rubric.name} ({rubric.points} points)
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {errors.rubricId && (
+            <p className="text-sm text-destructive">{errors.rubricId}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
 
           <div className="flex justify-between items-center">
             <div>
@@ -553,18 +628,18 @@ export default function Simulation({
 
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">
-                          {scenario.name}
+                          {scenario.name || "Unnamed Scenario"}
                         </h4>
                         <p className="text-xs text-muted-foreground line-clamp-3">
-                          {scenario.description}
+                          {scenario.description || "No description provided"}
                         </p>
 
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">
-                            Crowdedness: {scenario.crowdedness}
+                            Crowdedness: {scenario.crowdedness ?? "N/A"}
                           </Badge>
                           <Badge variant="outline" className="text-xs">
-                            Intensity: {scenario.intensity}
+                            Intensity: {scenario.intensity ?? "N/A"}
                           </Badge>
                         </div>
 
@@ -575,11 +650,15 @@ export default function Simulation({
                               ? "bg-green-100 text-green-800"
                               : scenario.seniority === "junior"
                                 ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
+                                : scenario.seniority === "senior"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-gray-100 text-gray-800"
                             }`}
                         >
-                          {scenario.seniority.charAt(0).toUpperCase() +
-                            scenario.seniority.slice(1)}
+                          {scenario.seniority 
+                            ? scenario.seniority.charAt(0).toUpperCase() + scenario.seniority.slice(1)
+                            : "No Level"
+                          }
                         </Badge>
                       </div>
                     </div>

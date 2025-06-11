@@ -34,6 +34,10 @@ vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
   getAllRubrics: vi.fn(),
 }));
 
+vi.mock('@/utils/queries/classes/get-all-classes', () => ({
+  getAllClasses: vi.fn(),
+}));
+
 vi.mock('@/utils/mutations/simulations/create-simulation', () => ({
   createSimulation: vi.fn(),
 }));
@@ -51,6 +55,7 @@ import { getAllDocuments } from '@/utils/queries/documents/get-all-documents';
 import { getAllSimulations } from '@/utils/queries/simulations/get-all-simulations';
 import { getAllScenarios } from '@/utils/queries/scenarios/get-all-scenarios';
 import { getAllRubrics } from '@/utils/queries/rubrics/get-all-rubrics';
+import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
 import { createSimulation } from '@/utils/mutations/simulations/create-simulation';
 import { updateSimulation } from '@/utils/mutations/simulations/update-simulation';
 import { deleteSimulation } from '@/utils/mutations/simulations/delete-simulation';
@@ -80,6 +85,8 @@ const mockSimulations = [
     documents: ['doc-1'],
     scenarioIds: ['scenario-1', 'scenario-2'],
     active: true,
+    classId: 'class-1',
+    rubricId: 'rubric-1',
   },
   {
     id: 'sim-2',
@@ -88,7 +95,14 @@ const mockSimulations = [
     documents: [],
     scenarioIds: ['scenario-3'],
     active: false,
+    classId: null,
+    rubricId: 'rubric-2',
   },
+];
+
+const mockClasses = [
+  { id: 'class-1', name: 'Introduction to Mathematics', classCode: 'MATH 101', term: 'Fall', year: 2023 },
+  { id: 'class-2', name: 'Advanced Calculus', classCode: 'MATH 301', term: 'Spring', year: 2024 },
 ];
 
 describe('Simulation', () => {
@@ -107,6 +121,7 @@ describe('Simulation', () => {
     (getAllScenarios as any).mockResolvedValue(mockScenarios);
     (getAllRubrics as any).mockResolvedValue(mockRubrics);
     (getAllSimulations as any).mockResolvedValue(mockSimulations);
+    (getAllClasses as any).mockResolvedValue(mockClasses);
     (createSimulation as any).mockResolvedValue({ id: 'new-sim-id' });
     (updateSimulation as any).mockResolvedValue(undefined);
     (deleteSimulation as any).mockResolvedValue(undefined);
@@ -425,7 +440,16 @@ describe('Simulation', () => {
       const titleInput = screen.getByLabelText(/simulation title/i);
       await user.type(titleInput, 'Test Simulation');
       
-      // Add a scenario first
+      // Select a rubric (required)
+      await waitFor(() => {
+        expect(screen.getByText('Select a rubric...')).toBeInTheDocument();
+      });
+      
+      const rubricSelect = screen.getByRole('combobox', { name: /rubric/i });
+      await user.click(rubricSelect);
+      await user.click(screen.getByText('Math Assessment Rubric (100 points)'));
+      
+      // Add a scenario
       await waitFor(() => {
         expect(screen.getByText('Add scenario')).toBeInTheDocument();
       });
@@ -441,9 +465,9 @@ describe('Simulation', () => {
         expect(createSimulation).toHaveBeenCalledWith({
           title: 'Test Simulation',
           timeLimit: 15,
-          documents: ['RAY'],
           scenarioIds: ['scenario-1'],
           active: true,
+          classId: null,
           rubricId: 'rubric-1',
         });
       });
@@ -581,6 +605,7 @@ describe('Simulation', () => {
         expect(getAllDocuments).toHaveBeenCalled();
         expect(getAllScenarios).toHaveBeenCalled();
         expect(getAllRubrics).toHaveBeenCalled();
+        expect(getAllClasses).toHaveBeenCalled();
       });
     });
 

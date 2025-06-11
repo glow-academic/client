@@ -83,8 +83,8 @@ export function Scenarios() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle className="text-base">{scenario.name}</CardTitle>
-                  <CardDescription>{scenario.description}</CardDescription>
+                  <CardTitle className="text-base">{scenario.name || "Unnamed Scenario"}</CardTitle>
+                  <CardDescription>{scenario.description || "No description provided"}</CardDescription>
                 </div>
                 <div className="flex gap-2 items-center">
                   <Button
@@ -98,7 +98,7 @@ export function Scenarios() {
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      handleDeleteClick(scenario.id, scenario.name)
+                      handleDeleteClick(scenario.id, scenario.name || "Unnamed Scenario")
                     }
                   >
                     <Trash2 className="h-4 w-4" />

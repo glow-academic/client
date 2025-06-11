@@ -70,7 +70,7 @@ async def run_scenario_agent(
     else:
         intensity_info = get_intensity_info(intensity)
 
-    if document_ids is None:
+    if document_ids is None or len(document_ids) == 0:
         document_info = None
     else:
         document_info = get_document_info(document_ids, session)
@@ -79,6 +79,7 @@ async def run_scenario_agent(
 
     input_items = [agent_info, class_info, document_info, seniority_info, crowdedness_info, intensity_info]
     input_items = [item for item in input_items if item is not None]
+    logger.info(f"Input items: {input_items}")
 
     result = await Runner.run(scenario_agent.agent(), input=input_items)
 

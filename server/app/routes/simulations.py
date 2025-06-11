@@ -89,12 +89,21 @@ async def start_attempt(
                 status_code=400, detail=f"Scenario {first_scenario_id} not found"
             )
         
+        # Use agent-specific default titles for simulations
+        agent = session.exec(
+            select(Agents).where(Agents.id == scenario.agent_id)
+        ).one_or_none()
+        if agent:
+            chat_title = f"{agent.name} Student Session"
+        else:
+            chat_title = "Practice Session"
+        
         # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
         if not scenario.description or scenario.description == "":
             name, description = await run_scenario_agent(
                 agent_id=scenario.agent_id,
                 class_id=scenario.class_id,
-                document_ids=scenario.document_ids,
+                document_ids=scenario.documents,
                 seniority=scenario.seniority,
                 crowdedness=scenario.crowdedness,
                 intensity=scenario.intensity,
@@ -106,7 +115,7 @@ async def start_attempt(
                 description=description,
                 agent_id=scenario.agent_id,
                 class_id=scenario.class_id,
-                document_ids=scenario.document_ids,
+                document_ids=scenario.documents,
                 seniority=scenario.seniority,
                 crowdedness=scenario.crowdedness,
                 intensity=scenario.intensity,
@@ -117,15 +126,7 @@ async def start_attempt(
             session.refresh(new_scenario)
 
             first_scenario_id = new_scenario.id
-        
-        # Use agent-specific default titles for simulations
-        agent = session.exec(
-            select(Agents).where(Agents.id == scenario.agent_id)
-        ).one_or_none()
-        if agent:
-            chat_title = f"{agent.name} Student Session"
-        else:
-            chat_title = "Practice Session"
+
 
         # Create the chat with the scenario and link it to this attempt
         chat = SimulationChats(
