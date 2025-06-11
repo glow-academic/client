@@ -19,30 +19,6 @@ export default function NotFound() {
     <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/30 px-4">
       <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg shadow-lg border border-border text-center">
         <div className="space-y-4">
-          {/* Glow Brand */}
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Glow</h1>
-            <p className="text-sm text-muted-foreground">
-              Graduate Learning Orientation Workshop
-            </p>
-          </div>
-
-          {/* 404 Icon */}
-          <div className="mx-auto w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center">
-            <svg
-              className="w-8 h-8 text-muted-foreground"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.291-1.007-5.691-2.709M15 11V9a6 6 0 10-12 0v2m5.121 9.121A2.992 2.992 0 0010 21a2.992 2.992 0 002.121-.879z"
-              />
-            </svg>
-          </div>
 
           {/* 404 Message */}
           <div className="space-y-2">

@@ -5,7 +5,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-  CREATE TYPE agent_type AS ENUM ('default', 'student', 'ta');
+  CREATE TYPE agent_type AS ENUM ('student', 'ta');
 
   CREATE TABLE agents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),

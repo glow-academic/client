@@ -1,10 +1,11 @@
 import { pgTable, unique, uuid, boolean, timestamp, text, integer, foreignKey, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
-export const agentType = pgEnum("agent_type", ['default', 'student', 'ta'])
+export const agentType = pgEnum("agent_type", ['student', 'ta'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
 export const evalType = pgEnum("eval_type", ['student', 'ta'])
+export const rubricType = pgEnum("rubric_type", ['simulation', 'eval'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
 export const userRole = pgEnum("user_role", ['admin', 'instructional', 'instructor', 'ta'])
 
@@ -101,6 +102,7 @@ export const rubrics = pgTable("rubrics", {
 	description: text().notNull(),
 	points: integer().notNull(),
 	passPoints: integer("pass_points").notNull(),
+	rubricType: rubricType("rubric_type").default('simulation').notNull(),
 });
 
 export const standardGroups = pgTable("standard_groups", {

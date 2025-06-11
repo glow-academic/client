@@ -54,15 +54,16 @@ import {
   GripVertical,
   MessageSquare,
 } from "lucide-react";
-import { Document, Scenario } from "@/types";
+import { Document, Rubric, Scenario } from "@/types";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { useRouter } from "next/navigation";
 
 interface SimulationProps {
   mode?: "list" | "create";
@@ -103,6 +104,7 @@ export default function Simulation({
     null,
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
+  const router = useRouter();
 
   const initialFormData: SimulationFormData = {
     title: "",
@@ -290,6 +292,7 @@ export default function Simulation({
           ? "Simulation updated successfully!"
           : "Simulation created successfully!",
       );
+      router.push(`/simulations/${result.id}`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
@@ -373,10 +376,10 @@ export default function Simulation({
                         </span>
                         <br />
                         <span className="inline-flex items-center text-sm text-muted-foreground">
-                          Class: {simulation.classId ? 
-                            classes.find((cls: any) => cls.id === simulation.classId)?.classCode || 
-                            classes.find((cls: any) => cls.id === simulation.classId)?.name || 
-                            "Unknown" 
+                          Class: {simulation.classId ?
+                            classes.find((cls: any) => cls.id === simulation.classId)?.classCode ||
+                            classes.find((cls: any) => cls.id === simulation.classId)?.name ||
+                            "Unknown"
                             : "Global"}
                         </span>
                         <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
@@ -441,6 +444,13 @@ export default function Simulation({
     );
   }
 
+  const formatTerm = (term: string) => {
+    if (term === "fall") return "Fall";
+    if (term === "spring") return "Spring";
+    if (term === "summer") return "Summer";
+    return term;
+  };
+
   // Create mode - render the full create form
   return (
     <div className="space-y-6">
@@ -448,7 +458,7 @@ export default function Simulation({
         {/* Basic Simulation Information */}
 
         <div className="space-y-2">
-          <Label htmlFor="title">Simulation Title</Label>
+          <Label htmlFor="title">Title</Label>
           <Input
             id="title"
             value={formData.title}
@@ -484,19 +494,22 @@ export default function Simulation({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="classId">Class (Optional)</Label>
+          <Label htmlFor="classId">Class</Label>
+          <p className="text-sm text-muted-foreground mt-1">
+            If no class is selected, a random class will be chosen automatically
+          </p>
           <Select
-            value={formData.classId || ""}
-            onValueChange={(value) => handleInputChange("classId", value || null)}
+            value={formData.classId || "no-class"}
+            onValueChange={(value) => handleInputChange("classId", value === "no-class" ? null : value)}
           >
             <SelectTrigger className={errors.classId ? "border-destructive" : ""}>
               <SelectValue placeholder="Select a class..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">No class (global simulation)</SelectItem>
+              <SelectItem value="no-class">No Class</SelectItem>
               {classes.map((cls: any) => (
                 <SelectItem key={cls.id} value={cls.id}>
-                  {cls.classCode || cls.name} - {cls.term} {cls.year}
+                  {cls.classCode || cls.name} - {formatTerm(cls.term)} {cls.year}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -516,7 +529,7 @@ export default function Simulation({
               <SelectValue placeholder="Select a rubric..." />
             </SelectTrigger>
             <SelectContent>
-              {rubrics.map((rubric: any) => (
+              {rubrics.filter((rubric: Rubric) => rubric.rubricType === "simulation").map((rubric: Rubric) => (
                 <SelectItem key={rubric.id} value={rubric.id}>
                   {rubric.name} ({rubric.points} points)
                 </SelectItem>
@@ -580,9 +593,6 @@ export default function Simulation({
               <div>
                 <p className="font-medium mb-1">
                   No scenarios selected
-                </p>
-                <p className="text-sm">
-                  A random scenario will be automatically chosen when the simulation starts
                 </p>
               </div>
             </div>
@@ -655,7 +665,7 @@ export default function Simulation({
                                   : "bg-gray-100 text-gray-800"
                             }`}
                         >
-                          {scenario.seniority 
+                          {scenario.seniority
                             ? scenario.seniority.charAt(0).toUpperCase() + scenario.seniority.slice(1)
                             : "No Level"
                           }

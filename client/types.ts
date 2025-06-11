@@ -22,7 +22,7 @@ import {
   evalMessages as EvalMessages,
   evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
-  agentType, classTerm, documentType, evalType, seniorityLevels, userRole
+  agentType, classTerm, documentType, evalType, rubricType, seniorityLevels, userRole
 } from "@/drizzle/schema";
 
 // Use Drizzle schema types
@@ -54,6 +54,7 @@ type AgentType = (typeof agentType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type EvalType = (typeof evalType.enumValues)[number];
+type RubricType = (typeof rubricType.enumValues)[number];
 type SeniorityLevels = (typeof seniorityLevels.enumValues)[number];
 type UserRole = (typeof userRole.enumValues)[number];
 
@@ -85,6 +86,7 @@ export type {
   ClassTerm,
   DocumentType,
   EvalType,
+  RubricType,
   SeniorityLevels,
   UserRole
 };

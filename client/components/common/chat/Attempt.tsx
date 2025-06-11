@@ -517,59 +517,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  // Helper function to format interaction attributes
-  const formatScenarioInfo = (scenario: Scenario | null | undefined) => {
-    if (!scenario) {
-      return (
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1">
-            <Users className="h-3 w-3" />
-            <span>Loading scenario...</span>
-          </div>
-        </div>
-      );
-    }
-
-    const crowdednessText =
-      scenario.crowdedness === 1
-        ? "Low crowdedness"
-        : scenario.crowdedness === 2
-          ? "Moderate crowdedness"
-          : scenario.crowdedness === 3
-            ? "High crowdedness"
-            : scenario.crowdedness === 4
-              ? "Very high crowdedness"
-              : scenario.crowdedness === 5
-                ? "Extremely crowded"
-                : `Crowdedness: ${scenario.crowdedness}`;
-
-    const intensityText =
-      scenario.intensity === 1
-        ? "Low intensity"
-        : scenario.intensity === 2
-          ? "Moderate intensity"
-          : scenario.intensity === 3
-            ? "High intensity"
-            : scenario.intensity === 4
-              ? "Very high intensity"
-              : scenario.intensity === 5
-                ? "Extremely intense"
-                : `Intensity: ${scenario.intensity}`;
-
-    return (
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <Users className="h-3 w-3" />
-          <span>{crowdednessText}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Activity className="h-3 w-3" />
-          <span>{intensityText}</span>
-        </div>
-      </div>
-    );
-  };
-
   // Updated streaming message handler from chat page
   const handleSendMessage = async (
     e: React.FormEvent<HTMLFormElement> | null,
@@ -1037,9 +984,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               <div>
                 <span>{scenario?.description || currentChat?.title}</span>
                 <div className="text-sm text-muted-foreground flex items-center gap-2 mt-1">
-                  {isSingleChatAttempt ? (
-                    formatScenarioInfo(scenario)
-                  ) : (
+                  {!isSingleChatAttempt && (
                     <>
                       <Users className="h-4 w-4" />
                       <span data-testid="chat-counter">
@@ -1049,7 +994,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       {scenario && (
                         <>
                           <span>•</span>
-                          {formatScenarioInfo(scenario)}
                         </>
                       )}
                     </>

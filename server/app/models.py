@@ -20,7 +20,7 @@ class Agents(_Base, table=True):
     subtitle: str = Field(sa_column=Column('subtitle', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    agent_type: str = Field(sa_column=Column('agent_type', Enum('default', 'student', 'ta', name='agent_type'), server_default=text("'student'::agent_type")))
+    agent_type: str = Field(sa_column=Column('agent_type', Enum('student', 'ta', name='agent_type'), server_default=text("'student'::agent_type")))
     temperature: int = Field(sa_column=Column('temperature', Integer))
 
     evals: List['Evals'] = Relationship(back_populates='base_agent')
@@ -62,6 +62,7 @@ class Rubrics(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
     pass_points: int = Field(sa_column=Column('pass_points', Integer))
+    rubric_type: str = Field(sa_column=Column('rubric_type', Enum('simulation', 'eval', name='rubric_type'), server_default=text("'simulation'::rubric_type")))
 
     simulations: List['Simulations'] = Relationship(back_populates='rubric')
     standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
