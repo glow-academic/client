@@ -39,7 +39,7 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { format, subDays, subHours, isAfter, startOfDay, startOfHour } from "date-fns";
+import { format, subDays, subHours } from "date-fns";
 import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";

@@ -15,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, AlertTriangle, Download, Filter, Search, Loader2, TrendingDown, Clock, Target, Users } from "lucide-react";
+import { Award, AlertTriangle, Download, Search, Loader2, TrendingDown, Clock, Target, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -30,8 +30,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";

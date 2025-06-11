@@ -14,7 +14,6 @@ import {
   Trash2,
   Timer,
   Users,
-  FileText,
   Plus,
   Sparkles,
 } from "lucide-react";

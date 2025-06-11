@@ -71,7 +71,6 @@ import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/querie
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAgentConfig } from "@/utils/agents";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
-import { Separator } from "@/components/ui/separator";
 
 // Color palette for charts
 const COLORS = {

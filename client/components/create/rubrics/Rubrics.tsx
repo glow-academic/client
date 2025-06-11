@@ -13,7 +13,6 @@ import {
   Edit,
   Trash2,
   FileCheck,
-  Users,
   Star,
   Plus,
   BookOpen,
@@ -30,7 +29,6 @@ import {
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 } from "@/components/ui/card";
 import {
   AlertDialog,

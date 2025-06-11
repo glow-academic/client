@@ -9,19 +9,14 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Edit, FileText, RotateCcw, Sparkles, Loader2 } from "lucide-react";
+import { RotateCcw, Sparkles, Loader2 } from "lucide-react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+
+
 import {
     Dialog,
     DialogContent,
@@ -34,17 +29,8 @@ import {
     HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+
+
 
 // Custom Components
 import { ScenarioPicker, type Model } from "./ScenarioPicker";

@@ -205,8 +205,7 @@ describe("ClassDetails", () => {
     ];
 
     // Apply mocks
-    const { getClass } = await import("@/utils/queries/classes/get-class");
-    vi.mocked(getClass).mockResolvedValue(mockClass);
+    require("@/utils/queries/classes/get-class").getClass.mockResolvedValue(mockClass);
     require("@/utils/queries/topics/get-topics-by-class").getTopicsByClass.mockResolvedValue(
       mockTopics,
     );
