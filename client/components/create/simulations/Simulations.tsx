@@ -120,10 +120,6 @@ export function Simulations() {
                   <Users className="h-3 w-3" />
                   {simulation.scenarioIds?.length || 0} scenarios
                 </div>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <FileText className="h-3 w-3" />
-                  {simulation.documents?.length || 0} documents
-                </div>
               </div>
             </CardContent>
             <CardFooter className="flex justify-end gap-2">

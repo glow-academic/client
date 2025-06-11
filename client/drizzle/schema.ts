@@ -151,7 +151,6 @@ export const simulations = pgTable("simulations", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
 	classId: uuid("class_id"),
-	documents: uuid().array().default(["RAY"]).notNull(),
 	timeLimit: integer("time_limit"),
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
@@ -178,6 +177,7 @@ export const scenarios = pgTable("scenarios", {
 	crowdedness: integer().notNull(),
 	intensity: integer().notNull(),
 	seniority: seniorityLevels().default('freshman').notNull(),
+	documents: uuid().array().default(["RAY"]).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.agentId],

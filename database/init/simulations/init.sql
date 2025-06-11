@@ -10,7 +10,6 @@ CREATE TABLE simulations (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   class_id   UUID        NULL REFERENCES classes(id) ON DELETE SET NULL, -- can be null for global simulations
-  documents UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[],
   time_limit INTEGER     NULL,          -- in minutes, or no time limit
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
   scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references scenarios
@@ -69,20 +68,20 @@ CREATE TABLE simulation_chat_grades (
 -- ============================================================================
 
 -- Insert Default Simulations (3 for the main agents)
-INSERT INTO simulations (id, title, class_id, documents, time_limit, active, scenario_ids, rubric_id) VALUES
-  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333'),
-  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333'),
-  ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', NULL, ARRAY[]::UUID[], NULL, true, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333');
+INSERT INTO simulations (id, title, class_id, time_limit, active, scenario_ids, rubric_id) VALUES
+  ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', NULL, NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333'),
+  ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Student Practice', NULL, NULL, true, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333'),
+  ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', NULL, NULL, true, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333');
 
 -- Insert Custom Randomized Simulations (3 additional diverse simulations)
-INSERT INTO simulations (id, title, class_id, documents, time_limit, active, scenario_ids, rubric_id) VALUES
-  ('c5a0b001-aaaa-bbbb-cccc-dddddddddddd', 'CS 180 Programming Challenge', '44444444-1111-1111-1111-111111111111', ARRAY[]::UUID[], 45, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333'),
-  ('c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee', 'Multi-Course Algorithm Assessment', NULL, ARRAY[]::UUID[], 60, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '33333333-3333-3333-3333-333333333333'),
-  ('c5a0b003-cccc-dddd-eeee-ffffffffffff', 'Advanced Theory Deep Dive', '77777777-4444-4444-4444-444444444444', ARRAY[]::UUID[], 90, true, ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], '33333333-3333-3333-3333-333333333333');
+INSERT INTO simulations (id, title, class_id, time_limit, active, scenario_ids, rubric_id) VALUES
+  ('c5a0b001-aaaa-bbbb-cccc-dddddddddddd', 'CS 180 Programming Challenge', '44444444-1111-1111-1111-111111111111', 45, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333'),
+  ('c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee', 'Multi-Course Algorithm Assessment', NULL, 60, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '33333333-3333-3333-3333-333333333333'),
+  ('c5a0b003-cccc-dddd-eeee-ffffffffffff', 'Advanced Theory Deep Dive', '77777777-4444-4444-4444-444444444444', 90, true, ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], '33333333-3333-3333-3333-333333333333');
 
 -- Insert Main Coding Practice Simulation
-INSERT INTO simulations (id, title, documents, time_limit, active, scenario_ids, rubric_id) VALUES
-  ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', ARRAY[]::UUID[], 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333')
+INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id) VALUES
+  ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333')
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert Simulation Attempts (Essential for linking chats to simulations and users)

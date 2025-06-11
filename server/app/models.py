@@ -144,6 +144,7 @@ class Scenarios(_Base, table=True):
     crowdedness: int = Field(sa_column=Column('crowdedness', Integer))
     intensity: int = Field(sa_column=Column('intensity', Integer))
     seniority: str = Field(sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels'), server_default=text("'freshman'::seniority_levels")))
+    documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='scenario')
@@ -176,7 +177,6 @@ class Simulations(_Base, table=True):
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
-    documents: list = Field(sa_column=Column('documents', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))

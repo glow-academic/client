@@ -72,7 +72,6 @@ interface SimulationProps {
 interface SimulationFormData {
   title: string;
   timeLimit: number | null;
-  documents: string[];
   scenarioIds: string[];
   active: boolean;
 }
@@ -105,7 +104,6 @@ export default function Simulation({
   const initialFormData: SimulationFormData = {
     title: "",
     timeLimit: 15,
-    documents: [],
     scenarioIds: [],
     active: true,
   };
@@ -145,13 +143,7 @@ export default function Simulation({
         setFormData({
           title: simulationToEdit.title || "",
           timeLimit: simulationToEdit.timeLimit || 15,
-          documents:
-            simulationToEdit.documents?.filter((id: string) => id !== "RAY") ||
-            [],
-          scenarioIds:
-            simulationToEdit.scenarioIds?.filter(
-              (id: string) => id !== "RAY",
-            ) || [],
+          scenarioIds: simulationToEdit.scenarioIds || [],
           active: simulationToEdit.active ?? true,
         });
       }
@@ -269,9 +261,7 @@ export default function Simulation({
       const payload = {
         title: formData.title,
         timeLimit: formData.timeLimit,
-        documents: formData.documents.length > 0 ? formData.documents : ["RAY"],
-        scenarioIds:
-          formData.scenarioIds.length > 0 ? formData.scenarioIds : ["RAY"],
+        scenarioIds: formData.scenarioIds,
         active: formData.active,
         rubricId: rubrics[0].id, // TODO: change to having a rubric selection
       };
@@ -491,49 +481,6 @@ export default function Simulation({
               />
               {errors.timeLimit && (
                 <p className="text-sm text-destructive">{errors.timeLimit}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="documents">Reference Documents (Optional)</Label>
-              <Select
-                value={formData.documents[0] || "none"}
-                onValueChange={(value: string) =>
-                  handleInputChange(
-                    "documents",
-                    value === "none" ? [] : [value],
-                  )
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select documents" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No documents</SelectItem>
-                  {documents.map((doc: any) => (
-                    <SelectItem key={doc.id} value={doc.id}>
-                      {doc.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {formData.documents.length > 0 && formData.documents[0] && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    const doc = documents.find(
-                      (d: any) => d.id === formData.documents[0],
-                    );
-                    if (doc) {
-                      setPreviewDocument(doc);
-                      setShowDocumentModal(true);
-                    }
-                  }}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview Document
-                </Button>
               )}
             </div>
           </CardContent>
