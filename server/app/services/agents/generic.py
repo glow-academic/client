@@ -1,5 +1,6 @@
 from typing import AsyncGenerator, Literal, Union
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
+from agents.items import TResponseInputItem
 from openai.types import Reasoning
 from datetime import datetime
 from app.extensions import get_gemini
@@ -22,6 +23,43 @@ from fastapi import Depends
 from openai.types.responses import (
     ResponseTextDeltaEvent,
 )
+
+async def run_generic_agent_bare(
+    agent_id: str,
+    input_items: list[TResponseInputItem],
+    session: Session = Depends(get_session),
+) -> AsyncGenerator[str, None]:
+    """
+    This function is used to run the generic agent using the OpenAI Agents SDK.
+
+    Args:
+        agent_id: The ID of the agent
+        input_text: Optional input text to send to the agent
+    Yields:
+        Text chunks from the agent's response
+    """
+    agent = session.exec(select(Agents).where(Agents.id == agent_id)).one()
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+
+    agent_instance = GenericAgent(
+        agent_name=agent.name,
+        agent_prompt=agent.system_prompt,
+        agent_type=agent.agent_type,
+        temperature=agent.temperature
+    )
+
+    result = Runner.run_streamed(
+        agent_instance.agent(),
+        input=input_items,
+        run_config=RunConfig(workflow_name=f"{agent.name} Agent"),
+    )
+
+    async for event in result.stream_events():
+        if event.type == "raw_response_event":
+            if isinstance(event.data, ResponseTextDeltaEvent):
+                chunk = event.data.delta
+                yield chunk
 
 
 async def run_generic_agent(

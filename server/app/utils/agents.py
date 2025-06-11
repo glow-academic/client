@@ -1,13 +1,19 @@
 # app/utils/agents.py
-from typing import Literal
+from sqlmodel import Session
+from app.models import Agents
+from sqlmodel import Session, select
 
-def get_agent_info(agent: str) -> dict:
+def get_agent_info(agent_id: str, session: Session) -> dict:
     """
     Get the agent information for a given agent.
     """
+    agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
+    if not agent:
+        raise ValueError(f"Agent with ID {agent_id} not found")
+
     return {
         "role": "assistant",
-        "content": f"This is the profile of the student: {agent}",
+        "content": f"This is the profile of the student: Name: {agent.name} Description: {agent.description}",
     }
 
 

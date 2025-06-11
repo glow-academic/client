@@ -12,6 +12,7 @@ from sqlmodel import Session, select
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.users import router as users_router
+from app.routes.scenarios import router as scenarios_router
 from app.routes.simulations import router as simulations_router
 from app.routes.evals import router as evals_router
 from app.db import init_db, get_session
@@ -21,6 +22,7 @@ app.include_router(documents_router, prefix="/documents")
 app.include_router(simulations_router, prefix="/simulations")
 app.include_router(users_router, prefix="/users")
 app.include_router(evals_router, prefix="/evals")
+app.include_router(scenarios_router, prefix="/scenarios")
 
 # Add CORS middleware
 app.add_middleware(

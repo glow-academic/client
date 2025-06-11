@@ -9,7 +9,7 @@ import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Trash2, Edit, FileText, RotateCcw } from "lucide-react";
+import { Trash2, Edit, FileText, RotateCcw, Sparkles } from "lucide-react";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -45,13 +45,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from "@/components/ui/select";
 
 // Custom Components
 import { ScenarioPicker, type Model } from "./ScenarioPicker";
@@ -183,6 +176,38 @@ export default function Scenario({
         strengths: doc.mimeType,
     }));
 
+    // Seniority models for picker
+    const seniorityModels: Model[] = [
+        {
+            id: "freshman",
+            name: "Freshman",
+            description: "First-year student level",
+            type: "Scenarios" as const,
+            strengths: "Basic understanding, eager to learn",
+        },
+        {
+            id: "sophomore",
+            name: "Sophomore",
+            description: "Second-year student level",
+            type: "Scenarios" as const,
+            strengths: "Some foundation knowledge, building confidence",
+        },
+        {
+            id: "junior",
+            name: "Junior",
+            description: "Third-year student level",
+            type: "Scenarios" as const,
+            strengths: "Solid foundation, more independent learning",
+        },
+        {
+            id: "senior",
+            name: "Senior",
+            description: "Fourth-year student level",
+            type: "Scenarios" as const,
+            strengths: "Advanced knowledge, preparing for career",
+        },
+    ];
+
     // Load scenario data if editing
     useEffect(() => {
         const targetScenarioId = scenarioId || editingScenarioId;
@@ -224,6 +249,10 @@ export default function Scenario({
         if (!formData.documents.includes(model.id)) {
             handleInputChange("documents", [...formData.documents, model.id]);
         }
+    };
+
+    const handleSenioritySelect = (model: Model) => {
+        handleInputChange("seniority", model.id as "freshman" | "sophomore" | "junior" | "senior");
     };
 
     const removeDocument = (documentId: string) => {
@@ -337,6 +366,11 @@ export default function Scenario({
         }
     };
 
+    const handleGenerateScenario = () => {
+        // TODO: Implement AI scenario generation
+        toast.info("AI scenario generation coming soon!");
+    };
+
     // Loading state for edit mode
     if (isEditMode && isLoading) {
         return (
@@ -363,8 +397,6 @@ export default function Scenario({
             </div>
         );
     }
-
-
 
     if (mode === "list") {
         return (
@@ -549,25 +581,15 @@ export default function Scenario({
                             />
 
                             {/* Seniority Selection */}
-                            <div className="grid gap-2">
-                                <Label className="text-sm font-medium">Seniority</Label>
-                                <Select
-                                    value={formData.seniority}
-                                    onValueChange={(value: "freshman" | "sophomore" | "junior" | "senior") =>
-                                        handleInputChange("seniority", value)
-                                    }
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select seniority level" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="freshman">Freshman</SelectItem>
-                                        <SelectItem value="sophomore">Sophomore</SelectItem>
-                                        <SelectItem value="junior">Junior</SelectItem>
-                                        <SelectItem value="senior">Senior</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                            <ScenarioPicker
+                                models={seniorityModels}
+                                types={["Scenarios"]}
+                                label="Seniority"
+                                placeholder="Select seniority level..."
+                                description="Choose the student seniority level for this scenario."
+                                onSelect={handleSenioritySelect}
+                                selectedModel={seniorityModels.find(model => model.id === formData.seniority)}
+                            />
 
                             {/* Scenario Parameters */}
                             <ScenarioSlider
@@ -599,7 +621,18 @@ export default function Scenario({
                                 {/* Description */}
                                 <div className="space-y-3">
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Scenario</Label>
+                                        <div className="flex items-center gap-2">
+                                            <Label htmlFor="description">Scenario</Label>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={handleGenerateScenario}
+                                                className="h-6 w-6 p-0"
+                                                title="Generate scenario with AI"
+                                            >
+                                                <Sparkles className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                         <Textarea
                                             id="description"
                                             value={formData.description}
@@ -611,8 +644,8 @@ export default function Scenario({
                                     </div>
                                 </div>
 
-                                {/* Playground Area - Half and Half Split */}
-                                <div className="flex-1 flex flex-col space-y-4">
+                                {/* Playground Area - Match sidebar height */}
+                                <div className="flex-1 flex flex-col space-y-4 min-h-[600px]">
                                     <div className="grid h-full gap-4 grid-rows-2 lg:grid-cols-2 lg:grid-rows-1">
                                         {/* Query Input */}
                                         <div className="flex flex-col space-y-2">
@@ -621,13 +654,13 @@ export default function Scenario({
                                                 value={query}
                                                 onChange={(e) => setQuery(e.target.value)}
                                                 placeholder="Enter a question or prompt to test how the agent responds in this scenario..."
-                                                className="h-full min-h-[200px] lg:min-h-[300px] resize-none"
+                                                className="h-full min-h-[200px] lg:min-h-[500px] resize-none"
                                             />
                                         </div>
 
                                         {/* Response Output */}
                                         <div className="flex flex-col space-y-2">
-                                            <div className="h-full min-h-[200px] lg:min-h-[300px] rounded-md border bg-muted p-4 overflow-auto">
+                                            <div className="h-full min-h-[200px] lg:min-h-[500px] rounded-md border bg-muted p-4 overflow-auto">
                                                 {isGenerating ? (
                                                     <div className="flex items-center justify-center h-full">
                                                         <div className="text-sm text-muted-foreground">Generating response...</div>
@@ -645,7 +678,7 @@ export default function Scenario({
                                         </div>
                                     </div>
 
-                                    {/* Action Buttons */}
+                                    {/* Action Buttons - Aligned horizontally */}
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-2">
                                             <Button
@@ -666,6 +699,18 @@ export default function Scenario({
                                                 <RotateCcw />
                                             </Button>
                                         </div>
+                                        <Button
+                                            onClick={handleSubmit}
+                                            disabled={isSubmitting}
+                                        >
+                                            {isSubmitting
+                                                ? isEditMode
+                                                    ? "Updating..."
+                                                    : "Creating..."
+                                                : isEditMode
+                                                    ? "Update Scenario"
+                                                    : "Save Scenario"}
+                                        </Button>
                                     </div>
                                 </div>
 
@@ -694,20 +739,6 @@ export default function Scenario({
                                 )}
                             </div>
                         </div>
-                    </div>
-                    <div className="flex items-center space-x-2 justify-end">
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting
-                                ? isEditMode
-                                    ? "Updating..."
-                                    : "Creating..."
-                                : isEditMode
-                                    ? "Update Scenario"
-                                    : "Save Scenario"}
-                        </Button>
                     </div>
                 </div>
             </div>

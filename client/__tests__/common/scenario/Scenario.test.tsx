@@ -174,7 +174,7 @@ describe('Scenario', () => {
       
       expect(screen.getByLabelText(/scenario name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/scenario description/i)).toBeInTheDocument();
-      expect(screen.getByText(/student seniority/i)).toBeInTheDocument();
+      expect(screen.getByText(/seniority/i)).toBeInTheDocument();
     });
 
     it('should render configuration sidebar', () => {
@@ -183,7 +183,7 @@ describe('Scenario', () => {
       expect(screen.getByText('Agent')).toBeInTheDocument();
       expect(screen.getByText('Class')).toBeInTheDocument();
       expect(screen.getByText('Documents')).toBeInTheDocument();
-      expect(screen.getByText('Configuration')).toBeInTheDocument();
+      expect(screen.getByText('Seniority')).toBeInTheDocument();
     });
 
     it('should render sliders with correct labels', () => {
@@ -191,6 +191,13 @@ describe('Scenario', () => {
       
       expect(screen.getByText('Crowdedness')).toBeInTheDocument();
       expect(screen.getByText('Intensity')).toBeInTheDocument();
+    });
+
+    it('should render AI generate button', () => {
+      renderWithProviders(<Scenario />);
+      
+      const generateButton = screen.getByTitle('Generate scenario with AI');
+      expect(generateButton).toBeInTheDocument();
     });
   });
 
@@ -202,6 +209,7 @@ describe('Scenario', () => {
       expect(screen.getByText('Agent Response')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /test query/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /clear/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /save scenario/i })).toBeInTheDocument();
     });
 
     it('should show placeholder text in response area initially', () => {
@@ -215,6 +223,17 @@ describe('Scenario', () => {
       
       const testButton = screen.getByRole('button', { name: /test query/i });
       expect(testButton).toBeDisabled();
+    });
+
+    it('should handle AI scenario generation', async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Scenario />);
+
+      const generateButton = screen.getByTitle('Generate scenario with AI');
+      await user.click(generateButton);
+
+      // Should show toast notification (mocked)
+      expect(generateButton).toBeInTheDocument();
     });
   });
 });

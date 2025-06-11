@@ -1,29 +1,33 @@
 from app.db import get_session
 from sqlmodel import Session
-from app.models import Scenarios, Agents
+from app.models import Agents, Classes
 from fastapi import Depends
 import logging
 from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
+from app.utils.scenario import get_seniority_info, get_crowdedness_info, get_intensity_info
+from app.utils.document import get_document_info
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
 from openai.types import Reasoning
 from app.extensions import get_gemini
 from pydantic import BaseModel
 from sqlmodel import select
-from typing import Optional, Tuple
+from typing import Tuple, List
 
 logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    agent_id: str,
-    user_id: Optional[str],
-    class_id: str,
+    agent_id: str | None = None,
+    class_id: str | None = None,
+    document_ids: List[str] | None = None,
+    seniority: str | None = None,
+    crowdedness: int | None = None,
+    intensity: int | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str]:
     """
     This function is used to run the scenario agent.
-    Returns a tuple of (scenario_id, chat_title).
 
     Args:
         agent_id: The ID of the agent
@@ -35,33 +39,52 @@ async def run_scenario_agent(
     """
 
     # Get the agent to get its name for the agent
-    agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
-    if not agent:
-        raise ValueError(f"Agent with ID {agent_id} not found")
+    if agent_id is None:
+        agent_info = None
+    else:
+        agent = session.exec(select(Agents).where(Agents.id == agent_id)).one_or_none()
+        if not agent:
+            raise ValueError(f"Agent with ID {agent_id} not found")
+        agent_info = get_agent_info(agent.id, session)
+
+    if class_id is None:
+        class_info = None
+    else:
+        class_data = session.exec(select(Classes).where(Classes.id == class_id)).one_or_none()
+        if not class_data:
+            raise ValueError(f"Class with ID {class_id} not found")
+        class_info = get_class_info(class_data.id, session)
+
+    if seniority is None:
+        seniority_info = None
+    else:
+        seniority_info = get_seniority_info(seniority)
+
+    if crowdedness is None:
+        crowdedness_info = None
+    else:
+        crowdedness_info = get_crowdedness_info(crowdedness)
+
+    if intensity is None:
+        intensity_info = None
+    else:
+        intensity_info = get_intensity_info(intensity)
+
+    if document_ids is None:
+        document_info = None
+    else:
+        document_info = get_document_info(document_ids, session)
 
     scenario_agent = ScenarioAgent()
 
-    agent_info = get_agent_info(agent.name)
-    class_info = get_class_info(class_id, session)
-
-    input_items = [agent_info, class_info]
+    input_items = [agent_info, class_info, document_info, seniority_info, crowdedness_info, intensity_info]
 
     result = await Runner.run(scenario_agent.agent(), input=input_items)
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
-        
 
-    # Create a scenario record
-    scenario = Scenarios(
-        name=scenario_result.title, description=scenario_result.scenario
-    )
-    session.add(scenario)
-    session.commit()
-    session.refresh(scenario)
-
-    logger.info(f"New scenario created with ID: {scenario.id} for agent: {agent.name}")
-    return str(scenario.id), scenario_result.title
+    return scenario_result.title, scenario_result.scenario
 
 
 class Scenario(BaseModel):
@@ -72,11 +95,9 @@ class Scenario(BaseModel):
 class ScenarioAgent:
     def __init__(self):
         self.gemini_client = get_gemini()
-        self.system_prompt = """Your purpose is to create a scenario for a chat between a student and a GTA. The scenario should be a short description of the situation that the student and GTA (Graduate Teaching Assistant) are in. The scenario should be 1-2 sentences long. The scenario should be specific to the course and the student's question. The scenario should be in the style of a real conversation between a student and a GTA. 
+        self.system_prompt = """Your purpose is to create a scenario for a chat between a student and a GTA. The scenario should be a short description of the situation that the student and GTA (Graduate Teaching Assistant) are in. The scenario should be 1-2 sentences long. The scenario should be specific to the content that you will recieve. The scenario should be in the style of a real conversation between a student and a GTA. 
 
-        Moreover, you will be given a student profile and a course. You must design the scenario and title to be for this profile without giving it away. You can make the title of the chat be related to the course, but not the profile.
-
-        The types of profiles are: 'aggressive', 'confused', 'happy'. The course information will be provided to you.
+        Moreover, you will be given a student agent, a course, a list of documents, a seniority, a crowdedness, and an intensity. You must design the scenario and title to be for this agent, course, documents, seniority, crowdedness, and intensity without giving it away. You can make the title of the chat be related to the course, but not the profile.
 
         Try to always give a sense of how many other people are in line, to test the ability of the GTA to manage time.
         

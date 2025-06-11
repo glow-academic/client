@@ -10,7 +10,6 @@ from app.models import (
 from app.db import get_session
 from sqlmodel import Session, select
 import logging
-from app.services.agents.scenario import run_scenario_agent
 from typing import Optional
 import random
 from datetime import datetime, timezone
