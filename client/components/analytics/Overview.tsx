@@ -128,6 +128,12 @@ export default function Overview() {
     enabled: !!grades && grades.length > 0,
   });
 
+  const isWithinLastWeek = (date: string) => {
+    const oneWeekAgo = subDays(new Date(), 7);
+    const chatDate = new Date(date);
+    return chatDate >= oneWeekAgo;
+  };
+
   // Calculate key metrics
   const analytics = useMemo(() => {
     if (
@@ -143,7 +149,7 @@ export default function Overview() {
 
     const tas = users.filter((user) => user.role === "ta");
     const completedChats = chats.filter((chat) => chat.completed);
-    const totalSessions = chats.length;
+    const totalSessions = chats.filter((chat) => isWithinLastWeek(chat.createdAt)).length;
     const completionRate =
       totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
 

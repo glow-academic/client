@@ -84,7 +84,7 @@ INSERT INTO users (id, viewed_intro, role, name, username, password, class_ids) 
   ('99b90118-7b9e-4e12-8e81-d7ccc2916605', true , 'ta', 'Sofia Lombardi',   'sofia_lombardi',   'hashed_pw_test5', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
   ('99b90118-7b9e-4e12-8e81-d7ccc2916606', false, 'ta', 'Noah Rasmussen',  'noah_rasmussen',   'hashed_pw_test6', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
 -- CS-381  -------------------------------------------------------------------
-  ('99b90118-7b9e-4e12-8e81-d7ccc2916607', true , 'ta', 'Mei Chen',         'mei_chen',         'hashed_pw_test7', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916607', true , 'ta', 'Ethan Dickey',         'dickeye',         '$2b$10$Ho.Iq11m2QT6/zUedqUrx.3tmFDIt90j7K1e.dEDqb6Nvm3SrPNAG', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
   ('99b90118-7b9e-4e12-8e81-d7ccc2916608', false, 'ta', 'Henry Carter',     'henry_carter',     'hashed_pw_test8', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
 -- multi-class ---------------------------------------------------------------
   ('99b90118-7b9e-4e12-8e81-d7ccc2916609', true , 'ta', 'Ava Petrova',      'ava_petrova',      'hashed_pw_test9',

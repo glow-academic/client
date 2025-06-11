@@ -115,7 +115,7 @@ const ProgressCircle = ({ percentage, size = 40 }: { percentage: number; size?: 
 };
 
 // Rubric Modal Component
-const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
+const RubricModal = React.memo(({ simulationId, rubrics, standardGroups, standards }: {
   simulationId: string;
   rubrics: any[];
   standardGroups: any[];
@@ -143,32 +143,19 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
     };
   });
 
-  // Debug logging to help identify rubric data issues
-  console.log('RubricModal Debug:', {
-    simulationId,
-    rubrics: rubrics?.length || 0,
-    standardGroups: standardGroups?.length || 0,
-    standards: standards?.length || 0,
-    simulationRubric,
-    rubricStandardGroups: rubricStandardGroups.length,
-    rubricData: rubricData.length
-  });
-
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
-                <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>View Rubric</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+              <FileText className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>View Rubric</p>
+          </TooltipContent>
+        </Tooltip>
       </DialogTrigger>
       <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
         <DialogHeader>
@@ -260,14 +247,334 @@ const RubricModal = ({ simulationId, rubrics, standardGroups, standards }: {
       </DialogContent>
     </Dialog>
   );
-};
+});
+
+RubricModal.displayName = "RubricModal";
+
+// Memoized Simulation Card Component with localized flip state
+const SimulationCard = React.memo(({ 
+  simulation, 
+  type, 
+  onStartSimulation, 
+  loadingSimulation, 
+  effectiveRole, 
+  rubricData, 
+  scenarios, 
+  agents, 
+  rubrics, 
+  standardGroups, 
+  standards 
+}: {
+  simulation: Simulation;
+  type: "solo" | "multi";
+  onStartSimulation: (id: string) => void;
+  loadingSimulation: string | null;
+  effectiveRole: string;
+  rubricData: { attempts: AttemptData[]; highestScore: number };
+  scenarios?: Scenario[];
+  agents?: Agent[];
+  rubrics?: any[];
+  standardGroups?: any[];
+  standards?: any[];
+}) => {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleCardFlip = useCallback((event: React.MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+    setIsFlipped(prev => !prev);
+  }, []);
+
+  const validScenarioIds = simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
+  
+  // Solo-specific data
+  const interaction = type === "solo" ? scenarios?.find((i: Scenario) => i.id === validScenarioIds[0]) : null;
+  const agent = interaction ? agents?.find((a: Agent) => a.id === interaction.agentId) : null;
+  const agentConfig = agent ? getAgentConfig(agent.name || "general") : null;
+  const IconComponent = type === "solo" ? (agentConfig?.icon || User) : Users;
+
+  const gradientClass = type === "solo" 
+    ? (agentConfig?.colors?.gradient || "from-gray-500 to-gray-600")
+    : "from-blue-500 to-purple-600";
+
+  const backgroundGradient = type === "solo"
+    ? "from-gray-900 to-gray-600"
+    : "from-blue-900 to-purple-600";
+
+  return (
+    <div className="relative perspective-1000">
+      <div
+        className={`relative transition-transform duration-700 transform-style-preserve-3d ${
+          isFlipped ? "rotate-y-180" : ""
+        }`}
+      >
+        {/* Front Side */}
+        <Card
+          data-testid={type === "solo" ? "permanent-simulation-card" : "simulation-card"}
+          className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden"
+        >
+          {/* Background Pattern */}
+          <div className="absolute inset-0 opacity-5">
+            <div className={`absolute inset-0 bg-gradient-to-br ${backgroundGradient}`}></div>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage:
+                  "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
+                backgroundSize: "20px 20px",
+              }}
+            ></div>
+          </div>
+
+          <CardHeader className="pb-4 relative z-10">
+            <div className="flex items-start justify-between">
+              <div className={`p-3 rounded-xl bg-gradient-to-br ${gradientClass} shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                <IconComponent className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex flex-col items-end space-y-2">
+                {/* Flip Icon */}
+                {effectiveRole !== "guest" && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleCardFlip}
+                        className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative z-20"
+                      >
+                        <RotateCcw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>View Previous Attempts</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {effectiveRole === "guest" && (
+                  <div className="text-right">
+                    <div
+                      className="text-xs font-medium text-gray-500 dark:text-gray-400"
+                      data-testid={type === "solo" ? "simulation-type" : "simulation-class"}
+                    >
+                      {type === "solo" ? "Solo" : "Multi"}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {type === "solo" ? "Simulation" : "Simulations"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent className="space-y-4 relative z-10">
+            <div>
+              <h3
+                className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
+                data-testid="simulation-title"
+              >
+                {simulation.title}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
+                {type === "solo" 
+                  ? agent?.description 
+                  : `Interactive simulation with ${validScenarioIds.length} scenario${validScenarioIds.length !== 1 ? "s" : ""}`
+                }
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center" data-testid="simulation-duration">
+                <Timer className="h-3 w-3 mr-1" />
+                <span>{simulation.timeLimit ? `${simulation.timeLimit}` : "∞"} min</span>
+              </div>
+              <div className="flex items-center">
+                {type === "solo" ? <User className="h-3 w-3 mr-1" /> : <Users className="h-3 w-3 mr-1" />}
+                <span>
+                  {type === "solo" 
+                    ? "1 session" 
+                    : `${validScenarioIds.length} session${validScenarioIds.length !== 1 ? "s" : ""}`
+                  }
+                </span>
+              </div>
+              {effectiveRole !== "guest" && rubricData.highestScore > 0 && (
+                <div className="flex items-center">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center">
+                        <Info className="h-3 w-3 mr-1" />
+                        <span>{rubricData.highestScore}%</span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Your highest score</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
+            </div>
+          </CardContent>
+
+          <CardFooter className="pt-0 relative z-10">
+            <button
+              onClick={() => onStartSimulation(simulation.id)}
+              disabled={loadingSimulation === simulation.id}
+              className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${gradientClass} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
+                loadingSimulation === simulation.id
+                  ? "animate-pulse cursor-not-allowed"
+                  : "hover:scale-105 cursor-pointer"
+              } disabled:opacity-70`}
+            >
+              {loadingSimulation === simulation.id
+                ? "Starting..."
+                : type === "solo" ? "Start Simulation" : "Start Simulations"}
+            </button>
+          </CardFooter>
+        </Card>
+
+        {/* Back Side - Only render when flipped */}
+        {isFlipped && (
+          <Card className="absolute inset-0 bg-white dark:bg-gray-900 border-0 shadow-lg rotate-y-180 backface-hidden">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+                    Previous Attempts
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    {simulation.title}
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  {rubrics && standardGroups && standards && (
+                    <RubricModal
+                      simulationId={simulation.id}
+                      rubrics={rubrics}
+                      standardGroups={standardGroups}
+                      standards={standards}
+                    />
+                  )}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleCardFlip}
+                        className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <ArrowLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Back to Card</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </div>
+            </CardHeader>
+
+            <CardContent className="max-h-48 overflow-auto">
+              {rubricData.attempts.length > 0 ? (
+                <table className="w-full text-xs">
+                  <thead className="sticky top-0 bg-white dark:bg-gray-900">
+                    <tr className="border-b">
+                      <th className="text-left py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
+                        #
+                      </th>
+                      <th className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
+                        Score
+                      </th>
+                      {standardGroups && standardGroups.slice(0, 3).map((group) => (
+                        <th key={group.id} className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
+                          {group.shortName}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rubricData.attempts.map((attemptData: AttemptData, index: number) => (
+                      <tr
+                        key={index}
+                        className="border-b border-gray-100 dark:border-gray-800"
+                      >
+                        <td className="py-1 px-1 font-medium text-gray-900 dark:text-white">
+                          {attemptData.attempt}
+                        </td>
+                        <td className="text-center py-1 px-1">
+                          <span
+                            className={`inline-flex items-center justify-center w-6 h-4 rounded text-xs font-semibold ${
+                              attemptData.overallScore >= 80
+                                ? "bg-green-100 text-green-800"
+                                : attemptData.overallScore >= 60
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {attemptData.overallScore}%
+                          </span>
+                        </td>
+                        {standardGroups && standardGroups.slice(0, 3).map((group) => {
+                          const score = attemptData.skillScores[group.shortName] || 0;
+                          return (
+                            <td key={group.id} className="text-center py-1 px-1">
+                              <span
+                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-semibold ${
+                                  score >= 80
+                                    ? "bg-green-100 text-green-800"
+                                    : score >= 60
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-red-100 text-red-800"
+                                }`}
+                              >
+                                {score}
+                              </span>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    No previous attempts
+                  </p>
+                </div>
+              )}
+            </CardContent>
+
+            <CardFooter className="pt-0">
+              <div className="w-full text-center py-2 text-xs text-gray-500">
+                {rubricData.attempts.length} attempt
+                {rubricData.attempts.length !== 1 ? "s" : ""}
+              </div>
+            </CardFooter>
+          </Card>
+        )}
+      </div>
+
+      <style jsx>{`
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+        .transform-style-preserve-3d {
+          transform-style: preserve-3d;
+          will-change: transform;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+      `}</style>
+    </div>
+  );
+});
+
+SimulationCard.displayName = "SimulationCard";
 
 export default function Home() {
   const router = useRouter();
-  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
-    null,
-  );
-  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  const [loadingSimulation, setLoadingSimulation] = useState<string | null>(null);
   const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
@@ -352,7 +659,7 @@ export default function Home() {
     enabled: !!grades && grades.length > 0,
   });
 
-  const handleStartSimulation = async (simulationId: string) => {
+  const handleStartSimulation = useCallback(async (simulationId: string) => {
     try {
       if (!classes) {
         toast.error("No classes found. Please contact an administrator.");
@@ -417,40 +724,22 @@ export default function Home() {
     } finally {
       setLoadingSimulation(null);
     }
-  };
-
-  const handleCardFlip = useCallback((simulationId: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    event.preventDefault();
-    
-    // Use requestAnimationFrame for smoother animation
-    requestAnimationFrame(() => {
-      setFlippedCards((prev) => {
-        const newSet = new Set(prev);
-        if (newSet.has(simulationId)) {
-          newSet.delete(simulationId);
-        } else {
-          newSet.add(simulationId);
-        }
-        return newSet;
-      });
-    });
-  }, []);
+  }, [classes, effectiveRole, user, router]);
 
   // Separate simulations into solo and multi based on interaction count
-  const soloSimulations =
+  const soloSimulations = useMemo(() =>
     simulations?.filter((simulation: Simulation) => {
       const validInteractionIds =
         simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
       return validInteractionIds.length === 1;
-    }) || [];
+    }) || [], [simulations]);
 
-  const multiSimulations =
+  const multiSimulations = useMemo(() =>
     simulations?.filter((simulation: Simulation) => {
       const validInteractionIds =
         simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
       return validInteractionIds.length > 1;
-    }) || [];
+    }) || [], [simulations]);
 
   // Memoize rubric data calculation to prevent unnecessary recalculations
   const rubricDataCache = useMemo(() => {
@@ -554,10 +843,9 @@ export default function Home() {
     return rubricDataCache.get(simulationId) || { attempts: [], highestScore: 0 };
   }, [rubricDataCache]);
 
-  const renderCarousel = (simulations: Simulation[], type: "solo" | "multi") => {
+  const renderCarousel = useCallback((simulations: Simulation[], type: "solo" | "multi") => {
     const carouselIndex = type === "solo" ? soloCarouselIndex : multiCarouselIndex;
-    const setCarouselIndex =
-      type === "solo" ? setSoloCarouselIndex : setMultiCarouselIndex;
+    const setCarouselIndex = type === "solo" ? setSoloCarouselIndex : setMultiCarouselIndex;
     const maxVisible = 3;
     
     // Fix pagination to avoid duplicates
@@ -624,9 +912,22 @@ export default function Home() {
 
         {/* Carousel container */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {visibleSimulations.map((simulation: Simulation) =>
-            type === "solo" ? renderSoloCard(simulation) : renderMultiCard(simulation),
-          )}
+          {visibleSimulations.map((simulation: Simulation) => (
+            <SimulationCard
+              key={simulation.id}
+              simulation={simulation}
+              type={type}
+              onStartSimulation={handleStartSimulation}
+              loadingSimulation={loadingSimulation}
+              effectiveRole={effectiveRole}
+              rubricData={getRealRubricData(simulation.id)}
+              scenarios={scenarios}
+              agents={agents}
+              rubrics={rubrics}
+              standardGroups={standardGroups}
+              standards={standards}
+            />
+          ))}
         </div>
 
         {/* Dots indicator */}
@@ -647,576 +948,7 @@ export default function Home() {
         )}
       </div>
     );
-  };
-
-  const renderMultiCard = (simulation: Simulation) => {
-    const validScenarioIds =
-      simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-    const isFlipped = flippedCards.has(simulation.id);
-    const rubricData = getRealRubricData(simulation.id);
-
-    return (
-      <div key={simulation.id} className="relative perspective-1000">
-        <div
-          className={`relative transition-transform duration-700 transform-style-preserve-3d ${
-            isFlipped ? "rotate-y-180" : ""
-          }`}
-        >
-          {/* Front Side */}
-          <Card
-            data-testid="simulation-card"
-            className={`group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden`}
-          >
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-900 to-purple-600"></div>
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
-                  backgroundSize: "20px 20px",
-                }}
-              ></div>
-            </div>
-
-            <CardHeader className="pb-4 relative z-10">
-              <div className="flex items-start justify-between">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 shadow-lg group-hover:scale-110 transition-transform duration-300">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex flex-col items-end space-y-2">
-                  {/* Flip Icon */}
-                  {effectiveRole !== "guest" && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => handleCardFlip(simulation.id, e)}
-                            className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative z-20"
-                          >
-                            <RotateCcw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Previous Attempts</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  {effectiveRole === "guest" && (
-                    <div className="text-right">
-                      <div
-                        className="text-xs font-medium text-gray-500 dark:text-gray-400"
-                        data-testid="simulation-class"
-                      >
-                        Multi
-                      </div>
-                      <div className="text-xs text-gray-400">Simulations</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 relative z-10">
-              <div>
-                <h3
-                  className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
-                  data-testid="simulation-title"
-                >
-                  {simulation.title}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                  Interactive simulation with {validScenarioIds.length} scenario
-                  {validScenarioIds.length !== 1 ? "s" : ""}
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                <div
-                  className="flex items-center"
-                  data-testid="simulation-duration"
-                >
-                  <Timer className="h-3 w-3 mr-1" />
-                  <span>
-                    {simulation.timeLimit ? `${simulation.timeLimit}` : "∞"} min
-                  </span>
-                </div>
-                <div className="flex items-center">
-                  <Users className="h-3 w-3 mr-1" />
-                  <span>
-                    {validScenarioIds.length} session
-                    {validScenarioIds.length !== 1 ? "s" : ""}
-                  </span>
-                </div>
-                {effectiveRole !== "guest" && rubricData.highestScore > 0 && (
-                  <div className="flex items-center">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center">
-                            <Info className="h-3 w-3 mr-1" />
-                            <span>{rubricData.highestScore}%</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Your highest score</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-
-            <CardFooter className="pt-0 relative z-10">
-              <button
-                onClick={() =>
-                  !loadingSimulation && handleStartSimulation(simulation.id)
-                }
-                disabled={loadingSimulation === simulation.id}
-                className={`w-full text-center py-3 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-                  loadingSimulation === simulation.id
-                    ? "animate-pulse cursor-not-allowed"
-                    : "hover:scale-105 cursor-pointer"
-                } disabled:opacity-70`}
-              >
-                {loadingSimulation === simulation.id
-                  ? "Starting..."
-                  : "Start Simulations"}
-              </button>
-            </CardFooter>
-          </Card>
-
-          {/* Back Side */}
-          <Card
-            className={`absolute inset-0 bg-white dark:bg-gray-900 border-0 shadow-lg rotate-y-180 backface-hidden ${isFlipped ? "pointer-events-auto" : "pointer-events-none invisible"}`}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                    Previous Attempts
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {simulation.title}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {rubrics && standardGroups && standards && (
-                    <RubricModal
-                      simulationId={simulation.id}
-                      rubrics={rubrics}
-                      standardGroups={standardGroups}
-                      standards={standards}
-                    />
-                  )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => handleCardFlip(simulation.id, e)}
-                          className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <ArrowLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Back to Card</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="max-h-48 overflow-auto">
-              {rubricData.attempts.length > 0 ? (
-                <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-900">
-                    <tr className="border-b">
-                      <th className="text-left py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                        #
-                      </th>
-                      <th className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                        Score
-                      </th>
-                      {standardGroups && standardGroups.slice(0, 3).map((group) => (
-                        <th key={group.id} className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                          {group.shortName}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rubricData.attempts.map((attemptData: AttemptData, index: number) => (
-                      <tr
-                        key={index}
-                        className="border-b border-gray-100 dark:border-gray-800"
-                      >
-                        <td className="py-1 px-1 font-medium text-gray-900 dark:text-white">
-                          {attemptData.attempt}
-                        </td>
-                        <td className="text-center py-1 px-1">
-                          <span
-                            className={`inline-flex items-center justify-center w-6 h-4 rounded text-xs font-semibold ${
-                              attemptData.overallScore >= 80
-                                ? "bg-green-100 text-green-800"
-                                : attemptData.overallScore >= 60
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {attemptData.overallScore}%
-                          </span>
-                        </td>
-                        {standardGroups && standardGroups.slice(0, 3).map((group) => {
-                          const score = attemptData.skillScores[group.shortName] || 0;
-                          return (
-                            <td key={group.id} className="text-center py-1 px-1">
-                              <span
-                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-semibold ${
-                                  score >= 80
-                                    ? "bg-green-100 text-green-800"
-                                    : score >= 60
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {score}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No previous attempts
-                  </p>
-                </div>
-              )}
-            </CardContent>
-
-            <CardFooter className="pt-0">
-              <div className="w-full text-center py-2 text-xs text-gray-500">
-                {rubricData.attempts.length} attempt
-                {rubricData.attempts.length !== 1 ? "s" : ""}
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <style jsx>{`
-          .perspective-1000 {
-            perspective: 1000px;
-          }
-          .transform-style-preserve-3d {
-            transform-style: preserve-3d;
-            will-change: transform;
-          }
-          .backface-hidden {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-          }
-          .rotate-y-180 {
-            transform: rotateY(180deg);
-          }
-        `}</style>
-      </div>
-    );
-  };
-
-  const renderSoloCard = (simulation: Simulation) => {
-    const validScenarioIds =
-      simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-    const interaction = scenarios?.find(
-      (i: Scenario) => i.id === validScenarioIds[0],
-    );
-    const agent = agents?.find((a: Agent) => a.id === interaction?.agentId);
-    const agentConfig = getAgentConfig(agent?.name || "general");
-    const IconComponent = agentConfig.icon;
-    const isFlipped = flippedCards.has(simulation.id);
-    const rubricData = getRealRubricData(simulation.id);
-
-    return (
-      <div key={simulation.id} className="relative perspective-1000">
-        <div
-          className={`relative transition-transform duration-700 transform-style-preserve-3d ${
-            isFlipped ? "rotate-y-180" : ""
-          }`}
-        >
-          {/* Front Side */}
-          <Card
-            data-testid="permanent-simulation-card"
-            className={`group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden`}
-          >
-            {/* Background Pattern */}
-            <div className="absolute inset-0 opacity-5">
-              <div className="absolute inset-0 bg-gradient-to-br from-gray-900 to-gray-600"></div>
-              <div
-                className="absolute inset-0"
-                style={{
-                  backgroundImage:
-                    "radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)",
-                  backgroundSize: "20px 20px",
-                }}
-              ></div>
-            </div>
-
-            <CardHeader className="pb-4 relative z-10">
-              <div className="flex items-start justify-between">
-                <div
-                  className={`p-3 rounded-xl bg-gradient-to-br ${agentConfig.colors.gradient} shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                >
-                  <IconComponent className="h-6 w-6 text-white" />
-                </div>
-                <div className="flex flex-col items-end space-y-2">
-                  {/* Flip Icon */}
-                  {effectiveRole !== "guest" && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={(e) => handleCardFlip(simulation.id, e)}
-                            className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors relative z-20"
-                          >
-                            <RotateCcw className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>View Previous Attempts</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                  {effectiveRole === "guest" && (
-                    <div className="text-right">
-                      <div
-                        className="text-xs font-medium text-gray-500 dark:text-gray-400"
-                        data-testid="simulation-type"
-                      >
-                        Solo
-                      </div>
-                      <div className="text-xs text-gray-400">Simulation</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="space-y-4 relative z-10">
-              <div>
-                <h3
-                  className="font-bold text-lg text-gray-900 dark:text-white group-hover:text-gray-700 dark:group-hover:text-gray-200 transition-colors"
-                  data-testid="simulation-title"
-                >
-                  {simulation.title}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                  {agent?.description}
-                </p>
-              </div>
-
-              <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                <div
-                  className="flex items-center"
-                  data-testid="simulation-duration"
-                >
-                  <Timer className="h-3 w-3 mr-1" />
-                  <span className="text-sm">
-                    {simulation.timeLimit ? `${simulation.timeLimit}` : "∞"}
-                  </span>
-                  <span className="ml-1">min</span>
-                </div>
-                <div className="flex items-center">
-                  <User className="h-3 w-3 mr-1" />
-                  <span>1 session</span>
-                </div>
-                {effectiveRole !== "guest" && rubricData.highestScore > 0 && (
-                  <div className="flex items-center">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <div className="flex items-center">
-                            <Info className="h-3 w-3 mr-1" />
-                            <span>{rubricData.highestScore}%</span>
-                          </div>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Your highest score</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-
-            <CardFooter className="pt-0 relative z-10">
-              <button
-                onClick={() =>
-                  !loadingSimulation && handleStartSimulation(simulation.id)
-                }
-                disabled={loadingSimulation === simulation.id}
-                className={`w-full text-center py-3 rounded-lg bg-gradient-to-r ${agentConfig.colors.gradient} text-white font-medium text-sm hover:shadow-lg transition-all duration-300 ${
-                  loadingSimulation === simulation.id
-                    ? "animate-pulse cursor-not-allowed"
-                    : "hover:scale-105 cursor-pointer"
-                } disabled:opacity-70`}
-              >
-                {loadingSimulation === simulation.id
-                  ? "Starting..."
-                  : "Start Simulation"}
-              </button>
-            </CardFooter>
-          </Card>
-
-                     {/* Back Side */}
-           <Card
-             className={`absolute inset-0 bg-white dark:bg-gray-900 border-0 shadow-lg rotate-y-180 backface-hidden ${isFlipped ? "pointer-events-auto" : "pointer-events-none invisible"}`}
-           >
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-                    Previous Attempts
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
-                    {simulation.title}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {rubrics && standardGroups && standards && (
-                    <RubricModal
-                      simulationId={simulation.id}
-                      rubrics={rubrics}
-                      standardGroups={standardGroups}
-                      standards={standards}
-                    />
-                  )}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          onClick={(e) => handleCardFlip(simulation.id, e)}
-                          className="p-1 rounded-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                        >
-                          <ArrowLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Back to Card</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </div>
-            </CardHeader>
-
-            <CardContent className="max-h-48 overflow-auto">
-              {rubricData.attempts.length > 0 ? (
-                <table className="w-full text-xs">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-900">
-                    <tr className="border-b">
-                      <th className="text-left py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                        #
-                      </th>
-                      <th className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                        Score
-                      </th>
-                      {standardGroups && standardGroups.slice(0, 3).map((group) => (
-                        <th key={group.id} className="text-center py-1 px-1 font-semibold text-gray-700 dark:text-gray-300">
-                          {group.shortName}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rubricData.attempts.map((attemptData: AttemptData, index: number) => (
-                      <tr
-                        key={index}
-                        className="border-b border-gray-100 dark:border-gray-800"
-                      >
-                        <td className="py-1 px-1 font-medium text-gray-900 dark:text-white">
-                          {attemptData.attempt}
-                        </td>
-                        <td className="text-center py-1 px-1">
-                          <span
-                            className={`inline-flex items-center justify-center w-6 h-4 rounded text-xs font-semibold ${
-                              attemptData.overallScore >= 80
-                                ? "bg-green-100 text-green-800"
-                                : attemptData.overallScore >= 60
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {attemptData.overallScore}%
-                          </span>
-                        </td>
-                        {standardGroups && standardGroups.slice(0, 3).map((group) => {
-                          const score = attemptData.skillScores[group.shortName] || 0;
-                          return (
-                            <td key={group.id} className="text-center py-1 px-1">
-                              <span
-                                className={`inline-flex items-center justify-center w-4 h-4 rounded-full text-xs font-semibold ${
-                                  score >= 80
-                                    ? "bg-green-100 text-green-800"
-                                    : score >= 60
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-red-100 text-red-800"
-                                }`}
-                              >
-                                {score}
-                              </span>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div className="flex items-center justify-center py-8">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    No previous attempts
-                  </p>
-                </div>
-              )}
-            </CardContent>
-
-            <CardFooter className="pt-0">
-              <div className="w-full text-center py-2 text-xs text-gray-500">
-                {rubricData.attempts.length} attempt
-                {rubricData.attempts.length !== 1 ? "s" : ""}
-              </div>
-            </CardFooter>
-          </Card>
-        </div>
-
-        <style jsx>{`
-          .perspective-1000 {
-            perspective: 1000px;
-          }
-          .transform-style-preserve-3d {
-            transform-style: preserve-3d;
-            will-change: transform;
-          }
-          .backface-hidden {
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-          }
-          .rotate-y-180 {
-            transform: rotateY(180deg);
-          }
-        `}</style>
-      </div>
-    );
-  };
+  }, [soloCarouselIndex, multiCarouselIndex, handleStartSimulation, loadingSimulation, effectiveRole, getRealRubricData, scenarios, agents, rubrics, standardGroups, standards]);
 
   // Loading state
   if (simulationsLoading) {
@@ -1269,12 +1001,41 @@ export default function Home() {
   if (effectiveRole === "guest") {
     // Guest view - show all simulations with carousels
     return (
+      <TooltipProvider>
+        <div className="space-y-8">
+          {/* Solo Simulations Carousel */}
+          {soloSimulations.length > 0 && renderCarousel(soloSimulations, "solo")}
+
+          {/* Multi Simulations Carousel */}
+          {multiSimulations.length > 0 && renderCarousel(multiSimulations, "multi")}
+
+          {/* No simulations message */}
+          {soloSimulations.length === 0 && multiSimulations.length === 0 && (
+            <div className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">
+                No simulations available
+              </h3>
+              <p className="text-muted-foreground">
+                Contact an administrator to add simulations.
+              </p>
+            </div>
+          )}
+        </div>
+      </TooltipProvider>
+    );
+  }
+
+  // Regular user view - show all simulations with carousels
+  return (
+    <TooltipProvider>
       <div className="space-y-8">
         {/* Solo Simulations Carousel */}
         {soloSimulations.length > 0 && renderCarousel(soloSimulations, "solo")}
 
         {/* Multi Simulations Carousel */}
         {multiSimulations.length > 0 && renderCarousel(multiSimulations, "multi")}
+
+        <SimulationHistory showAll={false} showChats={false} showExport={false} />
 
         {/* No simulations message */}
         {soloSimulations.length === 0 && multiSimulations.length === 0 && (
@@ -1288,31 +1049,6 @@ export default function Home() {
           </div>
         )}
       </div>
-    );
-  }
-
-  // Regular user view - show all simulations with carousels
-  return (
-    <div className="space-y-8">
-      {/* Solo Simulations Carousel */}
-      {soloSimulations.length > 0 && renderCarousel(soloSimulations, "solo")}
-
-      {/* Multi Simulations Carousel */}
-      {multiSimulations.length > 0 && renderCarousel(multiSimulations, "multi")}
-
-      <SimulationHistory showAll={false} showChats={false} showExport={false} />
-
-      {/* No simulations message */}
-      {soloSimulations.length === 0 && multiSimulations.length === 0 && (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-semibold mb-2">
-            No simulations available
-          </h3>
-          <p className="text-muted-foreground">
-            Contact an administrator to add simulations.
-          </p>
-        </div>
-      )}
-    </div>
+    </TooltipProvider>
   );
 }
