@@ -479,6 +479,112 @@ describe("Attempt", () => {
     });
   });
 
+  describe("Single Chat Attempt Behavior", () => {
+    it("should not show chat selector dropdown for single chat attempts", async () => {
+      // Mock single chat attempt
+      const mockSingleChatSimulation = {
+        id: "simulation-1",
+        name: "Test Simulation",
+        description: "Test simulation description",
+        scenarioIds: ["scenario-1"], // Only one scenario
+        timeLimit: 30,
+        rubricId: "rubric-1",
+        createdAt: "2024-01-01T00:00:00Z",
+      };
+
+      const mockSingleCompletedChat = [
+        {
+          id: "chat-1",
+          title: "Test Chat 1",
+          scenarioId: "scenario-1",
+          attemptId: "attempt-1",
+          completed: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          completedAt: "2024-01-01T01:00:00Z",
+        },
+      ];
+
+      require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
+        mockSingleChatSimulation,
+      );
+      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
+        mockSingleCompletedChat,
+      );
+
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Overall Results")).toBeInTheDocument();
+        // Should not show chat selector for single chat
+        expect(screen.queryByText("Select chat to view results")).not.toBeInTheDocument();
+      });
+    });
+
+    it("should show previous chat messages for single chat attempts", async () => {
+      const mockSingleChatSimulation = {
+        id: "simulation-1",
+        name: "Test Simulation",
+        description: "Test simulation description",
+        scenarioIds: ["scenario-1"],
+        timeLimit: 30,
+        rubricId: "rubric-1",
+        createdAt: "2024-01-01T00:00:00Z",
+      };
+
+      const mockSingleCompletedChat = [
+        {
+          id: "chat-1",
+          title: "Test Chat 1",
+          scenarioId: "scenario-1",
+          attemptId: "attempt-1",
+          completed: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          completedAt: "2024-01-01T01:00:00Z",
+        },
+      ];
+
+      require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
+        mockSingleChatSimulation,
+      );
+      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
+        mockSingleCompletedChat,
+      );
+
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByText("This session has been completed.")).toBeInTheDocument();
+        expect(screen.getByText("Hello, I need help with calculus.")).toBeInTheDocument();
+      });
+    });
+
+    it("should show scenario information in results header", async () => {
+      const mockSingleCompletedChat = [
+        {
+          id: "chat-1",
+          title: "Test Chat 1",
+          scenarioId: "scenario-1",
+          attemptId: "attempt-1",
+          completed: true,
+          createdAt: "2024-01-01T00:00:00Z",
+          completedAt: "2024-01-01T01:00:00Z",
+        },
+      ];
+
+      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
+        mockSingleCompletedChat,
+      );
+
+      renderWithProviders(<Attempt attemptId="attempt-1" />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test scenario description")).toBeInTheDocument();
+        expect(screen.getByText("High crowdedness")).toBeInTheDocument();
+        expect(screen.getByText("Moderate intensity")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("Results Display", () => {
     it("should show results when all chats completed", async () => {
       // Mock all chats as completed
@@ -530,7 +636,6 @@ describe("Attempt", () => {
       renderWithProviders(<Attempt attemptId="attempt-1" />);
 
       await waitFor(() => {
-        expect(screen.getByTestId("attempt-results")).toBeInTheDocument();
         expect(screen.getByText("Overall Results")).toBeInTheDocument();
       });
     });
@@ -609,7 +714,6 @@ describe("Attempt", () => {
       // Should show results immediately since all data is available
       await waitFor(
         () => {
-          expect(screen.getByTestId("attempt-results")).toBeInTheDocument();
           expect(screen.getByText("Overall Results")).toBeInTheDocument();
         },
         { timeout: 3000 },
@@ -718,7 +822,7 @@ describe("Attempt", () => {
       renderWithProviders(<Attempt attemptId="attempt-1" />);
 
       await waitFor(() => {
-        expect(screen.getByTestId("attempt-results")).toBeInTheDocument();
+        expect(screen.getByText("Overall Results")).toBeInTheDocument();
       });
     });
   });

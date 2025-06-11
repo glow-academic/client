@@ -362,6 +362,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [showResults, chats, selectedChatId]);
 
+  // Fetch scenario for results display
+  const { data: resultsScenario, isLoading: resultsScenarioLoading } = useQuery({
+    queryKey: ["resultsScenario", selectedChat?.scenarioId],
+    queryFn: () => getScenario(selectedChat!.scenarioId),
+    enabled: !!selectedChat?.scenarioId && showResults,
+  });
+
+  // Fetch messages for selected chat in results
+  const { data: resultsMessages = [], isLoading: resultsMessagesLoading } = useQuery({
+    queryKey: ["resultsMessages", selectedChat?.id],
+    queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
+    enabled: !!selectedChat?.id && showResults && isSingleChatAttempt,
+  });
+
   // Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
     if (!attempt?.createdAt || !simulation || showResults) return;
@@ -840,7 +854,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               The attempt you're looking for doesn't exist or has no chats
               configured.
             </p>
-            <Button onClick={() => router.push("/simulations")}>
+            <Button onClick={() => router.push("/home")}>
               Return To Dashboard
             </Button>
           </CardContent>
@@ -858,35 +872,41 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           <Card className="h-full flex flex-col">
             <CardContent className="flex-1 flex flex-col p-0">
               {/* Chat Selector and Controls */}
-              <div className="p-4 border-b bg-muted/30">
+              <div className="p-4 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <Select
-                      value={selectedChatId || ""}
-                      onValueChange={setSelectedChatId}
-                    >
-                      <SelectTrigger className="w-80">
-                        <SelectValue placeholder="Select chat to view results" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {chats
-                          ?.filter((chat: SimulationChat) => chat.completed)
-                          .map((chat: SimulationChat, index: number) => (
-                            <SelectItem key={chat.id} value={chat.id}>
-                              <div className="flex items-center gap-2">
-                                <span>
-                                  {isSingleChatAttempt
-                                    ? "Session Results"
-                                    : `Chat ${index + 1}: ${chat.title}`}
-                                </span>
-                                <Badge variant="outline" className="text-xs">
-                                  Completed
-                                </Badge>
-                              </div>
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                    {/* Show scenario information */}
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium">
+                        {resultsScenario?.description || "Session Results"}
+                      </span>
+                    </div>
+
+                    {/* Only show chat selector for multi-chat attempts */}
+                    {!isSingleChatAttempt && (
+                      <Select
+                        value={selectedChatId || ""}
+                        onValueChange={setSelectedChatId}
+                      >
+                        <SelectTrigger className="w-80">
+                          <SelectValue placeholder="Select chat to view results" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {chats
+                            ?.filter((chat: SimulationChat) => chat.completed)
+                            .map((chat: SimulationChat, index: number) => (
+                              <SelectItem key={chat.id} value={chat.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>Chat {index + 1}: {chat.title}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    Completed
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-4">
@@ -914,6 +934,52 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       rubricId={simulation.rubricId}
                       simulationChatId={selectedChat.id}
                     />
+                  ) : isSingleChatAttempt && selectedChat ? (
+                    /* Show chat messages for single chat attempts */
+                    <div className="space-y-4">
+                      {resultsMessages.map((message: SimulationMessage) => (
+                        <div key={message.id} className="space-y-4">
+                          {/* User Message */}
+                          {message.query && (
+                            <div className="flex justify-end">
+                              <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
+                                <Markdown>{message.query}</Markdown>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Assistant Response */}
+                          {message.response !== undefined && message.query !== "" && (
+                            <div className="flex justify-start">
+                              <div className="flex gap-3 max-w-[80%]">
+                                <Avatar className="h-8 w-8 flex-shrink-0">
+                                  <AvatarFallback>AI</AvatarFallback>
+                                </Avatar>
+                                <div className="bg-muted rounded-lg p-3 flex-1">
+                                  <Markdown>{message.response}</Markdown>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      
+                      {/* Show completion message */}
+                      <div className="text-center py-4 border-t">
+                        <p className="text-muted-foreground">
+                          This session has been completed.
+                        </p>
+                        {currentDynamicRubric && (
+                          <div className="mt-2">
+                            <Badge
+                              variant={currentDynamicRubric.passed ? "default" : "destructive"}
+                            >
+                              Score: {currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints} - {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ) : (
                     <>
                       {/* Aggregated Results */}
@@ -1126,11 +1192,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         Chat {currentChatIndex + 1} of{" "}
                         {simulation?.scenarioIds?.length || 0}
                       </span>
-                      {scenario && (
-                        <>
-                          <span>•</span>
-                        </>
-                      )}
                     </>
                   )}
                 </div>

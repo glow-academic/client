@@ -147,7 +147,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         group,
         standards: standards
             .filter((standard: Standard) => standard.standardGroupId === group.id)
-            .sort((a, b) => a.points - b.points), // Sort by points ascending
+            .sort((a, b) => b.points - a.points), // Sort by points descending (Level 5 to Level 1)
     }));
 
     // Determine the maximum number of standards across all groups for consistent column count
@@ -159,12 +159,12 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                 <Table className="min-w-[800px]">
                     <TableHeader className="sticky top-0 z-10">
                         <TableRow>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[120px]">
+                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[100px]">
                                 Criteria
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
                                 <TableHead key={i} className="bg-primary text-primary-foreground font-semibold">
-                                    Level {i + 1}
+                                    Level {maxStandards - i}
                                 </TableHead>
                             ))}
                         </TableRow>
@@ -172,11 +172,11 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                     <TableBody>
                         {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
                             <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
-                                <TableCell className="font-medium">{group.name}</TableCell>
+                                <TableCell className="font-medium align-top p-3">{group.name}</TableCell>
                                 {Array.from({ length: maxStandards }, (_, standardIndex) => {
                                     const standard = groupStandards[standardIndex];
                                     if (!standard) {
-                                        return <TableCell key={standardIndex} className="whitespace-normal text-xs"></TableCell>;
+                                        return <TableCell key={standardIndex} className="whitespace-normal text-xs align-top p-3"></TableCell>;
                                     }
 
                                     const feedback = getFeedbackForStandard(standard.id);
@@ -184,14 +184,14 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                                     const shouldHighlightCell = shouldHighlight(standard, groupStandards);
 
                                     return (
-                                        <TableCell
-                                            key={standard.id}
-                                            className={`whitespace-normal text-xs relative ${shouldHighlightCell
+                                                                                <TableCell 
+                                            key={standard.id} 
+                                            className={`whitespace-normal text-xs relative align-top p-3 ${shouldHighlightCell
                                                 ? isAchieved
                                                     ? "bg-green-200 dark:bg-green-900/40"
                                                     : "bg-green-100 dark:bg-green-900/20"
                                                 : ""
-                                                }`}
+                                            }`}
                                         >
                                             <div className="space-y-2">
                                                 <div className="font-medium text-xs">
