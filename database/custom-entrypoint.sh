@@ -7,6 +7,54 @@ DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
 DB_NAME=${POSTGRES_DB:-mydb}
 INIT_SQL=${INIT_SQL:-init.sql}
 INIT_DIR=${INIT_DIR:-init}
+HISTORY_DIR=${HISTORY_DIR:-/database/history}
+
+# --- BACKUP FUNCTION -------------------------------------------------
+backup_database() {
+  echo "=== Starting database backup on shutdown ==="
+  
+  # Create history directory if it doesn't exist
+  mkdir -p "$HISTORY_DIR"
+  
+  # Generate timestamp
+  ts=$(date +%Y%m%d_%H%M%S)
+  backup_file="$HISTORY_DIR/backup_${ts}.sql"
+  
+  # Wait a moment for any ongoing transactions to complete
+  sleep 2
+  
+  # Create the backup
+  echo "Creating database backup: $backup_file"
+  if pg_dump "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:5432/${DB_NAME}" > "$backup_file" 2>/dev/null; then
+    echo "✅ Backup saved → $backup_file"
+    
+    # Keep only the last 10 backups to prevent disk space issues
+    cd "$HISTORY_DIR"
+    ls -t backup_*.sql 2>/dev/null | tail -n +11 | xargs -r rm --
+    echo "Cleaned up old backups (keeping last 10)"
+  else
+    echo "⚠️  Backup failed or database not ready"
+  fi
+  
+  echo "=== Database backup completed ==="
+}
+
+# --- SIGNAL HANDLERS -------------------------------------------------
+# Handle shutdown signals to create backup before exit
+cleanup() {
+  echo "Received shutdown signal..."
+  backup_database
+  echo "Shutting down PostgreSQL..."
+  # Send SIGTERM to postgres process
+  if [ -n "${PG_PID:-}" ]; then
+    kill -TERM "$PG_PID" 2>/dev/null || true
+    wait "$PG_PID" 2>/dev/null || true
+  fi
+  exit 0
+}
+
+# Trap signals that indicate shutdown
+trap cleanup SIGTERM SIGINT SIGQUIT
 
 echo "Starting custom PostgreSQL entrypoint..."
 echo "DB_USER: $DB_USER"
@@ -128,6 +176,13 @@ else
 fi
 
 echo "Executing original PostgreSQL entrypoint..."
-# Execute the original entrypoint script
-# This will handle database initialization and run scripts in /docker-entrypoint-initdb.d/
-exec docker-entrypoint.sh postgres "$@"
+
+# Start PostgreSQL in the background so we can handle signals
+docker-entrypoint.sh postgres "$@" &
+PG_PID=$!
+
+echo "PostgreSQL started with PID: $PG_PID"
+echo "Database ready. Backup will be created automatically on shutdown."
+
+# Wait for PostgreSQL process
+wait "$PG_PID"

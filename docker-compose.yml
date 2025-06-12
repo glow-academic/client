@@ -23,6 +23,7 @@ services:
       - ./database/init.sql:/init.sql
       - ./database/init:/init
       - ./database/custom-entrypoint.sh:/custom-entrypoint.sh
+      - ./database/history:/database/history  # Mount history directory
     command: ["/custom-entrypoint.sh"]
     ports:
       - "${DB_PORT}:5432"
@@ -88,6 +89,11 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        DB_USER: ${DB_USER}
+        DB_PASSWORD: ${DB_PASSWORD}
+        DB_NAME: ${DB_NAME}
+        DB_PORT: ${DB_PORT}
+        DB_HOST: ${DB_HOST}
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
