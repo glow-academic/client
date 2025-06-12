@@ -18,7 +18,7 @@ def get_agent_info(agent_id: str, session: Session) -> dict:
     }
 
 
-def student_prompt(agent_name: str, agent_prompt: str) -> str:
+def student_prompt(agent_name: str, agent_prompt: str, advanced: bool = False) -> str:
     return (
         f"Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a {agent_name} college student, so I need you to truly embrace this role."
         f"{agent_prompt}"
@@ -38,7 +38,7 @@ def student_prompt(agent_name: str, agent_prompt: str) -> str:
     )
 
 
-def gta_prompt(agent_name: str, agent_prompt) -> str:
+def gta_prompt(agent_name: str, agent_prompt, advanced: bool = False) -> str:
     return (
         f"Your only purpose is to imitate a Graduate Level Teaching Assistant and to help a {agent_name} college student with whatever they ask you."
         f"{agent_prompt}"

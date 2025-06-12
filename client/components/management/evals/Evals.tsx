@@ -184,7 +184,7 @@ export default function Evals() {
         toast.success("Evaluation started successfully");
         
         // Navigate to the evaluation page
-        router.push(`/e/${id}`);
+        router.push(`/management/evals/r/${data.eval_run_id}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
@@ -211,7 +211,7 @@ export default function Evals() {
       chats?.some(chat => chat.id === chatId && chat.evalRunId === run.id)
     );
     if (evalRun) {
-      router.push(`/e/${evalRun.evalId}?chatId=${chatId}`);
+      router.push(`/management/evals/r/${evalRun.id}`);
     }
   };
 
@@ -338,7 +338,7 @@ export default function Evals() {
 
                       <div className="pt-2 border-t">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>Parallel runs: {evaluation.numParallelRuns}</span>
+                          <span>Parallel runs: {evaluation.maxParallelRuns}</span>
                           <span>Created: {formatDate(evaluation.createdAt)}</span>
                         </div>
                       </div>
@@ -428,7 +428,7 @@ export default function Evals() {
                 <Card 
                   key={evalRun.id} 
                   className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => router.push(`/e/${evalRun.evalId}`)}
+                  onClick={() => router.push(`/management/evals/r/${evalRun.id}`)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">

@@ -156,7 +156,6 @@ class TestRunGenericAgent:
         async for token in run_generic_agent(
             chat_id=str(sample_simulation_chat.id),
             input_text="Test input",
-            test_data=True,
             session=mock_session,
         ):
             result_tokens.append(token)
@@ -183,7 +182,6 @@ class TestRunGenericAgent:
         async for token in run_generic_agent(
             chat_id=str(sample_eval_chat.id),
             input_text="Test eval input",
-            test_data=True,
             session=mock_session,
         ):
             result_tokens.append(token)
@@ -225,7 +223,6 @@ class TestRunGenericAgent:
             async for token in run_generic_agent(
                 chat_id=str(sample_simulation_chat.id),
                 input_text="Test input",
-                test_data=False,
                 session=mock_session,
             ):
                 result_tokens.append(token)

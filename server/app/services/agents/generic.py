@@ -1,9 +1,9 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
 from agents.items import TResponseInputItem
 from openai.types import Reasoning
 from app.extensions import get_gemini
-from app.utils.chat import get_conversation_history, get_chat_scenario
+from app.utils.chat import generate_natural_opening, get_chat_scenario, get_eval_conversation_history, get_conversation_history
 from app.utils.classes import get_class_info
 from app.db import get_session
 from sqlmodel import Session, select
@@ -16,6 +16,7 @@ from app.models import (
     EvalRuns,
     Agents,
     Scenarios,
+    Evals,
 )
 from app.utils.agents import gta_prompt, student_prompt
 from fastapi import Depends
@@ -64,8 +65,7 @@ async def run_generic_agent_bare(
 
 async def run_generic_agent(
     chat_id: str,
-    input_text: str = "",
-    test_data: bool = False,
+    input_text: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -82,32 +82,6 @@ async def run_generic_agent(
     Yields:
         Text chunks from the agent's response
     """
-
-    # If test_data is True, stream back a dummy response
-    if test_data:
-        dummy_response = "This is a test response for debugging purposes. The agent is working correctly."
-
-        # Try to determine chat type and add appropriate message
-        simulation_chat = session.exec(
-            select(SimulationChats).where(SimulationChats.id == chat_id)
-        ).one_or_none()
-
-        if simulation_chat:
-            message = SimulationMessages(
-                chat_id=chat_id, query=input_text, response=dummy_response
-            )
-        else:
-            message = EvalMessages(
-                chat_id=chat_id, query=input_text, response=dummy_response
-            )
-
-        session.add(message)
-        session.commit()
-
-        # Stream the dummy response character by character to simulate real streaming
-        for char in dummy_response:
-            yield char
-        return
 
     # Try to get simulation chat first
     simulation_chat = session.exec(
@@ -128,7 +102,7 @@ async def run_generic_agent(
 
         if eval_chat:
             # Handle eval chat
-            async for token in _handle_eval_chat(eval_chat, input_text, session):
+            async for token in _handle_eval_chat(eval_chat, session):
                 yield token
         else:
             raise ValueError(f"Chat not found with ID: {chat_id}")
@@ -211,7 +185,7 @@ async def _handle_simulation_chat(
 
 
 async def _handle_eval_chat(
-    chat: EvalChats, input_text: str, session: Session
+    chat: EvalChats, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle eval chat processing."""
 
@@ -221,14 +195,46 @@ async def _handle_eval_chat(
     ).one()
     if not eval_run:
         raise ValueError(f"Eval run not found for chat {chat.id}")
-
+    
+    # get the eval for this eval run
+    eval_obj = session.exec(select(Evals).where(Evals.id == eval_run.eval_id)).one()
+    if not eval_obj:
+        raise ValueError(f"Eval not found for eval run {eval_run.id}")
+    
+    max_turns = eval_obj.max_turns
+    # get the query agent
+    query_agent = session.exec(select(Agents).where(Agents.id == eval_run.query_agent_id)).one()
+    if not query_agent:
+        raise ValueError(f"Query agent not found for eval run {eval_run.id}")
+    
     # Get the agent from the eval run
-    agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
-    if not agent:
+    response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
+    if not response_agent:
         raise ValueError(f"Agent not found for eval run {eval_run.id}")
+    
+    # find out what turn it is by checking the length of eval messages
+    eval_messages = session.exec(
+        select(EvalMessages).where(EvalMessages.chat_id == chat.id)
+    ).all()
+    turn_number = len(eval_messages)
+
+    if turn_number >= max_turns:
+        return
+
+    if turn_number == 0:
+        input_text = generate_natural_opening(query_agent)
+
+        # add a new message with the input text
+        message = EvalMessages(chat_id=chat.id, content=input_text, type="query")
+        session.add(message)
+        session.commit()
+    else:
+        # get the latest message
+        latest_message = eval_messages[-1]
+        input_text = latest_message.content
 
     # Add a new message with an empty response
-    message = EvalMessages(chat_id=chat.id, query=input_text, response="")
+    message = EvalMessages(chat_id=chat.id, content="", type="response" if turn_number % 2 == 0 else "query")
     session.add(message)
 
     # Get all the messages for the chat_id, including the new one, order by created_at
@@ -239,7 +245,7 @@ async def _handle_eval_chat(
     ).all()
 
     # Prepare conversation history - need to adapt for eval messages
-    conversation_history = get_conversation_history(messages)
+    conversation_history = get_eval_conversation_history(messages)
 
     # Get scenario info for context
     scenario = session.exec(
@@ -251,6 +257,12 @@ async def _handle_eval_chat(
     class_info = get_class_info(eval_run.class_id, session)
 
     input_items = [scenario_context, class_info] + conversation_history
+
+    # if turn_number is even, use the query agent, otherwise use the response agent
+    if turn_number % 2 == 0:
+        agent = query_agent
+    else:
+        agent = response_agent
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
@@ -276,7 +288,7 @@ async def _handle_eval_chat(
                 yield chunk
 
     # Update the message with the full response
-    message.response = full_response
+    message.content = full_response
     session.add(message)
     session.commit()
 

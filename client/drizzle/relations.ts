@@ -13,8 +13,6 @@ export const classesRelations = relations(classes, ({many}) => ({
 	schedules: many(schedules),
 	documents: many(documents),
 	scenarios: many(scenarios),
-	evals: many(evals),
-	evalRuns: many(evalRuns),
 }));
 
 export const profilesRelations = relations(profiles, ({one, many}) => ({
@@ -77,7 +75,7 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 		references: [classes.id]
 	}),
 	simulationChats: many(simulationChats),
-	evalRuns: many(evalRuns),
+	evalChats: many(evalChats),
 }));
 
 export const agentsRelations = relations(agents, ({many}) => ({
@@ -159,10 +157,6 @@ export const simulationChatFeedbacksRelations = relations(simulationChatFeedback
 }));
 
 export const evalsRelations = relations(evals, ({one, many}) => ({
-	class: one(classes, {
-		fields: [evals.classId],
-		references: [classes.id]
-	}),
 	agent: one(agents, {
 		fields: [evals.baseAgentId],
 		references: [agents.id]
@@ -171,10 +165,6 @@ export const evalsRelations = relations(evals, ({one, many}) => ({
 }));
 
 export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
-	class: one(classes, {
-		fields: [evalRuns.classId],
-		references: [classes.id]
-	}),
 	eval: one(evals, {
 		fields: [evalRuns.evalId],
 		references: [evals.id]
@@ -182,10 +172,6 @@ export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
 	agent: one(agents, {
 		fields: [evalRuns.agentId],
 		references: [agents.id]
-	}),
-	scenario: one(scenarios, {
-		fields: [evalRuns.scenarioId],
-		references: [scenarios.id]
 	}),
 	rubric: one(rubrics, {
 		fields: [evalRuns.rubricId],
@@ -195,6 +181,10 @@ export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
 }));
 
 export const evalChatsRelations = relations(evalChats, ({one, many}) => ({
+	scenario: one(scenarios, {
+		fields: [evalChats.scenarioId],
+		references: [scenarios.id]
+	}),
 	evalRun: one(evalRuns, {
 		fields: [evalChats.evalRunId],
 		references: [evalRuns.id]

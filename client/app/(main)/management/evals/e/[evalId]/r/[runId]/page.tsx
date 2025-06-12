@@ -1,22 +1,22 @@
 /**
- * app/e/[evalId]/page.tsx
+ * app/(main)/management/evals/e/[evalId]/r/[runId]/page.tsx
  * Evaluation page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
  */
 
-import Evaluation from "@/components/common/chat/Evaluation";
+import EvaluationRun from "@/components/common/chat/EvaluationRun";
 import { use } from "react";
 
 export default function EvaluationPage({
   params,
 }: {
-  params: Promise<{ evalId: string }>;
+  params: Promise<{ runId: string }>;
 }) {
-  const { evalId } = use(params);
+  const { runId } = use(params);
   return (
     <div className="space-y-6">
-      <Evaluation evaluationId={evalId} />
+      <EvaluationRun runId={runId} />
     </div>
   );
 }

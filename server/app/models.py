@@ -42,11 +42,9 @@ class Classes(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
 
     documents: List['Documents'] = Relationship(back_populates='class_')
-    evals: List['Evals'] = Relationship(back_populates='class_')
     scenarios: List['Scenarios'] = Relationship(back_populates='class_')
     schedules: List['Schedules'] = Relationship(back_populates='class_')
     topics: List['Topics'] = Relationship(back_populates='class_')
-    eval_runs: List['EvalRuns'] = Relationship(back_populates='class_')
 
 
 class Rubrics(_Base, table=True):
@@ -101,7 +99,6 @@ class Documents(_Base, table=True):
 class Evals(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['base_agent_id'], ['agents.id'], ondelete='CASCADE', name='evals_base_agent_id_fkey'),
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='evals_class_id_fkey'),
         PrimaryKeyConstraint('id', name='evals_pkey')
     )
 
@@ -112,14 +109,12 @@ class Evals(_Base, table=True):
     base_agent_id: UUID = Field(sa_column=Column('base_agent_id', Uuid))
     scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     agent_ids: list = Field(sa_column=Column('agent_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    rubric_ids: list = Field(sa_column=Column('rubric_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     eval_type: str = Field(sa_column=Column('eval_type', Enum('student', 'ta', name='eval_type'), server_default=text("'student'::eval_type")))
     max_turns: int = Field(sa_column=Column('max_turns', Integer))
-    num_parallel_runs: int = Field(sa_column=Column('num_parallel_runs', Integer))
-    rubric_ids: list = Field(sa_column=Column('rubric_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
+    max_parallel_runs: int = Field(sa_column=Column('max_parallel_runs', Integer))
 
     base_agent: Optional['Agents'] = Relationship(back_populates='evals')
-    class_: Optional['Classes'] = Relationship(back_populates='evals')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='eval')
 
 
@@ -164,7 +159,7 @@ class Scenarios(_Base, table=True):
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')
-    eval_runs: List['EvalRuns'] = Relationship(back_populates='scenario')
+    eval_chats: List['EvalChats'] = Relationship(back_populates='scenario')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='scenario')
 
 
@@ -242,26 +237,20 @@ class EvalRuns(_Base, table=True):
     __tablename__ = 'eval_runs'
     __table_args__ = (
         ForeignKeyConstraint(['agent_id'], ['agents.id'], ondelete='CASCADE', name='eval_runs_agent_id_fkey'),
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='eval_runs_class_id_fkey'),
         ForeignKeyConstraint(['eval_id'], ['evals.id'], ondelete='CASCADE', name='eval_runs_eval_id_fkey'),
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='eval_runs_rubric_id_fkey'),
-        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='eval_runs_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='eval_runs_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
     eval_id: UUID = Field(sa_column=Column('eval_id', Uuid))
     agent_id: UUID = Field(sa_column=Column('agent_id', Uuid))
-    scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
     rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
 
     agent: Optional['Agents'] = Relationship(back_populates='eval_runs')
-    class_: Optional['Classes'] = Relationship(back_populates='eval_runs')
     eval: Optional['Evals'] = Relationship(back_populates='eval_runs')
     rubric: Optional['Rubrics'] = Relationship(back_populates='eval_runs')
-    scenario: Optional['Scenarios'] = Relationship(back_populates='eval_runs')
     eval_chats: List['EvalChats'] = Relationship(back_populates='eval_run')
 
 
@@ -322,16 +311,20 @@ class EvalChats(_Base, table=True):
     __tablename__ = 'eval_chats'
     __table_args__ = (
         ForeignKeyConstraint(['eval_run_id'], ['eval_runs.id'], ondelete='CASCADE', name='eval_chats_eval_run_id_fkey'),
+        ForeignKeyConstraint(['scenario_id'], ['scenarios.id'], ondelete='CASCADE', name='eval_chats_scenario_id_fkey'),
         PrimaryKeyConstraint('id', name='eval_chats_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
+    scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
     eval_run_id: UUID = Field(sa_column=Column('eval_run_id', Uuid))
+    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     eval_run: Optional['EvalRuns'] = Relationship(back_populates='eval_chats')
+    scenario: Optional['Scenarios'] = Relationship(back_populates='eval_chats')
     eval_chat_grades: List['EvalChatGrades'] = Relationship(back_populates='eval_chat')
     eval_messages: List['EvalMessages'] = Relationship(back_populates='chat')
 
@@ -389,8 +382,8 @@ class EvalMessages(_Base, table=True):
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     chat_id: UUID = Field(sa_column=Column('chat_id', Uuid))
-    query: str = Field(sa_column=Column('query', Text))
-    response: str = Field(sa_column=Column('response', Text))
+    content: str = Field(sa_column=Column('content', Text))
+    type: str = Field(sa_column=Column('type', Enum('query', 'response', name='eval_message_type')))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
 
     chat: Optional['EvalChats'] = Relationship(back_populates='eval_messages')

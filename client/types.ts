@@ -23,7 +23,7 @@ import {
   evalMessages as EvalMessages,
   evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
-  agentType, classTerm, documentType, evalType, profileRole, rubricType, seniorityLevels
+  agentType, classTerm, documentType, evalMessageType, evalType, profileRole, rubricType, seniorityLevels
 } from "@/drizzle/schema";
 
 // Use Drizzle schema types
@@ -55,6 +55,7 @@ type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 type AgentType = (typeof agentType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
+type EvalMessageType = (typeof evalMessageType.enumValues)[number];
 type EvalType = (typeof evalType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
 type RubricType = (typeof rubricType.enumValues)[number];
@@ -88,6 +89,7 @@ export type {
   AgentType,
   ClassTerm,
   DocumentType,
+  EvalMessageType,
   EvalType,
   ProfileRole,
   RubricType,

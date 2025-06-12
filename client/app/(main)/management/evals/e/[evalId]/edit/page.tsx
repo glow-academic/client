@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/evals/e/[evalId]/page.tsx
+ * app/(main)/management/evals/e/[evalId]/edit/page.tsx
  * Page for the eval page.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

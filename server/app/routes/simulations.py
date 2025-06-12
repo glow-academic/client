@@ -6,8 +6,6 @@ from app.models import (
     SimulationChats,
     Agents,
     Scenarios,
-    Classes,
-    Documents,
 )
 from app.db import get_session
 from sqlmodel import Session, select
@@ -21,104 +19,11 @@ from app.services.agents.scenario import run_scenario_agent
 from fastapi.responses import StreamingResponse
 import json
 from typing import AsyncIterator
+from app.utils.scenario import randomly_fill_scenario_attributes
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-
-async def randomly_fill_scenario_attributes(
-    scenario: Scenarios, session: Session
-) -> Scenarios:
-    """
-    Randomly fill null attributes of a scenario with available options from the database.
-
-    Args:
-        scenario: The scenario object with potentially null attributes
-        session: Database session
-
-    Returns:
-        Updated scenario object with randomly selected values for null attributes
-    """
-    # Random agent selection if agent_id is null
-    if scenario.agent_id is None:
-        all_agents = session.exec(select(Agents)).all()
-        if all_agents:
-            scenario_agent_id = random.choice(all_agents).id
-            logger.info(f"Randomly selected agent_id: {scenario_agent_id}")
-    else:
-        scenario_agent_id = scenario.agent_id
-
-    # Random class selection if class_id is null
-    if scenario.class_id is None:
-        all_classes = session.exec(select(Classes)).all()
-        if all_classes:
-            scenario_class_id = random.choice(all_classes).id
-            logger.info(f"Randomly selected class_id: {scenario_class_id}")
-    else:
-        scenario_class_id = scenario.class_id
-
-    # Random document selection if documents is null
-    if scenario.documents is None:
-        # Get all documents, optionally filtered by class if we have one
-        if scenario_class_id:
-            class_documents = session.exec(
-                select(Documents).where(Documents.class_id == scenario_class_id)
-            ).all()
-        else:
-            class_documents = session.exec(select(Documents)).all()
-
-        if class_documents:
-            # Randomly select 0-3 documents
-            num_docs = random.randint(0, min(3, len(class_documents)))
-            if num_docs > 0:
-                selected_docs = random.sample(class_documents, num_docs)
-                scenario_documents = [doc.id for doc in selected_docs]
-                logger.info(
-                    f"Randomly selected {num_docs} documents: {scenario_documents}"
-                )
-            else:
-                scenario_documents = []
-                logger.info("Randomly selected 0 documents (empty list)")
-        else:
-            scenario_documents = []
-            logger.info("No documents found")
-    else:
-        scenario_documents = scenario.documents
-
-    # Random seniority selection if seniority is null
-    if scenario.seniority is None:
-        seniority_options = ["freshman", "sophomore", "junior", "senior"]
-        scenario_seniority = random.choice(seniority_options)
-        logger.info(f"Randomly selected seniority: {scenario_seniority}")
-    else:
-        scenario_seniority = scenario.seniority
-
-    # Random crowdedness selection if crowdedness is null (1-10 scale)
-    if scenario.crowdedness is None:
-        scenario_crowdedness = random.randint(1, 10)
-        logger.info(f"Randomly selected crowdedness: {scenario_crowdedness}")
-    else:
-        scenario_crowdedness = scenario.crowdedness
-
-    # Random intensity selection if intensity is null (1-10 scale)
-    if scenario.intensity is None:
-        scenario_intensity = random.randint(1, 10)
-        logger.info(f"Randomly selected intensity: {scenario_intensity}")
-    else:
-        scenario_intensity = scenario.intensity
-
-    return Scenarios(
-        name=scenario.name,
-        description=scenario.description,
-        agent_id=scenario_agent_id,
-        class_id=scenario_class_id,
-        documents=scenario_documents,
-        seniority=scenario_seniority,
-        crowdedness=scenario_crowdedness,
-        intensity=scenario_intensity,
-    )
-
 
 @router.post("/start")
 async def start_attempt(
@@ -424,13 +329,13 @@ async def continue_attempt(
                 next_chat_id = next_chat.id
 
         # Run logic to end the current chat
-        rubric_id = await run_grade_agent(chat_id, session)
+        simulation_grade_id = await run_grade_agent(chat_id, session)
 
         return {
             "success": True,
             "message": "Chat ended successfully",
             "chat_id": str(next_chat_id),
-            "rubric_id": rubric_id,
+            "simulation_grade_id": simulation_grade_id,
             "completed": next_chat_id == chat_id,
         }
 

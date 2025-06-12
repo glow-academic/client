@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm"
 export const agentType = pgEnum("agent_type", ['student', 'ta'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
+export const evalMessageType = pgEnum("eval_message_type", ['query', 'response'])
 export const evalType = pgEnum("eval_type", ['student', 'ta'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
 export const rubricType = pgEnum("rubric_type", ['simulation', 'eval'])
@@ -299,20 +300,14 @@ export const evals = pgTable("evals", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	description: text().notNull(),
-	classId: uuid("class_id"),
 	baseAgentId: uuid("base_agent_id").notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
 	agentIds: uuid("agent_ids").array().default(["RAY"]).notNull(),
+	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
 	evalType: evalType("eval_type").default('student').notNull(),
 	maxTurns: integer("max_turns").notNull(),
-	numParallelRuns: integer("num_parallel_runs").notNull(),
-	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
+	maxParallelRuns: integer("max_parallel_runs").notNull(),
 }, (table) => [
-	foreignKey({
-			columns: [table.classId],
-			foreignColumns: [classes.id],
-			name: "evals_class_id_fkey"
-		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.baseAgentId],
 			foreignColumns: [agents.id],
@@ -323,17 +318,10 @@ export const evals = pgTable("evals", {
 export const evalRuns = pgTable("eval_runs", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	classId: uuid("class_id").notNull(),
 	evalId: uuid("eval_id").notNull(),
 	agentId: uuid("agent_id").notNull(),
-	scenarioId: uuid("scenario_id").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
 }, (table) => [
-	foreignKey({
-			columns: [table.classId],
-			foreignColumns: [classes.id],
-			name: "eval_runs_class_id_fkey"
-		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.evalId],
 			foreignColumns: [evals.id],
@@ -343,11 +331,6 @@ export const evalRuns = pgTable("eval_runs", {
 			columns: [table.agentId],
 			foreignColumns: [agents.id],
 			name: "eval_runs_agent_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.scenarioId],
-			foreignColumns: [scenarios.id],
-			name: "eval_runs_scenario_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.rubricId],
@@ -361,8 +344,15 @@ export const evalChats = pgTable("eval_chats", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	title: text().notNull(),
+	scenarioId: uuid("scenario_id").notNull(),
 	evalRunId: uuid("eval_run_id").notNull(),
+	completed: boolean().default(false).notNull(),
 }, (table) => [
+	foreignKey({
+			columns: [table.scenarioId],
+			foreignColumns: [scenarios.id],
+			name: "eval_chats_scenario_id_fkey"
+		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.evalRunId],
 			foreignColumns: [evalRuns.id],
@@ -374,8 +364,8 @@ export const evalMessages = pgTable("eval_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	chatId: uuid("chat_id").notNull(),
-	query: text().notNull(),
-	response: text().notNull(),
+	content: text().notNull(),
+	type: evalMessageType().notNull(),
 	completed: boolean().default(false).notNull(),
 }, (table) => [
 	foreignKey({

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
-import EvaluationPage from "@/components/common/chat/Evaluation";
+import EvaluationPage from "@/components/common/chat/EvaluationRun";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
