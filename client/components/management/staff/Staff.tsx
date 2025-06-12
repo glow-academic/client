@@ -60,6 +60,8 @@ const getRoleBadgeVariant = (role: string) => {
 
 const getRoleIcon = (role: string) => {
   switch (role) {
+    case "admin":
+      return Shield;
     case "instructional":
       return Shield;
     case "instructor":
@@ -73,6 +75,8 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
+    case "admin":
+      return "Administrator";
     case "instructional":
       return "Instructional Staff";
     case "instructor":
@@ -97,10 +101,10 @@ export default function Staff() {
     queryFn: () => getAllProfiles(),
   });
 
-  // Filter staff users (exclude admin and regular users)
+  // Filter staff users (include admin, instructional, instructor, ta)
   const staffUsers = React.useMemo(() => {
     return allProfiles.filter((profile: Profile) =>
-      ["instructional", "instructor", "ta"].includes(profile.role),
+      ["admin", "instructional", "instructor", "ta"].includes(profile.role),
     );
   }, [allProfiles]);
 
@@ -147,6 +151,7 @@ export default function Staff() {
   const roleCounts = React.useMemo(() => {
     return {
       total: staffUsers.length,
+      admin: staffUsers.filter((profile: Profile) => profile.role === "admin").length,
       instructional: staffUsers.filter((profile: Profile) => profile.role === "instructional")
         .length,
       instructor: staffUsers.filter((profile: Profile) => profile.role === "instructor")
@@ -174,7 +179,7 @@ export default function Staff() {
   return (
     <div className="space-y-6">
       {/* Header with summary stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2">
@@ -182,6 +187,17 @@ export default function Staff() {
               <div>
                 <p className="text-2xl font-bold">{roleCounts.total}</p>
                 <p className="text-sm text-muted-foreground">Total Staff</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2">
+              <Shield className="h-4 w-4 text-red-600" />
+              <div>
+                <p className="text-2xl font-bold">{roleCounts.admin}</p>
+                <p className="text-sm text-muted-foreground">Administrators</p>
               </div>
             </div>
           </CardContent>
@@ -238,6 +254,7 @@ export default function Staff() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="admin">Administrators</SelectItem>
             <SelectItem value="instructional">Instructional Staff</SelectItem>
             <SelectItem value="instructor">Instructors</SelectItem>
             <SelectItem value="ta">Teaching Assistants</SelectItem>

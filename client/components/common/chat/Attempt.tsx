@@ -61,6 +61,7 @@ import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-stan
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
+import { getClass } from "@/utils/queries/classes/get-class";
 
 // Timer is now integrated directly into the component layout
 
@@ -107,6 +108,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     queryKey: ["attempt", attemptId],
     queryFn: () => getSimulationAttempt(attemptId),
     enabled: !!attemptId,
+  });
+
+  // Fetch class data for starter prompts
+  const { data: classData } = useQuery({
+    queryKey: ["class", attempt?.classId],
+    queryFn: () => getClass(attempt!.classId),
+    enabled: !!attempt?.classId,
   });
 
   const { data: simulation, isLoading: simulationLoading } = useQuery({
@@ -808,6 +816,37 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [allDynamicRubrics, chats]);
 
+  // Generate starter prompts
+  const starterPrompts = useMemo(() => {
+    const basePrompts = [
+      "Hi, how are you?",
+      "What can I help you with?",
+      "I'm ready to assist you today",
+      "How can I support your learning?",
+      "What would you like to work on?",
+    ];
+
+    if (classData?.classCode) {
+      basePrompts.push(`Are you here for ${classData.classCode}?`);
+    }
+
+    // Return 3-4 prompts, prioritizing the class-specific one if available
+    if (classData?.classCode) {
+      return [
+        "Hi, how are you?",
+        "What can I help you with?",
+        `Are you here for ${classData.classCode}?`,
+      ];
+    }
+
+    return basePrompts.slice(0, 3);
+  }, [classData?.classCode]);
+
+  // Handle starter prompt click
+  const handleStarterPromptClick = (prompt: string) => {
+    handleSendMessage(null, prompt);
+  };
+
   const LoadingDots = () => (
     <div className="flex space-x-1">
       {[0, 1, 2].map((i) => (
@@ -1112,6 +1151,31 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <Skeleton className="h-16 w-full" />
                       </div>
                     ))}
+                  </div>
+                ) : messages.length === 0 ? (
+                  /* Starter Prompts - shown when no messages */
+                  <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Choose a prompt below or type your own message
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3 w-full max-w-md">
+                      {starterPrompts.map((prompt, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-auto p-4 text-left justify-start whitespace-normal"
+                          onClick={() => handleStarterPromptClick(prompt)}
+                          disabled={
+                            currentChat?.completed ||
+                            (simulation?.timeLimit ? !isActive : false)
+                          }
+                        >
+                          <span className="text-sm">{prompt}</span>
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 ) : (
                   messages.map((message: SimulationMessage) => (

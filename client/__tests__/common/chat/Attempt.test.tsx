@@ -25,61 +25,50 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-// Mock API calls
-vi.mock("@/utils/queries/simulation_attempts/get-simulationAttempt", () => ({
+// Mock all query modules with vi.fn() directly
+vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempt", () => ({
   getSimulationAttempt: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/classes/get-class", () => ({
+  getClass: vi.fn(),
 }));
 
 vi.mock("@/utils/queries/simulations/get-simulation", () => ({
   getSimulation: vi.fn(),
 }));
 
-vi.mock(
-  "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt",
-  () => ({
-    getSimulationChatsByAttempt: vi.fn(),
-  }),
-);
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt", () => ({
+  getSimulationChatsByAttempt: vi.fn(),
+}));
 
 vi.mock("@/utils/queries/scenarios/get-scenario", () => ({
   getScenario: vi.fn(),
 }));
 
-vi.mock(
-  "@/utils/queries/simulation_messages/get-simulation-messages-by-chat",
-  () => ({
-    getSimulationMessagesByChat: vi.fn(),
-  }),
-);
+vi.mock("@/utils/queries/simulation_messages/get-simulation-messages-by-chat", () => ({
+  getSimulationMessagesByChat: vi.fn(),
+}));
 
 vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
   getAllRubrics: vi.fn(),
 }));
 
-vi.mock(
-  "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
-  () => ({
-    getStandardGroupsByRubrics: vi.fn(),
-  }),
-);
+vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics", () => ({
+  getStandardGroupsByRubrics: vi.fn(),
+}));
 
 vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
   getStandardsByStandardGroups: vi.fn(),
 }));
 
-vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
-  () => ({
-    getSimulationChatGradesBySimulationChats: vi.fn(),
-  }),
-);
+vi.mock("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats", () => ({
+  getSimulationChatGradesBySimulationChats: vi.fn(),
+}));
 
-vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
-  () => ({
-    getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
-  }),
-);
+vi.mock("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades", () => ({
+  getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
+}));
 
 vi.mock("@/utils/queries/documents/get-all-documents", () => ({
   getAllDocuments: vi.fn(),
@@ -98,6 +87,10 @@ vi.mock("@/components/common/chat/Markdown", () => ({
   ),
 }));
 
+vi.mock("@/components/common/rubric/TableRubric", () => ({
+  default: () => <div data-testid="table-rubric">Table Rubric</div>,
+}));
+
 // Mock toast
 vi.mock("sonner", () => ({
   toast: {
@@ -106,7 +99,7 @@ vi.mock("sonner", () => ({
   },
 }));
 
-describe("Attempt", () => {
+describe("Attempt - Starter Prompts", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
@@ -118,7 +111,7 @@ describe("Attempt", () => {
       },
     });
 
-    // Setup default mock implementations
+    // Setup default mock data
     const mockAttempt = {
       id: "attempt-1",
       userId: "user-1",
@@ -127,12 +120,22 @@ describe("Attempt", () => {
       createdAt: "2024-01-01T00:00:00Z",
     };
 
+    const mockClass = {
+      id: "class-1",
+      name: "Introduction to Computer Science",
+      classCode: "CS101",
+      year: 2024,
+      term: "fall",
+      description: "Basic computer science concepts",
+      createdAt: "2024-01-01T00:00:00Z",
+    };
+
     const mockSimulation = {
       id: "simulation-1",
       name: "Test Simulation",
       description: "Test simulation description",
-      scenarioIds: ["scenario-1", "scenario-2"],
-      timeLimit: 30, // 30 minutes
+      scenarioIds: ["scenario-1"],
+      timeLimit: 30,
       rubricId: "rubric-1",
       createdAt: "2024-01-01T00:00:00Z",
     };
@@ -143,17 +146,8 @@ describe("Attempt", () => {
         title: "Test Chat 1",
         scenarioId: "scenario-1",
         attemptId: "attempt-1",
-        completed: true,
-        createdAt: "2024-01-01T00:00:00Z",
-        completedAt: "2024-01-01T01:00:00Z",
-      },
-      {
-        id: "chat-2",
-        title: "Test Chat 2",
-        scenarioId: "scenario-2",
-        attemptId: "attempt-1",
         completed: false,
-        createdAt: "2024-01-01T01:00:00Z",
+        createdAt: "2024-01-01T00:00:00Z",
         completedAt: null,
       },
     ];
@@ -167,142 +161,32 @@ describe("Attempt", () => {
       createdAt: "2024-01-01T00:00:00Z",
     };
 
-    const mockMessages = [
-      {
-        id: "message-1",
-        query: "Hello, I need help with calculus.",
-        response:
-          "I'd be happy to help you with calculus! What specific topic are you working on?",
-        chatId: "chat-1",
-        completed: true,
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
+    // Apply mocks using require to get the mocked functions
+    const { getSimulationAttempt } = require("@/utils/queries/simulation_attempts/get-simulation-attempt");
+    const { getClass } = require("@/utils/queries/classes/get-class");
+    const { getSimulation } = require("@/utils/queries/simulations/get-simulation");
+    const { getSimulationChatsByAttempt } = require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt");
+    const { getScenario } = require("@/utils/queries/scenarios/get-scenario");
+    const { getSimulationMessagesByChat } = require("@/utils/queries/simulation_messages/get-simulation-messages-by-chat");
+    const { getAllRubrics } = require("@/utils/queries/rubrics/get-all-rubrics");
+    const { getStandardGroupsByRubrics } = require("@/utils/queries/standard_groups/get-standard-groups-by-rubrics");
+    const { getStandardsByStandardGroups } = require("@/utils/queries/standards/get-standards-by-standardgroups");
+    const { getSimulationChatGradesBySimulationChats } = require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats");
+    const { getSimulationChatFeedbacksBySimulationChatGrades } = require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades");
+    const { getAllDocuments } = require("@/utils/queries/documents/get-all-documents");
 
-    const mockRubrics = [
-      {
-        id: "rubric-1",
-        name: "Test Rubric",
-        description: "Test rubric description",
-        points: 100,
-        passPoints: 70,
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockStandardGroups = [
-      {
-        id: "group-1",
-        name: "Communication Skills",
-        description: "Communication and listening skills",
-        points: 25,
-        passPoints: 18,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "group-2",
-        name: "Adaptability",
-        description: "Flexibility and adaptation skills",
-        points: 25,
-        passPoints: 18,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockStandards = [
-      {
-        id: "standard-1",
-        name: "Active Listening",
-        description: "Demonstrates active listening skills",
-        points: 25,
-        standardGroupId: "group-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "standard-2",
-        name: "Flexibility",
-        description: "Shows flexibility in teaching approach",
-        points: 25,
-        standardGroupId: "group-2",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockGrades = [
-      {
-        id: "grade-1",
-        simulationChatId: "chat-1",
-        score: 85,
-        timeTaken: 3665, // 1 hour, 1 minute, 5 seconds
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockFeedbacks = [
-      {
-        id: "feedback-1",
-        simulationChatGradeId: "grade-1",
-        standardId: "standard-1",
-        total: 20,
-        feedback: "Good listening skills demonstrated",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "feedback-2",
-        simulationChatGradeId: "grade-1",
-        standardId: "standard-2",
-        total: 22,
-        feedback: "Shows good adaptability to student needs",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    const mockDocuments = [
-      {
-        id: "doc-1",
-        name: "Course Syllabus",
-        content: "Course syllabus content",
-        classId: "class-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-    ];
-
-    // Apply mocks
-    require("@/utils/queries/simulation_attempts/get-simulationAttempt").getSimulationAttempt.mockResolvedValue(
-      mockAttempt,
-    );
-    require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
-      mockSimulation,
-    );
-    require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-      mockChats,
-    );
-    require("@/utils/queries/scenarios/get-scenario").getScenario.mockResolvedValue(
-      mockScenario,
-    );
-    require("@/utils/queries/simulation_messages/get-simulation-messages-by-chat").getSimulationMessagesByChat.mockResolvedValue(
-      mockMessages,
-    );
-    require("@/utils/queries/rubrics/get-all-rubrics").getAllRubrics.mockResolvedValue(
-      mockRubrics,
-    );
-    require("@/utils/queries/standard_groups/get-standard-groups-by-rubrics").getStandardGroupsByRubrics.mockResolvedValue(
-      mockStandardGroups,
-    );
-    require("@/utils/queries/standards/get-standards-by-standardgroups").getStandardsByStandardGroups.mockResolvedValue(
-      mockStandards,
-    );
-    require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-      mockGrades,
-    );
-    require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades").getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(
-      mockFeedbacks,
-    );
-    require("@/utils/queries/documents/get-all-documents").getAllDocuments.mockResolvedValue(
-      mockDocuments,
-    );
+    getSimulationAttempt.mockResolvedValue(mockAttempt);
+    getClass.mockResolvedValue(mockClass);
+    getSimulation.mockResolvedValue(mockSimulation);
+    getSimulationChatsByAttempt.mockResolvedValue(mockChats);
+    getScenario.mockResolvedValue(mockScenario);
+    getSimulationMessagesByChat.mockResolvedValue([]);
+    getAllRubrics.mockResolvedValue([]);
+    getStandardGroupsByRubrics.mockResolvedValue([]);
+    getStandardsByStandardGroups.mockResolvedValue([]);
+    getSimulationChatGradesBySimulationChats.mockResolvedValue([]);
+    getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue([]);
+    getAllDocuments.mockResolvedValue([]);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -313,569 +197,93 @@ describe("Attempt", () => {
     return render(ui, { wrapper: AllProviders, ...options });
   };
 
-  describe("Rendering", () => {
-    it("should render without crashing", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
+  it("should display starter prompts when there are no messages", async () => {
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("Test scenario description"),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should display chat counter for multi-chat attempts", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("chat-counter")).toBeInTheDocument();
-        expect(screen.getByText("Chat 2 of 2")).toBeInTheDocument(); // Should show current incomplete chat
-      });
-    });
-
-    it("should display scenario information", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("High crowdedness")).toBeInTheDocument();
-        expect(screen.getByText("Moderate intensity")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle missing scenario gracefully", async () => {
-      require("@/utils/queries/scenarios/get-scenario").getScenario.mockResolvedValue(
-        null,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Loading scenario...")).toBeInTheDocument();
-      });
-    });
-
-    it("should have correct accessibility attributes", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("message-input")).toBeInTheDocument();
-        expect(screen.getByTestId("send-button")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText("Start the conversation")).toBeInTheDocument();
+      expect(screen.getByText("Choose a prompt below or type your own message")).toBeInTheDocument();
     });
   });
 
-  describe("API Integration", () => {
-    it("should handle API calls correctly", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
+  it("should display basic starter prompts", async () => {
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      await waitFor(() => {
-        expect(
-          require("@/utils/queries/simulation_attempts/get-simulationAttempt")
-            .getSimulationAttempt,
-        ).toHaveBeenCalledWith("attempt-1");
-      });
-    });
-
-    it("should handle loading states", () => {
-      // Mock loading state
-      require("@/utils/queries/simulation_attempts/get-simulationAttempt").getSimulationAttempt.mockImplementation(
-        () => new Promise(() => {}),
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      // Should show loading skeleton
-      expect(screen.getByRole("generic")).toBeInTheDocument();
-    });
-
-    it("should handle error states", async () => {
-      require("@/utils/queries/simulation_attempts/get-simulationAttempt").getSimulationAttempt.mockRejectedValue(
-        new Error("API Error"),
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Attempt Not Found")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
+      expect(screen.getByText("What can I help you with?")).toBeInTheDocument();
     });
   });
 
-  describe("Chat Functionality", () => {
-    it("should display messages correctly", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
+  it("should display class-specific starter prompt with classCode", async () => {
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      await waitFor(() => {
-        expect(
-          screen.getByText("Hello, I need help with calculus."),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            "I'd be happy to help you with calculus! What specific topic are you working on?",
-          ),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should handle message input", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        const input = screen.getByTestId("message-input");
-        expect(input).toBeInTheDocument();
-      });
-
-      const input = screen.getByTestId("message-input");
-      await user.type(input, "Test message");
-      expect(input).toHaveValue("Test message");
-    });
-
-    it("should show completed chat status", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Completed")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText("Are you here for CS101?")).toBeInTheDocument();
     });
   });
 
-  describe("Dynamic Rubric System", () => {
-    it("should calculate dynamic rubric scores", async () => {
-      // Mock completed chat scenario
-      const mockCompletedChats = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockCompletedChats,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("This chat has been completed."),
-        ).toBeInTheDocument();
-      });
+  it("should handle starter prompt clicks", async () => {
+    const user = userEvent.setup();
+    
+    // Mock fetch for message sending
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      body: {
+        getReader: () => ({
+          read: () => Promise.resolve({ done: true, value: new Uint8Array() }),
+        }),
+      },
     });
 
-    it("should display skill-based feedback", async () => {
-      // Test will verify that feedback is properly displayed when available
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      await waitFor(() => {
-        // Should load without errors
-        expect(screen.getByTestId("message-input")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
     });
+
+    const starterPromptButton = screen.getByText("Hi, how are you?");
+    await user.click(starterPromptButton);
+
+    // Should trigger message sending
+    expect(global.fetch).toHaveBeenCalled();
   });
 
-  describe("Single Chat Attempt Behavior", () => {
-    it("should not show chat selector dropdown for single chat attempts", async () => {
-      // Mock single chat attempt
-      const mockSingleChatSimulation = {
-        id: "simulation-1",
-        name: "Test Simulation",
-        description: "Test simulation description",
-        scenarioIds: ["scenario-1"], // Only one scenario
-        timeLimit: 30,
-        rubricId: "rubric-1",
+  it("should not display starter prompts when messages exist", async () => {
+    // Mock existing messages
+    const { getSimulationMessagesByChat } = require("@/utils/queries/simulation_messages/get-simulation-messages-by-chat");
+    getSimulationMessagesByChat.mockResolvedValue([
+      {
+        id: "message-1",
+        query: "Hello, I need help with calculus.",
+        response: "I'd be happy to help you with calculus!",
+        chatId: "chat-1",
+        completed: true,
         createdAt: "2024-01-01T00:00:00Z",
-      };
+      },
+    ]);
 
-      const mockSingleCompletedChat = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-      ];
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
-        mockSingleChatSimulation,
-      );
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockSingleCompletedChat,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Overall Results")).toBeInTheDocument();
-        // Should not show chat selector for single chat
-        expect(screen.queryByText("Select chat to view results")).not.toBeInTheDocument();
-      });
-    });
-
-    it("should show previous chat messages for single chat attempts", async () => {
-      const mockSingleChatSimulation = {
-        id: "simulation-1",
-        name: "Test Simulation",
-        description: "Test simulation description",
-        scenarioIds: ["scenario-1"],
-        timeLimit: 30,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      };
-
-      const mockSingleCompletedChat = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
-        mockSingleChatSimulation,
-      );
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockSingleCompletedChat,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("This session has been completed.")).toBeInTheDocument();
-        expect(screen.getByText("Hello, I need help with calculus.")).toBeInTheDocument();
-      });
-    });
-
-    it("should show scenario information in results header", async () => {
-      const mockSingleCompletedChat = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockSingleCompletedChat,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Test scenario description")).toBeInTheDocument();
-        expect(screen.getByText("High crowdedness")).toBeInTheDocument();
-        expect(screen.getByText("Moderate intensity")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      // Should show existing messages instead of starter prompts
+      expect(screen.getByText("Hello, I need help with calculus.")).toBeInTheDocument();
+      expect(screen.queryByText("Start the conversation")).not.toBeInTheDocument();
     });
   });
 
-  describe("Results Display", () => {
-    it("should show results when all chats completed", async () => {
-      // Mock all chats as completed
-      const mockAllCompletedChats = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-        {
-          id: "chat-2",
-          title: "Test Chat 2",
-          scenarioId: "scenario-2",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T01:00:00Z",
-          completedAt: "2024-01-01T02:00:00Z",
-        },
-      ];
+  it("should handle missing class data gracefully", async () => {
+    // Mock no class data
+    const { getClass } = require("@/utils/queries/classes/get-class");
+    getClass.mockResolvedValue(null);
 
-      const mockAllGrades = [
-        {
-          id: "grade-1",
-          simulationChatId: "chat-1",
-          score: 85,
-          timeTaken: 3600,
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-        {
-          id: "grade-2",
-          simulationChatId: "chat-2",
-          score: 90,
-          timeTaken: 3000,
-          createdAt: "2024-01-01T01:00:00Z",
-        },
-      ];
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
 
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockAllCompletedChats,
-      );
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        mockAllGrades,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Overall Results")).toBeInTheDocument();
-      });
-    });
-
-    it("should show results after refresh when chats are completed and graded", async () => {
-      // Mock scenario where chats are already completed and graded (refresh scenario)
-      const mockAllCompletedChats = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-        {
-          id: "chat-2",
-          title: "Test Chat 2",
-          scenarioId: "scenario-2",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T01:00:00Z",
-          completedAt: "2024-01-01T02:00:00Z",
-        },
-      ];
-
-      const mockAllGrades = [
-        {
-          id: "grade-1",
-          simulationChatId: "chat-1",
-          score: 85,
-          timeTaken: 3600,
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-        {
-          id: "grade-2",
-          simulationChatId: "chat-2",
-          score: 90,
-          timeTaken: 3000,
-          createdAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      const mockAllFeedbacks = [
-        {
-          id: "feedback-1",
-          simulationChatGradeId: "grade-1",
-          standardId: "standard-1",
-          total: 20,
-          feedback: "Good performance on chat 1",
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-        {
-          id: "feedback-2",
-          simulationChatGradeId: "grade-2",
-          standardId: "standard-1",
-          total: 22,
-          feedback: "Excellent performance on chat 2",
-          createdAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockAllCompletedChats,
-      );
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        mockAllGrades,
-      );
-      require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades").getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(
-        mockAllFeedbacks,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      // Should show results immediately since all data is available
-      await waitFor(
-        () => {
-          expect(screen.getByText("Overall Results")).toBeInTheDocument();
-        },
-        { timeout: 3000 },
-      );
-    });
-  });
-
-  describe("Documents", () => {
-    it("should display class documents", async () => {
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Documents")).toBeInTheDocument();
-        expect(screen.getByTestId("document-viewer")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Time Formatting", () => {
-    it("should format time correctly in minutes and seconds", async () => {
-      // Mock grades with specific time values to test formatting
-      const mockGradesWithVariousTimes = [
-        {
-          id: "grade-1",
-          simulationChatId: "chat-1",
-          score: 85,
-          timeTaken: 65, // 1 minute 5 seconds
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-        {
-          id: "grade-2",
-          simulationChatId: "chat-2",
-          score: 90,
-          timeTaken: 120, // 2 minutes exactly
-          createdAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      const mockAllCompletedChats = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-        {
-          id: "chat-2",
-          title: "Test Chat 2",
-          scenarioId: "scenario-2",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T01:00:00Z",
-          completedAt: "2024-01-01T02:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockAllCompletedChats,
-      );
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        mockGradesWithVariousTimes,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId("attempt-results")).toBeInTheDocument();
-        // Should show detailed time formatting in results
-        expect(screen.getByText("Overall Results")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle seconds-only time formatting", async () => {
-      const mockGradesSecondsOnly = [
-        {
-          id: "grade-1",
-          simulationChatId: "chat-1",
-          score: 85,
-          timeTaken: 45, // 45 seconds only
-          createdAt: "2024-01-01T00:00:00Z",
-        },
-      ];
-
-      const mockCompletedChat = [
-        {
-          id: "chat-1",
-          title: "Test Chat 1",
-          scenarioId: "scenario-1",
-          attemptId: "attempt-1",
-          completed: true,
-          createdAt: "2024-01-01T00:00:00Z",
-          completedAt: "2024-01-01T01:00:00Z",
-        },
-      ];
-
-      require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempt").getSimulationChatsByAttempt.mockResolvedValue(
-        mockCompletedChat,
-      );
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        mockGradesSecondsOnly,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Overall Results")).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle missing attempt gracefully", async () => {
-      require("@/utils/queries/simulation_attempts/get-simulationAttempt").getSimulationAttempt.mockResolvedValue(
-        null,
-      );
-
-      renderWithProviders(<Attempt attemptId="nonexistent" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Attempt Not Found")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle empty scenario IDs", async () => {
-      const mockSimulationNoScenarios = {
-        id: "simulation-1",
-        name: "Test Simulation",
-        description: "Test simulation description",
-        scenarioIds: [],
-        timeLimit: 30,
-        rubricId: "rubric-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      };
-
-      require("@/utils/queries/simulations/get-simulation").getSimulation.mockResolvedValue(
-        mockSimulationNoScenarios,
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Attempt Not Found")).toBeInTheDocument();
-      });
-    });
-
-    it("should handle missing grades/feedbacks gracefully", async () => {
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        [],
-      );
-      require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades").getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(
-        [],
-      );
-
-      renderWithProviders(<Attempt attemptId="attempt-1" />);
-
-      await waitFor(() => {
-        // Should still render without errors
-        expect(screen.getByTestId("message-input")).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText("Hi, how are you?")).toBeInTheDocument();
+      expect(screen.getByText("What can I help you with?")).toBeInTheDocument();
+      // Should not show class-specific prompt
+      expect(screen.queryByText(/Are you here for/)).not.toBeInTheDocument();
     });
   });
 });

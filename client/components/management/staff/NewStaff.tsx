@@ -8,6 +8,7 @@
 "use client";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { Download, X, Shield, GraduationCap, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -30,19 +32,25 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { useSession } from "next-auth/react";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
-type ProfileRole = "instructional" | "instructor" | "ta";
+type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
 interface CSVUser {
-  name: string;
-  username: string;
-  password: string;
+  firstName: string;
+  lastName: string;
+  alias: string;
   role: ProfileRole;
   classIds: string[];
 }
 
 const getRoleIcon = (role: string) => {
   switch (role) {
+    case "admin":
+      return Shield;
     case "instructional":
       return Shield;
     case "instructor":
@@ -56,6 +64,8 @@ const getRoleIcon = (role: string) => {
 
 const getRoleDisplayName = (role: string) => {
   switch (role) {
+    case "admin":
+      return "Administrator";
     case "instructional":
       return "Instructional Staff";
     case "instructor":
@@ -69,6 +79,8 @@ const getRoleDisplayName = (role: string) => {
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
+    case "admin":
+      return "destructive";
     case "instructional":
       return "default";
     case "instructor":
@@ -83,9 +95,9 @@ const getRoleBadgeVariant = (role: string) => {
 export default function NewStaff() {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
-    name: "",
-    username: "",
-    password: "",
+    firstName: "",
+    lastName: "",
+    alias: "",
     role: "" as ProfileRole | "",
     classIds: [] as string[],
   });
@@ -93,23 +105,69 @@ export default function NewStaff() {
   const [csvPreview, setCsvPreview] = React.useState<CSVUser[]>([]);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-  // All roles are available since only admins access this screen
-  const availableRoles = [
-    {
-      value: "instructional" as ProfileRole,
-      label: "Instructional Staff",
-      icon: Shield,
-    },
-    {
-      value: "instructor" as ProfileRole,
-      label: "Instructor",
-      icon: GraduationCap,
-    },
-    { value: "ta" as ProfileRole, label: "Teaching Assistant", icon: User },
-  ];
+  // Get current user's profile to check if they're admin
+  const session = useSession();
+  const userEmail = session.data?.user?.email;
 
-  const handleInputChange = (field: string, value: string) => {
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
+
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
+    select: (data) => data[0],
+    enabled: !!user,
+  });
+
+  // Fetch all classes for multi-select
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
+  // Check if current user is admin
+  const isCurrentUserAdmin = currentUserProfile?.role === "admin";
+
+  // Available roles based on current user permissions
+  const availableRoles = React.useMemo(() => {
+    const baseRoles = [
+      {
+        value: "instructional" as ProfileRole,
+        label: "Instructional Staff",
+        icon: Shield,
+      },
+      {
+        value: "instructor" as ProfileRole,
+        label: "Instructor",
+        icon: GraduationCap,
+      },
+      { value: "ta" as ProfileRole, label: "Teaching Assistant", icon: User },
+    ];
+
+    if (isCurrentUserAdmin) {
+      baseRoles.unshift({
+        value: "admin" as ProfileRole,
+        label: "Administrator",
+        icon: Shield,
+      });
+    }
+
+    return baseRoles;
+  }, [isCurrentUserAdmin]);
+
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleClassToggle = (classId: string) => {
+    const currentClassIds = formData.classIds;
+    const newClassIds = currentClassIds.includes(classId)
+      ? currentClassIds.filter(id => id !== classId)
+      : [...currentClassIds, classId];
+    
+    handleInputChange("classIds", newClassIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -153,9 +211,9 @@ export default function NewStaff() {
           const role = values[3] as ProfileRole;
 
           return {
-            name: values[0] || "",
-            username: values[1] || "",
-            password: values[2] || "",
+            firstName: values[0] || "",
+            lastName: values[1] || "",
+            alias: values[2] || "",
             role: role,
             classIds: values[4]
               ? values[4].split(";").map((id) => id.trim())
@@ -164,7 +222,7 @@ export default function NewStaff() {
         })
         .filter(
           (user): user is CSVUser =>
-            Boolean(user.name) && Boolean(user.username),
+            Boolean(user.firstName) && Boolean(user.lastName),
         );
 
       setCsvPreview(users);
@@ -173,23 +231,23 @@ export default function NewStaff() {
   };
 
   const downloadTemplate = () => {
-    const headers = ["name", "username", "password", "role", "classIds"];
+    const headers = ["firstName", "lastName", "alias", "role", "classIds"];
     const examples = [
       [
-        "Dr. Sarah Johnson",
+        "Sarah",
+        "Johnson", 
         "sjohnson",
-        "password123",
         "instructional",
         "class1;class2",
       ],
       [
-        "Dr. Jane Smith",
+        "Jane",
+        "Smith",
         "jsmith",
-        "password123",
         "instructor",
         "class1;class2",
       ],
-      ["John Doe", "jdoe", "password123", "ta", "class1;class2"],
+      ["John", "Doe", "jdoe", "ta", "class1;class2"],
     ];
 
     const csvContent =
@@ -236,84 +294,111 @@ export default function NewStaff() {
 
         <TabsContent value="single">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select
-                value={formData.role}
-                onValueChange={(value: ProfileRole) =>
-                  handleInputChange("role", value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableRoles.map((role) => {
-                    const RoleIcon = role.icon;
-                    return (
-                      <SelectItem key={role.value} value={role.value}>
-                        <div className="flex items-center gap-2">
-                          <RoleIcon className="h-4 w-4" />
-                          {role.label}
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="firstName">First Name</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="lastName">Last Name</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="alias">Username/Alias</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder={
-                    formData.role === "instructional"
-                      ? "Dr. Sarah Johnson"
-                      : formData.role === "instructor"
-                        ? "Dr. Jane Smith"
-                        : formData.role === "ta"
-                          ? "John Doe"
-                          : "Enter full name"
-                  }
+                  id="alias"
+                  value={formData.alias}
+                  onChange={(e) => handleInputChange("alias", e.target.value)}
+                  placeholder="Enter username"
                   required
                 />
+                <p className="text-sm text-muted-foreground">
+                  Will be used as {formData.alias}@purdue.edu
+                </p>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="username">Username</Label>
-                <Input
-                  id="username"
-                  value={formData.username}
-                  onChange={(e) =>
-                    handleInputChange("username", e.target.value)
-                  }
-                  placeholder={
-                    formData.role === "instructional"
-                      ? "sjohnson"
-                      : formData.role === "instructor"
-                        ? "jsmith"
-                        : formData.role === "ta"
-                          ? "jdoe"
-                          : "Enter username"
-                  }
-                  required
-                />
+                <Label htmlFor="role">Role</Label>
+                <Select
+                  value={formData.role}
+                  onValueChange={(value: ProfileRole) => handleInputChange("role", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableRoles.map((role) => {
+                      const Icon = role.icon;
+                      return (
+                        <SelectItem key={role.value} value={role.value}>
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-4 w-4" />
+                            {role.label}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
+            {/* Class Assignment Section */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={formData.password}
-                onChange={(e) => handleInputChange("password", e.target.value)}
-                placeholder="Enter password"
-                required
-              />
+              <Label>Class Assignments</Label>
+              <p className="text-sm text-muted-foreground">
+                Select which classes this user should have access to.
+              </p>
+              <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                {allClasses.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No classes available
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    {allClasses.map((classItem: any) => (
+                      <div key={classItem.id} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`class-${classItem.id}`}
+                          checked={formData.classIds.includes(classItem.id)}
+                          onCheckedChange={() => handleClassToggle(classItem.id)}
+                        />
+                        <Label 
+                          htmlFor={`class-${classItem.id}`}
+                          className="text-sm font-normal cursor-pointer flex-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="font-medium">{classItem.classCode}</span>
+                              <span className="text-muted-foreground ml-2">{classItem.name}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs">
+                              {classItem.term} {classItem.year}
+                            </Badge>
+                          </div>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {formData.classIds.length} class{formData.classIds.length !== 1 ? 'es' : ''} selected
+              </p>
             </div>
 
             {formData.role && (
@@ -328,6 +413,8 @@ export default function NewStaff() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
+                  {formData.role === "admin" &&
+                    "Will have full system access and user management permissions."}
                   {formData.role === "instructional" &&
                     "Will have permissions to manage instructors and teaching assistants."}
                   {formData.role === "instructor" &&
@@ -358,8 +445,8 @@ export default function NewStaff() {
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground">
-                Include the following columns in the CSV file: name, username,
-                password, role, classIds.
+                Include the following columns in the CSV file: firstName, lastName,
+                alias, role, classIds.
               </div>
             </div>
 
@@ -429,9 +516,9 @@ export default function NewStaff() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
+                        <TableHead>First Name</TableHead>
+                        <TableHead>Last Name</TableHead>
                         <TableHead>Username</TableHead>
-                        <TableHead>Password</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Classes</TableHead>
                       </TableRow>
@@ -441,11 +528,9 @@ export default function NewStaff() {
                         const RoleIcon = getRoleIcon(user.role);
                         return (
                           <TableRow key={index}>
-                            <TableCell>{user.name}</TableCell>
-                            <TableCell>{user.username}</TableCell>
-                            <TableCell>
-                              {"*".repeat(user.password.length)}
-                            </TableCell>
+                            <TableCell>{user.firstName}</TableCell>
+                            <TableCell>{user.lastName}</TableCell>
+                            <TableCell>{user.alias}</TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <RoleIcon className="h-4 w-4" />

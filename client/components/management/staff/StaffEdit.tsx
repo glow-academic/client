@@ -27,6 +27,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,73 +46,42 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Profile } from "@/types";
+import { Profile, ProfileRole } from "@/types";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-
-const getRoleBadgeVariant = (role: string) => {
-  switch (role) {
-    case "admin":
-      return "destructive";
-    case "instructional":
-      return "default";
-    case "instructor":
-      return "secondary";
-    case "ta":
-      return "outline";
-    default:
-      return "outline";
-  }
-};
-
-const getRoleIcon = (role: string) => {
-  switch (role) {
-    case "instructional":
-      return Shield;
-    case "instructor":
-      return GraduationCap;
-    case "ta":
-      return UserIcon;
-    default:
-      return UserIcon;
-  }
-};
-
-const getRoleDisplayName = (role: string) => {
-  switch (role) {
-    case "instructional":
-      return "Instructional Staff";
-    case "instructor":
-      return "Instructor";
-    case "ta":
-      return "Teaching Assistant";
-    default:
-      return role.charAt(0).toUpperCase() + role.slice(1);
-  }
-};
-
-const getRolePermissions = (role: string) => {
-  switch (role) {
-    case "instructional":
-      return "Can manage instructors and teaching assistants";
-    case "instructor":
-      return "Can manage assigned classes and teaching assistants";
-    case "ta":
-      return "Can assist with assigned classes";
-    default:
-      return "Standard user permissions";
-  }
-};
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { useSession } from "next-auth/react";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { updateProfile } from "@/utils/mutations/profiles/update-profile";
+import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 
 export default function StaffEdit({ profileId }: { profileId: string }) {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
-    name: "",
-    username: "",
-    password: "",
+    firstName: "",
+    lastName: "",
+    alias: "",
     classIds: [] as string[],
+    role: "ta" as ProfileRole,
   });
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [hasChanges, setHasChanges] = React.useState(false);
+
+  // Get current user's profile to check if they're admin
+  const session = useSession();
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
+
+  const { data: currentUserProfile } = useQuery({
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
+    select: (data) => data[0],
+    enabled: !!user,
+  });
 
   // Fetch all users to find the target user
   const { data: allProfiles = [], isLoading } = useQuery({
@@ -112,23 +89,42 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     queryFn: () => getAllProfiles(),
   });
 
+  // Fetch all classes for multi-select
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
   const targetUser = allProfiles.find((profile: Profile) => profile.id === profileId);
+
+  // Check if current user is admin
+  const isCurrentUserAdmin = currentUserProfile?.role === "admin";
 
   // Initialize form data when user is loaded
   React.useEffect(() => {
     if (targetUser) {
       setFormData({
-        name: targetUser.firstName + " " + targetUser.lastName,
-        username: targetUser.alias,
-        password: "",
+        firstName: targetUser.firstName,
+        lastName: targetUser.lastName,
+        alias: targetUser.alias,
         classIds: targetUser.classIds || [],
+        role: targetUser.role as ProfileRole,
       });
     }
   }, [targetUser]);
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     setHasChanges(true);
+  };
+
+  const handleClassToggle = (classId: string) => {
+    const currentClassIds = formData.classIds;
+    const newClassIds = currentClassIds.includes(classId)
+      ? currentClassIds.filter(id => id !== classId)
+      : [...currentClassIds, classId];
+    
+    handleInputChange("classIds", newClassIds);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -137,12 +133,13 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to update user
-      console.log("Updating user:", { profileId, ...formData });
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await updateProfile(profileId, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        alias: formData.alias,
+        classIds: formData.classIds,
+        role: formData.role,
+      });
       setHasChanges(false);
       router.push("/management/staff");
     } catch (error) {
@@ -157,12 +154,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
 
     setIsSubmitting(true);
     try {
-      // TODO: Implement API call to delete user
-      console.log("Deleting user:", profileId);
-
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await deleteProfile(profileId);
       router.push("/management/staff");
     } catch (error) {
       console.error("Error deleting user:", error);
@@ -199,8 +191,8 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     );
   }
 
-  // Check if user is actually staff
-  if (!["instructional", "instructor", "ta"].includes(targetUser.role)) {
+  // Check if user is actually staff or admin
+  if (!["admin", "instructional", "instructor", "ta"].includes(targetUser.role)) {
     return (
       <div className="space-y-6">
         <div>
@@ -222,7 +214,18 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     );
   }
 
-  const RoleIcon = getRoleIcon(targetUser.role);
+  const formatClassTerm = (term: string) => {
+    switch (term) {
+      case "fall":
+        return "Fall";
+      case "spring":
+        return "Spring";
+      case "summer":
+        return "Summer";
+      default:
+        return term;
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -239,103 +242,127 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Full Name</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder={
-                      targetUser.role === "instructional"
-                        ? "Dr. Sarah Johnson"
-                        : targetUser.role === "instructor"
-                          ? "Dr. Jane Smith"
-                          : "John Doe"
-                    }
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    placeholder="Jane"
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
+                  <Label htmlFor="lastName">Last Name</Label>
                   <Input
-                    id="username"
-                    value={formData.username}
-                    onChange={(e) =>
-                      handleInputChange("username", e.target.value)
-                    }
-                    placeholder={
-                      targetUser.role === "instructional"
-                        ? "sjohnson"
-                        : targetUser.role === "instructor"
-                          ? "jsmith"
-                          : "jdoe"
-                    }
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    placeholder="Smith"
                     required
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="alias">Username/Alias</Label>
+                  <Input
+                    id="alias"
+                    value={formData.alias}
+                    onChange={(e) => handleInputChange("alias", e.target.value)}
+                    placeholder="jsmith"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Select
+                    value={formData.role}
+                    onValueChange={(value: ProfileRole) => handleInputChange("role", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {isCurrentUserAdmin && (
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-red-600" />
+                            Administrator
+                          </div>
+                        </SelectItem>
+                      )}
+                      <SelectItem value="instructional">
+                        <div className="flex items-center gap-2">
+                          <Shield className="h-4 w-4" />
+                          Instructional Staff
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="instructor">
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="h-4 w-4" />
+                          Instructor
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ta">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4" />
+                          Teaching Assistant
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Classes Section */}
               <div className="space-y-2">
-                <Label htmlFor="password">New Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange("password", e.target.value)
-                  }
-                  placeholder="Leave blank to keep current password"
-                />
+                <Label>Classes</Label>
+                <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                  {allClasses.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No classes available
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {allClasses.map((classItem: any) => (
+                        <div key={classItem.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`class-${classItem.id}`}
+                            checked={formData.classIds.includes(classItem.id)}
+                            onCheckedChange={() => handleClassToggle(classItem.id)}
+                          />
+                          <Label 
+                            htmlFor={`class-${classItem.id}`}
+                            className="text-sm font-normal cursor-pointer flex-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div >
+                                <span className="font-medium">{classItem.classCode}</span>
+                                <span className="text-muted-foreground ml-2">{classItem.name}</span>
+                              </div>
+                              <Badge variant="outline" className="text-xs">
+                                {formatClassTerm(classItem.term)} {classItem.year}
+                              </Badge>
+                            </div>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Leave blank to keep the current password.
+                  {formData.classIds.length} class{formData.classIds.length !== 1 ? 'es' : ''} selected
                 </p>
               </div>
 
               <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => router.push("/management/staff")}
-                >
-                  Cancel
-                </Button>
                 <Button type="submit" disabled={isSubmitting || !hasChanges}>
                   <Save className="h-4 w-4 mr-2" />
-                  {isSubmitting ? "Saving..." : "Save Changes"}
+                  {isSubmitting ? "Saving..." : "Save"}
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Role & Permissions</CardTitle>
-            <CardDescription>
-              Current role and access level information.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Label>Role:</Label>
-              <div className="flex items-center gap-2">
-                <RoleIcon className="h-4 w-4" />
-                <Badge variant={getRoleBadgeVariant(targetUser.role)}>
-                  {getRoleDisplayName(targetUser.role)}
-                </Badge>
-              </div>
-            </div>
-            <div>
-              <Label>Class Assignments:</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {targetUser.classIds?.length || 0} classes assigned
-              </p>
-            </div>
-            <div>
-              <Label>Permissions:</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                {getRolePermissions(targetUser.role)}
-              </p>
-            </div>
           </CardContent>
         </Card>
 
@@ -360,7 +387,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
-                    {targetUser.firstName + " " + targetUser.lastName} ({targetUser.alias}@purdue.edu). This action
+                    {formData.firstName + " " + formData.lastName} ({formData.alias}@purdue.edu). This action
                     cannot be undone and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

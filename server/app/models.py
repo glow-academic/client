@@ -133,6 +133,7 @@ class Profiles(_Base, table=True):
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     user_id: UUID = Field(sa_column=Column('user_id', Uuid))
+    last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), server_default=text('now()')))
     first_name: str = Field(sa_column=Column('first_name', Text))
     last_name: str = Field(sa_column=Column('last_name', Text))
     alias: str = Field(sa_column=Column('alias', Text))

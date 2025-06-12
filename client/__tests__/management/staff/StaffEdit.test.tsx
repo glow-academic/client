@@ -57,8 +57,9 @@ describe("StaffEdit", () => {
 
   const mockTargetUser = {
     id: testUserId,
-    name: "Dr. Jane Smith",
-    username: "jsmith",
+    firstName: "Jane",
+    lastName: "Smith",
+    alias: "jsmith",
     role: "instructor",
     classIds: ["class1", "class2"],
   };
@@ -132,12 +133,14 @@ describe("StaffEdit", () => {
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
-        expect(screen.getByText("Edit Instructor")).toBeInTheDocument();
+        expect(screen.getByText("User Information")).toBeInTheDocument();
         expect(
-          screen.getByText("Modify the details for Dr. Jane Smith."),
+          screen.getByText("Basic user details and account information."),
         ).toBeInTheDocument();
-        expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-        expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/username\/alias/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
         expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
       });
     });
@@ -170,7 +173,8 @@ describe("StaffEdit", () => {
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Jane")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Smith")).toBeInTheDocument();
         expect(screen.getByDisplayValue("jsmith")).toBeInTheDocument();
       });
     });
@@ -186,14 +190,14 @@ describe("StaffEdit", () => {
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Jane")).toBeInTheDocument();
       });
 
-      const nameInput = screen.getByLabelText(/full name/i);
-      await user.clear(nameInput);
-      await user.type(nameInput, "Dr. Jane Updated");
+      const firstNameInput = screen.getByLabelText(/first name/i);
+      await user.clear(firstNameInput);
+      await user.type(firstNameInput, "Janet");
 
-      expect(screen.getByDisplayValue("Dr. Jane Updated")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("Janet")).toBeInTheDocument();
     });
 
     it("should enable save button when changes are made", async () => {
@@ -208,15 +212,15 @@ describe("StaffEdit", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /save changes/i }),
+          screen.getByRole("button", { name: /save/i }),
         ).toBeDisabled();
       });
 
-      const nameInput = screen.getByLabelText(/full name/i);
-      await user.type(nameInput, " Updated");
+      const firstNameInput = screen.getByLabelText(/first name/i);
+      await user.type(firstNameInput, "t");
 
       expect(
-        screen.getByRole("button", { name: /save changes/i }),
+        screen.getByRole("button", { name: /save/i }),
       ).not.toBeDisabled();
     });
 
@@ -231,13 +235,13 @@ describe("StaffEdit", () => {
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Jane")).toBeInTheDocument();
       });
 
-      const nameInput = screen.getByLabelText(/full name/i);
-      await user.type(nameInput, " Updated");
+      const firstNameInput = screen.getByLabelText(/first name/i);
+      await user.type(firstNameInput, "t");
 
-      const saveButton = screen.getByRole("button", { name: /save changes/i });
+      const saveButton = screen.getByRole("button", { name: /save/i });
       await user.click(saveButton);
 
       expect(
@@ -290,6 +294,80 @@ describe("StaffEdit", () => {
     });
   });
 
+  describe("Role Management", () => {
+    it("should display current role information", async () => {
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Role & Permissions")).toBeInTheDocument();
+        expect(screen.getByText("Current Role:")).toBeInTheDocument();
+        expect(screen.getByText("Instructor")).toBeInTheDocument();
+        expect(screen.getByText("2 classes assigned")).toBeInTheDocument();
+        expect(
+          screen.getByText(
+            "Can manage assigned classes and teaching assistants",
+          ),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it("should allow role selection", async () => {
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+
+      const user = userEvent.setup();
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
+      });
+
+      // Click on role selector
+      const roleSelect = screen.getByRole("combobox");
+      await user.click(roleSelect);
+
+      // Should show role options
+      expect(screen.getByText("Instructional Staff")).toBeInTheDocument();
+      expect(screen.getByText("Teaching Assistant")).toBeInTheDocument();
+    });
+
+    it("should update role permissions when role changes", async () => {
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+
+      const user = userEvent.setup();
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/role/i)).toBeInTheDocument();
+      });
+
+      // Click on role selector and select TA
+      const roleSelect = screen.getByRole("combobox");
+      await user.click(roleSelect);
+      
+      const taOption = screen.getByText("Teaching Assistant");
+      await user.click(taOption);
+
+      // Should update permissions text
+      await waitFor(() => {
+        expect(screen.getByText("Can assist with assigned classes")).toBeInTheDocument();
+      });
+    });
+  });
+
   describe("Password Management", () => {
     it("should show password field for all users", async () => {
       const { getAllProfiles } = await import(
@@ -329,68 +407,6 @@ describe("StaffEdit", () => {
     });
   });
 
-  describe("Role and Permissions Display", () => {
-    it("should display role information card", async () => {
-      const { getAllProfiles } = await import(
-        "@/utils/queries/profiles/get-all-profiles"
-      );
-
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
-
-      renderWithProviders(<StaffEdit profileId={testUserId} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Role & Permissions")).toBeInTheDocument();
-        expect(
-          screen.getByText("Current role and access level information."),
-        ).toBeInTheDocument();
-        expect(screen.getByText("Instructor")).toBeInTheDocument();
-        expect(screen.getByText("2 classes assigned")).toBeInTheDocument();
-        expect(
-          screen.getByText(
-            "Can manage assigned classes and teaching assistants",
-          ),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should show correct role icon and badge for instructional staff", async () => {
-      const { getAllProfiles } = await import(
-        "@/utils/queries/profiles/get-all-profiles"
-      );
-
-      const instructionalUser = { ...mockTargetUser, role: "instructional" };
-
-      (getAllProfiles as any).mockResolvedValue([instructionalUser]);
-
-      renderWithProviders(<StaffEdit profileId={testUserId} />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Edit Instructional Staff"),
-        ).toBeInTheDocument();
-        expect(screen.getByText("Instructional Staff")).toBeInTheDocument();
-      });
-    });
-
-    it("should show correct role icon and badge for teaching assistant", async () => {
-      const { getAllProfiles } = await import(
-        "@/utils/queries/profiles/get-all-profiles"
-      );
-
-      const taUser = { ...mockTargetUser, role: "ta" };
-
-      (getAllProfiles as any).mockResolvedValue([taUser]);
-
-      renderWithProviders(<StaffEdit profileId={testUserId} />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Edit Teaching Assistant")).toBeInTheDocument();
-        expect(screen.getByText("Teaching Assistant")).toBeInTheDocument();
-      });
-    });
-  });
-
   describe("Delete Functionality", () => {
     it("should show delete section for all users", async () => {
       const { getAllProfiles } = await import(
@@ -414,7 +430,7 @@ describe("StaffEdit", () => {
       });
     });
 
-    it("should show delete confirmation dialog", async () => {
+    it("should show delete confirmation dialog with updated user info", async () => {
       const { getAllProfiles } = await import(
         "@/utils/queries/profiles/get-all-profiles"
       );
@@ -436,7 +452,7 @@ describe("StaffEdit", () => {
       expect(screen.getByText("Are you absolutely sure?")).toBeInTheDocument();
       expect(
         screen.getByText(
-          /This will permanently delete the user account for Dr. Jane Smith/,
+          /This will permanently delete the user account for Jane Smith/,
         ),
       ).toBeInTheDocument();
       expect(
@@ -507,14 +523,14 @@ describe("StaffEdit", () => {
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
+        expect(screen.getByDisplayValue("Jane")).toBeInTheDocument();
       });
 
       // Make a change and submit
-      const nameInput = screen.getByLabelText(/full name/i);
-      await user.type(nameInput, " Updated");
+      const firstNameInput = screen.getByLabelText(/first name/i);
+      await user.type(firstNameInput, "t");
 
-      const saveButton = screen.getByRole("button", { name: /save changes/i });
+      const saveButton = screen.getByRole("button", { name: /save/i });
       await user.click(saveButton);
 
       // Wait for navigation
@@ -550,6 +566,46 @@ describe("StaffEdit", () => {
       expect(mockPush).toHaveBeenCalledWith("/management/staff");
     });
   });
+
+  describe("Field Validation", () => {
+    it("should show email preview for alias field", async () => {
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+
+      const user = userEvent.setup();
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Will be used as redacted@purdue.edu")).toBeInTheDocument();
+      });
+
+      // Change alias and check email preview updates
+      const aliasInput = screen.getByLabelText(/username\/alias/i);
+      await user.clear(aliasInput);
+      await user.type(aliasInput, "newuser");
+
+      expect(screen.getByText("Will be used as redacted@purdue.edu")).toBeInTheDocument();
+    });
+
+    it("should require all mandatory fields", async () => {
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
+      );
+
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/first name/i)).toHaveAttribute("required");
+        expect(screen.getByLabelText(/last name/i)).toHaveAttribute("required");
+        expect(screen.getByLabelText(/username\/alias/i)).toHaveAttribute("required");
+      });
+    });
+  });
 });
 
 /*
@@ -571,5 +627,6 @@ describe("StaffEdit", () => {
  * - Uses context: false
  *
  * The component provides comprehensive staff editing functionality with
- * simplified access control since only admins can access this screen.
+ * role management, individual field editing, and simplified access control
+ * since only admins can access this screen.
  */

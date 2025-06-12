@@ -66,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               firstName: firstName,
               lastName: lastName,
               alias: alias,
+              lastLogin: new Date().toISOString(),
             });
             
             console.log('Updated existing user profile:', {

@@ -16,6 +16,7 @@ CREATE TYPE profile_role AS ENUM ('admin', 'instructional', 'instructor', 'ta');
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id    UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,
   last_name  TEXT        NOT NULL,
   alias      TEXT        NOT NULL,
@@ -32,11 +33,13 @@ CREATE TABLE profiles (
 -- Cutstom Users with roles, and admin profiles
 INSERT INTO users (id, email) VALUES
   ('ac2da0fb-385d-487e-9fa1-c5010d7c18e0', 'redacted@purdue.edu'),
-  ('12471175-62bf-4308-9bd8-4b3e61af798c', 'redacted@purdue.edu');
+  ('12471175-62bf-4308-9bd8-4b3e61af798c', 'redacted@purdue.edu'),
+  ('a8e0377a-3328-4ec6-bcc9-411b96f14243', 'redacted@purdue.edu');
 
 INSERT INTO profiles (id, user_id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
   ('965bd24f-dfae-4063-b370-e1373df46322', 'ac2da0fb-385d-487e-9fa1-c5010d7c18e0', 'Ashok', 'Saravanan', 'sarava18', true, 'admin', ARRAY[]::UUID[]),
-  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', '12471175-62bf-4308-9bd8-4b3e61af798c', 'Alex', 'Siladie', 'asiladie', true, 'admin', ARRAY[]::UUID[]);
+  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', '12471175-62bf-4308-9bd8-4b3e61af798c', 'Alex', 'Siladie', 'asiladie', true, 'admin', ARRAY[]::UUID[]),
+  ('34f445d6-7318-45a7-ba49-086b85b76b85', 'a8e0377a-3328-4ec6-bcc9-411b96f14243', 'Ethan', 'Dickey', 'dickeye', true, 'instructional', ARRAY[]::UUID[]);
 
 -- First, insert users into the Auth.js users table with UUID IDs
 INSERT INTO users (id, email) VALUES
@@ -81,7 +84,7 @@ INSERT INTO users (id, email) VALUES
   ('c9d0e1f2-a3b4-3456-789a-bcdef0123456', 'owen.foster@university.edu'),
   ('d0e1f2a3-b4c5-4567-89ab-cdef01234567', 'sofia.lombardi@university.edu'),
   ('e1f2a3b4-c5d6-5678-9abc-def012345678', 'noah.rasmussen@university.edu'),
-  ('f2a3b4c5-d6e7-6789-abcd-ef0123456789', 'ethan.dickey@university.edu'),
+  ('f2a3b4c5-d6e7-6789-abcd-ef0123456789', 'john.doe@university.edu'),
   ('a3b4c5d6-e7f8-789a-bcde-f01234567890', 'henry.carter@university.edu'),
   ('b4c5d6e7-f8a9-89ab-cdef-012345678901', 'ava.petrova@university.edu'),
   ('c5d6e7f8-a9b0-9abc-def0-123456789012', 'leo.muller@university.edu');
@@ -89,8 +92,8 @@ INSERT INTO users (id, email) VALUES
 -- Then, insert profiles linked to the users
 -- Admin and Instructional Users
 INSERT INTO profiles (id, user_id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
-  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Sarah', 'Chen', 'sarah.chen', true, 'admin', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222', '66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
-  ('11111111-aaaa-bbbb-cccc-111111111111', 'b2c3d4e5-f6a7-8901-bcde-f23456789012', 'Michael', 'Rodriguez', 'michael.rodriguez', true, 'admin', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'Sarah', 'Chen', 'sarah.chen', true, 'instructional', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222', '66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('11111111-aaaa-bbbb-cccc-111111111111', 'b2c3d4e5-f6a7-8901-bcde-f23456789012', 'Michael', 'Rodriguez', 'michael.rodriguez', true, 'instructional', ARRAY['44444444-1111-1111-1111-111111111111', '66666666-3333-3333-3333-333333333333']::UUID[]),
   ('22222222-aaaa-bbbb-cccc-222222222222', 'c3d4e5f6-a7b8-9012-cdef-345678901234', 'Emily', 'Johnson', 'emily.johnson', true, 'instructional', ARRAY['55555555-2222-2222-2222-222222222222', '77777777-4444-4444-4444-444444444444']::UUID[]),
   ('33333333-aaaa-bbbb-cccc-333333333333', 'd4e5f6a7-b8c9-0123-def4-56789012345a', 'David', 'Kim', 'david.kim', false, 'instructional', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222']::UUID[]),
   ('44444444-aaaa-bbbb-cccc-444444444444', 'e5f6a7b8-c9d0-1234-ef56-789012345abc', 'Lisa', 'Wang', 'lisa.wang', true, 'instructor', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
@@ -152,7 +155,7 @@ INSERT INTO profiles (id, user_id, first_name, last_name, alias, viewed_intro, r
   ('99b90118-7b9e-4e12-8e81-d7ccc2916605', 'd0e1f2a3-b4c5-4567-89ab-cdef01234567', 'Sofia', 'Lombardi', 'sofia.lombardi', true , 'ta', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
   ('99b90118-7b9e-4e12-8e81-d7ccc2916606', 'e1f2a3b4-c5d6-5678-9abc-def012345678', 'Noah', 'Rasmussen', 'noah.rasmussen', false, 'ta', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
 -- CS-381  -------------------------------------------------------------------
-  ('99b90118-7b9e-4e12-8e81-d7ccc2916607', 'f2a3b4c5-d6e7-6789-abcd-ef0123456789', 'Ethan', 'Dickey', 'ethan.dickey', true , 'ta', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('99b90118-7b9e-4e12-8e81-d7ccc2916607', 'f2a3b4c5-d6e7-6789-abcd-ef0123456789', 'John', 'Doe', 'john.doe', true , 'ta', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
   ('99b90118-7b9e-4e12-8e81-d7ccc2916608', 'a3b4c5d6-e7f8-789a-bcde-f01234567890', 'Henry', 'Carter', 'henry.carter', false, 'ta', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
 -- multi-class ---------------------------------------------------------------
   ('99b90118-7b9e-4e12-8e81-d7ccc2916609', 'b4c5d6e7-f8a9-89ab-cdef-012345678901', 'Ava', 'Petrova', 'ava.petrova', true , 'ta', ARRAY['44444444-1111-1111-1111-111111111111','55555555-2222-2222-2222-222222222222']::UUID[]),
