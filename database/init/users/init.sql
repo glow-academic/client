@@ -29,6 +29,15 @@ CREATE TABLE profiles (
 -- SEED DATA
 -- ============================================================================
 
+-- Cutstom Users with roles, and admin profiles
+INSERT INTO users (id, email) VALUES
+  ('ac2da0fb-385d-487e-9fa1-c5010d7c18e0', 'redacted@purdue.edu'),
+  ('12471175-62bf-4308-9bd8-4b3e61af798c', 'redacted@purdue.edu');
+
+INSERT INTO profiles (id, user_id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
+  ('965bd24f-dfae-4063-b370-e1373df46322', 'ac2da0fb-385d-487e-9fa1-c5010d7c18e0', 'Ashok', 'Saravanan', 'sarava18', true, 'admin', ARRAY[]::UUID[]),
+  ('6a2518eb-eba7-4650-aee0-d387c3fb8265', '12471175-62bf-4308-9bd8-4b3e61af798c', 'Alex', 'Siladie', 'asiladie', true, 'admin', ARRAY[]::UUID[]);
+
 -- First, insert users into the Auth.js users table with UUID IDs
 INSERT INTO users (id, email) VALUES
   ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'sarah.chen@university.edu'),

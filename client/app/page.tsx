@@ -7,9 +7,98 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react"
+import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button";
-import { useRole } from "@/contexts/role-context";
+import { useQuery } from "@tanstack/react-query";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
+
+// Microsoft Icon Component
+const MicrosoftIcon = () => (
+  <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M1 1h10v10H1z" fill="#f25022" />
+    <path d="M12 1h10v10H12z" fill="#00a4ef" />
+    <path d="M1 12h10v10H1z" fill="#ffb900" />
+    <path d="M12 12h10v10H12z" fill="#7fba00" />
+  </svg>
+);
+
+// User Icon Component
+const UserIcon = () => (
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+
+// Sparkle Icon Component
+const SparkleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z" />
+  </svg>
+);
+
+// Animated Sparkles Background Component
+const AnimatedSparkles = () => {
+  const sparkles = Array.from({ length: 50 }, (_, i) => ({
+    id: i,
+    size: Math.random() * 3 + 1,
+    left: Math.random() * 100,
+    top: Math.random() * 100,
+    animationDelay: Math.random() * 3,
+    animationDuration: Math.random() * 3 + 2,
+  }));
+
+  return (
+    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+      {sparkles.map((sparkle) => (
+        <div
+          key={sparkle.id}
+          className="absolute text-white/20 animate-pulse"
+          style={{
+            left: `${sparkle.left}%`,
+            top: `${sparkle.top}%`,
+            animationDelay: `${sparkle.animationDelay}s`,
+            animationDuration: `${sparkle.animationDuration}s`,
+          }}
+        >
+          <SparkleIcon className={`w-${Math.floor(sparkle.size)} h-${Math.floor(sparkle.size)}`} />
+        </div>
+      ))}
+
+      {/* Moving sparkles */}
+      {Array.from({ length: 8 }, (_, i) => (
+        <div
+          key={`moving-${i}`}
+          className="absolute text-blue-300/30 animate-bounce"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 2}s`,
+            animationDuration: `${Math.random() * 2 + 3}s`,
+          }}
+        >
+          <SparkleIcon className="w-3 h-3" />
+        </div>
+      ))}
+
+      {/* Floating sparkles */}
+      {Array.from({ length: 6 }, (_, i) => (
+        <div
+          key={`floating-${i}`}
+          className="absolute text-purple-300/25 animate-ping"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 4}s`,
+            animationDuration: `${Math.random() * 3 + 4}s`,
+          }}
+        >
+          <SparkleIcon className="w-2 h-2" />
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function Home() {
   const [error, setError] = useState("");
@@ -17,13 +106,35 @@ export default function Home() {
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
 
+  const session = useSession();
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
+    select: (data) => data[0],
+    enabled: !!user,
+  });
+
   const handleMicrosoftLogin = async () => {
     try {
       setLoadingMicrosoft(true);
       // Clear guest mode and simulated role from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
-      await signIn("microsoft-entra-id", {redirectTo: "/home"});
+
+      // If the user is not a TA, redirect to analytics
+      let redirectTo = "/home";
+      if (profile?.role !== "ta") {
+        redirectTo = "/analytics";
+      }
+      
+      await signIn("microsoft-entra-id", { redirectTo: redirectTo });
     } catch (error) {
       console.error("Error logging in:", error);
       setError("An error occurred during login: " + (error as Error).message);
@@ -34,7 +145,7 @@ export default function Home() {
 
   const handleGuestAccess = () => {
     try {
-    // Set guest mode in localStorage and redirect
+      // Set guest mode in localStorage and redirect
       setLoadingGuest(true);
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
@@ -50,54 +161,98 @@ export default function Home() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background to-secondary/30 px-4">
-      <div className="w-full max-w-md p-8 space-y-8 bg-card rounded-lg shadow-lg border border-border">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Glow</h1>
-          <p className="mt-2 text-muted-foreground">
+    <div className="relative flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 px-4 animate-in fade-in duration-1000">
+      {/* Animated Sparkles Background */}
+      <AnimatedSparkles />
+
+      <div className="relative z-10 w-full max-w-md p-8 space-y-8 bg-white/10 backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 animate-in slide-in-from-bottom-4 duration-700 delay-200">
+        {/* Header */}
+        <div className="text-center space-y-3 animate-in slide-in-from-top-4 duration-700 delay-300">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg animate-in zoom-in duration-700 delay-400 relative overflow-hidden">
+            {/* Logo sparkles */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
+              <div className="absolute top-2 right-2 animate-ping" style={{ animationDelay: '0.5s' }}>
+                <SparkleIcon className="w-3 h-3 text-white/70" />
+              </div>
+              <div className="absolute bottom-2 left-2 animate-pulse" style={{ animationDelay: '1s' }}>
+                <SparkleIcon className="w-2 h-2 text-white/50" />
+              </div>
+            </div>
+          </div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+            Glow
+          </h1>
+          <p className="text-blue-100/80 text-sm">
             Graduate Learning Orientation Workshop
           </p>
         </div>
 
-        <form className="mt-8 space-y-6">
+        {/* Form */}
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
           {error && (
-            <div className="p-3 bg-destructive/10 border border-destructive text-destructive text-sm rounded-md">
-              {error}
+            <div className="p-4 bg-red-500/20 border border-red-400/30 text-red-200 text-sm rounded-xl animate-in slide-in-from-top-2 duration-300 backdrop-blur-sm">
+              <div className="flex items-center space-x-2">
+                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <span>{error}</span>
+              </div>
             </div>
           )}
 
-
-          <div className="space-y-3">
-              <Button
-                type="button"
-                onClick={handleMicrosoftLogin}
-                className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
-                disabled={loadingMicrosoft}
-              >
-                Continue with Microsoft
-              </Button>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">
-                    Or
-                  </span>
-                </div>
+          <div className="space-y-4">
+            {/* Microsoft Login Button */}
+            <Button
+              type="button"
+              onClick={handleMicrosoftLogin}
+              disabled={loadingMicrosoft}
+              className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
+            >
+              <div className="flex items-center justify-center space-x-3">
+                {loadingMicrosoft ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <MicrosoftIcon />
+                )}
+                <span className="text-base">
+                  {loadingMicrosoft ? "Signing in..." : "Continue with Microsoft"}
+                </span>
               </div>
+            </Button>
 
-              <Button
-                type="button"
-                onClick={handleGuestAccess}
-                className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
-                disabled={loadingGuest}
-              >
-                Continue as Guest
-              </Button>
+            {/* Divider */}
+            <div className="relative py-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/20" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-slate-900/50 backdrop-blur-sm px-4 text-blue-200/80 font-medium tracking-wider">
+                  Or
+                </span>
+              </div>
+            </div>
+
+            {/* Guest Access Button */}
+            <Button
+              type="button"
+              onClick={handleGuestAccess}
+              disabled={loadingGuest}
+              className="w-full h-12 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-white/30 backdrop-blur-sm"
+            >
+              <div className="flex items-center justify-center space-x-3">
+                {loadingGuest ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <UserIcon />
+                )}
+                <span className="text-base">
+                  {loadingGuest ? "Accessing..." : "Continue as Guest"}
+                </span>
+              </div>
+            </Button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

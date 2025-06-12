@@ -36,7 +36,6 @@ import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/querie
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
 import { getSimulationAttemptsByProfile } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 const chartConfig = {

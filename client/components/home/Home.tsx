@@ -56,7 +56,6 @@ import { Agent, Scenario, Simulation } from "@/types";
 import { useSession } from "next-auth/react";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 // Type for attempt data

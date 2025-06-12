@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Index, Integer, PrimaryKeyConstraint, String, Text, UUID, UniqueConstraint, Uuid, text
+from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, Text, UUID, Uuid, text
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -74,50 +74,12 @@ class Rubrics(_Base, table=True):
 class Users(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='users_pkey'),
-        UniqueConstraint('email', name='users_email_key')
     )
 
-    id: str = Field(sa_column=Column('id', Text, primary_key=True, server_default=text('(gen_random_uuid())::text')))
-    name: Optional[str] = Field(default=None, sa_column=Column('name', Text))
-    email: Optional[str] = Field(default=None, sa_column=Column('email', Text))
-    emailVerified: Optional[datetime] = Field(default=None, sa_column=Column('emailVerified', DateTime))
-    image: Optional[str] = Field(default=None, sa_column=Column('image', Text))
+    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True))
+    email: str = Field(sa_column=Column('email', Text))
 
-    accounts: List['Accounts'] = Relationship(back_populates='users')
     profiles: List['Profiles'] = Relationship(back_populates='user')
-    sessions: List['Sessions'] = Relationship(back_populates='users')
-
-
-class VerificationToken(_Base, table=True):
-    __tablename__ = 'verification_token'
-    __table_args__ = (
-        PrimaryKeyConstraint('identifier', 'token', name='verification_token_pkey'),
-    )
-
-    identifier: str = Field(sa_column=Column('identifier', Text, primary_key=True))
-    expires: datetime = Field(sa_column=Column('expires', DateTime))
-    token: str = Field(sa_column=Column('token', Text, primary_key=True))
-
-
-class Accounts(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['userId'], ['users.id'], ondelete='CASCADE', name='accounts_userid_fkey'),
-        PrimaryKeyConstraint('provider', 'providerAccountId', name='accounts_pkey')
-    )
-
-    userId: str = Field(sa_column=Column('userId', Text))
-    type: str = Field(sa_column=Column('type', Text))
-    provider: str = Field(sa_column=Column('provider', Text, primary_key=True))
-    providerAccountId: str = Field(sa_column=Column('providerAccountId', Text, primary_key=True))
-    refresh_token: Optional[str] = Field(default=None, sa_column=Column('refresh_token', Text))
-    access_token: Optional[str] = Field(default=None, sa_column=Column('access_token', Text))
-    expires_at: Optional[int] = Field(default=None, sa_column=Column('expires_at', Integer))
-    id_token: Optional[str] = Field(default=None, sa_column=Column('id_token', Text))
-    scope: Optional[str] = Field(default=None, sa_column=Column('scope', Text))
-    session_state: Optional[str] = Field(default=None, sa_column=Column('session_state', Text))
-    token_type: Optional[str] = Field(default=None, sa_column=Column('token_type', Text))
-
-    users: Optional['Users'] = Relationship(back_populates='accounts')
 
 
 class Documents(_Base, table=True):
@@ -166,15 +128,14 @@ class Evals(_Base, table=True):
 class Profiles(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE', name='profiles_user_id_fkey'),
-        PrimaryKeyConstraint('id', name='profiles_pkey'),
-        Index('idx_profiles_user_id', 'user_id')
+        PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    user_id: str = Field(sa_column=Column('user_id', Text))
-    first_name: str = Field(sa_column=Column('first_name', String(255)))
-    last_name: str = Field(sa_column=Column('last_name', String(255)))
-    email: str = Field(sa_column=Column('email', String(255)))
+    user_id: UUID = Field(sa_column=Column('user_id', Uuid))
+    first_name: str = Field(sa_column=Column('first_name', Text))
+    last_name: str = Field(sa_column=Column('last_name', Text))
+    alias: str = Field(sa_column=Column('alias', Text))
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, server_default=text('false')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), server_default=text("'ta'::profile_role")))
@@ -222,19 +183,6 @@ class Schedules(_Base, table=True):
 
     class_: Optional['Classes'] = Relationship(back_populates='schedules')
     events: List['Events'] = Relationship(back_populates='schedule')
-
-
-class Sessions(_Base, table=True):
-    __table_args__ = (
-        ForeignKeyConstraint(['userId'], ['users.id'], ondelete='CASCADE', name='sessions_userid_fkey'),
-        PrimaryKeyConstraint('sessionToken', name='sessions_pkey')
-    )
-
-    sessionToken: str = Field(sa_column=Column('sessionToken', Text, primary_key=True))
-    userId: str = Field(sa_column=Column('userId', Text))
-    expires: datetime = Field(sa_column=Column('expires', DateTime))
-
-    users: Optional['Users'] = Relationship(back_populates='sessions')
 
 
 class Simulations(_Base, table=True):

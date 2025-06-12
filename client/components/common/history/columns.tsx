@@ -30,6 +30,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -57,13 +58,18 @@ export function useColumns({
   showExport?: boolean;
 }) {
   const session = useSession();
-  const userId = parseInt(session.data?.user?.id!);
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(userId!),
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
-    enabled: !!userId,
+    enabled: !!user,
   });
 
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -974,7 +980,7 @@ export function useColumns({
     ];
 
     return baseColumns;
-  }, [profileOptions, classOptions, showChats, showAll, showExport, grades, validStandardGroups, validStandards, userId]);
+  }, [profileOptions, classOptions, showChats, showAll, showExport, grades, validStandardGroups, validStandards, user]);
 
   // Determine which data to return based on view mode
   // showChats=true means show individual chats, showChats=false means show attempts/simulations
@@ -983,21 +989,21 @@ export function useColumns({
     : enhancedAttempts || [];
 
   // Apply filtering based on showAll parameter
-  if (!showAll && userId) {
+  if (!showAll && user) {
     // If showAll is false, filter to show only current user's data
     if (showChats) {
       // Filter chats to only show those belonging to the current user
       data = data.filter(
-        (chat: unknown) => (chat as Record<string, unknown>).userId === userId,
+        (chat: unknown) => (chat as Record<string, unknown>).userId === user.id,
       );
     } else {
       // Filter attempts to only show those belonging to the current user
       data = data.filter(
         (attempt: unknown) =>
-          (attempt as Record<string, unknown>).userId === userId,
+          (attempt as Record<string, unknown>).userId === user.id,
       );
     }
-  } else if (!userId) {
+  } else if (!user) {
     // If there's no user, show empty data
     data = [];
   }

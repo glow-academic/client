@@ -59,7 +59,6 @@ import { Label } from "@/components/ui/label";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
