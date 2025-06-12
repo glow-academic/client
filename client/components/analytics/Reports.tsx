@@ -310,8 +310,8 @@ export default function Reports() {
     return filtered;
   }, [analytics, sortBy, filterBy, searchQuery]);
 
-  const handleDownloadReport = async (userId: string, options: ReportOptions) => {
-    setDownloadingReports(prev => new Set(prev).add(userId));
+  const handleDownloadReport = async (profileId: string, options: ReportOptions) => {
+    setDownloadingReports(prev => new Set(prev).add(profileId));
 
     try {
       const queryParams = new URLSearchParams({
@@ -323,7 +323,7 @@ export default function Reports() {
         includeFeedback: options.includeFeedback.toString(),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${userId}?${queryParams}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}?${queryParams}`, {
         method: 'GET',
       });
 
@@ -335,7 +335,7 @@ export default function Reports() {
       const contentDisposition = response.headers.get('content-disposition');
       const filename = contentDisposition
         ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
-        : `TA_Report_${userId}.pdf`;
+        : `TA_Report_${profileId}.pdf`;
 
       // Create blob and download
       const blob = await response.blob();
@@ -355,7 +355,7 @@ export default function Reports() {
     } finally {
       setDownloadingReports(prev => {
         const newSet = new Set(prev);
-        newSet.delete(userId);
+        newSet.delete(profileId);
         return newSet;
       });
     }

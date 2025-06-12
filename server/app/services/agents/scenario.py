@@ -31,8 +31,11 @@ async def run_scenario_agent(
 
     Args:
         agent_id: The ID of the agent
-        user_id: The ID of the user (can be None for guest mode)
         class_id: The ID of the class
+        document_ids: The IDs of the documents
+        seniority: The seniority of the student
+        crowdedness: The crowdedness of the class
+        intensity: The intensity of the class
         session: The database session
     Returns:
         A tuple of (scenario_id, chat_title).

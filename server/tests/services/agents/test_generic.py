@@ -45,7 +45,7 @@ def sample_attempt():
     attempt.id = uuid4()
     attempt.class_id = uuid4()
     attempt.simulation_id = uuid4()
-    attempt.user_id = uuid4()
+    attempt.profile_id = uuid4()
     return attempt
 
 @pytest.fixture

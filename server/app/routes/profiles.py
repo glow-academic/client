@@ -7,7 +7,7 @@ import os
 import tempfile
 from datetime import datetime
 import statistics
-from app.models import Users, SimulationChats, SimulationChatGrades, SimulationChatFeedbacks, Rubrics, Agents, StandardGroups, Standards, Scenarios, SimulationAttempts, Simulations
+from app.models import Profiles, SimulationChats, SimulationChatGrades, SimulationChatFeedbacks, Rubrics, Agents, StandardGroups, Standards, Scenarios, SimulationAttempts, Simulations
 from typing import Dict, List, Tuple, Optional
 from collections import defaultdict
 
@@ -211,9 +211,9 @@ def create_score_table(grades: List[SimulationChatGrades], chats: List[Simulatio
             table.add_hline()
 
 
-@router.get("/{user_id}")
+@router.get("/{profile_id}")
 async def get_report(
-    user_id: str,
+    profile_id: str,
     session: Session = Depends(get_session),
     includeStudentTypeChart: bool = Query(True, description="Include student type distribution chart"),
     includePerformanceChart: bool = Query(True, description="Include performance by student type chart"),
@@ -226,12 +226,12 @@ async def get_report(
     Generate and return a comprehensive PDF report for a user's performance.
     """
     # Find the user in the database
-    user = session.exec(select(Users).where(Users.id == user_id)).one_or_none()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+    profile = session.exec(select(Profiles).where(Profiles.id == profile_id)).one_or_none()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
 
     # Get the chats for the user through attempts
-    attempts = session.exec(select(SimulationAttempts).where(SimulationAttempts.user_id == user_id)).all()
+    attempts = session.exec(select(SimulationAttempts).where(SimulationAttempts.profile_id == profile_id)).all()
     if not attempts:
         raise HTTPException(status_code=404, detail="No attempts found for this user")
 
@@ -339,7 +339,7 @@ async def get_report(
             chart_files['time_series'] = time_chart
 
         # Create PDF using PyLaTeX
-        pdf_filename = f"TA_Report_{user.name.replace(' ', '_')}.pdf"
+        pdf_filename = f"TA_Report_{profile.first_name.replace(' ', '_')}.pdf"
         doc = Document(os.path.join(temp_dir, "report"))
 
         # Add document preamble for better formatting
@@ -368,7 +368,7 @@ async def get_report(
         doc.append(NoEscape(r"\centering"))
         doc.append(NoEscape(r"{\Huge\bfseries TA Performance Report\par}"))
         doc.append(NoEscape(r"\vspace{2cm}"))
-        doc.append(NoEscape(r"{\Large\bfseries " + escape_latex(user.name) + r"\par}"))
+        doc.append(NoEscape(r"{\Large\bfseries " + escape_latex(profile.first_name) + " " + escape_latex(profile.last_name) + r"\par}"))
         doc.append(NoEscape(r"\vspace{1cm}"))
         doc.append(
             NoEscape(
@@ -552,9 +552,9 @@ async def get_report(
         )
 
 
-@router.post("/{user_id}")
+@router.post("/{profile_id}")
 async def generate_report(
-    user_id: str,
+    profile_id: str,
     session: Session = Depends(get_session),
     includeStudentTypeChart: bool = Query(True, description="Include student type distribution chart"),
     includePerformanceChart: bool = Query(True, description="Include performance by student type chart"),
@@ -568,7 +568,7 @@ async def generate_report(
     It will return the same response as the GET endpoint.
     """
     return await get_report(
-        user_id, 
+        profile_id, 
         session, 
         includeStudentTypeChart,
         includePerformanceChart,

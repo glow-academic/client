@@ -13,13 +13,11 @@ import { createBreadcrumbSectionChangeHandler } from "@/utils/navigation-utils";
 interface NavigationBreadcrumbsProps {
   breadcrumbs: Array<{ title: string; section?: string }>;
   onSectionChange?: (section: string) => void;
-  rightContent?: React.ReactNode;
 }
 
 export function NavigationBreadcrumbs({
   breadcrumbs,
   onSectionChange,
-  rightContent,
 }: NavigationBreadcrumbsProps) {
   const router = useRouter();
   const breadcrumbNavigate = createBreadcrumbSectionChangeHandler(router);
@@ -39,17 +37,8 @@ export function NavigationBreadcrumbs({
     }
   };
 
-  if (!breadcrumbs || breadcrumbs.length === 0) {
-    return rightContent ? (
-      <div className="flex items-center justify-between w-full">
-        <div />
-        {rightContent}
-      </div>
-    ) : null;
-  }
-
   return (
-    <div className="flex items-center justify-between w-full">
+    <div className="flex items-center w-full">
       <Breadcrumb>
         <BreadcrumbList>
           {breadcrumbs.map((crumb, index) => (
@@ -71,7 +60,6 @@ export function NavigationBreadcrumbs({
           ))}
         </BreadcrumbList>
       </Breadcrumb>
-      {rightContent && <div className="ml-4">{rightContent}</div>}
     </div>
   );
 }

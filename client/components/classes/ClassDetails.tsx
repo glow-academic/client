@@ -42,8 +42,6 @@ import {
 // Import class-specific queries
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getTopicsByClass } from "@/utils/queries/topics/get-topics-by-class";
-import { getSimulationsByClass } from "@/utils/queries/simulations/get-simulations-by-class";
-import { getSimulationAttemptsByClass } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-class";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
@@ -51,6 +49,9 @@ import { getAllEvents } from "@/utils/queries/events/get-all-events";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 type ClassDetailsProps = {
   classId: string;
@@ -74,8 +75,6 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     queryFn: () => getAllProfiles(),
   });
 
-
-
   // Fetch class-specific data
   const { data: topics = [], isLoading: isLoadingTopics } = useQuery({
     queryKey: ["topics", classId],
@@ -83,14 +82,46 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
   });
 
   const { data: simulations = [], isLoading: isLoadingSimulations } = useQuery({
-    queryKey: ["simulations", classId],
-    queryFn: () => getSimulationsByClass([classId]),
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
   });
 
-  const { data: attempts = [], isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", classId],
-    queryFn: () => getSimulationAttemptsByClass([classId]),
+  // Fetch scenarios to find class-related simulations
+  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
+
+  // Fetch all profiles to get their attempts
+  const { data: allProfiles = [], isLoading: isLoadingAllProfiles } = useQuery({
+    queryKey: ["allProfiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  // Get all attempts for all profiles
+  const { data: allAttempts = [], isLoading: isLoadingAttempts } = useQuery({
+    queryKey: ["allAttempts", allProfiles?.map((profile: any) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(allProfiles!.map((profile: any) => profile.id)),
+    enabled: !!allProfiles && allProfiles.length > 0,
+  });
+
+  // Filter attempts for this class based on scenarios
+  const attempts = useMemo(() => {
+    if (!allAttempts || !scenarios || !simulations) return [];
+    
+    // Find scenarios for this class
+    const classScenarios = scenarios.filter((scenario: any) => scenario.classId === classId);
+    
+    // Find simulations that use these scenarios
+    const classSimulations = simulations.filter((simulation: any) => 
+      classScenarios.some((scenario: any) => simulation.scenarioIds?.includes(scenario.id))
+    );
+    
+    // Filter attempts for these simulations
+    return allAttempts.filter((attempt: any) => 
+      classSimulations.some((simulation: any) => simulation.id === attempt.simulationId)
+    );
+  }, [allAttempts, scenarios, simulations, classId]);
 
   const { data: chats = [], isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
@@ -260,6 +291,8 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     isLoadingProfiles ||
     isLoadingTopics ||
     isLoadingSimulations ||
+    isLoadingScenarios ||
+    isLoadingAllProfiles ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||

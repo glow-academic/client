@@ -1,5 +1,5 @@
 """
-Tests for app.routes.users
+Tests for app.routes.profiles
 
 Auto-generated on: 2025-06-10T16:21:22.276313
 Updated with report customization tests
@@ -13,11 +13,11 @@ from uuid import uuid4
 import tempfile
 import os
 from app.main import app
-from app.routes.users import create_student_type_chart, create_student_type_performance, create_score_radar_chart, create_time_series_chart
+from server.app.routes.profiles import create_student_type_chart, create_student_type_performance, create_score_radar_chart, create_time_series_chart
 from datetime import datetime
 
 # Import the router being tested
-from app.routes.users import router
+from server.app.routes.profiles import router
 
 @pytest.fixture
 def client():
@@ -43,8 +43,8 @@ def mock_user():
 def mock_attempts():
     """Create mock simulation attempts."""
     return [
-        MagicMock(id="attempt-1", user_id="test-user-id"),
-        MagicMock(id="attempt-2", user_id="test-user-id"),
+        MagicMock(id="attempt-1", profile_id="test-user-id"),
+        MagicMock(id="attempt-2", profile_id="test-user-id"),
     ]
 
 @pytest.fixture
@@ -140,13 +140,13 @@ def mock_agents():
 class TestGet_Report:
     """Tests for get_report endpoint."""
     
-    @patch('app.routes.users.select')
+    @patch('app.routes.profiles.select')
     @patch('tempfile.TemporaryDirectory')
-    @patch('app.routes.users.create_student_type_chart')
-    @patch('app.routes.users.create_student_type_performance')
-    @patch('app.routes.users.create_score_radar_chart')
-    @patch('app.routes.users.create_time_series_chart')
-    @patch('app.routes.users.Document')
+    @patch('app.routes.profiles.create_student_type_chart')
+    @patch('app.routes.profiles.create_student_type_performance')
+    @patch('app.routes.profiles.create_score_radar_chart')
+    @patch('app.routes.profiles.create_time_series_chart')
+    @patch('app.routes.profiles.Document')
     def test_get_report_success_all_options(
         self,
         mock_document,
@@ -209,9 +209,9 @@ class TestGet_Report:
 
         # Mock file reading
         with patch('builtins.open', mock_open(read_data=b'fake pdf content')):
-            with patch('app.routes.users.get_session', return_value=mock_session):
+            with patch('app.routes.profiles.get_session', return_value=mock_session):
                 response = client.get(
-                    "/users/test-user-id",
+                    "/profiles/test-user-id",
                     params={
                         "includeStudentTypeChart": True,
                         "includePerformanceChart": True,
@@ -237,13 +237,13 @@ class TestGet_Report:
         mock_document.assert_called_once()
         mock_doc_instance.generate_pdf.assert_called_once_with(clean_tex=True)
     
-    @patch('app.routes.users.select')
+    @patch('app.routes.profiles.select')
     @patch('tempfile.TemporaryDirectory')
-    @patch('app.routes.users.create_student_type_chart')
-    @patch('app.routes.users.create_student_type_performance')
-    @patch('app.routes.users.create_score_radar_chart')
-    @patch('app.routes.users.create_time_series_chart')
-    @patch('app.routes.users.Document')
+    @patch('app.routes.profiles.create_student_type_chart')
+    @patch('app.routes.profiles.create_student_type_performance')
+    @patch('app.routes.profiles.create_score_radar_chart')
+    @patch('app.routes.profiles.create_time_series_chart')
+    @patch('app.routes.profiles.Document')
     def test_get_report_success_minimal_options(
         self, 
         mock_document,
@@ -286,9 +286,9 @@ class TestGet_Report:
         
         # Mock file reading
         with patch('builtins.open', mock_open(read_data=b'fake pdf content')):
-            with patch('app.routes.users.get_session', return_value=mock_session):
+            with patch('app.routes.profiles.get_session', return_value=mock_session):
                 response = client.get(
-                    "/users/test-user-id",
+                    "/profiles/test-user-id",
                     params={
                         "includeStudentTypeChart": False,
                         "includePerformanceChart": False,
@@ -313,8 +313,8 @@ class TestGet_Report:
         # Mock user not found
         mock_session.exec.return_value.one_or_none.return_value = None
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
-            response = client.get("/users/nonexistent-user-id")
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
+            response = client.get("/profiles/nonexistent-user-id")
         
         assert response.status_code == 404
         assert response.json()["detail"] == "User not found"
@@ -327,8 +327,8 @@ class TestGet_Report:
             [],  # Empty attempts
         ]
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
-            response = client.get("/users/test-user-id")
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
+            response = client.get("/profiles/test-user-id")
         
         assert response.status_code == 404
         assert response.json()["detail"] == "No attempts found for this user"
@@ -342,15 +342,15 @@ class TestGet_Report:
             [],  # Empty chats
         ]
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
-            response = client.get("/users/test-user-id")
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
+            response = client.get("/profiles/test-user-id")
         
         assert response.status_code == 404
         assert response.json()["detail"] == "No chats found for this user"
     
-    @patch('app.routes.users.select')
+    @patch('app.routes.profiles.select')
     @patch('tempfile.TemporaryDirectory')
-    @patch('app.routes.users.Document')
+    @patch('app.routes.profiles.Document')
     def test_get_report_with_default_parameters(
         self, 
         mock_document,
@@ -389,8 +389,8 @@ class TestGet_Report:
         
         # Mock file reading
         with patch('builtins.open', mock_open(read_data=b'fake pdf content')):
-            with patch('app.routes.users.get_session', return_value=mock_session):
-                response = client.get("/users/test-user-id")
+            with patch('app.routes.profiles.get_session', return_value=mock_session):
+                response = client.get("/profiles/test-user-id")
         
         assert response.status_code == 200
         assert response.headers["content-type"] == "application/pdf"
@@ -399,16 +399,16 @@ class TestGet_Report:
 class TestGenerate_Report:
     """Tests for generate_report endpoint."""
     
-    @patch('app.routes.users.get_report')
+    @patch('app.routes.profiles.get_report')
     def test_generate_report_success(self, mock_get_report, client, mock_session):
         """Test successful generate_report request."""
         # Mock the get_report function
         mock_response = MagicMock()
         mock_get_report.return_value = mock_response
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
             response = client.post(
-                "/users/test-user-id",
+                "/profiles/test-user-id",
                 params={
                     "includeStudentTypeChart": True,
                     "includePerformanceChart": False,
@@ -431,14 +431,14 @@ class TestGenerate_Report:
             False,  # includeFeedback
         )
     
-    @patch('app.routes.users.get_report')
+    @patch('app.routes.profiles.get_report')
     def test_generate_report_with_defaults(self, mock_get_report, client, mock_session):
         """Test generate_report with default parameters."""
         mock_response = MagicMock()
         mock_get_report.return_value = mock_response
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
-            response = client.post("/users/test-user-id")  # No query params
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
+            response = client.post("/profiles/test-user-id")  # No query params
         
         # Verify get_report was called with default True values
         mock_get_report.assert_called_once_with(
@@ -452,15 +452,15 @@ class TestGenerate_Report:
             True,  # includeFeedback
         )
     
-    @patch('app.routes.users.get_report')
+    @patch('app.routes.profiles.get_report')
     def test_generate_report_error_propagation(self, mock_get_report, client, mock_session):
         """Test generate_report error handling."""
         # Mock get_report to raise an exception
         from fastapi import HTTPException
         mock_get_report.side_effect = HTTPException(status_code=404, detail="User not found")
         
-        with patch('app.routes.users.get_session', return_value=mock_session):
-            response = client.post("/users/nonexistent-user-id")
+        with patch('app.routes.profiles.get_session', return_value=mock_session):
+            response = client.post("/profiles/nonexistent-user-id")
         
         assert response.status_code == 404
         assert response.json()["detail"] == "User not found"
@@ -474,7 +474,7 @@ class TestChartCreationFunctions:
     @patch('matplotlib.pyplot.figure')
     def test_create_student_type_chart(self, mock_figure, mock_pie, mock_savefig):
         """Test student type chart creation."""
-        from app.routes.users import create_student_type_chart
+        from server.app.routes.profiles import create_student_type_chart
         
         chat_agents = {"happy": 5, "aggressive": 3, "confused": 2}
         filename = "/tmp/test_chart.png"
@@ -491,7 +491,7 @@ class TestChartCreationFunctions:
     @patch('matplotlib.pyplot.figure')
     def test_create_student_type_performance(self, mock_figure, mock_bar, mock_savefig):
         """Test student type performance chart creation."""
-        from app.routes.users import create_student_type_performance
+        from server.app.routes.profiles import create_student_type_performance
         
         performance_by_type = {
             "happy": [85, 90, 88],
@@ -512,7 +512,7 @@ class TestChartCreationFunctions:
     @patch('matplotlib.pyplot.figure')
     def test_create_score_radar_chart(self, mock_figure, mock_subplot, mock_savefig):
         """Test radar chart creation."""
-        from app.routes.users import create_score_radar_chart
+        from server.app.routes.profiles import create_score_radar_chart
         
         scores = {
             "Adaptability": 85,
@@ -534,7 +534,7 @@ class TestChartCreationFunctions:
     @patch('matplotlib.pyplot.figure')
     def test_create_time_series_chart(self, mock_figure, mock_plot, mock_savefig):
         """Test time series chart creation."""
-        from app.routes.users import create_time_series_chart
+        from server.app.routes.profiles import create_time_series_chart
         from datetime import datetime
         
         time_data = [
@@ -555,12 +555,12 @@ class TestChartCreationFunctions:
 class TestIntegration:
     """Integration tests for the complete report generation flow."""
     
-    @patch('app.routes.users.select')
+    @patch('app.routes.profiles.select')
     @patch('tempfile.TemporaryDirectory')
-    @patch('app.routes.users.create_student_type_chart')
-    @patch('app.routes.users.create_student_type_performance')
-    @patch('app.routes.users.create_score_radar_chart')
-    @patch('app.routes.users.Document')
+    @patch('app.routes.profiles.create_student_type_chart')
+    @patch('app.routes.profiles.create_student_type_performance')
+    @patch('app.routes.profiles.create_score_radar_chart')
+    @patch('app.routes.profiles.Document')
     def test_full_report_generation_flow(
         self,
         mock_document,
@@ -608,9 +608,9 @@ class TestIntegration:
         
         # Mock file reading
         with patch('builtins.open', mock_open(read_data=b'realistic pdf content')):
-            with patch('app.routes.users.get_session', return_value=mock_session):
+            with patch('app.routes.profiles.get_session', return_value=mock_session):
                 response = client.get(
-                    "/users/test-user-id",
+                    "/profiles/test-user-id",
                     params={
                         "includeStudentTypeChart": True,
                         "includePerformanceChart": True,

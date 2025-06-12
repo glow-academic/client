@@ -187,17 +187,11 @@ export const simulations = pgTable("simulations", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
-	classId: uuid("class_id"),
 	timeLimit: integer("time_limit"),
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
 	rubricId: uuid("rubric_id").notNull(),
 }, (table) => [
-	foreignKey({
-			columns: [table.classId],
-			foreignColumns: [classes.id],
-			name: "simulations_class_id_fkey"
-		}).onDelete("set null"),
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -209,18 +203,12 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	profileId: uuid("profile_id"),
-	classId: uuid("class_id").notNull(),
 	simulationId: uuid("simulation_id").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
 			name: "simulation_attempts_profile_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.classId],
-			foreignColumns: [classes.id],
-			name: "simulation_attempts_class_id_fkey"
 		}).onDelete("cascade"),
 	foreignKey({
 			columns: [table.simulationId],

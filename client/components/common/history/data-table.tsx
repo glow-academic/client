@@ -34,7 +34,6 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
-  showChats?: boolean;
   showExport?: boolean;
   scoreOptions?: { value: string; label: string }[];
 }
@@ -44,7 +43,6 @@ export function DataTable<TData, TValue>({
   data,
   profileOptions,
   classOptions,
-  showChats,
   showExport = true,
   scoreOptions = [],
 }: DataTableProps<TData, TValue>) {
@@ -110,8 +108,6 @@ export function DataTable<TData, TValue>({
         dateRange={dateRange}
         setDateRange={setDateRange}
         showExport={showExport}
-        scoreOptions={scoreOptions}
-        viewMode={showChats ? "chats" : "attempts"}
       />
       <div className="rounded-md border">
         <Table>
@@ -143,7 +139,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className={!showChats ? "pl-6" : ""}
+                      className="pl-6"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -157,7 +153,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className={`h-24 text-center ${!showChats ? "pl-6" : ""}`}
+                  className="h-24 text-center pl-6"
                 >
                   No results.
                 </TableCell>
@@ -166,7 +162,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} showChats={showChats || false} />
+      <DataTablePagination table={table} />
     </div>
   );
 }

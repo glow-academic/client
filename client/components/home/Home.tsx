@@ -695,11 +695,12 @@ export default function Home() {
       const formData = new FormData();
       formData.append("simulation_id", simulationId);
 
-      // Handle user_id for guest mode
+      // Handle profile_id for guest mode
       if (effectiveRole === "guest" || !profile) {
         // pass
+        console.log("Guest mode, no profile");
       } else {
-        formData.append("user_id", profile.id);
+        formData.append("profile_id", profile.id);
       }
 
       formData.append("class_id", classId);
@@ -1043,7 +1044,7 @@ export default function Home() {
         {/* Multi Simulations Carousel */}
         {multiSimulations.length > 0 && renderCarousel(multiSimulations, "multi")}
 
-        <SimulationHistory showAll={false} showChats={false} showExport={false} />
+        <SimulationHistory showAll={false} showExport={false} />
 
         {/* No simulations message */}
         {soloSimulations.length === 0 && multiSimulations.length === 0 && (

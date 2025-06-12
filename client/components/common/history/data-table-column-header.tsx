@@ -15,21 +15,19 @@ interface DataTableColumnHeaderProps<TData, TValue>
   extends React.HTMLAttributes<HTMLDivElement> {
   column: Column<TData, TValue>;
   title: string;
-  showChats?: boolean;
 }
 
 export function DataTableColumnHeader<TData, TValue>({
   column,
   title,
   className,
-  showChats = false,
 }: DataTableColumnHeaderProps<TData, TValue>) {
   if (!column.getCanSort()) {
-    return <div className={cn(className, showChats && "ml-4")}>{title}</div>;
+    return <div className={cn(className)}>{title}</div>;
   }
 
   return (
-    <div className={cn("flex items-center space-x-2", className, showChats && "ml-4")}>
+    <div className={cn("flex items-center space-x-2", className)}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

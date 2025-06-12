@@ -119,19 +119,19 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
 @router.post("/start")
 async def start_attempt(
     simulation_id: str = Form(...),
-    user_id: Optional[str] = Form(None),
+    profile_id: Optional[str] = Form(None),
     class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
     This endpoint creates a new attempt and associated chats based on a simulation.
-    For guest mode, user_id can be None or empty string.
+    For guest mode, profile_id can be None or empty string.
     Handles both permanent individual practice simulations and dynamic quiz simulations.
     """
     try:
-        # Handle empty string user_id as None for guest mode
-        if user_id == "" or user_id == "null":
-            user_id = None
+        # Handle empty string profile_id as None for guest mode
+        if profile_id == "" or profile_id == "null":
+            profile_id = None
 
         # Get the simulation
         simulation = session.exec(
@@ -142,7 +142,7 @@ async def start_attempt(
 
         # Create the attempt
         new_attempt = SimulationAttempts(
-            user_id=user_id,  # Will be None for guest mode
+            profile_id=profile_id,  # Will be None for guest mode
             class_id=class_id,
             simulation_id=simulation_id,
         )

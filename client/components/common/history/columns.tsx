@@ -24,8 +24,10 @@ import {
   SimulationChatGrade,
   SimulationChatFeedback,
   Profile,
+  Scenario,
 } from "@/types";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
@@ -38,22 +40,14 @@ interface EnhancedAttempt extends SimulationAttempt {
   agentsTested: string[];
   simulationTitle: string;
   interactionIds: string[];
-}
-
-interface EnhancedChat extends SimulationChat {
-  grades: SimulationChatGrade[];
-  feedbacks: SimulationChatFeedback[];
-  profileId?: string;
-  classId?: string;
+  classId: string | null;
 }
 
 // Component to use the columns with data from queries
 export function useColumns({
-  showChats = false,
   showAll = false,
   showExport = true,
 }: {
-  showChats?: boolean;
   showAll?: boolean;
   showExport?: boolean;
 }) {
@@ -95,6 +89,11 @@ export function useColumns({
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
+  });
+
+  const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
+    queryKey: ["scenarios"],
+    queryFn: () => getAllScenarios(),
   });
 
   const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
@@ -162,15 +161,25 @@ export function useColumns({
     }));
   }, [profiles]);
 
-  // Create class options
+  // Create class options - only include classes that are used in scenarios
   const classOptions = useMemo(() => {
-    if (!classes) return [];
-    return classes.map((cls: Class) => ({
-      value: cls.id,
-      label: cls.classCode,
-      icon: null,
-    }));
-  }, [classes]);
+    if (!classes || !scenarios) return [];
+    
+    // Get unique class IDs from scenarios
+    const usedClassIds = [...new Set(
+      scenarios
+        .map((scenario: Scenario) => scenario.classId)
+        .filter((classId): classId is string => classId !== null)
+    )];
+    
+    return classes
+      .filter((cls: Class) => usedClassIds.includes(cls.id))
+      .map((cls: Class) => ({
+        value: cls.id,
+        label: cls.classCode,
+        icon: null,
+      }));
+  }, [classes, scenarios]);
 
   // Filter valid rubrics based on simulations
   const validRubrics = useMemo(() => {
@@ -192,7 +201,7 @@ export function useColumns({
 
   // Create enhanced attempts data
   const enhancedAttempts = useMemo(() => {
-    if (!attempts || !chats || !agents || !simulations) return [];
+    if (!attempts || !chats || !agents || !simulations || !scenarios) return [];
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
       const attemptChats = chats.filter(
@@ -226,6 +235,20 @@ export function useColumns({
         (s) => s.id === attempt.simulationId,
       );
 
+      // Derive classId from scenarios
+      let derivedClassId = null;
+      if (simulation?.scenarioIds) {
+        // Find the first scenario that has a classId
+        for (const scenarioId of simulation.scenarioIds) {
+          if (scenarioId === "RAY") continue; // Skip default RAY scenario
+          const scenario = scenarios.find((s: Scenario) => s.id === scenarioId);
+          if (scenario?.classId) {
+            derivedClassId = scenario.classId;
+            break;
+          }
+        }
+      }
+
       return {
         ...attempt,
         chats: attemptChats,
@@ -233,37 +256,10 @@ export function useColumns({
         simulationTitle:
           simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
+        classId: derivedClassId, // Add the derived classId
       };
     });
-  }, [attempts, chats, agents, simulations]);
-
-  // Create enhanced chats data
-  const enhancedChats = useMemo(() => {
-    if (!chats || !grades || !feedbacks || !attempts) return [];
-
-    return chats.map((chat: SimulationChat): EnhancedChat => {
-      const chatGrades = grades.filter(
-        (grade) => grade.simulationChatId === chat.id,
-      );
-      const chatFeedbacks = feedbacks.filter((feedback) =>
-        chatGrades.some((grade) => grade.id === feedback.simulationChatGradeId),
-      );
-
-      // Find the associated attempt to get user and class information
-      const associatedAttempt = attempts.find(
-        (attempt) => attempt.id === chat.attemptId,
-      );
-
-      return {
-        ...chat,
-        grades: chatGrades,
-        feedbacks: chatFeedbacks,
-        // Add user and class information from the associated attempt
-        profileId: associatedAttempt?.profileId || undefined,
-        classId: associatedAttempt?.classId || undefined,
-      };
-    });
-  }, [chats, grades, feedbacks, attempts]);
+  }, [attempts, chats, agents, simulations, scenarios]);
 
   // Create skill categories from standard groups for scoring
   const skillCategories = useMemo(() => {
@@ -300,376 +296,15 @@ export function useColumns({
     }));
   }, [validStandardGroups]);
 
-
-
-  // Define columns
+  // Define columns - only attempts view
   const columns = useMemo(() => {
-    if (!showChats) {
-      // Attempts view columns (when showChats is false, show attempts/simulations)
-      const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
-        // Select column - only show if showExport is true
-        ...(showExport
-          ? [
-              {
-                id: "select",
-                header: ({ table }: { table: Table<EnhancedAttempt> }) => (
-                  <Checkbox
-                    checked={
-                      table.getIsAllPageRowsSelected() ||
-                      (table.getIsSomePageRowsSelected() && "indeterminate")
-                    }
-                    onCheckedChange={(value: boolean | "indeterminate") =>
-                      table.toggleAllPageRowsSelected(!!value)
-                    }
-                    aria-label="Select all"
-                    className="translate-y-[2px] ml-4"
-                  />
-                ),
-                cell: ({ row }: { row: Row<EnhancedAttempt> }) => (
-                  <Checkbox
-                    checked={row.getIsSelected()}
-                    onCheckedChange={(value: boolean | "indeterminate") =>
-                      row.toggleSelected(!!value)
-                    }
-                    aria-label="Select row"
-                    className="translate-y-[2px] ml-4"
-                  />
-                ),
-                enableSorting: false,
-                enableHiding: false,
-              },
-            ]
-          : []),
-        // Date column
-        {
-          accessorKey: "createdAt",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Date"
-              showChats={showChats}
-            />
-          ),
-          cell: ({ row }) => {
-            const date = row.getValue("createdAt");
-            if (!date) return null;
-
-            const dateObj = new Date(date as string);
-            const day = dateObj.getDate().toString().padStart(2, "0");
-            const month = (dateObj.getMonth() + 1).toString().padStart(2, "0");
-            const year = dateObj.getFullYear().toString().slice(-2);
-            const time = dateObj.toLocaleTimeString("en-US", {
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false,
-            });
-
-            return (
-              <div className="font-medium text-sm">
-                <div>
-                  {month}-{day}-{year}
-                </div>
-                <div className="text-xs text-muted-foreground">{time}</div>
-              </div>
-            );
-          },
-          enableSorting: true,
-          filterFn: (row, id, value) => {
-            if (!value || value.length === 0) return true;
-            const rowDate = new Date(row.getValue(id) as string);
-            const [fromDate, toDate] = value as [Date, Date];
-            if (fromDate && toDate) {
-              return rowDate >= fromDate && rowDate <= toDate;
-            }
-            return true;
-          },
-        },
-        // User Name column - only show if showAll is true
-        ...(showAll
-          ? [
-              {
-                accessorKey: "profileId",
-                header: ({ column }: any) => (
-                  <DataTableColumnHeader
-                    column={column}
-                    title="Name"
-                    showChats={showChats}
-                  />
-                ),
-                cell: ({ row }: any) => {
-                  const profileOption = profileOptions.find(
-                    (profile) => profile.value === row.getValue("profileId"),
-                  );
-
-                  if (!profileOption) {
-                    return (
-                      <span className="text-muted-foreground">
-                        Unknown User
-                      </span>
-                    );
-                  }
-
-                  return (
-                    <div className="flex items-center">
-                      <span>{profileOption.label}</span>
-                    </div>
-                  );
-                },
-                filterFn: (row: any, id: any, value: any) => {
-                  return value.includes(row.getValue(id) as string);
-                },
-                enableSorting: true,
-              },
-            ]
-          : []),
-        // Simulation Title column
-        {
-          accessorKey: "simulationTitle",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Simulation"
-              showChats={showChats}
-            />
-          ),
-          cell: ({ row }) => {
-            return (
-              <div className="flex space-x-2">
-                <span className="max-w-[500px] truncate font-medium">
-                  {row.getValue("simulationTitle") || "Unknown Simulation"}
-                </span>
-              </div>
-            );
-          },
-        },
-        // Class column
-        {
-          accessorKey: "classId",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Class"
-              showChats={showChats}
-            />
-          ),
-          cell: ({ row }) => {
-            const classOption = classOptions.find(
-              (cls) => cls.value === row.getValue("classId"),
-            );
-
-            if (!classOption) {
-              return <span className="text-muted-foreground">No Class</span>;
-            }
-
-            return (
-              <div className="flex items-center">
-                <span>{classOption.label}</span>
-              </div>
-            );
-          },
-          filterFn: (row, id, value) => {
-            return value.includes(row.getValue(id) as string);
-          },
-          enableSorting: true,
-        },
-        // Chats completion column
-        {
-          accessorKey: "chats",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Chats"
-              showChats={showChats}
-            />
-          ),
-          cell: ({ row }) => {
-            const chats = row.getValue("chats") as SimulationChat[];
-            const interactionIds = row.original.interactionIds;
-
-            const completedChats =
-              chats?.filter((chat) => chat.completed).length || 0;
-            const totalChats = interactionIds?.length || chats?.length || 0;
-
-            return (
-              <div className="text-center">
-                <span className="font-medium">
-                  {completedChats}/{totalChats}
-                </span>
-                <div className="text-xs text-muted-foreground">completed</div>
-              </div>
-            );
-          },
-          enableSorting: false,
-        },
-        // Agents tested column
-        {
-          accessorKey: "agentsTested",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Agents Tested"
-              showChats={showChats}
-            />
-          ),
-          cell: ({ row }) => {
-            const agentsTested = row.getValue("agentsTested") as string[];
-
-            if (!agentsTested || agentsTested.length === 0) {
-              return <span className="text-muted-foreground">None</span>;
-            }
-
-            return (
-              <div className="flex flex-wrap gap-1">
-                {agentsTested.map((agentName, index) => {
-                  const badgeColorClass =
-                    agentName.toLowerCase() === "aggressive"
-                      ? "bg-red-100 text-red-800 border-red-300"
-                      : agentName.toLowerCase() === "happy"
-                        ? "bg-green-100 text-green-800 border-green-300"
-                        : agentName.toLowerCase() === "confused"
-                          ? "bg-yellow-100 text-yellow-800 border-yellow-300"
-                          : "bg-gray-100 text-gray-800 border-gray-300";
-
-                  return (
-                    <Badge
-                      key={index}
-                      variant="outline"
-                      className={`text-xs ${badgeColorClass}`}
-                    >
-                      {agentName}
-                    </Badge>
-                  );
-                })}
-              </div>
-            );
-          },
-          filterFn: (row, id, value) => {
-            const agentsTested = row.getValue(id) as string[];
-            if (!value || value.length === 0) return true;
-            return value.some((filterAgent: string) =>
-              agentsTested?.some((agent) =>
-                agent.toLowerCase().includes(filterAgent.toLowerCase()),
-              ),
-            );
-          },
-        },
-        // Average score column
-        {
-          accessorKey: "averageScore",
-          header: ({ column }) => (
-            <DataTableColumnHeader
-              column={column}
-              title="Avg Score"
-              showChats={showChats}
-            />
-          ),
-          accessorFn: (row: EnhancedAttempt) => {
-            const chats = row.chats;
-            if (!chats || chats.length === 0) return 0;
-
-            const chatGrades = chats
-              .map((chat) =>
-                grades?.find((grade) => grade.simulationChatId === chat.id),
-              )
-              .filter(Boolean);
-
-            if (chatGrades.length === 0) return 0;
-
-            const totalScore = chatGrades.reduce(
-              (sum: number, grade) => sum + (grade?.score || 0),
-              0,
-            );
-            return totalScore / chatGrades.length;
-          },
-          cell: ({ row }) => {
-            const chats = row.getValue("chats") as SimulationChat[];
-            if (!chats || chats.length === 0) {
-              return <div className="text-muted-foreground">No chats</div>;
-            }
-
-            const chatGrades = chats
-              .map((chat: SimulationChat) =>
-                grades?.find((grade) => grade.simulationChatId === chat.id),
-              )
-              .filter(Boolean);
-
-            if (chatGrades.length === 0) {
-              const completedChats = chats.filter((chat) => chat.completed);
-              if (completedChats.length > 0) {
-                return (
-                  <div className="text-amber-500">Grading in progress</div>
-                );
-              }
-              return <div className="text-muted-foreground">Not graded</div>;
-            }
-
-            const totalScore = chatGrades.reduce(
-              (sum: number, grade) => sum + (grade?.score || 0),
-              0,
-            );
-            const averageScore = totalScore / chatGrades.length;
-            const scorePercent = Math.round(averageScore);
-
-            return (
-              <div className="text-center">
-                <Badge
-                  variant="outline"
-                  className={`text-xs font-semibold ${
-                    scorePercent >= 80
-                      ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                      : scorePercent >= 70
-                        ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
-                        : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                  }`}
-                >
-                  {scorePercent}%
-                </Badge>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {averageScore.toFixed(1)}
-                </div>
-              </div>
-            );
-          },
-          enableSorting: true,
-        },
-        // Actions column
-        {
-          id: "actions",
-          cell: ({ row }) => {
-            const attempt = row.original;
-            const chats = attempt.chats;
-            const interactionIds = attempt.interactionIds;
-
-            const totalExpectedChats = interactionIds?.length || 0;
-            const completedChats =
-              chats?.filter((chat: SimulationChat) => chat.completed).length ||
-              0;
-            const isAttemptCompleted =
-              totalExpectedChats > 0 && completedChats === totalExpectedChats;
-
-            return (
-              <DataTableRowActions
-                id={attempt.id}
-                completed={isAttemptCompleted}
-                showChats={showChats}
-                isOwnUser={attempt.profileId === profile?.id}
-              />
-            );
-          },
-        },
-      ];
-
-      return attemptColumns;
-    }
-
-    // Original chats view columns
-    const baseColumns: ColumnDef<EnhancedChat>[] = [
+    const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
       // Select column - only show if showExport is true
       ...(showExport
         ? [
             {
               id: "select",
-              header: ({ table }: { table: Table<EnhancedChat> }) => (
+              header: ({ table }: { table: Table<EnhancedAttempt> }) => (
                 <Checkbox
                   checked={
                     table.getIsAllPageRowsSelected() ||
@@ -682,7 +317,7 @@ export function useColumns({
                   className="translate-y-[2px] ml-4"
                 />
               ),
-              cell: ({ row }: { row: Row<EnhancedChat> }) => (
+              cell: ({ row }: { row: Row<EnhancedAttempt> }) => (
                 <Checkbox
                   checked={row.getIsSelected()}
                   onCheckedChange={(value: boolean | "indeterminate") =>
@@ -704,7 +339,6 @@ export function useColumns({
           <DataTableColumnHeader
             column={column}
             title="Date"
-            showChats={showChats}
           />
         ),
         cell: ({ row }) => {
@@ -741,16 +375,15 @@ export function useColumns({
           return true;
         },
       },
-      // Name column - only show if showAll is true
+      // User Name column - only show if showAll is true
       ...(showAll
         ? [
             {
-              accessorKey: "userId",
+              accessorKey: "profileId",
               header: ({ column }: any) => (
                 <DataTableColumnHeader
                   column={column}
                   title="Name"
-                  showChats={showChats}
                 />
               ),
               cell: ({ row }: any) => {
@@ -760,7 +393,9 @@ export function useColumns({
 
                 if (!profileOption) {
                   return (
-                    <span className="text-muted-foreground">Unknown User</span>
+                    <span className="text-muted-foreground">
+                      Unknown User
+                    </span>
                   );
                 }
 
@@ -777,21 +412,20 @@ export function useColumns({
             },
           ]
         : []),
-      // Title column
+      // Simulation Title column
       {
-        accessorKey: "title",
+        accessorKey: "simulationTitle",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Title"
-            showChats={showChats}
+            title="Simulation"
           />
         ),
         cell: ({ row }) => {
           return (
             <div className="flex space-x-2">
               <span className="max-w-[500px] truncate font-medium">
-                {row.getValue("title") as string}
+                {row.getValue("simulationTitle") || "Unknown Simulation"}
               </span>
             </div>
           );
@@ -804,16 +438,21 @@ export function useColumns({
           <DataTableColumnHeader
             column={column}
             title="Class"
-            showChats={showChats}
           />
         ),
         cell: ({ row }) => {
+          const classId = row.getValue("classId");
+          
+          if (!classId) {
+            return <span className="text-muted-foreground">No Class</span>;
+          }
+
           const classOption = classOptions.find(
-            (cls) => cls.value === row.getValue("classId"),
+            (cls) => cls.value === classId,
           );
 
           if (!classOption) {
-            return <span className="text-muted-foreground">No Class</span>;
+            return <span className="text-muted-foreground">Unknown Class</span>;
           }
 
           return (
@@ -823,142 +462,166 @@ export function useColumns({
           );
         },
         filterFn: (row, id, value) => {
-          return value.includes(row.getValue(id) as string);
+          const classId = row.getValue(id) as string | null;
+          if (!classId) return false; // Exclude rows without classId from filters
+          return value.includes(classId);
         },
         enableSorting: true,
       },
-      // Score column based on grades with individual breakdown
+      // Chats completion column
       {
-        accessorKey: "score",
+        accessorKey: "chats",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Score"
-            showChats={showChats}
+            title="Chats"
           />
         ),
-        accessorFn: (row: EnhancedChat) => {
-          const grades = row.grades;
-          return grades.length > 0 ? grades[0].score : 0;
-        },
-        cell: ({ row, column }) => {
-          const chat = row.original;
-          const grades = chat.grades;
-          const selectedMetrics = (column.getFilterValue() as string[]) || [];
+        cell: ({ row }) => {
+          const chats = row.getValue("chats") as SimulationChat[];
+          const interactionIds = row.original.interactionIds;
 
-          if (!grades || grades.length === 0) {
-            if (chat.completed) {
-              return <div className="text-amber-500">Grading in progress</div>;
+          const completedChats =
+            chats?.filter((chat) => chat.completed).length || 0;
+          const totalChats = interactionIds?.length || chats?.length || 0;
+
+          return (
+            <div className="text-center">
+              <span className="font-medium">
+                {completedChats}/{totalChats}
+              </span>
+              <div className="text-xs text-muted-foreground">completed</div>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      // Agents tested column
+      {
+        accessorKey: "agentsTested",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Agents Tested"
+          />
+        ),
+        cell: ({ row }) => {
+          const agentsTested = row.getValue("agentsTested") as string[];
+
+          if (!agentsTested || agentsTested.length === 0) {
+            return <span className="text-muted-foreground">None</span>;
+          }
+
+          return (
+            <div className="flex flex-wrap gap-1">
+              {agentsTested.map((agentName, index) => {
+                const badgeColorClass =
+                  agentName.toLowerCase() === "aggressive"
+                    ? "bg-red-100 text-red-800 border-red-300"
+                    : agentName.toLowerCase() === "happy"
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : agentName.toLowerCase() === "confused"
+                        ? "bg-yellow-100 text-yellow-800 border-yellow-300"
+                        : "bg-gray-100 text-gray-800 border-gray-300";
+
+                return (
+                  <Badge
+                    key={index}
+                    variant="outline"
+                    className={`text-xs ${badgeColorClass}`}
+                  >
+                    {agentName}
+                  </Badge>
+                );
+              })}
+            </div>
+          );
+        },
+        filterFn: (row, id, value) => {
+          const agentsTested = row.getValue(id) as string[];
+          if (!value || value.length === 0) return true;
+          return value.some((filterAgent: string) =>
+            agentsTested?.some((agent) =>
+              agent.toLowerCase().includes(filterAgent.toLowerCase()),
+            ),
+          );
+        },
+      },
+      // Average score column
+      {
+        accessorKey: "averageScore",
+        header: ({ column }) => (
+          <DataTableColumnHeader
+            column={column}
+            title="Avg Score"
+          />
+        ),
+        accessorFn: (row: EnhancedAttempt) => {
+          const chats = row.chats;
+          if (!chats || chats.length === 0) return 0;
+
+          const chatGrades = chats
+            .map((chat) =>
+              grades?.find((grade) => grade.simulationChatId === chat.id),
+            )
+            .filter(Boolean);
+
+          if (chatGrades.length === 0) return 0;
+
+          const totalScore = chatGrades.reduce(
+            (sum: number, grade) => sum + (grade?.score || 0),
+            0,
+          );
+          return totalScore / chatGrades.length;
+        },
+        cell: ({ row }) => {
+          const chats = row.getValue("chats") as SimulationChat[];
+          if (!chats || chats.length === 0) {
+            return <div className="text-muted-foreground">No chats</div>;
+          }
+
+          const chatGrades = chats
+            .map((chat: SimulationChat) =>
+              grades?.find((grade) => grade.simulationChatId === chat.id),
+            )
+            .filter(Boolean);
+
+          if (chatGrades.length === 0) {
+            const completedChats = chats.filter((chat) => chat.completed);
+            if (completedChats.length > 0) {
+              return (
+                <div className="text-amber-500">Grading in progress</div>
+              );
             }
             return <div className="text-muted-foreground">Not graded</div>;
           }
 
-          const score = grades[0].score;
-          const scorePercent = Math.round(score);
-
-          // If no metrics are selected, show the overall score
-          if (selectedMetrics.length === 0) {
-            return (
-              <Badge
-                variant="outline"
-                className={`text-xs font-semibold ${
-                  scorePercent >= 80
-                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                    : scorePercent >= 70
-                      ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
-                      : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                }`}
-              >
-                {scorePercent}%
-              </Badge>
-            );
-          }
-
-          // Show individual breakdown for selected metrics
-          const chatFeedbacks = chat.feedbacks;
-          const selectedScores = selectedMetrics.map((metric) => {
-            const standardGroup = validStandardGroups?.find(g => g.shortName === metric);
-            if (!standardGroup) return null;
-            
-            const groupStandards = validStandards?.filter(s => s.standardGroupId === standardGroup.id) || [];
-            const groupFeedbacks = chatFeedbacks.filter(f => 
-              groupStandards.some(s => s.id === f.standardId)
-            );
-            
-            const totalScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0);
-            const maxScore = groupStandards.reduce((sum, s) => sum + s.points, 0);
-            
-            return {
-              label: metric,
-              score: totalScore,
-              maxScore: maxScore,
-            };
-          }).filter(Boolean);
-
-          if (selectedScores.length === 0) {
-            return (
-              <Badge
-                variant="outline"
-                className={`text-xs font-semibold ${
-                  scorePercent >= 80
-                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
-                    : scorePercent >= 70
-                      ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
-                      : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
-                }`}
-              >
-                {scorePercent}%
-              </Badge>
-            );
-          }
-
-          const total = selectedScores.reduce((sum, item) => sum + (item?.score || 0), 0);
-          const maxPossible = selectedScores.reduce((sum, item) => sum + (item?.maxScore || 0), 0);
+          const totalScore = chatGrades.reduce(
+            (sum: number, grade) => sum + (grade?.score || 0),
+            0,
+          );
+          const averageScore = totalScore / chatGrades.length;
+          const scorePercent = Math.round(averageScore);
 
           return (
-            <div className="flex flex-col gap-1">
-              {selectedScores.map((item, index) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between text-sm"
-                >
-                  <span className="text-muted-foreground">{item?.label}:</span>
-                  <span>{item?.score}/{item?.maxScore}</span>
-                </div>
-              ))}
-              {selectedMetrics.length > 1 && (
-                <div className="flex items-center justify-between border-t pt-1 mt-1">
-                  <span className="font-medium">Total:</span>
-                  <span className="font-medium">
-                    {total}/{maxPossible}
-                  </span>
-                </div>
-              )}
+            <div className="text-center">
+              <Badge
+                variant="outline"
+                className={`text-xs font-semibold ${
+                  scorePercent >= 80
+                    ? "bg-green-100 text-green-800 border-green-300 hover:bg-green-200"
+                    : scorePercent >= 70
+                      ? "bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200"
+                      : "bg-red-100 text-red-800 border-red-300 hover:bg-red-200"
+                }`}
+              >
+                {scorePercent}%
+              </Badge>
+              <div className="text-xs text-muted-foreground mt-1">
+                {averageScore.toFixed(1)}
+              </div>
             </div>
           );
-        },
-        filterFn: (row, id, value: string[]) => {
-          const chat = row.original;
-          const grades = chat.grades;
-
-          // If no grades, exclude from filter
-          if (!grades || grades.length === 0) return false;
-
-          // If no metrics selected, include all with grades
-          if (value.length === 0) return true;
-
-          // Check if any selected metric has data
-          return value.some((metric) => {
-            const standardGroup = validStandardGroups?.find(g => g.shortName === metric);
-            if (!standardGroup) return false;
-            
-            const groupStandards = validStandards?.filter(s => s.standardGroupId === standardGroup.id) || [];
-            const groupFeedbacks = chat.feedbacks.filter(f => 
-              groupStandards.some(s => s.id === f.standardId)
-            );
-            
-            return groupFeedbacks.length > 0;
-          });
         },
         enableSorting: true,
       },
@@ -966,43 +629,30 @@ export function useColumns({
       {
         id: "actions",
         cell: ({ row }) => {
-          const chat = row.original;
+          const attempt = row.original;
+
           return (
             <DataTableRowActions
-              id={chat.id}
-              completed={chat.completed}
-              showChats={showChats}
-              isOwnUser={chat.profileId === profile?.id}
+              id={attempt.id}
             />
           );
         },
       },
     ];
 
-    return baseColumns;
-  }, [profileOptions, classOptions, showChats, showAll, showExport, grades, validStandardGroups, validStandards, user]);
+    return attemptColumns;
+  }, [profileOptions, classOptions, showAll, showExport, grades, profile]);
 
-  // Determine which data to return based on view mode
-  // showChats=true means show individual chats, showChats=false means show attempts/simulations
-  let data: unknown[] = showChats
-    ? enhancedChats || []
-    : enhancedAttempts || [];
+  // Use enhanced attempts data
+  let data: unknown[] = enhancedAttempts || [];
 
   // Apply filtering based on showAll parameter
   if (!showAll && user) {
     // If showAll is false, filter to show only current user's data
-    if (showChats) {
-      // Filter chats to only show those belonging to the current user
-      data = data.filter(
-        (chat: unknown) => (chat as Record<string, unknown>).userId === user.id,
-      );
-    } else {
-      // Filter attempts to only show those belonging to the current user
-      data = data.filter(
-        (attempt: unknown) =>
-          (attempt as Record<string, unknown>).userId === user.id,
-      );
-    }
+    data = data.filter(
+      (attempt: unknown) =>
+        (attempt as Record<string, unknown>).profileId === profile?.id,
+    );
   } else if (!user) {
     // If there's no user, show empty data
     data = [];
@@ -1019,7 +669,8 @@ export function useColumns({
     isLoadingStandards ||
     isLoadingGrades ||
     isLoadingFeedbacks ||
-    isLoadingClasses;
+    isLoadingClasses ||
+    isLoadingScenarios;
 
   return {
     columns,
@@ -1030,7 +681,6 @@ export function useColumns({
     agentTypes,
     skillCategories,
     scoreOptions,
-    showChats,
     showAll,
   };
 }

@@ -33,6 +33,7 @@ const columnMap = {
   classId: "Class",
   classCode: "Class",
   userId: "Name",
+  profileId: "Name",
   agent: "Agent",
   title: "Title",
   simulationTitle: "Simulation",
@@ -66,14 +67,12 @@ interface ExportButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
-  viewMode?: "chats" | "attempts";
 }
 
 export function ExportButton<TData>({
   table,
   profileOptions,
   classOptions,
-  viewMode = "chats",
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -187,7 +186,7 @@ export function ExportButton<TData>({
 
       // Create a temporary link element to download the file
       const today = new Date();
-      const filename = `${viewMode}_export_${today.toISOString().slice(0, 10)}.csv`;
+      const filename = `simulations_export_${today.toISOString().slice(0, 10)}.csv`;
 
       const link = document.createElement("a");
       const url = URL.createObjectURL(blob);

@@ -75,14 +75,12 @@ interface SimulationFormData {
   timeLimit: number | null;
   scenarioIds: string[];
   active: boolean;
-  classId: string | null;
   rubricId: string;
 }
 
 interface FormErrors {
   title?: string;
   timeLimit?: string;
-  classId?: string;
   rubricId?: string;
 }
 
@@ -111,7 +109,6 @@ export default function Simulation({
     timeLimit: 15,
     scenarioIds: [],
     active: true,
-    classId: null,
     rubricId: "",
   };
 
@@ -157,7 +154,6 @@ export default function Simulation({
           timeLimit: simulationToEdit.timeLimit || 15,
           scenarioIds: simulationToEdit.scenarioIds || [],
           active: simulationToEdit.active ?? true,
-          classId: simulationToEdit.classId || null,
           rubricId: simulationToEdit.rubricId || "",
         });
       }
@@ -273,7 +269,6 @@ export default function Simulation({
         timeLimit: formData.timeLimit,
         scenarioIds: formData.scenarioIds,
         active: formData.active,
-        classId: formData.classId,
         rubricId: formData.rubricId,
       };
 
@@ -376,13 +371,6 @@ export default function Simulation({
                         </span>
                         <br />
                         <span className="inline-flex items-center text-sm text-muted-foreground">
-                          Class: {simulation.classId ?
-                            classes.find((cls: any) => cls.id === simulation.classId)?.classCode ||
-                            classes.find((cls: any) => cls.id === simulation.classId)?.name ||
-                            "Unknown"
-                            : "Global"}
-                        </span>
-                        <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
                           Rubric: {rubrics.find((rubric: any) => rubric.id === simulation.rubricId)?.name || "Unknown"}
                         </span>
                       </CardDescription>
@@ -490,32 +478,6 @@ export default function Simulation({
           />
           {errors.timeLimit && (
             <p className="text-sm text-destructive">{errors.timeLimit}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="classId">Class</Label>
-          <p className="text-sm text-muted-foreground mt-1">
-            If no class is selected, a random class will be chosen automatically
-          </p>
-          <Select
-            value={formData.classId || "no-class"}
-            onValueChange={(value) => handleInputChange("classId", value === "no-class" ? null : value)}
-          >
-            <SelectTrigger className={errors.classId ? "border-destructive" : ""}>
-              <SelectValue placeholder="Select a class..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="no-class">No Class</SelectItem>
-              {classes.map((cls: any) => (
-                <SelectItem key={cls.id} value={cls.id}>
-                  {cls.classCode || cls.name} - {formatTerm(cls.term)} {cls.year}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.classId && (
-            <p className="text-sm text-destructive">{errors.classId}</p>
           )}
         </div>
 

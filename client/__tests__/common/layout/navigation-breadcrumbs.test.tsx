@@ -96,7 +96,6 @@ describe("NavigationBreadcrumbs", () => {
       render(
         <NavigationBreadcrumbs
           breadcrumbs={mockBreadcrumbs}
-          rightContent={rightContent}
         />,
       );
 
@@ -213,14 +212,12 @@ describe("NavigationBreadcrumbs", () => {
       expect(separators).toHaveLength(mockBreadcrumbs.length - 1);
     });
 
-    it("should render only right content when no breadcrumbs and right content provided", () => {
-      const rightContent = <button data-testid="right-content">Action</button>;
+    it("should render nothing when no breadcrumbs provided", () => {
       render(
-        <NavigationBreadcrumbs breadcrumbs={[]} rightContent={rightContent} />,
+        <NavigationBreadcrumbs breadcrumbs={[]} />,
       );
 
-      expect(screen.getByTestId("right-content")).toBeInTheDocument();
-      expect(screen.queryByTestId("breadcrumb")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("breadcrumb")).toBeNull();
     });
   });
 });

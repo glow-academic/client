@@ -46,7 +46,7 @@ def sample_simulation_attempt():
         created_at=datetime.now(timezone.utc),
         class_id=UUID("44444444-4444-4444-4444-444444444444"),
         simulation_id=UUID("55555555-5555-5555-5555-555555555555"),
-        user_id=UUID("66666666-6666-6666-6666-666666666666")
+        profile_id=UUID("66666666-6666-6666-6666-666666666666")
     )
 
 

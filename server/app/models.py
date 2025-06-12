@@ -45,10 +45,8 @@ class Classes(_Base, table=True):
     evals: List['Evals'] = Relationship(back_populates='class_')
     scenarios: List['Scenarios'] = Relationship(back_populates='class_')
     schedules: List['Schedules'] = Relationship(back_populates='class_')
-    simulations: List['Simulations'] = Relationship(back_populates='class_')
     topics: List['Topics'] = Relationship(back_populates='class_')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='class_')
-    simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='class_')
 
 
 class Rubrics(_Base, table=True):
@@ -188,7 +186,6 @@ class Schedules(_Base, table=True):
 
 class Simulations(_Base, table=True):
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='SET NULL', name='simulations_class_id_fkey'),
         ForeignKeyConstraint(['rubric_id'], ['rubrics.id'], ondelete='CASCADE', name='simulations_rubric_id_fkey'),
         PrimaryKeyConstraint('id', name='simulations_pkey')
     )
@@ -199,10 +196,8 @@ class Simulations(_Base, table=True):
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
     rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
-    class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
-    class_: Optional['Classes'] = Relationship(back_populates='simulations')
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='simulation')
 
@@ -290,7 +285,6 @@ class Events(_Base, table=True):
 class SimulationAttempts(_Base, table=True):
     __tablename__ = 'simulation_attempts'
     __table_args__ = (
-        ForeignKeyConstraint(['class_id'], ['classes.id'], ondelete='CASCADE', name='simulation_attempts_class_id_fkey'),
         ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='simulation_attempts_profile_id_fkey'),
         ForeignKeyConstraint(['simulation_id'], ['simulations.id'], ondelete='CASCADE', name='simulation_attempts_simulation_id_fkey'),
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey')
@@ -298,11 +292,9 @@ class SimulationAttempts(_Base, table=True):
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
     simulation_id: UUID = Field(sa_column=Column('simulation_id', Uuid))
     profile_id: Optional[UUID] = Field(default=None, sa_column=Column('profile_id', Uuid))
 
-    class_: Optional['Classes'] = Relationship(back_populates='simulation_attempts')
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
     simulation: Optional['Simulations'] = Relationship(back_populates='simulation_attempts')
     simulation_chats: List['SimulationChats'] = Relationship(back_populates='attempt')

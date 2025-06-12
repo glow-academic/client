@@ -19,7 +19,6 @@ import { Switch } from "@/components/ui/switch";
 
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
-import { ViewModeProvider } from "@/contexts/view-mode-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -37,10 +36,6 @@ export default function MainLayout({
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
   >([]);
-  const [viewMode, setViewMode] = React.useState<"chats" | "attempts">(
-    "attempts",
-  );
-
   // Check if we're on the logs page
   const isLogsPage = pathname === "/analytics/logs";
 
@@ -57,21 +52,6 @@ export default function MainLayout({
     router,
     "/simulations",
   );
-
-  // Create view mode toggle for history page
-  const viewModeToggle = isLogsPage ? (
-    <div className="flex items-center space-x-2">
-      <span className="text-sm text-muted-foreground">
-        Show individual chats
-      </span>
-      <Switch
-        checked={viewMode === "chats"}
-        onCheckedChange={(checked) =>
-          setViewMode(checked ? "chats" : "attempts")
-        }
-      />
-    </div>
-  ) : null;
 
   // Determine action button based on current path
   const getActionButton = () => {
@@ -200,7 +180,6 @@ export default function MainLayout({
             <NavigationBreadcrumbs
               breadcrumbs={breadcrumbs}
               onSectionChange={handleSectionChange}
-              rightContent={viewModeToggle}
             />
           </div>
 
@@ -210,15 +189,6 @@ export default function MainLayout({
       </SidebarInset>
     </SidebarProvider>
   );
-
-  // Only provide ViewModeProvider context for logs page
-  if (isLogsPage) {
-    return (
-      <ViewModeProvider viewMode={viewMode} setViewMode={setViewMode}>
-        {content}
-      </ViewModeProvider>
-    );
-  }
 
   return content;
 }

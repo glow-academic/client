@@ -137,7 +137,7 @@ class TestStartAttempt:
                 "/simulations/start",
                 data={
                     "simulation_id": str(sample_simulation.id),
-                    "user_id": str(sample_user.id),
+                    "profile_id": str(sample_user.id),
                     "class_id": str(sample_class.id),
                 }
             )
@@ -153,7 +153,7 @@ class TestStartAttempt:
             app.dependency_overrides.clear()
     
     def test_start_attempt_success_guest_mode(self, sample_simulation, sample_scenario, sample_agent, sample_class):
-        """Test successful start_attempt request in guest mode (no user_id)."""
+        """Test successful start_attempt request in guest mode (no profile_id)."""
         # Setup mocks
         mock_session = MagicMock()
         
@@ -200,8 +200,8 @@ class TestStartAttempt:
             # Clean up
             app.dependency_overrides.clear()
     
-    def test_start_attempt_empty_string_user_id(self, sample_simulation, sample_scenario, sample_agent, sample_class):
-        """Test start_attempt with empty string user_id (should be treated as guest mode)."""
+    def test_start_attempt_empty_string_profile_id(self, sample_simulation, sample_scenario, sample_agent, sample_class):
+        """Test start_attempt with empty string profile_id (should be treated as guest mode)."""
         # Setup mocks
         mock_session = MagicMock()
         
@@ -234,7 +234,7 @@ class TestStartAttempt:
                 "/simulations/start",
                 data={
                     "simulation_id": str(sample_simulation.id),
-                    "user_id": "",  # Empty string should be treated as None
+                    "profile_id": "",  # Empty string should be treated as None
                     "class_id": str(sample_class.id)
                 }
             )

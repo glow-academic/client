@@ -71,6 +71,7 @@ import { getAgentConfig } from "@/utils/agents";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
 // Color palette for charts
 const COLORS = {
@@ -149,6 +150,11 @@ export default function ClassesGeneralPage() {
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
+  const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
+    queryKey: ["simulations"],
+    queryFn: () => getAllSimulations(),
+  });
+
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
     queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
@@ -223,7 +229,10 @@ export default function ClassesGeneralPage() {
 
     // Calculate active classes (classes with recent activity)
     const activeClasses = classes.filter(classItem => {
-      const classAttempts = attempts?.filter(attempt => attempt.classId === classItem.id) || [];
+      const classScenarios = scenarios?.filter(scenario => scenario.classId === classItem.id) || [];
+      // see if these scenarios were used in any simulations, and find attemmpts for those simulations
+      const classSimulations = simulations?.filter(simulation => classScenarios.some(scenario => simulation.scenarioIds.includes(scenario.id))) || [];
+      const classAttempts = attempts?.filter(attempt => classSimulations.some(simulation => simulation.id === attempt.simulationId)) || [];
       return classAttempts.length > 0;
     }).length;
 
@@ -356,8 +365,10 @@ export default function ClassesGeneralPage() {
 
     return classes
       .map((classItem) => {
+        const classScenarios = scenarios?.filter(scenario => scenario.classId === classItem.id) || [];  
+        const classSimulations = simulations?.filter(simulation => classScenarios.some(scenario => simulation.scenarioIds.includes(scenario.id))) || [];
         const classAttempts = attempts.filter(
-          (attempt) => attempt.classId === classItem.id,
+          (attempt) => classSimulations.some(simulation => simulation.id === attempt.simulationId),
         );
         const classChats = chats.filter((chat) =>
           classAttempts.some((attempt) => attempt.id === chat.attemptId),

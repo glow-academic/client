@@ -13,8 +13,6 @@ export const classesRelations = relations(classes, ({many}) => ({
 	schedules: many(schedules),
 	documents: many(documents),
 	scenarios: many(scenarios),
-	simulations: many(simulations),
-	simulationAttempts: many(simulationAttempts),
 	evals: many(evals),
 	evalRuns: many(evalRuns),
 }));
@@ -98,10 +96,6 @@ export const standardsRelations = relations(standards, ({one, many}) => ({
 }));
 
 export const simulationsRelations = relations(simulations, ({one, many}) => ({
-	class: one(classes, {
-		fields: [simulations.classId],
-		references: [classes.id]
-	}),
 	rubric: one(rubrics, {
 		fields: [simulations.rubricId],
 		references: [rubrics.id]
@@ -113,10 +107,6 @@ export const simulationAttemptsRelations = relations(simulationAttempts, ({one, 
 	profile: one(profiles, {
 		fields: [simulationAttempts.profileId],
 		references: [profiles.id]
-	}),
-	class: one(classes, {
-		fields: [simulationAttempts.classId],
-		references: [classes.id]
 	}),
 	simulation: one(simulations, {
 		fields: [simulationAttempts.simulationId],

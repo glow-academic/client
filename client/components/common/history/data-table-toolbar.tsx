@@ -19,9 +19,7 @@ interface DataTableToolbarProps<TData> {
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
-  viewMode?: "chats" | "attempts";
   showExport?: boolean;
-  scoreOptions?: { value: string; label: string }[];
 }
 
 export function DataTableToolbar<TData>({
@@ -31,9 +29,7 @@ export function DataTableToolbar<TData>({
   isAdmin = false,
   dateRange,
   setDateRange,
-  viewMode = "chats",
   showExport = true,
-  scoreOptions = [],
 }: DataTableToolbarProps<TData>) {
   // Check if any filters other than the date range are active
   const isFiltered =
@@ -45,55 +41,35 @@ export function DataTableToolbar<TData>({
       <div className="flex items-center justify-between">
         <div className="flex flex-1 items-center space-x-2">
           <Input
-            placeholder={
-              viewMode === "chats" ? "Filter chats..." : "Filter simulations..."
-            }
+            placeholder="Filter simulations..."
             value={
               (table
-                .getColumn(viewMode === "chats" ? "title" : "simulationTitle")
+                .getColumn("simulationTitle")
                 ?.getFilterValue() as string) ?? ""
             }
             onChange={(event) =>
               table
-                .getColumn(viewMode === "chats" ? "title" : "simulationTitle")
+                .getColumn("simulationTitle")
                 ?.setFilterValue(event.target.value)
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
-          {/* {viewMode === 'chats' && table.getColumn("status") && (
+          {/* Name filter - only show if profileId column exists */}
+          {table.getColumn("profileId") && (
             <DataTableFacetedFilter
-              column={table.getColumn("status")}
-              title="Status"
-              options={statuses}
+              column={table.getColumn("profileId")}
+              title="Name"
+              options={profileOptions}
             />
-          )} */}
-          {/* Name filter - show for all users in chat mode, and for attempts mode */}
-          {(viewMode === "chats" || viewMode === "attempts") &&
-            table.getColumn("profileId") && (
-              <DataTableFacetedFilter
-                column={table.getColumn("profileId")}
-                title="Name"
-                options={profileOptions}
-              />
-            )}
-          {table.getColumn(viewMode === "chats" ? "classId" : "classCode") && (
+          )}
+          {/* Class filter */}
+          {table.getColumn("classId") && (
             <DataTableFacetedFilter
-              column={table.getColumn(
-                viewMode === "chats" ? "classId" : "classCode",
-              )}
+              column={table.getColumn("classId")}
               title="Class"
               options={classOptions}
             />
           )}
-          {viewMode === "chats" &&
-            table.getColumn("score") &&
-            scoreOptions.length > 0 && ( // Only show if we have score options
-              <DataTableFacetedFilter
-                column={table.getColumn("score")}
-                title="Score"
-                options={scoreOptions}
-              />
-            )}
           {isFiltered && (
             <Button
               variant="ghost"
@@ -120,7 +96,6 @@ export function DataTableToolbar<TData>({
               table={table}
               profileOptions={profileOptions}
               classOptions={classOptions}
-              viewMode={viewMode}
             />
           )}
 

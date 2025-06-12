@@ -1,6 +1,6 @@
 /**
- * AllSimulationHistory.tsx
- * Used to display the all simulation history page.
+ * SimulationHistory.tsx
+ * Used to display the simulation history page.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
@@ -10,18 +10,15 @@ import { DataTable } from "./data-table";
 
 type SimulationHistoryProps = {
   showAll: boolean;
-  showChats: boolean;
   showExport?: boolean;
 };
 
 export default function SimulationHistory({
   showAll,
-  showChats,
   showExport = true,
 }: SimulationHistoryProps) {
   const { columns, data, profileOptions, classOptions, scoreOptions } = useColumns({
     showAll,
-    showChats,
     showExport,
   });
 
@@ -31,7 +28,6 @@ export default function SimulationHistory({
       columns={columns}
       profileOptions={profileOptions}
       classOptions={classOptions}
-      showChats={showChats}
       showExport={showExport}
       scoreOptions={scoreOptions}
     />

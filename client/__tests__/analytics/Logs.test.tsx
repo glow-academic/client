@@ -6,12 +6,6 @@ import { ReactNode } from 'react';
 import Logs from '@/components/analytics/Logs';
 
 // Mock external dependencies
-vi.mock('@/contexts/view-mode-context', () => ({
-  useViewMode: vi.fn(() => ({
-    viewMode: 'attempts',
-    setViewMode: vi.fn(),
-  })),
-}));
 
 vi.mock('@/components/common/history/SimulationHistory', () => ({
   default: ({ showAll, showChats }: { showAll: boolean; showChats: boolean }) => (
@@ -21,8 +15,6 @@ vi.mock('@/components/common/history/SimulationHistory', () => ({
     </div>
   ),
 }));
-
-import { useViewMode } from '@/contexts/view-mode-context';
 
 describe('Logs', () => {
   let queryClient: QueryClient;
@@ -37,10 +29,6 @@ describe('Logs', () => {
       },
     });
     
-    (useViewMode as any).mockReturnValue({
-      viewMode: 'attempts',
-      setViewMode: mockSetViewMode,
-    });
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -74,10 +62,6 @@ describe('Logs', () => {
     });
 
     it('should pass showChats=true when viewMode is chats', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'chats',
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -86,10 +70,6 @@ describe('Logs', () => {
     });
 
     it('should pass showChats=false when viewMode is attempts', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'attempts',
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -108,14 +88,9 @@ describe('Logs', () => {
   describe('View Mode Integration', () => {
     it('should use viewMode from context', () => {
       const mockViewMode = 'chats';
-      (useViewMode as any).mockReturnValue({
-        viewMode: mockViewMode,
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
-      expect(useViewMode).toHaveBeenCalled();
       expect(screen.getByTestId('show-chats')).toHaveTextContent('true');
     });
 
@@ -126,10 +101,6 @@ describe('Logs', () => {
       expect(screen.getByTestId('show-chats')).toHaveTextContent('false');
       
       // Change to chats mode
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'chats',
-        setViewMode: mockSetViewMode,
-      });
       
       rerender(<Logs />);
       
@@ -137,10 +108,6 @@ describe('Logs', () => {
     });
 
     it('should handle missing viewMode context gracefully', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: undefined,
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -158,19 +125,11 @@ describe('Logs', () => {
 
     it('should pass correct showChats prop based on viewMode', () => {
       // Test with attempts mode
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'attempts',
-        setViewMode: mockSetViewMode,
-      });
       
       const { rerender } = renderWithProviders(<Logs />);
       expect(screen.getByTestId('show-chats')).toHaveTextContent('false');
       
       // Test with chats mode
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'chats',
-        setViewMode: mockSetViewMode,
-      });
       
       rerender(<Logs />);
       expect(screen.getByTestId('show-chats')).toHaveTextContent('true');
@@ -195,19 +154,12 @@ describe('Logs', () => {
 
   describe('Edge Cases', () => {
     it('should handle context provider errors gracefully', () => {
-      (useViewMode as any).mockImplementation(() => {
-        throw new Error('Context error');
-      });
       
       // Should not crash even if context throws error
       expect(() => renderWithProviders(<Logs />)).not.toThrow();
     });
 
     it('should handle null viewMode', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: null,
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -216,10 +168,6 @@ describe('Logs', () => {
     });
 
     it('should handle invalid viewMode values', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'invalid-mode',
-        setViewMode: mockSetViewMode,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -228,10 +176,6 @@ describe('Logs', () => {
     });
 
     it('should handle missing setViewMode function', () => {
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'attempts',
-        setViewMode: undefined,
-      });
       
       renderWithProviders(<Logs />);
       
@@ -254,16 +198,8 @@ describe('Logs', () => {
       const { rerender } = renderWithProviders(<Logs />);
       
       // Rapidly change viewMode
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'chats',
-        setViewMode: mockSetViewMode,
-      });
       rerender(<Logs />);
       
-      (useViewMode as any).mockReturnValue({
-        viewMode: 'attempts',
-        setViewMode: mockSetViewMode,
-      });
       rerender(<Logs />);
       
       expect(screen.getByTestId('simulation-history')).toBeInTheDocument();

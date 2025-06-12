@@ -3,7 +3,7 @@
 Bulk generator – 300 chats across six simulations
  * 50 chats per simulation (300 total)
  * Scores show gradual improvement over past 90 days
- * 80% of Active-Listening feedback is 1 or 2 (biased low)
+ * First 2 standards: scores up to 90, Last 2 standards: scores up to 60
  * Diverse data with realistic progression
 Dates span past 90 days to today (UTC)
 """
@@ -14,26 +14,18 @@ import random, uuid, datetime, pathlib
 # 1.  CONFIGURATION                                                          #
 # ---------------------------------------------------------------------------#
 # ---- TA roster ------------------------------------------------------------#
-TA_USERS = {
-    # full original TA dict + the 10 extra from the previous answer  (truncated)
-    "99b90118-7b9e-4e12-8e81-d7ccc2916601": ["44444444-1111-1111-1111-111111111111"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916602": ["44444444-1111-1111-1111-111111111111"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916603": ["55555555-2222-2222-2222-222222222222"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916604": ["55555555-2222-2222-2222-222222222222"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916605": ["66666666-3333-3333-3333-333333333333"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916606": ["66666666-3333-3333-3333-333333333333"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916607": ["77777777-4444-4444-4444-444444444444"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916608": ["77777777-4444-4444-4444-444444444444"],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916609": [
-        "44444444-1111-1111-1111-111111111111",
-        "55555555-2222-2222-2222-222222222222",
-    ],
-    "99b90118-7b9e-4e12-8e81-d7ccc2916610": [
-        "66666666-3333-3333-3333-333333333333",
-        "77777777-4444-4444-4444-444444444444",
-    ],
-    # (keep the rest of your original TA list)
-}
+TA_USERS = [
+    "99b90118-7b9e-4e12-8e81-d7ccc2916601",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916602", 
+    "99b90118-7b9e-4e12-8e81-d7ccc2916603",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916604",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916605",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916606",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916607",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916608",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916609",
+    "99b90118-7b9e-4e12-8e81-d7ccc2916610",
+]
 
 # ---- Six simulations ------------------------------------------------------#
 SIMULATIONS = [
@@ -51,14 +43,17 @@ SIM_QUOTA = [50, 50, 50, 50, 50, 50]   # 50 chats per simulation (300 total)
 # ---- Rubric & Standards ---------------------------------------------------#
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
 
-STD_LISTEN_LOW   = ["11111111-4444-aaaa-bbbb-333333333333",  # 2
-                    "11111111-5555-aaaa-bbbb-333333333333"]  # 1
-STD_LISTEN_OTHER = ["11111111-1111-aaaa-bbbb-333333333333",  # 5
-                    "11111111-2222-aaaa-bbbb-333333333333",  # 4
-                    "11111111-3333-aaaa-bbbb-333333333333"]  # 3
-STD_CM  = "22222222-2222-aaaa-bbbb-333333333333"
-STD_TM  = "33333333-2222-aaaa-bbbb-333333333333"
-STD_ADP = "44444444-2222-aaaa-bbbb-333333333333"
+# First 2 standards (max score 90)
+STD_FIRST_TWO = [
+    "11111111-1111-aaaa-bbbb-333333333333",  # Standard 1
+    "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
+]
+
+# Last 2 standards (max score 60) 
+STD_LAST_TWO = [
+    "22222222-2222-aaaa-bbbb-333333333333",  # Standard 3
+    "33333333-2222-aaaa-bbbb-333333333333",  # Standard 4
+]
 
 # Diverse question and answer banks for more realistic data
 QUESTION_BANK = [
@@ -142,22 +137,21 @@ def get_score_with_improvement(progress: float) -> int:
     else:
         return random.randint(base_min, base_max)
 
-def get_listening_score_biased_low(progress: float) -> tuple[str, int]:
+def get_diverse_standard_score(standard_id: str, progress: float) -> int:
     """
-    Get listening standard and score, biased toward low scores
-    80% chance of score 1 or 2, with slight improvement over time
+    Generate scores based on standard type with improvement over time
+    First 2 standards: max 90, Last 2 standards: max 60
     """
-    # Bias toward low scores, but allow some improvement over time
-    low_bias = 0.8 - (progress * 0.2)  # 80% -> 60% chance of low score
-    
-    if random.random() < low_bias:
-        std = random.choice(STD_LISTEN_LOW)
-        score = 1 if std == STD_LISTEN_LOW[1] else 2
+    if standard_id in STD_FIRST_TWO:
+        # First 2 standards: range 10-90, improving over time
+        base_min = 10 + int(progress * 30)  # 10 -> 40
+        base_max = 50 + int(progress * 40)  # 50 -> 90
+        return random.randint(base_min, min(90, base_max))
     else:
-        std = random.choice(STD_LISTEN_OTHER)
-        score = int(std[-2])  # Extract score from standard ID
-    
-    return std, score
+        # Last 2 standards: range 5-60, improving over time  
+        base_min = 5 + int(progress * 20)   # 5 -> 25
+        base_max = 30 + int(progress * 30)  # 30 -> 60
+        return random.randint(base_min, min(60, base_max))
 
 def q(val: str) -> str:
     return "'" + val.replace("'", "''") + "'"
@@ -179,8 +173,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         progress = chat_counter / (total_chats - 1)
         chat_counter += 1
         
-        ta_id, class_ids = random.choice(list(TA_USERS.items()))
-        class_id = random.choice(class_ids)
+        ta_id = random.choice(TA_USERS)
 
         attempt_id = str(uuid.uuid4())
         chat_id    = str(uuid.uuid4())
@@ -188,7 +181,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
 
         # ----- simulation_attempt -----------------------------------------#
         attempt_rows.append(
-            f"({q(attempt_id)}, {q(rand_ts_with_trend(progress))}, {q(ta_id)}, {q(class_id)}, {q(sim_id)})"
+            f"({q(attempt_id)}, {q(rand_ts_with_trend(progress))}, {q(ta_id)}, {q(sim_id)})"
         )
 
         # ----- simulation_chat -------------------------------------------#
@@ -201,7 +194,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
 
         chat_rows.append(
             f"({q(chat_id)}, {q(created_at)}, {completed_at}, {q(title)}, "
-            f"{q(scenario_id)}, {str(completed).lower()}, {q(attempt_id)})"
+            f"{q(scenario_id)}, {q(attempt_id)}, {str(completed).lower()})"
         )
 
         # ----- simulation_messages (2-12, more variety) ------------------#
@@ -228,20 +221,17 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         )
 
         # ----- simulation_chat_feedbacks (4 per chat) ---------------------#
-        listen_std, listen_score = get_listening_score_biased_low(progress)
+        # Generate diverse scores for all 4 standards
+        all_standards = STD_FIRST_TWO + STD_LAST_TWO
         
-        # Other scores improve slightly over time
-        cm_score = min(5, 3 + int(progress * 2) + random.randint(0, 1))
-        tm_score = min(5, 3 + int(progress * 2) + random.randint(0, 1))
-        adp_score = min(5, 3 + int(progress * 2) + random.randint(0, 1))
-        
-        fb_rows.extend([
-            f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(listen_std)}, {q(grade_id)}, "
-            f"{listen_score}, 'Active listening feedback')",
-            f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(STD_CM)},  {q(grade_id)}, {cm_score}, 'Content mastery feedback')",
-            f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(STD_TM)},  {q(grade_id)}, {tm_score}, 'Time management feedback')",
-            f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(STD_ADP)}, {q(grade_id)}, {adp_score}, 'Adaptation feedback')",
-        ])
+        for standard_id in all_standards:
+            standard_score = get_diverse_standard_score(standard_id, progress)
+            feedback_text = f"Feedback for standard {standard_id[-4:]}"
+            
+            fb_rows.append(
+                f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(standard_id)}, {q(grade_id)}, "
+                f"{standard_score}, {q(feedback_text)})"
+            )
 
 # ---------------------------------------------------------------------------#
 # 5.  Emit INSERT statements                                                 #
@@ -251,9 +241,9 @@ def build_insert(table: str, cols: str, rows: list[str]) -> str:
 
 sql = "".join([
     build_insert("simulation_attempts",
-                 "id, created_at, profile_id, class_id, simulation_id", attempt_rows),
+                 "id, created_at, profile_id, simulation_id", attempt_rows),
     build_insert("simulation_chats",
-                 "id, created_at, completed_at, title, scenario_id, completed, attempt_id", chat_rows),
+                 "id, created_at, completed_at, title, scenario_id, attempt_id, completed", chat_rows),
     build_insert("simulation_messages",
                  "id, created_at, chat_id, query, response, completed", message_rows),
     build_insert("simulation_chat_grades",
@@ -269,5 +259,5 @@ output_path.write_text(sql)
 
 print(f"✅  Generated {len(chat_rows)} chats ({len(message_rows)} messages)")
 print(f"📊  Data spans past 90 days with gradual improvement trend")
-print(f"🎯  80% of active listening scores are 1 or 2 (biased low)")
+print(f"🎯  First 2 standards: max score 90, Last 2 standards: max score 60")
 print(f"📁  Output: {output_path}")
