@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-12T19:54:08.519Z
+Generated on: 2025-06-12T23:35:50.651Z
 
 ## Summary
-- **Total Components**: 57
-- **Tests Created**: 0
+- **Total Components**: 59
+- **Tests Created**: 2
 - **Tests Updated**: 0
 - **Tests Skipped** (already implemented): 57
 
@@ -23,6 +23,7 @@ Generated on: 2025-06-12T19:54:08.519Z
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Evaluation | common/chat/Evaluation.tsx | Evaluation.test.tsx | ✅ Implemented |
+| EvaluationRun | common/chat/EvaluationRun.tsx | EvaluationRun.test.tsx | ❌ Needs Implementation |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
@@ -62,6 +63,7 @@ Generated on: 2025-06-12T19:54:08.519Z
 | ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
+| EvalDetails | management/evals/EvalDetails.tsx | EvalDetails.test.tsx | ❌ Needs Implementation |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ✅ Implemented |
@@ -90,6 +92,7 @@ __tests__/
 │   │   ├── Chat.test.tsx
 │   │   ├── DocumentViewer.test.tsx
 │   │   ├── Evaluation.test.tsx
+│   │   ├── EvaluationRun.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx
 │   ├── class/
@@ -146,6 +149,7 @@ __tests__/
 │   │   ├── Classes.test.tsx
 │   │   ├── NewClass.test.tsx
 │   ├── evals/
+│   │   ├── EvalDetails.test.tsx
 │   │   ├── EvalEdit.test.tsx
 │   │   ├── Evals.test.tsx
 │   │   ├── NewEval.test.tsx

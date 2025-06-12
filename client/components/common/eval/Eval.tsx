@@ -60,13 +60,12 @@ interface EvalProps {
 interface EvalFormData {
   name: string;
   description: string;
-  classId: string | null;
   baseAgentId: string;
   scenarioIds: string[];
   agentIds: string[];
   evalType: "student" | "ta";
   maxTurns: number;
-  numParallelRuns: number;
+  maxParallelRuns: number;
   rubricIds: string[];
 }
 
@@ -77,7 +76,7 @@ interface FormErrors {
   scenarioIds?: string;
   agentIds?: string;
   maxTurns?: string;
-  numParallelRuns?: string;
+  maxParallelRuns?: string;
   rubricIds?: string;
 }
 
@@ -96,13 +95,12 @@ export default function Eval({
   const initialFormData: EvalFormData = {
     name: "",
     description: "",
-    classId: null,
     baseAgentId: "",
     scenarioIds: [],
     agentIds: [],
     evalType: "student",
     maxTurns: 10,
-    numParallelRuns: 1,
+    maxParallelRuns: 1,
     rubricIds: [],
   };
 
@@ -169,14 +167,13 @@ export default function Eval({
       setFormData({
         name: evalData.name || "",
         description: evalData.description || "",
-        classId: evalData.classId || null,
         baseAgentId: evalData.baseAgentId || "",
         scenarioIds:
           evalData.scenarioIds?.filter((id: string) => id !== "RAY") || [],
         agentIds: evalData.agentIds?.filter((id: string) => id !== "RAY") || [],
         evalType: evalData.evalType || "student",
         maxTurns: evalData.maxTurns || 10,
-        numParallelRuns: evalData.numParallelRuns || 1,
+        maxParallelRuns: evalData.maxParallelRuns || 1,
         rubricIds:
           evalData.rubricIds?.filter((id: string) => id !== "RAY") || [],
       });
@@ -283,8 +280,8 @@ export default function Eval({
       newErrors.maxTurns = "Max turns must be between 1 and 100";
     }
 
-    if (formData.numParallelRuns < 1 || formData.numParallelRuns > 10) {
-      newErrors.numParallelRuns = "Parallel runs must be between 1 and 10";
+    if (formData.maxParallelRuns < 1 || formData.maxParallelRuns > 10) {
+      newErrors.maxParallelRuns = "Parallel runs must be between 1 and 10";
     }
 
     if (formData.rubricIds.length === 0) {
@@ -309,14 +306,13 @@ export default function Eval({
       const payload = {
         name: formData.name,
         description: formData.description,
-        classId: formData.classId,
         baseAgentId: formData.baseAgentId,
         scenarioIds:
           formData.scenarioIds.length > 0 ? formData.scenarioIds : ["RAY"],
         agentIds: formData.agentIds.length > 0 ? formData.agentIds : ["RAY"],
         evalType: formData.evalType,
         maxTurns: formData.maxTurns,
-        numParallelRuns: formData.numParallelRuns,
+        maxParallelRuns: formData.maxParallelRuns,
         rubricIds: formData.rubricIds.length > 0 ? formData.rubricIds : ["RAY"],
       };
 
@@ -346,17 +342,6 @@ export default function Eval({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">
-          {isEditMode ? "Edit Evaluation" : "Create Evaluation"}
-        </h1>
-        <p className="text-muted-foreground">
-          {isEditMode
-            ? "Update the evaluation configuration and settings"
-            : "Create a new evaluation to assess agent performance"}
-        </p>
-      </div>
-
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Information */}
         <Card>
@@ -417,28 +402,6 @@ export default function Eval({
                 <p className="text-sm text-destructive">{errors.description}</p>
               )}
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="classId">Class (Optional)</Label>
-              <Select
-                value={formData.classId || "none"}
-                onValueChange={(value: string) =>
-                  handleInputChange("classId", value === "none" ? null : value)
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a class" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">No specific class</SelectItem>
-                  {classes.map((cls: Class) => (
-                    <SelectItem key={cls.id} value={cls.id}>
-                      {cls.name} ({cls.classCode})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </CardContent>
         </Card>
 
@@ -477,18 +440,18 @@ export default function Eval({
                   type="number"
                   min="1"
                   max="10"
-                  value={formData.numParallelRuns}
+                  value={formData.maxParallelRuns}
                   onChange={(e) =>
                     handleInputChange(
-                      "numParallelRuns",
+                      "maxParallelRuns",
                       parseInt(e.target.value) || 1,
                     )
                   }
-                  className={errors.numParallelRuns ? "border-destructive" : ""}
+                  className={errors.maxParallelRuns ? "border-destructive" : ""}
                 />
-                {errors.numParallelRuns && (
+                {errors.maxParallelRuns && (
                   <p className="text-sm text-destructive">
-                    {errors.numParallelRuns}
+                    {errors.maxParallelRuns}
                   </p>
                 )}
               </div>

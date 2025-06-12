@@ -151,7 +151,7 @@ export default function Evals() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/management/evals/e/${id}`);
+    router.push(`/management/evals/e/${id}/edit`);
   };
 
   const handleRun = async (id: string) => {
@@ -184,7 +184,7 @@ export default function Evals() {
         toast.success("Evaluation started successfully");
         
         // Navigate to the evaluation page
-        router.push(`/management/evals/r/${data.eval_run_id}`);
+        router.push(`/management/evals/e/${id}/r/${data.eval_run_id}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
@@ -211,7 +211,7 @@ export default function Evals() {
       chats?.some(chat => chat.id === chatId && chat.evalRunId === run.id)
     );
     if (evalRun) {
-      router.push(`/management/evals/r/${evalRun.id}`);
+      router.push(`/management/evals/e/${evalRun.evalId}/r/${evalRun.id}`);
     }
   };
 
@@ -428,7 +428,7 @@ export default function Evals() {
                 <Card 
                   key={evalRun.id} 
                   className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => router.push(`/management/evals/r/${evalRun.id}`)}
+                  onClick={() => router.push(`/management/evals/e/${evalRun.evalId}/r/${evalRun.id}`)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
