@@ -32,7 +32,7 @@ import { DataTableToolbar } from "./data-table-toolbar";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
-  userOptions: { value: string; label: string }[];
+  profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   showChats?: boolean;
   showExport?: boolean;
@@ -42,7 +42,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
   columns,
   data,
-  userOptions,
+  profileOptions,
   classOptions,
   showChats,
   showExport = true,
@@ -105,7 +105,7 @@ export function DataTable<TData, TValue>({
     <div className="space-y-4">
       <DataTableToolbar
         table={table}
-        userOptions={userOptions}
+        profileOptions={profileOptions}
         classOptions={classOptions}
         dateRange={dateRange}
         setDateRange={setDateRange}

@@ -19,7 +19,7 @@ CREATE TABLE simulations (
 CREATE TABLE simulation_attempts (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
-  user_id    UUID         NULL REFERENCES users(id)  ON DELETE CASCADE,
+  profile_id    UUID         NULL REFERENCES profiles(id)  ON DELETE CASCADE,
   class_id   UUID         NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
   simulation_id    UUID        NOT NULL REFERENCES simulations(id)  ON DELETE CASCADE
 );
@@ -84,8 +84,8 @@ INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id)
   ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333')
 ON CONFLICT (id) DO NOTHING;
 
--- Insert Simulation Attempts (Essential for linking chats to simulations and users)
-INSERT INTO simulation_attempts (id, created_at, user_id, class_id, simulation_id) VALUES
+-- Insert Simulation Attempts (Essential for linking chats to simulations and profiles)
+INSERT INTO simulation_attempts (id, created_at, profile_id, class_id, simulation_id) VALUES
   -- CS 180 attempts
   ('f1e2d3c4-b5a6-47f8-9e00-111111111111', NOW() - INTERVAL '2 hours', 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('f1e2d3c4-b5a6-47f8-9e00-222222222222', NOW() - INTERVAL '1 day', 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
@@ -114,7 +114,7 @@ INSERT INTO simulation_attempts (id, created_at, user_id, class_id, simulation_i
   ('c5a0b005-1111-2222-3333-444444444444', NOW() - INTERVAL '6 hours', 'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '66666666-3333-3333-3333-333333333333', 'c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee'),
   ('c5a0b006-1111-2222-3333-444444444444', NOW() - INTERVAL '8 hours', 'c5abc003-aaaa-bbbb-cccc-dddddddddddd', '77777777-4444-4444-4444-444444444444', 'c5a0b003-cccc-dddd-eeee-ffffffffffff'),
   
-  -- Additional attempts for guest mode testing (NULL user_id for guest attempts)
+  -- Additional attempts for guest mode testing (NULL profile_id for guest attempts)
   ('aaaaaaaa-1111-2222-3333-444444444441', NOW() - INTERVAL '30 minutes', NULL, '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('aaaaaaaa-1111-2222-3333-444444444442', NOW() - INTERVAL '2 days', NULL, '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
   ('aaaaaaaa-1111-2222-3333-444444444443', NOW() - INTERVAL '3 hours', NULL, '66666666-3333-3333-3333-333333333333', 'aaaaaaaa-bbbb-cccc-dddd-111111111111'),
@@ -251,7 +251,7 @@ INSERT INTO simulation_chat_feedbacks (id, standard_id, simulation_chat_grade_id
 
 
 -- GPT GENERATED DATA
-INSERT INTO simulation_attempts (id, created_at, user_id, class_id, simulation_id) VALUES
+INSERT INTO simulation_attempts (id, created_at, profile_id, class_id, simulation_id) VALUES
   ('a08712b2-65c5-4466-a1cb-ba0bf8a987c9', '2025-03-17T22:29:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916602', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-1111-2222-3333-444444444444'),
   ('af833cba-16e1-4d8e-9489-51cacf302b53', '2025-03-13T14:08:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916607', '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-1111-2222-3333-444444444444'),
   ('0a95fcdc-fbcc-4798-828e-c1aceb0de801', '2025-03-13T14:08:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916606', '66666666-3333-3333-3333-333333333333', 'aaaaaaaa-1111-2222-3333-444444444444'),

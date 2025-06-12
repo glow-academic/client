@@ -78,7 +78,7 @@ const mockAgents = [
     subtitle: 'General purpose helper',
     description: 'A general-purpose AI agent for various educational tasks.',
     temperature: 0.8,
-    agentType: 'default' as const,
+    agentType: 'student' as const,
     systemPrompt: 'You are a helpful educational assistant.',
     createdAt: '2024-01-17T10:00:00Z',
   },

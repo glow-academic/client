@@ -9,7 +9,6 @@ import * as React from "react";
 import { User, Shield, Mail, Building, GraduationCap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-import { getUser } from "@/utils/queries/users/get-user";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -21,8 +20,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/hooks/use-auth";
-import { Class, UserRole } from "@/types";
+import { Class, ProfileRole } from "@/types";
+import { useSession } from "next-auth/react";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -36,7 +36,7 @@ const getInitials = (name?: string): string => {
 };
 
 // Helper function to get role display info
-const getRoleInfo = (role: UserRole) => {
+const getRoleInfo = (role: ProfileRole) => {
   const roleInfo = {
     admin: {
       label: "Administrator",
@@ -72,11 +72,13 @@ interface ProfileProps {
 }
 
 export function Profile({ className }: ProfileProps) {
-  const { userId } = useAuth();
-  // Fetch user data
-  const { data: user, isLoading: userLoading } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
+  const session = useSession();
+  const userId = session.data?.user?.id;
+
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(userId!),
+    select: (data) => data[0],
     enabled: !!userId,
   });
 
@@ -84,10 +86,10 @@ export function Profile({ className }: ProfileProps) {
   const { data: classes = [] } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
-    enabled: !!user,
+    enabled: !!profile,
   });
 
-  if (userLoading) {
+  if (profileLoading) {
     return (
       <div className={className}>
         <Card>
@@ -99,7 +101,7 @@ export function Profile({ className }: ProfileProps) {
     );
   }
 
-  if (!user) {
+  if (!profile) {
     return (
       <div className={className}>
         <Card>
@@ -114,12 +116,12 @@ export function Profile({ className }: ProfileProps) {
     );
   }
 
-  const roleInfo = getRoleInfo(user.role as UserRole);
+  const roleInfo = getRoleInfo(profile.role as ProfileRole);
   const RoleIcon = roleInfo.icon;
 
   // Filter classes user is assigned to
   const assignedClasses = classes.filter((cls: Class) =>
-    user.classIds?.includes(cls.id),
+    profile.classIds?.includes(cls.id),
   );
 
   return (
@@ -131,14 +133,14 @@ export function Profile({ className }: ProfileProps) {
             <div className="flex items-center gap-4">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="text-lg">
-                  {getInitials(user.name)}
+                  {getInitials(profile.firstName + " " + profile.lastName)}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <CardTitle className="text-2xl">{user.name}</CardTitle>
+                <CardTitle className="text-2xl">{profile.firstName + " " + profile.lastName}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Mail className="h-4 w-4" />
-                  {user.username}@purdue.edu
+                  {profile.email}
                 </CardDescription>
               </div>
             </div>
@@ -175,7 +177,7 @@ export function Profile({ className }: ProfileProps) {
               <div>
                 <span className="font-medium">Member Since:</span>
                 <p className="text-muted-foreground">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(profile.createdAt).toLocaleDateString()}
                 </p>
               </div>
               <div>
@@ -231,7 +233,7 @@ export function Profile({ className }: ProfileProps) {
           </CardHeader>
           <CardContent>
             <div className="space-y-2 text-sm">
-              {user.role === "admin" && (
+              {profile.role === "admin" && (
                 <>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-green-500 rounded-full" />
@@ -247,7 +249,7 @@ export function Profile({ className }: ProfileProps) {
                   </div>
                 </>
               )}
-              {user.role === "instructional" && (
+              {profile.role === "instructional" && (
                 <>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-blue-500 rounded-full" />
@@ -263,7 +265,7 @@ export function Profile({ className }: ProfileProps) {
                   </div>
                 </>
               )}
-              {user.role === "instructor" && (
+              {profile.role === "instructor" && (
                 <>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-orange-500 rounded-full" />
@@ -279,7 +281,7 @@ export function Profile({ className }: ProfileProps) {
                   </div>
                 </>
               )}
-              {user.role === "ta" && (
+              {profile.role === "ta" && (
                 <>
                   <div className="flex items-center gap-2">
                     <div className="h-2 w-2 bg-gray-500 rounded-full" />

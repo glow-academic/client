@@ -16,8 +16,6 @@ import {
   GraduationCap,
   User as UserIcon,
 } from "lucide-react";
-
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import {
   Card,
   CardContent,
@@ -40,7 +38,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { User } from "@/types";
+import { Profile } from "@/types";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 
 const getRoleBadgeVariant = (role: string) => {
   switch (role) {
@@ -96,7 +95,7 @@ const getRolePermissions = (role: string) => {
   }
 };
 
-export default function StaffEdit({ userId }: { userId: string }) {
+export default function StaffEdit({ profileId }: { profileId: string }) {
   const router = useRouter();
   const [formData, setFormData] = React.useState({
     name: "",
@@ -108,19 +107,19 @@ export default function StaffEdit({ userId }: { userId: string }) {
   const [hasChanges, setHasChanges] = React.useState(false);
 
   // Fetch all users to find the target user
-  const { data: allUsers = [], isLoading } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: allProfiles = [], isLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
-  const targetUser = allUsers.find((user: User) => user.id === userId);
+  const targetUser = allProfiles.find((profile: Profile) => profile.id === profileId);
 
   // Initialize form data when user is loaded
   React.useEffect(() => {
     if (targetUser) {
       setFormData({
-        name: targetUser.name,
-        username: targetUser.username,
+        name: targetUser.firstName + " " + targetUser.lastName,
+        username: targetUser.email,
         password: "",
         classIds: targetUser.classIds || [],
       });
@@ -139,7 +138,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to update user
-      console.log("Updating user:", { userId, ...formData });
+      console.log("Updating user:", { profileId, ...formData });
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -159,7 +158,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to delete user
-      console.log("Deleting user:", userId);
+      console.log("Deleting user:", profileId);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -361,7 +360,7 @@ export default function StaffEdit({ userId }: { userId: string }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
-                    {targetUser.name} ({targetUser.username}). This action
+                    {targetUser.firstName + " " + targetUser.lastName} ({targetUser.email}). This action
                     cannot be undone and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

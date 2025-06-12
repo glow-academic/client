@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/staff/u/[userId]/page.tsx
+ * app/(main)/management/staff/p/[profileId]/page.tsx
  * Staff edit page for the user.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025
@@ -11,12 +11,12 @@ import { use } from "react";
 export default function StaffEditPage({
   params,
 }: {
-  params: Promise<{ userId: string }>;
+  params: Promise<{ profileId: string }>;
 }) {
-  const { userId } = use(params);
+  const { profileId } = use(params);
   return (
     <div className="space-y-6">
-      <StaffEdit userId={userId} />
+      <StaffEdit profileId={profileId} />
     </div>
   );
 }

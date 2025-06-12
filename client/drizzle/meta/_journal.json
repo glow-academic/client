@@ -71,6 +71,20 @@
       "when": 1749654995563,
       "tag": "0009_naive_zeigeist",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1749687009391,
+      "tag": "0010_lonely_dreadnoughts",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1749695675235,
+      "tag": "0011_petite_captain_america",
+      "breakpoints": true
     }
   ]
 }

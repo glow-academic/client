@@ -19,7 +19,7 @@ export default function SimulationHistory({
   showChats,
   showExport = true,
 }: SimulationHistoryProps) {
-  const { columns, data, userOptions, classOptions, scoreOptions } = useColumns({
+  const { columns, data, profileOptions, classOptions, scoreOptions } = useColumns({
     showAll,
     showChats,
     showExport,
@@ -29,7 +29,7 @@ export default function SimulationHistory({
     <DataTable<any, any>
       data={data || []}
       columns={columns}
-      userOptions={userOptions}
+      profileOptions={profileOptions}
       classOptions={classOptions}
       showChats={showChats}
       showExport={showExport}

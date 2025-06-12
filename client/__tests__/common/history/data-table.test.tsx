@@ -11,7 +11,7 @@ vi.mock("@/components/common/history/data-table-pagination", () => ({
 }));
 
 vi.mock("@/components/common/history/data-table-toolbar", () => ({
-  DataTableToolbar: ({ table, userOptions, classOptions }: any) => (
+  DataTableToolbar: ({ table, profileOptions, classOptions }: any) => (
     <div data-testid="toolbar">Toolbar</div>
   ),
 }));
@@ -78,7 +78,7 @@ const mockData = [
   { id: "2", testKey: "Test Value 2" },
 ];
 
-const mockUserOptions = [
+const mockprofileOptions = [
   { value: "user1", label: "User 1" },
   { value: "user2", label: "User 2" },
 ];
@@ -136,7 +136,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -150,7 +150,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -163,7 +163,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -176,7 +176,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -191,7 +191,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -204,7 +204,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -222,7 +222,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={[]}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -237,7 +237,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showChats={false}
         />,
@@ -252,7 +252,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showChats={true}
         />,
@@ -272,7 +272,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={[]}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showChats={false}
         />,
@@ -299,7 +299,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -315,7 +315,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -354,7 +354,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -364,12 +364,12 @@ describe("DataTable", () => {
   });
 
   describe("Props Validation", () => {
-    it("should handle empty userOptions", () => {
+    it("should handle empty profileOptions", () => {
       render(
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={[]}
+          profileOptions={[]}
           classOptions={mockClassOptions}
         />,
       );
@@ -382,7 +382,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={[]}
         />,
       );
@@ -395,7 +395,7 @@ describe("DataTable", () => {
         <DataTable
           columns={mockColumns as any}
           data={mockData}
-          userOptions={mockUserOptions}
+          profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -415,7 +415,7 @@ describe("DataTable", () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useReactTable, userOptions, useState, user, useEffect
+ * - Uses hooks: useReactTable, profileOptions, useState, user, useEffect
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

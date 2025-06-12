@@ -1,12 +1,12 @@
 import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 
-type UserRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
+type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
 /**
  * Get the first available section for a given role
  * This determines where users should be navigated when switching roles
  */
-export const getFirstAvailableSectionForRole = (role: UserRole): string => {
+export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
   switch (role) {
     case "guest":
     case "ta":
@@ -26,7 +26,7 @@ export const getFirstAvailableSectionForRole = (role: UserRole): string => {
  * Get all available sections for a given role
  * This helps determine what sections a user can access
  */
-export const getAvailableSectionsForRole = (role: UserRole): string[] => {
+export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
   const sections: string[] = [];
 
   switch (role) {
@@ -69,7 +69,7 @@ export const getAvailableSectionsForRole = (role: UserRole): string[] => {
 /**
  * Check if a section is available for a given role
  */
-export const isSectionAvailableForRole = (section: string, role: UserRole): boolean => {
+export const isSectionAvailableForRole = (section: string, role: ProfileRole): boolean => {
   const availableSections = getAvailableSectionsForRole(role);
   
   // Handle dynamic sections (class-*, agent-*, etc.)
@@ -221,7 +221,7 @@ export const createBreadcrumbSectionChangeHandler = (
  */
 export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
-  currentRole: UserRole,
+  currentRole: ProfileRole,
   onSectionChange?: (section: string) => void,
 ) => {
   return (section: string) => {

@@ -29,8 +29,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
-import { User } from "@/types";
+import { Profile } from "@/types";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -92,17 +92,17 @@ export default function Staff() {
   const router = useRouter();
 
   // Fetch all users
-  const { data: allUsers = [], isLoading } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: allProfiles = [], isLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   // Filter staff users (exclude admin and regular users)
   const staffUsers = React.useMemo(() => {
-    return allUsers.filter((user: User) =>
-      ["instructional", "instructor", "ta"].includes(user.role),
+    return allProfiles.filter((profile: Profile) =>
+      ["instructional", "instructor", "ta"].includes(profile.role),
     );
-  }, [allUsers]);
+  }, [allProfiles]);
 
   // Apply filters and search
   const filteredUsers = React.useMemo(() => {
@@ -110,28 +110,29 @@ export default function Staff() {
 
     // Role filter
     if (roleFilter !== "all") {
-      filtered = filtered.filter((user: User) => user.role === roleFilter);
+      filtered = filtered.filter((profile: Profile) => profile.role === roleFilter);
     }
 
     // Search filter
     if (searchTerm) {
       filtered = filtered.filter(
-        (user: User) =>
-          user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.role.toLowerCase().includes(searchTerm.toLowerCase()),
+        (profile: Profile) =>
+          profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          profile.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          profile.role.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
 
     // Sort
-    filtered.sort((a: User, b: User) => {
+    filtered.sort((a: Profile, b: Profile) => {
       switch (sortBy) {
         case "name":
-          return a.name.localeCompare(b.name);
+          return a.firstName.localeCompare(b.firstName);
         case "role":
           return a.role.localeCompare(b.role);
-        case "username":
-          return a.username.localeCompare(b.username);
+        case "email":
+          return a.email.localeCompare(b.email);
         case "classes":
           return (b.classIds?.length || 0) - (a.classIds?.length || 0);
         default:
@@ -146,16 +147,16 @@ export default function Staff() {
   const roleCounts = React.useMemo(() => {
     return {
       total: staffUsers.length,
-      instructional: staffUsers.filter((u: User) => u.role === "instructional")
+      instructional: staffUsers.filter((profile: Profile) => profile.role === "instructional")
         .length,
-      instructor: staffUsers.filter((u: User) => u.role === "instructor")
+      instructor: staffUsers.filter((profile: Profile) => profile.role === "instructor")
         .length,
-      ta: staffUsers.filter((u: User) => u.role === "ta").length,
+      ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
     };
   }, [staffUsers]);
 
-  const handleEditUser = (userId: string) => {
-    router.push(`/management/staff/u/${userId}`);
+  const handleEditUser = (profileId: string) => {
+    router.push(`/management/staff/p/${profileId}`);
   };
 
   if (isLoading) {
@@ -280,39 +281,39 @@ export default function Staff() {
                 </TableCell>
               </TableRow>
             ) : (
-              filteredUsers.map((user: User) => {
-                const RoleIcon = getRoleIcon(user.role);
+              filteredUsers.map((profile: Profile) => {
+                const RoleIcon = getRoleIcon(profile.role);
                 return (
-                  <TableRow key={user.id}>
+                  <TableRow key={profile.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs">
-                            {getInitials(user.name)}
+                            {getInitials(profile.firstName + " " + profile.lastName)}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{user.name}</p>
+                          <p className="font-medium">{profile.firstName + " " + profile.lastName}</p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <RoleIcon className="h-4 w-4" />
-                        <Badge variant={getRoleBadgeVariant(user.role)}>
-                          {getRoleDisplayName(user.role)}
+                        <Badge variant={getRoleBadgeVariant(profile.role)}>
+                          {getRoleDisplayName(profile.role)}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{user.username}</TableCell>
+                    <TableCell className="text-sm">{profile.email}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {user.classIds?.length || 0} classes
+                      {profile.classIds?.length || 0} classes
                     </TableCell>
                     <TableCell>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleEditUser(user.id)}
+                        onClick={() => handleEditUser(profile.id)}
                       >
                         Edit
                       </Button>

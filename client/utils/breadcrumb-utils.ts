@@ -7,6 +7,7 @@ import { getRubric } from "./queries/rubrics/get-rubric";
 import { getEval } from "./queries/evals/get-eval";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
+import { getProfile } from "./queries/profiles/get-profile";
 
 interface BreadcrumbItem {
   title: string;
@@ -53,9 +54,9 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const chatData = await getSimulationChat(id);
         return chatData?.title || `Chat ${id.substring(0, 8)}...`;
 
-      case "user":
-        const userData = await getUser(id);
-        return userData?.name || `User ${id.substring(0, 8)}...`;
+      case "profile":
+        const profileData = await getProfile(id);
+        return profileData?.firstName + " " + profileData?.lastName || `Profile ${id.substring(0, 8)}...`;
 
       case "rubric":
         const rubricData = await getRubric(id);
@@ -117,8 +118,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "agent";
       } else if (prevSegment === "s" && segments.includes("scenarios")) {
         context = "scenario";
-      } else if (prevSegment === "u" && segments.includes("staff")) {
-        context = "user";
+      } else if (prevSegment === "p" && segments.includes("staff")) {
+        context = "profile";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
       } else if (prevSegment === "e" && segments.includes("evals")) {
@@ -279,8 +280,8 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "management":
       if (second === "staff") {
-        if (third === "u" && fourth) {
-          return `user-${fourth}`;
+        if (third === "p" && fourth) {
+          return `profile-${fourth}`;
         }
         return "staff";
       }

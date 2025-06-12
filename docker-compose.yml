@@ -56,23 +56,23 @@ services:
     networks:
       - internal
       - web
-    # In prod, we let Traefik route /api → server
+    # In prod, we let Traefik route /server → server
     labels:
       - "traefik.enable=${PROD:-false}"
       - "traefik.docker.network=web"
 
       # Public router → container
-      - "traefik.http.routers.${SUBDOMAIN}-api.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && (PathPrefix(`/api`) || PathPrefix(`/documents`))"
-      - "traefik.http.routers.${SUBDOMAIN}-api.entrypoints=websecure"
-      - "traefik.http.routers.${SUBDOMAIN}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${SUBDOMAIN}-server.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && (PathPrefix(`/server`) || PathPrefix(`/documents`))"
+      - "traefik.http.routers.${SUBDOMAIN}-server.entrypoints=websecure"
+      - "traefik.http.routers.${SUBDOMAIN}-server.tls.certresolver=letsencrypt"
 
       # Back-end service
-      - "traefik.http.services.${SUBDOMAIN}-api.loadbalancer.server.port=8000"
+      - "traefik.http.services.${SUBDOMAIN}-server.loadbalancer.server.port=8000"
 
-      # Strip prefix middleware - only strip /api, not /documents
-      - "traefik.http.middlewares.${SUBDOMAIN}-strip-api.stripprefix.prefixes=/api"
-      - "traefik.http.middlewares.${SUBDOMAIN}-strip-api.stripprefix.forceSlash=false"
-      - "traefik.http.routers.${SUBDOMAIN}-api.middlewares=${SUBDOMAIN}-strip-api@docker"
+      # Strip prefix middleware - only strip /server, not /documents
+      - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.prefixes=/server"
+      - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.forceSlash=false"
+      - "traefik.http.routers.${SUBDOMAIN}-server.middlewares=${SUBDOMAIN}-strip-server@docker"
     profiles:
       - prod
       - dev
@@ -88,6 +88,9 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        AUTH_SECRET: ${AUTH_SECRET}
+        AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
+        AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
     env_file: .env
     environment:
       - DB_HOST=database
@@ -98,12 +101,12 @@ services:
       - internal
       - web
     # In prod, Traefik serves the client at root,
-    # ensuring /api goes to server instead of Next.js
+    # ensuring /server goes to server instead of Next.js
     labels:
       - "traefik.enable=${PROD:-false}"
       - "traefik.docker.network=web"
 
-      # Main site (everything except /api)
+      # Main site (everything except /server)
       - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)"
       - "traefik.http.routers.${SUBDOMAIN}-app.entrypoints=websecure"
       - "traefik.http.routers.${SUBDOMAIN}-app.tls.certresolver=letsencrypt"

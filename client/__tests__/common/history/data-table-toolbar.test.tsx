@@ -64,7 +64,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -78,7 +78,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -93,7 +93,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -108,7 +108,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -120,7 +120,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -136,7 +136,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -159,7 +159,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -188,7 +188,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={tableWithFilter as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -203,7 +203,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -216,7 +216,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -229,7 +229,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -242,7 +242,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -255,7 +255,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -268,7 +268,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -295,7 +295,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={tableWithFilters as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -307,7 +307,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -326,7 +326,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={tableWithDateFilter as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -346,7 +346,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={tableWithFilters as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -365,7 +365,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           setDateRange={mockSetDateRange}
         />,
@@ -378,7 +378,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />,
       );
@@ -395,7 +395,7 @@ describe("DataTableToolbar", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           isAdmin={true}
           dateRange={mockDateRange}

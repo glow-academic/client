@@ -13,43 +13,43 @@ import {
   isSectionAvailableForRole 
 } from "@/utils/navigation-utils";
 
-type UserRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
+type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
 // Helper function to check if a user can simulate a specific role
-const canUserSimulateRole = (userRole: UserRole, targetRole: UserRole): boolean => {
+const canUserSimulateRole = (ProfileRole: ProfileRole, targetRole: ProfileRole): boolean => {
   // Admin can simulate all roles
-  if (userRole === "admin") return true;
+  if (ProfileRole === "admin") return true;
   
   // Instructional staff can simulate instructor and ta roles
-  if (userRole === "instructional") {
+  if (ProfileRole === "instructional") {
     return ["instructor", "ta"].includes(targetRole);
   }
   
   // Instructor can simulate ta role
-  if (userRole === "instructor") {
+  if (ProfileRole === "instructor") {
     return targetRole === "ta";
   }
   
   // TA cannot simulate any other roles
-  if (userRole === "ta") return false;
+  if (ProfileRole === "ta") return false;
   
   return false;
 };
 
 interface RoleContextType {
-  effectiveRole: UserRole;
-  simulatedRole: UserRole | null;
+  effectiveRole: ProfileRole;
+  simulatedRole: ProfileRole | null;
   isGuestMode: boolean;
-  setRole: (role: UserRole | null, shouldNavigate?: boolean) => void;
+  setRole: (role: ProfileRole | null, shouldNavigate?: boolean) => void;
   enableGuestMode: () => void;
   disableGuestMode: () => void;
   refreshRole: () => void;
-  getFirstAvailableSection: (role: UserRole) => string;
-  navigateToRoleDefault: (role: UserRole) => void;
-  isSectionAvailable: (section: string, role?: UserRole) => boolean;
+  getFirstAvailableSection: (role: ProfileRole) => string;
+  navigateToRoleDefault: (role: ProfileRole) => void;
+  isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
   // Debug utilities
   debug: {
-    userRole?: UserRole;
+    ProfileRole?: ProfileRole;
     isClient: boolean;
     localStorage: {
       simulatedRole: string | null;
@@ -70,11 +70,11 @@ export const useRole = () => {
 
 interface RoleProviderProps {
   children: React.ReactNode;
-  userRole?: UserRole;
+  ProfileRole?: ProfileRole;
 }
 
-export function RoleProvider({ children, userRole }: RoleProviderProps) {
-  const [simulatedRole, setSimulatedRole] = useState<UserRole | null>(null);
+export function RoleProvider({ children, ProfileRole }: RoleProviderProps) {
+  const [simulatedRole, setSimulatedRole] = useState<ProfileRole | null>(null);
   const [isGuestMode, setIsGuestMode] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const queryClient = useQueryClient();
@@ -91,7 +91,7 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
 
     // If we have an actual user role, don't load guest mode from localStorage
     // This prevents guest mode from interfering with actual authentication
-    if (userRole && userRole !== "guest") {
+    if (ProfileRole && ProfileRole !== "guest") {
       // Clear any guest mode that might be lingering
       localStorage.removeItem("guestMode");
       setIsGuestMode(false);
@@ -116,35 +116,35 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
       storedRole &&
       ["admin", "instructional", "instructor", "ta"].includes(storedRole)
     ) {
-      setSimulatedRole(storedRole as UserRole);
+      setSimulatedRole(storedRole as ProfileRole);
     }
-  }, [isClient, userRole]);
+  }, [isClient, ProfileRole]);
 
   // Calculate effective role
-  const effectiveRole: UserRole = React.useMemo(() => {
+  const effectiveRole: ProfileRole = React.useMemo(() => {
     if (!isClient) return "guest";
 
     if (isGuestMode) return "guest";
     if (simulatedRole) return simulatedRole;
-    return userRole || "guest";
-  }, [isClient, isGuestMode, simulatedRole, userRole]);
+    return ProfileRole || "guest";
+  }, [isClient, isGuestMode, simulatedRole, ProfileRole]);
 
-  const getFirstAvailableSection = React.useCallback((role: UserRole) => {
+  const getFirstAvailableSection = React.useCallback((role: ProfileRole) => {
     return getFirstAvailableSectionForRole(role);
   }, []);
 
-  const isSectionAvailable = React.useCallback((section: string, role?: UserRole) => {
+  const isSectionAvailable = React.useCallback((section: string, role?: ProfileRole) => {
     const targetRole = role || effectiveRole;
     return isSectionAvailableForRole(section, targetRole);
   }, [effectiveRole]);
 
-  const navigateToRoleDefault = React.useCallback((role: UserRole) => {
+  const navigateToRoleDefault = React.useCallback((role: ProfileRole) => {
     const defaultSection = getFirstAvailableSectionForRole(role);
     const route = getSectionRoute(defaultSection);
     router.push(route);
   }, [router]);
 
-  const setRole = React.useCallback((role: UserRole | null, shouldNavigate: boolean = false) => {
+  const setRole = React.useCallback((role: ProfileRole | null, shouldNavigate: boolean = false) => {
     if (!isClient) return;
 
     const previousRole = effectiveRole;
@@ -209,14 +209,14 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
       localStorage.removeItem("simulatedRole");
       
       // Navigate to the user's actual role default page
-      if (userRole) {
-        navigateToRoleDefault(userRole);
+      if (ProfileRole) {
+        navigateToRoleDefault(ProfileRole);
       }
     }
 
     // Invalidate all queries
     queryClient.invalidateQueries();
-  }, [isClient, simulatedRole, userRole, queryClient, navigateToRoleDefault]);
+  }, [isClient, simulatedRole, ProfileRole, queryClient, navigateToRoleDefault]);
 
   const refreshRole = React.useCallback(() => {
     if (!isClient) return;
@@ -228,14 +228,14 @@ export function RoleProvider({ children, userRole }: RoleProviderProps) {
   // Debug information
   const debug = React.useMemo(
     () => ({
-      userRole,
+      ProfileRole,
       isClient,
       localStorage: {
         simulatedRole: isClient ? localStorage.getItem("simulatedRole") : null,
         guestMode: isClient ? localStorage.getItem("guestMode") : null,
       },
     }),
-    [userRole, isClient, simulatedRole, isGuestMode],
+    [ProfileRole, isClient, simulatedRole, isGuestMode],
   );
 
   const value: RoleContextType = {

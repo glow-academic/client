@@ -48,9 +48,9 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
 import { getAllEvents } from "@/utils/queries/events/get-all-events";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 
 type ClassDetailsProps = {
   classId: string;
@@ -69,9 +69,9 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
   });
 
   // Fetch all users to filter by class
-  const { data: _allUsers = [], isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: _allProfiles = [], isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
 
@@ -241,13 +241,13 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
   }, [schedules]);
 
   const totalStudents = useMemo(() => {
-    const chatUserIds = chats
+    const chatProfileIds = chats
       .map((chat) => {
         const attempt = attempts.find((a) => a.id === chat.attemptId);
-        return attempt?.userId;
+        return attempt?.profileId;
       })
       .filter(Boolean) as string[];
-    return new Set(chatUserIds).size;
+    return new Set(chatProfileIds).size;
   }, [chats, attempts]);
   const avgPerformance =
     grades && grades.length > 0
@@ -257,7 +257,7 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
   // Loading state
   if (
     isLoadingClass ||
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingTopics ||
     isLoadingSimulations ||
     isLoadingAttempts ||

@@ -254,9 +254,9 @@ describe("useColumns", () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(result.current.userOptions).toBeDefined();
-      expect(Array.isArray(result.current.userOptions)).toBe(true);
-      expect(result.current.userOptions.length).toBeGreaterThan(0);
+      expect(result.current.profileOptions).toBeDefined();
+      expect(Array.isArray(result.current.profileOptions)).toBe(true);
+      expect(result.current.profileOptions.length).toBeGreaterThan(0);
     });
 
     it("should provide class options", async () => {

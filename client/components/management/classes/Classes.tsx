@@ -59,18 +59,18 @@ import {
   Area,
 } from "recharts";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAgentConfig } from "@/utils/agents";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 // Color palette for charts
 const COLORS = {
@@ -113,9 +113,9 @@ export default function ClassesGeneralPage() {
     queryFn: () => getAllClasses(),
   });
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -150,9 +150,9 @@ export default function ClassesGeneralPage() {
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
-    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
-    enabled: !!users && users.length > 0,
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -181,7 +181,7 @@ export default function ClassesGeneralPage() {
   // Calculate analytics data
   const analytics = useMemo(() => {
     if (
-      !users ||
+      !profiles ||
       !chats ||
       !grades ||
       !agents ||
@@ -192,7 +192,7 @@ export default function ClassesGeneralPage() {
     )
       return null;
 
-    const tas = users.filter((user) => user.role === "ta");
+    const tas = profiles.filter((profile) => profile.role === "ta");
     const completedChats = chats.filter((chat) => chat.completed);
     const totalSessions = chats.length;
     const completionRate =
@@ -229,7 +229,7 @@ export default function ClassesGeneralPage() {
 
     // Calculate struggling TAs (below 70% average)
     const strugglingTAs = tas.filter(ta => {
-      const taAttempts = attempts?.filter(attempt => attempt.userId === ta.id) || [];
+      const taAttempts = attempts?.filter(attempt => attempt.profileId === ta.id) || [];
       const taChats = chats.filter(chat =>
         taAttempts.some(attempt => attempt.id === chat.attemptId)
       );
@@ -255,7 +255,7 @@ export default function ClassesGeneralPage() {
       strugglingTAs,
     };
       }, [
-    users,
+    profiles,
     chats,
     grades,
     agents,
@@ -387,14 +387,14 @@ export default function ClassesGeneralPage() {
 
   // Generate detailed metric data for dialogs
   const getMetricDetails = (metricType: string) => {
-    if (!analytics || !users || !grades || !chats || !attempts) return null;
+    if (!analytics || !profiles || !grades || !chats || !attempts) return null;
 
     switch (metricType) {
       case 'totalTAs':
-        const taDetails = users
-          .filter(user => user.role === "ta")
+        const taDetails = profiles
+          .filter(profile => profile.role === "ta")
           .map(ta => {
-            const taAttempts = attempts.filter(attempt => attempt.userId === ta.id);
+            const taAttempts = attempts.filter(attempt => attempt.profileId === ta.id);
             const taChats = chats.filter(chat =>
               taAttempts.some(attempt => attempt.id === chat.attemptId)
             );
@@ -407,7 +407,7 @@ export default function ClassesGeneralPage() {
               : 0;
             
             return {
-              name: ta.name,
+              name: ta.firstName + " " + ta.lastName,
               sessions: taChats.length,
               avgScore,
               status: avgScore >= 80 ? 'Excellent' : avgScore >= 70 ? 'Good' : 'Needs Support'
@@ -537,7 +537,7 @@ export default function ClassesGeneralPage() {
   // Loading state
   if (
     isLoadingClasses ||
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingAgents ||
     isLoadingScenarios ||
     isLoadingRubrics ||

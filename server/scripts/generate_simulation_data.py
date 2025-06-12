@@ -251,7 +251,7 @@ def build_insert(table: str, cols: str, rows: list[str]) -> str:
 
 sql = "".join([
     build_insert("simulation_attempts",
-                 "id, created_at, user_id, class_id, simulation_id", attempt_rows),
+                 "id, created_at, profile_id, class_id, simulation_id", attempt_rows),
     build_insert("simulation_chats",
                  "id, created_at, completed_at, title, scenario_id, completed, attempt_id", chat_rows),
     build_insert("simulation_messages",

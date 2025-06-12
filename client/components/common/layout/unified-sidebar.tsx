@@ -24,7 +24,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { logout } from "@/utils/auth/logout";
+import { signOut } from "next-auth/react";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { useRole } from "@/contexts/role-context";
 import {
@@ -56,11 +56,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/use-auth";
-import { getUser } from "@/utils/queries/users/get-user";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { useSession } from "next-auth/react";
 
-type UserRole = "admin" | "instructional" | "instructor" | "ta";
+type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
 interface UnifiedSidebarProps extends React.ComponentProps<typeof Sidebar> {
   activeSection: string;
@@ -100,7 +100,7 @@ const getInitials = (name?: string): string => {
 };
 
 // Helper function to get hierarchical modes based on user role
-const getAvailableModes = (userRole: UserRole) => {
+const getAvailableModes = (ProfileRole: ProfileRole) => {
   const roleLabels = {
     admin: "Administrator",
     instructional: "Instructional Staff",
@@ -109,14 +109,14 @@ const getAvailableModes = (userRole: UserRole) => {
   };
 
   const roleHierarchy = ["admin", "instructional", "instructor", "ta"];
-  const userIndex = roleHierarchy.indexOf(userRole);
+  const userIndex = roleHierarchy.indexOf(ProfileRole);
 
   if (userIndex === -1) return [];
 
   const availableRoles = roleHierarchy.slice(userIndex);
   const modes = availableRoles.map((role) => ({
     key: role,
-    label: roleLabels[role as UserRole],
+    label: roleLabels[role as ProfileRole],
   }));
 
   // All roles can access guest mode
@@ -136,12 +136,13 @@ export function UnifiedSidebar({
 
   // Use the role context instead of local state
   const { effectiveRole, setRole } = useRole();
-  const { userId } = useAuth();
+  const session = useSession();
+  const userId = session.data?.user?.id;
 
-  // Fetch user data
-  const { data: user } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(userId!),
+    select: (data) => data[0],
     enabled: !!userId,
   });
 
@@ -153,9 +154,9 @@ export function UnifiedSidebar({
 
   // Get available modes based on user role
   const availableModes = React.useMemo(() => {
-    if (!user?.role) return [{ key: "guest", label: "Guest Mode" }];
-    return getAvailableModes(user.role);
-  }, [user?.role]);
+    if (!profile?.role) return [{ key: "guest", label: "Guest Mode" }];
+    return getAvailableModes(profile.role);
+  }, [profile?.role]);
 
   // Get current mode label
   const currentModeLabel = React.useMemo(() => {
@@ -165,7 +166,7 @@ export function UnifiedSidebar({
 
   // Filter classes based on user role
   const availableClasses = React.useMemo(() => {
-    if (!user || !classes || effectiveRole === "guest") return [];
+    if (!profile || !classes || effectiveRole === "guest") return [];
 
     switch (effectiveRole) {
       case "admin":
@@ -174,14 +175,14 @@ export function UnifiedSidebar({
       case "instructor":
         // Only classes the user is assigned to
         return classes.filter((cls: ClassData) =>
-          user.classIds?.includes(cls.id),
+          profile.classIds?.includes(cls.id),
         );
       case "ta":
         return []; // No class access for TAs
       default:
         return [];
     }
-  }, [classes, user, effectiveRole]);
+  }, [classes, profile, effectiveRole]);
 
   // Build navigation menu based on role with search filtering
   const navMain = React.useMemo(() => {
@@ -369,10 +370,10 @@ export function UnifiedSidebar({
   const handleModeChange = (mode: string) => {
     if (mode === "guest") {
       setRole("guest", true); // Navigate to guest default page
-    } else if (mode === user?.role) {
+    } else if (mode === profile?.role) {
       setRole(null, true); // Reset to actual user role and navigate
     } else {
-      setRole(mode as UserRole, true); // Set simulated role and navigate
+      setRole(mode as ProfileRole, true); // Set simulated role and navigate
     }
   };
 
@@ -381,7 +382,7 @@ export function UnifiedSidebar({
   };
 
   const handleLoginOrLogout = async () => {
-    if (effectiveRole === "guest" || !user) {
+    if (effectiveRole === "guest" || !profile) {
       // Navigate to login page for guests or when no user
       router.push("/");
       return;
@@ -398,13 +399,9 @@ export function UnifiedSidebar({
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
 
-          const { success, error } = await logout();
-          if (success) {
-            router.push("/");
-            return "Logged out successfully";
-          } else {
-            throw new Error(error);
-          }
+          await signOut();
+          router.push("/");
+          return "Logged out successfully";
         } catch (error) {
           console.error("Error logging out:", error);
           throw new Error(
@@ -567,21 +564,21 @@ export function UnifiedSidebar({
                 >
                   <Avatar className="h-8 w-8">
                     <AvatarFallback>
-                      {effectiveRole === "guest" || !user
+                      {effectiveRole === "guest" || !profile
                         ? "GU"
-                        : getInitials(user?.name)}
+                        : getInitials(profile?.firstName + " " + profile?.lastName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {effectiveRole === "guest" || !user
+                      {effectiveRole === "guest" || !profile
                         ? "Guest User"
-                        : user?.name}
+                        : profile?.firstName + " " + profile?.lastName}
                     </span>
                     <span className="truncate text-xs">
-                      {effectiveRole === "guest" || !user
+                      {effectiveRole === "guest" || !profile
                         ? "Not logged in"
-                        : `${user?.username}@purdue.edu`}
+                        : `${profile?.email}`}
                     </span>
                   </div>
                   <ChevronRight className="ml-auto size-4" />
@@ -597,27 +594,27 @@ export function UnifiedSidebar({
                   <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback>
-                        {effectiveRole === "guest" || !user
+                        {effectiveRole === "guest" || !profile
                           ? "GU"
-                          : getInitials(user?.name)}
+                          : getInitials(profile?.firstName + " " + profile?.lastName)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">
                       <span className="truncate font-semibold">
-                        {effectiveRole === "guest" || !user
+                        {effectiveRole === "guest" || !profile
                           ? "Guest User"
-                          : user?.name}
+                          : profile?.firstName + " " + profile?.lastName}
                       </span>
                       <span className="truncate text-xs">
-                        {effectiveRole === "guest" || !user
+                        {effectiveRole === "guest" || !profile
                           ? "Not logged in"
-                          : `${user?.username}@purdue.edu`}
+                          : `${profile?.email}`}
                       </span>
                     </div>
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {user && effectiveRole !== "guest" && (
+                {profile && effectiveRole !== "guest" && (
                   <>
                     <DropdownMenuItem
                       onClick={() => handleSectionChange("profile")}
@@ -638,7 +635,7 @@ export function UnifiedSidebar({
                   <LogOut className="h-4 w-4 mr-2" />
                   {isLoggingOut
                     ? "Logging out..."
-                    : effectiveRole === "guest" || !user
+                    : effectiveRole === "guest" || !profile
                       ? "Log in"
                       : "Logout"}
                 </DropdownMenuItem>

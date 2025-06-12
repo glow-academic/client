@@ -65,7 +65,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -78,7 +78,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -103,7 +103,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={tableWithSelection as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -120,7 +120,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -142,7 +142,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -163,7 +163,7 @@ describe("ExportButton", () => {
       const { rerender } = render(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="chats"
         />,
@@ -174,7 +174,7 @@ describe("ExportButton", () => {
       rerender(
         <ExportButton
           table={mockTable as any}
-          userOptions={mockUserOptions}
+          profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           viewMode="attempts"
         />,
@@ -187,7 +187,7 @@ describe("ExportButton", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          userOptions={[]}
+          profileOptions={[]}
           classOptions={[]}
           viewMode="chats"
         />,
@@ -208,7 +208,7 @@ describe("ExportButton", () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useState, userId, userOptions, user, userOption
+ * - Uses hooks: useState, userId, profileOptions, user, userOption
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

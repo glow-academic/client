@@ -20,8 +20,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock API calls
-vi.mock("@/utils/queries/users/get-all-users", () => ({
-  getAllUsers: vi.fn(),
+vi.mock("@/utils/queries/profiles/get-all-profiles", () => ({
+  getAllProfiles: vi.fn(),
 }));
 
 describe("StaffEdit", () => {
@@ -67,25 +67,25 @@ describe("StaffEdit", () => {
 
   describe("Rendering", () => {
     it("should render loading state initially", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getAllProfiles as any).mockImplementation(() => new Promise(() => {})); // Never resolves
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       expect(screen.getByText("Loading...")).toBeInTheDocument();
     });
 
     it("should render user not found when user does not exist", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue([]); // Target user not in list
+      (getAllProfiles as any).mockResolvedValue([]); // Target user not in list
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("User Not Found")).toBeInTheDocument();
@@ -99,15 +99,15 @@ describe("StaffEdit", () => {
     });
 
     it("should render invalid user type for non-staff users", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
       const studentUser = { ...mockTargetUser, role: "student" };
 
-      (getAllUsers as any).mockResolvedValue([studentUser]);
+      (getAllProfiles as any).mockResolvedValue([studentUser]);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Invalid User Type")).toBeInTheDocument();
@@ -123,13 +123,13 @@ describe("StaffEdit", () => {
     });
 
     it("should render edit form for staff users", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Edit Instructor")).toBeInTheDocument();
@@ -143,13 +143,13 @@ describe("StaffEdit", () => {
     });
 
     it("should show back button in header", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -161,13 +161,13 @@ describe("StaffEdit", () => {
 
   describe("Form Functionality", () => {
     it("should populate form with existing user data", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
@@ -176,14 +176,14 @@ describe("StaffEdit", () => {
     });
 
     it("should handle form input changes", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
@@ -197,14 +197,14 @@ describe("StaffEdit", () => {
     });
 
     it("should enable save button when changes are made", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -221,14 +221,14 @@ describe("StaffEdit", () => {
     });
 
     it("should handle form submission", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
@@ -246,14 +246,14 @@ describe("StaffEdit", () => {
     });
 
     it("should navigate back on cancel", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -268,14 +268,14 @@ describe("StaffEdit", () => {
     });
 
     it("should navigate back on header back button", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -292,13 +292,13 @@ describe("StaffEdit", () => {
 
   describe("Password Management", () => {
     it("should show password field for all users", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
@@ -309,14 +309,14 @@ describe("StaffEdit", () => {
     });
 
     it("should handle password changes", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByLabelText(/new password/i)).toBeInTheDocument();
@@ -331,13 +331,13 @@ describe("StaffEdit", () => {
 
   describe("Role and Permissions Display", () => {
     it("should display role information card", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Role & Permissions")).toBeInTheDocument();
@@ -355,15 +355,15 @@ describe("StaffEdit", () => {
     });
 
     it("should show correct role icon and badge for instructional staff", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
       const instructionalUser = { ...mockTargetUser, role: "instructional" };
 
-      (getAllUsers as any).mockResolvedValue([instructionalUser]);
+      (getAllProfiles as any).mockResolvedValue([instructionalUser]);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -374,15 +374,15 @@ describe("StaffEdit", () => {
     });
 
     it("should show correct role icon and badge for teaching assistant", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
       const taUser = { ...mockTargetUser, role: "ta" };
 
-      (getAllUsers as any).mockResolvedValue([taUser]);
+      (getAllProfiles as any).mockResolvedValue([taUser]);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Edit Teaching Assistant")).toBeInTheDocument();
@@ -393,13 +393,13 @@ describe("StaffEdit", () => {
 
   describe("Delete Functionality", () => {
     it("should show delete section for all users", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Danger Zone")).toBeInTheDocument();
@@ -415,14 +415,14 @@ describe("StaffEdit", () => {
     });
 
     it("should show delete confirmation dialog", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -448,14 +448,14 @@ describe("StaffEdit", () => {
     });
 
     it("should handle delete confirmation", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -484,27 +484,27 @@ describe("StaffEdit", () => {
 
   describe("Navigation and Error Handling", () => {
     it("should handle API errors gracefully", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockRejectedValue(new Error("API Error"));
+      (getAllProfiles as any).mockRejectedValue(new Error("API Error"));
 
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       // Should show loading state and not crash
       expect(screen.getByText("Loading...")).toBeInTheDocument();
     });
 
     it("should navigate to staff page after successful update", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(screen.getByDisplayValue("Dr. Jane Smith")).toBeInTheDocument();
@@ -527,14 +527,14 @@ describe("StaffEdit", () => {
     });
 
     it("should handle back navigation from error states", async () => {
-      const { getAllUsers } = await import(
-        "@/utils/queries/users/get-all-users"
+      const { getAllProfiles } = await import(
+        "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllUsers as any).mockResolvedValue([]);
+      (getAllProfiles as any).mockResolvedValue([]);
 
       const user = userEvent.setup();
-      renderWithProviders(<StaffEdit userId={testUserId} />);
+      renderWithProviders(<StaffEdit profileId={testUserId} />);
 
       await waitFor(() => {
         expect(
@@ -559,12 +559,12 @@ describe("StaffEdit", () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true (userId: string)
- * - Props interface: { userId: string }
+ * - Has props: true (profileId: string)
+ * - Props interface: { profileId: string }
  * - Client component: false
  * - Uses hooks: useRouter, useQuery, useState, useEffect
  * - Uses router: true
- * - Has API calls: true (getAllUsers)
+ * - Has API calls: true (getAllProfiles)
  * - Has form handling: true
  * - Uses state: true
  * - Uses effects: true

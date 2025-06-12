@@ -1,5 +1,5 @@
 /**
- * app/(main)/management/staff/u/page.tsx
+ * app/(main)/management/staff/p/page.tsx
  * Staff edit page for the staff section.
  * @AshokSaravanan222 & @siladiea
  * 06/08/2025

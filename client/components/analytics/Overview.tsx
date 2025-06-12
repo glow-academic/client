@@ -40,8 +40,6 @@ import {
   Bar,
 } from "recharts";
 import { format, subDays, subHours } from "date-fns";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -50,6 +48,8 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { StandardGroup } from "@/types";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 // Color palette for charts
 const COLORS = {
@@ -68,9 +68,9 @@ export default function Overview() {
   const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<"1h" | "12h" | "24h">("24h");
 
   // Fetch data
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -100,9 +100,9 @@ export default function Overview() {
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
-    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
-    enabled: !!users && users.length > 0,
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -137,7 +137,7 @@ export default function Overview() {
   // Calculate key metrics
   const analytics = useMemo(() => {
     if (
-      !users ||
+      !profiles ||
       !chats ||
       !grades ||
       !agents ||
@@ -147,7 +147,7 @@ export default function Overview() {
     )
       return null;
 
-    const tas = users.filter((user) => user.role === "ta");
+    const tas = profiles.filter((profile) => profile.role === "ta");
     const completedChats = chats.filter((chat) => chat.completed);
     const totalSessions = chats.filter((chat) => isWithinLastWeek(chat.createdAt)).length;
     const completionRate =
@@ -189,7 +189,7 @@ export default function Overview() {
     // TA performance for struggling count
     const taPerformance = tas.map((ta) => {
       const taAttempts =
-        attempts?.filter((attempt) => attempt.userId === ta.id) || [];
+        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
       const taChats = chats.filter((chat) =>
         taAttempts.some((attempt) => attempt.id === chat.attemptId),
       );
@@ -316,7 +316,7 @@ export default function Overview() {
       avgTrainingTime,
     };
   }, [
-    users,
+    profiles,
     chats,
     grades,
     agents,
@@ -330,7 +330,7 @@ export default function Overview() {
 
   // Loading state
   if (
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||

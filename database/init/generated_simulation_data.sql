@@ -1,4 +1,4 @@
-INSERT INTO simulation_attempts (id, created_at, user_id, class_id, simulation_id) VALUES
+INSERT INTO simulation_attempts (id, created_at, profile_id, class_id, simulation_id) VALUES
   ('a08712b2-65c5-4466-a1cb-ba0bf8a987c9', '2025-03-17T22:29:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916602', '44444444-1111-1111-1111-111111111111', 'aaaaaaaa-1111-2222-3333-444444444444'),
   ('af833cba-16e1-4d8e-9489-51cacf302b53', '2025-03-13T14:08:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916607', '77777777-4444-4444-4444-444444444444', 'aaaaaaaa-1111-2222-3333-444444444444'),
   ('0a95fcdc-fbcc-4798-828e-c1aceb0de801', '2025-03-13T14:08:04+00:00', '99b90118-7b9e-4e12-8e81-d7ccc2916606', '66666666-3333-3333-3333-333333333333', 'aaaaaaaa-1111-2222-3333-444444444444'),

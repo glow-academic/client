@@ -22,7 +22,6 @@ vi.mock('@/utils/queries/classes/get-all-classes', () => ({
 }));
 
 // Import mocked functions
-import { useAuth } from '@/hooks/use-auth';
 import { getUser } from '@/utils/queries/users/get-user';
 import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
 
@@ -99,7 +98,6 @@ describe('Profile', () => {
       },
     });
     
-    (useAuth as any).mockReturnValue({ userId: 'user-1' });
     (getUser as any).mockResolvedValue(mockUser);
     (getAllClasses as any).mockResolvedValue(mockClasses);
   });
@@ -328,7 +326,6 @@ describe('Profile', () => {
     });
 
     it('should handle missing userId gracefully', async () => {
-      (useAuth as any).mockReturnValue({ userId: null });
       
       renderWithProviders(<Profile />);
       

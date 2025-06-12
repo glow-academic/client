@@ -29,16 +29,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { toast } from "sonner";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -59,9 +59,9 @@ export default function Reports() {
   const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set());
 
   // Fetch data
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
@@ -91,9 +91,9 @@ export default function Reports() {
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
-    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
-    enabled: !!users && users.length > 0,
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -122,7 +122,7 @@ export default function Reports() {
   // Calculate analytics
   const analytics = useMemo(() => {
     if (
-      !users ||
+      !profiles ||
       !chats ||
       !grades ||
       !feedbacks ||
@@ -132,13 +132,13 @@ export default function Reports() {
     )
       return null;
 
-    const tas = users.filter((user) => user.role === "ta");
+    const tas = profiles.filter((profile) => profile.role === "ta");
 
     // TA leaderboard based on actual grades
     const taPerformance = tas
       .map((ta) => {
         const taAttempts =
-          attempts?.filter((attempt) => attempt.userId === ta.id) || [];
+          attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
         const taChats = chats.filter((chat) =>
           taAttempts.some((attempt) => attempt.id === chat.attemptId),
         );
@@ -230,8 +230,9 @@ export default function Reports() {
 
         return {
           id: ta.id,
-          name: ta.name,
-          username: ta.username,
+          firstName: ta.firstName,
+          lastName: ta.lastName,
+          username: ta.email,
           avgScore,
           completedSessions,
           totalSessions,
@@ -239,7 +240,7 @@ export default function Reports() {
             totalSessions > 0
               ? Math.round((completedSessions / totalSessions) * 100)
               : 0,
-          initials: ta.name
+          initials: ta.firstName + " " + ta.lastName
             .split(" ")
             .map((n) => n[0])
             .join("")
@@ -258,7 +259,7 @@ export default function Reports() {
     return {
       taPerformance,
     };
-  }, [users, chats, grades, feedbacks, standards, standardGroups, attempts, rubrics]);
+  }, [profiles, chats, grades, feedbacks, standards, standardGroups, attempts, rubrics]);
 
   // Sort, filter, and search TAs
   const sortedFilteredAndSearchedTAs = useMemo(() => {
@@ -270,7 +271,8 @@ export default function Reports() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(ta => 
-        ta.name.toLowerCase().includes(query) || 
+        ta.firstName.toLowerCase().includes(query) || 
+        ta.lastName.toLowerCase().includes(query) || 
         ta.username.toLowerCase().includes(query)
       );
     }
@@ -295,10 +297,10 @@ export default function Reports() {
         filtered.sort((a, b) => a.avgScore - b.avgScore);
         break;
       case "name-asc":
-        filtered.sort((a, b) => a.name.localeCompare(b.name));
+        filtered.sort((a, b) => a.firstName.localeCompare(b.firstName));
         break;
       case "name-desc":
-        filtered.sort((a, b) => b.name.localeCompare(a.name));
+        filtered.sort((a, b) => b.firstName.localeCompare(a.firstName));
         break;
       case "sessions-desc":
         filtered.sort((a, b) => b.totalSessions - a.totalSessions);
@@ -361,7 +363,7 @@ export default function Reports() {
 
   // Loading state
   if (
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||
@@ -450,7 +452,7 @@ export default function Reports() {
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{ta.name}</h3>
+                        <h3 className="font-semibold text-lg">{ta.firstName} {ta.lastName}</h3>
                         {ta.isStruggling && (
                           <AlertTriangle className="h-5 w-5 text-orange-500" />
                         )}
@@ -550,7 +552,7 @@ export default function Reports() {
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>
-                              Support Recommendations for {ta.name}
+                              Support Recommendations for {ta.firstName} {ta.lastName}
                             </DialogTitle>
                           </DialogHeader>
                           <div className="space-y-6">
@@ -699,7 +701,8 @@ export default function Reports() {
 interface ReportDownloadDialogProps {
   ta: {
     id: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     username: string;
   };
   onDownload: (options: ReportOptions) => void;
@@ -729,7 +732,7 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Download Report for {ta.name}</DialogTitle>
+          <DialogTitle>Download Report for {ta.firstName} {ta.lastName}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">

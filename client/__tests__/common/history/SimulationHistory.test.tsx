@@ -18,7 +18,7 @@ vi.mock("@/components/common/history/columns", () => ({
       { id: "1", title: "Test Chat 1", score: 85, createdAt: "2024-01-01" },
       { id: "2", title: "Test Chat 2", score: 78, createdAt: "2024-01-02" },
     ],
-    userOptions: [
+    profileOptions: [
       { value: "1", label: "Test User 1" },
       { value: "2", label: "Test User 2" },
     ],
@@ -158,7 +158,7 @@ describe("SimulationHistory", () => {
       mockUseColumns.mockReturnValueOnce({
         columns: [],
         data: [],
-        userOptions: [],
+        profileOptions: [],
         classOptions: [],
         agentTypes: [],
         skillCategories: {},
@@ -181,7 +181,7 @@ describe("SimulationHistory", () => {
       mockUseColumns.mockReturnValueOnce({
         columns: [],
         data: [],
-        userOptions: [],
+        profileOptions: [],
         classOptions: [],
         agentTypes: [],
         skillCategories: {},
@@ -210,7 +210,7 @@ describe("SimulationHistory", () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: useColumns, userOptions
+ * - Uses hooks: useColumns, profileOptions
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

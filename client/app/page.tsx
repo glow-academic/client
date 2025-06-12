@@ -7,46 +7,44 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/utils/auth/login";
+import { signIn } from "next-auth/react"
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loadingGuest, setLoadingGuest] = useState(false);
+  const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (admin: boolean) => {
-    setLoading(true);
+  const handleMicrosoftLogin = async () => {
     try {
-      // Clear any guest mode before attempting login
+      setLoadingMicrosoft(true);
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
-      
-      const { success, error } = await login(username, password, admin);
-      if (success) {
-        // Both admin and regular users go to the dashboard home page
-        if (admin) {
-          router.push("/analytics");
-        } else {
-          router.push("/home");
-        }
-      } else {
-        setError(error || "An error occurred during login");
-        throw new Error(error);
-      }
+      await signIn("microsoft-entra-id");
     } catch (error) {
       console.error("Error logging in:", error);
+      setError("An error occurred during login: " + (error as Error).message);
     } finally {
-      setLoading(false);
+      setLoadingMicrosoft(false);
     }
   };
 
   const handleGuestAccess = () => {
+    try {
     // Set guest mode in localStorage and redirect
-    localStorage.setItem("guestMode", "true");
-    localStorage.setItem("simulatedRole", "guest");
-    router.push("/home");
+      setLoadingGuest(true);
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedRole");
+      localStorage.setItem("guestMode", "true");
+      localStorage.setItem("simulatedRole", "guest");
+      router.push("/home");
+    } catch (error) {
+      console.error("Error logging in:", error);
+      setError("An error occurred during login: " + (error as Error).message);
+    } finally {
+      setLoadingGuest(false);
+    }
   };
 
   return (
@@ -66,83 +64,36 @@ export default function Home() {
             </div>
           )}
 
-          <div>
-            <label
-              htmlFor="username"
-              className="block text-sm font-medium text-foreground"
-            >
-              Username
-            </label>
-            <input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="password"
-              className="block text-sm font-medium text-foreground"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
 
           <div className="space-y-3">
-            {loading ? (
-              <div className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary text-center">
-                Logging in...
+              <Button
+                type="button"
+                onClick={handleMicrosoftLogin}
+                className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
+                disabled={loadingMicrosoft}
+              >
+                Continue with Microsoft
+              </Button>
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Or
+                  </span>
+                </div>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    onClick={() => handleLogin(false)}
-                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90"
-                  >
-                    Login
-                  </button>
 
-                  <button
-                    type="button"
-                    onClick={() => handleLogin(true)}
-                    className="py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-secondary-foreground bg-secondary hover:bg-secondary/90"
-                  >
-                    Admin
-                  </button>
-                </div>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                      Or
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleGuestAccess}
-                  className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
-                >
-                  Continue as Guest
-                </button>
-              </>
-            )}
+              <Button
+                type="button"
+                onClick={handleGuestAccess}
+                className="w-full py-2 px-4 border border-input rounded-md shadow-sm text-sm font-medium text-foreground bg-background hover:bg-accent"
+                disabled={loadingGuest}
+              >
+                Continue as Guest
+              </Button>
           </div>
         </form>
       </div>

@@ -64,14 +64,14 @@ const MAX_ROWS_WITHOUT_CONFIRM = 100;
 
 interface ExportButtonProps<TData> {
   table: Table<TData>;
-  userOptions: { value: string; label: string }[];
+  profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   viewMode?: "chats" | "attempts";
 }
 
 export function ExportButton<TData>({
   table,
-  userOptions,
+  profileOptions,
   classOptions,
   viewMode = "chats",
 }: ExportButtonProps<TData>) {
@@ -159,11 +159,11 @@ export function ExportButton<TData>({
               return `"${Number(cellValue).toFixed(1)}"`;
             }
 
-            if (column.id === "userId" && cellValue) {
-              const userOption = userOptions.find(
-                (user) => user.value === cellValue,
+            if (column.id === "profileId" && cellValue) {
+              const profileOption = profileOptions.find(
+                (profile) => profile.value === cellValue,
               );
-              return userOption ? `"${userOption.label}"` : `"${cellValue}"`;
+              return profileOption ? `"${profileOption.label}"` : `"${cellValue}"`;
             }
 
             // Handle string values that might contain commas

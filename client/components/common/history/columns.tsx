@@ -8,27 +8,28 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { Badge } from "../../ui/badge";
 import { getAgentConfig } from "@/utils/agents";
-import { useAuth } from "@/hooks/use-auth";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import {
   Agent,
   Class,
-  User,
   SimulationChat,
   SimulationAttempt,
   SimulationChatGrade,
   SimulationChatFeedback,
+  Profile,
 } from "@/types";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { useSession } from "next-auth/react";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -41,7 +42,7 @@ interface EnhancedAttempt extends SimulationAttempt {
 interface EnhancedChat extends SimulationChat {
   grades: SimulationChatGrade[];
   feedbacks: SimulationChatFeedback[];
-  userId?: string;
+  profileId?: string;
   classId?: string;
 }
 
@@ -55,11 +56,19 @@ export function useColumns({
   showAll?: boolean;
   showExport?: boolean;
 }) {
-  const { userId } = useAuth();
+  const session = useSession();
+  const userId = parseInt(session.data?.user?.id!);
 
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(userId!),
+    select: (data) => data[0],
+    enabled: !!userId,
+  });
+
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   const { data: classes, isLoading: isLoadingClasses } = useQuery({
@@ -99,9 +108,9 @@ export function useColumns({
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
-    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
-    enabled: !!users && users.length > 0,
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -138,14 +147,14 @@ export function useColumns({
   }, [agents]);
 
   // Create user options for GTA names
-  const userOptions = useMemo(() => {
-    if (!users) return [];
-    return users.map((user: User) => ({
-      value: user.id,
-      label: user.name,
+  const profileOptions = useMemo(() => {
+    if (!profiles) return [];
+    return profiles.map((profile: Profile) => ({
+      value: profile.id,
+      label: profile.firstName + " " + profile.lastName,
       icon: null,
     }));
-  }, [users]);
+  }, [profiles]);
 
   // Create class options
   const classOptions = useMemo(() => {
@@ -244,7 +253,7 @@ export function useColumns({
         grades: chatGrades,
         feedbacks: chatFeedbacks,
         // Add user and class information from the associated attempt
-        userId: associatedAttempt?.userId || undefined,
+        profileId: associatedAttempt?.profileId || undefined,
         classId: associatedAttempt?.classId || undefined,
       };
     });
@@ -373,7 +382,7 @@ export function useColumns({
         ...(showAll
           ? [
               {
-                accessorKey: "userId",
+                accessorKey: "profileId",
                 header: ({ column }: any) => (
                   <DataTableColumnHeader
                     column={column}
@@ -382,11 +391,11 @@ export function useColumns({
                   />
                 ),
                 cell: ({ row }: any) => {
-                  const userOption = userOptions.find(
-                    (user) => user.value === row.getValue("userId"),
+                  const profileOption = profileOptions.find(
+                    (profile) => profile.value === row.getValue("profileId"),
                   );
 
-                  if (!userOption) {
+                  if (!profileOption) {
                     return (
                       <span className="text-muted-foreground">
                         Unknown User
@@ -396,7 +405,7 @@ export function useColumns({
 
                   return (
                     <div className="flex items-center">
-                      <span>{userOption.label}</span>
+                      <span>{profileOption.label}</span>
                     </div>
                   );
                 },
@@ -637,7 +646,7 @@ export function useColumns({
                 id={attempt.id}
                 completed={isAttemptCompleted}
                 showChats={showChats}
-                isOwnUser={attempt.userId === userId}
+                isOwnUser={attempt.profileId === profile?.id}
               />
             );
           },
@@ -739,11 +748,11 @@ export function useColumns({
                 />
               ),
               cell: ({ row }: any) => {
-                const userOption = userOptions.find(
-                  (user) => user.value === row.getValue("userId"),
+                const profileOption = profileOptions.find(
+                  (profile) => profile.value === row.getValue("profileId"),
                 );
 
-                if (!userOption) {
+                if (!profileOption) {
                   return (
                     <span className="text-muted-foreground">Unknown User</span>
                   );
@@ -751,7 +760,7 @@ export function useColumns({
 
                 return (
                   <div className="flex items-center">
-                    <span>{userOption.label}</span>
+                    <span>{profileOption.label}</span>
                   </div>
                 );
               },
@@ -957,7 +966,7 @@ export function useColumns({
               id={chat.id}
               completed={chat.completed}
               showChats={showChats}
-              isOwnUser={chat.userId === userId}
+              isOwnUser={chat.profileId === profile?.id}
             />
           );
         },
@@ -965,7 +974,7 @@ export function useColumns({
     ];
 
     return baseColumns;
-  }, [userOptions, classOptions, showChats, showAll, showExport, grades, validStandardGroups, validStandards, userId]);
+  }, [profileOptions, classOptions, showChats, showAll, showExport, grades, validStandardGroups, validStandards, userId]);
 
   // Determine which data to return based on view mode
   // showChats=true means show individual chats, showChats=false means show attempts/simulations
@@ -995,7 +1004,7 @@ export function useColumns({
   // If showAll is true, don't filter - show all data
 
   const isLoading =
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingAttempts ||
     isLoadingAgents ||
     isLoadingChats ||
@@ -1010,7 +1019,7 @@ export function useColumns({
     columns,
     isLoading,
     data: data,
-    userOptions,
+    profileOptions,
     classOptions,
     agentTypes,
     skillCategories,

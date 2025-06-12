@@ -14,7 +14,7 @@ import { DataTableFacetedFilter } from "@/components/common/history/data-table-f
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>;
-  userOptions: { value: string; label: string }[];
+  profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
@@ -26,7 +26,7 @@ interface DataTableToolbarProps<TData> {
 
 export function DataTableToolbar<TData>({
   table,
-  userOptions,
+  profileOptions,
   classOptions,
   isAdmin = false,
   dateRange,
@@ -69,11 +69,11 @@ export function DataTableToolbar<TData>({
           )} */}
           {/* Name filter - show for all users in chat mode, and for attempts mode */}
           {(viewMode === "chats" || viewMode === "attempts") &&
-            table.getColumn("userId") && (
+            table.getColumn("profileId") && (
               <DataTableFacetedFilter
-                column={table.getColumn("userId")}
+                column={table.getColumn("profileId")}
                 title="Name"
-                options={userOptions}
+                options={profileOptions}
               />
             )}
           {table.getColumn(viewMode === "chats" ? "classId" : "classCode") && (
@@ -118,7 +118,7 @@ export function DataTableToolbar<TData>({
           {showExport && (
             <ExportButton
               table={table}
-              userOptions={userOptions}
+              profileOptions={profileOptions}
               classOptions={classOptions}
               viewMode={viewMode}
             />

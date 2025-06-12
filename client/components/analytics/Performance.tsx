@@ -51,17 +51,17 @@ import {
 } from "recharts";
 import { format, subDays, isAfter, startOfDay } from "date-fns";
 import { getAgentConfig } from "@/utils/agents";
-import { getAllUsers } from "@/utils/queries/users/get-all-users";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 // Color palette for charts
 const COLORS = {
@@ -81,9 +81,9 @@ export default function Performance() {
   const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">("30d");
 
   // Fetch data
-  const { data: users, isLoading: isLoadingUsers } = useQuery({
-    queryKey: ["users"],
-    queryFn: () => getAllUsers(),
+  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -132,9 +132,9 @@ export default function Performance() {
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", users?.map((user) => user.id)],
-    queryFn: () => getSimulationAttemptsByUsers(users!.map((user) => user.id)),
-    enabled: !!users && users.length > 0,
+    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    enabled: !!profiles && profiles.length > 0,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -163,7 +163,7 @@ export default function Performance() {
   // Calculate analytics
   const analytics = useMemo(() => {
     if (
-      !users ||
+      !profiles ||
       !chats ||
       !grades ||
       !feedbacks ||
@@ -174,7 +174,7 @@ export default function Performance() {
     )
       return null;
 
-    const tas = users.filter((user) => user.role === "ta");
+    const tas = profiles.filter((profile) => profile.role === "ta");
 
     // Filter data by selected rubric if not "all"
     const filteredStandardGroups =
@@ -308,7 +308,7 @@ export default function Performance() {
     const taPerformance = tas
       .map((ta) => {
         const taAttempts =
-          attempts?.filter((attempt) => attempt.userId === ta.id) || [];
+          attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
         const taChats = chats.filter((chat) =>
           taAttempts.some((attempt) => attempt.id === chat.attemptId),
         );
@@ -330,8 +330,8 @@ export default function Performance() {
 
         return {
           id: ta.id,
-          name: ta.name,
-          username: ta.username,
+          name: ta.firstName + " " + ta.lastName,
+          username: ta.email,
           avgScore,
           completedSessions,
           totalSessions,
@@ -339,7 +339,7 @@ export default function Performance() {
             totalSessions > 0
               ? Math.round((completedSessions / totalSessions) * 100)
               : 0,
-          initials: ta.name
+          initials: ta.firstName.charAt(0) + ta.lastName.charAt(0)
             .split(" ")
             .map((n) => n[0])
             .join("")
@@ -416,7 +416,7 @@ export default function Performance() {
       lastWeekAvg,
     };
   }, [
-    users,
+    profiles,
     chats,
     grades,
     feedbacks,
@@ -432,7 +432,7 @@ export default function Performance() {
 
   // Loading state
   if (
-    isLoadingUsers ||
+    isLoadingProfiles ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||

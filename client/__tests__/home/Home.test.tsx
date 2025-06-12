@@ -114,8 +114,6 @@ vi.mock('@/utils/agents', () => ({
 
 // Import mocked functions
 import { useRole } from '@/contexts/role-context';
-import { useAuth } from '@/hooks/use-auth';
-import { getUser } from '@/utils/queries/users/get-user';
 import { getAllClasses } from '@/utils/queries/classes/get-all-classes';
 import { getAllSimulations } from '@/utils/queries/simulations/get-all-simulations';
 import { getAllScenarios } from '@/utils/queries/scenarios/get-all-scenarios';
@@ -123,7 +121,6 @@ import { getAllAgents } from '@/utils/queries/agents/get-all-agents';
 import { getAllRubrics } from '@/utils/queries/rubrics/get-all-rubrics';
 import { getStandardGroupsByRubrics } from '@/utils/queries/standard_groups/get-standard-groups-by-rubrics';
 import { getStandardsByStandardGroups } from '@/utils/queries/standards/get-standards-by-standardgroups';
-import { getSimulationAttemptsByUsers } from '@/utils/queries/simulation_attempts/get-simulation-attempts-by-users';
 import { getSimulationChatsByAttempts } from '@/utils/queries/simulation_chats/get-simulation-chats-by-attempts';
 import { getSimulationChatGradesBySimulationChats } from '@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats';
 import { getSimulationChatFeedbacksBySimulationChatGrades } from '@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades';
@@ -195,8 +192,6 @@ describe('Home', () => {
     
     (useRouter as any).mockReturnValue(mockRouter);
     (useRole as any).mockReturnValue({ effectiveRole: 'student' });
-    (useAuth as any).mockReturnValue({ userId: 'user-1' });
-    (getUser as any).mockResolvedValue(mockUser);
     (getAllClasses as any).mockResolvedValue(mockClasses);
     (getAllSimulations as any).mockResolvedValue(mockAllSimulations);
     (getAllScenarios as any).mockResolvedValue(mockScenarios);
@@ -204,7 +199,6 @@ describe('Home', () => {
     (getAllRubrics as any).mockResolvedValue([]);
     (getStandardGroupsByRubrics as any).mockResolvedValue([]);
     (getStandardsByStandardGroups as any).mockResolvedValue([]);
-    (getSimulationAttemptsByUsers as any).mockResolvedValue([]);
     (getSimulationChatsByAttempts as any).mockResolvedValue([]);
     (getSimulationChatGradesBySimulationChats as any).mockResolvedValue([]);
     (getSimulationChatFeedbacksBySimulationChatGrades as any).mockResolvedValue([]);
@@ -373,7 +367,6 @@ describe('Home', () => {
       renderWithProviders(<Home />);
       
       await waitFor(() => {
-        expect(getUser).toHaveBeenCalledWith('user-1');
         expect(getAllClasses).toHaveBeenCalled();
         expect(getAllSimulations).toHaveBeenCalled();
         expect(getAllScenarios).toHaveBeenCalled();
@@ -390,15 +383,6 @@ describe('Home', () => {
       await waitFor(() => {
         expect(getAllSimulations).toHaveBeenCalled();
       });
-    });
-
-    it('should handle missing user data', async () => {
-      (useAuth as any).mockReturnValue({ userId: null });
-      
-      renderWithProviders(<Home />);
-      
-      // Should not call getUser when userId is null
-      expect(getUser).not.toHaveBeenCalled();
     });
 
     it('should filter out RAY placeholder values', async () => {

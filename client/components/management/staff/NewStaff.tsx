@@ -31,13 +31,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-type UserRole = "instructional" | "instructor" | "ta";
+type ProfileRole = "instructional" | "instructor" | "ta";
 
 interface CSVUser {
   name: string;
   username: string;
   password: string;
-  role: UserRole;
+  role: ProfileRole;
   classIds: string[];
 }
 
@@ -86,7 +86,7 @@ export default function NewStaff() {
     name: "",
     username: "",
     password: "",
-    role: "" as UserRole | "",
+    role: "" as ProfileRole | "",
     classIds: [] as string[],
   });
   const [csvFile, setCsvFile] = React.useState<File | null>(null);
@@ -96,16 +96,16 @@ export default function NewStaff() {
   // All roles are available since only admins access this screen
   const availableRoles = [
     {
-      value: "instructional" as UserRole,
+      value: "instructional" as ProfileRole,
       label: "Instructional Staff",
       icon: Shield,
     },
     {
-      value: "instructor" as UserRole,
+      value: "instructor" as ProfileRole,
       label: "Instructor",
       icon: GraduationCap,
     },
-    { value: "ta" as UserRole, label: "Teaching Assistant", icon: User },
+    { value: "ta" as ProfileRole, label: "Teaching Assistant", icon: User },
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -150,7 +150,7 @@ export default function NewStaff() {
         .slice(1)
         .map((line) => {
           const values = line.split(",").map((v) => v.trim());
-          const role = values[3] as UserRole;
+          const role = values[3] as ProfileRole;
 
           return {
             name: values[0] || "",
@@ -240,7 +240,7 @@ export default function NewStaff() {
               <Label htmlFor="role">Role</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value: UserRole) =>
+                onValueChange={(value: ProfileRole) =>
                   handleInputChange("role", value)
                 }
               >

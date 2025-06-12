@@ -42,13 +42,10 @@ import {
 import { getAgentConfig } from "@/utils/agents";
 import { useRole } from "@/contexts/role-context";
 import SimulationHistory from "../common/history/SimulationHistory";
-import { useAuth } from "@/hooks/use-auth";
-import { getUser } from "@/utils/queries/users/get-user";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getSimulationAttemptsByUsers } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
@@ -56,6 +53,9 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { Agent, Scenario, Simulation } from "@/types";
+import { useSession } from "next-auth/react";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 // Type for attempt data
 interface AttemptData {
@@ -581,11 +581,13 @@ export default function Home() {
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
 
-  const { userId } = useAuth();
+  const session = useSession();
+  const userId = session.data?.user?.id;
 
-  const { data: user } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(userId!),
+    select: (data) => data[0],
     enabled: !!userId,
   });
 
@@ -631,9 +633,9 @@ export default function Home() {
   });
 
   const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", userId],
-    queryFn: () => getSimulationAttemptsByUsers([userId!]),
-    enabled: !!userId && effectiveRole !== "guest",
+    queryKey: ["simulationAttempts", profile?.id],
+    queryFn: () => getSimulationAttemptsByProfiles([profile!.id]),
+    enabled: !!profile?.id && effectiveRole !== "guest",
   });
 
   const { data: chats } = useQuery({
@@ -673,8 +675,8 @@ export default function Home() {
       const availableClasses =
         effectiveRole === "guest"
           ? classes
-          : user?.classIds?.length || 0 > 0
-            ? classes.filter((c) => user?.classIds.includes(c.id))
+          : profile?.classIds?.length || 0 > 0
+            ? classes.filter((c) => profile?.classIds.includes(c.id))
             : classes;
 
       const classId =
@@ -688,10 +690,10 @@ export default function Home() {
       formData.append("simulation_id", simulationId);
 
       // Handle user_id for guest mode
-      if (effectiveRole === "guest" || !user) {
+      if (effectiveRole === "guest" || !profile) {
         // pass
       } else {
-        formData.append("user_id", user.id);
+        formData.append("user_id", profile.id);
       }
 
       formData.append("class_id", classId);
@@ -724,7 +726,7 @@ export default function Home() {
     } finally {
       setLoadingSimulation(null);
     }
-  }, [classes, effectiveRole, user, router]);
+  }, [classes, effectiveRole, profile, router]);
 
   // Separate simulations into solo and multi based on interaction count
   const soloSimulations = useMemo(() =>

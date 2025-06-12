@@ -140,6 +140,7 @@ describe("Rubrics", () => {
           points: 100,
           passPoints: 70,
           createdAt: "2023-01-01",
+          rubricType: "simulation",
         },
       ]);
 
@@ -165,6 +166,7 @@ describe("Rubrics", () => {
           points: 100,
           passPoints: 70,
           createdAt: "2023-01-01",
+          rubricType: "simulation",
         },
       ]);
 
@@ -248,6 +250,7 @@ describe("Rubrics", () => {
           points: 100,
           passPoints: 70,
           createdAt: "2023-01-01",
+          rubricType: "simulation",
         },
       ]);
 
@@ -272,6 +275,7 @@ describe("Rubrics", () => {
           points: 100,
           passPoints: 85,
           createdAt: "2023-01-01",
+          rubricType: "simulation",
         },
       ]);
 
@@ -303,6 +307,7 @@ describe("Rubrics", () => {
           points: 0,
           passPoints: 0,
           createdAt: "2023-01-01",
+          rubricType: "simulation",
         },
       ]);
 

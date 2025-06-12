@@ -26,16 +26,16 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getUser } from "@/utils/queries/users/get-user";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { useAuth } from "@/hooks/use-auth";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationAttemptsByUser } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-user";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { useSession } from "next-auth/react";
+import { getSimulationAttemptsByProfile } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile";
 
 const chartConfig = {
   score: {
@@ -61,11 +61,13 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Growth() {
-  const { userId } = useAuth();
-  // Fetch current user
-  const { data: user } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => getUser(userId!),
+  const session = useSession();
+  const userId = session.data?.user?.id;
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(userId!),
+    select: (data) => data[0],
     enabled: !!userId,
   });
 
@@ -96,9 +98,9 @@ export default function Growth() {
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", userId],
-    queryFn: () => getSimulationAttemptsByUser(userId!),
-    enabled: !!userId,
+    queryKey: ["simulationAttempts", profile?.id],
+    queryFn: () => getSimulationAttemptsByProfile(profile!.id),
+    enabled: !!profile?.id,
   });
 
   const { data: chats, isLoading: isLoadingChats } = useQuery({
@@ -126,7 +128,7 @@ export default function Growth() {
 
   // Calculate growth metrics for the current user
   const growthData = useMemo(() => {
-    if (!grades || !feedbacks || !standards || !standardGroups || !user)
+    if (!grades || !feedbacks || !standards || !standardGroups || !profile)
       return [];
 
     // For TAs, show only their own performance
@@ -204,7 +206,7 @@ export default function Growth() {
         fullMark: 100,
       },
     ];
-  }, [grades, feedbacks, standards, standardGroups, user, chats]);
+  }, [grades, feedbacks, standards, standardGroups, profile, chats]);
 
   // Calculate growth trend based on grades over time
   const growthTrend = useMemo(() => {
