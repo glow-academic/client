@@ -56,6 +56,8 @@ import { Agent, Scenario, Simulation } from "@/types";
 import { useSession } from "next-auth/react";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 // Type for attempt data
 interface AttemptData {
@@ -582,13 +584,18 @@ export default function Home() {
   const { effectiveRole } = useRole();
 
   const session = useSession();
-  const userId = session.data?.user?.id;
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(userId!),
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
-    enabled: !!userId,
+    enabled: !!user,
   });
 
   // Fetch classes and simulations

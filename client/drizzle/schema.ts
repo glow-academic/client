@@ -1,4 +1,4 @@
-import { pgTable, text, uuid, timestamp, integer, foreignKey, boolean, varchar, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, timestamp, integer, foreignKey, boolean, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const agentType = pgEnum("agent_type", ['student', 'ta'])
@@ -11,7 +11,7 @@ export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomor
 
 
 export const users = pgTable("users", {
-	id: text().primaryKey().notNull(),
+	id: uuid().primaryKey().notNull(),
 	email: text().notNull(),
 });
 
@@ -42,10 +42,10 @@ export const topics = pgTable("topics", {
 
 export const profiles = pgTable("profiles", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	userId: text("user_id").notNull(),
-	firstName: varchar("first_name", { length: 255 }).notNull(),
-	lastName: varchar("last_name", { length: 255 }).notNull(),
-	email: varchar({ length: 255 }).notNull(),
+	userId: uuid("user_id").notNull(),
+	firstName: text("first_name").notNull(),
+	lastName: text("last_name").notNull(),
+	alias: text().notNull(),
 	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	role: profileRole().default('ta').notNull(),

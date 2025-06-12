@@ -331,7 +331,7 @@ export default function Performance() {
         return {
           id: ta.id,
           name: ta.firstName + " " + ta.lastName,
-          username: ta.email,
+          username: ta.alias,
           avgScore,
           completedSessions,
           totalSessions,

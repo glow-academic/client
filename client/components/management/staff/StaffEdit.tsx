@@ -119,7 +119,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     if (targetUser) {
       setFormData({
         name: targetUser.firstName + " " + targetUser.lastName,
-        username: targetUser.email,
+        username: targetUser.alias,
         password: "",
         classIds: targetUser.classIds || [],
       });
@@ -360,7 +360,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
-                    {targetUser.firstName + " " + targetUser.lastName} ({targetUser.email}). This action
+                    {targetUser.firstName + " " + targetUser.lastName} ({targetUser.alias}@purdue.edu). This action
                     cannot be undone and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>

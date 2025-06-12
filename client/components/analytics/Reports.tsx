@@ -232,7 +232,7 @@ export default function Reports() {
           id: ta.id,
           firstName: ta.firstName,
           lastName: ta.lastName,
-          username: ta.email,
+          username: ta.alias,
           avgScore,
           completedSessions,
           totalSessions,

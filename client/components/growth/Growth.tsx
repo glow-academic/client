@@ -36,6 +36,8 @@ import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/querie
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
 import { getSimulationAttemptsByProfile } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile";
+import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 const chartConfig = {
   score: {
@@ -62,13 +64,18 @@ const chartConfig = {
 
 export default function Growth() {
   const session = useSession();
-  const userId = session.data?.user?.id;
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(userId!),
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
-    enabled: !!userId,
+    enabled: !!user,
   });
 
   const { data: agents, isLoading: isLoadingAgents } = useQuery({
@@ -362,12 +369,12 @@ export default function Growth() {
             <div className="flex items-center">
               <div
                 className={`text-2xl font-bold ${(growthData.find((d) => d.metric === "Overall Score")
-                    ?.value ?? 0) >= 80
-                    ? "text-green-600"
-                    : (growthData.find((d) => d.metric === "Overall Score")
-                      ?.value ?? 0) >= 60
-                      ? "text-amber-600"
-                      : "text-red-600"
+                  ?.value ?? 0) >= 80
+                  ? "text-green-600"
+                  : (growthData.find((d) => d.metric === "Overall Score")
+                    ?.value ?? 0) >= 60
+                    ? "text-amber-600"
+                    : "text-red-600"
                   }`}
               >
                 {growthData.find((d) => d.metric === "Overall Score")?.value ??

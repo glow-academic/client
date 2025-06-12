@@ -20,6 +20,9 @@ export default function Home() {
   const handleMicrosoftLogin = async () => {
     try {
       setLoadingMicrosoft(true);
+      // Clear guest mode and simulated role from localStorage
+      localStorage.removeItem("guestMode");
+      localStorage.removeItem("simulatedRole");
       await signIn("microsoft-entra-id", {redirectTo: "/home"});
     } catch (error) {
       console.error("Error logging in:", error);

@@ -119,7 +119,7 @@ export default function Staff() {
         (profile: Profile) =>
           profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           profile.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          profile.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          profile.alias.toLowerCase().includes(searchTerm.toLowerCase()) ||
           profile.role.toLowerCase().includes(searchTerm.toLowerCase()),
       );
     }
@@ -132,7 +132,7 @@ export default function Staff() {
         case "role":
           return a.role.localeCompare(b.role);
         case "email":
-          return a.email.localeCompare(b.email);
+          return a.alias.localeCompare(b.alias);
         case "classes":
           return (b.classIds?.length || 0) - (a.classIds?.length || 0);
         default:
@@ -305,7 +305,7 @@ export default function Staff() {
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{profile.email}</TableCell>
+                    <TableCell className="text-sm">{profile.alias}@purdue.edu</TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       {profile.classIds?.length || 0} classes
                     </TableCell>

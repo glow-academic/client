@@ -59,6 +59,8 @@ import { Label } from "@/components/ui/label";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
+import { getAllUsers } from "@/utils/queries/users/get-all-users";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -137,13 +139,18 @@ export function UnifiedSidebar({
   // Use the role context instead of local state
   const { effectiveRole, setRole } = useRole();
   const session = useSession();
-  const userId = session.data?.user?.id;
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(userId!),
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
-    enabled: !!userId,
+    enabled: !!user,
   });
 
   // Fetch classes for dynamic menu
@@ -398,9 +405,7 @@ export function UnifiedSidebar({
           localStorage.removeItem("guestAttemptIds");
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
-
-          await signOut();
-          router.push("/");
+          await signOut({redirectTo: "/"});
           return "Logged out successfully";
         } catch (error) {
           console.error("Error logging out:", error);
@@ -578,7 +583,7 @@ export function UnifiedSidebar({
                     <span className="truncate text-xs">
                       {effectiveRole === "guest" || !profile
                         ? "Not logged in"
-                        : `${profile?.email}`}
+                        : `${profile?.alias}@purdue.edu`}
                     </span>
                   </div>
                   <ChevronRight className="ml-auto size-4" />
@@ -608,7 +613,7 @@ export function UnifiedSidebar({
                       <span className="truncate text-xs">
                         {effectiveRole === "guest" || !profile
                           ? "Not logged in"
-                          : `${profile?.email}`}
+                          : `${profile?.alias}@purdue.edu`}
                       </span>
                     </div>
                   </div>

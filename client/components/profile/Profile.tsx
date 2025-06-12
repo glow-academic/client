@@ -23,6 +23,7 @@ import { Separator } from "@/components/ui/separator";
 import { Class, ProfileRole } from "@/types";
 import { useSession } from "next-auth/react";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -73,13 +74,18 @@ interface ProfileProps {
 
 export function Profile({ className }: ProfileProps) {
   const session = useSession();
-  const userId = session.data?.user?.id;
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+  });
 
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(userId!),
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
-    enabled: !!userId,
+    enabled: !!user,
   });
 
   // Fetch classes for assigned courses
@@ -140,7 +146,7 @@ export function Profile({ className }: ProfileProps) {
                 <CardTitle className="text-2xl">{profile.firstName + " " + profile.lastName}</CardTitle>
                 <CardDescription className="flex items-center gap-2 mt-1">
                   <Mail className="h-4 w-4" />
-                  {profile.email}
+                  {profile.alias}@purdue.edu
                 </CardDescription>
               </div>
             </div>
