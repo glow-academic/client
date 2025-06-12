@@ -88,9 +88,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [showGrades, setShowGrades] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<Set<string>>(new Set());
+  const [runStatus, setRunStatus] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Fetch eval run data
   const {
@@ -113,7 +115,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     enabled: !!evalRun?.evalId,
   });
 
-  // Fetch chats for this eval run
+  // Fetch chats for this eval run with polling when running
   const { 
     data: chats, 
     isLoading: isLoadingChats 
@@ -121,7 +123,51 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     queryKey: ["evalChats", evalRun?.id],
     queryFn: () => getEvalChatsByEvalRun(evalRun!.id),
     enabled: !!evalRun?.id,
+    refetchInterval: isRunningEval ? 2000 : false, // Poll every 2 seconds when running
   });
+
+  // Poll for run status when evaluation is running
+  useEffect(() => {
+    if (isRunningEval && evalRun?.id) {
+      const pollStatus = async () => {
+        try {
+          const response = await fetch(`/api/evals/run/${evalRun.id}/status`);
+          if (response.ok) {
+            const status = await response.json();
+            setRunStatus(status);
+            
+            // Check if all chats are completed
+            if (status.completed_chats === status.total_chats && status.total_chats > 0) {
+              setIsRunningEval(false);
+              setAiConversationComplete(true);
+              toast.success("All evaluations completed!");
+            }
+          }
+        } catch (error) {
+          console.error("Error polling status:", error);
+        }
+      };
+
+      // Poll immediately and then every 3 seconds
+      pollStatus();
+      pollingIntervalRef.current = setInterval(pollStatus, 3000);
+
+      return () => {
+        if (pollingIntervalRef.current) {
+          clearInterval(pollingIntervalRef.current);
+        }
+      };
+    }
+  }, [isRunningEval, evalRun?.id]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   // Determine current chat based on index
   const currentChat = useMemo(() => {
@@ -133,11 +179,12 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     return chat || chats[0];
   }, [chats, evaluation?.scenarioIds, currentChatIndex]);
 
-  // Fetch messages for current chat
+  // Fetch messages for current chat with polling when running
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["evalMessages", currentChat?.id],
     queryFn: () => getEvalMessagesByChat(currentChat!.id),
     enabled: !!currentChat?.id,
+    refetchInterval: isRunningEval ? 1000 : false, // Poll every second when running
   });
 
   // Fetch scenario for current chat
@@ -439,6 +486,87 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       ))}
     </div>
   );
+
+  // Function to start evaluation run
+  const startEvaluationRun = async () => {
+    if (!evalRun?.id) return;
+
+    setIsRunningEval(true);
+    setAiConversationData([]);
+    setAiConversationComplete(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('eval_run_id', evalRun.id);
+
+      const response = await fetch('/api/evals/run', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body reader available');
+      }
+
+      toast.success("Evaluation started successfully");
+
+      // Process the streaming response
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.done) {
+                setIsRunningEval(false);
+                setAiConversationComplete(true);
+                toast.success("Evaluation completed successfully");
+                // Invalidate queries to refresh data
+                queryClient.invalidateQueries({ queryKey: ["evalChats"] });
+                queryClient.invalidateQueries({ queryKey: ["evalMessages"] });
+                break;
+              }
+              
+              if (data.type === 'error') {
+                toast.error(`Error: ${data.error}`);
+                setIsRunningEval(false);
+                break;
+              }
+              
+              // Add streaming data to conversation
+              setAiConversationData(prev => [...prev, {
+                type: data.type,
+                message: data.message || data.token || '',
+                chat_id: data.chat_id,
+                chat_index: data.chat_index,
+                timestamp: new Date().toISOString(),
+                ...data
+              }]);
+              
+            } catch (parseError) {
+              console.error('Error parsing SSE data:', parseError);
+            }
+          }
+        }
+      }
+
+    } catch (error) {
+      console.error('Error running evaluation:', error);
+      toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      setIsRunningEval(false);
+    }
+  };
 
   // Check if we have loading state
   if (isLoadingEvalRun || isLoadingEvaluation || isLoadingChats) {
@@ -769,17 +897,46 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
           <CardFooter className="flex-shrink-0 p-4 border-t">
             <div className="w-full flex justify-between items-center">
-              <div>
-                <Switch 
-                  id="show-grades" 
-                  checked={showGrades} 
-                  onCheckedChange={setShowGrades} 
-                  className="mr-2"
-                />
-                <Label htmlFor="show-grades" className="text-sm">
-                  Show Rubric
-                </Label>
+              <div className="flex items-center gap-4">
+                <div>
+                  <Switch 
+                    id="show-grades" 
+                    checked={showGrades} 
+                    onCheckedChange={setShowGrades} 
+                    className="mr-2"
+                  />
+                  <Label htmlFor="show-grades" className="text-sm">
+                    Show Rubric
+                  </Label>
+                </div>
+                
+                {/* Run Evaluation Button */}
+                {!isRunningEval && !currentChat?.completed && (
+                  <Button
+                    onClick={startEvaluationRun}
+                    variant="default"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Run Evaluation
+                  </Button>
+                )}
+                
+                {/* Running Status */}
+                {isRunningEval && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Running evaluation...
+                    {runStatus && (
+                      <span>
+                        ({runStatus.completed_chats}/{runStatus.total_chats} chats completed)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
+              
               <div className="flex gap-2">
                 {currentChat?.completed && (
                   <div className="flex gap-4">

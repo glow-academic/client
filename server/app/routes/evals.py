@@ -146,9 +146,6 @@ async def start_eval(
 
             session.refresh(eval_run)
 
-        # call the endpoint to run the first eval run
-        await run_eval(eval_runs_created[0].id, session)
-
         logger.info(f"Created {len(eval_runs_created)} eval runs for eval {eval_id}")
 
         return {
@@ -207,70 +204,117 @@ async def run_eval(
         # find the eval chats that are not completed
         eval_chats_not_completed = [chat for chat in eval_chats if not chat.completed]
 
+        if not eval_chats_not_completed:
+            return {"message": "All chats in this eval run are already completed"}
+
         # Find increment
         max_parallel_runs = min(eval_obj.max_parallel_runs, len(eval_chats_not_completed))
 
-        # In groups of no more than max_parallel_runs, create simulation chats
-        for i in range(0, len(eval_chats_not_completed), max_parallel_runs):
-            eval_chats_to_run = eval_chats_not_completed[i:i+max_parallel_runs]
-
-            # if length is greater than 1, run a batch of eval chats to the run_advanced_agent
-            if len(eval_chats_to_run) > 1:
-
-                async def eval_chat_stream() -> AsyncIterator[str]:
-                    # initial heartbeat so proxies flush headers
-                    yield ":\n\n"
-                    try:
-                        async for token in run_generic_agent(
-                            chat_id=eval_chats_to_run[0].id,
-                            session=session,
-                        ):
-                            yield f"data: {json.dumps({'text': token})}\n\n"
-                        yield 'data: {"done": true}\n\n'
-                    except Exception as exc:
-                        err_msg = str(exc)
-                        logger.exception("Streaming error: %s", err_msg)
-                        yield f"data: {json.dumps({'error': err_msg})}\n\n"
-                        raise
-                eval_grade_id = await run_evaluate_agent(eval_chats_to_run[0].id, session)
-            else:
-                eval_grade_ids = []
-                async def eval_chats_stream() -> AsyncIterator[str]:
-                    # initial heartbeat so proxies flush headers
-                    yield ":\n\n"
-                    try:
-                        async for token in run_advanced_agent(
-                            chat_ids=eval_chats_to_run,
-                            session=session,
-                        ):
-                            yield f"data: {json.dumps({'text': token})}\n\n"
-                        yield 'data: {"done": true}\n\n'
-                    except Exception as exc:
-                        err_msg = str(exc)
-                        logger.exception("Streaming error: %s", err_msg)
-                        yield f"data: {json.dumps({'error': err_msg})}\n\n"
-                        raise
+        async def eval_stream() -> AsyncIterator[str]:
+            """Stream the evaluation process"""
+            # initial heartbeat so proxies flush headers
+            yield ":\n\n"
+            
+            try:
+                # Process chats in batches
+                for i in range(0, len(eval_chats_not_completed), max_parallel_runs):
+                    eval_chats_to_run = eval_chats_not_completed[i:i+max_parallel_runs]
+                    chat_ids = [chat.id for chat in eval_chats_to_run]
+                    
+                    yield f"data: {json.dumps({'type': 'batch_start', 'batch_size': len(eval_chats_to_run), 'batch_index': i // max_parallel_runs + 1})}\n\n"
+                    
+                    # Run the advanced agent for this batch
+                    async for event in run_advanced_agent(
+                        eval_chat_ids=chat_ids,
+                        session=session,
+                    ):
+                        yield f"data: {json.dumps(event)}\n\n"
+                    
+                    # Run evaluation for each completed chat
+                    for chat in eval_chats_to_run:
+                        try:
+                            eval_grade_id = await run_evaluate_agent(chat.id, session)
+                            yield f"data: {json.dumps({'type': 'evaluation_complete', 'chat_id': chat.id, 'eval_grade_id': eval_grade_id})}\n\n"
+                        except Exception as eval_error:
+                            logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")
+                            yield f"data: {json.dumps({'type': 'evaluation_error', 'chat_id': chat.id, 'error': str(eval_error)})}\n\n"
                 
-                for eval_chat in eval_chats_to_run:
-                    eval_grade_id = await run_evaluate_agent(eval_chat.id, session)
-                    eval_grade_ids.append(eval_grade_id)
+                yield f"data: {json.dumps({'type': 'run_complete', 'message': 'Eval run completed successfully'})}\n\n"
+                yield 'data: {"done": true}\n\n'
+                
+            except Exception as exc:
+                err_msg = str(exc)
+                logger.exception("Streaming error: %s", err_msg)
+                yield f"data: {json.dumps({'type': 'error', 'error': err_msg})}\n\n"
+                raise
 
+        return StreamingResponse(
+            eval_stream(),
+            media_type="text/event-stream; charset=utf-8",
+            headers={
+                "Cache-Control": "no-store",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no"  # Disable nginx buffering
+            },
+        )
         
-        if len(eval_chats_to_run) > 1:
-            return StreamingResponse(
-                eval_chats_stream(),
-                media_type="text/event-stream; charset=utf-8",
-                headers={"Cache-Control": "no-store"},
-            )
-        else:
-            return StreamingResponse(
-                eval_chats_stream(),
-                media_type="text/event-stream; charset=utf-8",
-                headers={"Cache-Control": "no-store"},
-            )
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in run eval endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to run eval: {str(e)}")
+
+@router.get("/run/{eval_run_id}/status")
+async def get_eval_run_status(
+    eval_run_id: str,
+    session: Session = Depends(get_session),
+):
+    """
+    Get the current status of an eval run
+    """
+    try:
+        # Get the eval run
+        eval_run = session.exec(
+            select(EvalRuns).where(EvalRuns.id == eval_run_id)
+        ).one_or_none()
+        if not eval_run:
+            raise HTTPException(status_code=404, detail="Eval run not found")
+
+        # Get all chats for this eval run
+        eval_chats = session.exec(
+            select(EvalChats).where(EvalChats.eval_run_id == eval_run_id)
+        ).all()
+
+        total_chats = len(eval_chats)
+        completed_chats = len([chat for chat in eval_chats if chat.completed])
+        
+        # Get message counts for each chat
+        chat_statuses = []
+        for chat in eval_chats:
+            messages = session.exec(
+                select(EvalMessages).where(EvalMessages.chat_id == chat.id)
+            ).all()
+            
+            chat_statuses.append({
+                "chat_id": chat.id,
+                "title": chat.title,
+                "completed": chat.completed,
+                "completed_at": chat.completed_at.isoformat() if chat.completed_at else None,
+                "message_count": len(messages),
+                "scenario_id": chat.scenario_id
+            })
+
+        return {
+            "eval_run_id": eval_run_id,
+            "total_chats": total_chats,
+            "completed_chats": completed_chats,
+            "progress_percentage": (completed_chats / total_chats * 100) if total_chats > 0 else 0,
+            "chat_statuses": chat_statuses
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting eval run status: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get eval run status: {str(e)}")
     

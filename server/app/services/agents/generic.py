@@ -202,10 +202,10 @@ async def _handle_eval_chat(
         raise ValueError(f"Eval not found for eval run {eval_run.id}")
     
     max_turns = eval_obj.max_turns
-    # get the query agent
-    query_agent = session.exec(select(Agents).where(Agents.id == eval_run.query_agent_id)).one()
+    # get the query agent from the eval base_agent_id
+    query_agent = session.exec(select(Agents).where(Agents.id == eval_obj.base_agent_id)).one()
     if not query_agent:
-        raise ValueError(f"Query agent not found for eval run {eval_run.id}")
+        raise ValueError(f"Base agent not found for eval {eval_obj.id}")
     
     # Get the agent from the eval run
     response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
@@ -249,20 +249,25 @@ async def _handle_eval_chat(
 
     # Get scenario info for context
     scenario = session.exec(
-        select(Scenarios).where(Scenarios.id == eval_run.scenario_id)
+        select(Scenarios).where(Scenarios.id == chat.scenario_id)
     ).one()
     scenario_context = f"Scenario: {scenario.name} - {scenario.description}"
 
-    # Get class info
-    class_info = get_class_info(eval_run.class_id, session)
+    # Get class info if available
+    class_info = ""
+    if scenario.class_id:
+        class_info = get_class_info(scenario.class_id, session)
 
-    input_items = [scenario_context, class_info] + conversation_history
+    input_items = [scenario_context]
+    if class_info:
+        input_items.append(class_info)
+    input_items.extend(conversation_history)
 
-    # if turn_number is even, use the query agent, otherwise use the response agent
+    # if turn_number is even, use the response agent, otherwise use the query agent
     if turn_number % 2 == 0:
-        agent = query_agent
-    else:
         agent = response_agent
+    else:
+        agent = query_agent
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
