@@ -15,10 +15,10 @@ import {
 
 const columnMap = {
   createdAt: "Date",
-  classId: "Class",
+  classId: "Classes",
   userId: "Name",
   simulationTitle: "Simulation",
-  classCode: "Class",
+  classCode: "Classes",
   agentsTested: "Agents",
   averageScore: "Score",
 };

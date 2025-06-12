@@ -143,7 +143,7 @@ describe("DataTableViewOptions", () => {
     it("should show sliders icon", () => {
       render(<DataTableViewOptions table={mockTable as any} />);
 
-      expect(screen.getByTestId("sliders-icon")).toBeInTheDocument();
+      expect(screen.getByTestId("settings2-icon")).toBeInTheDocument();
     });
 
     it("should render dropdown trigger", () => {

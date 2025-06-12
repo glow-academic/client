@@ -34,6 +34,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
+  scoreRangeOptions: { value: string; label: string }[];
   showExport?: boolean;
   scoreOptions?: { value: string; label: string }[];
 }
@@ -43,6 +44,7 @@ export function DataTable<TData, TValue>({
   data,
   profileOptions,
   classOptions,
+  scoreRangeOptions,
   showExport = true,
   scoreOptions = [],
 }: DataTableProps<TData, TValue>) {
@@ -105,6 +107,7 @@ export function DataTable<TData, TValue>({
         table={table}
         profileOptions={profileOptions}
         classOptions={classOptions}
+        scoreRangeOptions={scoreRangeOptions}
         dateRange={dateRange}
         setDateRange={setDateRange}
         showExport={showExport}
@@ -139,7 +142,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="pl-6"
+                      className="px-6"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -153,7 +156,7 @@ export function DataTable<TData, TValue>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length}
-                  className="h-24 text-center pl-6"
+                  className="h-24 text-center px-6"
                 >
                   No results.
                 </TableCell>

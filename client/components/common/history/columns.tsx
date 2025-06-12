@@ -21,8 +21,6 @@ import {
   Class,
   SimulationChat,
   SimulationAttempt,
-  SimulationChatGrade,
-  SimulationChatFeedback,
   Profile,
   Scenario,
 } from "@/types";
@@ -41,6 +39,7 @@ interface EnhancedAttempt extends SimulationAttempt {
   simulationTitle: string;
   interactionIds: string[];
   classId: string | null;
+  classIds: string[];
 }
 
 // Component to use the columns with data from queries
@@ -208,7 +207,7 @@ export function useColumns({
         (chat) => chat.attemptId === attempt.id,
       );
       
-      // Get agents tested from chats - look at scenarioId and match with agents
+      // Get agents from all scenarios in the chats
       const agentsTested = [
         ...new Set(
           attemptChats.map((chat) => {
@@ -229,14 +228,15 @@ export function useColumns({
         (s) => s.id === attempt.simulationId,
       );
 
-      // Derive classIds from the scenario of the chat
-      let derivedClassId = null;
-      if (simulation?.scenarioIds) {
-        const scenario = scenarios.find((s: Scenario) => s.id === attemptChats[0].scenarioId);
-        if (scenario?.classId) {
-          derivedClassId = scenario.classId;
-        }
-      }
+      // Derive all classIds from all scenarios in the chats
+      const derivedClassIds = [
+        ...new Set(
+          attemptChats.map((chat) => {
+            const scenario = scenarios.find((s: Scenario) => s.id === chat.scenarioId);
+            return scenario?.classId;
+          }).filter((classId): classId is string => classId !== null)
+        )
+      ];
 
       return {
         ...attempt,
@@ -245,7 +245,8 @@ export function useColumns({
         simulationTitle:
           simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
-        classId: derivedClassId, // Add the derived classId
+        classId: derivedClassIds.length > 0 ? derivedClassIds[0] : null, // Keep first class for filtering
+        classIds: derivedClassIds, // Add all class IDs for display
       };
     });
   }, [attempts, chats, agents, simulations, scenarios]);
@@ -285,6 +286,26 @@ export function useColumns({
     }));
   }, [validStandardGroups]);
 
+  // Create score range options for filtering
+  const scoreRangeOptions = useMemo(() => [
+    {
+      value: "excellent",
+      label: "Excellent (80%+)",
+    },
+    {
+      value: "good",
+      label: "Good (70-79%)",
+    },
+    {
+      value: "needs-improvement",
+      label: "Needs Improvement (<70%)",
+    },
+    {
+      value: "not-graded",
+      label: "Not Graded",
+    },
+  ], []);
+
   // Define columns - only attempts view
   const columns = useMemo(() => {
     const attemptColumns: ColumnDef<EnhancedAttempt>[] = [
@@ -303,7 +324,7 @@ export function useColumns({
                     table.toggleAllPageRowsSelected(!!value)
                   }
                   aria-label="Select all"
-                  className="translate-y-[2px] ml-4"
+                  className="translate-y-[2px]"
                 />
               ),
               cell: ({ row }: { row: Row<EnhancedAttempt> }) => (
@@ -313,7 +334,7 @@ export function useColumns({
                     row.toggleSelected(!!value)
                   }
                   aria-label="Select row"
-                  className="translate-y-[2px] ml-4"
+                  className="translate-y-[2px]"
                 />
               ),
               enableSorting: false,
@@ -426,27 +447,38 @@ export function useColumns({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Class"
+            title="Classes"
           />
         ),
         cell: ({ row }) => {
-          const classId = row.getValue("classId");
+          const classIds = row.original.classIds || [];
           
-          if (!classId) {
-            return <span className="text-muted-foreground">No Class</span>;
+          if (!classIds || classIds.length === 0) {
+            return <span className="text-muted-foreground">No Classes</span>;
           }
 
-          const classOption = classOptions.find(
-            (cls) => cls.value === classId,
-          );
+          const classLabels = classIds.map(classId => {
+            const classOption = classOptions.find(
+              (cls) => cls.value === classId,
+            );
+            return classOption ? classOption.label : "Unknown Class";
+          }).filter(label => label !== "Unknown Class");
 
-          if (!classOption) {
-            return <span className="text-muted-foreground">Unknown Class</span>;
+          if (classLabels.length === 0) {
+            return <span className="text-muted-foreground">Unknown Classes</span>;
           }
 
           return (
-            <div className="flex items-center">
-              <span>{classOption.label}</span>
+            <div className="flex flex-wrap gap-1">
+              {classLabels.map((label, index) => (
+                <Badge
+                  key={index}
+                  variant="outline"
+                  className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                >
+                  {label}
+                </Badge>
+              ))}
             </div>
           );
         },
@@ -491,7 +523,7 @@ export function useColumns({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Agents Tested"
+            title="Agents"
           />
         ),
         cell: ({ row }) => {
@@ -542,7 +574,7 @@ export function useColumns({
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
-            title="Avg Score"
+            title="Score"
           />
         ),
         accessorFn: (row: EnhancedAttempt) => {
@@ -606,13 +638,41 @@ export function useColumns({
               >
                 {scorePercent}%
               </Badge>
-              <div className="text-xs text-muted-foreground mt-1">
-                {averageScore.toFixed(1)}
-              </div>
             </div>
           );
         },
         enableSorting: true,
+        filterFn: (row, id, value) => {
+          const chats = row.getValue("chats") as SimulationChat[];
+          if (!chats || chats.length === 0) {
+            return value.includes("not-graded");
+          }
+
+          const chatGrades = chats
+            .map((chat: SimulationChat) =>
+              grades?.find((grade) => grade.simulationChatId === chat.id),
+            )
+            .filter(Boolean);
+
+          if (chatGrades.length === 0) {
+            return value.includes("not-graded");
+          }
+
+          const totalScore = chatGrades.reduce(
+            (sum: number, grade) => sum + (grade?.score || 0),
+            0,
+          );
+          const averageScore = totalScore / chatGrades.length;
+          const scorePercent = Math.round(averageScore);
+
+          if (scorePercent >= 80) {
+            return value.includes("excellent");
+          } else if (scorePercent >= 70) {
+            return value.includes("good");
+          } else {
+            return value.includes("needs-improvement");
+          }
+        },
       },
       // Actions column
       {
@@ -670,6 +730,7 @@ export function useColumns({
     agentTypes,
     skillCategories,
     scoreOptions,
+    scoreRangeOptions,
     showAll,
   };
 }

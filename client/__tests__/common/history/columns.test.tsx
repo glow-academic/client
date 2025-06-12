@@ -305,6 +305,29 @@ describe("useColumns", () => {
         expect(Array.isArray(result.current.scoreOptions)).toBe(true);
       });
     });
+
+    it("should provide score range options", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.scoreRangeOptions).toBeDefined();
+        expect(Array.isArray(result.current.scoreRangeOptions)).toBe(true);
+        expect(result.current.scoreRangeOptions).toHaveLength(4);
+        
+        const expectedOptions = [
+          { value: "excellent", label: "Excellent (80%+)" },
+          { value: "good", label: "Good (70-79%)" },
+          { value: "needs-improvement", label: "Needs Improvement (<70%)" },
+          { value: "not-graded", label: "Not Graded" },
+        ];
+        
+        result.current.scoreRangeOptions.forEach((option: any, index: number) => {
+          expect(option).toMatchObject(expectedOptions[index]);
+        });
+      });
+    });
   });
 
   describe("ShowAll Functionality", () => {

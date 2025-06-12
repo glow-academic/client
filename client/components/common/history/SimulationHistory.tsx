@@ -17,7 +17,7 @@ export default function SimulationHistory({
   showAll,
   showExport = true,
 }: SimulationHistoryProps) {
-  const { columns, data, profileOptions, classOptions, scoreOptions } = useColumns({
+  const { columns, data, profileOptions, classOptions, scoreOptions, scoreRangeOptions } = useColumns({
     showAll,
     showExport,
   });
@@ -28,6 +28,7 @@ export default function SimulationHistory({
       columns={columns}
       profileOptions={profileOptions}
       classOptions={classOptions}
+      scoreRangeOptions={scoreRangeOptions}
       showExport={showExport}
       scoreOptions={scoreOptions}
     />

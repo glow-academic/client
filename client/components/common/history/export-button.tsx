@@ -30,8 +30,8 @@ type ExportableData = ChatData | AttemptData;
 // Column name mapping for CSV export
 const columnMap = {
   createdAt: "Date",
-  classId: "Class",
-  classCode: "Class",
+  classId: "Classes",
+  classCode: "Classes",
   userId: "Name",
   profileId: "Name",
   agent: "Agent",
@@ -39,9 +39,9 @@ const columnMap = {
   simulationTitle: "Simulation",
   status: "Status",
   score: "Score",
-  averageScore: "Avg Score",
+  averageScore: "Score",
   chats: "Chats",
-  agentsTested: "Agents Tested",
+  agentsTested: "Agents",
 };
 
 // Helper function to determine chat status
@@ -67,12 +67,14 @@ interface ExportButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
+  scoreRangeOptions?: { value: string; label: string }[];
 }
 
 export function ExportButton<TData>({
   table,
   profileOptions,
   classOptions,
+  scoreRangeOptions = [],
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);
@@ -127,10 +129,15 @@ export function ExportButton<TData>({
 
             // Special handling for class and user IDs - map to human-readable names
             if (column.id === "classId" && cellValue) {
-              const classOption = classOptions.find(
-                (cls) => cls.value === cellValue,
-              );
-              return classOption ? `"${classOption.label}"` : `"${cellValue}"`;
+              const original = row.original as any;
+              const classIds = original.classIds || [cellValue];
+              const classLabels = classIds.map((classId: string) => {
+                const classOption = classOptions.find(
+                  (cls) => cls.value === classId,
+                );
+                return classOption ? classOption.label : classId;
+              });
+              return `"${classLabels.join("; ")}"`;
             }
 
             if (column.id === "classCode" && cellValue) {

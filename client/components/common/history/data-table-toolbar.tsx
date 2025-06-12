@@ -16,6 +16,7 @@ interface DataTableToolbarProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
+  scoreRangeOptions: { value: string; label: string }[];
   isAdmin?: boolean;
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
@@ -26,6 +27,7 @@ export function DataTableToolbar<TData>({
   table,
   profileOptions,
   classOptions,
+  scoreRangeOptions,
   isAdmin = false,
   dateRange,
   setDateRange,
@@ -70,6 +72,14 @@ export function DataTableToolbar<TData>({
               options={classOptions}
             />
           )}
+          {/* Score filter */}
+          {table.getColumn("averageScore") && (
+            <DataTableFacetedFilter
+              column={table.getColumn("averageScore")}
+              title="Score"
+              options={scoreRangeOptions}
+            />
+          )}
           {isFiltered && (
             <Button
               variant="ghost"
@@ -96,6 +106,7 @@ export function DataTableToolbar<TData>({
               table={table}
               profileOptions={profileOptions}
               classOptions={classOptions}
+              scoreRangeOptions={scoreRangeOptions}
             />
           )}
 

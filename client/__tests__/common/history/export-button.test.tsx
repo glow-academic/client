@@ -67,12 +67,22 @@ const mockURL = {
 beforeEach(() => {
   vi.clearAllMocks();
   
+  // Store original createElement
+  const originalCreateElement = document.createElement;
+  
   // Mock document.createElement
   vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
     if (tagName === "a") {
       return mockLink as any;
     }
-    return document.createElement(tagName);
+    // For other elements, return a basic mock
+    return {
+      style: {},
+      setAttribute: vi.fn(),
+      getAttribute: vi.fn(),
+      appendChild: vi.fn(),
+      removeChild: vi.fn(),
+    } as any;
   });
   
   // Mock document.body.appendChild and removeChild
