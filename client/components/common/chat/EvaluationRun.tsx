@@ -64,14 +64,11 @@ import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { Document, EvalChat, EvalRun, EvalMessage, Scenario } from "@/types";
 
-// Dynamic rubric interface based on grades/feedback
-interface DynamicRubric {
-  chatId: string;
+// Simple rubric interface for timer tooltip
+interface SimpleRubric {
   score: number;
   passed: boolean;
   timeTaken: number;
-  skillScores: Record<string, number>;
-  skillFeedbacks: Record<string, string>;
   totalPossiblePoints: number;
 }
 
@@ -261,53 +258,33 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     return chats.find((chat: EvalChat) => chat.id === selectedChatId) || currentChat;
   }, [selectedChatId, chats, currentChat]);
 
-  // Create dynamic rubric for selected chat
-  const selectedDynamicRubric = useMemo((): DynamicRubric | null => {
-    if (!selectedChat?.id || !grades || !feedbacks || !standards || !standardGroups)
-      return null;
+  // Get basic rubric info for timer tooltip
+  const selectedChatGrade = useMemo(() => {
+    if (!selectedChat?.id || !grades) return null;
+    return grades.find(grade => grade.evalChatId === selectedChat.id);
+  }, [selectedChat?.id, grades]);
 
-    const chatGrade = grades.find(grade => grade.evalChatId === selectedChat.id);
-    if (!chatGrade) return null;
-
-    const chatFeedbacks = feedbacks.filter(
-      feedback => feedback.evalChatGradeId === chatGrade.id
-    );
-
-    // Calculate skill scores and feedbacks
-    const skillScores: Record<string, number> = {};
-    const skillFeedbacks: Record<string, string> = {};
+  const selectedDynamicRubric: SimpleRubric | null = useMemo(() => {
+    if (!selectedChatGrade || !standards || !standardGroups) return null;
+    
+    // Calculate total possible points
     let totalPossiblePoints = 0;
-
     standardGroups.forEach(group => {
       const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-      const groupFeedbacks = chatFeedbacks.filter(f =>
-        groupStandards.some(s => s.id === f.standardId)
-      );
-
-      if (groupFeedbacks.length > 0) {
-        const maxPoints = Math.max(...groupStandards.map(s => s.points));
-        const avgScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length;
-        const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
-
-        skillScores[group.name] = normalizedScore;
-        skillFeedbacks[group.name] = groupFeedbacks.map(f => f.feedback).join("; ");
-        totalPossiblePoints += maxPoints;
+      if (groupStandards.length > 0) {
+        totalPossiblePoints += Math.max(...groupStandards.map(s => s.points));
       }
     });
 
-    // Calculate if passed (assuming 70% threshold)
-    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
+    const passed = selectedChatGrade.score >= totalPossiblePoints * 0.7;
 
     return {
-      chatId: selectedChat.id,
-      score: chatGrade.score,
+      score: selectedChatGrade.score,
       passed,
-      timeTaken: chatGrade.timeTaken,
-      skillScores,
-      skillFeedbacks,
+      timeTaken: selectedChatGrade.timeTaken,
       totalPossiblePoints,
     };
-  }, [selectedChat?.id, grades, feedbacks, standards, standardGroups]);
+  }, [selectedChatGrade, standards, standardGroups]);
 
   // Fetch messages for selected chat with polling when running
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
@@ -324,59 +301,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     enabled: !!selectedChat?.scenarioId,
   });
 
-  // Create dynamic rubrics for all completed chats
-  const allDynamicRubrics = useMemo((): DynamicRubric[] => {
-    if (!chats || !grades || !feedbacks || !standards || !standardGroups)
-      return [];
 
-    const completedChats = chats.filter((chat: EvalChat) => chat.completed);
-
-    return completedChats
-      .map(chat => {
-        const chatGrade = grades.find(grade => grade.evalChatId === chat.id);
-        if (!chatGrade) return null;
-
-        const chatFeedbacks = feedbacks.filter(
-          feedback => feedback.evalChatGradeId === chatGrade.id
-        );
-
-        // Calculate skill scores and feedbacks
-        const skillScores: Record<string, number> = {};
-        const skillFeedbacks: Record<string, string> = {};
-        let totalPossiblePoints = 0;
-
-        standardGroups.forEach(group => {
-          const groupStandards = standards.filter(s => s.standardGroupId === group.id);
-          const groupFeedbacks = chatFeedbacks.filter(f =>
-            groupStandards.some(s => s.id === f.standardId)
-          );
-
-          if (groupFeedbacks.length > 0) {
-            const maxPoints = Math.max(...groupStandards.map(s => s.points));
-            const avgScore = groupFeedbacks.reduce((sum, f) => sum + f.total, 0) / groupFeedbacks.length;
-            const normalizedScore = Math.round((avgScore / maxPoints) * 5); // Convert to 1-5 scale
-
-            skillScores[group.name] = normalizedScore;
-            skillFeedbacks[group.name] = groupFeedbacks.map(f => f.feedback).join("; ");
-            totalPossiblePoints += maxPoints;
-          }
-        });
-
-        // Calculate if passed (assuming 70% threshold)
-        const passed = chatGrade.score >= totalPossiblePoints * 0.7;
-
-        return {
-          chatId: chat.id,
-          score: chatGrade.score,
-          passed,
-          timeTaken: chatGrade.timeTaken,
-          skillScores,
-          skillFeedbacks,
-          totalPossiblePoints,
-        };
-      })
-      .filter(Boolean) as DynamicRubric[];
-  }, [chats, grades, feedbacks, standards, standardGroups]);
 
   // Auto-select first incomplete chat when data loads
   useEffect(() => {
@@ -633,15 +558,9 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                   <span className="font-medium">
                     {scenario?.description || currentChat?.title || "AI Evaluation"}
                   </span>
-                  <div className="text-sm text-muted-foreground flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span data-testid="chat-counter">
-                      Chat {currentChatIndex + 1} of {evaluation.scenarioIds.length || 0}
-                    </span>
-                  </div>
                 </div>
               </div>
-              <div className="flex items-start justify-end flex-col gap-2">
+              <div className="flex items-end justify-end flex-col gap-2">
                 <div className="flex items-center gap-4">
                   {/* Show Rubric Toggle */}
                   <div className="flex items-center gap-2">
@@ -705,25 +624,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                     <SelectValue placeholder="Select chat to view" />
                   </SelectTrigger>
                   <SelectContent>
-                    {chats?.map((chat: EvalChat, index: number) => {
-                      const chatScenario = scenario; // You might want to fetch individual scenarios
-                      const chatRubric = allDynamicRubrics.find(rubric => rubric.chatId === chat.id);
-                      return (
-                        <SelectItem key={chat.id} value={chat.id}>
-                          <div className="flex items-center gap-2">
-                            <span>Chat {index + 1}</span>
-                            {chat.completed && (
-                              <Badge 
-                                variant={chatRubric?.passed ? "default" : "destructive"}
-                                className="text-xs"
-                              >
-                                {chatRubric?.passed ? "Passed" : "Failed"}
-                              </Badge>
-                            )}
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
+                    {chats?.map((chat: EvalChat, index: number) => (
+                      <SelectItem key={chat.id} value={chat.id}>
+                        <span>Chat {index + 1}</span>
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -746,71 +651,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       </div>
                     ))}
                   </div>
-                ) : showGrades && selectedChat?.completed && selectedDynamicRubric ? (
-                  <div className="space-y-4">
-                    {/* Overall Score Card */}
-                    <div className="flex justify-center">
-                      <div className="bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100 rounded-lg p-4 max-w-[80%]">
-                        <div className="text-xs font-medium mb-2">Overall Results</div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-                          <div>
-                            <div className="text-2xl font-bold">
-                              {selectedDynamicRubric.score}/
-                              {selectedDynamicRubric.totalPossiblePoints}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              Overall Score
-                            </div>
-                          </div>
-                          <div>
-                            <div className="text-2xl font-bold">
-                              {Math.round(selectedDynamicRubric.timeTaken / 60)}
-                            </div>
-                            <div className="text-xs text-muted-foreground">Minutes</div>
-                          </div>
-                          {Object.entries(selectedDynamicRubric.skillScores)
-                            .slice(0, 2)
-                            .map(([skillName, score]) => (
-                              <div key={skillName}>
-                                <div className="text-2xl font-bold">{score}/5</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {skillName}
-                                </div>
-                              </div>
-                            ))}
-                        </div>
-                        <div className="mt-3 text-center">
-                          <Badge
-                            variant={
-                              selectedDynamicRubric.passed
-                                ? "default"
-                                : "destructive"
-                            }
-                          >
-                            {selectedDynamicRubric.passed ? "Passed" : "Failed"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Skill Feedback Cards */}
-                    {Object.entries(selectedDynamicRubric.skillFeedbacks).map(
-                      ([skillName, feedback], index) => (
-                        <div key={skillName} className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}>
-                          <div className={`max-w-[80%] p-3 rounded-lg ${
-                            index % 2 === 0
-                              ? "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
-                              : "bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100"
-                          }`}>
-                            <div className="text-xs font-medium mb-1">
-                              {skillName} - Score: {selectedDynamicRubric.skillScores[skillName]}/5
-                            </div>
-                            <div className="text-sm">{feedback}</div>
-                          </div>
-                        </div>
-                      )
-                    )}
-                  </div>
+                ) : showGrades && selectedChat?.completed && evalRun?.rubricId ? (
+                  <TableRubric
+                    rubricId={evalRun.rubricId}
+                    evaluationChatId={selectedChat.id}
+                  />
                 ) : (
                   <>
                     {/* Show completed chat messages */}

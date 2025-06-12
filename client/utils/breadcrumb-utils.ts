@@ -7,6 +7,7 @@ import { getEval } from "./queries/evals/get-eval";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
 import { getProfile } from "./queries/profiles/get-profile";
+import { getEvalRun } from "./queries/eval_runs/get-eval-run";
 
 interface BreadcrumbItem {
   title: string;
@@ -64,6 +65,15 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "eval":
         const evalData = await getEval(id);
         return evalData?.name || `Evaluation ${id.substring(0, 8)}...`;
+      
+      case "eval-run":
+        const evalRunData = await getEvalRun(id);
+        // get the agent for the eval run
+        const agentEvalData = await getAgent(evalRunData?.agentId);
+        // get base agent from eval
+        const evalRunEvalData = await getEval(evalRunData?.evalId);
+        const baseAgent = await getAgent(evalRunEvalData?.baseAgentId);
+        return `${baseAgent?.name} vs ${agentEvalData?.name}`;
 
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -121,6 +131,8 @@ export const generateEnhancedBreadcrumbs = async (
         context = "profile";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
+      } else if (prevSegment === "r" && segments.includes("evals")) {
+        context = "eval-run";
       } else if (prevSegment === "e" && segments.includes("evals")) {
         context = "eval";
       }
