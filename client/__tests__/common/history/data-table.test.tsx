@@ -5,7 +5,7 @@ import { DataTable } from "@/components/common/history/data-table";
 
 // Mock the child components
 vi.mock("@/components/common/history/data-table-pagination", () => ({
-  DataTablePagination: ({ table, showChats }: any) => (
+  DataTablePagination: ({ table }: any) => (
     <div data-testid="pagination">Pagination</div>
   ),
 }));
@@ -231,55 +231,33 @@ describe("DataTable", () => {
     });
   });
 
-  describe("ShowChats Prop", () => {
-    it("should apply correct styling when showChats is false", () => {
+  describe("ShowExport Prop", () => {
+    it("should pass showExport prop to toolbar when provided", () => {
       render(
         <DataTable
           columns={mockColumns as any}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
-          showChats={false}
+          showExport={true}
         />,
       );
 
-      const tableCell = screen.getByText("Test Cell").closest("td");
-      expect(tableCell).toHaveClass("pl-6");
+      expect(screen.getByTestId("toolbar")).toBeInTheDocument();
     });
 
-    it("should not apply pl-6 styling when showChats is true", () => {
+    it("should handle showExport false", () => {
       render(
         <DataTable
           columns={mockColumns as any}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
-          showChats={true}
+          showExport={false}
         />,
       );
 
-      const tableCell = screen.getByText("Test Cell").closest("td");
-      expect(tableCell).not.toHaveClass("pl-6");
-    });
-
-    it('should apply correct styling to "No results" cell when showChats is false', () => {
-      const mockEmptyTable = createMockTable({
-        getRowModel: vi.fn(() => ({ rows: [] })),
-      });
-      mockUseReactTable.mockReturnValue(mockEmptyTable as any);
-
-      render(
-        <DataTable
-          columns={mockColumns as any}
-          data={[]}
-          profileOptions={mockprofileOptions}
-          classOptions={mockClassOptions}
-          showChats={false}
-        />,
-      );
-
-      const noResultsCell = screen.getByText("No results.").closest("td");
-      expect(noResultsCell).toHaveClass("pl-6");
+      expect(screen.getByTestId("toolbar")).toBeInTheDocument();
     });
   });
 
@@ -306,6 +284,20 @@ describe("DataTable", () => {
 
       // The useEffect for date filtering should be tested through integration
       expect(mockUseReactTable).toHaveBeenCalled();
+    });
+
+    it("should handle date range state", () => {
+      render(
+        <DataTable
+          columns={mockColumns as any}
+          data={mockData}
+          profileOptions={mockprofileOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      // Date range state should be managed internally
+      expect(screen.getByTestId("toolbar")).toBeInTheDocument();
     });
   });
 
@@ -361,6 +353,40 @@ describe("DataTable", () => {
 
       expect(screen.getByText("Selected Cell")).toBeInTheDocument();
     });
+
+    it("should handle sorting state", () => {
+      render(
+        <DataTable
+          columns={mockColumns as any}
+          data={mockData}
+          profileOptions={mockprofileOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(mockUseReactTable).toHaveBeenCalledWith(
+        expect.objectContaining({
+          getSortedRowModel: expect.any(Function),
+        }),
+      );
+    });
+
+    it("should handle filtering state", () => {
+      render(
+        <DataTable
+          columns={mockColumns as any}
+          data={mockData}
+          profileOptions={mockprofileOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(mockUseReactTable).toHaveBeenCalledWith(
+        expect.objectContaining({
+          getFilteredRowModel: expect.any(Function),
+        }),
+      );
+    });
   });
 
   describe("Props Validation", () => {
@@ -390,7 +416,7 @@ describe("DataTable", () => {
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
     });
 
-    it("should handle undefined showChats prop", () => {
+    it("should handle undefined showExport prop", () => {
       render(
         <DataTable
           columns={mockColumns as any}
@@ -400,6 +426,34 @@ describe("DataTable", () => {
         />,
       );
 
+      expect(screen.getByTestId("pagination")).toBeInTheDocument();
+    });
+
+    it("should handle empty data array", () => {
+      render(
+        <DataTable
+          columns={mockColumns as any}
+          data={[]}
+          profileOptions={mockprofileOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(screen.getByTestId("toolbar")).toBeInTheDocument();
+      expect(screen.getByTestId("pagination")).toBeInTheDocument();
+    });
+
+    it("should handle empty columns array", () => {
+      render(
+        <DataTable
+          columns={[]}
+          data={mockData}
+          profileOptions={mockprofileOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(screen.getByTestId("toolbar")).toBeInTheDocument();
       expect(screen.getByTestId("pagination")).toBeInTheDocument();
     });
   });

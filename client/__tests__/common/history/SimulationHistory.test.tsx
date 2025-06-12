@@ -10,13 +10,13 @@ vi.mock("@/components/common/history/columns", () => ({
     columns: [
       { id: "select", header: "Select" },
       { accessorKey: "createdAt", header: "Date" },
-      { accessorKey: "title", header: "Title" },
-      { accessorKey: "score", header: "Score" },
+      { accessorKey: "simulationTitle", header: "Simulation" },
+      { accessorKey: "averageScore", header: "Score" },
       { id: "actions", header: "Actions" },
     ],
     data: [
-      { id: "1", title: "Test Chat 1", score: 85, createdAt: "2024-01-01" },
-      { id: "2", title: "Test Chat 2", score: 78, createdAt: "2024-01-02" },
+      { id: "1", simulationTitle: "Test Simulation 1", averageScore: 85, createdAt: "2024-01-01" },
+      { id: "2", simulationTitle: "Test Simulation 2", averageScore: 78, createdAt: "2024-01-02" },
     ],
     profileOptions: [
       { value: "1", label: "Test User 1" },
@@ -26,7 +26,20 @@ vi.mock("@/components/common/history/columns", () => ({
       { value: "1", label: "CS101" },
       { value: "2", label: "CS201" },
     ],
+    agentTypes: [
+      { value: "student", label: "Student" },
+      { value: "instructor", label: "Instructor" },
+    ],
+    skillCategories: {
+      communication: "Communication",
+      problemSolving: "Problem Solving",
+    },
+    scoreOptions: [
+      { value: "pass", label: "Pass" },
+      { value: "fail", label: "Fail" },
+    ],
     isLoading: false,
+    showAll: false,
   })),
 }));
 
@@ -36,10 +49,11 @@ const mockUseColumns = vi.mocked(useColumns);
 
 // Mock the DataTable component
 vi.mock("@/components/common/history/data-table", () => ({
-  DataTable: vi.fn(({ data, columns }) => (
+  DataTable: vi.fn(({ data, columns, showExport }) => (
     <div data-testid="data-table">
       <div data-testid="columns-count">{columns.length}</div>
       <div data-testid="data-count">{data.length}</div>
+      <div data-testid="show-export">{showExport ? "true" : "false"}</div>
     </div>
   )),
 }));
@@ -67,88 +81,96 @@ describe("SimulationHistory", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={false} />);
 
       expect(screen.getByTestId("data-table")).toBeInTheDocument();
     });
 
     it("should render with showAll true", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={true} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={true} />);
 
       expect(screen.getByTestId("data-table")).toBeInTheDocument();
     });
 
-    it("should render with showChats true", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={true} />,
-      );
+    it("should render with showExport true", () => {
+      renderWithProviders(<SimulationHistory showAll={false} showExport={true} />);
 
       expect(screen.getByTestId("data-table")).toBeInTheDocument();
+      expect(screen.getByTestId("show-export")).toHaveTextContent("true");
+    });
+
+    it("should render with showExport false", () => {
+      renderWithProviders(<SimulationHistory showAll={false} showExport={false} />);
+
+      expect(screen.getByTestId("data-table")).toBeInTheDocument();
+      expect(screen.getByTestId("show-export")).toHaveTextContent("false");
     });
 
     it("should pass correct props to useColumns hook", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={true} showChats={true} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={true} showExport={true} />);
 
       expect(mockUseColumns).toHaveBeenCalledWith({
         showAll: true,
-        showChats: true,
+        showExport: true,
       });
     });
   });
 
   describe("Data Display", () => {
     it("should display data table with correct number of columns", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={false} />);
 
       expect(screen.getByTestId("columns-count")).toHaveTextContent("5");
     });
 
     it("should display data table with correct number of data items", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={false} />);
 
       expect(screen.getByTestId("data-count")).toHaveTextContent("2");
+    });
+
+    it("should pass all required props to DataTable", () => {
+      renderWithProviders(<SimulationHistory showAll={false} showExport={true} />);
+
+      expect(screen.getByTestId("data-table")).toBeInTheDocument();
+      expect(screen.getByTestId("columns-count")).toHaveTextContent("5");
+      expect(screen.getByTestId("data-count")).toHaveTextContent("2");
+      expect(screen.getByTestId("show-export")).toHaveTextContent("true");
     });
   });
 
   describe("Props Handling", () => {
     it("should handle showAll prop correctly", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={true} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={true} />);
 
       expect(mockUseColumns).toHaveBeenCalledWith(
         expect.objectContaining({ showAll: true }),
       );
     });
 
-    it("should handle showChats prop correctly", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={true} />,
-      );
+    it("should handle showExport prop correctly", () => {
+      renderWithProviders(<SimulationHistory showAll={false} showExport={true} />);
 
       expect(mockUseColumns).toHaveBeenCalledWith(
-        expect.objectContaining({ showChats: true }),
+        expect.objectContaining({ showExport: true }),
       );
     });
 
     it("should handle both props together", () => {
-      renderWithProviders(
-        <SimulationHistory showAll={true} showChats={true} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={true} showExport={false} />);
 
       expect(mockUseColumns).toHaveBeenCalledWith({
         showAll: true,
-        showChats: true,
+        showExport: false,
+      });
+    });
+
+    it("should handle default showExport when not provided", () => {
+      renderWithProviders(<SimulationHistory showAll={false} />);
+
+      expect(mockUseColumns).toHaveBeenCalledWith({
+        showAll: false,
+        showExport: true, // Default value
       });
     });
   });
@@ -164,13 +186,10 @@ describe("SimulationHistory", () => {
         skillCategories: {},
         scoreOptions: [],
         isLoading: false,
-        showChats: false,
         showAll: false,
       });
 
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={false} />);
 
       expect(screen.getByTestId("data-table")).toBeInTheDocument();
       expect(screen.getByTestId("columns-count")).toHaveTextContent("0");
@@ -187,15 +206,69 @@ describe("SimulationHistory", () => {
         skillCategories: {},
         scoreOptions: [],
         isLoading: true,
-        showChats: false,
         showAll: false,
       });
 
-      renderWithProviders(
-        <SimulationHistory showAll={false} showChats={false} />,
-      );
+      renderWithProviders(<SimulationHistory showAll={false} />);
 
       expect(screen.getByTestId("data-table")).toBeInTheDocument();
+    });
+
+    it("should handle large datasets", () => {
+      const largeData = Array.from({ length: 100 }, (_, i) => ({
+        id: i.toString(),
+        simulationTitle: `Simulation ${i}`,
+        averageScore: Math.floor(Math.random() * 100),
+        createdAt: "2024-01-01",
+      }));
+
+      mockUseColumns.mockReturnValueOnce({
+        columns: [
+          { id: "select", header: "Select" },
+          { accessorKey: "createdAt", header: "Date" },
+          { accessorKey: "simulationTitle", header: "Simulation" },
+          { accessorKey: "averageScore", header: "Score" },
+          { id: "actions", header: "Actions" },
+        ],
+        data: largeData,
+        profileOptions: [],
+        classOptions: [],
+        agentTypes: [],
+        skillCategories: {},
+        scoreOptions: [],
+        isLoading: false,
+        showAll: false,
+      });
+
+      renderWithProviders(<SimulationHistory showAll={false} />);
+
+      expect(screen.getByTestId("data-table")).toBeInTheDocument();
+      expect(screen.getByTestId("data-count")).toHaveTextContent("100");
+    });
+  });
+
+  describe("Component Integration", () => {
+    it("should pass correct data structure to DataTable", () => {
+      renderWithProviders(<SimulationHistory showAll={false} showExport={true} />);
+
+      expect(mockUseColumns).toHaveBeenCalledWith({
+        showAll: false,
+        showExport: true,
+      });
+
+      // Verify that the DataTable receives the correct props
+      expect(screen.getByTestId("data-table")).toBeInTheDocument();
+    });
+
+    it("should handle useColumns hook errors gracefully", () => {
+      mockUseColumns.mockImplementationOnce(() => {
+        throw new Error("Hook error");
+      });
+
+      // This should not crash the component
+      expect(() => {
+        renderWithProviders(<SimulationHistory showAll={false} />);
+      }).toThrow("Hook error");
     });
   });
 });

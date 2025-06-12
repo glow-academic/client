@@ -47,12 +47,12 @@ def client(test_session):
 
     def get_test_session():
         return test_session
-    
+
     app.dependency_overrides[get_session] = get_test_session
-    
+
     with TestClient(app) as test_client:
         yield test_client
-    
+
     app.dependency_overrides.clear()
 
 
@@ -79,4 +79,4 @@ def pytest_configure(config):
 
 
 # Configure pytest-asyncio
-pytest_plugins = ('pytest_asyncio',)
+pytest_plugins = ("pytest_asyncio",)

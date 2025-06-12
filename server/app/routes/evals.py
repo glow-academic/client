@@ -12,7 +12,6 @@ from app.models import (
 from app.db import get_session
 from sqlmodel import Session, select
 import logging
-from typing import Optional, List
 import random
 from app.services.agents.evaluate import run_evaluate_agent
 from app.services.agents.generic import GenericAgent
@@ -40,9 +39,7 @@ async def start_eval(
     """
     try:
         # Get the eval
-        eval_obj = session.exec(
-            select(Evals).where(Evals.id == eval_id)
-        ).one_or_none()
+        eval_obj = session.exec(select(Evals).where(Evals.id == eval_id)).one_or_none()
         if not eval_obj:
             raise HTTPException(status_code=404, detail="Evaluation not found")
 
@@ -52,14 +49,20 @@ async def start_eval(
         rubric_ids = eval_obj.rubric_ids or []
 
         if not scenario_ids:
-            raise HTTPException(status_code=400, detail="Eval has no scenarios configured")
+            raise HTTPException(
+                status_code=400, detail="Eval has no scenarios configured"
+            )
         if not agent_ids:
             raise HTTPException(status_code=400, detail="Eval has no agents configured")
         if not rubric_ids:
-            raise HTTPException(status_code=400, detail="Eval has no rubrics configured")
+            raise HTTPException(
+                status_code=400, detail="Eval has no rubrics configured"
+            )
 
         # Validate that all referenced entities exist
-        scenarios = session.exec(select(Scenarios).where(Scenarios.id.in_(scenario_ids))).all()
+        scenarios = session.exec(
+            select(Scenarios).where(Scenarios.id.in_(scenario_ids))
+        ).all()
         agents = session.exec(select(Agents).where(Agents.id.in_(agent_ids))).all()
         rubrics = session.exec(select(Rubrics).where(Rubrics.id.in_(rubric_ids))).all()
 
@@ -72,26 +75,25 @@ async def start_eval(
 
         # Create eval runs for all combinations
         eval_runs_created = []
-        
+
         # Limit combinations based on num_parallel_runs
         max_runs = min(eval_obj.num_parallel_runs, len(scenario_ids))
         selected_scenarios = scenario_ids[:max_runs]
-        
+
         for scenario_id in selected_scenarios:
             for agent_id in agent_ids:
                 for rubric_id in rubric_ids:
                     eval_run = EvalRuns(
-                        class_id=class_id,
                         eval_id=eval_id,
                         agent_id=agent_id,
                         scenario_id=scenario_id,
-                        rubric_id=rubric_id
+                        rubric_id=rubric_id,
                     )
                     session.add(eval_run)
                     eval_runs_created.append(eval_run)
 
         session.commit()
-        
+
         # Refresh all eval runs to get their IDs
         for eval_run in eval_runs_created:
             session.refresh(eval_run)
@@ -102,15 +104,14 @@ async def start_eval(
             "success": True,
             "message": f"Created {len(eval_runs_created)} eval runs",
             "eval_run_ids": [str(run.id) for run in eval_runs_created],
-            "total_runs": len(eval_runs_created)
+            "total_runs": len(eval_runs_created),
         }
 
     except Exception as e:
         session.rollback()
         logger.error(f"Error starting eval: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to start eval: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to start eval: {str(e)}")
+
 
 @router.post("/run-multiple")
 async def run_multiple_evals(
@@ -123,9 +124,7 @@ async def run_multiple_evals(
     """
     try:
         # Get the eval
-        eval_obj = session.exec(
-            select(Evals).where(Evals.id == eval_id)
-        ).one_or_none()
+        eval_obj = session.exec(select(Evals).where(Evals.id == eval_id)).one_or_none()
         if not eval_obj:
             raise HTTPException(status_code=404, detail="Evaluation not found")
 
@@ -133,9 +132,11 @@ async def run_multiple_evals(
         eval_runs = session.exec(
             select(EvalRuns).where(EvalRuns.eval_id == eval_id)
         ).all()
-        
+
         if not eval_runs:
-            raise HTTPException(status_code=400, detail="No eval runs found for this evaluation")
+            raise HTTPException(
+                status_code=400, detail="No eval runs found for this evaluation"
+            )
 
         # Group eval runs by scenario (since we run scenarios in parallel)
         scenario_groups = {}
@@ -162,39 +163,44 @@ async def run_multiple_evals(
                 # Create chats for all eval runs
                 chat_ids = []
                 eval_run_chat_map = {}
-                
+
                 for eval_run in runs_to_execute:
                     # Get related entities
-                    scenario = session.exec(select(Scenarios).where(Scenarios.id == eval_run.scenario_id)).one()
-                    query_agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
-                    response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
-                    
+                    scenario = session.exec(
+                        select(Scenarios).where(Scenarios.id == eval_run.scenario_id)
+                    ).one()
+                    query_agent = session.exec(
+                        select(Agents).where(Agents.id == scenario.agent_id)
+                    ).one()
+                    response_agent = session.exec(
+                        select(Agents).where(Agents.id == eval_run.agent_id)
+                    ).one()
+
                     # Create the eval chat
-                    chat_title = f"{query_agent.name} vs {response_agent.name} - {scenario.name}"
-                    eval_chat = EvalChats(
-                        title=chat_title,
-                        eval_run_id=eval_run.id
+                    chat_title = (
+                        f"{query_agent.name} vs {response_agent.name} - {scenario.name}"
                     )
+                    eval_chat = EvalChats(title=chat_title, eval_run_id=eval_run.id)
                     session.add(eval_chat)
                     session.commit()
                     session.refresh(eval_chat)
-                    
+
                     chat_ids.append(str(eval_chat.id))
                     eval_run_chat_map[str(eval_chat.id)] = {
-                        'eval_run': eval_run,
-                        'scenario': scenario,
-                        'query_agent': query_agent,
-                        'response_agent': response_agent
+                        "eval_run": eval_run,
+                        "scenario": scenario,
+                        "query_agent": query_agent,
+                        "response_agent": response_agent,
                     }
-                    
+
                     yield f"data: {json.dumps({'type': 'chat_created', 'chat_id': str(eval_chat.id), 'title': chat_title, 'eval_run_id': str(eval_run.id)})}\n\n"
 
                 # Prepare input messages for all chats
                 input_texts = []
                 for chat_id in chat_ids:
                     chat_info = eval_run_chat_map[chat_id]
-                    scenario = chat_info['scenario']
-                    query_agent = chat_info['query_agent']
+                    scenario = chat_info["scenario"]
+                    query_agent = chat_info["query_agent"]
                     opening_message = _generate_natural_opening(scenario, query_agent)
                     input_texts.append(opening_message)
 
@@ -202,14 +208,14 @@ async def run_multiple_evals(
 
                 # Import and use the advanced agent for parallel processing
                 from app.services.agents.advanced import run_advanced_agent_parallel
-                
+
                 # Run all conversations in parallel
                 async for event_data in run_advanced_agent_parallel(
                     chat_ids=chat_ids,
                     input_texts=input_texts,
                     eval_obj=eval_obj,
                     eval_run_chat_map=eval_run_chat_map,
-                    session=session
+                    session=session,
                 ):
                     yield f"data: {json.dumps(event_data)}\n\n"
 
@@ -256,20 +262,25 @@ async def run_eval(
 
         # Get related entities
         eval_obj = session.exec(select(Evals).where(Evals.id == eval_run.eval_id)).one()
-        scenario = session.exec(select(Scenarios).where(Scenarios.id == eval_run.scenario_id)).one()
-        query_agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
-        response_agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
+        scenario = session.exec(
+            select(Scenarios).where(Scenarios.id == eval_run.scenario_id)
+        ).one()
+        query_agent = session.exec(
+            select(Agents).where(Agents.id == scenario.agent_id)
+        ).one()
+        response_agent = session.exec(
+            select(Agents).where(Agents.id == eval_run.agent_id)
+        ).one()
 
         async def event_stream() -> AsyncIterator[str]:
             yield ":\n\n"  # Initial heartbeat
 
             try:
                 # Create the eval chat
-                chat_title = f"{query_agent.name} vs {response_agent.name} - {scenario.name}"
-                eval_chat = EvalChats(
-                    title=chat_title,
-                    eval_run_id=eval_run_id
+                chat_title = (
+                    f"{query_agent.name} vs {response_agent.name} - {scenario.name}"
                 )
+                eval_chat = EvalChats(title=chat_title, eval_run_id=eval_run_id)
                 session.add(eval_chat)
                 session.commit()
                 session.refresh(eval_chat)
@@ -281,14 +292,15 @@ async def run_eval(
                     agent_name=query_agent.name,
                     agent_prompt=query_agent.system_prompt,
                     agent_type=query_agent.agent_type,
-                    temperature=query_agent.temperature / 10.0  # Convert to 0-1 range
+                    temperature=query_agent.temperature / 10.0,  # Convert to 0-1 range
                 )
-                
+
                 response_agent_instance = GenericAgent(
                     agent_name=response_agent.name,
                     agent_prompt=response_agent.system_prompt,
                     agent_type=response_agent.agent_type,
-                    temperature=response_agent.temperature / 10.0  # Convert to 0-1 range
+                    temperature=response_agent.temperature
+                    / 10.0,  # Convert to 0-1 range
                 )
 
                 # Initialize conversation with scenario-based opening
@@ -297,7 +309,7 @@ async def run_eval(
                 current_speaker = "query"  # query agent starts
                 current_agent_instance = query_agent_instance
                 current_agent_name = query_agent.name
-                
+
                 # Run conversation for max_turns
                 for turn in range(eval_obj.max_turns):
                     yield f"data: {json.dumps({'type': 'turn_start', 'turn': turn + 1, 'speaker': current_agent_name, 'message': current_message})}\n\n"
@@ -310,7 +322,7 @@ async def run_eval(
                         current_agent_instance,
                         current_agent_name,
                         scenario,
-                        session
+                        session,
                     ):
                         response += token
                         yield f"data: {json.dumps({'type': 'token', 'speaker': current_agent_name, 'token': token})}\n\n"
@@ -320,7 +332,7 @@ async def run_eval(
                         chat_id=eval_chat.id,
                         query=current_message,
                         response=response,
-                        completed=True
+                        completed=True,
                     )
                     session.add(eval_message)
                     session.commit()
@@ -336,7 +348,7 @@ async def run_eval(
                         current_speaker = "query"
                         current_agent_instance = query_agent_instance
                         current_agent_name = query_agent.name
-                    
+
                     # The response becomes the next message
                     current_message = response
 
@@ -349,9 +361,9 @@ async def run_eval(
 
                 # Run evaluation
                 yield f"data: {json.dumps({'type': 'evaluation_start'})}\n\n"
-                
+
                 eval_grade_id = await run_evaluate_agent(str(eval_chat.id), session)
-                
+
                 yield f"data: {json.dumps({'type': 'evaluation_complete', 'eval_grade_id': eval_grade_id})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'success': True})}\n\n"
 
@@ -371,9 +383,7 @@ async def run_eval(
         raise
     except Exception as e:
         logger.error(f"Error in run eval endpoint: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to run eval: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Failed to run eval: {str(e)}")
 
 
 def _generate_natural_opening(scenario: Scenarios, agent: Agents) -> str:
@@ -387,7 +397,7 @@ def _generate_natural_opening(scenario: Scenarios, agent: Agents) -> str:
             f"I'm stuck on this problem about {scenario.description.lower()}. Where should I start?",
             f"Can you explain {scenario.description.lower()} to me? I'm really confused.",
             f"I've been working on {scenario.description.lower()} but I'm not getting the right answer.",
-            f"I need help with {scenario.description.lower()}. I don't know what I'm doing wrong."
+            f"I need help with {scenario.description.lower()}. I don't know what I'm doing wrong.",
         ]
     else:
         # TA agents start by offering help or asking what the student needs
@@ -396,9 +406,9 @@ def _generate_natural_opening(scenario: Scenarios, agent: Agents) -> str:
             f"How can I help you with {scenario.description.lower()} today?",
             f"What questions do you have about {scenario.description.lower()}?",
             f"Let's work through {scenario.description.lower()} together. What have you tried so far?",
-            f"I'm here to help with {scenario.description.lower()}. What's your main concern?"
+            f"I'm here to help with {scenario.description.lower()}. What's your main concern?",
         ]
-    
+
     return random.choice(openings)
 
 
@@ -408,7 +418,7 @@ async def run_agent_conversation(
     agent_instance: GenericAgent,
     agent_name: str,
     scenario: Scenarios,
-    session: Session
+    session: Session,
 ) -> AsyncIterator[str]:
     """
     Run a single agent in the conversation and yield tokens as they're generated.
@@ -420,7 +430,7 @@ async def run_agent_conversation(
             .where(EvalMessages.chat_id == chat_id)
             .order_by(EvalMessages.created_at)
         ).all()
-        
+
         # Build conversation context
         conversation_context = []
         for msg in messages:
@@ -428,20 +438,20 @@ async def run_agent_conversation(
                 conversation_context.append(f"Previous: {msg.query}")
             if msg.response:
                 conversation_context.append(f"Response: {msg.response}")
-        
+
         # Build the complete input message with context
         context_parts = []
         if scenario:
             context_parts.append(f"Scenario: {scenario.name} - {scenario.description}")
-        
+
         if conversation_context:
             context_parts.extend(conversation_context)
-        
+
         context_parts.append(f"Current message: {input_message}")
-        
+
         # Join all context into a single string
         full_input = "\n\n".join(context_parts)
-        
+
         # Run the agent
         result = Runner.run_streamed(
             agent_instance.agent(),

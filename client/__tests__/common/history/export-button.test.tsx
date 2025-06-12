@@ -11,6 +11,11 @@ vi.mock("sonner", () => ({
   },
 }));
 
+// Mock icons
+vi.mock("lucide-react", () => ({
+  Download: () => <div data-testid="download-icon" />,
+}));
+
 // Mock the table object for testing
 const mockTable = {
   getState: vi.fn(() => ({
@@ -26,9 +31,9 @@ const mockTable = {
           id: "1",
           createdAt: "2024-01-01T10:00:00Z",
           userId: "user1",
+          simulationTitle: "Test Simulation",
+          averageScore: 85,
           classId: "class1",
-          title: "Test Chat 1",
-          score: 85,
         },
       },
       {
@@ -36,14 +41,55 @@ const mockTable = {
           id: "2",
           createdAt: "2024-01-02T11:00:00Z",
           userId: "user2",
+          simulationTitle: "Another Simulation",
+          averageScore: 78,
           classId: "class2",
-          title: "Test Chat 2",
-          score: 92,
         },
       },
     ],
   })),
 };
+
+// Mock DOM methods
+const mockLink = {
+  href: "",
+  download: "",
+  click: vi.fn(),
+  style: {},
+};
+
+const mockURL = {
+  createObjectURL: vi.fn(() => "blob:mock-url"),
+  revokeObjectURL: vi.fn(),
+};
+
+// Setup DOM mocks
+beforeEach(() => {
+  vi.clearAllMocks();
+  
+  // Mock document.createElement
+  vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
+    if (tagName === "a") {
+      return mockLink as any;
+    }
+    return document.createElement(tagName);
+  });
+  
+  // Mock document.body.appendChild and removeChild
+  vi.spyOn(document.body, "appendChild").mockImplementation(() => mockLink as any);
+  vi.spyOn(document.body, "removeChild").mockImplementation(() => mockLink as any);
+  
+  // Mock URL methods
+  global.URL = mockURL as any;
+  
+  // Mock Blob constructor
+  global.Blob = vi.fn().mockImplementation((content, options) => ({
+    content,
+    options,
+    size: content ? content[0].length : 0,
+    type: options?.type || "",
+  })) as any;
+});
 
 const mockUserOptions = [
   { label: "User 1", value: "user1" },
@@ -56,37 +102,44 @@ const mockClassOptions = [
 ];
 
 describe("ExportButton", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   describe("Rendering", () => {
     it("should render without crashing", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 
-      expect(screen.getByRole("button")).toBeInTheDocument();
+      expect(screen.getByText("Export")).toBeInTheDocument();
     });
 
-    it("should show export button with download icon", () => {
+    it("should render export button with correct text", () => {
       render(
         <ExportButton
           table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 
       const button = screen.getByRole("button");
       expect(button).toBeInTheDocument();
       expect(button).toHaveTextContent("Export");
+    });
+
+    it("should show download icon", () => {
+      render(
+        <ExportButton
+          table={mockTable as any}
+          profileOptions={[]}
+          classOptions={[]}
+        />,
+      );
+
+      // The icon should be rendered (mocked as div with data-testid)
+      expect(screen.getByTestId("download-icon")).toBeInTheDocument();
     });
 
     it("should show selected count when rows are selected", () => {
@@ -105,91 +158,181 @@ describe("ExportButton", () => {
           table={tableWithSelection as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          viewMode="chats"
         />,
       );
 
       expect(screen.getByText("Export (2)")).toBeInTheDocument();
     });
+
+    it("should show export text without count when no rows selected", () => {
+      render(
+        <ExportButton
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(screen.getByText("Export")).toBeInTheDocument();
+      expect(screen.queryByText(/Export \(\d+\)/)).not.toBeInTheDocument();
+    });
   });
 
-  describe("Export Popover", () => {
-    it("should open popover when export button is clicked", async () => {
+  describe("Export Functionality", () => {
+    it("should handle CSV export", async () => {
       const user = userEvent.setup();
 
       render(
         <ExportButton
           table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 
-      const button = screen.getByRole("button");
-      await user.click(button);
+      const exportButton = screen.getByRole("button");
+      await user.click(exportButton);
 
-      // Check if popover content appears
-      expect(screen.getByText("Export Options")).toBeInTheDocument();
-      expect(
-        screen.getByText(/Exporting all filtered rows/),
-      ).toBeInTheDocument();
+      expect(mockURL.createObjectURL).toHaveBeenCalled();
+      expect(mockLink.click).toHaveBeenCalled();
+      expect(mockURL.revokeObjectURL).toHaveBeenCalled();
     });
 
-    it("should show export information in popover", async () => {
-      const user = userEvent.setup();
+    it("should handle export with empty data", () => {
+      const emptyTable = {
+        ...mockTable,
+        getFilteredRowModel: vi.fn(() => ({
+          rows: [],
+        })),
+      };
 
       render(
         <ExportButton
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
+          table={emptyTable as any}
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 
-      const button = screen.getByRole("button");
-      await user.click(button);
-
-      expect(screen.getByText("Export Options")).toBeInTheDocument();
-      expect(
-        screen.getByText(/Exporting all filtered rows/),
-      ).toBeInTheDocument();
+      expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });
 
   describe("Props Handling", () => {
-    it("should handle different viewModes", () => {
-      const { rerender } = render(
-        <ExportButton
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
-        />,
-      );
-
-      expect(screen.getByRole("button")).toBeInTheDocument();
-
-      rerender(
-        <ExportButton
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="attempts"
-        />,
-      );
-
-      expect(screen.getByRole("button")).toBeInTheDocument();
-    });
-
     it("should handle empty options arrays", () => {
       render(
         <ExportButton
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-          viewMode="chats"
+        />,
+      );
+
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+
+    it("should handle different table states", () => {
+      const differentTable = {
+        ...mockTable,
+        getState: vi.fn(() => ({
+          rowSelection: { "1": true },
+        })),
+      };
+
+      render(
+        <ExportButton
+          table={differentTable as any}
+          profileOptions={[]}
+          classOptions={[]}
+        />,
+      );
+
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+  });
+
+  describe("Accessibility", () => {
+    it("should have proper button attributes", () => {
+      render(
+        <ExportButton
+          table={mockTable as any}
+          profileOptions={[]}
+          classOptions={[]}
+        />,
+      );
+
+      const button = screen.getByRole("button");
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveAttribute("type", "button");
+    });
+
+    it("should be keyboard accessible", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <ExportButton
+          table={mockTable as any}
+          profileOptions={[]}
+          classOptions={[]}
+        />,
+      );
+
+      const button = screen.getByRole("button");
+      await user.tab();
+      expect(button).toHaveFocus();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle malformed data gracefully", () => {
+      const malformedTable = {
+        ...mockTable,
+        getFilteredRowModel: vi.fn(() => ({
+          rows: [
+            {
+              original: {
+                id: null,
+                createdAt: undefined,
+                simulationTitle: "",
+              },
+            },
+          ],
+        })),
+      };
+
+      render(
+        <ExportButton
+          table={malformedTable as any}
+          profileOptions={[]}
+          classOptions={[]}
+        />,
+      );
+
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+
+    it("should handle very large datasets", () => {
+      const largeData = Array.from({ length: 1000 }, (_, i) => ({
+        original: {
+          id: i.toString(),
+          createdAt: "2024-01-01T10:00:00Z",
+          simulationTitle: `Simulation ${i}`,
+          averageScore: Math.floor(Math.random() * 100),
+        },
+      }));
+
+      const largeDataTable = {
+        ...mockTable,
+        getFilteredRowModel: vi.fn(() => ({
+          rows: largeData,
+        })),
+      };
+
+      render(
+        <ExportButton
+          table={largeDataTable as any}
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 

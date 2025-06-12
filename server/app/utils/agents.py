@@ -1,7 +1,8 @@
 # app/utils/agents.py
 from sqlmodel import Session
 from app.models import Agents
-from sqlmodel import Session, select
+from sqlmodel import select
+
 
 def get_agent_info(agent_id: str, session: Session) -> dict:
     """
@@ -35,6 +36,7 @@ def student_prompt(agent_name: str, agent_prompt: str) -> str:
         "- For mathematical formulas or expressions, use standard LaTeX delimiters (e.g., $...$ for inline math, and $$...$$ for display math). "
         "- Avoid using LaTeX commands to format entire code blocks."
     )
+
 
 def gta_prompt(agent_name: str, agent_prompt) -> str:
     return (

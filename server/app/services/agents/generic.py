@@ -1,28 +1,28 @@
-from typing import AsyncGenerator, Literal, Union
+from typing import AsyncGenerator
 from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
 from agents.items import TResponseInputItem
 from openai.types import Reasoning
-from datetime import datetime
 from app.extensions import get_gemini
 from app.utils.chat import get_conversation_history, get_chat_scenario
 from app.utils.classes import get_class_info
 from app.db import get_session
 from sqlmodel import Session, select
 from app.models import (
-    SimulationMessages, 
-    SimulationChats, 
-    SimulationAttempts, 
+    SimulationMessages,
+    SimulationChats,
+    SimulationAttempts,
     EvalMessages,
     EvalChats,
     EvalRuns,
     Agents,
-    Scenarios
+    Scenarios,
 )
 from app.utils.agents import gta_prompt, student_prompt
 from fastapi import Depends
 from openai.types.responses import (
     ResponseTextDeltaEvent,
 )
+
 
 async def run_generic_agent_bare(
     agent_id: str,
@@ -46,7 +46,7 @@ async def run_generic_agent_bare(
         agent_name=agent.name,
         agent_prompt=agent.system_prompt,
         agent_type=agent.agent_type,
-        temperature=agent.temperature
+        temperature=agent.temperature,
     )
 
     result = Runner.run_streamed(
@@ -72,7 +72,7 @@ async def run_generic_agent(
     This function is used to run the generic agent using the OpenAI Agents SDK.
     Returns a streamable result that yields clean text chunks as they're generated.
     The agent behavior is customized based on the agent's description.
-    
+
     Now supports both simulation chats and eval chats by detecting the chat type.
 
     Args:
@@ -82,7 +82,7 @@ async def run_generic_agent(
     Yields:
         Text chunks from the agent's response
     """
-    
+
     # If test_data is True, stream back a dummy response
     if test_data:
         dummy_response = "This is a test response for debugging purposes. The agent is working correctly."
@@ -91,12 +91,16 @@ async def run_generic_agent(
         simulation_chat = session.exec(
             select(SimulationChats).where(SimulationChats.id == chat_id)
         ).one_or_none()
-        
+
         if simulation_chat:
-            message = SimulationMessages(chat_id=chat_id, query=input_text, response=dummy_response)
+            message = SimulationMessages(
+                chat_id=chat_id, query=input_text, response=dummy_response
+            )
         else:
-            message = EvalMessages(chat_id=chat_id, query=input_text, response=dummy_response)
-        
+            message = EvalMessages(
+                chat_id=chat_id, query=input_text, response=dummy_response
+            )
+
         session.add(message)
         session.commit()
 
@@ -104,22 +108,24 @@ async def run_generic_agent(
         for char in dummy_response:
             yield char
         return
-    
+
     # Try to get simulation chat first
     simulation_chat = session.exec(
         select(SimulationChats).where(SimulationChats.id == chat_id)
     ).one_or_none()
-    
+
     if simulation_chat:
         # Handle simulation chat
-        async for token in _handle_simulation_chat(simulation_chat, input_text, session):
+        async for token in _handle_simulation_chat(
+            simulation_chat, input_text, session
+        ):
             yield token
     else:
         # Try to get eval chat
         eval_chat = session.exec(
             select(EvalChats).where(EvalChats.id == chat_id)
         ).one_or_none()
-        
+
         if eval_chat:
             # Handle eval chat
             async for token in _handle_eval_chat(eval_chat, input_text, session):
@@ -129,12 +135,10 @@ async def run_generic_agent(
 
 
 async def _handle_simulation_chat(
-    chat: SimulationChats,
-    input_text: str,
-    session: Session
+    chat: SimulationChats, input_text: str, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
-    
+
     # Find attempt from chat
     attempt = session.exec(
         select(SimulationAttempts).where(SimulationAttempts.id == chat.attempt_id)
@@ -148,10 +152,14 @@ async def _handle_simulation_chat(
     ).one()
     if not scenario:
         raise ValueError(f"Scenario not found for chat {chat.id}")
-        
-    agent = session.exec(
-        select(Agents).where(Agents.id == scenario.agent_id)
-    ).one()
+    
+    if not scenario.agent_id:
+        raise ValueError(f"Scenario {scenario.id} has no agent_id")
+    
+    if not scenario.class_id:
+        raise ValueError(f"Scenario {scenario.id} has no class_id")
+
+    agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
     if not agent:
         raise ValueError(f"Agent not found for scenario {scenario.id}")
 
@@ -169,16 +177,16 @@ async def _handle_simulation_chat(
     # Prepare conversation history from chat_id
     conversation_history = get_conversation_history(messages)
     chat_scenario = get_chat_scenario(chat, session)
-    class_info = get_class_info(attempt.class_id, session)
+    class_info = get_class_info(scenario.class_id, session)
 
     input_items = [chat_scenario, class_info] + conversation_history
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
-        agent_name=agent.name, 
-        agent_prompt=agent.system_prompt, 
-        agent_type=agent.agent_type, 
-        temperature=agent.temperature
+        agent_name=agent.name,
+        agent_prompt=agent.system_prompt,
+        agent_type=agent.agent_type,
+        temperature=agent.temperature,
     )
 
     result = Runner.run_streamed(
@@ -203,12 +211,10 @@ async def _handle_simulation_chat(
 
 
 async def _handle_eval_chat(
-    chat: EvalChats,
-    input_text: str,
-    session: Session
+    chat: EvalChats, input_text: str, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle eval chat processing."""
-    
+
     # Get the eval run
     eval_run = session.exec(
         select(EvalRuns).where(EvalRuns.id == chat.eval_run_id)
@@ -217,9 +223,7 @@ async def _handle_eval_chat(
         raise ValueError(f"Eval run not found for chat {chat.id}")
 
     # Get the agent from the eval run
-    agent = session.exec(
-        select(Agents).where(Agents.id == eval_run.agent_id)
-    ).one()
+    agent = session.exec(select(Agents).where(Agents.id == eval_run.agent_id)).one()
     if not agent:
         raise ValueError(f"Agent not found for eval run {eval_run.id}")
 
@@ -236,13 +240,13 @@ async def _handle_eval_chat(
 
     # Prepare conversation history - need to adapt for eval messages
     conversation_history = get_conversation_history(messages)
-    
+
     # Get scenario info for context
     scenario = session.exec(
         select(Scenarios).where(Scenarios.id == eval_run.scenario_id)
     ).one()
     scenario_context = f"Scenario: {scenario.name} - {scenario.description}"
-    
+
     # Get class info
     class_info = get_class_info(eval_run.class_id, session)
 
@@ -250,10 +254,10 @@ async def _handle_eval_chat(
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
-        agent_name=agent.name, 
-        agent_prompt=agent.system_prompt, 
-        agent_type=agent.agent_type, 
-        temperature=agent.temperature
+        agent_name=agent.name,
+        agent_prompt=agent.system_prompt,
+        agent_type=agent.agent_type,
+        temperature=agent.temperature,
     )
 
     result = Runner.run_streamed(
@@ -278,7 +282,13 @@ async def _handle_eval_chat(
 
 
 class GenericAgent:
-    def __init__(self, agent_name: str, agent_prompt: str, agent_type: str, temperature: float = 0.0):
+    def __init__(
+        self,
+        agent_name: str,
+        agent_prompt: str,
+        agent_type: str,
+        temperature: float = 0.0,
+    ):
         self.gemini_client = get_gemini()
         self.agent_name = agent_name
         self.agent_prompt = agent_prompt
@@ -303,4 +313,4 @@ class GenericAgent:
                 include_usage=True,
                 reasoning=Reasoning(effort="low"),
             ),
-        ) 
+        )

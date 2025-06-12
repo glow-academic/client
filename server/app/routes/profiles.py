@@ -7,8 +7,20 @@ import os
 import tempfile
 from datetime import datetime
 import statistics
-from app.models import Profiles, SimulationChats, SimulationChatGrades, SimulationChatFeedbacks, Rubrics, Agents, StandardGroups, Standards, Scenarios, SimulationAttempts, Simulations
-from typing import Dict, List, Tuple, Optional
+from app.models import (
+    Profiles,
+    SimulationChats,
+    SimulationChatGrades,
+    SimulationChatFeedbacks,
+    Rubrics,
+    Agents,
+    StandardGroups,
+    Standards,
+    Scenarios,
+    SimulationAttempts,
+    Simulations,
+)
+from typing import Dict, List, Tuple
 from collections import defaultdict
 
 # PyLaTeX imports
@@ -149,13 +161,19 @@ def create_student_type_performance(
     return filename
 
 
-def create_score_table(grades: List[SimulationChatGrades], chats: List[SimulationChats], attempts: List[SimulationAttempts], simulations: List[Simulations], doc):
+def create_score_table(
+    grades: List[SimulationChatGrades],
+    chats: List[SimulationChats],
+    attempts: List[SimulationAttempts],
+    simulations: List[Simulations],
+    doc,
+):
     """Create a detailed performance score table"""
     # Create a mapping for quick lookups
     chat_map = {chat.id: chat for chat in chats}
     attempt_map = {attempt.id: attempt for attempt in attempts}
     simulation_map = {sim.id: sim for sim in simulations}
-    
+
     # Define the tabular environment
     with doc.create(Tabular("|c|c|c|c|c|", booktabs=True)) as table:
         table.add_hline()
@@ -181,12 +199,18 @@ def create_score_table(grades: List[SimulationChatGrades], chats: List[Simulatio
                 if attempt:
                     simulation = simulation_map.get(attempt.simulation_id)
                     if simulation:
-                        simulation_name = simulation.title[:30] + "..." if len(simulation.title) > 30 else simulation.title
-            
+                        simulation_name = (
+                            simulation.title[:30] + "..."
+                            if len(simulation.title) > 30
+                            else simulation.title
+                        )
+
             time_minutes = round(grade.time_taken / 60) if grade.time_taken else 0
             passed_text = "Yes" if grade.passed else "No"
-            date_str = grade.created_at.strftime("%Y-%m-%d") if grade.created_at else "N/A"
-            
+            date_str = (
+                grade.created_at.strftime("%Y-%m-%d") if grade.created_at else "N/A"
+            )
+
             table.add_row(
                 (
                     simulation_name,
@@ -201,7 +225,13 @@ def create_score_table(grades: List[SimulationChatGrades], chats: List[Simulatio
         # Add average row if we have grades
         if grades:
             avg_score = int(statistics.mean([g.score for g in grades]))
-            avg_time = int(statistics.mean([g.time_taken for g in grades if g.time_taken]) / 60) if any(g.time_taken for g in grades) else 0
+            avg_time = (
+                int(
+                    statistics.mean([g.time_taken for g in grades if g.time_taken]) / 60
+                )
+                if any(g.time_taken for g in grades)
+                else 0
+            )
             pass_rate = int((sum(1 for g in grades if g.passed) / len(grades)) * 100)
 
             table.add_row(
@@ -215,23 +245,37 @@ def create_score_table(grades: List[SimulationChatGrades], chats: List[Simulatio
 async def get_report(
     profile_id: str,
     session: Session = Depends(get_session),
-    includeStudentTypeChart: bool = Query(True, description="Include student type distribution chart"),
-    includePerformanceChart: bool = Query(True, description="Include performance by student type chart"),
+    includeStudentTypeChart: bool = Query(
+        True, description="Include student type distribution chart"
+    ),
+    includePerformanceChart: bool = Query(
+        True, description="Include performance by student type chart"
+    ),
     includeRadarChart: bool = Query(True, description="Include skills radar chart"),
-    includeTimeChart: bool = Query(True, description="Include performance over time chart"),
-    includeDetailedScores: bool = Query(True, description="Include detailed score table"),
-    includeFeedback: bool = Query(True, description="Include detailed feedback section"),
+    includeTimeChart: bool = Query(
+        True, description="Include performance over time chart"
+    ),
+    includeDetailedScores: bool = Query(
+        True, description="Include detailed score table"
+    ),
+    includeFeedback: bool = Query(
+        True, description="Include detailed feedback section"
+    ),
 ):
     """
     Generate and return a comprehensive PDF report for a user's performance.
     """
     # Find the user in the database
-    profile = session.exec(select(Profiles).where(Profiles.id == profile_id)).one_or_none()
+    profile = session.exec(
+        select(Profiles).where(Profiles.id == profile_id)
+    ).one_or_none()
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
     # Get the chats for the user through attempts
-    attempts = session.exec(select(SimulationAttempts).where(SimulationAttempts.profile_id == profile_id)).all()
+    attempts = session.exec(
+        select(SimulationAttempts).where(SimulationAttempts.profile_id == profile_id)
+    ).all()
     if not attempts:
         raise HTTPException(status_code=404, detail="No attempts found for this user")
 
@@ -245,24 +289,34 @@ async def get_report(
 
     # Get all grades for the user's chats
     chat_ids = [chat.id for chat in chats]
-    grades = session.exec(select(SimulationChatGrades).where(SimulationChatGrades.simulation_chat_id.in_(chat_ids))).all()
-    
+    grades = session.exec(
+        select(SimulationChatGrades).where(
+            SimulationChatGrades.simulation_chat_id.in_(chat_ids)
+        )
+    ).all()
+
     # Get all feedbacks for the user's grades
     grade_ids = [grade.id for grade in grades]
-    feedbacks = session.exec(select(SimulationChatFeedbacks).where(SimulationChatFeedbacks.simulation_chat_grade_id.in_(grade_ids))).all()
-    
+    feedbacks = session.exec(
+        select(SimulationChatFeedbacks).where(
+            SimulationChatFeedbacks.simulation_chat_grade_id.in_(grade_ids)
+        )
+    ).all()
+
     # Get reference data
     rubrics = session.exec(select(Rubrics)).all()
     standard_groups = session.exec(select(StandardGroups)).all()
     standards = session.exec(select(Standards)).all()
-    
+
     # Get all agents for dynamic descriptions
     agents = session.exec(select(Agents)).all()
     agent_map = {agent.id: agent for agent in agents}
-    
+
     # Get all simulations for the table
     simulation_ids = list(set(attempt.simulation_id for attempt in attempts))
-    simulations = session.exec(select(Simulations).where(Simulations.id.in_(simulation_ids))).all()
+    simulations = session.exec(
+        select(Simulations).where(Simulations.id.in_(simulation_ids))
+    ).all()
 
     # Create temporary directory for the report files
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -302,12 +356,23 @@ async def get_report(
         skill_categories = {}
         for group in standard_groups:
             group_standards = [s for s in standards if s.standard_group_id == group.id]
-            group_feedbacks = [f for f in feedbacks if any(s.id == f.standard_id for s in group_standards)]
-            
+            group_feedbacks = [
+                f
+                for f in feedbacks
+                if any(s.id == f.standard_id for s in group_standards)
+            ]
+
             if group_feedbacks and group_standards:
-                max_points = max([s.points for s in group_standards]) if group_standards else 1
+                max_points = (
+                    max([s.points for s in group_standards]) if group_standards else 1
+                )
                 avg_score = int(
-                    (sum(f.total for f in group_feedbacks) / len(group_feedbacks) / max_points) * 100
+                    (
+                        sum(f.total for f in group_feedbacks)
+                        / len(group_feedbacks)
+                        / max_points
+                    )
+                    * 100
                 )
                 skill_categories[group.short_name] = avg_score
 
@@ -317,26 +382,26 @@ async def get_report(
 
         # Generate charts based on options
         chart_files = {}
-        
+
         if includeStudentTypeChart and chat_agents:
             agent_chart = os.path.join(temp_dir, "student_types.png")
             create_student_type_chart(chat_agents, agent_chart)
-            chart_files['student_types'] = agent_chart
+            chart_files["student_types"] = agent_chart
 
         if includePerformanceChart and performance_by_type:
             performance_chart = os.path.join(temp_dir, "performance_by_type.png")
             create_student_type_performance(performance_by_type, performance_chart)
-            chart_files['performance_by_type'] = performance_chart
+            chart_files["performance_by_type"] = performance_chart
 
         if includeRadarChart and skill_categories:
             radar_chart = os.path.join(temp_dir, "radar_chart.png")
             create_score_radar_chart(skill_categories, radar_chart)
-            chart_files['radar'] = radar_chart
+            chart_files["radar"] = radar_chart
 
         if includeTimeChart and len(time_series_data) > 1:
             time_chart = os.path.join(temp_dir, "time_chart.png")
             create_time_series_chart(time_series_data, time_chart)
-            chart_files['time_series'] = time_chart
+            chart_files["time_series"] = time_chart
 
         # Create PDF using PyLaTeX
         pdf_filename = f"TA_Report_{profile.first_name.replace(' ', '_')}.pdf"
@@ -368,7 +433,15 @@ async def get_report(
         doc.append(NoEscape(r"\centering"))
         doc.append(NoEscape(r"{\Huge\bfseries TA Performance Report\par}"))
         doc.append(NoEscape(r"\vspace{2cm}"))
-        doc.append(NoEscape(r"{\Large\bfseries " + escape_latex(profile.first_name) + " " + escape_latex(profile.last_name) + r"\par}"))
+        doc.append(
+            NoEscape(
+                r"{\Large\bfseries "
+                + escape_latex(profile.first_name)
+                + " "
+                + escape_latex(profile.last_name)
+                + r"\par}"
+            )
+        )
         doc.append(NoEscape(r"\vspace{1cm}"))
         doc.append(
             NoEscape(
@@ -435,9 +508,11 @@ async def get_report(
             doc.append(NoEscape(r"\end{itemize}"))
 
             # Add radar chart to summary section if enabled
-            if includeRadarChart and 'radar' in chart_files:
+            if includeRadarChart and "radar" in chart_files:
                 with doc.create(Figure(position="h!")) as fig:
-                    fig.add_image(chart_files['radar'], width=NoEscape(r"0.7\textwidth"))
+                    fig.add_image(
+                        chart_files["radar"], width=NoEscape(r"0.7\textwidth")
+                    )
                     fig.add_caption("Performance Across Categories")
 
         # Agent Analysis (formerly Student Types Analysis)
@@ -449,16 +524,19 @@ async def get_report(
                 doc.append(NoEscape(r"\par\medskip"))
 
                 # Add pie chart if enabled
-                if includeStudentTypeChart and 'student_types' in chart_files:
+                if includeStudentTypeChart and "student_types" in chart_files:
                     with doc.create(Figure(position="h!")) as fig:
-                        fig.add_image(chart_files['student_types'], width=NoEscape(r"0.6\textwidth"))
+                        fig.add_image(
+                            chart_files["student_types"],
+                            width=NoEscape(r"0.6\textwidth"),
+                        )
                         fig.add_caption("Distribution of Agent Types")
 
                 # Add dynamic explanation text for each agent type encountered
                 if chat_agents:
                     doc.append(NoEscape(r"\subsection{Agent Descriptions}"))
                     doc.append(NoEscape(r"\begin{description}"))
-                    
+
                     # Get unique agent IDs from the chats
                     encountered_agent_ids = set()
                     for chat in chats:
@@ -467,7 +545,7 @@ async def get_report(
                         ).one_or_none()
                         if scenario:
                             encountered_agent_ids.add(scenario.agent_id)
-                    
+
                     # Add descriptions for encountered agents
                     for agent_id in encountered_agent_ids:
                         agent = agent_map.get(agent_id)
@@ -479,17 +557,20 @@ async def get_report(
                                     f"\\item[{escape_latex(agent.name)}] {escaped_description}"
                                 )
                             )
-                    
+
                     doc.append(NoEscape(r"\end{description}"))
 
                 # Add performance by agent type chart if enabled
-                if includePerformanceChart and 'performance_by_type' in chart_files:
+                if includePerformanceChart and "performance_by_type" in chart_files:
                     with doc.create(Figure(position="h!")) as fig:
-                        fig.add_image(chart_files['performance_by_type'], width=NoEscape(r"0.7\textwidth"))
+                        fig.add_image(
+                            chart_files["performance_by_type"],
+                            width=NoEscape(r"0.7\textwidth"),
+                        )
                         fig.add_caption("Performance by Agent Type")
 
         # Performance Trends
-        if includeTimeChart and 'time_series' in chart_files:
+        if includeTimeChart and "time_series" in chart_files:
             with doc.create(Section("Performance Over Time")):
                 doc.append(
                     "This section shows how your performance scores have changed over time."
@@ -497,7 +578,9 @@ async def get_report(
                 doc.append(NoEscape(r"\par\medskip"))
 
                 with doc.create(Figure(position="h!")) as fig:
-                    fig.add_image(chart_files['time_series'], width=NoEscape(r"0.8\textwidth"))
+                    fig.add_image(
+                        chart_files["time_series"], width=NoEscape(r"0.8\textwidth")
+                    )
                     fig.add_caption("Score Trend")
 
         # Detailed Scores
@@ -522,9 +605,18 @@ async def get_report(
                 feedback_by_group = defaultdict(list)
                 for feedback in feedbacks:
                     # Find the standard and its group
-                    standard = next((s for s in standards if s.id == feedback.standard_id), None)
+                    standard = next(
+                        (s for s in standards if s.id == feedback.standard_id), None
+                    )
                     if standard:
-                        group = next((g for g in standard_groups if g.id == standard.standard_group_id), None)
+                        group = next(
+                            (
+                                g
+                                for g in standard_groups
+                                if g.id == standard.standard_group_id
+                            ),
+                            None,
+                        )
                         if group and feedback.feedback:
                             feedback_by_group[group.name].append(feedback.feedback)
 
@@ -533,8 +625,12 @@ async def get_report(
                         with doc.create(Subsection(group_name)):
                             # Take the most recent feedback
                             doc.append(NoEscape(r"\begin{itemize}"))
-                            for feedback_text in group_feedbacks[-3:]:  # Show last 3 feedbacks
-                                doc.append(NoEscape(r"\item " + escape_latex(feedback_text)))
+                            for feedback_text in group_feedbacks[
+                                -3:
+                            ]:  # Show last 3 feedbacks
+                                doc.append(
+                                    NoEscape(r"\item " + escape_latex(feedback_text))
+                                )
                             doc.append(NoEscape(r"\end{itemize}"))
 
         # Generate the PDF
@@ -556,24 +652,34 @@ async def get_report(
 async def generate_report(
     profile_id: str,
     session: Session = Depends(get_session),
-    includeStudentTypeChart: bool = Query(True, description="Include student type distribution chart"),
-    includePerformanceChart: bool = Query(True, description="Include performance by student type chart"),
+    includeStudentTypeChart: bool = Query(
+        True, description="Include student type distribution chart"
+    ),
+    includePerformanceChart: bool = Query(
+        True, description="Include performance by student type chart"
+    ),
     includeRadarChart: bool = Query(True, description="Include skills radar chart"),
-    includeTimeChart: bool = Query(True, description="Include performance over time chart"),
-    includeDetailedScores: bool = Query(True, description="Include detailed score table"),
-    includeFeedback: bool = Query(True, description="Include detailed feedback section"),
+    includeTimeChart: bool = Query(
+        True, description="Include performance over time chart"
+    ),
+    includeDetailedScores: bool = Query(
+        True, description="Include detailed score table"
+    ),
+    includeFeedback: bool = Query(
+        True, description="Include detailed feedback section"
+    ),
 ):
     """
     This endpoint is used to initiate report generation for a user.
     It will return the same response as the GET endpoint.
     """
     return await get_report(
-        profile_id, 
-        session, 
+        profile_id,
+        session,
         includeStudentTypeChart,
         includePerformanceChart,
         includeRadarChart,
         includeTimeChart,
         includeDetailedScores,
-        includeFeedback
+        includeFeedback,
     )

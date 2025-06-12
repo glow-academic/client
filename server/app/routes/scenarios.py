@@ -32,10 +32,12 @@ async def new_scenario(
         agent_id = agent_id if agent_id and agent_id.strip() else None
         class_id = class_id if class_id and class_id.strip() else None
         seniority = seniority if seniority and seniority.strip() else None
-        
+
         # Filter out empty document IDs
         if document_ids:
-            document_ids = [doc_id for doc_id in document_ids if doc_id and doc_id.strip()]
+            document_ids = [
+                doc_id for doc_id in document_ids if doc_id and doc_id.strip()
+            ]
             if not document_ids:
                 document_ids = None
 
@@ -81,7 +83,7 @@ async def test_scenario(
         # Validate required fields
         if not agent_id or not agent_id.strip():
             raise HTTPException(status_code=400, detail="Agent ID is required")
-        
+
         if not query or not query.strip():
             raise HTTPException(status_code=400, detail="Query is required")
 
@@ -92,18 +94,22 @@ async def test_scenario(
             try:
                 # Create input items with scenario context and user query
                 input_items = []
-                
+
                 # Only add scenario description if it's provided and not empty
                 if description and description.strip():
-                    input_items.append({
-                        "role": "assistant",
-                        "content": f"The following is the scenario description for the chat: {description.strip()}",
-                    })
-                
-                input_items.append({
-                    "role": "user",
-                    "content": query.strip(),
-                })
+                    input_items.append(
+                        {
+                            "role": "assistant",
+                            "content": f"The following is the scenario description for the chat: {description.strip()}",
+                        }
+                    )
+
+                input_items.append(
+                    {
+                        "role": "user",
+                        "content": query.strip(),
+                    }
+                )
 
                 async for token in run_generic_agent_bare(
                     agent_id=agent_id.strip(),

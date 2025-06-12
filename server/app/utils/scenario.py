@@ -13,6 +13,7 @@ def get_seniority_info(seniority: str) -> dict:
         "content": f"The following is the seniority information: {seniority_info_string}",
     }
 
+
 def get_crowdedness_info(crowdedness: int) -> dict:
     """
     Get the crowdedness information for a given crowdedness.
@@ -24,6 +25,7 @@ def get_crowdedness_info(crowdedness: int) -> dict:
         "role": "assistant",
         "content": f"The following is the crowdedness information, on a scale of 1 to 10 (1 being the least crowded and 10 being the most crowded): {crowdedness_info_string}",
     }
+
 
 def get_intensity_info(intensity: int) -> dict:
     """

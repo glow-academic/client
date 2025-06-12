@@ -27,14 +27,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Session) -> Scenarios:
+async def randomly_fill_scenario_attributes(
+    scenario: Scenarios, session: Session
+) -> Scenarios:
     """
     Randomly fill null attributes of a scenario with available options from the database.
-    
+
     Args:
         scenario: The scenario object with potentially null attributes
         session: Database session
-        
+
     Returns:
         Updated scenario object with randomly selected values for null attributes
     """
@@ -46,7 +48,7 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
             logger.info(f"Randomly selected agent_id: {scenario_agent_id}")
     else:
         scenario_agent_id = scenario.agent_id
-    
+
     # Random class selection if class_id is null
     if scenario.class_id is None:
         all_classes = session.exec(select(Classes)).all()
@@ -55,7 +57,7 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
             logger.info(f"Randomly selected class_id: {scenario_class_id}")
     else:
         scenario_class_id = scenario.class_id
-    
+
     # Random document selection if documents is null
     if scenario.documents is None:
         # Get all documents, optionally filtered by class if we have one
@@ -65,14 +67,16 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
             ).all()
         else:
             class_documents = session.exec(select(Documents)).all()
-        
+
         if class_documents:
             # Randomly select 0-3 documents
             num_docs = random.randint(0, min(3, len(class_documents)))
             if num_docs > 0:
                 selected_docs = random.sample(class_documents, num_docs)
                 scenario_documents = [doc.id for doc in selected_docs]
-                logger.info(f"Randomly selected {num_docs} documents: {scenario_documents}")
+                logger.info(
+                    f"Randomly selected {num_docs} documents: {scenario_documents}"
+                )
             else:
                 scenario_documents = []
                 logger.info("Randomly selected 0 documents (empty list)")
@@ -81,7 +85,7 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
             logger.info("No documents found")
     else:
         scenario_documents = scenario.documents
-    
+
     # Random seniority selection if seniority is null
     if scenario.seniority is None:
         seniority_options = ["freshman", "sophomore", "junior", "senior"]
@@ -89,14 +93,14 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
         logger.info(f"Randomly selected seniority: {scenario_seniority}")
     else:
         scenario_seniority = scenario.seniority
-    
+
     # Random crowdedness selection if crowdedness is null (1-10 scale)
     if scenario.crowdedness is None:
         scenario_crowdedness = random.randint(1, 10)
         logger.info(f"Randomly selected crowdedness: {scenario_crowdedness}")
     else:
         scenario_crowdedness = scenario.crowdedness
-    
+
     # Random intensity selection if intensity is null (1-10 scale)
     if scenario.intensity is None:
         scenario_intensity = random.randint(1, 10)
@@ -120,7 +124,6 @@ async def randomly_fill_scenario_attributes(scenario: Scenarios, session: Sessio
 async def start_attempt(
     simulation_id: str = Form(...),
     profile_id: Optional[str] = Form(None),
-    class_id: str = Form(...),
     session: Session = Depends(get_session),
 ):
     """
@@ -143,7 +146,6 @@ async def start_attempt(
         # Create the attempt
         new_attempt = SimulationAttempts(
             profile_id=profile_id,  # Will be None for guest mode
-            class_id=class_id,
             simulation_id=simulation_id,
         )
         session.add(new_attempt)
@@ -157,7 +159,9 @@ async def start_attempt(
 
         # If no scenarios are configured, pick a random scenario from all available scenarios
         if not scenario_ids:
-            logger.info(f"No scenarios configured for simulation {simulation_id}, selecting random scenario")
+            logger.info(
+                f"No scenarios configured for simulation {simulation_id}, selecting random scenario"
+            )
             all_scenarios = session.exec(select(Scenarios)).all()
             if not all_scenarios:
                 raise HTTPException(
@@ -165,9 +169,12 @@ async def start_attempt(
                 )
             # Pick a random scenario
             import random
+
             random_scenario = random.choice(all_scenarios)
             scenario_id = random_scenario.id
-            logger.info(f"Selected random scenario {scenario_id} for simulation {simulation_id}")
+            logger.info(
+                f"Selected random scenario {scenario_id} for simulation {simulation_id}"
+            )
         else:
             # Get the first scenario from the configured list
             scenario_id = scenario_ids[0]
@@ -179,10 +186,10 @@ async def start_attempt(
             raise HTTPException(
                 status_code=400, detail=f"Scenario {scenario_id} not found"
             )
-        
+
         # First, randomly fill any null attributes in the scenario
         scenario = await randomly_fill_scenario_attributes(old_scenario, session)
-        
+
         # Use agent-specific default titles for simulations
         agent = session.exec(
             select(Agents).where(Agents.id == scenario.agent_id)
@@ -191,9 +198,9 @@ async def start_attempt(
             chat_title = f"{agent.name} Student Session"
         else:
             chat_title = "Practice Session"
-        
+
         # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
-        if not scenario.description or scenario.description == "":        
+        if not scenario.description or scenario.description == "":
             name, description = await run_scenario_agent(
                 agent_id=scenario.agent_id,
                 class_id=scenario.class_id,
@@ -212,7 +219,6 @@ async def start_attempt(
             session.refresh(scenario)
 
             scenario_id = scenario.id
-
 
         # Create the chat with the scenario and link it to this attempt
         chat = SimulationChats(
@@ -329,7 +335,9 @@ async def continue_attempt(
 
         # get the simulation
         simulation = session.exec(
-            select(Simulations).where(Simulations.id == simulation_attempt.simulation_id)
+            select(Simulations).where(
+                Simulations.id == simulation_attempt.simulation_id
+            )
         ).one_or_none()
         if not simulation:
             raise HTTPException(status_code=404, detail="Simulation not found")
@@ -340,14 +348,16 @@ async def continue_attempt(
         # If no scenarios are configured, this was a random scenario selection
         # In this case, we don't continue to another scenario
         if not scenario_ids:
-            logger.info(f"No scenarios configured for simulation {simulation.id}, ending attempt")
+            logger.info(
+                f"No scenarios configured for simulation {simulation.id}, ending attempt"
+            )
             next_chat_id = chat_id
         else:
             # Count existing chats for this attempt to determine the next scenario index
             existing_chats = session.exec(
                 select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
             ).all()
-            
+
             # The next index is the count of existing chats (0-based indexing)
             next_index = len(existing_chats)
 
@@ -359,10 +369,14 @@ async def continue_attempt(
                     select(Scenarios).where(Scenarios.id == next_scenario_id)
                 ).one_or_none()
                 if not old_next_scenario:
-                    raise HTTPException(status_code=404, detail="Next scenario not found")
+                    raise HTTPException(
+                        status_code=404, detail="Next scenario not found"
+                    )
 
                 # Randomly fill any null attributes in the next scenario
-                next_scenario = await randomly_fill_scenario_attributes(old_next_scenario, session)
+                next_scenario = await randomly_fill_scenario_attributes(
+                    old_next_scenario, session
+                )
 
                 # Use agent name for title if available
                 agent = session.exec(
@@ -374,7 +388,7 @@ async def continue_attempt(
                     chat_title = "Practice Session"
 
                 # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
-                if not next_scenario.description or next_scenario.description == "":        
+                if not next_scenario.description or next_scenario.description == "":
                     name, description = await run_scenario_agent(
                         agent_id=next_scenario.agent_id,
                         class_id=next_scenario.class_id,
@@ -427,4 +441,6 @@ async def continue_attempt(
     except Exception as e:
         session.rollback()
         logger.error(f"Error continuing attempt: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to continue attempt: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to continue attempt: {str(e)}"
+        )

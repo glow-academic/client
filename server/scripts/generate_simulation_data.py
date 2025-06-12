@@ -8,7 +8,10 @@ Bulk generator – 300 chats across six simulations
 Dates span past 90 days to today (UTC)
 """
 
-import random, uuid, datetime, pathlib
+import random
+import uuid
+import datetime
+import pathlib
 
 # ---------------------------------------------------------------------------#
 # 1.  CONFIGURATION                                                          #
@@ -16,7 +19,7 @@ import random, uuid, datetime, pathlib
 # ---- TA roster ------------------------------------------------------------#
 TA_USERS = [
     "99b90118-7b9e-4e12-8e81-d7ccc2916601",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916602", 
+    "99b90118-7b9e-4e12-8e81-d7ccc2916602",
     "99b90118-7b9e-4e12-8e81-d7ccc2916603",
     "99b90118-7b9e-4e12-8e81-d7ccc2916604",
     "99b90118-7b9e-4e12-8e81-d7ccc2916605",
@@ -38,7 +41,7 @@ SIMULATIONS = [
     "c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee",  # Multi-Course Algorithm
     "c5a0b003-cccc-dddd-eeee-ffffffffffff",  # Advanced Theory Deep Dive
 ]
-SIM_QUOTA = [50, 50, 50, 50, 50, 50]   # 50 chats per simulation (300 total)
+SIM_QUOTA = [50, 50, 50, 50, 50, 50]  # 50 chats per simulation (300 total)
 
 # ---- Rubric & Standards ---------------------------------------------------#
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
@@ -49,7 +52,7 @@ STD_FIRST_TWO = [
     "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
 ]
 
-# Last 2 standards (max score 60) 
+# Last 2 standards (max score 60)
 STD_LAST_TWO = [
     "22222222-2222-aaaa-bbbb-333333333333",  # Standard 3
     "33333333-2222-aaaa-bbbb-333333333333",  # Standard 4
@@ -71,7 +74,7 @@ QUESTION_BANK = [
     "What's wrong with my logic?",
     "Can you explain this concept?",
     "How do I approach this problem?",
-    "Why is my code so slow?"
+    "Why is my code so slow?",
 ]
 
 ANSWER_BANK = [
@@ -89,13 +92,20 @@ ANSWER_BANK = [
     "Think about the invariant you're trying to maintain.",
     "Let me draw a diagram to explain this.",
     "Break this down into smaller steps.",
-    "Try using a different approach - maybe recursion?"
+    "Try using a different approach - maybe recursion?",
 ]
 
 CHAT_TITLES = [
-    "Debug Help", "Algorithm Q", "Concept Check", "Code Review", 
-    "Logic Error", "Performance Issue", "Implementation Help",
-    "Understanding Concepts", "Problem Solving", "Optimization Question"
+    "Debug Help",
+    "Algorithm Q",
+    "Concept Check",
+    "Code Review",
+    "Logic Error",
+    "Performance Issue",
+    "Implementation Help",
+    "Understanding Concepts",
+    "Problem Solving",
+    "Optimization Question",
 ]
 
 # Past 90 days
@@ -103,6 +113,7 @@ TODAY = datetime.datetime.now(datetime.timezone.utc)
 START = TODAY - datetime.timedelta(days=90)
 
 random.seed(42)
+
 
 # ---------------------------------------------------------------------------#
 # 2.  Helpers                                                                #
@@ -116,9 +127,10 @@ def rand_ts_with_trend(progress: float) -> str:
     # Add some randomness but bias toward the trend
     jitter = random.uniform(-0.1, 0.1)
     adjusted_progress = max(0, min(1, progress + jitter))
-    
+
     delta = adjusted_progress * (TODAY - START)
     return (START + delta).isoformat(timespec="seconds")
+
 
 def get_score_with_improvement(progress: float) -> int:
     """
@@ -127,7 +139,7 @@ def get_score_with_improvement(progress: float) -> int:
     """
     base_min = 20 + int(progress * 30)  # 20 -> 50
     base_max = 60 + int(progress * 35)  # 60 -> 95
-    
+
     # Still allow some outliers
     roll = random.random()
     if roll < 0.03:  # 3% chance of very low score
@@ -136,6 +148,7 @@ def get_score_with_improvement(progress: float) -> int:
         return 100
     else:
         return random.randint(base_min, base_max)
+
 
 def get_diverse_standard_score(standard_id: str, progress: float) -> int:
     """
@@ -148,13 +161,15 @@ def get_diverse_standard_score(standard_id: str, progress: float) -> int:
         base_max = 50 + int(progress * 40)  # 50 -> 90
         return random.randint(base_min, min(90, base_max))
     else:
-        # Last 2 standards: range 5-60, improving over time  
-        base_min = 5 + int(progress * 20)   # 5 -> 25
+        # Last 2 standards: range 5-60, improving over time
+        base_min = 5 + int(progress * 20)  # 5 -> 25
         base_max = 30 + int(progress * 30)  # 30 -> 60
         return random.randint(base_min, min(60, base_max))
 
+
 def q(val: str) -> str:
     return "'" + val.replace("'", "''") + "'"
+
 
 # ---------------------------------------------------------------------------#
 # 3.  Row buckets                                                            #
@@ -172,12 +187,12 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         # Calculate progress (0.0 to 1.0) for this chat
         progress = chat_counter / (total_chats - 1)
         chat_counter += 1
-        
+
         ta_id = random.choice(TA_USERS)
 
         attempt_id = str(uuid.uuid4())
-        chat_id    = str(uuid.uuid4())
-        grade_id   = str(uuid.uuid4())
+        chat_id = str(uuid.uuid4())
+        grade_id = str(uuid.uuid4())
 
         # ----- simulation_attempt -----------------------------------------#
         attempt_rows.append(
@@ -201,7 +216,9 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         msg_count = random.randint(2, 12)
         for j in range(msg_count):
             msg_id = str(uuid.uuid4())
-            msg_progress = progress + (j / msg_count) * 0.01  # Slight progression within chat
+            msg_progress = (
+                progress + (j / msg_count) * 0.01
+            )  # Slight progression within chat
             message_rows.append(
                 f"({q(msg_id)}, {q(rand_ts_with_trend(msg_progress))}, {q(chat_id)}, "
                 f"{q(random.choice(QUESTION_BANK))}, "
@@ -213,7 +230,9 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         passed = score >= 70
         # Time taken improves slightly over time (people get faster)
         base_time = random.randint(600, 2400)
-        time_taken = max(300, int(base_time * (1.2 - progress * 0.4)))  # Slight improvement
+        time_taken = max(
+            300, int(base_time * (1.2 - progress * 0.4))
+        )  # Slight improvement
 
         grade_rows.append(
             f"({q(grade_id)}, {q(rand_ts_with_trend(progress))}, {str(passed).lower()}, {score}, "
@@ -223,15 +242,16 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
         # ----- simulation_chat_feedbacks (4 per chat) ---------------------#
         # Generate diverse scores for all 4 standards
         all_standards = STD_FIRST_TWO + STD_LAST_TWO
-        
+
         for standard_id in all_standards:
             standard_score = get_diverse_standard_score(standard_id, progress)
             feedback_text = f"Feedback for standard {standard_id[-4:]}"
-            
+
             fb_rows.append(
                 f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(standard_id)}, {q(grade_id)}, "
                 f"{standard_score}, {q(feedback_text)})"
             )
+
 
 # ---------------------------------------------------------------------------#
 # 5.  Emit INSERT statements                                                 #
@@ -239,18 +259,36 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
 def build_insert(table: str, cols: str, rows: list[str]) -> str:
     return f"INSERT INTO {table} ({cols}) VALUES\n  " + ",\n  ".join(rows) + ";\n\n"
 
-sql = "".join([
-    build_insert("simulation_attempts",
-                 "id, created_at, profile_id, simulation_id", attempt_rows),
-    build_insert("simulation_chats",
-                 "id, created_at, completed_at, title, scenario_id, attempt_id, completed", chat_rows),
-    build_insert("simulation_messages",
-                 "id, created_at, chat_id, query, response, completed", message_rows),
-    build_insert("simulation_chat_grades",
-                 "id, created_at, passed, score, time_taken, rubric_id, simulation_chat_id", grade_rows),
-    build_insert("simulation_chat_feedbacks",
-                 "id, created_at, standard_id, simulation_chat_grade_id, total, feedback", fb_rows),
-])
+
+sql = "".join(
+    [
+        build_insert(
+            "simulation_attempts",
+            "id, created_at, profile_id, simulation_id",
+            attempt_rows,
+        ),
+        build_insert(
+            "simulation_chats",
+            "id, created_at, completed_at, title, scenario_id, attempt_id, completed",
+            chat_rows,
+        ),
+        build_insert(
+            "simulation_messages",
+            "id, created_at, chat_id, query, response, completed",
+            message_rows,
+        ),
+        build_insert(
+            "simulation_chat_grades",
+            "id, created_at, passed, score, time_taken, rubric_id, simulation_chat_id",
+            grade_rows,
+        ),
+        build_insert(
+            "simulation_chat_feedbacks",
+            "id, created_at, standard_id, simulation_chat_grade_id, total, feedback",
+            fb_rows,
+        ),
+    ]
+)
 
 # Write to database/init directory
 output_path = pathlib.Path("database/init/generated_simulation_data.sql")
@@ -258,6 +296,6 @@ output_path.parent.mkdir(parents=True, exist_ok=True)
 output_path.write_text(sql)
 
 print(f"✅  Generated {len(chat_rows)} chats ({len(message_rows)} messages)")
-print(f"📊  Data spans past 90 days with gradual improvement trend")
-print(f"🎯  First 2 standards: max score 90, Last 2 standards: max score 60")
+print("📊  Data spans past 90 days with gradual improvement trend")
+print("🎯  First 2 standards: max score 90, Last 2 standards: max score 60")
 print(f"📁  Output: {output_path}")

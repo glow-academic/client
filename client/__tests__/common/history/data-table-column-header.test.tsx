@@ -47,17 +47,17 @@ describe("DataTableColumnHeader", () => {
       expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
-    it("should apply showChats styling when showChats is true", () => {
+    it("should apply custom className when provided", () => {
       const { container } = render(
         <DataTableColumnHeader
           column={mockNonSortableColumn as any}
           title="Test Column"
-          showChats={true}
+          className="custom-class"
         />,
       );
 
       const div = container.firstChild as HTMLElement;
-      expect(div).toHaveClass("pl-4");
+      expect(div).toHaveClass("custom-class");
     });
 
     it("should render dropdown menu for sortable columns", () => {
@@ -160,6 +160,81 @@ describe("DataTableColumnHeader", () => {
       );
 
       // ArrowDown icon should be present
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+
+    it("should show unsorted state when not sorted", () => {
+      render(
+        <DataTableColumnHeader
+          column={mockColumn as any}
+          title="Test Column"
+        />,
+      );
+
+      // ChevronsUpDown icon should be present for unsorted state
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+  });
+
+  describe("Accessibility", () => {
+    it("should have proper button attributes for sortable columns", () => {
+      render(
+        <DataTableColumnHeader
+          column={mockColumn as any}
+          title="Test Column"
+        />,
+      );
+
+      const button = screen.getByRole("button");
+      expect(button).toHaveAttribute("type", "button");
+    });
+
+    it("should be keyboard accessible", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <DataTableColumnHeader
+          column={mockColumn as any}
+          title="Test Column"
+        />,
+      );
+
+      const button = screen.getByRole("button");
+      await user.tab();
+      expect(button).toHaveFocus();
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("should handle null sort state", () => {
+      const nullSortColumn = {
+        ...mockColumn,
+        getIsSorted: vi.fn(() => null),
+      };
+
+      render(
+        <DataTableColumnHeader
+          column={nullSortColumn as any}
+          title="Test Column"
+        />,
+      );
+
+      expect(screen.getByRole("button")).toBeInTheDocument();
+    });
+
+    it("should handle undefined sort state", () => {
+      const undefinedSortColumn = {
+        ...mockColumn,
+        getIsSorted: vi.fn(() => undefined),
+      };
+
+      render(
+        <DataTableColumnHeader
+          column={undefinedSortColumn as any}
+          title="Test Column"
+        />,
+      );
+
       expect(screen.getByRole("button")).toBeInTheDocument();
     });
   });

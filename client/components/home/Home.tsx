@@ -703,8 +703,6 @@ export default function Home() {
         formData.append("profile_id", profile.id);
       }
 
-      formData.append("class_id", classId);
-
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/simulations/start`,
         {

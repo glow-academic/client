@@ -212,17 +212,11 @@ export function useColumns({
       const agentsTested = [
         ...new Set(
           attemptChats.map((chat) => {
-            // First try to find agent by scenarioId
-            const agent = agents.find((a) => a.id === chat.scenarioId);
-            if (agent) return agent.name;
-            
-            // If not found, try to get from simulation scenarios
-            const simulation = simulations.find((s) => s.id === attempt.simulationId);
-            if (simulation?.scenarioIds?.includes(chat.scenarioId)) {
-              // Find agent by scenario ID in the simulation
-              const scenarioAgent = agents.find((a) => 
-                simulation.scenarioIds?.includes(a.id)
-              );
+            // find the scenario for this chat
+            const scenario = scenarios.find((s) => s.id === chat.scenarioId);
+            if (scenario) {
+              // Find agent by the agentId in the scenario
+              const scenarioAgent = agents.find((a) => a.id === scenario.agentId);
               return scenarioAgent?.name || "Unknown Agent";
             }
             
@@ -235,17 +229,12 @@ export function useColumns({
         (s) => s.id === attempt.simulationId,
       );
 
-      // Derive classId from scenarios
+      // Derive classIds from the scenario of the chat
       let derivedClassId = null;
       if (simulation?.scenarioIds) {
-        // Find the first scenario that has a classId
-        for (const scenarioId of simulation.scenarioIds) {
-          if (scenarioId === "RAY") continue; // Skip default RAY scenario
-          const scenario = scenarios.find((s: Scenario) => s.id === scenarioId);
-          if (scenario?.classId) {
-            derivedClassId = scenario.classId;
-            break;
-          }
+        const scenario = scenarios.find((s: Scenario) => s.id === attemptChats[0].scenarioId);
+        if (scenario?.classId) {
+          derivedClassId = scenario.classId;
         }
       }
 

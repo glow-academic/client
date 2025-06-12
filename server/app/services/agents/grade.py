@@ -1,8 +1,15 @@
 from app.db import get_session
 from sqlmodel import Session
 from app.models import (
-    SimulationChats, SimulationMessages, Rubrics, StandardGroups, Standards,
-    SimulationChatGrades, SimulationChatFeedbacks, Simulations, SimulationAttempts
+    SimulationChats,
+    SimulationMessages,
+    Rubrics,
+    StandardGroups,
+    Standards,
+    SimulationChatGrades,
+    SimulationChatFeedbacks,
+    Simulations,
+    SimulationAttempts,
 )
 from fastapi import Depends
 import logging
@@ -14,8 +21,7 @@ from app.utils.rubric import get_dynamic_rubric
 from sqlmodel import select
 from pydantic import BaseModel, Field, create_model
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
-from uuid import UUID
+from typing import List
 import re
 
 logger = logging.getLogger(__name__)
@@ -24,47 +30,55 @@ logger = logging.getLogger(__name__)
 def create_safe_field_name(short_name: str) -> str:
     """
     Create a safe field name from a short_name by removing special characters and spaces.
-    
+
     Args:
         short_name: The short name from the standard group
-    
+
     Returns:
         Safe field name for use in Pydantic models
     """
-    safe_name = re.sub(r'[^a-zA-Z0-9_]', '_', short_name.lower())
-    safe_name = re.sub(r'_+', '_', safe_name).strip('_')
+    safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", short_name.lower())
+    safe_name = re.sub(r"_+", "_", safe_name).strip("_")
     return safe_name
 
 
-def create_dynamic_rubric_model(standard_groups: List[StandardGroups]) -> type[BaseModel]:
+def create_dynamic_rubric_model(
+    standard_groups: List[StandardGroups],
+) -> type[BaseModel]:
     """
     Create a dynamic Pydantic model based on the rubric's standard groups.
-    
+
     Args:
         standard_groups: List of standard groups for this rubric
-    
+
     Returns:
         Dynamic Pydantic model class
     """
     fields = {}
-    
+
     for group in standard_groups:
         # Create safe field names by removing special characters and spaces
         safe_name = create_safe_field_name(group.short_name)
-        
+
         # Create field for the score (1-5)
         score_field_name = f"{safe_name}_score"
-        fields[score_field_name] = (int, Field(ge=1, le=5, description=f"Score for {group.name} (1-5)"))
-        
+        fields[score_field_name] = (
+            int,
+            Field(ge=1, le=5, description=f"Score for {group.name} (1-5)"),
+        )
+
         # Create field for the feedback
         feedback_field_name = f"{safe_name}_feedback"
-        fields[feedback_field_name] = (str, Field(description=f"Feedback for {group.name}"))
-    
+        fields[feedback_field_name] = (
+            str,
+            Field(description=f"Feedback for {group.name}"),
+        )
+
     # Add overall fields
     fields["overall_score"] = (int, Field(description="Overall total score"))
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
-    
+
     return create_model("DynamicRubricGrade", **fields)
 
 
@@ -108,14 +122,14 @@ async def run_grade_agent(
         ).one()
 
         if not simulation.rubric_id:
-            raise ValueError(f"Simulation {simulation.id} does not have a rubric assigned")
+            raise ValueError(
+                f"Simulation {simulation.id} does not have a rubric assigned"
+            )
 
         rubric_id = simulation.rubric_id
 
         # get rubric from rubric_id
-        rubric = session.exec(
-            select(Rubrics).where(Rubrics.id == rubric_id)
-        ).one()
+        rubric = session.exec(select(Rubrics).where(Rubrics.id == rubric_id)).one()
 
         # get standard groups from rubric
         standard_groups = session.exec(
@@ -128,12 +142,16 @@ async def run_grade_agent(
             select(Standards).where(Standards.standard_group_id.in_(standard_group_ids))
         ).all()
 
-        logger.info(f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric.name}")
-        logger.info(f"Found {len(standard_groups)} standard groups and {len(standards)} standards")
+        logger.info(
+            f"Starting grading for simulation chat {simulation_chat_id} with rubric {rubric.name}"
+        )
+        logger.info(
+            f"Found {len(standard_groups)} standard groups and {len(standards)} standards"
+        )
 
         # Build dynamic rubric using utility function
         rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
-        
+
         # Create dynamic Pydantic model for the rubric
         DynamicRubric = create_dynamic_rubric_model(standard_groups)
 
@@ -147,7 +165,7 @@ async def run_grade_agent(
         # Create and run the grading agent
         grading_agent = GradingAgent()
         agent = grading_agent.agent(DynamicRubric)
-        
+
         # Prepare input with rubric and conversation history
         input_items = [rubric_input] + conversation_history
 
@@ -167,68 +185,78 @@ async def run_grade_agent(
         else:
             # If timezone-naive, assume it's already UTC and make it timezone-aware
             chat_created_at = chat_created_at.replace(tzinfo=timezone.utc)
-        
+
         # Now both times are timezone-aware and in UTC
         time_taken = max(1, int((current_time - chat_created_at).total_seconds()))
-        logger.info(f"Time calculation: current={current_time}, created={chat_created_at}, taken={time_taken}s")
+        logger.info(
+            f"Time calculation: current={current_time}, created={chat_created_at}, taken={time_taken}s"
+        )
 
         # Extract overall grading data
         overall_score = grading_result.overall_score
         passed = grading_result.passed
-        
+
         logger.info(f"Grading results: score={overall_score}, passed={passed}")
-        
+
         # Create the simulation chat grade record
         simulation_chat_grade = SimulationChatGrades(
             passed=passed,
             score=overall_score,
             time_taken=time_taken,
             rubric_id=rubric_id,
-            simulation_chat_id=simulation_chat_id
+            simulation_chat_id=simulation_chat_id,
         )
-        
+
         session.add(simulation_chat_grade)
         session.flush()  # Get the ID without committing
-        
+
         # Create feedback records for each standard group
         feedback_count = 0
         for group in standard_groups:
             # Create safe field names (same logic as in model creation)
             safe_name = create_safe_field_name(group.short_name)
-            
+
             # Get the score and feedback for this group
             score_field = f"{safe_name}_score"
             feedback_field = f"{safe_name}_feedback"
-            
+
             try:
                 group_score = getattr(grading_result, score_field, 0)
                 group_feedback = getattr(grading_result, feedback_field, "")
-                
-                logger.info(f"Group {group.short_name}: score={group_score}, feedback_length={len(group_feedback)}")
-                
+
+                logger.info(
+                    f"Group {group.short_name}: score={group_score}, feedback_length={len(group_feedback)}"
+                )
+
                 # Find the corresponding standard for this score
-                group_standards = [s for s in standards if s.standard_group_id == group.id]
+                group_standards = [
+                    s for s in standards if s.standard_group_id == group.id
+                ]
                 matching_standard = None
                 for standard in group_standards:
                     if standard.points == group_score:
                         matching_standard = standard
                         break
-                
+
                 if matching_standard:
                     # Create feedback record
                     simulation_chat_feedback = SimulationChatFeedbacks(
                         standard_id=matching_standard.id,
                         simulation_chat_grade_id=simulation_chat_grade.id,
                         total=group_score,
-                        feedback=group_feedback
+                        feedback=group_feedback,
                     )
                     session.add(simulation_chat_feedback)
                     feedback_count += 1
                 else:
-                    logger.warning(f"No matching standard found for group {group.short_name} with score {group_score}")
-                    
+                    logger.warning(
+                        f"No matching standard found for group {group.short_name} with score {group_score}"
+                    )
+
             except AttributeError as e:
-                logger.error(f"Failed to get grading data for group {group.short_name}: {e}")
+                logger.error(
+                    f"Failed to get grading data for group {group.short_name}: {e}"
+                )
                 continue
 
         logger.info(f"Created {feedback_count} feedback records")
@@ -242,9 +270,11 @@ async def run_grade_agent(
         session.commit()
         session.refresh(simulation_chat_grade)
 
-        logger.info(f"Grading completed successfully with grade ID: {simulation_chat_grade.id}")
+        logger.info(
+            f"Grading completed successfully with grade ID: {simulation_chat_grade.id}"
+        )
         return str(simulation_chat_grade.id)
-        
+
     except Exception as e:
         logger.error(f"Error in run_grade_agent: {str(e)}", exc_info=True)
         session.rollback()

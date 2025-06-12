@@ -33,39 +33,25 @@ describe("DataTablePagination", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={mockTable as any} />);
 
       expect(screen.getByText("Rows per page")).toBeInTheDocument();
     });
 
-    it("should show selected rows count when showChats is false", () => {
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+    it("should show selected rows count", () => {
+      render(<DataTablePagination table={mockTable as any} />);
 
       expect(screen.getByText("2 of 50 row(s) selected.")).toBeInTheDocument();
     });
 
-    it("should not show selected rows count when showChats is true", () => {
-      render(<DataTablePagination table={mockTable as any} showChats={true} />);
-
-      expect(screen.queryByText(/row\(s\) selected/)).not.toBeInTheDocument();
-    });
-
     it("should display current page information", () => {
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={mockTable as any} />);
 
       expect(screen.getByText("Page 1 of 5")).toBeInTheDocument();
     });
 
     it("should show page size selector", () => {
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={mockTable as any} />);
 
       expect(screen.getByText("10")).toBeInTheDocument();
       expect(screen.getByText("Rows per page")).toBeInTheDocument();
@@ -76,9 +62,7 @@ describe("DataTablePagination", () => {
     it("should handle page size change", async () => {
       const user = userEvent.setup();
 
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={mockTable as any} />);
 
       const pageSizeSelect = screen.getByRole("combobox");
       await user.click(pageSizeSelect);
@@ -101,12 +85,7 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(
-        <DataTablePagination
-          table={mockTableWithNext as any}
-          showChats={false}
-        />,
-      );
+      render(<DataTablePagination table={mockTableWithNext as any} />);
 
       const nextButton = screen.getByRole("button", {
         name: /go to next page/i,
@@ -130,12 +109,7 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(
-        <DataTablePagination
-          table={mockTableWithPrevious as any}
-          showChats={false}
-        />,
-      );
+      render(<DataTablePagination table={mockTableWithPrevious as any} />);
 
       const prevButton = screen.getByRole("button", {
         name: /go to previous page/i,
@@ -159,12 +133,7 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(
-        <DataTablePagination
-          table={mockTableWithFirst as any}
-          showChats={false}
-        />,
-      );
+      render(<DataTablePagination table={mockTableWithFirst as any} />);
 
       const firstButton = screen.getByRole("button", {
         name: /go to first page/i,
@@ -188,12 +157,7 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(
-        <DataTablePagination
-          table={mockTableWithLast as any}
-          showChats={false}
-        />,
-      );
+      render(<DataTablePagination table={mockTableWithLast as any} />);
 
       const lastButton = screen.getByRole("button", {
         name: /go to last page/i,
@@ -206,9 +170,7 @@ describe("DataTablePagination", () => {
 
   describe("Button States", () => {
     it("should disable previous page buttons when on first page", () => {
-      render(
-        <DataTablePagination table={mockTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={mockTable as any} />);
 
       const prevButtons = screen
         .getAllByRole("button")
@@ -235,12 +197,7 @@ describe("DataTablePagination", () => {
         })),
       };
 
-      render(
-        <DataTablePagination
-          table={tableOnLastPage as any}
-          showChats={false}
-        />,
-      );
+      render(<DataTablePagination table={tableOnLastPage as any} />);
 
       const nextButtons = screen
         .getAllByRole("button")
@@ -268,9 +225,7 @@ describe("DataTablePagination", () => {
         })),
       };
 
-      render(
-        <DataTablePagination table={tableInMiddle as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={tableInMiddle as any} />);
 
       const allButtons = screen
         .getAllByRole("button")
@@ -293,12 +248,60 @@ describe("DataTablePagination", () => {
         getFilteredSelectedRowModel: vi.fn(() => ({ rows: [] })),
       };
 
-      render(
-        <DataTablePagination table={emptyTable as any} showChats={false} />,
-      );
+      render(<DataTablePagination table={emptyTable as any} />);
 
       expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
       expect(screen.getByText("0 of 0 row(s) selected.")).toBeInTheDocument();
+    });
+
+    it("should handle single page table", () => {
+      const singlePageTable = {
+        ...mockTable,
+        getPageCount: vi.fn(() => 1),
+        getCanPreviousPage: vi.fn(() => false),
+        getCanNextPage: vi.fn(() => false),
+      };
+
+      render(<DataTablePagination table={singlePageTable as any} />);
+
+      expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
+    });
+
+    it("should handle large page counts", () => {
+      const largePageTable = {
+        ...mockTable,
+        getPageCount: vi.fn(() => 999),
+        getState: vi.fn(() => ({
+          pagination: {
+            pageSize: 10,
+            pageIndex: 500,
+          },
+        })),
+      };
+
+      render(<DataTablePagination table={largePageTable as any} />);
+
+      expect(screen.getByText("Page 501 of 999")).toBeInTheDocument();
+    });
+  });
+
+  describe("Page Size Options", () => {
+    it("should call setPageSize when page size is changed", async () => {
+      const user = userEvent.setup();
+
+      render(<DataTablePagination table={mockTable as any} />);
+
+      const select = screen.getByRole("combobox");
+      await user.click(select);
+
+      // Check that the select is interactive
+      expect(select).toBeInTheDocument();
+    });
+
+    it("should display current page size", () => {
+      render(<DataTablePagination table={mockTable as any} />);
+
+      expect(screen.getByDisplayValue("10")).toBeInTheDocument();
     });
   });
 });

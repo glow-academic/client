@@ -70,32 +70,16 @@ describe("DataTableToolbar", () => {
       );
 
       expect(
-        screen.getByPlaceholderText("Filter chats..."),
+        screen.getByPlaceholderText("Filter simulations..."),
       ).toBeInTheDocument();
     });
 
-    it("should render filter input for chats mode", () => {
+    it("should render filter input for simulations", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          viewMode="chats"
-        />,
-      );
-
-      expect(
-        screen.getByPlaceholderText("Filter chats..."),
-      ).toBeInTheDocument();
-    });
-
-    it("should render filter input for attempts mode", () => {
-      render(
-        <DataTableToolbar
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="attempts"
         />,
       );
 
@@ -104,16 +88,30 @@ describe("DataTableToolbar", () => {
       ).toBeInTheDocument();
     });
 
-    it("should render export button", () => {
+    it("should render export button when showExport is true", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          showExport={true}
         />,
       );
 
       expect(screen.getByTestId("export-button")).toBeInTheDocument();
+    });
+
+    it("should not render export button when showExport is false", () => {
+      render(
+        <DataTableToolbar
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          showExport={false}
+        />,
+      );
+
+      expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
     });
 
     it("should render view options", () => {
@@ -130,7 +128,7 @@ describe("DataTableToolbar", () => {
   });
 
   describe("Filter Input", () => {
-    it("should handle search input for chats", async () => {
+    it("should handle search input for simulations", async () => {
       const user = userEvent.setup();
 
       render(
@@ -138,42 +136,18 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          viewMode="chats"
-        />,
-      );
-
-      const input = screen.getByPlaceholderText("Filter chats...");
-      await user.clear(input);
-      await user.type(input, "test search");
-
-      expect(mockTable.getColumn).toHaveBeenCalledWith("title");
-      // Check that the final value was set correctly
-      const calls = mockColumn.setFilterValue.mock.calls;
-      const lastCall = calls[calls.length - 1];
-      expect(lastCall[0]).toBe("test search");
-    });
-
-    it("should handle search input for attempts", async () => {
-      const user = userEvent.setup();
-
-      render(
-        <DataTableToolbar
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="attempts"
         />,
       );
 
       const input = screen.getByPlaceholderText("Filter simulations...");
       await user.clear(input);
-      await user.type(input, "simulation search");
+      await user.type(input, "test search");
 
       expect(mockTable.getColumn).toHaveBeenCalledWith("simulationTitle");
       // Check that the final value was set correctly
       const calls = mockColumn.setFilterValue.mock.calls;
       const lastCall = calls[calls.length - 1];
-      expect(lastCall[0]).toBe("simulation search");
+      expect(lastCall[0]).toBe("test search");
     });
 
     it("should display current filter value", () => {
@@ -196,87 +170,61 @@ describe("DataTableToolbar", () => {
       const input = screen.getByDisplayValue("existing filter");
       expect(input).toBeInTheDocument();
     });
+
+    it("should clear filter when input is cleared", async () => {
+      const user = userEvent.setup();
+
+      render(
+        <DataTableToolbar
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      const input = screen.getByPlaceholderText("Filter simulations...");
+      await user.clear(input);
+
+      expect(mockColumn.setFilterValue).toHaveBeenCalledWith("");
+    });
   });
 
   describe("Faceted Filters", () => {
-    it("should render user filter for chats mode", () => {
+    it("should render user filter", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          viewMode="chats"
         />,
       );
 
       expect(screen.getByTestId("faceted-filter-name")).toBeInTheDocument();
     });
 
-    it("should render user filter for attempts mode", () => {
+    it("should render class filter", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          viewMode="attempts"
-        />,
-      );
-
-      expect(screen.getByTestId("faceted-filter-name")).toBeInTheDocument();
-    });
-
-    it("should render class filter with correct column for chats", () => {
-      render(
-        <DataTableToolbar
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
         />,
       );
 
       expect(mockTable.getColumn).toHaveBeenCalledWith("classId");
     });
 
-    it("should render class filter with correct column for attempts", () => {
+    it("should not render filters when options are empty", () => {
       render(
         <DataTableToolbar
           table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="attempts"
+          profileOptions={[]}
+          classOptions={[]}
         />,
       );
 
-      expect(mockTable.getColumn).toHaveBeenCalledWith("classCode");
-    });
-
-    it("should render score filter for chats mode", () => {
-      render(
-        <DataTableToolbar
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="chats"
-        />,
-      );
-
-      expect(screen.getByTestId("faceted-filter-score")).toBeInTheDocument();
-    });
-
-    it("should not render score filter for attempts mode", () => {
-      render(
-        <DataTableToolbar
-          table={mockTable as any}
-          profileOptions={mockUserOptions}
-          classOptions={mockClassOptions}
-          viewMode="attempts"
-        />,
-      );
-
-      expect(
-        screen.queryByTestId("faceted-filter-score"),
-      ).not.toBeInTheDocument();
+      // Filters should still render but with empty options
+      expect(screen.getByTestId("faceted-filter-name")).toBeInTheDocument();
     });
   });
 
@@ -385,6 +333,23 @@ describe("DataTableToolbar", () => {
 
       expect(screen.queryByTestId("date-picker")).not.toBeInTheDocument();
     });
+
+    it("should pass dateRange to date picker", () => {
+      const mockSetDateRange = vi.fn();
+      const mockDateRange = { from: new Date(), to: new Date() };
+
+      render(
+        <DataTableToolbar
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+          dateRange={mockDateRange}
+          setDateRange={mockSetDateRange}
+        />,
+      );
+
+      expect(screen.getByTestId("date-picker")).toBeInTheDocument();
+    });
   });
 
   describe("Props Handling", () => {
@@ -400,13 +365,60 @@ describe("DataTableToolbar", () => {
           isAdmin={true}
           dateRange={mockDateRange}
           setDateRange={mockSetDateRange}
-          viewMode="attempts"
+          showExport={true}
         />,
       );
 
       expect(screen.getByTestId("export-button")).toBeInTheDocument();
       expect(screen.getByTestId("view-options")).toBeInTheDocument();
       expect(screen.getByTestId("date-picker")).toBeInTheDocument();
+    });
+
+    it("should handle missing optional props", () => {
+      render(
+        <DataTableToolbar
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(screen.getByTestId("view-options")).toBeInTheDocument();
+      expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("date-picker")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Column Access", () => {
+    it("should access correct columns for filtering", () => {
+      render(
+        <DataTableToolbar
+          table={mockTable as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(mockTable.getColumn).toHaveBeenCalledWith("simulationTitle");
+      expect(mockTable.getColumn).toHaveBeenCalledWith("profileId");
+      expect(mockTable.getColumn).toHaveBeenCalledWith("classId");
+    });
+
+    it("should handle missing columns gracefully", () => {
+      const tableWithMissingColumns = {
+        ...mockTable,
+        getColumn: vi.fn(() => null),
+      };
+
+      render(
+        <DataTableToolbar
+          table={tableWithMissingColumns as any}
+          profileOptions={mockUserOptions}
+          classOptions={mockClassOptions}
+        />,
+      );
+
+      expect(screen.getByPlaceholderText("Filter simulations...")).toBeInTheDocument();
     });
   });
 });

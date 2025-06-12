@@ -5,18 +5,47 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import { useColumns } from "@/components/common/history/columns";
 
-// Mock the query functions
-vi.mock("@/utils/queries/users/get-all-users", () => ({
-  getAllUsers: vi.fn(() =>
-    Promise.resolve([
-      { id: "1", role: "ta", name: "Test TA 1", username: "ta1" },
-      { id: "2", role: "ta", name: "Test TA 2", username: "ta2" },
-      {
-        id: "3",
-        role: "instructor",
-        name: "Test Instructor",
-        username: "instructor1",
+// Mock next-auth
+vi.mock("next-auth/react", () => ({
+  useSession: vi.fn(() => ({
+    data: {
+      user: {
+        id: "test-user-id",
+        name: "Test User",
+        email: "test@example.com",
+        role: "student",
       },
+    },
+    status: "authenticated",
+  })),
+  SessionProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+// Mock getUserByEmail
+vi.mock("@/utils/user/get-user-by-email", () => ({
+  getUserByEmail: vi.fn(() =>
+    Promise.resolve({
+      id: "test-user-id",
+      name: "Test User",
+      email: "test@example.com",
+    }),
+  ),
+}));
+
+// Mock the query functions
+vi.mock("@/utils/queries/profiles/get-all-profiles", () => ({
+  getAllProfiles: vi.fn(() =>
+    Promise.resolve([
+      { id: "profile1", firstName: "Test", lastName: "User 1", userId: "test-user-id" },
+      { id: "profile2", firstName: "Test", lastName: "User 2", userId: "other-user-id" },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profiles-by-user", () => ({
+  getProfilesByUser: vi.fn(() =>
+    Promise.resolve([
+      { id: "profile1", firstName: "Test", lastName: "User 1", userId: "test-user-id" },
     ]),
   ),
 }));
@@ -24,8 +53,8 @@ vi.mock("@/utils/queries/users/get-all-users", () => ({
 vi.mock("@/utils/queries/classes/get-all-classes", () => ({
   getAllClasses: vi.fn(() =>
     Promise.resolve([
-      { id: "1", classCode: "CS101", name: "Intro to CS" },
-      { id: "2", classCode: "CS201", name: "Data Structures" },
+      { id: "class1", name: "CS101", classCode: "CS101" },
+      { id: "class2", name: "CS201", classCode: "CS201" },
     ]),
   ),
 }));
@@ -33,8 +62,8 @@ vi.mock("@/utils/queries/classes/get-all-classes", () => ({
 vi.mock("@/utils/queries/agents/get-all-agents", () => ({
   getAllAgents: vi.fn(() =>
     Promise.resolve([
-      { id: "1", name: "Happy", agentType: "student" },
-      { id: "2", name: "Aggressive", agentType: "student" },
+      { id: "agent1", name: "Student Agent" },
+      { id: "agent2", name: "Instructor Agent" },
     ]),
   ),
 }));
@@ -42,159 +71,130 @@ vi.mock("@/utils/queries/agents/get-all-agents", () => ({
 vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
   getAllRubrics: vi.fn(() =>
     Promise.resolve([
+      { id: "rubric1", name: "Test Rubric 1" },
+      { id: "rubric2", name: "Test Rubric 2" },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/simulations/get-all-simulations", () => ({
+  getAllSimulations: vi.fn(() =>
+    Promise.resolve([
       {
-        id: "1",
-        name: "Test Rubric",
-        description: "Test",
-        points: 100,
-        passPoints: 70,
+        id: "sim1",
+        title: "Test Simulation 1",
+        scenarioIds: ["scenario1"],
+        rubricId: "rubric1",
+      },
+      {
+        id: "sim2",
+        title: "Test Simulation 2",
+        scenarioIds: ["scenario2"],
+        rubricId: "rubric2",
       },
     ]),
   ),
 }));
 
-vi.mock(
-  "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
-  () => ({
-    getStandardGroupsByRubrics: vi.fn(() =>
-      Promise.resolve([
-        {
-          id: "1",
-          name: "Communication Skills",
-          rubricId: "1",
-          points: 25,
-          passPoints: 18,
-        },
-        {
-          id: "2",
-          name: "Problem Solving",
-          rubricId: "1",
-          points: 25,
-          passPoints: 18,
-        },
-      ]),
-    ),
-  }),
-);
-
-vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
-  getStandardsByStandardGroups: vi.fn(() =>
+vi.mock("@/utils/queries/scenarios/get-all-scenarios", () => ({
+  getAllScenarios: vi.fn(() =>
     Promise.resolve([
-      { id: "1", name: "Active Listening", standardGroupId: "1", points: 5 },
-      { id: "2", name: "Clear Communication", standardGroupId: "1", points: 5 },
-      { id: "3", name: "Critical Thinking", standardGroupId: "2", points: 5 },
+      {
+        id: "scenario1",
+        title: "Scenario 1",
+        classId: "class1",
+      },
+      {
+        id: "scenario2",
+        title: "Scenario 2",
+        classId: "class2",
+      },
+      {
+        id: "RAY",
+        title: "Default RAY Scenario",
+        classId: null,
+      },
     ]),
   ),
 }));
 
-vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-users",
-  () => ({
-    getSimulationAttemptsByUsers: vi.fn(() =>
-      Promise.resolve([
-        { id: "1", userId: "1", simulationId: "1", classId: "1" },
-        { id: "2", userId: "2", simulationId: "1", classId: "1" },
-      ]),
-    ),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts",
-  () => ({
-    getSimulationChatsByAttempts: vi.fn(() =>
-      Promise.resolve([
-        {
-          id: "1",
-          attemptId: "1",
-          scenarioId: "1",
-          completed: true,
-          title: "Chat 1",
-          userId: "1",
-        },
-        {
-          id: "2",
-          attemptId: "2",
-          scenarioId: "2",
-          completed: true,
-          title: "Chat 2",
-          userId: "2",
-        },
-      ]),
-    ),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
-  () => ({
-    getSimulationChatGradesBySimulationChats: vi.fn(() =>
-      Promise.resolve([
-        {
-          id: "1",
-          simulationChatId: "1",
-          score: 85,
-          passed: true,
-          timeTaken: 300,
-          rubricId: "1",
-        },
-        {
-          id: "2",
-          simulationChatId: "2",
-          score: 78,
-          passed: true,
-          timeTaken: 450,
-          rubricId: "1",
-        },
-      ]),
-    ),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
-  () => ({
-    getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(() =>
-      Promise.resolve([
-        {
-          id: "1",
-          simulationChatGradeId: "1",
-          standardId: "1",
-          total: 4,
-          feedback: "Good listening",
-        },
-        {
-          id: "2",
-          simulationChatGradeId: "1",
-          standardId: "2",
-          total: 5,
-          feedback: "Clear communication",
-        },
-        {
-          id: "3",
-          simulationChatGradeId: "2",
-          standardId: "3",
-          total: 4,
-          feedback: "Good thinking",
-        },
-      ]),
-    ),
-  }),
-);
-
-vi.mock("@/hooks/use-auth", () => ({
-  useAuth: vi.fn(() => ({
-    userId: "1",
-    isLoading: false,
-    isAuthenticated: true,
-  })),
+vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles", () => ({
+  getSimulationAttemptsByProfiles: vi.fn(() =>
+    Promise.resolve([
+      {
+        id: "attempt1",
+        profileId: "profile1",
+        simulationId: "sim1",
+        createdAt: "2024-01-01T10:00:00Z",
+        averageScore: 85,
+      },
+      {
+        id: "attempt2",
+        profileId: "profile2",
+        simulationId: "sim2",
+        createdAt: "2024-01-02T11:00:00Z",
+        averageScore: 78,
+      },
+    ]),
+  ),
 }));
 
+vi.mock("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts", () => ({
+  getSimulationChatsByAttempts: vi.fn(() =>
+    Promise.resolve([
+      {
+        id: "chat1",
+        attemptId: "attempt1",
+        scenarioId: "scenario1",
+      },
+      {
+        id: "chat2",
+        attemptId: "attempt2",
+        scenarioId: "scenario2",
+      },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubrics", () => ({
+  getStandardGroupsByRubrics: vi.fn(() =>
+    Promise.resolve([
+      { id: "group1", name: "Communication", shortName: "COMM", rubricId: "rubric1" },
+      { id: "group2", name: "Problem Solving", shortName: "PROB", rubricId: "rubric2" },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
+  getStandardsByStandardGroups: vi.fn(() =>
+    Promise.resolve([
+      { id: "standard1", standardGroupId: "group1", points: 5 },
+      { id: "standard2", standardGroupId: "group2", points: 5 },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats", () => ({
+  getSimulationChatGradesBySimulationChats: vi.fn(() =>
+    Promise.resolve([
+      { id: "grade1", simulationChatId: "chat1" },
+      { id: "grade2", simulationChatId: "chat2" },
+    ]),
+  ),
+}));
+
+vi.mock("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades", () => ({
+  getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(() =>
+    Promise.resolve([
+      { id: "feedback1", simulationChatGradeId: "grade1", standardId: "standard1", total: 4 },
+      { id: "feedback2", simulationChatGradeId: "grade2", standardId: "standard2", total: 3 },
+    ]),
+  ),
+}));
+
+// Mock agent config
 vi.mock("@/utils/agents", () => ({
-  getAgentConfig: vi.fn((name: string) => ({
-    icon: `${name}-icon`,
-    color: "blue",
-  })),
+  getAgentConfig: vi.fn(() => ({ icon: "test-icon" })),
 }));
 
 describe("useColumns", () => {
@@ -210,253 +210,260 @@ describe("useColumns", () => {
     });
   });
 
-  const wrapper = ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-  );
+  const renderWithProviders = (ui: React.ReactElement) => {
+    const AllProviders = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    return render(ui, { wrapper: AllProviders });
+  };
+
+  const renderHookWithProviders = (hook: () => any) => {
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+
+    return renderHook(hook, { wrapper });
+  };
 
   describe("Hook Functionality", () => {
-    it("should return columns and data for chats view", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      expect(result.current.columns).toBeDefined();
-      expect(Array.isArray(result.current.columns)).toBe(true);
-      expect(result.current.data).toBeDefined();
-      expect(result.current.showChats).toBe(false);
-    });
-
     it("should return columns and data for attempts view", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: true }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        expect(Array.isArray(result.current.columns)).toBe(true);
+        expect(result.current.data).toBeDefined();
+        expect(Array.isArray(result.current.data)).toBe(true);
       });
-
-      expect(result.current.columns).toBeDefined();
-      expect(Array.isArray(result.current.columns)).toBe(true);
-      expect(result.current.data).toBeDefined();
-      expect(result.current.showChats).toBe(true);
     });
 
-    it("should provide user options", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+    it("should return columns and data with showExport", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        expect(result.current.data).toBeDefined();
       });
+    });
 
-      expect(result.current.profileOptions).toBeDefined();
-      expect(Array.isArray(result.current.profileOptions)).toBe(true);
-      expect(result.current.profileOptions.length).toBeGreaterThan(0);
+    it("should provide profile options", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.profileOptions).toBeDefined();
+        expect(Array.isArray(result.current.profileOptions)).toBe(true);
+      });
     });
 
     it("should provide class options", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.classOptions).toBeDefined();
+        expect(Array.isArray(result.current.classOptions)).toBe(true);
       });
-
-      expect(result.current.classOptions).toBeDefined();
-      expect(Array.isArray(result.current.classOptions)).toBe(true);
-      expect(result.current.classOptions.length).toBeGreaterThan(0);
     });
 
     it("should provide agent types", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.agentTypes).toBeDefined();
+        expect(Array.isArray(result.current.agentTypes)).toBe(true);
       });
-
-      expect(result.current.agentTypes).toBeDefined();
-      expect(Array.isArray(result.current.agentTypes)).toBe(true);
-      expect(result.current.agentTypes.length).toBeGreaterThan(0);
     });
 
     it("should provide skill categories", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.skillCategories).toBeDefined();
+        expect(typeof result.current.skillCategories).toBe("object");
       });
+    });
 
-      expect(result.current.skillCategories).toBeDefined();
-      expect(typeof result.current.skillCategories).toBe("object");
+    it("should provide score options", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.scoreOptions).toBeDefined();
+        expect(Array.isArray(result.current.scoreOptions)).toBe(true);
+      });
     });
   });
 
   describe("ShowAll Functionality", () => {
     it("should filter data to current user when showAll is false", async () => {
-      const { result } = renderHook(
-        () => useColumns({ showChats: false, showAll: false }),
-        { wrapper },
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
       );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.data).toBeDefined();
+        // When showAll is false, data should be filtered to current user's profile
+        if (result.current.data.length > 0) {
+          result.current.data.forEach((item: any) => {
+            expect(item.profileId).toBe("profile1"); // Current user's profile
+          });
+        }
       });
-
-      expect(result.current.showAll).toBe(false);
-      expect(result.current.data).toBeDefined();
-      // Data should be filtered to current user only
     });
 
     it("should show all data when showAll is true", async () => {
-      const { result } = renderHook(
-        () => useColumns({ showChats: false, showAll: true }),
-        { wrapper },
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: true, showExport: true }),
       );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.data).toBeDefined();
+        // When showAll is true, should include data from all profiles
+        expect(Array.isArray(result.current.data)).toBe(true);
       });
-
-      expect(result.current.showAll).toBe(true);
-      expect(result.current.data).toBeDefined();
-      // Data should include all users
     });
 
     it("should include name column when showAll is true", async () => {
-      const { result } = renderHook(
-        () => useColumns({ showChats: false, showAll: true }),
-        { wrapper },
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: true, showExport: true }),
       );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        const nameColumn = result.current.columns.find(
+          (col: any) => col.accessorKey === "profileId",
+        );
+        expect(nameColumn).toBeDefined();
       });
-
-      const columns = result.current.columns;
-      // Should have more columns when showAll is true (includes name column)
-      expect(columns.length).toBeGreaterThan(0);
     });
 
     it("should exclude name column when showAll is false", async () => {
-      const { result } = renderHook(
-        () => useColumns({ showChats: false, showAll: false }),
-        { wrapper },
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
       );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        const nameColumn = result.current.columns.find(
+          (col: any) => col.accessorKey === "profileId",
+        );
+        expect(nameColumn).toBeUndefined();
       });
-
-      const columns = result.current.columns;
-      expect(columns.length).toBeGreaterThan(0);
-      // Name column should not be present when showAll is false
     });
   });
 
   describe("Data Filtering", () => {
     it("should filter data for single user view", async () => {
-      const { result } = renderHook(
-        () => useColumns({ showChats: false, showAll: false }),
-        { wrapper },
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
       );
+
+      await waitFor(() => {
+        expect(result.current.data).toBeDefined();
+        // All data should belong to the current user's profile when showAll is false
+        if (result.current.data.length > 0) {
+          result.current.data.forEach((item: any) => {
+            expect(item.profileId).toBe("profile1");
+          });
+        }
+      });
+    });
+
+    it("should handle loading states", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
+
+      // Initially should be loading
+      expect(result.current.isLoading).toBe(true);
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
-
-      // Since we're mocking a user with ID '1' and showAll is false, data should be filtered
-      expect(result.current.data).toBeDefined();
-    });
-
-    it("should handle loading states", () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
-
-      // Initially should be loading
-      expect(typeof result.current.isLoading).toBe("boolean");
     });
   });
 
   describe("Column Configuration", () => {
-    it("should have different columns for chats vs attempts view", async () => {
-      const { result: chatsResult } = renderHook(
-        () => useColumns({ showChats: false }),
-        { wrapper },
-      );
-      const { result: attemptsResult } = renderHook(
-        () => useColumns({ showChats: true }),
-        { wrapper },
+    it("should have columns for attempts view", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
       );
 
       await waitFor(() => {
-        expect(chatsResult.current.isLoading).toBe(false);
-        expect(attemptsResult.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        expect(result.current.columns.length).toBeGreaterThan(0);
       });
-
-      // Both should have columns but they might be different
-      expect(chatsResult.current.columns.length).toBeGreaterThan(0);
-      expect(attemptsResult.current.columns.length).toBeGreaterThan(0);
     });
 
     it("should include required column properties", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      const columns = result.current.columns;
-      expect(columns.length).toBeGreaterThan(0);
-
-      // Check that we have valid columns
-      expect(columns.length).toBeGreaterThan(0);
-
-      // Check that columns are objects
-      columns.forEach((column: any) => {
-        expect(typeof column).toBe("object");
-        expect(column).not.toBeNull();
+        expect(result.current.columns).toBeDefined();
+        result.current.columns.forEach((column: any) => {
+          // Columns should have either id or accessorKey
+          expect(column.id || column.accessorKey).toBeDefined();
+        });
       });
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle empty data gracefully", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.data).toBeDefined();
+        expect(Array.isArray(result.current.data)).toBe(true);
       });
-
-      expect(result.current.data).toBeDefined();
-      expect(Array.isArray(result.current.data)).toBe(true);
     });
 
-    it("should handle different view modes", async () => {
-      const { result } = renderHook(() => useColumns({ showChats: false }), {
-        wrapper,
-      });
+    it("should handle different configurations", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: true, showExport: false }),
+      );
 
       await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
+        expect(result.current.columns).toBeDefined();
+        expect(result.current.data).toBeDefined();
       });
+    });
+  });
 
-      expect(result.current.showChats).toBe(false);
-      expect(result.current.data).toBeDefined();
+  describe("Class Derivation", () => {
+    it("should derive class information from scenarios", async () => {
+      const { result } = renderHookWithProviders(() =>
+        useColumns({ showAll: false, showExport: true }),
+      );
+
+      await waitFor(() => {
+        expect(result.current.data).toBeDefined();
+        // Check that class information is properly derived
+        if (result.current.data.length > 0) {
+          result.current.data.forEach((item: any) => {
+            if (item.classId) {
+              expect(typeof item.classId).toBe("string");
+            }
+          });
+        }
+      });
     });
   });
 });
