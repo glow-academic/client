@@ -2,13 +2,9 @@ import NextAuth from "next-auth"
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id"
 import { createProfile } from "./utils/mutations/profiles/create-profile"
 import { createUser } from "./utils/mutations/users/create-user";
-import { updateUser } from "./utils/mutations/users/update-user";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
-
-// Check if we're in build time (when database might not be available)
-const isBuildTime = process.env.NODE_ENV === 'production' && !process.env.DB_USER;
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [MicrosoftEntraID({
@@ -18,12 +14,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
   callbacks: {
     async signIn({ user, profile }) {
-      // Skip database operations during build time
-      if (isBuildTime) {
-        console.log('Skipping database operations during build time');
-        return true;
-      }
-
       try {
 
         if (!user.id || !user.email) {
