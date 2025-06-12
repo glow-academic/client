@@ -179,21 +179,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     return chat || chats[0];
   }, [chats, evaluation?.scenarioIds, currentChatIndex]);
 
-  // Fetch messages for current chat with polling when running
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["evalMessages", currentChat?.id],
-    queryFn: () => getEvalMessagesByChat(currentChat!.id),
-    enabled: !!currentChat?.id,
-    refetchInterval: isRunningEval ? 1000 : false, // Poll every second when running
-  });
-
-  // Fetch scenario for current chat
-  const { data: scenario, isLoading: scenarioLoading } = useQuery({
-    queryKey: ["scenario", currentChat?.scenarioId],
-    queryFn: () => getScenario(currentChat!.scenarioId),
-    enabled: !!currentChat?.scenarioId,
-  });
-
   // Fetch agents for base agent and response agent
   const { data: baseAgent, isLoading: baseAgentLoading } = useQuery({
     queryKey: ["agent", evaluation?.baseAgentId],
@@ -255,12 +240,33 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     return relevantDocs;
   }, [documents, evaluation]);
 
-  // Create dynamic rubric for current chat
-  const currentDynamicRubric = useMemo((): DynamicRubric | null => {
-    if (!currentChat?.id || !grades || !feedbacks || !standards || !standardGroups)
+  // Auto-select first completed chat when results show and default to showing rubric if all chats completed
+  useEffect(() => {
+    if (chats && chats.length > 0 && !selectedChatId) {
+      const completedChats = chats.filter((chat: EvalChat) => chat.completed);
+      if (completedChats.length > 0) {
+        setSelectedChatId(completedChats[0].id);
+
+        // If current chat is completed, default to showing rubric
+        if (currentChat?.completed) {
+          setShowGrades(true);
+        }
+      }
+    }
+  }, [chats, selectedChatId, currentChat?.completed]);
+
+  // Get selected chat for rubric display
+  const selectedChat = useMemo(() => {
+    if (!selectedChatId || !chats) return currentChat;
+    return chats.find((chat: EvalChat) => chat.id === selectedChatId) || currentChat;
+  }, [selectedChatId, chats, currentChat]);
+
+  // Create dynamic rubric for selected chat
+  const selectedDynamicRubric = useMemo((): DynamicRubric | null => {
+    if (!selectedChat?.id || !grades || !feedbacks || !standards || !standardGroups)
       return null;
 
-    const chatGrade = grades.find(grade => grade.evalChatId === currentChat.id);
+    const chatGrade = grades.find(grade => grade.evalChatId === selectedChat.id);
     if (!chatGrade) return null;
 
     const chatFeedbacks = feedbacks.filter(
@@ -293,7 +299,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     const passed = chatGrade.score >= totalPossiblePoints * 0.7;
 
     return {
-      chatId: currentChat.id,
+      chatId: selectedChat.id,
       score: chatGrade.score,
       passed,
       timeTaken: chatGrade.timeTaken,
@@ -301,7 +307,22 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       skillFeedbacks,
       totalPossiblePoints,
     };
-  }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
+  }, [selectedChat?.id, grades, feedbacks, standards, standardGroups]);
+
+  // Fetch messages for selected chat with polling when running
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ["evalMessages", selectedChat?.id],
+    queryFn: () => getEvalMessagesByChat(selectedChat!.id),
+    enabled: !!selectedChat?.id,
+    refetchInterval: isRunningEval ? 1000 : false, // Poll every second when running
+  });
+
+  // Fetch scenario for selected chat
+  const { data: scenario, isLoading: scenarioLoading } = useQuery({
+    queryKey: ["scenario", selectedChat?.scenarioId],
+    queryFn: () => getScenario(selectedChat!.scenarioId),
+    enabled: !!selectedChat?.scenarioId,
+  });
 
   // Create dynamic rubrics for all completed chats
   const allDynamicRubrics = useMemo((): DynamicRubric[] => {
@@ -620,10 +641,91 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                   </div>
                 </div>
               </div>
-              <div className="flex items-start justify-end gap-2">
-                {currentChat?.completed && (
-                  <Badge variant="default">Completed</Badge>
-                )}
+              <div className="flex items-start justify-end flex-col gap-2">
+                <div className="flex items-center gap-4">
+                  {/* Show Rubric Toggle */}
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="show-grades" className="text-sm">
+                      Show Rubric
+                    </Label>
+                    <Switch
+                      id="show-grades"
+                      checked={showGrades}
+                      onCheckedChange={setShowGrades}
+                    />
+                  </div>
+                  
+                  {/* Timer with Pass/Fail Status */}
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                          selectedDynamicRubric
+                            ? selectedDynamicRubric.passed
+                              ? "bg-green-100 dark:bg-green-900/30"
+                              : "bg-red-100 dark:bg-red-900/30"
+                            : "bg-muted"
+                        }`}>
+                          <Clock className="h-4 w-4" />
+                          <span className="text-sm font-medium" data-testid="timer">
+                            {selectedDynamicRubric?.timeTaken !== undefined
+                              ? formatTime(selectedDynamicRubric.timeTaken)
+                              : "No time data"}
+                          </span>
+                        </div>
+                      </TooltipTrigger>
+                      {selectedDynamicRubric && (
+                        <TooltipContent>
+                          <p>
+                            {selectedDynamicRubric.passed ? "Passed" : "Failed"} 
+                            ({selectedDynamicRubric.score}/{selectedDynamicRubric.totalPossiblePoints})
+                          </p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+
+                {/* Chat Selection Dropdown */}
+                <Select
+                  value={selectedChatId || currentChat?.id || ""}
+                  onValueChange={(value) => {
+                    setSelectedChatId(value);
+                    // Update current chat index to match selected chat
+                    const chatIndex = evaluation.scenarioIds.findIndex((scenarioId: string) => {
+                      const chat = chats?.find((c: EvalChat) => c.scenarioId === scenarioId);
+                      return chat?.id === value;
+                    });
+                    if (chatIndex !== -1) {
+                      setCurrentChatIndex(chatIndex);
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-64">
+                    <SelectValue placeholder="Select chat to view" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chats?.map((chat: EvalChat, index: number) => {
+                      const chatScenario = scenario; // You might want to fetch individual scenarios
+                      const chatRubric = allDynamicRubrics.find(rubric => rubric.chatId === chat.id);
+                      return (
+                        <SelectItem key={chat.id} value={chat.id}>
+                          <div className="flex items-center gap-2">
+                            <span>Chat {index + 1}</span>
+                            {chat.completed && (
+                              <Badge 
+                                variant={chatRubric?.passed ? "default" : "destructive"}
+                                className="text-xs"
+                              >
+                                {chatRubric?.passed ? "Passed" : "Failed"}
+                              </Badge>
+                            )}
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -644,7 +746,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       </div>
                     ))}
                   </div>
-                ) : showGrades && currentChat?.completed && currentDynamicRubric ? (
+                ) : showGrades && selectedChat?.completed && selectedDynamicRubric ? (
                   <div className="space-y-4">
                     {/* Overall Score Card */}
                     <div className="flex justify-center">
@@ -653,8 +755,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                           <div>
                             <div className="text-2xl font-bold">
-                              {currentDynamicRubric.score}/
-                              {currentDynamicRubric.totalPossiblePoints}
+                              {selectedDynamicRubric.score}/
+                              {selectedDynamicRubric.totalPossiblePoints}
                             </div>
                             <div className="text-xs text-muted-foreground">
                               Overall Score
@@ -662,11 +764,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           </div>
                           <div>
                             <div className="text-2xl font-bold">
-                              {Math.round(currentDynamicRubric.timeTaken / 60)}
+                              {Math.round(selectedDynamicRubric.timeTaken / 60)}
                             </div>
                             <div className="text-xs text-muted-foreground">Minutes</div>
                           </div>
-                          {Object.entries(currentDynamicRubric.skillScores)
+                          {Object.entries(selectedDynamicRubric.skillScores)
                             .slice(0, 2)
                             .map(([skillName, score]) => (
                               <div key={skillName}>
@@ -680,19 +782,19 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                         <div className="mt-3 text-center">
                           <Badge
                             variant={
-                              currentDynamicRubric.passed
+                              selectedDynamicRubric.passed
                                 ? "default"
                                 : "destructive"
                             }
                           >
-                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                            {selectedDynamicRubric.passed ? "Passed" : "Failed"}
                           </Badge>
                         </div>
                       </div>
                     </div>
 
                     {/* Skill Feedback Cards */}
-                    {Object.entries(currentDynamicRubric.skillFeedbacks).map(
+                    {Object.entries(selectedDynamicRubric.skillFeedbacks).map(
                       ([skillName, feedback], index) => (
                         <div key={skillName} className={`flex ${index % 2 === 0 ? "justify-start" : "justify-end"}`}>
                           <div className={`max-w-[80%] p-3 rounded-lg ${
@@ -701,7 +803,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                               : "bg-purple-100 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100"
                           }`}>
                             <div className="text-xs font-medium mb-1">
-                              {skillName} - Score: {currentDynamicRubric.skillScores[skillName]}/5
+                              {skillName} - Score: {selectedDynamicRubric.skillScores[skillName]}/5
                             </div>
                             <div className="text-sm">{feedback}</div>
                           </div>
@@ -712,7 +814,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                 ) : (
                   <>
                     {/* Show completed chat messages */}
-                    {currentChat?.completed && messages.length > 0 ? (
+                    {selectedChat?.completed && messages.length > 0 ? (
                       <>
                         {messages.map((message: EvalMessage) => (
                           <div key={message.id} className="space-y-4">
@@ -867,7 +969,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                     )}
 
                     {/* No content state */}
-                    {!currentChat?.completed && !isRunningEval && messages.length === 0 && (
+                    {!selectedChat?.completed && !isRunningEval && messages.length === 0 && (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">
                           Click "Run Evaluation" to start this chat.
@@ -898,18 +1000,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
           <CardFooter className="flex-shrink-0 p-4 border-t">
             <div className="w-full flex justify-between items-center">
               <div className="flex items-center gap-4">
-                <div>
-                  <Switch 
-                    id="show-grades" 
-                    checked={showGrades} 
-                    onCheckedChange={setShowGrades} 
-                    className="mr-2"
-                  />
-                  <Label htmlFor="show-grades" className="text-sm">
-                    Show Rubric
-                  </Label>
-                </div>
-                
                 {/* Run Evaluation Button */}
                 {!isRunningEval && !currentChat?.completed && (
                   <Button
@@ -933,24 +1023,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                         ({runStatus.completed_chats}/{runStatus.total_chats} chats completed)
                       </span>
                     )}
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex gap-2">
-                {currentChat?.completed && (
-                  <div className="flex gap-4">
-                    <div className="text-sm">
-                      <Badge
-                        variant={
-                          currentDynamicRubric?.passed ? "default" : "destructive"
-                        }
-                      >
-                        Score: {currentDynamicRubric?.score || 0}/
-                        {currentDynamicRubric?.totalPossiblePoints || 0} -{" "}
-                        {currentDynamicRubric?.passed ? "Passed" : "Failed"}
-                      </Badge>
-                    </div>
                   </div>
                 )}
               </div>
