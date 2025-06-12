@@ -1,4 +1,4 @@
-import { pgTable, uuid, timestamp, text, integer, foreignKey, boolean, unique, index, varchar, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, text, uuid, timestamp, integer, foreignKey, boolean, varchar, pgEnum } from "drizzle-orm/pg-core"
 import { sql } from "drizzle-orm"
 
 export const agentType = pgEnum("agent_type", ['student', 'ta'])
@@ -9,6 +9,11 @@ export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'in
 export const rubricType = pgEnum("rubric_type", ['simulation', 'eval'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
 
+
+export const users = pgTable("users", {
+	id: text().primaryKey().notNull(),
+	email: text().notNull(),
+});
 
 export const classes = pgTable("classes", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -32,6 +37,24 @@ export const topics = pgTable("topics", {
 			columns: [table.classId],
 			foreignColumns: [classes.id],
 			name: "topics_class_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const profiles = pgTable("profiles", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	userId: text("user_id").notNull(),
+	firstName: varchar("first_name", { length: 255 }).notNull(),
+	lastName: varchar("last_name", { length: 255 }).notNull(),
+	email: varchar({ length: 255 }).notNull(),
+	viewedIntro: boolean("viewed_intro").default(false).notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	role: profileRole().default('ta').notNull(),
+	classIds: uuid("class_ids").array().default(["RAY"]).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.userId],
+			foreignColumns: [users.id],
+			name: "profiles_user_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -82,47 +105,6 @@ export const documents = pgTable("documents", {
 		}).onDelete("cascade"),
 ]);
 
-export const users = pgTable("users", {
-	id: text().primaryKey().notNull(),
-	name: text(),
-	email: text(),
-	emailVerified: timestamp("emailVerified", { mode: 'date' }),
-	image: text(),
-}, (table) => [
-	unique("users_email_key").on(table.email),
-]);
-
-export const sessions = pgTable("sessions", {
-	sessionToken: text().primaryKey().notNull(),
-	userId: text().notNull(),
-	expires: timestamp({ mode: 'date' }).notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "sessions_userid_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const profiles = pgTable("profiles", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	userId: text("user_id").notNull(),
-	firstName: varchar("first_name", { length: 255 }).notNull(),
-	lastName: varchar("last_name", { length: 255 }).notNull(),
-	email: varchar({ length: 255 }).notNull(),
-	viewedIntro: boolean("viewed_intro").default(false).notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	role: profileRole().default('ta').notNull(),
-	classIds: uuid("class_ids").array().default(["RAY"]).notNull(),
-}, (table) => [
-	index("idx_profiles_user_id").using("btree", table.userId.asc().nullsLast().op("text_ops")),
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "profiles_user_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const agents = pgTable("agents", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -161,21 +143,6 @@ export const standardGroups = pgTable("standard_groups", {
 		}).onDelete("cascade"),
 ]);
 
-export const standards = pgTable("standards", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	points: integer().notNull(),
-	standardGroupId: uuid("standard_group_id").notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.standardGroupId],
-			foreignColumns: [standardGroups.id],
-			name: "standards_standard_group_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const scenarios = pgTable("scenarios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -198,6 +165,21 @@ export const scenarios = pgTable("scenarios", {
 			foreignColumns: [classes.id],
 			name: "scenarios_class_id_fkey"
 		}).onDelete("set null"),
+]);
+
+export const standards = pgTable("standards", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	points: integer().notNull(),
+	standardGroupId: uuid("standard_group_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.standardGroupId],
+			foreignColumns: [standardGroups.id],
+			name: "standards_standard_group_id_fkey"
+		}).onDelete("cascade"),
 ]);
 
 export const simulations = pgTable("simulations", {
@@ -246,6 +228,27 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 		}).onDelete("cascade"),
 ]);
 
+export const simulationChatGrades = pgTable("simulation_chat_grades", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	passed: boolean().notNull(),
+	score: integer().notNull(),
+	timeTaken: integer("time_taken").notNull(),
+	rubricId: uuid("rubric_id").notNull(),
+	simulationChatId: uuid("simulation_chat_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.rubricId],
+			foreignColumns: [rubrics.id],
+			name: "simulation_chat_grades_rubric_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.simulationChatId],
+			foreignColumns: [simulationChats.id],
+			name: "simulation_chat_grades_simulation_chat_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const simulationChats = pgTable("simulation_chats", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -267,20 +270,6 @@ export const simulationChats = pgTable("simulation_chats", {
 		}).onDelete("cascade"),
 ]);
 
-export const evalChats = pgTable("eval_chats", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
-	title: text().notNull(),
-	evalRunId: uuid("eval_run_id").notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.evalRunId],
-			foreignColumns: [evalRuns.id],
-			name: "eval_chats_eval_run_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const simulationMessages = pgTable("simulation_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -293,27 +282,6 @@ export const simulationMessages = pgTable("simulation_messages", {
 			columns: [table.chatId],
 			foreignColumns: [simulationChats.id],
 			name: "simulation_messages_chat_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const simulationChatGrades = pgTable("simulation_chat_grades", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	passed: boolean().notNull(),
-	score: integer().notNull(),
-	timeTaken: integer("time_taken").notNull(),
-	rubricId: uuid("rubric_id").notNull(),
-	simulationChatId: uuid("simulation_chat_id").notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.rubricId],
-			foreignColumns: [rubrics.id],
-			name: "simulation_chat_grades_rubric_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.simulationChatId],
-			foreignColumns: [simulationChats.id],
-			name: "simulation_chat_grades_simulation_chat_id_fkey"
 		}).onDelete("cascade"),
 ]);
 
@@ -399,6 +367,35 @@ export const evalRuns = pgTable("eval_runs", {
 		}).onDelete("cascade"),
 ]);
 
+export const evalChats = pgTable("eval_chats", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+	title: text().notNull(),
+	evalRunId: uuid("eval_run_id").notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.evalRunId],
+			foreignColumns: [evalRuns.id],
+			name: "eval_chats_eval_run_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const evalMessages = pgTable("eval_messages", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	chatId: uuid("chat_id").notNull(),
+	query: text().notNull(),
+	response: text().notNull(),
+	completed: boolean().default(false).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.chatId],
+			foreignColumns: [evalChats.id],
+			name: "eval_messages_chat_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const evalChatGrades = pgTable("eval_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -420,21 +417,6 @@ export const evalChatGrades = pgTable("eval_chat_grades", {
 		}).onDelete("cascade"),
 ]);
 
-export const evalMessages = pgTable("eval_messages", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	chatId: uuid("chat_id").notNull(),
-	query: text().notNull(),
-	response: text().notNull(),
-	completed: boolean().default(false).notNull(),
-}, (table) => [
-	foreignKey({
-			columns: [table.chatId],
-			foreignColumns: [evalChats.id],
-			name: "eval_messages_chat_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -453,33 +435,4 @@ export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 			foreignColumns: [evalChatGrades.id],
 			name: "eval_chat_feedbacks_eval_chat_grade_id_fkey"
 		}).onDelete("cascade"),
-]);
-
-export const verificationToken = pgTable("verification_token", {
-	identifier: text().notNull(),
-	expires: timestamp({ mode: 'date' }).notNull(),
-	token: text().notNull(),
-}, (table) => [
-	primaryKey({ columns: [table.identifier, table.token], name: "verification_token_pkey"}),
-]);
-
-export const accounts = pgTable("accounts", {
-	userId: text().notNull(),
-	type: text().notNull(),
-	provider: text().notNull(),
-	providerAccountId: text().notNull(),
-	refresh_token: text(),
-	access_token: text(),
-	expires_at: integer(),
-	id_token: text(),
-	scope: text(),
-	session_state: text(),
-	token_type: text(),
-}, (table) => [
-	foreignKey({
-			columns: [table.userId],
-			foreignColumns: [users.id],
-			name: "accounts_userid_fkey"
-		}).onDelete("cascade"),
-	primaryKey({ columns: [table.provider, table.providerAccountId], name: "accounts_pkey"}),
 ]);

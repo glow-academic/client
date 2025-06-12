@@ -2,58 +2,14 @@
 -- Enable the gen_random_uuid() function
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE verification_token
-(
-  identifier TEXT NOT NULL,
-  expires TIMESTAMPTZ NOT NULL,
-  token TEXT NOT NULL,
- 
-  PRIMARY KEY (identifier, token)
-);
- 
-CREATE TABLE accounts
-(
-  "userId" TEXT NOT NULL,
-  type TEXT NOT NULL,
-  provider TEXT NOT NULL,
-  "providerAccountId" TEXT NOT NULL,
-  refresh_token TEXT,
-  access_token TEXT,
-  expires_at INTEGER,
-  id_token TEXT,
-  scope TEXT,
-  session_state TEXT,
-  token_type TEXT,
- 
-  PRIMARY KEY (provider, "providerAccountId")
-);
- 
-CREATE TABLE sessions
-(
-  "sessionToken" TEXT PRIMARY KEY,
-  "userId" TEXT NOT NULL,
-  expires TIMESTAMPTZ NOT NULL
-);
- 
-CREATE TABLE users
-(
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  email TEXT UNIQUE,
-  "emailVerified" TIMESTAMPTZ,
-  image TEXT
-);
-
--- Add foreign key constraints for Auth.js tables
-ALTER TABLE accounts ADD CONSTRAINT accounts_userId_fkey 
-  FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE;
-
-ALTER TABLE sessions ADD CONSTRAINT sessions_userId_fkey 
-  FOREIGN KEY ("userId") REFERENCES users(id) ON DELETE CASCADE;
-
 -- ============================================================================
 -- TABLE DEFINITIONS
 -- ============================================================================
+
+CREATE TABLE users (
+  id         TEXT        PRIMARY KEY,
+  email      TEXT        NOT NULL
+);
 
 CREATE TYPE profile_role AS ENUM ('admin', 'instructional', 'instructor', 'ta');
 
@@ -69,60 +25,57 @@ CREATE TABLE profiles (
   class_ids  UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[]
 );
 
--- Create index for better performance
-CREATE INDEX idx_profiles_user_id ON profiles(user_id);
-
 -- ============================================================================
 -- SEED DATA
 -- ============================================================================
 
 -- First, insert users into the Auth.js users table with simple text IDs
-INSERT INTO users (id, name, email) VALUES
-  ('user_sarah_chen', 'Dr. Sarah Chen', 'sarah.chen@university.edu'),
-  ('user_michael_rodriguez', 'Prof. Michael Rodriguez', 'michael.rodriguez@university.edu'),
-  ('user_emily_johnson', 'Dr. Emily Johnson', 'emily.johnson@university.edu'),
-  ('user_david_kim', 'Prof. David Kim', 'david.kim@university.edu'),
-  ('user_lisa_wang', 'Dr. Lisa Wang', 'lisa.wang@university.edu'),
-  ('user_james_thompson', 'Prof. James Thompson', 'james.thompson@university.edu'),
-  ('user_nina_park', 'Nina Park', 'nina.park@university.edu'),
-  ('user_rohan_saxena', 'Rohan Saxena', 'rohan.saxena@university.edu'),
-  ('user_saket_shi', 'Saket Shi', 'saket.shi@university.edu'),
-  ('user_samarth_soe', 'Samarth Soe', 'samarth.soe@university.edu'),
-  ('user_nikita_park', 'Nikita Park', 'nikita.park@university.edu'),
-  ('user_alex_chen', 'Alex Chen', 'alex.chen@university.edu'),
-  ('user_maya_patel', 'Maya Patel', 'maya.patel@university.edu'),
-  ('user_richie_qian', 'Richie Qian', 'richie.qian@university.edu'),
-  ('user_tony_xu', 'Tony Xu', 'tony.xu@university.edu'),
-  ('user_yuting_zhou', 'Yuting Zhou', 'yuting.zhou@university.edu'),
-  ('user_jordan_lee', 'Jordan Lee', 'jordan.lee@university.edu'),
-  ('user_priya_sharma', 'Priya Sharma', 'priya.sharma@university.edu'),
-  ('user_kevin_zhang', 'Kevin Zhang', 'kevin.zhang@university.edu'),
-  ('user_pranav_patel', 'Pranav Patel', 'pranav.patel@university.edu'),
-  ('user_tayden_xiao', 'Tayden Xiao', 'tayden.xiao@university.edu'),
-  ('user_sophia_martinez', 'Sophia Martinez', 'sophia.martinez@university.edu'),
-  ('user_ryan_oconnor', 'Ryan O''Connor', 'ryan.oconnor@university.edu'),
-  ('user_aisha_johnson', 'Aisha Johnson', 'aisha.johnson@university.edu'),
-  ('user_daniel_kim', 'Daniel Kim', 'daniel.kim@university.edu'),
-  ('user_william_yoon', 'William Yoon', 'william.yoon@university.edu'),
-  ('user_isabella_garcia', 'Isabella Garcia', 'isabella.garcia@university.edu'),
-  ('user_ethan_brown', 'Ethan Brown', 'ethan.brown@university.edu'),
-  ('user_zoe_wilson', 'Zoe Wilson', 'zoe.wilson@university.edu'),
-  ('user_marcus_davis', 'Marcus Davis', 'marcus.davis@university.edu'),
-  ('user_grace_liu', 'Grace Liu', 'grace.liu@university.edu'),
-  ('user_nathan_singh', 'Nathan Singh', 'nathan.singh@university.edu'),
-  ('user_emma_rodriguez', 'Emma Rodriguez', 'emma.rodriguez@university.edu'),
-  ('user_lucas_thompson', 'Lucas Thompson', 'lucas.thompson@university.edu'),
-  ('user_chloe_anderson', 'Chloe Anderson', 'chloe.anderson@university.edu'),
-  ('user_harper_nguyen', 'Harper Nguyen', 'harper.nguyen@university.edu'),
-  ('user_diego_alvarez', 'Diego Alvarez', 'diego.alvarez@university.edu'),
-  ('user_lila_banerjee', 'Lila Banerjee', 'lila.banerjee@university.edu'),
-  ('user_owen_foster', 'Owen Foster', 'owen.foster@university.edu'),
-  ('user_sofia_lombardi', 'Sofia Lombardi', 'sofia.lombardi@university.edu'),
-  ('user_noah_rasmussen', 'Noah Rasmussen', 'noah.rasmussen@university.edu'),
-  ('user_ethan_dickey', 'Ethan Dickey', 'ethan.dickey@university.edu'),
-  ('user_henry_carter', 'Henry Carter', 'henry.carter@university.edu'),
-  ('user_ava_petrova', 'Ava Petrova', 'ava.petrova@university.edu'),
-  ('user_leo_muller', 'Leo Müller', 'leo.muller@university.edu');
+INSERT INTO users (id, email) VALUES
+  ('user_sarah_chen', 'sarah.chen@university.edu'),
+  ('user_michael_rodriguez', 'michael.rodriguez@university.edu'),
+  ('user_emily_johnson', 'emily.johnson@university.edu'),
+  ('user_david_kim', 'david.kim@university.edu'),
+  ('user_lisa_wang', 'lisa.wang@university.edu'),
+  ('user_james_thompson', 'james.thompson@university.edu'),
+  ('user_nina_park', 'nina.park@university.edu'),
+  ('user_rohan_saxena', 'rohan.saxena@university.edu'),
+  ('user_saket_shi', 'saket.shi@university.edu'),
+  ('user_samarth_soe', 'samarth.soe@university.edu'),
+  ('user_nikita_park', 'nikita.park@university.edu'),
+  ('user_alex_chen', 'alex.chen@university.edu'),
+  ('user_maya_patel', 'maya.patel@university.edu'),
+  ('user_richie_qian', 'richie.qian@university.edu'),
+  ('user_tony_xu', 'tony.xu@university.edu'),
+  ('user_yuting_zhou', 'yuting.zhou@university.edu'),
+  ('user_jordan_lee', 'jordan.lee@university.edu'),
+  ('user_priya_sharma', 'priya.sharma@university.edu'),
+  ('user_kevin_zhang', 'kevin.zhang@university.edu'),
+  ('user_pranav_patel', 'pranav.patel@university.edu'),
+  ('user_tayden_xiao', 'tayden.xiao@university.edu'),
+  ('user_sophia_martinez', 'sophia.martinez@university.edu'),
+  ('user_ryan_oconnor', 'ryan.oconnor@university.edu'),
+  ('user_aisha_johnson', 'aisha.johnson@university.edu'),
+  ('user_daniel_kim', 'daniel.kim@university.edu'),
+  ('user_william_yoon', 'william.yoon@university.edu'),
+  ('user_isabella_garcia', 'isabella.garcia@university.edu'),
+  ('user_ethan_brown', 'ethan.brown@university.edu'),
+  ('user_zoe_wilson', 'zoe.wilson@university.edu'),
+  ('user_marcus_davis', 'marcus.davis@university.edu'),
+  ('user_grace_liu', 'grace.liu@university.edu'),
+  ('user_nathan_singh', 'nathan.singh@university.edu'),
+  ('user_emma_rodriguez', 'emma.rodriguez@university.edu'),
+  ('user_lucas_thompson', 'lucas.thompson@university.edu'),
+  ('user_chloe_anderson', 'chloe.anderson@university.edu'),
+  ('user_harper_nguyen', 'harper.nguyen@university.edu'),
+  ('user_diego_alvarez', 'diego.alvarez@university.edu'),
+  ('user_lila_banerjee', 'lila.banerjee@university.edu'),
+  ('user_owen_foster', 'owen.foster@university.edu'),
+  ('user_sofia_lombardi', 'sofia.lombardi@university.edu'),
+  ('user_noah_rasmussen', 'noah.rasmussen@university.edu'),
+  ('user_ethan_dickey', 'ethan.dickey@university.edu'),
+  ('user_henry_carter', 'henry.carter@university.edu'),
+  ('user_ava_petrova', 'ava.petrova@university.edu'),
+  ('user_leo_muller', 'leo.muller@university.edu');
 
 -- Then, insert profiles linked to the users
 -- Admin and Instructional Users

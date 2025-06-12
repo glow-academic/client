@@ -2,7 +2,6 @@ import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getUser } from "@/utils/queries/users/get-user";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getEval } from "./queries/evals/get-eval";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";

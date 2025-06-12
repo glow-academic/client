@@ -9,6 +9,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button";
+import { useRole } from "@/contexts/role-context";
 
 export default function Home() {
   const [error, setError] = useState("");
@@ -19,9 +20,7 @@ export default function Home() {
   const handleMicrosoftLogin = async () => {
     try {
       setLoadingMicrosoft(true);
-      localStorage.removeItem("guestMode");
-      localStorage.removeItem("simulatedRole");
-      await signIn("microsoft-entra-id");
+      await signIn("microsoft-entra-id", {redirectTo: "/home"});
     } catch (error) {
       console.error("Error logging in:", error);
       setError("An error occurred during login: " + (error as Error).message);
