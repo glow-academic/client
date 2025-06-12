@@ -97,50 +97,30 @@ BEGIN
 END $$;
 EOF
 
-  # Copy the master init.sql file with proper path handling
+  # Create a wrapper script that simply executes the master init.sql
   if [ -f "/$INIT_SQL" ]; then
-    echo "Copying master $INIT_SQL to initialization directory..."
+    echo "Setting up database initialization wrapper..."
     
-    # Create a wrapper script that handles the modular loading properly
+    # Copy the master init.sql to a location where it can be referenced by the wrapper
+    # Use a different extension to prevent Docker from executing it directly
+    cp "/$INIT_SQL" "/docker-entrypoint-initdb.d/master_init.sql.template"
+    chmod 755 "/docker-entrypoint-initdb.d/master_init.sql.template"
+    
+    # Create a wrapper script that simply executes the master init.sql
+    # This approach mirrors run.sh - let the master init.sql handle the orchestration
     cat > /docker-entrypoint-initdb.d/01-execute-modular.sql << EOF
 -- Execute the modular initialization
--- This ensures the \i commands can find the init directory
+-- This approach mirrors run.sh - simply execute the master init.sql
+-- which will orchestrate loading all modules in the correct dependency order
 
--- Check if we have the modular structure
 DO \$\$
 BEGIN
     RAISE NOTICE 'Applying database schema using modular approach...';
-    RAISE NOTICE 'Found modular SQL files in $INIT_DIR directory';
     RAISE NOTICE 'Executing master $INIT_SQL which will load all modules in correct order...';
 END \$\$;
 
--- Execute each module in the correct dependency order
--- (replicating the structure from the master init.sql)
-
--- Enable the gen_random_uuid() function (needed by all modules)
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
-
--- 1. Independent tables (no foreign key dependencies)
-\i /docker-entrypoint-initdb.d/$INIT_DIR/classes/init.sql
-\i /docker-entrypoint-initdb.d/$INIT_DIR/users/init.sql
-\i /docker-entrypoint-initdb.d/$INIT_DIR/agents/init.sql
-\i /docker-entrypoint-initdb.d/$INIT_DIR/rubrics/init.sql
-
--- 2. Tables that depend on agents (scenarios references agents)
-\i /docker-entrypoint-initdb.d/$INIT_DIR/scenarios/init.sql
-
--- 3. Tables that depend on multiple previous tables
-\i /docker-entrypoint-initdb.d/$INIT_DIR/simulations/init.sql
-
--- 4. Evaluation system (depends on rubrics)
-\i /docker-entrypoint-initdb.d/$INIT_DIR/evals/init.sql
-
--- Completion message
-DO \$\$
-BEGIN
-    RAISE NOTICE 'Database initialization completed successfully!';
-    RAISE NOTICE 'All modules loaded in dependency order.';
-END \$\$;
+-- Simply execute the master init.sql file - it knows the structure and dependencies
+\i /docker-entrypoint-initdb.d/master_init.sql.template
 EOF
     
     chmod 755 /docker-entrypoint-initdb.d/01-execute-modular.sql
