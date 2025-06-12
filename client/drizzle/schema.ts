@@ -82,26 +82,26 @@ export const documents = pgTable("documents", {
 		}).onDelete("cascade"),
 ]);
 
+export const users = pgTable("users", {
+	id: text().primaryKey().notNull(),
+	name: text(),
+	email: text(),
+	emailVerified: timestamp("emailVerified", { mode: 'date' }),
+	image: text(),
+}, (table) => [
+	unique("users_email_key").on(table.email),
+]);
+
 export const sessions = pgTable("sessions", {
 	sessionToken: text().primaryKey().notNull(),
 	userId: text().notNull(),
-	expires: timestamp({ mode: 'string' }).notNull(),
+	expires: timestamp({ mode: 'date' }).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
 			name: "sessions_userid_fkey"
 		}).onDelete("cascade"),
-]);
-
-export const users = pgTable("users", {
-	id: text().primaryKey().notNull(),
-	name: text(),
-	email: text(),
-	emailVerified: timestamp({ mode: 'string' }),
-	image: text(),
-}, (table) => [
-	unique("users_email_key").on(table.email),
 ]);
 
 export const profiles = pgTable("profiles", {
@@ -457,7 +457,7 @@ export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 
 export const verificationToken = pgTable("verification_token", {
 	identifier: text().notNull(),
-	expires: timestamp({ mode: 'string' }).notNull(),
+	expires: timestamp({ mode: 'date' }).notNull(),
 	token: text().notNull(),
 }, (table) => [
 	primaryKey({ columns: [table.identifier, table.token], name: "verification_token_pkey"}),
@@ -468,13 +468,13 @@ export const accounts = pgTable("accounts", {
 	type: text().notNull(),
 	provider: text().notNull(),
 	providerAccountId: text().notNull(),
-	refreshToken: text("refresh_token"),
-	accessToken: text("access_token"),
-	expiresAt: integer("expires_at"),
-	idToken: text("id_token"),
+	refresh_token: text(),
+	access_token: text(),
+	expires_at: integer(),
+	id_token: text(),
 	scope: text(),
-	sessionState: text("session_state"),
-	tokenType: text("token_type"),
+	session_state: text(),
+	token_type: text(),
 }, (table) => [
 	foreignKey({
 			columns: [table.userId],

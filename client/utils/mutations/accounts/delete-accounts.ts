@@ -2,11 +2,20 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { accounts } from "@/drizzle/schema";
-import { inArray } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 
-export async function deleteAccounts(ids: string[]) {
+export async function deleteAccounts(accountKeys: Array<{provider: string, providerAccountId: string}>) {
   try {
-    return await db.delete(accounts).where(inArray(accounts.id, ids)).returning();
+    const conditions = accountKeys.map(key => 
+      and(
+        eq(accounts.provider, key.provider),
+        eq(accounts.providerAccountId, key.providerAccountId)
+      )
+    );
+    
+    return await db.delete(accounts)
+      .where(or(...conditions))
+      .returning();
   } catch (error) {
     console.error("Error deleting multiple accounts:", error);
     throw error;

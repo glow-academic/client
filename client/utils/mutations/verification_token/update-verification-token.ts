@@ -2,11 +2,24 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { verificationToken } from "@/drizzle/schema";
-import { inArray } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 
-export async function updateVerificationToken(ids: string[], data: Partial<typeof verificationToken.$inferInsert>) {
+export async function updateVerificationToken(
+  tokens: Array<{identifier: string, token: string}>, 
+  data: Partial<typeof verificationToken.$inferInsert>
+) {
   try {
-    return await db.update(verificationToken).set(data).where(inArray(verificationToken.id, ids)).returning();
+    const conditions = tokens.map(tokenData => 
+      and(
+        eq(verificationToken.identifier, tokenData.identifier),
+        eq(verificationToken.token, tokenData.token)
+      )
+    );
+    
+    return await db.update(verificationToken)
+      .set(data)
+      .where(or(...conditions))
+      .returning();
   } catch (error) {
     console.error("Error updating multiple verification_token:", error);
     throw error;
