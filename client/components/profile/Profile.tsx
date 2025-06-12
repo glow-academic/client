@@ -6,7 +6,7 @@
  */
 "use client";
 import * as React from "react";
-import { User, Shield, Mail, Building, GraduationCap } from "lucide-react";
+import { Mail, GraduationCap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
@@ -121,6 +121,19 @@ export function Profile({ className }: ProfileProps) {
     profile.classIds?.includes(cls.id),
   );
 
+  const formatClassTerm = (term: string) => {
+    switch (term) {
+      case "fall":
+        return "Fall";
+      case "spring":
+        return "Spring";
+      case "summer":
+        return "Summer";
+      default:
+        return term;
+    }
+  }
+
   return (
     <div className={className}>
       <Card>
@@ -169,7 +182,7 @@ export function Profile({ className }: ProfileProps) {
                       <div>
                         <p className="font-medium">{cls.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {cls.classCode} • {cls.term} {cls.year}
+                          {cls.classCode} • {formatClassTerm(cls.term)} {cls.year}
                         </p>
                       </div>
                       <Badge variant="outline">{cls.classCode}</Badge>
