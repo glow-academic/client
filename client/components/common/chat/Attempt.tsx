@@ -1537,7 +1537,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               </ResizablePanel>
 
               <ResizableHandle />
-              <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
+              <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
                 <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
@@ -1559,11 +1559,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] max-h-full pt-2 overflow-hidden">
-                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full max-h-full overflow-hidden">
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2 p-1">
+                      <form onSubmit={handleSendMessage} className={`flex flex-col gap-2 h-full ${isTall ? '' : 'max-h-full overflow-hidden'}`}>
                         {isTall ? (
                           /* Vertical layout for larger panels with expanded textarea */
-                          <div className="flex flex-col gap-3 flex-1">
+                          <div className="flex flex-col gap-3 flex-1 p-1">
                             <Textarea
                               ref={textareaRef}
                               value={newMessage}
@@ -1616,7 +1616,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           </div>
                         ) : (
                           /* Horizontal layout for smaller panels - original compact view */
-                          <div className="flex gap-2 flex-1 min-h-[40px] max-h-[40px] items-center">
+                          <div className="flex gap-2 flex-1 min-h-[40px] items-center p-2">
                             <Textarea
                               ref={textareaRef}
                               value={newMessage}
