@@ -15,27 +15,6 @@ import {
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
-// Helper function to check if a user can simulate a specific role
-const canUserSimulateRole = (ProfileRole: ProfileRole, targetRole: ProfileRole): boolean => {
-  // Admin can simulate all roles
-  if (ProfileRole === "admin") return true;
-  
-  // Instructional staff can simulate instructor and ta roles
-  if (ProfileRole === "instructional") {
-    return ["instructor", "ta"].includes(targetRole);
-  }
-  
-  // Instructor can simulate ta role
-  if (ProfileRole === "instructor") {
-    return targetRole === "ta";
-  }
-  
-  // TA cannot simulate any other roles
-  if (ProfileRole === "ta") return false;
-  
-  return false;
-};
-
 interface RoleContextType {
   effectiveRole: ProfileRole;
   simulatedRole: ProfileRole | null;
@@ -70,7 +49,7 @@ export const useRole = () => {
 
 interface RoleProviderProps {
   children: React.ReactNode;
-  ProfileRole?: ProfileRole;
+  ProfileRole?: ProfileRole | undefined;
 }
 
 export function RoleProvider({ children, ProfileRole }: RoleProviderProps) {
