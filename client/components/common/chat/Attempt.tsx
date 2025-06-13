@@ -1022,6 +1022,24 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
+  // Helper function to get user initials from profile
+  const getUserInitials = (profile: any): string => {
+    if (!profile) return "U";
+    
+    const firstName = profile.firstName || "";
+    const lastName = profile.lastName || "";
+    
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (firstName) {
+      return firstName.charAt(0).toUpperCase();
+    } else if (lastName) {
+      return lastName.charAt(0).toUpperCase();
+    }
+    
+    return "U";
+  };
+
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -1520,52 +1538,143 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
-                <CardFooter
-                  ref={inputPanelRef}
-                  className="h-full p-4 border-t grid gap-2"
-                  /* When the footer is short we want a single row;
-                     when it's tall we want textarea + buttons */
-                  style={{
-                    gridTemplateRows: isTall ? "1fr auto" : "auto",
-                  }}
-                >
-                  {/* Row 1 – Textarea grows/shrinks automatically */}
-                  <Textarea
-                    ref={textareaRef}
-                    value={newMessage}
-                    onChange={e => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    className="w-full h-full resize-none overflow-y-auto text-md"
-                    disabled={simulation?.timeLimit ? !isActive : false}
-                    onKeyDown={e => {
-                      if (e.key === "Enter" && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage(e as any);
-                      }
-                    }}
-                  />
-
-                  {/* Row 2 – Buttons stick to the bottom/right */}
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      type="submit"
-                      disabled={!newMessage.trim() || (simulation?.timeLimit ? !isActive : false)}
-                      data-testid="send-button"
-                      className="min-h-[40px] h-[40px] px-3"
-                    >
-                      <Send className="h-4 w-4 mr-1" /> Send
-                    </Button>
-
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handleEndChat}
-                      disabled={endChatLoading || (simulation?.timeLimit ? !isActive : false)}
-                      className="min-h-[40px] h-[40px] px-3 text-sm whitespace-nowrap"
-                    >
-                      {endChatLoading ? "Ending…" : isSingleChatAttempt ? "End Session" : "End Chat"}
-                    </Button>
-                  </div>
+                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0">
+                  {currentChat?.completed ? (
+                    <div className="w-full text-center py-4">
+                      <p className="text-muted-foreground mb-2">
+                        This chat has been completed.
+                      </p>
+                      {currentDynamicRubric && (
+                        <div className="text-sm">
+                          <Badge
+                            variant={
+                              currentDynamicRubric.passed ? "default" : "destructive"
+                            }
+                          >
+                            Score: {currentDynamicRubric.score}/
+                            {currentDynamicRubric.totalPossiblePoints} -{" "}
+                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
+                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
+                        {isTall ? (
+                          /* Vertical layout for larger panels with expanded textarea */
+                          <div className="flex flex-col gap-3 flex-1">
+                            <Textarea
+                              ref={textareaRef}
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Type your message..."
+                              disabled={simulation?.timeLimit ? !isActive : false}
+                              className="flex-1 resize-y overflow-y-auto text-md"
+                              data-testid="message-input"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendMessage(e as any);
+                                }
+                              }}
+                              style={{
+                                minHeight: '80px',
+                                maxHeight: '300px'
+                              }}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                type="submit"
+                                disabled={
+                                  !newMessage.trim() ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                data-testid="send-button"
+                                className="min-h-[40px] h-[40px] px-4"
+                              >
+                                <Send className="h-4 w-4 mr-2" />
+                                Send
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleEndChat}
+                                disabled={
+                                  endChatLoading ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+                              >
+                                {endChatLoading
+                                  ? "Ending..."
+                                  : isSingleChatAttempt
+                                    ? "End Session"
+                                    : "End Chat"}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          /* Horizontal layout for smaller panels - original compact view */
+                          <div className="flex gap-2 flex-1 min-h-[40px]">
+                            <Textarea
+                              ref={textareaRef}
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Type your message..."
+                              disabled={simulation?.timeLimit ? !isActive : false}
+                              className="flex-1 resize-none overflow-y-auto text-md"
+                              data-testid="message-input"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendMessage(e as any);
+                                }
+                              }}
+                              style={{
+                                minHeight: '40px',
+                                maxHeight: '80px'
+                              }}
+                            />
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                type="submit"
+                                disabled={
+                                  !newMessage.trim() ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                data-testid="send-button"
+                                className="min-h-[40px] h-[40px] px-3"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleEndChat}
+                                disabled={
+                                  endChatLoading ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
+                              >
+                                {endChatLoading
+                                  ? "Ending..."
+                                  : isSingleChatAttempt
+                                    ? "End Session"
+                                    : "End Chat"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </form>
+                      {simulation?.timeLimit && !isActive && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          Time's up! The session has ended.
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </CardFooter>
               </ResizablePanel>
             </ResizablePanelGroup>
