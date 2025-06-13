@@ -50,6 +50,7 @@ import { updateEval } from "@/utils/mutations/evals/update-eval";
 
 // Types
 import { Agent, Scenario, Rubric } from "@/types";
+import { logError } from "@/utils/logger";
 
 interface EvalProps {
   evalId?: string;
@@ -142,7 +143,7 @@ export default function Eval({
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: EvalFormData }) =>
       updateEval(id, data),
     onSuccess: () => {
       toast.success("Evaluation updated successfully!");
@@ -315,7 +316,15 @@ export default function Eval({
         createMutation.mutate(payload);
       }
     } catch (error) {
-      toast.error(`Failed to ${isEditMode ? "update" : "create"} evaluation`);
+      logError(
+        `Failed to ${isEditMode ? "update" : "create"} evaluation`,
+        error,
+      );
+      toast.error(
+        `Failed to ${isEditMode ? "update" : "create"} evaluation: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      );
     } finally {
       setIsSubmitting(false);
     }

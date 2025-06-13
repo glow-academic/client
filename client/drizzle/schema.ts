@@ -173,7 +173,7 @@ export const standards = pgTable("standards", {
 export const appLogs = pgTable("app_logs", {
 	id: serial().primaryKey().notNull(),
 	level: text().notNull(),
-	messageFinal: text("message_final"),
+	message: text(),
 	context: jsonb(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow()});
 

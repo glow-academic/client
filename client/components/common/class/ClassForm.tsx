@@ -48,6 +48,7 @@ import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
 import { Class, Document, DocumentType } from "@/types";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
+import { logError, logInfo } from "@/utils/logger";
 
 interface FormErrors {
   name?: string;
@@ -148,7 +149,7 @@ export default function ClassForm({
 
         // If there's debug info, log it
         if (result.debug_info) {
-          console.log("Course processing debug info:", result.debug_info);
+          logInfo("Course processing debug info:", result.debug_info);
         }
       } else {
         throw new Error(result.message || "Course processing failed");
@@ -157,7 +158,7 @@ export default function ClassForm({
       toast.error(
         `Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
-      console.error("Course processing error:", error);
+      logError("Course processing error:", error);
     } finally {
       setIsProcessingCourse(false);
     }
@@ -257,7 +258,7 @@ export default function ClassForm({
       toast.error(
         `Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
-      console.error(`Error ${mode}ing class:`, error);
+      logError(`Error ${mode}ing class:`, error);
     } finally {
       setIsSubmitting(false);
     }
@@ -329,7 +330,7 @@ export default function ClassForm({
               retryDelays: [0, 3000, 5000, 10000, 20000],
               metadata: tusMetadata,
               onError: (error) => {
-                console.error(`Failed to upload ${file.name}: `, error);
+                logError(`Failed to upload ${file.name}: `, error);
 
                 toast.error(
                   `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
@@ -341,7 +342,7 @@ export default function ClassForm({
                 const percentage = Math.round(
                   (bytesUploaded / bytesTotal) * 100,
                 );
-                console.log(`${file.name} uploaded ${percentage}%`);
+                logInfo(`${file.name} uploaded ${percentage}%`);
               },
               onSuccess: async () => {
                 // Finalize the upload
@@ -378,7 +379,7 @@ export default function ClassForm({
                   toast.success(`${file.name} uploaded successfully!`);
                   resolve();
                 } catch (error) {
-                  console.error(`Finalization error for ${file.name}:`, error);
+                  logError(`Finalization error for ${file.name}:`, error);
 
                   toast.error(
                     `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -409,21 +410,21 @@ export default function ClassForm({
           // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ["documents", classId] });
         } catch (error) {
-          console.error("Some uploads failed:", error);
+          logError("Some uploads failed:", error);
           // Dismiss the loading toast
           toast.dismiss(toastId);
         } finally {
           setIsUploading(false);
         }
       } catch (error) {
-        console.error("Upload initialization error:", error);
+        logError("Upload initialization error:", error);
         toast.error(
           `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         setIsUploading(false);
       }
     },
-    [classId, queryClient],
+    [classId, queryClient, mode],
   );
 
   // Drag and drop handlers
@@ -493,7 +494,7 @@ export default function ClassForm({
       setShowDeleteDialog(false);
       setDocumentToDelete(null);
     } catch (error) {
-      console.error("Delete document error:", error);
+      logError("Delete document error:", error);
       toast.error(
         `Failed to delete document: ${
           error instanceof Error ? error.message : "Unknown error"
@@ -514,7 +515,7 @@ export default function ClassForm({
       toast.success("Document type updated");
     } catch (error) {
       toast.error("Failed to update document type");
-      console.error("Update error:", error);
+      logError("Update error:", error);
     }
   };
 
