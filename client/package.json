@@ -2,6 +2,7 @@
   "name": "glow",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node cypress/scripts/advanced-test-generator.js && node scripts/generate-component-tests.js && next dev",
     "build": "next lint --fix && NODE_ENV=production next build",
@@ -59,6 +60,7 @@
     "next-themes": "^0.4.6",
     "pdf-lib": "^1.17.1",
     "pg": "^8.16.0",
+    "pino": "^9.7.0",
     "postgres": "^3.4.5",
     "prettier": "^3.5.3",
     "react": "^19.0.0",

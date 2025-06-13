@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, "../drizzle/schema.ts");
@@ -88,7 +93,7 @@ function generateTypesContent(tables, enums) {
   const enumTypes = enums
     .map(
       (enumName) =>
-        `type ${capitalize(enumName)} = (typeof ${enumName}.enumValues)[number];`,
+        `type ${capitalize(enumName)} = (typeof ${enumName}.enumValues)[number];`
     )
     .join("\n");
 
@@ -142,13 +147,13 @@ function generateTypes() {
 
   console.log(`\n✅ Generated ${TYPES_PATH}`);
   console.log(
-    "📝 All table and enum types are now available with singular names!",
+    "📝 All table and enum types are now available with singular names!"
   );
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateTypes();
 }
 
-module.exports = { generateTypes, extractSchemaInfo };
+export { extractSchemaInfo, generateTypes };

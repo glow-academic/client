@@ -33,12 +33,12 @@ export default defineConfig({
                   [classId, username],
                 );
               })
-              .then((_result: any) => {
+              .then((_result: unknown) => {
                 console.log(`Assigned user ${username} to class ${classId}`);
                 return client.end();
               })
               .then(() => resolve(null))
-              .catch((error: any) => {
+              .catch((error: unknown) => {
                 console.error("Error assigning user to class:", error);
                 client.end();
                 reject(error);

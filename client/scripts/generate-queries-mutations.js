@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
-const { execSync } = require("child_process");
+import { execSync } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, "../drizzle/schema.ts");
@@ -106,13 +111,13 @@ function detectSchemaMismatches(snapshot) {
   }
 
   // Check for mismatches
-  Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
+  Object.entries(snapshot.tables || {}).forEach(([tableData]) => {
     const dbTableName = tableData.name;
     const schemaExportName = schemaTables.get(dbTableName);
 
     if (!schemaExportName) {
       warnings.push(
-        `⚠️  Table "${dbTableName}" exists in database but not found in schema file`,
+        `⚠️  Table "${dbTableName}" exists in database but not found in schema file`
       );
     }
   });
@@ -120,11 +125,11 @@ function detectSchemaMismatches(snapshot) {
   // Check for schema tables not in database
   schemaTables.forEach((exportName, tableName) => {
     const dbTable = Object.values(snapshot.tables || {}).find(
-      (table) => table.name === tableName,
+      (table) => table.name === tableName
     );
     if (!dbTable) {
       warnings.push(
-        `⚠️  Table "${tableName}" (${exportName}) exists in schema but not in database`,
+        `⚠️  Table "${tableName}" (${exportName}) exists in schema but not in database`
       );
     }
   });
@@ -133,7 +138,7 @@ function detectSchemaMismatches(snapshot) {
     console.log("🔍 Schema mismatch warnings:");
     warnings.forEach((warning) => console.log(`  ${warning}`));
     console.log(
-      "💡 Consider running migrations or using --pull to sync with database\n",
+      "💡 Consider running migrations or using --pull to sync with database\n"
     );
   }
 
@@ -179,9 +184,9 @@ function extractTableInfo() {
           hasDefault: columnData.default !== undefined,
           isForeignKey: isForeignKeyColumn(
             columnData.name,
-            tableData.foreignKeys || {},
+            tableData.foreignKeys || {}
           ),
-        }),
+        })
       );
 
       // Parse foreign keys
@@ -190,7 +195,7 @@ function extractTableInfo() {
           columnName: fkData.columnsFrom[0], // Taking first column for simplicity
           foreignTable: fkData.tableTo,
           name: fkData.name,
-        }),
+        })
       );
 
       // Find primary key
@@ -224,7 +229,7 @@ function getExportNameFromSchema(tableName) {
     // Look for export const [name] = pgTable("tableName"
     const exportRegex = new RegExp(
       `export const (\\w+)\\s*=\\s*pgTable\\(\\s*["']${tableName}["']`,
-      "g",
+      "g"
     );
     const match = exportRegex.exec(schemaContent);
 
@@ -236,7 +241,7 @@ function getExportNameFromSchema(tableName) {
     return tableName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   } catch (error) {
     console.warn(
-      `⚠️  Could not find export name for table ${tableName}, using fallback`,
+      `⚠️  Could not find export name for table ${tableName}, using fallback`
     );
     return tableName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
   }
@@ -283,7 +288,7 @@ function mapDrizzleType(dbType) {
  */
 function isForeignKeyColumn(columnName, foreignKeys) {
   return Object.values(foreignKeys).some(
-    (fk) => fk.columnsFrom && fk.columnsFrom.includes(columnName),
+    (fk) => fk.columnsFrom && fk.columnsFrom.includes(columnName)
   );
 }
 
@@ -292,8 +297,8 @@ function isForeignKeyColumn(columnName, foreignKeys) {
  */
 function toKebabCase(str) {
   return str
-    .replace(/([a-z])([A-Z])/g, '$1-$2') // camelCase to kebab-case
-    .replace(/_/g, '-') // snake_case to kebab-case
+    .replace(/([a-z])([A-Z])/g, "$1-$2") // camelCase to kebab-case
+    .replace(/_/g, "-") // snake_case to kebab-case
     .toLowerCase();
 }
 
@@ -340,14 +345,8 @@ function generateQueries(tables) {
   let updated = 0;
 
   tables.forEach((table) => {
-    const {
-      exportName,
-      tableName,
-      singularName,
-      fields,
-      foreignKeys,
-      primaryKey,
-    } = table;
+    const { exportName, tableName, singularName, foreignKeys, primaryKey } =
+      table;
 
     // Create table-specific directory
     const tableDir = path.join(QUERIES_DIR, tableName);
@@ -360,7 +359,7 @@ function generateQueries(tables) {
     const getAllResult = writeQueryFile(
       tableName,
       `get-all-${toKebabCase(tableName)}.ts`,
-      getAllQuery,
+      getAllQuery
     );
     if (getAllResult.created) created++;
     else updated++;
@@ -370,12 +369,12 @@ function generateQueries(tables) {
       exportName,
       tableName,
       singularName,
-      primaryKey,
+      primaryKey
     );
     const getByIdResult = writeQueryFile(
       tableName,
       `get-${toKebabCase(singularName)}.ts`,
-      getByIdQuery,
+      getByIdQuery
     );
     if (getByIdResult.created) created++;
     else updated++;
@@ -385,7 +384,7 @@ function generateQueries(tables) {
       const getByFkQuery = generateGetByForeignKeyQuery(
         exportName,
         tableName,
-        fk,
+        fk
       );
       const paramName = fk.columnName
         .replace(/Id$/, "")
@@ -395,7 +394,7 @@ function generateQueries(tables) {
       const getByFkResult = writeQueryFile(
         tableName,
         `get-${toKebabCase(tableName)}-by-${cleanParamName}.ts`,
-        getByFkQuery,
+        getByFkQuery
       );
       if (getByFkResult.created) created++;
       else updated++;
@@ -406,7 +405,7 @@ function generateQueries(tables) {
       const getByFkPluralQuery = generateGetByForeignKeyPluralQuery(
         exportName,
         tableName,
-        fk,
+        fk
       );
       const paramName = fk.columnName
         .replace(/Id$/, "")
@@ -419,7 +418,7 @@ function generateQueries(tables) {
       const getByFkPluralResult = writeQueryFile(
         tableName,
         `get-${toKebabCase(tableName)}-by-${cleanPluralParamName}.ts`,
-        getByFkPluralQuery,
+        getByFkPluralQuery
       );
       if (getByFkPluralResult.created) created++;
       else updated++;
@@ -427,7 +426,7 @@ function generateQueries(tables) {
   });
 
   console.log(
-    `📖 Query generation complete: ${created} created, ${updated} updated`,
+    `📖 Query generation complete: ${created} created, ${updated} updated`
   );
 }
 
@@ -458,12 +457,12 @@ function generateMutations(tables) {
       exportName,
       tableName,
       singularName,
-      fields,
+      fields
     );
     const createResult = writeMutationFile(
       tableName,
       `create-${toKebabCase(singularName)}.ts`,
-      createMutation,
+      createMutation
     );
     if (createResult.created) created++;
     else updated++;
@@ -473,12 +472,12 @@ function generateMutations(tables) {
       exportName,
       tableName,
       singularName,
-      fields,
+      fields
     );
     const createMultipleResult = writeMutationFile(
       tableName,
       `create-${toKebabCase(tableName)}.ts`,
-      createMultipleMutation,
+      createMultipleMutation
     );
     if (createMultipleResult.created) created++;
     else updated++;
@@ -489,12 +488,12 @@ function generateMutations(tables) {
       tableName,
       singularName,
       fields,
-      primaryKey,
+      primaryKey
     );
     const updateResult = writeMutationFile(
       tableName,
       `update-${toKebabCase(singularName)}.ts`,
-      updateMutation,
+      updateMutation
     );
     if (updateResult.created) created++;
     else updated++;
@@ -505,12 +504,12 @@ function generateMutations(tables) {
       tableName,
       singularName,
       fields,
-      primaryKey,
+      primaryKey
     );
     const updateMultipleResult = writeMutationFile(
       tableName,
       `update-${toKebabCase(tableName)}.ts`,
-      updateMultipleMutation,
+      updateMultipleMutation
     );
     if (updateMultipleResult.created) created++;
     else updated++;
@@ -520,12 +519,12 @@ function generateMutations(tables) {
       exportName,
       tableName,
       singularName,
-      primaryKey,
+      primaryKey
     );
     const deleteResult = writeMutationFile(
       tableName,
       `delete-${toKebabCase(singularName)}.ts`,
-      deleteMutation,
+      deleteMutation
     );
     if (deleteResult.created) created++;
     else updated++;
@@ -535,19 +534,19 @@ function generateMutations(tables) {
       exportName,
       tableName,
       singularName,
-      primaryKey,
+      primaryKey
     );
     const deleteMultipleResult = writeMutationFile(
       tableName,
       `delete-${toKebabCase(tableName)}.ts`,
-      deleteMultipleMutation,
+      deleteMultipleMutation
     );
     if (deleteMultipleResult.created) created++;
     else updated++;
   });
 
   console.log(
-    `✏️  Mutation generation complete: ${created} created, ${updated} updated`,
+    `✏️  Mutation generation complete: ${created} created, ${updated} updated`
   );
 }
 
@@ -647,7 +646,7 @@ export async function get${capitalize(exportName)}By${capitalize(pluralParamName
 /**
  * Generate create mutation
  */
-function generateCreateMutation(exportName, tableName, singularName, fields) {
+function generateCreateMutation(exportName, tableName, singularName) {
   return `// utils/mutations/${tableName}/create-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
@@ -668,12 +667,7 @@ export async function create${capitalize(singularName)}(data: typeof ${exportNam
 /**
  * Generate create multiple mutation
  */
-function generateCreateMultipleMutation(
-  exportName,
-  tableName,
-  singularName,
-  fields,
-) {
+function generateCreateMultipleMutation(exportName, tableName) {
   return `// utils/mutations/${tableName}/create-${toKebabCase(tableName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
@@ -698,7 +692,7 @@ function generateUpdateMutation(
   tableName,
   singularName,
   fields,
-  primaryKey,
+  primaryKey
 ) {
   return `// utils/mutations/${tableName}/update-${toKebabCase(singularName)}.ts
 "use server";
@@ -726,7 +720,7 @@ function generateUpdateMultipleMutation(
   tableName,
   singularName,
   fields,
-  primaryKey,
+  primaryKey
 ) {
   return `// utils/mutations/${tableName}/update-${toKebabCase(tableName)}.ts
 "use server";
@@ -752,7 +746,7 @@ function generateDeleteMutation(
   exportName,
   tableName,
   singularName,
-  primaryKey,
+  primaryKey
 ) {
   return `// utils/mutations/${tableName}/delete-${toKebabCase(singularName)}.ts
 "use server";
@@ -779,7 +773,7 @@ function generateDeleteMultipleMutation(
   exportName,
   tableName,
   singularName,
-  primaryKey,
+  primaryKey
 ) {
   return `// utils/mutations/${tableName}/delete-${toKebabCase(tableName)}.ts
 "use server";
@@ -846,7 +840,7 @@ function capitalize(str) {
  */
 function generateQueriesAndMutations(options = {}) {
   console.log(
-    "🚀 Generating queries and mutations from latest database state...\n",
+    "🚀 Generating queries and mutations from latest database state...\n"
   );
 
   // Check for different snapshot generation options
@@ -865,7 +859,7 @@ function generateQueriesAndMutations(options = {}) {
       generateSnapshotFromSchema();
     } else {
       console.log(
-        "🔄 Using drizzle-kit introspect to get latest database state...",
+        "🔄 Using drizzle-kit introspect to get latest database state..."
       );
       generateSnapshot();
     }
@@ -878,7 +872,7 @@ function generateQueriesAndMutations(options = {}) {
   console.log(`📊 Found ${tables.length} tables:`);
   tables.forEach((table) => {
     console.log(
-      `  - ${table.exportName} (${table.foreignKeys.length} foreign keys)`,
+      `  - ${table.exportName} (${table.foreignKeys.length} foreign keys)`
     );
   });
   console.log("");
@@ -892,7 +886,7 @@ function generateQueriesAndMutations(options = {}) {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   // Check for help flag
   if (process.argv.includes("--help") || process.argv.includes("-h")) {
     console.log(`
@@ -933,4 +927,4 @@ Recommended workflow:
   generateQueriesAndMutations();
 }
 
-module.exports = { generateQueriesAndMutations, extractTableInfo };
+export { extractTableInfo, generateQueriesAndMutations };

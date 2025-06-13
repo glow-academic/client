@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, "../../drizzle/schema.ts");
@@ -41,8 +46,8 @@ function extractDetailedTableInfo() {
       const constraintsMatch = schemaContent.match(
         new RegExp(
           `export const ${exportName} = pgTable\\("${tableName}", \\{[^}]+\\}, \\(table\\) => \\[([^\\]]+)\\]`,
-          "s",
-        ),
+          "s"
+        )
       );
 
       const constraints = constraintsMatch
@@ -56,7 +61,7 @@ function extractDetailedTableInfo() {
         fields,
         constraints,
         hasTimestamps: fields.some(
-          (f) => f.name === "createdAt" || f.name === "created_at",
+          (f) => f.name === "createdAt" || f.name === "created_at"
         ),
         hasUuid: fields.some((f) => f.type === "uuid" && f.isPrimaryKey),
         requiredFields: fields.filter((f) => f.isRequired),
@@ -142,7 +147,7 @@ function parseConstraints(constraintsContent) {
 
   // Foreign key constraints
   const fkMatches = constraintsContent.matchAll(
-    /foreignKey\(\{[^}]+columns:\s*\[([^\]]+)\][^}]+foreignColumns:\s*\[([^\]]+)\][^}]+name:\s*"([^"]+)"[^}]*\}\)(?:\.onDelete\("([^"]+)"\))?/g,
+    /foreignKey\(\{[^}]+columns:\s*\[([^\]]+)\][^}]+foreignColumns:\s*\[([^\]]+)\][^}]+name:\s*"([^"]+)"[^}]*\}\)(?:\.onDelete\("([^"]+)"\))?/g
   );
 
   for (const match of fkMatches) {
@@ -158,7 +163,7 @@ function parseConstraints(constraintsContent) {
 
   // Unique constraints
   const uniqueMatches = constraintsContent.matchAll(
-    /unique\("([^"]+)"\)\.on\(([^)]+)\)/g,
+    /unique\("([^"]+)"\)\.on\(([^)]+)\)/g
   );
 
   for (const match of uniqueMatches) {
@@ -234,7 +239,7 @@ function generateAdvancedTestTemplate(table, allTables) {
         .filter((c) => c.type === "unique")
         .map(
           (c) =>
-            `      // Unique constraint: ${c.name} on ${c.columns.join(", ")}`,
+            `      // Unique constraint: ${c.name} on ${c.columns.join(", ")}`
         )
         .join("\n")}
       
@@ -261,7 +266,7 @@ function generateAdvancedTestTemplate(table, allTables) {
 
   // Foreign key tests
   const foreignKeyConstraints = constraints.filter(
-    (c) => c.type === "foreignKey",
+    (c) => c.type === "foreignKey"
   );
   if (foreignKeyConstraints.length > 0) {
     foreignKeyConstraints.forEach((fk) => {
@@ -399,7 +404,7 @@ function generateAdvancedTests() {
   const { tables, enums } = extractDetailedTableInfo();
 
   console.log(
-    `📊 Found ${tables.length} tables and ${Object.keys(enums).length} enums`,
+    `📊 Found ${tables.length} tables and ${Object.keys(enums).length} enums`
   );
 
   const E2E_DIR = path.join(__dirname, "../e2e");
@@ -443,8 +448,8 @@ function generateAdvancedTests() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateAdvancedTests();
 }
 
-module.exports = { generateAdvancedTests, extractDetailedTableInfo };
+export { extractDetailedTableInfo, generateAdvancedTests };

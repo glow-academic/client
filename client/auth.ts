@@ -5,12 +5,20 @@ import { createUser } from "./utils/mutations/users/create-user";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
+import { Pool } from "pg";
+import PostgresAdapter from "@auth/pg-adapter";
+import { db_url } from "./utils/drizzle/database";
 
 const clientId = process.env['AUTH_MICROSOFT_ENTRA_ID_ID'] || "";
 const clientSecret = process.env['AUTH_MICROSOFT_ENTRA_ID_SECRET'] || "";
 const secret = process.env['AUTH_SECRET'] || "";
 
+const pool = new Pool({
+  connectionString: db_url,
+});
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PostgresAdapter(pool),
   providers: [MicrosoftEntraID({
     clientId: clientId,
     clientSecret: clientSecret,

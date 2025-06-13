@@ -1,7 +1,12 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Path configurations
 const COMPONENTS_DIR = path.join(__dirname, "../components");
@@ -84,7 +89,7 @@ function analyzeComponent(componentPath) {
 
     // Extract named exports
     const namedExportMatches = content.matchAll(
-      /export\s+(?:const|function|class)\s+(\w+)/g,
+      /export\s+(?:const|function|class)\s+(\w+)/g
     );
     for (const match of namedExportMatches) {
       analysis.namedExports.push(match[1]);
@@ -92,7 +97,7 @@ function analyzeComponent(componentPath) {
 
     // Extract props interface
     const propsInterfaceMatch = content.match(
-      /interface\s+(\w*Props)\s*\{([^}]+)\}/,
+      /interface\s+(\w*Props)\s*\{([^}]+)\}/
     );
     if (propsInterfaceMatch) {
       analysis.hasProps = true;
@@ -109,7 +114,7 @@ function analyzeComponent(componentPath) {
 
     // Extract imports
     const importMatches = content.matchAll(
-      /import\s+.*?from\s+['"]([^'"]+)['"]/g,
+      /import\s+.*?from\s+['"]([^'"]+)['"]/g
     );
     for (const match of importMatches) {
       analysis.imports.push(match[1]);
@@ -119,7 +124,7 @@ function analyzeComponent(componentPath) {
   } catch (error) {
     console.error(
       `❌ Error analyzing component ${componentPath}:`,
-      error.message,
+      error.message
     );
     return {
       hasDefaultExport: true,
@@ -144,7 +149,7 @@ function analyzeComponent(componentPath) {
  * Generate test template based on component analysis
  */
 function generateTestTemplate(component, analysis) {
-  const { componentName, componentPath, relativePath } = component;
+  const { componentName, componentPath } = component;
   const importPath =
     `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
 
@@ -402,50 +407,6 @@ describe('${componentName}', () => {
 }
 
 /**
- * Generate test wrapper based on component needs
- */
-function generateTestWrapper(analysis) {
-  if (!analysis.hasApiCalls && !analysis.usesContext) {
-    return "";
-  }
-
-  let wrapper = `  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (`;
-
-  if (analysis.hasApiCalls) {
-    wrapper += `
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>`;
-  } else {
-    wrapper += `
-      <>{children}</>`;
-  }
-
-  wrapper += `
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-`;
-
-  return wrapper;
-}
-
-/**
- * Generate basic render test
- */
-function generateBasicRenderTest(component, analysis) {
-  const { componentName } = component;
-
-  if (analysis.hasApiCalls) {
-    return `renderWithProviders(<${componentName} />);`;
-  } else {
-    return `render(<${componentName} />);`;
-  }
-}
-
-/**
  * Generate render example for comments
  */
 function generateRenderExample(component, analysis) {
@@ -480,8 +441,7 @@ function generateTestFiles(components) {
   let skipped = 0;
 
   components.forEach((component) => {
-    const { testDir, testFilePath, componentFullPath, componentName } =
-      component;
+    const { testDir, testFilePath, componentFullPath } = component;
 
     // Ensure test directory exists
     if (!fs.existsSync(testDir)) {
@@ -490,7 +450,7 @@ function generateTestFiles(components) {
 
     if (isTestImplemented(testFilePath)) {
       console.log(
-        `⏭️  Skipping ${component.testFileName} (already implemented)`,
+        `⏭️  Skipping ${component.testFileName} (already implemented)`
       );
       skipped++;
     } else {
@@ -505,7 +465,7 @@ function generateTestFiles(components) {
 
       if (existed) {
         console.log(
-          `✨ Updated ${component.testFileName} (was empty/incomplete)`,
+          `✨ Updated ${component.testFileName} (was empty/incomplete)`
         );
         updated++;
       } else {
@@ -698,17 +658,13 @@ function main() {
 
   console.log("\n✅ Component test generation complete!");
   console.log(
-    '💡 Run "npm run test:components" to execute all component tests',
+    '💡 Run "npm run test:components" to execute all component tests'
   );
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   main();
 }
 
-module.exports = {
-  scanComponentFiles,
-  generateTestFiles,
-  generateCoverageReport,
-};
+export { generateCoverageReport, generateTestFiles, scanComponentFiles };

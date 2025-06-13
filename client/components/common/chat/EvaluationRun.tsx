@@ -450,9 +450,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                 timestamp: new Date().toISOString(),
                 ...data
               }]);
-              
             } catch (parseError) {
-              console.error('Error parsing SSE data:', parseError);
+              toast.error(`Error parsing SSE data: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
             }
           }
         }
