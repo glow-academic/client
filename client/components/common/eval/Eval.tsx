@@ -243,7 +243,7 @@ export default function Eval({
     const draggedIndex = newOrder.findIndex((id) => id === draggedItem);
     const targetIndex = newOrder.findIndex((id) => id === targetItemId);
 
-    if (draggedIndex !== -1 && targetIndex !== -1) {
+    if (draggedIndex !== -1 && targetIndex !== -1 && draggedItem) {
       const [removed] = newOrder.splice(draggedIndex, 1);
       newOrder.splice(targetIndex, 0, removed);
 

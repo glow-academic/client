@@ -342,7 +342,7 @@ export default function Reports() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = filename;
+      a.download = filename || 'report.pdf';
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

@@ -70,7 +70,7 @@ export default function DocumentViewer({
   useEffect(() => {
     if (document) {
       setDocId(document.id);
-    } else if (documentsToUse.length && !docId) {
+    } else if (documentsToUse.length && !docId && documentsToUse[0]) {
       setDocId(documentsToUse[0].id);
     }
   }, [documentsToUse, docId, document]);

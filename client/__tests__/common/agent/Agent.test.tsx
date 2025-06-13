@@ -1,422 +1,374 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { useRouter } from "next/navigation";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
-import Agent from "@/components/common/agent/Agent";
+import React from 'react';
+import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@testing-library/jest-dom';
+import userEvent from '@testing-library/user-event';
+import { useRouter } from 'next/navigation';
+import Agent from '@/components/common/agent/Agent';
 
-// Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
 }));
 
-// Mock API calls
-vi.mock("@/utils/queries/agents/get-agent", () => ({
-  getAgent: vi.fn(),
-}));
-
-vi.mock("@/utils/mutations/agents/create-agent", () => ({
-  createAgent: vi.fn(),
-}));
-
-vi.mock("@/utils/mutations/agents/update-agent", () => ({
-  updateAgent: vi.fn(),
-}));
-
-// Mock toast
-vi.mock("sonner", () => ({
+// Mock sonner
+vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
   },
 }));
 
-describe("Agent", () => {
-  let queryClient: QueryClient;
-  const mockPush = vi.fn();
+// Mock the query functions
+vi.mock('@/utils/queries/agents/get-agent', () => ({
+  getAgent: vi.fn(),
+}));
 
+vi.mock('@/utils/mutations/agents/create-agent', () => ({
+  createAgent: vi.fn(),
+}));
+
+vi.mock('@/utils/mutations/agents/update-agent', () => ({
+  updateAgent: vi.fn(),
+}));
+
+const mockPush = vi.fn();
+const mockAgent = {
+  id: '1',
+  name: 'Test Agent',
+  subtitle: 'Test Subtitle',
+  description: 'Test Description',
+  systemPrompt: 'Test System Prompt',
+  agentType: 'student' as const,
+  temperature: 0.7,
+};
+
+const createTestQueryClient = () => {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+};
+
+const renderWithQueryClient = (component: React.ReactElement) => {
+  const queryClient = createTestQueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      {component}
+    </QueryClientProvider>
+  );
+};
+
+describe('Agent Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
-
     (useRouter as any).mockReturnValue({
       push: mockPush,
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
     });
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-
-  describe("Rendering", () => {
-    it("should render create mode by default", () => {
-      renderWithProviders(<Agent />);
-
-      expect(
-        screen.getByRole("button", { name: /create agent/i }),
-      ).toBeInTheDocument();
-      expect(screen.getByLabelText(/agent name/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/subtitle/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/system prompt/i)).toBeInTheDocument();
+  describe('Create Mode', () => {
+    it('renders create form correctly', () => {
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      expect(screen.getByText('Create Agent')).toBeInTheDocument();
+      expect(screen.getByLabelText(/Agent Name/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Subtitle/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Description/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/System Prompt/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Agent Type/)).toBeInTheDocument();
+      expect(screen.getByLabelText(/Temperature/)).toBeInTheDocument();
     });
 
-    it("should render edit mode when agentId is provided", () => {
-      renderWithProviders(<Agent agentId="test-id" mode="edit" />);
-
-      // Should show skeleton loading initially
-      expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
+    it('has correct initial form values', () => {
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const nameInput = screen.getByLabelText(/Agent Name/) as HTMLInputElement;
+      const subtitleInput = screen.getByLabelText(/Subtitle/) as HTMLInputElement;
+      const descriptionInput = screen.getByLabelText(/Description/) as HTMLTextAreaElement;
+      const systemPromptInput = screen.getByLabelText(/System Prompt/) as HTMLTextAreaElement;
+      const temperatureInput = screen.getByLabelText(/Temperature/) as HTMLInputElement;
+      
+      expect(nameInput.value).toBe('');
+      expect(subtitleInput.value).toBe('');
+      expect(descriptionInput.value).toBe('');
+      expect(systemPromptInput.value).toBe('');
+      expect(temperatureInput.value).toBe('0.7');
     });
 
-    it("should have correct form fields and accessibility attributes", () => {
-      renderWithProviders(<Agent />);
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
-      const descriptionTextarea = screen.getByLabelText(/description/i);
-      const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
-      const agentTypeSelect = screen.getByLabelText(/agent type/i);
-      const temperatureInput = screen.getByLabelText(/temperature/i);
-
-      expect(nameInput).toHaveAttribute("required");
-      expect(nameInput).toHaveAttribute(
-        "placeholder",
-        "e.g., Enthusiastic Student Agent",
-      );
-      expect(subtitleInput).toHaveAttribute("required");
-      expect(subtitleInput).toHaveAttribute(
-        "placeholder",
-        "Brief description of the agent",
-      );
-      expect(descriptionTextarea).toHaveAttribute("required");
-      expect(descriptionTextarea).toHaveAttribute(
-        "placeholder",
-        "Detailed behavior description and personality traits",
-      );
-      expect(systemPromptTextarea).toHaveAttribute("required");
-      expect(systemPromptTextarea).toHaveAttribute(
-        "placeholder",
-        "System prompt that defines how the agent should behave and respond",
-      );
-      expect(agentTypeSelect).toBeInTheDocument();
-      expect(temperatureInput).toHaveAttribute("type", "number");
-      expect(temperatureInput).toHaveAttribute("min", "0");
-      expect(temperatureInput).toHaveAttribute("max", "100");
-    });
-
-    it("should show helper text for system prompt and temperature", () => {
-      renderWithProviders(<Agent />);
-
-      expect(
-        screen.getByText(
-          "This prompt defines the agent's behavior and personality in conversations.",
-        ),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          "Temperature value for response randomness (0-100). Lower values are more deterministic.",
-        ),
-      ).toBeInTheDocument();
+    it('shows create button', () => {
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      expect(screen.getByRole('button', { name: /Create Agent/ })).toBeInTheDocument();
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle form submissions for create mode", async () => {
-      const { createAgent } = await import(
-        "@/utils/mutations/agents/create-agent"
-      );
-      (createAgent as any).mockResolvedValue({ id: "new-agent-id" });
+  describe('Edit Mode', () => {
+    beforeEach(() => {
+      const { getAgent } = require('@/utils/queries/agents/get-agent');
+      getAgent.mockResolvedValue(mockAgent);
+    });
 
-      const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
-      const descriptionTextarea = screen.getByLabelText(/description/i);
-      const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
-      const submitButton = screen.getByRole("button", {
-        name: /create agent/i,
+    it('renders edit form correctly', async () => {
+      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Edit Agent')).toBeInTheDocument();
       });
+    });
 
-      await user.type(nameInput, "Test Agent");
-      await user.type(subtitleInput, "Test Subtitle");
-      await user.type(descriptionTextarea, "Test Description");
-      await user.type(systemPromptTextarea, "Test System Prompt");
+    it('loads agent data correctly', async () => {
+      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      
+      await waitFor(() => {
+        const nameInput = screen.getByLabelText(/Agent Name/) as HTMLInputElement;
+        expect(nameInput.value).toBe('Test Agent');
+      });
+    });
+
+    it('shows update button', async () => {
+      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Update Agent/ })).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Form Validation', () => {
+    it('shows validation errors for empty required fields', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
       await user.click(submitButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Name is required')).toBeInTheDocument();
+        expect(screen.getByText('Subtitle is required')).toBeInTheDocument();
+        expect(screen.getByText('Description is required')).toBeInTheDocument();
+        expect(screen.getByText('System prompt is required')).toBeInTheDocument();
+      });
+    });
 
+    it('validates temperature range', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const temperatureInput = screen.getByLabelText(/Temperature/);
+      await user.clear(temperatureInput);
+      await user.type(temperatureInput, '2.5');
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
+      await user.click(submitButton);
+      
+      await waitFor(() => {
+        expect(screen.getByText('Temperature must be between 0 and 2')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Form Interactions', () => {
+    it('updates form fields correctly', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const nameInput = screen.getByLabelText(/Agent Name/);
+      await user.type(nameInput, 'New Agent Name');
+      
+      expect(nameInput).toHaveValue('New Agent Name');
+    });
+
+    it('updates temperature with slider', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const temperatureInput = screen.getByLabelText(/Temperature/);
+      await user.clear(temperatureInput);
+      await user.type(temperatureInput, '1.2');
+      
+      expect(temperatureInput).toHaveValue('1.2');
+    });
+
+    it('selects agent type correctly', async () => {
+      const user = userEvent.setup();
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const agentTypeSelect = screen.getByRole('combobox');
+      await user.click(agentTypeSelect);
+      
+      const taOption = screen.getByRole('option', { name: /Teaching Assistant/ });
+      await user.click(taOption);
+      
+      // The select should now show the selected value
+      expect(screen.getByText('Teaching Assistant')).toBeInTheDocument();
+    });
+  });
+
+  describe('Form Submission', () => {
+    it('submits create form successfully', async () => {
+      const user = userEvent.setup();
+      const { createAgent } = require('@/utils/mutations/agents/create-agent');
+      const { toast } = require('sonner');
+      
+      createAgent.mockResolvedValue({ id: 'new-agent-id' });
+      
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      // Fill out the form
+      await user.type(screen.getByLabelText(/Agent Name/), 'Test Agent');
+      await user.type(screen.getByLabelText(/Subtitle/), 'Test Subtitle');
+      await user.type(screen.getByLabelText(/Description/), 'Test Description');
+      await user.type(screen.getByLabelText(/System Prompt/), 'Test System Prompt');
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
+      await user.click(submitButton);
+      
       await waitFor(() => {
         expect(createAgent).toHaveBeenCalledWith({
-          name: "Test Agent",
-          subtitle: "Test Subtitle",
-          description: "Test Description",
-          systemPrompt: "Test System Prompt",
-          agentType: "student",
-          temperature: 0,
+          name: 'Test Agent',
+          subtitle: 'Test Subtitle',
+          description: 'Test Description',
+          systemPrompt: 'Test System Prompt',
+          agentType: 'student',
+          temperature: 0.7,
         });
+        expect(toast.success).toHaveBeenCalledWith('Agent created successfully!');
       });
-
-      expect(mockPush).toHaveBeenCalledWith("/management/agents");
     });
 
-    it("should handle agent type selection", async () => {
+    it('submits update form successfully', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const agentTypeSelect = screen.getByLabelText(/agent type/i);
-      await user.click(agentTypeSelect);
-
-      const taOption = screen.getByText("Teaching Assistant");
-      await user.click(taOption);
-
-      expect(agentTypeSelect).toHaveTextContent("Teaching Assistant");
-    });
-
-    it("should handle temperature input", async () => {
-      const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const temperatureInput = screen.getByLabelText(/temperature/i);
-      await user.clear(temperatureInput);
-      await user.type(temperatureInput, "50");
-
-      expect(temperatureInput).toHaveValue(50);
-    });
-
-    it("should validate required fields", async () => {
-      const { toast } = await import("sonner");
-      const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const submitButton = screen.getByRole("button", {
-        name: /create agent/i,
+      const { getAgent } = require('@/utils/queries/agents/get-agent');
+      const { updateAgent } = require('@/utils/mutations/agents/update-agent');
+      const { toast } = require('sonner');
+      
+      getAgent.mockResolvedValue(mockAgent);
+      updateAgent.mockResolvedValue({ id: '1' });
+      
+      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Test Agent')).toBeInTheDocument();
       });
+      
+      // Update the name
+      const nameInput = screen.getByLabelText(/Agent Name/);
+      await user.clear(nameInput);
+      await user.type(nameInput, 'Updated Agent');
+      
+      const submitButton = screen.getByRole('button', { name: /Update Agent/ });
       await user.click(submitButton);
-
-      expect(toast.error).toHaveBeenCalledWith("Agent name is required");
+      
+      await waitFor(() => {
+        expect(updateAgent).toHaveBeenCalledWith('1', {
+          name: 'Updated Agent',
+          subtitle: 'Test Subtitle',
+          description: 'Test Description',
+          systemPrompt: 'Test System Prompt',
+          agentType: 'student',
+          temperature: 0.7,
+        });
+        expect(toast.success).toHaveBeenCalledWith('Agent updated successfully!');
+      });
     });
 
-    it("should validate all required fields in sequence", async () => {
-      const { toast } = await import("sonner");
+    it('handles create form submission error', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
-      const descriptionTextarea = screen.getByLabelText(/description/i);
-      const submitButton = screen.getByRole("button", {
-        name: /create agent/i,
+      const { createAgent } = require('@/utils/mutations/agents/create-agent');
+      const { toast } = require('sonner');
+      
+      createAgent.mockRejectedValue(new Error('Creation failed'));
+      
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      // Fill out the form
+      await user.type(screen.getByLabelText(/Agent Name/), 'Test Agent');
+      await user.type(screen.getByLabelText(/Subtitle/), 'Test Subtitle');
+      await user.type(screen.getByLabelText(/Description/), 'Test Description');
+      await user.type(screen.getByLabelText(/System Prompt/), 'Test System Prompt');
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
+      await user.click(submitButton);
+      
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Failed to create agent: Creation failed');
       });
-
-      // Test name validation
-      await user.click(submitButton);
-      expect(toast.error).toHaveBeenCalledWith("Agent name is required");
-
-      // Test subtitle validation
-      await user.type(nameInput, "Test Agent");
-      await user.click(submitButton);
-      expect(toast.error).toHaveBeenCalledWith("Agent subtitle is required");
-
-      // Test description validation
-      await user.type(subtitleInput, "Test Subtitle");
-      await user.click(submitButton);
-      expect(toast.error).toHaveBeenCalledWith("Agent description is required");
-
-      // Test system prompt validation
-      await user.type(descriptionTextarea, "Test Description");
-      await user.click(submitButton);
-      expect(toast.error).toHaveBeenCalledWith("System prompt is required");
-    });
-
-    it("should show loading state during submission", async () => {
-      const { createAgent } = await import(
-        "@/utils/mutations/agents/create-agent"
-      );
-      (createAgent as any).mockImplementation(
-        () => new Promise((resolve) => setTimeout(resolve, 100)),
-      );
-
-      const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
-      const descriptionTextarea = screen.getByLabelText(/description/i);
-      const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
-      const submitButton = screen.getByRole("button", {
-        name: /create agent/i,
-      });
-
-      await user.type(nameInput, "Test Agent");
-      await user.type(subtitleInput, "Test Subtitle");
-      await user.type(descriptionTextarea, "Test Description");
-      await user.type(systemPromptTextarea, "Test System Prompt");
-      await user.click(submitButton);
-
-      expect(
-        screen.getByRole("button", { name: /creating.../i }),
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("button", { name: /creating.../i }),
-      ).toBeDisabled();
     });
   });
 
-  describe("API Integration", () => {
-    it("should handle loading states in edit mode", () => {
-      renderWithProviders(<Agent agentId="test-id" mode="edit" />);
-
-      // Should show skeleton loading state
-      expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
-    });
-
-    it("should handle error states when agent not found", async () => {
-      const { getAgent } = await import("@/utils/queries/agents/get-agent");
-      (getAgent as any).mockResolvedValue(null);
-
-      renderWithProviders(<Agent agentId="non-existent-id" mode="edit" />);
-
-      await waitFor(() => {
-        expect(screen.getByText("Agent Not Found")).toBeInTheDocument();
-        expect(
-          screen.getByText("The agent you're looking for doesn't exist."),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByRole("button", { name: /back to agents/i }),
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("should populate form data in edit mode", async () => {
-      const mockAgent = {
-        name: "Existing Agent",
-        subtitle: "Existing Subtitle",
-        description: "Existing Description",
-        systemPrompt: "Existing System Prompt",
-        agentType: "ta" as const,
-        temperature: 75,
-      };
-
-      const { getAgent } = await import("@/utils/queries/agents/get-agent");
-      (getAgent as any).mockResolvedValue(mockAgent);
-
-      renderWithProviders(<Agent agentId="test-id" mode="edit" />);
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue("Existing Agent")).toBeInTheDocument();
-        expect(
-          screen.getByDisplayValue("Existing Subtitle"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByDisplayValue("Existing Description"),
-        ).toBeInTheDocument();
-        expect(
-          screen.getByDisplayValue("Existing System Prompt"),
-        ).toBeInTheDocument();
-        expect(screen.getByDisplayValue("75")).toBeInTheDocument();
-      });
-
-      expect(
-        screen.getByRole("button", { name: /update agent/i }),
-      ).toBeInTheDocument();
-    });
-
-    it("should handle update agent submission", async () => {
-      const mockAgent = {
-        name: "Existing Agent",
-        subtitle: "Existing Subtitle",
-        description: "Existing Description",
-        systemPrompt: "Existing System Prompt",
-        agentType: "student" as const,
-        temperature: 0,
-      };
-
-      const { getAgent } = await import("@/utils/queries/agents/get-agent");
-      const { updateAgent } = await import(
-        "@/utils/mutations/agents/update-agent"
-      );
-      (getAgent as any).mockResolvedValue(mockAgent);
-      (updateAgent as any).mockResolvedValue({ id: "test-id" });
-
+  describe('Navigation', () => {
+    it('navigates back on cancel', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Agent agentId="test-id" mode="edit" />);
-
-      await waitFor(() => {
-        expect(screen.getByDisplayValue("Existing Agent")).toBeInTheDocument();
-      });
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const submitButton = screen.getByRole("button", {
-        name: /update agent/i,
-      });
-
-      await user.clear(nameInput);
-      await user.type(nameInput, "Updated Agent");
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(updateAgent).toHaveBeenCalledWith("test-id", {
-          name: "Updated Agent",
-          subtitle: "Existing Subtitle",
-          description: "Existing Description",
-          systemPrompt: "Existing System Prompt",
-          agentType: "student",
-          temperature: 0,
-        });
-      });
-
-      expect(mockPush).toHaveBeenCalledWith("/management/agents");
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      const cancelButton = screen.getByRole('button', { name: /Cancel/ });
+      await user.click(cancelButton);
+      
+      expect(mockPush).toHaveBeenCalledWith('/management/agents');
     });
 
-    it("should handle API errors gracefully", async () => {
-      const { createAgent } = await import(
-        "@/utils/mutations/agents/create-agent"
-      );
-      const { toast } = await import("sonner");
-      (createAgent as any).mockRejectedValue(new Error("API Error"));
-
+    it('navigates to agents list after successful creation', async () => {
       const user = userEvent.setup();
-      renderWithProviders(<Agent />);
-
-      const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
-      const descriptionTextarea = screen.getByLabelText(/description/i);
-      const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
-      const submitButton = screen.getByRole("button", {
-        name: /create agent/i,
-      });
-
-      await user.type(nameInput, "Test Agent");
-      await user.type(subtitleInput, "Test Subtitle");
-      await user.type(descriptionTextarea, "Test Description");
-      await user.type(systemPromptTextarea, "Test System Prompt");
+      const { createAgent } = require('@/utils/mutations/agents/create-agent');
+      
+      createAgent.mockResolvedValue({ id: 'new-agent-id' });
+      
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      // Fill out and submit form
+      await user.type(screen.getByLabelText(/Agent Name/), 'Test Agent');
+      await user.type(screen.getByLabelText(/Subtitle/), 'Test Subtitle');
+      await user.type(screen.getByLabelText(/Description/), 'Test Description');
+      await user.type(screen.getByLabelText(/System Prompt/), 'Test System Prompt');
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
       await user.click(submitButton);
-
+      
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith("Failed to create agent");
+        expect(mockPush).toHaveBeenCalledWith('/management/agents');
       });
     });
+  });
+
+  describe('Loading States', () => {
+    it('shows loading state when fetching agent data', () => {
+      const { getAgent } = require('@/utils/queries/agents/get-agent');
+      getAgent.mockImplementation(() => new Promise(() => {})); // Never resolves
+      
+      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      
+      expect(screen.getByText('Loading...')).toBeInTheDocument();
+    });
+
+    it('shows submitting state during form submission', async () => {
+      const user = userEvent.setup();
+      const { createAgent } = require('@/utils/mutations/agents/create-agent');
+      
+      createAgent.mockImplementation(() => new Promise(() => {})); // Never resolves
+      
+      renderWithQueryClient(<Agent mode="create" />);
+      
+      // Fill out and submit form
+      await user.type(screen.getByLabelText(/Agent Name/), 'Test Agent');
+      await user.type(screen.getByLabelText(/Subtitle/), 'Test Subtitle');
+      await user.type(screen.getByLabelText(/Description/), 'Test Description');
+      await user.type(screen.getByLabelText(/System Prompt/), 'Test System Prompt');
+      
+      const submitButton = screen.getByRole('button', { name: /Create Agent/ });
+      await user.click(submitButton);
+      
+      expect(screen.getByText('Creating...')).toBeInTheDocument();
+    });
+  });
+
+  it('matches snapshot', () => {
+    const { container } = renderWithQueryClient(<Agent mode="create" />);
+    expect(container.firstChild).toMatchSnapshot();
   });
 });
 

@@ -402,7 +402,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   useEffect(() => {
     if (showResults && chats && chats.length > 0 && !selectedChatId) {
       const completedChats = chats.filter((chat: SimulationChat) => chat.completed);
-      if (completedChats.length > 0) {
+      if (completedChats.length > 0 && completedChats[0]) {
         setSelectedChatId(completedChats[0].id);
 
         // If all chats are completed, default to showing rubric
@@ -796,9 +796,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   useEffect(() => {
     if (!inputPanelRef.current) return;
-    const ro = new ResizeObserver(([entry]) =>
-      setIsTall(entry.contentRect.height > 160)
-    );
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setIsTall(entry.contentRect.height > 160);
+      }
+    });
     ro.observe(inputPanelRef.current);
     return () => ro.disconnect();
   }, []);
@@ -881,7 +884,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Set default selected document
   useEffect(() => {
-    if (classDocuments.length > 0 && !selectedDocumentId) {
+    if (classDocuments.length > 0 && !selectedDocumentId && classDocuments[0]) {
       setSelectedDocumentId(classDocuments[0].id);
     }
   }, [classDocuments, selectedDocumentId]);

@@ -247,9 +247,9 @@ export default function ClassForm({
 
         queryClient.invalidateQueries({ queryKey: ["classes"] });
         toast.success("Class created successfully!");
-        if (onSuccess) {
+        if (onSuccess && result) {
           onSuccess(result.id);
-        } else {
+        } else if (result) {
           router.push(`/classes/c/${result.id}`);
         }
       } else {
@@ -306,21 +306,24 @@ export default function ClassForm({
         setFileUploads(initialStatuses);
 
         // Show toast for multiple files
-        let toastId: string | number;
+        let toastId: string | number = "";
         if (fileArray.length > 1) {
           toastId = toast.loading(`Uploading ${fileArray.length} files...`);
-        } else {
+        } else if (fileArray[0]) {
           toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
         }
 
         // Get the API URL from environment
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-        // Upload each file in parallel
         const uploadPromises = fileArray.map((file, index) => {
           return new Promise<void>((resolve, reject) => {
             // Generate a unique file ID
-            const fileId = initialStatuses[index].id;
+            const fileId = initialStatuses[index]?.id;
+            if (!fileId) {
+              reject(new Error("File ID not found"));
+              return;
+            }
 
             const tusMetadata = {
               filename: file.name,
@@ -753,7 +756,7 @@ export default function ClassForm({
             <div className="space-y-2">
               <Label htmlFor="term">Term *</Label>
               <Select
-                value={formData.term}
+                value={formData.term || ""}
                 onValueChange={(value: "fall" | "spring" | "summer") =>
                   setFormData((prev) => ({ ...prev, term: value }))
                 }
@@ -778,7 +781,7 @@ export default function ClassForm({
             <Label htmlFor="description">Description</Label>
             <Textarea
               id="description"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,

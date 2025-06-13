@@ -1,0 +1,21 @@
+---
+description: 
+globs: server/**
+alwaysApply: false
+---
+---
+description: Backend (FastAPI + Python) conventions
+globs:
+  - "server/**"
+alwaysApply: false
+---
+
+# Server Folder Rules
+- Use **SQLModel** (built on SQLAlchemy) for models in `server/app/models.py` as the canonical schema; update them whenever the DB schema changes.
+- All business logic belongs in **`server/app/services/`**; keep route handlers in `server/app/routes/` thin.
+- Enforce **100% passing `pytest`** (`make test`) before merge.
+- Run **`make typecheck`** (mypy) and **`make lint`** (ruff) locally; fix or silence any errors with clear justification.
+- Use **`uv`** for dependency management and virtual environment handling.
+- Follow **12-factor config**: secrets via env vars, no hard-coded credentials.
+- Prefer async endpoints when possible; use **SQLModel Session** for DB access.
+- Auto-generate models from DB schema using `make generate-models`.

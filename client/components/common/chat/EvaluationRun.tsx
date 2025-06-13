@@ -211,12 +211,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     enabled: !!chats && chats.length > 0,
   });
 
-  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["evalFeedbacks", grades?.map(grade => grade.id)],
-    queryFn: () => getEvalChatFeedbacksByEvalChatGrades(grades!.map(grade => grade.id)),
-    enabled: !!grades && grades.length > 0,
-  });
-
   // Fetch documents that might be relevant
   const { data: documents = [] } = useQuery({
     queryKey: ["documents"],
@@ -238,7 +232,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   useEffect(() => {
     if (chats && chats.length > 0 && !selectedChatId) {
       const completedChats = chats.filter((chat: EvalChat) => chat.completed);
-      if (completedChats.length > 0) {
+      if (completedChats.length > 0 && completedChats[0]) {
         setSelectedChatId(completedChats[0].id);
 
         // If current chat is completed, default to showing rubric

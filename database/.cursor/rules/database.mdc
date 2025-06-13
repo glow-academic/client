@@ -1,0 +1,22 @@
+---
+description: 
+globs: database/**
+alwaysApply: false
+---
+---
+description: Postgres & migration guidelines
+globs:
+  - "database/**"
+alwaysApply: false
+---
+
+# Database Folder Rules
+- **`database/init/`** holds the single source of truth for initial schema and seed data; any structural change must be reflected here first.
+- Use **Drizzle ORM migrations** managed from the client; schema defined in `client/drizzle/schema.ts`.
+- Before pushing DB changes:
+  1. Run `cd database && bash run.sh --clean` locally to recreate a fresh instance.
+  2. Execute all unit and integration tests across client/server.
+- Keep table and column names **snake_case**; include `created_at` & `updated_at` timestamps by default.
+- Indices: Add an index for every foreign key and any column used in WHERE clauses of hot paths.
+- Use **PostgreSQL** with proper enum types and UUID primary keys.
+- Database runs on Docker; connection managed via environment variables.

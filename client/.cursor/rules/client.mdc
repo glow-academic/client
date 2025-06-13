@@ -1,0 +1,22 @@
+---
+description: 
+globs: client/**
+alwaysApply: false
+---
+---
+description: Front-end (Next.js + TypeScript) standards
+globs:
+  - "client/**"          # Auto-attach whenever files under client/ are referenced
+alwaysApply: false
+---
+
+# Client Folder Rules
+- Use **React functional components**, TypeScript strict mode, and hooks over class components.
+- Styling: Follow **shadcn/ui** component patterns; extend with Radix-based primitives when custom UI is needed.
+- All new components live in **`client/components/`** with colocated `*.test.tsx` files using **Vitest**.
+- Run **`npx tsc --noEmit`** locally before committing; CI will block on type errors.
+- Use **TanStack Query** (`@tanstack/react-query`) for server state management with optimistic updates when feasible.
+- Database schema managed via **Drizzle ORM** in `client/drizzle/schema.ts`; auto-generate types with `yarn generate:types`.
+- Auto-generate queries/mutations with `yarn generate:queries` after schema changes.
+- Keep client state minimal; prefer server state via TanStack Query cache.
+- Use **Next.js 15** App Router patterns; colocate page components with their routes.
