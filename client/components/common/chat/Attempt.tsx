@@ -1028,7 +1028,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   ) : selectedChat ? (
                     /* Show chat messages for both single and multi-chat attempts */
                     <div className="space-y-4">
-                      {resultsMessages.map((message: SimulationMessage) => (
+                      {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
                         <div key={message.id} className="space-y-4">
                           {/* User Message */}
                           {message.query && (
@@ -1200,7 +1200,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     </div>
                   </div>
                 ) : (
-                  messages.map((message: SimulationMessage) => (
+                  messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
                     <div key={message.id} className="space-y-4">
                       {/* User Message */}
                       {message.query && (
