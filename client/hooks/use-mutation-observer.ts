@@ -1,7 +1,7 @@
 import * as React from "react";
 
 export const useMutationObserver = (
-  ref: React.MutableRefObject<HTMLElement | null>,
+  ref: React.RefObject<HTMLElement | null>,
   callback: MutationCallback,
   options = {
     attributes: true,
@@ -16,8 +16,6 @@ export const useMutationObserver = (
       observer.observe(ref.current, options);
       return () => observer.disconnect();
     }
-    return () => {
-      console.log("Mutation observer disconnected");
-    };
+    return () => {};
   }, [ref, callback, options]);
 };

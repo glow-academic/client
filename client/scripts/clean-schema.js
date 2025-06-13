@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const fs = require("fs");
-const path = require("path");
+import fs from "fs";
+import path from "path";
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, "../drizzle/schema.ts");
@@ -77,8 +77,8 @@ function cleanSchema() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.main === true) {
   cleanSchema();
 }
 
-module.exports = { cleanSchema }; 
+export { cleanSchema }; 
