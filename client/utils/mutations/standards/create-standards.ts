@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { standards } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createStandards(data: (typeof standards.$inferInsert)[]) {
   try {
     return await db.insert(standards).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple standards:", error);
+    logError("Error creating multiple standards:", error);
     throw error;
   }
 }

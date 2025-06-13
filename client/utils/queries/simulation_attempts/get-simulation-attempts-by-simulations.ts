@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationAttempts } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getSimulationAttemptsBySimulations(simulationIds: string[]) {
   try {
     return await db.select().from(simulationAttempts).where(inArray(simulationAttempts.simulationId, simulationIds));
   } catch (error) {
-    console.error("Error fetching simulation_attempts by simulations:", error);
+    logError("Error fetching simulation_attempts by simulations:", error);
     throw error;
   }
 }

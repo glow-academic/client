@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { simulations } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteSimulation(id: string) {
   try {
     const result = await db.delete(simulations).where(eq(simulations.id, id)).returning();
     return result[0];
   } catch (error) {
-    console.error("Error deleting simulation:", error);
+    logError("Error deleting simulation:", error);
     throw error;
   }
 }

@@ -2,13 +2,14 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { agents } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createAgent(data: typeof agents.$inferInsert) {
   try {
     const result = await db.insert(agents).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating agent:", error);
+    logError("Error creating agent:", error);
     throw error;
   }
 }

@@ -3,7 +3,8 @@
 import postgres from "postgres";
 import { db_url } from "@/utils/drizzle/database";
 
-// Server-only PostgreSQL logger
+// Server-only PostgreSQL logger, log to console in non production
+const isProduction = process.env.NODE_ENV === "production";
 
 let sql: postgres.Sql | null = null;
 
@@ -54,6 +55,9 @@ export async function logInfo(
   message: string,
   context?: Record<string, unknown>
 ): Promise<void> {
+  if (!isProduction) {
+    console.log(message, context);
+  }
   return logToDatabase("info", message, context);
 }
 
@@ -67,6 +71,10 @@ export async function logError(
       ? { message: error.message, stack: error.stack, name: error.name }
       : error;
 
+  if (!isProduction) {
+    console.error(message, errorInfo);
+  }
+
   return logToDatabase("error", message, {
     ...context,
     error: errorInfo,
@@ -77,6 +85,9 @@ export async function logWarn(
   message: string,
   context?: Record<string, unknown>
 ): Promise<void> {
+  if (!isProduction) {
+    console.warn(message, context);
+  }
   return logToDatabase("warn", message, context);
 }
 
@@ -84,5 +95,8 @@ export async function logDebug(
   message: string,
   context?: Record<string, unknown>
 ): Promise<void> {
+  if (!isProduction) {
+    console.debug(message, context);
+  }
   return logToDatabase("debug", message, context);
 }

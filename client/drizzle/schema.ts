@@ -1,4 +1,6 @@
-import { pgTable, serial, integer, varchar, text, bigint, uuid, timestamp, foreignKey, boolean, bigserial, jsonb, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, integer, varchar, text, bigint, uuid, timestamp, foreignKey, boolean, jsonb, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+
 export const agentType = pgEnum("agent_type", ['student', 'ta'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
@@ -7,6 +9,7 @@ export const evalType = pgEnum("eval_type", ['student', 'ta'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
 export const rubricType = pgEnum("rubric_type", ['simulation', 'eval'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
+
 
 export const accounts = pgTable("accounts", {
 	id: serial().primaryKey().notNull(),
@@ -21,7 +24,8 @@ export const accounts = pgTable("accounts", {
 	idToken: text("id_token"),
 	scope: text(),
 	sessionState: text("session_state"),
-	tokenType: text("token_type")});
+	tokenType: text("token_type"),
+});
 
 export const classes = pgTable("classes", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -30,7 +34,8 @@ export const classes = pgTable("classes", {
 	classCode: text("class_code").notNull(),
 	year: integer().notNull(),
 	term: classTerm().default('fall').notNull(),
-	description: text().notNull()});
+	description: text().notNull(),
+});
 
 export const topics = pgTable("topics", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -38,7 +43,8 @@ export const topics = pgTable("topics", {
 	name: text().notNull(),
 	description: text().notNull(),
 	prerequisite: boolean().default(false).notNull(),
-	classId: uuid("class_id").notNull()}, (table) => [
+	classId: uuid("class_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.classId],
 			foreignColumns: [classes.id],
@@ -51,7 +57,8 @@ export const schedules = pgTable("schedules", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	description: text().notNull(),
-	classId: uuid("class_id").notNull()}, (table) => [
+	classId: uuid("class_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.classId],
 			foreignColumns: [classes.id],
@@ -63,7 +70,8 @@ export const sessions = pgTable("sessions", {
 	id: serial().primaryKey().notNull(),
 	userId: integer().notNull(),
 	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-	sessionToken: varchar({ length: 255 }).notNull()});
+	sessionToken: varchar({ length: 255 }).notNull(),
+});
 
 export const events = pgTable("events", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -72,7 +80,8 @@ export const events = pgTable("events", {
 	description: text().notNull(),
 	documentType: documentType("document_type"),
 	time: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-	scheduleId: uuid("schedule_id").notNull()}, (table) => [
+	scheduleId: uuid("schedule_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.scheduleId],
 			foreignColumns: [schedules.id],
@@ -88,7 +97,8 @@ export const documents = pgTable("documents", {
 	mimeType: text("mime_type").notNull(),
 	classId: uuid("class_id").notNull(),
 	type: documentType().default('homework').notNull(),
-	classified: boolean().default(false).notNull()}, (table) => [
+	classified: boolean().default(false).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.classId],
 			foreignColumns: [classes.id],
@@ -101,7 +111,8 @@ export const users = pgTable("users", {
 	name: varchar({ length: 255 }),
 	email: varchar({ length: 255 }),
 	emailVerified: timestamp({ withTimezone: true, mode: 'string' }),
-	image: text()});
+	image: text(),
+});
 
 export const profiles = pgTable("profiles", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -113,7 +124,8 @@ export const profiles = pgTable("profiles", {
 	viewedIntro: boolean("viewed_intro").default(false).notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	role: profileRole().default('ta').notNull(),
-	classIds: uuid("class_ids").array().default(["RAY"]).notNull()}, (table) => [
+	classIds: uuid("class_ids").array().default(["RAY"]).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.userId],
 			foreignColumns: [users.id],
@@ -129,7 +141,8 @@ export const agents = pgTable("agents", {
 	description: text().notNull(),
 	systemPrompt: text("system_prompt").notNull(),
 	agentType: agentType("agent_type").default('student').notNull(),
-	temperature: integer().notNull()});
+	temperature: integer().notNull(),
+});
 
 export const rubrics = pgTable("rubrics", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -138,7 +151,8 @@ export const rubrics = pgTable("rubrics", {
 	description: text().notNull(),
 	points: integer().notNull(),
 	passPoints: integer("pass_points").notNull(),
-	rubricType: rubricType("rubric_type").default('simulation').notNull()});
+	rubricType: rubricType("rubric_type").default('simulation').notNull(),
+});
 
 export const standardGroups = pgTable("standard_groups", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -148,7 +162,8 @@ export const standardGroups = pgTable("standard_groups", {
 	description: text().notNull(),
 	points: integer().notNull(),
 	passPoints: integer("pass_points").notNull(),
-	rubricId: uuid("rubric_id").notNull()}, (table) => [
+	rubricId: uuid("rubric_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -162,7 +177,8 @@ export const standards = pgTable("standards", {
 	name: text().notNull(),
 	description: text().notNull(),
 	points: integer().notNull(),
-	standardGroupId: uuid("standard_group_id").notNull()}, (table) => [
+	standardGroupId: uuid("standard_group_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.standardGroupId],
 			foreignColumns: [standardGroups.id],
@@ -171,11 +187,12 @@ export const standards = pgTable("standards", {
 ]);
 
 export const appLogs = pgTable("app_logs", {
-	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
+	id: serial().primaryKey().notNull(),
 	level: text().notNull(),
 	message: text(),
 	context: jsonb(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow()});
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+});
 
 export const scenarios = pgTable("scenarios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -188,7 +205,8 @@ export const scenarios = pgTable("scenarios", {
 	crowdedness: integer(),
 	intensity: integer(),
 	seniority: seniorityLevels(),
-	documents: uuid().array()}, (table) => [
+	documents: uuid().array(),
+}, (table) => [
 	foreignKey({
 			columns: [table.agentId],
 			foreignColumns: [agents.id],
@@ -208,7 +226,8 @@ export const simulations = pgTable("simulations", {
 	timeLimit: integer("time_limit"),
 	active: boolean().default(true).notNull(),
 	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
-	rubricId: uuid("rubric_id").notNull()}, (table) => [
+	rubricId: uuid("rubric_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -220,7 +239,8 @@ export const simulationAttempts = pgTable("simulation_attempts", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	profileId: uuid("profile_id"),
-	simulationId: uuid("simulation_id").notNull()}, (table) => [
+	simulationId: uuid("simulation_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
@@ -240,7 +260,8 @@ export const simulationChats = pgTable("simulation_chats", {
 	title: text().notNull(),
 	scenarioId: uuid("scenario_id").notNull(),
 	attemptId: uuid("attempt_id").notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
+	completed: boolean().default(false).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
@@ -259,7 +280,8 @@ export const simulationMessages = pgTable("simulation_messages", {
 	chatId: uuid("chat_id").notNull(),
 	query: text().notNull(),
 	response: text().notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
+	completed: boolean().default(false).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.chatId],
 			foreignColumns: [simulationChats.id],
@@ -274,7 +296,8 @@ export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	score: integer().notNull(),
 	timeTaken: integer("time_taken").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
-	simulationChatId: uuid("simulation_chat_id").notNull()}, (table) => [
+	simulationChatId: uuid("simulation_chat_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -292,7 +315,8 @@ export const evalRuns = pgTable("eval_runs", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	evalId: uuid("eval_id").notNull(),
 	agentId: uuid("agent_id").notNull(),
-	rubricId: uuid("rubric_id").notNull()}, (table) => [
+	rubricId: uuid("rubric_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.evalId],
 			foreignColumns: [evals.id],
@@ -316,7 +340,8 @@ export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
 	standardId: uuid("standard_id").notNull(),
 	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
 	total: integer().notNull(),
-	feedback: text()}, (table) => [
+	feedback: text(),
+}, (table) => [
 	foreignKey({
 			columns: [table.standardId],
 			foreignColumns: [standards.id],
@@ -336,7 +361,8 @@ export const evalChats = pgTable("eval_chats", {
 	title: text().notNull(),
 	scenarioId: uuid("scenario_id").notNull(),
 	evalRunId: uuid("eval_run_id").notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
+	completed: boolean().default(false).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
@@ -360,7 +386,8 @@ export const evals = pgTable("evals", {
 	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
 	evalType: evalType("eval_type").default('student').notNull(),
 	maxTurns: integer("max_turns").notNull(),
-	maxParallelRuns: integer("max_parallel_runs").notNull()}, (table) => [
+	maxParallelRuns: integer("max_parallel_runs").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.baseAgentId],
 			foreignColumns: [agents.id],
@@ -374,7 +401,8 @@ export const evalMessages = pgTable("eval_messages", {
 	chatId: uuid("chat_id").notNull(),
 	content: text().notNull(),
 	type: evalMessageType().notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
+	completed: boolean().default(false).notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.chatId],
 			foreignColumns: [evalChats.id],
@@ -389,7 +417,8 @@ export const evalChatGrades = pgTable("eval_chat_grades", {
 	score: integer().notNull(),
 	timeTaken: integer("time_taken").notNull(),
 	rubricId: uuid("rubric_id").notNull(),
-	evalChatId: uuid("eval_chat_id").notNull()}, (table) => [
+	evalChatId: uuid("eval_chat_id").notNull(),
+}, (table) => [
 	foreignKey({
 			columns: [table.rubricId],
 			foreignColumns: [rubrics.id],
@@ -408,7 +437,8 @@ export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 	standardId: uuid("standard_id").notNull(),
 	evalChatGradeId: uuid("eval_chat_grade_id").notNull(),
 	total: integer().notNull(),
-	feedback: text()}, (table) => [
+	feedback: text(),
+}, (table) => [
 	foreignKey({
 			columns: [table.standardId],
 			foreignColumns: [standards.id],
@@ -424,6 +454,7 @@ export const evalChatFeedbacks = pgTable("eval_chat_feedbacks", {
 export const verificationToken = pgTable("verification_token", {
 	identifier: text().notNull(),
 	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
-	token: text().notNull()}, (table) => [
+	token: text().notNull(),
+}, (table) => [
 	primaryKey({ columns: [table.identifier, table.token], name: "verification_token_pkey"}),
 ]);

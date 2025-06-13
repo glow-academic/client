@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { evalMessages } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function updateEvalMessage(id: string, data: Partial<typeof evalMessages.$inferInsert>) {
   try {
     const result = await db.update(evalMessages).set(data).where(eq(evalMessages.id, id)).returning();
     return result[0];
   } catch (error) {
-    console.error("Error updating evalMessage:", error);
+    logError("Error updating evalMessage:", error);
     throw error;
   }
 }

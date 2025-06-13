@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getSession(id: number) {
   try {
     const result = await db.select().from(sessions).where(eq(sessions.id, id));
     return result[0] || null;
   } catch (error) {
-    console.error("Error fetching session:", error);
+    logError("Error fetching session:", error);
     throw error;
   }
 }

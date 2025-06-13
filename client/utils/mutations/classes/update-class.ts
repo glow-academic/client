@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { classes } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function updateClass(id: string, data: Partial<typeof classes.$inferInsert>) {
   try {
     const result = await db.update(classes).set(data).where(eq(classes.id, id)).returning();
     return result[0];
   } catch (error) {
-    console.error("Error updating class:", error);
+    logError("Error updating class:", error);
     throw error;
   }
 }

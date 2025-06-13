@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { users } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteUsers(ids: number[]) {
   try {
     return await db.delete(users).where(inArray(users.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple users:", error);
+    logError("Error deleting multiple users:", error);
     throw error;
   }
 }

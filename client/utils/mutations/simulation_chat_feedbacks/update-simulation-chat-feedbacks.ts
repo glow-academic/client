@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationChatFeedbacks } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function updateSimulationChatFeedbacks(ids: string[], data: Partial<typeof simulationChatFeedbacks.$inferInsert>) {
   try {
     return await db.update(simulationChatFeedbacks).set(data).where(inArray(simulationChatFeedbacks.id, ids)).returning();
   } catch (error) {
-    console.error("Error updating multiple simulation_chat_feedbacks:", error);
+    logError("Error updating multiple simulation_chat_feedbacks:", error);
     throw error;
   }
 }

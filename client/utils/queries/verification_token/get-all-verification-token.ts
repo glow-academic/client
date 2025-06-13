@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { verificationToken } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function getAllVerificationToken() {
   try {
     return await db.select().from(verificationToken);
   } catch (error) {
-    console.error("Error fetching all verification_token:", error);
+    logError("Error fetching all verification_token:", error);
     throw error;
   }
 }

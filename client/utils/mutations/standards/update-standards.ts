@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { standards } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function updateStandards(ids: string[], data: Partial<typeof standards.$inferInsert>) {
   try {
     return await db.update(standards).set(data).where(inArray(standards.id, ids)).returning();
   } catch (error) {
-    console.error("Error updating multiple standards:", error);
+    logError("Error updating multiple standards:", error);
     throw error;
   }
 }

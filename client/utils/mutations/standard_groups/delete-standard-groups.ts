@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { standardGroups } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteStandardGroups(ids: string[]) {
   try {
     return await db.delete(standardGroups).where(inArray(standardGroups.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple standard_groups:", error);
+    logError("Error deleting multiple standard_groups:", error);
     throw error;
   }
 }

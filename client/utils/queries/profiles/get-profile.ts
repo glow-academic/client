@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getProfile(id: string) {
   try {
     const result = await db.select().from(profiles).where(eq(profiles.id, id));
     return result[0] || null;
   } catch (error) {
-    console.error("Error fetching profile:", error);
+    logError("Error fetching profile:", error);
     throw error;
   }
 }

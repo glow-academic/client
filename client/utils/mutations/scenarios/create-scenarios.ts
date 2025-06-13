@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { scenarios } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createScenarios(data: (typeof scenarios.$inferInsert)[]) {
   try {
     return await db.insert(scenarios).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple scenarios:", error);
+    logError("Error creating multiple scenarios:", error);
     throw error;
   }
 }

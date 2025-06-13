@@ -3,13 +3,14 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationChatGrades } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getSimulationChatGrade(id: string) {
   try {
     const result = await db.select().from(simulationChatGrades).where(eq(simulationChatGrades.id, id));
     return result[0] || null;
   } catch (error) {
-    console.error("Error fetching simulationChatGrade:", error);
+    logError("Error fetching simulationChatGrade:", error);
     throw error;
   }
 }

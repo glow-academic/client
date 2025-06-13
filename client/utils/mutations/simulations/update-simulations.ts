@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { simulations } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function updateSimulations(ids: string[], data: Partial<typeof simulations.$inferInsert>) {
   try {
     return await db.update(simulations).set(data).where(inArray(simulations.id, ids)).returning();
   } catch (error) {
-    console.error("Error updating multiple simulations:", error);
+    logError("Error updating multiple simulations:", error);
     throw error;
   }
 }

@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { documents } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getDocumentsByClass(classIds: string[]) {
   try {
     return await db.select().from(documents).where(inArray(documents.classId, classIds));
   } catch (error) {
-    console.error("Error fetching documents by class:", error);
+    logError("Error fetching documents by class:", error);
     throw error;
   }
 }

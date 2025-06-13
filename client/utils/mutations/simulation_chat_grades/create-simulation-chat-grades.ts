@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { simulationChatGrades } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createSimulationChatGrades(data: (typeof simulationChatGrades.$inferInsert)[]) {
   try {
     return await db.insert(simulationChatGrades).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple simulation_chat_grades:", error);
+    logError("Error creating multiple simulation_chat_grades:", error);
     throw error;
   }
 }

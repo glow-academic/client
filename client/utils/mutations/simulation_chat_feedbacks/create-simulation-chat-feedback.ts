@@ -2,13 +2,14 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { simulationChatFeedbacks } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createSimulationChatFeedback(data: typeof simulationChatFeedbacks.$inferInsert) {
   try {
     const result = await db.insert(simulationChatFeedbacks).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating simulationChatFeedback:", error);
+    logError("Error creating simulationChatFeedback:", error);
     throw error;
   }
 }

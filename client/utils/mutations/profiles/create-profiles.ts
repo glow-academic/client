@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { profiles } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createProfiles(data: (typeof profiles.$inferInsert)[]) {
   try {
     return await db.insert(profiles).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple profiles:", error);
+    logError("Error creating multiple profiles:", error);
     throw error;
   }
 }

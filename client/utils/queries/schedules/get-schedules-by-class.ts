@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { schedules } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getSchedulesByClass(classIds: string[]) {
   try {
     return await db.select().from(schedules).where(inArray(schedules.classId, classIds));
   } catch (error) {
-    console.error("Error fetching schedules by class:", error);
+    logError("Error fetching schedules by class:", error);
     throw error;
   }
 }

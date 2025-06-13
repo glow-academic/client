@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { evalChatGrades } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getEvalChatGradesByRubric(rubricId: string) {
   try {
     return await db.select().from(evalChatGrades).where(eq(evalChatGrades.rubricId, rubricId));
   } catch (error) {
-    console.error("Error fetching eval_chat_grades by rubric:", error);
+    logError("Error fetching eval_chat_grades by rubric:", error);
     throw error;
   }
 }

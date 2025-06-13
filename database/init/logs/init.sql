@@ -1,5 +1,5 @@
 CREATE TABLE app_logs (
-  id           BIGSERIAL PRIMARY KEY,
+  id           SERIAL PRIMARY KEY,
   level        TEXT NOT NULL,          -- "info" | "error" | …
   message      TEXT,
   context      JSONB,                  -- extra metadata / stack traces

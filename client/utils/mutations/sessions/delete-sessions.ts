@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteSessions(ids: number[]) {
   try {
     return await db.delete(sessions).where(inArray(sessions.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple sessions:", error);
+    logError("Error deleting multiple sessions:", error);
     throw error;
   }
 }

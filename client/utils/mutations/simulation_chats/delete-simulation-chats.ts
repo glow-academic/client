@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationChats } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteSimulationChats(ids: string[]) {
   try {
     return await db.delete(simulationChats).where(inArray(simulationChats.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple simulation_chats:", error);
+    logError("Error deleting multiple simulation_chats:", error);
     throw error;
   }
 }

@@ -2,13 +2,14 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { evalChatGrades } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createEvalChatGrade(data: typeof evalChatGrades.$inferInsert) {
   try {
     const result = await db.insert(evalChatGrades).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating evalChatGrade:", error);
+    logError("Error creating evalChatGrade:", error);
     throw error;
   }
 }

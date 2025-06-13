@@ -33,7 +33,7 @@ const eslintConfig = [
       "react/no-unescaped-entities": ["error", { forbid: [">", "}"] }],
       "no-console": process.env.NODE_ENV === "production" ? "error" : "warn",
     },
-    ignores: ["scripts/**", ".next/**"],
+    ignores: ["scripts/**", ".next/**", "utils/logger.ts"],
   },
 ];
 

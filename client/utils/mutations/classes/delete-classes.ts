@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { classes } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteClasses(ids: string[]) {
   try {
     return await db.delete(classes).where(inArray(classes.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple classes:", error);
+    logError("Error deleting multiple classes:", error);
     throw error;
   }
 }

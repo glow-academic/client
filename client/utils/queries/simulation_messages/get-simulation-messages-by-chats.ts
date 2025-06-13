@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { simulationMessages } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getSimulationMessagesByChats(chatIds: string[]) {
   try {
     return await db.select().from(simulationMessages).where(inArray(simulationMessages.chatId, chatIds));
   } catch (error) {
-    console.error("Error fetching simulation_messages by chats:", error);
+    logError("Error fetching simulation_messages by chats:", error);
     throw error;
   }
 }

@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { standards } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getStandardsByStandardGroups(standardGroupIds: string[]) {
   try {
     return await db.select().from(standards).where(inArray(standards.standardGroupId, standardGroupIds));
   } catch (error) {
-    console.error("Error fetching standards by standardGroups:", error);
+    logError("Error fetching standards by standardGroups:", error);
     throw error;
   }
 }

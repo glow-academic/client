@@ -1,9 +1,9 @@
 // utils/profiles.ts
-import { Zap, SmilePlus, HelpCircle, User } from "lucide-react";
+import { Zap, SmilePlus, HelpCircle, User, LucideIcon } from "lucide-react";
 
 // Profile configuration interface
 export interface AgentConfig {
-  icon: any; // Lucide icon component
+  icon: LucideIcon; // Lucide icon component
   colors: {
     gradient: string;
     iconColor: string;

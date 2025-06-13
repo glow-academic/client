@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { scenarios } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function getScenariosByAgent(agentId: string) {
   try {
     return await db.select().from(scenarios).where(eq(scenarios.agentId, agentId));
   } catch (error) {
-    console.error("Error fetching scenarios by agent:", error);
+    logError("Error fetching scenarios by agent:", error);
     throw error;
   }
 }

@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { evalChatGrades } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteEvalChatGrades(ids: string[]) {
   try {
     return await db.delete(evalChatGrades).where(inArray(evalChatGrades.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple eval_chat_grades:", error);
+    logError("Error deleting multiple eval_chat_grades:", error);
     throw error;
   }
 }

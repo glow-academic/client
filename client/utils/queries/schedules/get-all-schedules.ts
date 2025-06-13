@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { schedules } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function getAllSchedules() {
   try {
     return await db.select().from(schedules);
   } catch (error) {
-    console.error("Error fetching all schedules:", error);
+    logError("Error fetching all schedules:", error);
     throw error;
   }
 }

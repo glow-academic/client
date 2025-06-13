@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { evalMessages } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createEvalMessages(data: (typeof evalMessages.$inferInsert)[]) {
   try {
     return await db.insert(evalMessages).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple eval_messages:", error);
+    logError("Error creating multiple eval_messages:", error);
     throw error;
   }
 }

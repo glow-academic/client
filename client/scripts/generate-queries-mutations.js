@@ -631,12 +631,13 @@ function generateGetAllQuery(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function getAll${capitalize(exportName)}() {
   try {
     return await db.select().from(${exportName});
   } catch (error) {
-    console.error("Error fetching all ${tableName}:", error);
+    logError("Error fetching all ${tableName}:", error);
     throw error;
   }
 }
@@ -658,13 +659,14 @@ function generateGetByIdQuery(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function get${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.select().from(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey}));
     return result[0] || null;
   } catch (error) {
-    console.error("Error fetching ${singularName}:", error);
+    logError("Error fetching ${singularName}:", error);
     throw error;
   }
 }
@@ -684,12 +686,13 @@ function generateGetByForeignKeyQuery(exportName, tableName, foreignKey) {
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function get${capitalize(exportName)}By${capitalize(paramName)}(${paramName}Id: string) {
   try {
     return await db.select().from(${exportName}).where(eq(${exportName}.${tsPropertyName}, ${paramName}Id));
   } catch (error) {
-    console.error("Error fetching ${tableName} by ${paramName}:", error);
+    logError("Error fetching ${tableName} by ${paramName}:", error);
     throw error;
   }
 }
@@ -710,12 +713,13 @@ function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function get${capitalize(exportName)}By${capitalize(pluralParamName)}(${paramName}Ids: string[]) {
   try {
     return await db.select().from(${exportName}).where(inArray(${exportName}.${tsPropertyName}, ${paramName}Ids));
   } catch (error) {
-    console.error("Error fetching ${tableName} by ${pluralParamName}:", error);
+    logError("Error fetching ${tableName} by ${pluralParamName}:", error);
     throw error;
   }
 }
@@ -730,13 +734,14 @@ function generateCreateMutation(exportName, tableName, singularName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function create${capitalize(singularName)}(data: typeof ${exportName}.$inferInsert) {
   try {
     const result = await db.insert(${exportName}).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating ${singularName}:", error);
+    logError("Error creating ${singularName}:", error);
     throw error;
   }
 }
@@ -751,12 +756,13 @@ function generateCreateMultipleMutation(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function create${capitalize(exportName)}(data: (typeof ${exportName}.$inferInsert)[]) {
   try {
     return await db.insert(${exportName}).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple ${tableName}:", error);
+    logError("Error creating multiple ${tableName}:", error);
     throw error;
   }
 }
@@ -779,13 +785,14 @@ function generateUpdateMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function update${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}, data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     const result = await db.update(${exportName}).set(data).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    console.error("Error updating ${singularName}:", error);
+    logError("Error updating ${singularName}:", error);
     throw error;
   }
 }
@@ -808,12 +815,13 @@ function generateUpdateMultipleMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function update${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[], data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     return await db.update(${exportName}).set(data).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    console.error("Error updating multiple ${tableName}:", error);
+    logError("Error updating multiple ${tableName}:", error);
     throw error;
   }
 }
@@ -835,13 +843,14 @@ function generateDeleteMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function delete${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.delete(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    console.error("Error deleting ${singularName}:", error);
+    logError("Error deleting ${singularName}:", error);
     throw error;
   }
 }
@@ -863,12 +872,13 @@ function generateDeleteMultipleMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function delete${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[]) {
   try {
     return await db.delete(${exportName}).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    console.error("Error deleting multiple ${tableName}:", error);
+    logError("Error deleting multiple ${tableName}:", error);
     throw error;
   }
 }

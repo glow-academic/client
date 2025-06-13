@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { simulationChats } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createSimulationChats(data: (typeof simulationChats.$inferInsert)[]) {
   try {
     return await db.insert(simulationChats).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple simulation_chats:", error);
+    logError("Error creating multiple simulation_chats:", error);
     throw error;
   }
 }

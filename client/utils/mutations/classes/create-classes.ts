@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { classes } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createClasses(data: (typeof classes.$inferInsert)[]) {
   try {
     return await db.insert(classes).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple classes:", error);
+    logError("Error creating multiple classes:", error);
     throw error;
   }
 }

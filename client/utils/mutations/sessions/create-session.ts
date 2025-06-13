@@ -2,13 +2,14 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function createSession(data: typeof sessions.$inferInsert) {
   try {
     const result = await db.insert(sessions).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating session:", error);
+    logError("Error creating session:", error);
     throw error;
   }
 }

@@ -21,8 +21,12 @@ mkdir -p "$__DATA_DIR"
 
 # Process command‐line arguments
 CLEAN_DB=false
+CONNECT_DB=false
 for arg in "$@"; do
-  case $arg in --clean) CLEAN_DB=true; shift ;; esac
+  case $arg in 
+    --clean) CLEAN_DB=true; shift ;;
+    --connect) CONNECT_DB=true; shift ;;
+  esac
 done
 
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
@@ -134,11 +138,25 @@ fi
 echo "✅ Database $DB_NAME is ready!"
 echo "🔗 Connection: $USER_CONN"
 
-# In Docker environment, keep PostgreSQL running
-if [[ -f /.dockerenv ]]; then
+# Handle different modes
+if $CONNECT_DB; then
+  echo ""
+  echo "🔌 Opening interactive database connection..."
+  echo "💡 You can now run SQL queries directly. Type \\q to exit."
+  echo "📊 Useful commands:"
+  echo "   \\dt                    - List all tables"
+  echo "   \\d table_name         - Describe table structure"
+  echo "   SELECT * FROM users;   - Query users table"
+  echo "   \\q                     - Quit"
+  echo ""
+  
+  # Start interactive psql session
+  psql "$USER_CONN"
+elif [[ -f /.dockerenv ]]; then
   echo "🐳 Docker environment detected. Keeping PostgreSQL running..."
   # This will keep the container running
   tail -f /dev/null
 else
   echo "💡 Database is ready for connections. Use 'psql \"$USER_CONN\"' to connect."
+  echo "💡 Or use 'yarn start --connect' for an interactive session."
 fi

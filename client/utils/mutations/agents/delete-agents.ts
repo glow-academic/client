@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { agents } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteAgents(ids: string[]) {
   try {
     return await db.delete(agents).where(inArray(agents.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple agents:", error);
+    logError("Error deleting multiple agents:", error);
     throw error;
   }
 }

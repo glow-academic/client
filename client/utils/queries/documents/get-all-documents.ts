@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { documents } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function getAllDocuments() {
   try {
     return await db.select().from(documents);
   } catch (error) {
-    console.error("Error fetching all documents:", error);
+    logError("Error fetching all documents:", error);
     throw error;
   }
 }

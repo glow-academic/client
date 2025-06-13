@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { appLogs } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteAppLogs(ids: number[]) {
   try {
     return await db.delete(appLogs).where(inArray(appLogs.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple app_logs:", error);
+    logError("Error deleting multiple app_logs:", error);
     throw error;
   }
 }

@@ -7,6 +7,7 @@
   "scripts": {
     "start": "bash start.sh",
     "start:clean": "bash start.sh --clean",
+    "connect": "bash start.sh --connect",
     "test": "yarn test:cypress",
     "test:cypress": "cypress run --headless",
     "test:cypress:open": "cypress open",
@@ -14,9 +15,14 @@
     "generate": "cd ../client && npx drizzle-kit generate",
     "studio": "cd ../client && npx drizzle-kit studio"
   },
-  "dependencies": {},
+  "dependencies": {
+    "drizzle-kit": "^0.31.1",
+    "drizzle-orm": "^0.44.2",
+    "pg": "^8.16.0"
+  },
   "devDependencies": {
-    "cypress": "^13.6.0",
-    "@types/node": "^20.0.0"
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.15.4",
+    "cypress": "^13.6.0"
   }
 }

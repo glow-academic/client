@@ -3,12 +3,13 @@
 import { db } from "@/utils/drizzle/database";
 import { evalRuns } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
+import { logError } from "@/utils/logger";
 
 export async function deleteEvalRuns(ids: string[]) {
   try {
     return await db.delete(evalRuns).where(inArray(evalRuns.id, ids)).returning();
   } catch (error) {
-    console.error("Error deleting multiple eval_runs:", error);
+    logError("Error deleting multiple eval_runs:", error);
     throw error;
   }
 }

@@ -2,12 +2,13 @@
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { simulations } from "@/drizzle/schema";
+import { logError } from "@/utils/logger";
 
 export async function getAllSimulations() {
   try {
     return await db.select().from(simulations);
   } catch (error) {
-    console.error("Error fetching all simulations:", error);
+    logError("Error fetching all simulations:", error);
     throw error;
   }
 }
