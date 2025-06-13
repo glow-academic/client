@@ -1,14 +1,8 @@
 {
   "recommendations": [
     "ms-python.python",
-    "ms-python.debugpy",
-    "ms-toolsai.jupyter",
     "matangover.mypy",
-    "charliermarsh.ruff",
-    "ms-python.isort",
-    "ms-vscode.makefile-tools",
-    "redhat.vscode-yaml",
-    "ms-vscode.vscode-json"
+    "ms-vscode.makefile-tools"
   ],
   "unwantedRecommendations": [
     "ms-python.pylint",
