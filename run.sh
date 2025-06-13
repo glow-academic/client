@@ -1,156 +1,287 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Color
+
 # --- LOAD .env -------------------------------------------------------
-# put KEY=value pairs (no quotes) in ../.env
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-if [[ -f "${script_dir}/../.env" ]]; then
-  set -a                # export every sourced var
-  source "${script_dir}/../.env"
+if [[ -f "${script_dir}/.env" ]]; then
+  set -a
+  source "${script_dir}/.env"
   set +a
 fi
 
 # --- CONFIG ----------------------------------------------------------
-DB_USER=${DB_USER:-myuser}
-DB_PASSWORD=${DB_PASSWORD:-mypassword}
-DB_NAME=${DB_NAME:-mydb}
-DB_HOST=${DB_HOST:-localhost}
-DB_PORT=${DB_PORT:-5432}
-__DATA_DIR=history
-mkdir -p "$__DATA_DIR"
-
-# Process command‐line arguments
 CLEAN_DB=false
+RUN_TESTS=false
+
+# Process command-line arguments
 for arg in "$@"; do
-  case $arg in --clean) CLEAN_DB=true; shift ;; esac
+  case $arg in 
+    --clean) CLEAN_DB=true; shift ;;
+    --test) RUN_TESTS=true; shift ;;
+    --help|-h) 
+      echo "🚀 Glow Development Environment"
+      echo ""
+      echo "Usage: bash run.sh [options]"
+      echo ""
+      echo "Options:"
+      echo "  --clean    Clean database before starting"
+      echo "  --test     Run all test suites after startup"
+      echo "  --help     Show this help message"
+      echo ""
+      echo "This script will:"
+      echo "  1. Start the database"
+      echo "  2. Start client and server in parallel"
+      echo "  3. Handle database migrations automatically"
+      echo "  4. Optionally run test suites"
+      exit 0
+      ;;
+  esac
 done
 
-ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
-USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-INIT_SQL=${INIT_SQL:-init.sql}
-INIT_DIR=${INIT_DIR:-init}
-
-# --- OPTIONAL: install PostgreSQL if missing -------------------------
-if ! command -v psql &>/dev/null; then
-  echo "PostgreSQL client not found - installing…"
-  case "$(uname)" in
-    Darwin)  
-      brew install postgresql@15
-      # Create postgres superuser if it doesn't exist
-      if ! psql -U postgres -c '\q' 2>/dev/null; then
-        echo "Creating postgres superuser for Homebrew installation..."
-        createuser -s postgres
-      fi
-      ;;
-    Linux)
-      if   command -v apt-get &>/dev/null; then sudo apt-get update && sudo apt-get -y install postgresql
-      elif command -v yum     &>/dev/null; then sudo yum       -y install postgresql-server postgresql-contrib
-      else echo "Unsupported distro. Install PostgreSQL manually." && exit 1; fi ;;
-    *) echo "Unsupported OS." && exit 1 ;;
-  esac
-fi
-
-# Ensure server is running -----------------------------------------------------
-pg_isready -q || {
-  echo "Starting PostgreSQL service…"
-  if [[ "$(uname)" == Darwin ]]; then 
-    brew services start postgresql@15
-    # Create postgres superuser if it doesn't exist (after service start)
-    if ! psql -U postgres -c '\q' 2>/dev/null; then
-      echo "Creating postgres superuser for Homebrew installation..."
-      createuser -s postgres
-    fi
-  else 
-    # In Docker, we don't need to start PostgreSQL as a service
-    # The container already has PostgreSQL running
-    if [[ -f /.dockerenv ]]; then
-      # Wait for PostgreSQL to be ready
-      until pg_isready -q; do
-        echo "Waiting for PostgreSQL to start..."
-        sleep 1
-      done
-    else
-      # For non-Docker Linux environments
-      command -v systemctl >/dev/null && systemctl start postgresql || service postgresql start
-    fi
-  fi
-  sleep 5
+# --- HELPER FUNCTIONS ------------------------------------------------
+log_step() {
+  echo -e "${BLUE}[STEP]${NC} $1"
 }
 
-# --- HELPERS -----------------------------------------------------------------
-as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
-role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
-db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
-__backup() {
-  ts=$(date +%Y%m%d_%H%M%S)
-  pg_dump "$USER_CONN" > "$__DATA_DIR/backup_${ts}.sql"
-  echo "Backup saved → $__DATA_DIR/backup_${ts}.sql"
+log_success() {
+  echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-# --- ROLE --------------------------------------------------------------------
-if ! role_exists; then
-  echo "Creating role $DB_USER with CREATEDB privilege…"
-  as_admin -c "CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD' CREATEDB;"
-fi
+log_warning() {
+  echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
-# --- DATABASE (clean / create / restore) -------------------------------------
-if $CLEAN_DB && db_exists; then
-  echo "Clean requested - backing up then dropping $DB_NAME..."
-  __backup
-  
-  # Terminate all connections to the database before dropping it
-  as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();"
-  
-  as_admin -c "DROP DATABASE $DB_NAME;"
-fi
+log_error() {
+  echo -e "${RED}[ERROR]${NC} $1"
+}
 
-if ! db_exists; then
-  echo "Creating database $DB_NAME owned by $DB_USER..."
-  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-fi
+log_info() {
+  echo -e "${CYAN}[INFO]${NC} $1"
+}
 
-# If DB is empty, try to restore the newest dump ------------------------------
-TABLES=$(psql "$USER_CONN" -qtA -c \
-          "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';")
-
-if [[ $TABLES -eq 0 ]]; then
-  LATEST=$(ls -t $__DATA_DIR/backup_*.sql 2>/dev/null | head -n1)
-  if [[ -n $LATEST && $CLEAN_DB = false ]]; then
-    echo "Restoring $LATEST …"
-    psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$LATEST"
-  elif [[ -f $INIT_SQL ]]; then
-    echo "Applying database schema using modular approach…"
-    
-    # Check if we have the modular structure
-    if [[ -d $INIT_DIR ]]; then
-      echo "Found modular SQL files in $INIT_DIR directory"
-      echo "Executing master init.sql which will load all modules in correct order…"
-      
-      # Set the search path for \i commands to work properly
-      export PGPASSWORD="$DB_PASSWORD"
-      
-      # Execute the master init.sql file which orchestrates the modular loading
-      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
-    else
-      echo "No modular structure found, applying single $INIT_SQL file…"
-      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
-    fi
+# Check if a process is running on a port
+check_port() {
+  local port=$1
+  if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+    return 0
   else
-    echo "No schema or backup to apply (DB is empty)."
-    echo "Expected files: $INIT_SQL or backup files in $__DATA_DIR/"
+    return 1
   fi
-fi
+}
 
-# In Docker environment, keep PostgreSQL running
-if [[ -f /.dockerenv ]]; then
-  echo "Database initialized. Keeping PostgreSQL running..."
-  # This will keep the container running
-  tail -f /dev/null
+# Wait for a service to be ready
+wait_for_service() {
+  local service_name=$1
+  local port=$2
+  local max_attempts=${3:-30}
+  local attempt=0
+  
+  log_info "Waiting for $service_name to be ready on port $port..."
+  
+  while [ $attempt -lt $max_attempts ]; do
+    if check_port $port; then
+      log_success "$service_name is ready!"
+      return 0
+    fi
+    
+    attempt=$((attempt + 1))
+    sleep 2
+    echo -n "."
+  done
+  
+  log_error "$service_name failed to start within $((max_attempts * 2)) seconds"
+  return 1
+}
+
+# --- MAIN EXECUTION --------------------------------------------------
+echo -e "${PURPLE}🌟 Starting Glow Development Environment${NC}"
+echo ""
+
+# Step 1: Start Database
+log_step "Starting database..."
+cd database
+
+if $CLEAN_DB; then
+  log_info "Clean flag detected - will clean database"
+  bash run.sh --clean &
 else
-  # --- READY: open psql, then dump a fresh backup ------------------------------
-  echo "Database ready - opening psql (type '\q' to quit)."
-  psql "$USER_CONN"
-
-  echo "Session ended - writing fresh backup…"
-  __backup
+  bash run.sh &
 fi
+
+DB_PID=$!
+cd ..
+
+# Wait a moment for database to initialize
+sleep 3
+
+# Check if database started successfully
+if ! kill -0 $DB_PID 2>/dev/null; then
+  log_error "Database failed to start"
+  exit 1
+fi
+
+log_success "Database started (PID: $DB_PID)"
+
+# Step 2: Start Client and Server in parallel
+log_step "Starting client and server in parallel..."
+
+# Start Client
+log_info "Starting client..."
+cd client
+yarn dev > ../client.log 2>&1 &
+CLIENT_PID=$!
+cd ..
+
+# Start Server  
+log_info "Starting server..."
+cd server
+make run > ../server.log 2>&1 &
+SERVER_PID=$!
+cd ..
+
+log_info "Client PID: $CLIENT_PID"
+log_info "Server PID: $SERVER_PID"
+
+# Step 3: Wait for services to be ready
+log_step "Waiting for services to be ready..."
+
+# Wait for client (Next.js typically runs on 3000)
+if wait_for_service "Client" 3000 30; then
+  log_success "Client is ready!"
+else
+  log_error "Client failed to start. Check client.log for details."
+  tail -20 client.log
+fi
+
+# Wait for server (FastAPI typically runs on 8000)
+if wait_for_service "Server" 8000 30; then
+  log_success "Server is ready!"
+else
+  log_error "Server failed to start. Check server.log for details."
+  tail -20 server.log
+fi
+
+# Step 4: Handle migrations
+log_step "Handling database migrations..."
+cd client
+
+# Generate migrations if schema has changed
+log_info "Generating migrations from current schema..."
+if npx drizzle-kit generate > ../migration.log 2>&1; then
+  log_success "Migrations generated successfully"
+  
+  # Check if any new migration files were created
+  if ls ../database/migrations/*.sql >/dev/null 2>&1; then
+    log_info "Applying new migrations to database..."
+    cd ../database
+    
+    # Apply migrations
+    if yarn migrate > ../migrate.log 2>&1; then
+      log_success "Migrations applied successfully"
+    else
+      log_warning "Migration application had issues - continuing with current database state"
+      log_info "Check migrate.log for details"
+    fi
+    cd ../client
+  else
+    log_info "No new migrations to apply"
+  fi
+else
+  log_warning "Migration generation had issues - continuing with current state"
+  log_info "Check migration.log for details"
+fi
+
+cd ..
+
+# Step 5: Final status
+echo ""
+log_step "Environment Status:"
+echo -e "  ${GREEN}✅ Database:${NC} Running (PID: $DB_PID)"
+echo -e "  ${GREEN}✅ Client:${NC}   Running (PID: $CLIENT_PID) - http://localhost:3000"
+echo -e "  ${GREEN}✅ Server:${NC}   Running (PID: $SERVER_PID) - http://localhost:8000"
+echo ""
+
+# Step 6: Run tests if requested
+if $RUN_TESTS; then
+  log_step "Running test suites..."
+  
+  # Client tests
+  log_info "Running client tests..."
+  cd client
+  if yarn test; then
+    log_success "Client tests passed"
+  else
+    log_warning "Client tests had issues"
+  fi
+  cd ..
+  
+  # Server tests
+  log_info "Running server tests..."
+  cd server
+  if make test; then
+    log_success "Server tests passed"
+  else
+    log_warning "Server tests had issues"
+  fi
+  cd ..
+  
+  # Cypress E2E tests
+  log_info "Running Cypress E2E tests..."
+  cd database
+  if yarn test:cypress; then
+    log_success "Cypress tests passed"
+  else
+    log_warning "Cypress tests had issues"
+  fi
+  cd ..
+fi
+
+# Step 7: Keep running and handle cleanup
+echo ""
+log_success "🎉 All services are running!"
+echo ""
+echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
+echo ""
+
+# Function to cleanup on exit
+cleanup() {
+  echo ""
+  log_info "Shutting down services..."
+  
+  # Kill all child processes
+  if kill -0 $DB_PID 2>/dev/null; then
+    log_info "Stopping database..."
+    kill $DB_PID
+  fi
+  
+  if kill -0 $CLIENT_PID 2>/dev/null; then
+    log_info "Stopping client..."
+    kill $CLIENT_PID
+  fi
+  
+  if kill -0 $SERVER_PID 2>/dev/null; then
+    log_info "Stopping server..."
+    kill $SERVER_PID
+  fi
+  
+  # Clean up log files
+  rm -f client.log server.log migration.log migrate.log
+  
+  log_success "All services stopped. Goodbye! 👋"
+  exit 0
+}
+
+# Set up signal handlers
+trap cleanup SIGINT SIGTERM
+
+# Wait for any of the processes to exit
+wait

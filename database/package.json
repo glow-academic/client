@@ -1,0 +1,17 @@
+{
+  "name": "database",
+  "version": "1.0.0",
+  "description": "glow database management",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "start": "bash run.sh",
+    "start:clean": "bash run.sh --clean",
+    "test:cypress": "cd ../client && yarn test:cypress",
+    "migrate": "cd ../client && npx drizzle-kit migrate",
+    "generate": "cd ../client && npx drizzle-kit generate",
+    "studio": "cd ../client && npx drizzle-kit studio"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

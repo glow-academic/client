@@ -1,1 +1,0 @@
-ALTER TABLE "standards" ADD COLUMN "short_name" text NOT NULL;
