@@ -786,18 +786,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    // Hide scroll button after scrolling to bottom
-    setTimeout(() => setShowScrollButton(false), 500);
+    const scrollArea = scrollAreaRef.current;
+    if (scrollArea) {
+      const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      if (viewport) {
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+        // Hide scroll button after scrolling to bottom
+        setTimeout(() => setShowScrollButton(false), 500);
+      }
+    }
   };
 
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
-    const hasScrollableContent = scrollHeight > clientHeight + 10;
-    // Show button when there's scrollable content AND user is not near the bottom AND there are messages
-    setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 2);
-  };
+
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -807,15 +807,30 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [messages.length]);
 
-  // Check scroll position when messages change
+  // Set up scroll event listener for the ScrollArea
   useEffect(() => {
-    const messagesContainer = messagesEndRef.current?.parentElement;
-    if (messagesContainer) {
-      const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+    const scrollArea = scrollAreaRef.current;
+    if (!scrollArea) return;
+
+    const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    if (!viewport) return;
+
+    const handleScrollEvent = () => {
+      const { scrollTop, scrollHeight, clientHeight } = viewport;
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
       const hasScrollableContent = scrollHeight > clientHeight + 10;
-      setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 2);
-    }
+      setShowScrollButton(hasScrollableContent && !isNearBottom);
+    };
+
+    // Initial check
+    handleScrollEvent();
+
+    // Add scroll listener
+    viewport.addEventListener('scroll', handleScrollEvent);
+
+    return () => {
+      viewport.removeEventListener('scroll', handleScrollEvent);
+    };
   }, [messages.length]);
 
   // Track input panel height for dynamic layout
@@ -835,8 +850,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, []);
 
-  // Determine if we should use vertical layout (when panel is tall enough)
-  const useVerticalLayout = inputPanelHeight > 100;
+
 
   // Set default selected document
   useEffect(() => {
@@ -1184,7 +1198,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
-          <Card className="h-full flex flex-col">
+          <Card className="h-full flex flex-col py-4">
             <ResizablePanelGroup direction="vertical" className="h-full">
               <ResizablePanel defaultSize={85} minSize={60}>
                 <div className="h-full flex flex-col">
@@ -1271,7 +1285,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     <ScrollArea
                       className="flex-1 px-4 min-h-0"
                       ref={scrollAreaRef}
-                      onScrollCapture={handleScroll}
                     >
                       <div className="space-y-4 py-4">
                         {messagesLoading ? (
@@ -1393,8 +1406,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   ) : (
                     <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
                       <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
-                        {/* Dynamic layout based on panel height */}
-                        {useVerticalLayout ? (
+                        {/* Dynamic layout based on panel height - threshold increased to 140px */}
+                        {inputPanelHeight > 140 ? (
                           /* Vertical layout for larger panels */
                           <div className="flex flex-col gap-2 flex-1">
                             <Textarea
@@ -1411,8 +1424,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }
                               }}
                               style={{
-                                minHeight: '60px',
-                                height: `${Math.max(60, inputPanelHeight - 120)}px`
+                                minHeight: '80px',
+                                height: `${Math.max(80, inputPanelHeight - 100)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1453,13 +1466,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
                               disabled={simulation?.timeLimit ? !isActive : false}
-                              className="flex-1 resize-none text-md min-h-[40px] max-h-[40px]"
+                              className="flex-1 resize-none text-md"
                               data-testid="message-input"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
                                   handleSendMessage(e as any);
                                 }
+                              }}
+                              style={{
+                                minHeight: '40px',
+                                height: `${Math.max(40, inputPanelHeight - 60)}px`
                               }}
                               rows={1}
                             />
@@ -1513,7 +1530,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           <>
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-              <Card className="h-full flex flex-col ml-4">
+              <Card className="h-full flex flex-col ml-4 p-0">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                   {/* Select dropdown directly above document */}
                   {classDocuments.length > 1 && (
