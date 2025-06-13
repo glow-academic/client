@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node cypress/scripts/advanced-test-generator.js && node scripts/generate-component-tests.js && next dev",
+    "dev": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node scripts/generate-component-tests.js && next dev",
     "build": "next lint --fix && NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
@@ -15,10 +15,6 @@
     "generate:queries:fast": "node scripts/generate-queries-mutations.js --skip-snapshot",
     "clean:schema": "node scripts/clean-schema.js",
     "generate:all": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js",
-    "test:cypress": "node cypress/scripts/parallel-runner.js",
-    "test:cypress:original": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && cypress run\"",
-    "test:cypress:stress": "CYPRESS_WORKERS=6 node cypress/scripts/parallel-runner.js",
-    "test:all": "npm run test && npm run test:cypress",
     "test": "vitest run"
   },
   "dependencies": {
