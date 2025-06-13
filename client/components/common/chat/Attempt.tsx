@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/resizable";
 
 // Icons
-import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose } from "lucide-react";
+import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown } from "lucide-react";
 
 // Tooltip
 import {
@@ -789,7 +789,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
     const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    setShowScrollButton(!isNearBottom && messages.length > 0);
+    const hasScrollableContent = scrollHeight > clientHeight;
+    // Show button when there's scrollable content AND user is not near the bottom
+    setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 0);
   };
 
   // Auto-scroll to bottom when new messages arrive
@@ -1273,14 +1275,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                     {/* Scroll to bottom button */}
                     {showScrollButton && (
-                      <div className="absolute bottom-4 right-8 z-10">
+                      <div className="absolute bottom-6 right-6 z-10">
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
                           onClick={scrollToBottom}
-                          className="rounded-full h-10 w-10 p-0 shadow-lg"
+                          className="rounded-full h-12 w-12 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
                         >
-                          <ChevronDown className="h-4 w-4" />
+                          <ArrowDown className="h-5 w-5" />
                         </Button>
                       </div>
                     )}
@@ -1289,8 +1291,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               </ResizablePanel>
 
               <ResizableHandle />
-              <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
-                <CardFooter className="h-full p-4 border-t">
+              <ResizablePanel defaultSize={15} minSize={18} maxSize={40}>
+                <CardFooter className="h-full p-4 border-t flex flex-col justify-center">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1311,15 +1313,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col gap-2">
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[100px]">
                       <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
-                        <div className="flex gap-2 flex-1">
+                        <div className="flex gap-2 flex-1 min-h-[60px]">
                           <Textarea
                             value={newMessage}
                             onChange={(e) => setNewMessage(e.target.value)}
                             placeholder="Type your message..."
                             disabled={simulation?.timeLimit ? !isActive : false}
-                            className="flex-1 resize-none"
+                            className="flex-1 resize-none text-md min-h-[40px]"
                             data-testid="message-input"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -1328,7 +1330,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }
                             }}
                           />
-                          <div className="flex flex-col gap-2">
+                          <div className="flex flex-col gap-2 min-w-[120px] justify-center">
                             <Button
                               type="submit"
                               disabled={
@@ -1336,6 +1338,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 (simulation?.timeLimit ? !isActive : false)
                               }
                               data-testid="send-button"
+                              className="min-h-[36px] h-[36px]"
                             >
                               <Send className="h-4 w-4" />
                             </Button>
@@ -1347,7 +1350,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 endChatLoading ||
                                 (simulation?.timeLimit ? !isActive : false)
                               }
-                              className="whitespace-nowrap"
+                              className="whitespace-nowrap min-h-[36px] h-[36px] px-2"
                             >
                               {endChatLoading
                                 ? "Ending..."
@@ -1359,7 +1362,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         </div>
                       </form>
                       {simulation?.timeLimit && !isActive && (
-                        <p className="text-sm text-muted-foreground text-center">
+                        <p className="text-sm text-muted-foreground text-center mt-2">
                           Time's up! The session has ended.
                         </p>
                       )}
