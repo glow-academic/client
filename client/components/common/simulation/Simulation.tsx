@@ -21,12 +21,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -54,14 +48,12 @@ import {
   GripVertical,
   MessageSquare,
 } from "lucide-react";
-import { Document, Rubric, Scenario } from "@/types";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { Rubric, Scenario } from "@/types";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { useRouter } from "next/navigation";
 
@@ -96,8 +88,6 @@ export default function Simulation({
     null,
   );
   const [isDeleting, setIsDeleting] = useState(false);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [previewDocument, setPreviewDocument] = useState<Document | null>(null);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
     null,
   );
@@ -115,11 +105,6 @@ export default function Simulation({
   const [formData, setFormData] = useState<SimulationFormData>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ["documents"],
-    queryFn: () => getAllDocuments(),
-  });
-
   // Fetch simulations for the list mode
   const { data: simulations = [] } = useQuery({
     queryKey: ["simulations"],
@@ -134,11 +119,6 @@ export default function Simulation({
   const { data: scenarios = [] } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
-  });
-
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   // Load simulation data if editing
@@ -213,7 +193,7 @@ export default function Simulation({
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, removed);
+      newOrder.splice(targetIndex, 0, removed!);
 
       setFormData((prev) => ({ ...prev, scenarioIds: newOrder }));
     }
@@ -278,6 +258,11 @@ export default function Simulation({
         result = await updateSimulation(targetSimulationId, payload);
       } else {
         result = await createSimulation(payload);
+      }
+
+      if (!result) {
+        toast.error("Failed to create simulation");
+        return;
       }
 
       resetFormAndState();
@@ -431,13 +416,6 @@ export default function Simulation({
       </div>
     );
   }
-
-  const formatTerm = (term: string) => {
-    if (term === "fall") return "Fall";
-    if (term === "spring") return "Spring";
-    if (term === "summer") return "Summer";
-    return term;
-  };
 
   // Create mode - render the full create form
   return (
@@ -664,24 +642,6 @@ export default function Simulation({
           </Button>
         </div>
       </form>
-
-      {/* Document Preview Modal */}
-      <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Document Preview: {previewDocument?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            {previewDocument && (
-              <div className="p-4 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  Document preview would be displayed here
-                </p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

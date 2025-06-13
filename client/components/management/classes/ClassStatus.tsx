@@ -6,8 +6,7 @@
  */
 "use client";
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -48,9 +47,6 @@ type ClassStatusProps = {
 };
 
 export default function ClassStatus({ classId }: ClassStatusProps) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-
   const [processingStatus, setProcessingStatus] = useState<ProcessingStatus>({
     stage: "extracting",
     progress: 0,
@@ -59,9 +55,6 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
     totalDocuments: 0,
     syllabusFound: false,
   });
-
-  const [isPolling, setIsPolling] = useState(true);
-  const [showClassForm, setShowClassForm] = useState(false);
 
   // Fetch class data
   const { data: classData, isLoading: classLoading } = useQuery({
@@ -124,7 +117,6 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
       } else {
         stage = "complete";
         message = "Processing complete!";
-        setIsPolling(false);
       }
     }
 
@@ -135,7 +127,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
       documentsProcessed: processedDocs,
       totalDocuments: totalDocs,
       syllabusFound: !!syllabusDoc,
-      syllabusName: syllabusDoc?.name,
+      syllabusName: syllabusDoc?.name || "",
     });
   }, [documents]);
 
@@ -194,7 +186,7 @@ export default function ClassStatus({ classId }: ClassStatusProps) {
     {},
   );
 
-  if (classLoading) {
+  if (classLoading || schedulesLoading || eventsLoading || documentsLoading) {
     return (
       <div className="min-h-screen py-8 px-4">
         <div className="max-w-4xl mx-auto space-y-6">

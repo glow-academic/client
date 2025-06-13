@@ -52,7 +52,7 @@ interface ScenarioPickerProps extends PopoverProps {
   placeholder?: string
   description?: string
   onSelect?: (model: Model) => void
-  selectedModel?: Model
+  selectedModel?: Model | undefined
 }
 
 export function ScenarioPicker({ 

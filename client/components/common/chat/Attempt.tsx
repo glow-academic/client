@@ -75,9 +75,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 import { getClass } from "@/utils/queries/classes/get-class";
-import { useSession } from "next-auth/react";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 
 // Timer is now integrated directly into the component layout
 
@@ -120,23 +117,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-
-  const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-    enabled: !!userEmail,
-  });
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
-    select: (data) => data[0],
-    enabled: !!user,
-  });
 
   // Fetch attempt data
   const {
@@ -545,9 +525,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           // All chats completed or single chat completed, show results
           setShowResults(true);
           setIsActive(false);
+          return;
         }
       }
     }
+    return;
   }, [
     currentChat?.completed,
     currentChat?.id,
@@ -808,6 +790,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
+    return;
   }, [messages.length]);
 
   // Set up scroll event listener for the ScrollArea with increased threshold
@@ -972,7 +955,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => ro.disconnect();
   }, []);
 
-  if (attemptLoading || simulationLoading || scenarioLoading) {
+  if (attemptLoading || simulationLoading || scenarioLoading || isLoadingChats || isLoadingRubrics || isLoadingFeedbacks || isLoadingGrades || isLoadingStandardGroups || isLoadingStandards || resultsMessagesLoading || resultsScenarioLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -1134,7 +1117,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <SelectContent>
                           {chats
                             ?.filter((chat: SimulationChat) => chat.completed)
-                            .map((chat: SimulationChat, index: number) => (
+                            .map((chat: SimulationChat) => (
                               <SelectItem key={chat.id} value={chat.id}>
                                 <div className="flex items-center gap-2">
                                   <span>{chat.title}</span>

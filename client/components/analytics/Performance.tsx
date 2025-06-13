@@ -195,18 +195,9 @@ export default function Performance() {
     const personalityDays = personalityTimeRange === "7d" ? 7 : personalityTimeRange === "30d" ? 30 : 90;
     const skillDays = skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
     const personalityCutoff = startOfDay(subDays(new Date(), personalityDays));
-    const skillCutoff = startOfDay(subDays(new Date(), skillDays));
 
     const personalityFilteredGrades = filteredGrades.filter((grade) =>
       isAfter(new Date(grade.createdAt), personalityCutoff)
-    );
-
-    const skillFilteredGrades = filteredGrades.filter((grade) =>
-      isAfter(new Date(grade.createdAt), skillCutoff)
-    );
-
-    const filteredFeedbacks = feedbacks.filter((f) =>
-      filteredStandards.some((s) => s.id === f.standardId),
     );
 
     const skillFilteredFeedbacks = feedbacks.filter((f) =>
@@ -558,7 +549,7 @@ export default function Performance() {
             </div>
 
             <div className="space-y-4">
-              {analytics.performanceByType.map((type, index) => (
+              {analytics.performanceByType.map((type) => (
                 <div
                   key={type.name}
                   className="flex items-center justify-between p-4 rounded-lg border"

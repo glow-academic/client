@@ -47,7 +47,6 @@ export default function MainLayout({
 
   const handleSectionChange = createSectionChangeHandler(
     router,
-    "/simulations",
   );
 
   // Determine action button based on current path

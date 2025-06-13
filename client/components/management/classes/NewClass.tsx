@@ -7,7 +7,6 @@
 "use client";
 import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
@@ -37,39 +36,34 @@ interface FileUploadStatus {
 
 export default function NewClass() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [creationMode, setCreationMode] = useState<CreationMode>("selection");
   const [processingStep, setProcessingStep] = useState<ProcessingStep>("idle");
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [extractedFiles, setExtractedFiles] = useState<string[]>([]);
-  const [classifiedDocs, setClassifiedDocs] = useState<any[]>([]);
   const [createdClassId, setCreatedClassId] = useState<string | null>(null);
   const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
 
   const handleZipUpload = async (file: File) => {
     try {
       setProcessingStep("uploading");
-      setIsUploading(true);
 
       // use the file name as the class name
       const className = file.name.split(".")[0];
 
       // try to find numeric codes for the class code in the class name
-      const classCode = className.match(/\d+/);
+      const classCode = className?.match(/\d+/);
 
       // First create a temporary class for the ZIP upload
       const tempClassResult = await createClass({
-        name: className,
-        classCode: classCode ? classCode[0] : className,
+        name: className || "",
+        classCode: classCode ? classCode[0] : className || "",
         year: new Date().getFullYear(),
         term: "fall",
         description: "Make changes to this class description",
       });
 
-      const tempClassId = tempClassResult.id;
+      const tempClassId = tempClassResult?.id || "";
       setCreatedClassId(tempClassId);
 
       // Create file upload status
@@ -216,8 +210,6 @@ export default function NewClass() {
         `Failed to upload ZIP: ${error instanceof Error ? error.message : "Unknown error"}`,
       );
       setProcessingStep("idle");
-    } finally {
-      setIsUploading(false);
     }
   };
 
@@ -283,7 +275,7 @@ export default function NewClass() {
               </div>
             </div>
 
-            {fileUploads.length > 0 && (
+            {fileUploads.length > 0 && fileUploads[0] && (
               <div className="text-xs text-blue-700 dark:text-blue-300">
                 Processing: {fileUploads[0].name}
               </div>

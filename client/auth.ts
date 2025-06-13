@@ -6,12 +6,16 @@ import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
+const clientId = process.env.AUTH_MICROSOFT_ENTRA_ID_ID || "";
+const clientSecret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET || "";
+const secret = process.env.AUTH_SECRET || "";
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [MicrosoftEntraID({
-    clientId: process.env.AUTH_MICROSOFT_ENTRA_ID_ID,
-    clientSecret: process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET,
+    clientId: clientId,
+    clientSecret: clientSecret,
   })],
-  secret: process.env.AUTH_SECRET,
+  secret: secret,
   callbacks: {
     async signIn({ user, profile }) {
       try {
@@ -44,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             userId: userId,
             firstName: firstName,
             lastName: lastName,
-            alias: alias,
+            alias: alias || "",
             viewedIntro: false,
             role: 'ta',
             classIds: []
@@ -65,7 +69,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             await updateProfile(userProfile.id, {
               firstName: firstName,
               lastName: lastName,
-              alias: alias,
+              alias: alias || "",
               lastLogin: new Date().toISOString(),
             });
             
@@ -81,7 +85,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               userId: databaseUser.id,
               firstName: firstName,
               lastName: lastName,
-              alias: alias,
+              alias: alias || "",
               viewedIntro: false,
               role: 'ta',
               classIds: []

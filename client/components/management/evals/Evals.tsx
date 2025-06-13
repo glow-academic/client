@@ -47,14 +47,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getEvalRunsByEvals } from "@/utils/queries/eval_runs/get-eval-runs-by-evals";
 import { Eval } from "@/types";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
-import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
-import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 
 export default function Evals() {
   const router = useRouter();
@@ -75,54 +68,6 @@ export default function Evals() {
   const { data: classes } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
-  });
-
-  const { data: evalRuns = [] } = useQuery({
-    queryKey: ["evalRuns", evals?.map((evaluation: Eval) => evaluation.id)],
-    queryFn: () => getEvalRunsByEvals(evals?.map((evaluation: Eval) => evaluation.id) || []),
-    enabled: !!evals && evals.length > 0,
-  });
-
-  const { data: rubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: standardGroups } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-    queryFn: () =>
-      getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
-
-  const { data: standards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
-  });
-
-  const { data: chats } = useQuery({
-    queryKey: ["evalChats", evalRuns?.map((evalRun) => evalRun.id)],
-    queryFn: () =>
-      getEvalChatsByEvalRuns(evalRuns!.map((evalRun) => evalRun.id)),
-    enabled: !!evalRuns && evalRuns.length > 0,
-  });
-
-  const { data: grades } = useQuery({
-    queryKey: ["evalGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getEvalChatGradesByEvalChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: feedbacks } = useQuery({
-    queryKey: ["evalFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getEvalChatFeedbacksByEvalChatGrades(
-        grades!.map((grade) => grade.id),
-      ),
-    enabled: !!grades && grades.length > 0,
   });
 
   const handleDelete = async () => {
@@ -212,16 +157,6 @@ export default function Evals() {
     router.push("/management/evals/new");
   };
 
-  const handleViewChat = (chatId: string) => {
-    // Navigate to evaluation page with specific chat
-    const evalRun = evalRuns.find(run => 
-      chats?.some(chat => chat.id === chatId && chat.evalRunId === run.id)
-    );
-    if (evalRun) {
-      router.push(`/management/evals/e/${evalRun.evalId}/r/${evalRun.id}`);
-    }
-  };
-
   const getEvalTypeBadge = (evalType: "student" | "ta") => {
     return evalType === "student"
       ? { variant: "default" as const, text: "Student", icon: Users }
@@ -248,27 +183,6 @@ export default function Evals() {
       day: "numeric",
     });
   };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Get eval runs with their chats for the carousel
-  const evalRunsWithChats = evalRuns?.map(run => {
-    const runChats = chats?.filter(chat => chat.evalRunId === run.id) || [];
-    const runGrades = grades?.filter(grade => 
-      runChats.some(chat => chat.id === grade.evalChatId)
-    ) || [];
-    
-    return {
-      ...run,
-      chats: runChats,
-      grades: runGrades,
-    };
-  }) || [];
 
   return (
     <div className="space-y-8">

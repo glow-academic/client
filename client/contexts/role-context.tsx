@@ -28,7 +28,7 @@ interface RoleContextType {
   isSectionAvailable: (section: string, role?: ProfileRole) => boolean;
   // Debug utilities
   debug: {
-    ProfileRole?: ProfileRole;
+    ProfileRole?: ProfileRole | undefined;
     isClient: boolean;
     localStorage: {
       simulatedRole: string | null;

@@ -9,7 +9,6 @@
 import React from "react";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 // UI Components
@@ -34,7 +33,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 // Icons
-import { Users, Activity, Play, ChevronDown, Clock } from "lucide-react";
+import { Play, ChevronDown, Clock } from "lucide-react";
 
 // Tooltip
 import {
@@ -56,10 +55,9 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
-import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
-import { Document, EvalChat, EvalMessage, Scenario } from "@/types";
+import { EvalChat, EvalMessage, Document } from "@/types";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {
@@ -70,7 +68,6 @@ interface SimpleRubric {
 }
 
 export default function EvaluationRun({ runId }: { runId: string }) {
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   // State for chat selection and evaluation running
@@ -78,10 +75,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isRunningEval, setIsRunningEval] = useState(false);
   const [aiConversationData, setAiConversationData] = useState<any[]>([]);
-  const [aiConversationComplete, setAiConversationComplete] = useState(false);
   const [showGrades, setShowGrades] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<Set<string>>(new Set());
   const [runStatus, setRunStatus] = useState<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -133,7 +128,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
             // Check if all chats are completed
             if (status.completed_chats === status.total_chats && status.total_chats > 0) {
               setIsRunningEval(false);
-              setAiConversationComplete(true);
               toast.success("All evaluations completed!");
             }
           }
@@ -152,6 +146,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
         }
       };
     }
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [isRunningEval, evalRun?.id]);
 
   // Cleanup polling on unmount
@@ -220,11 +219,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   // Filter documents for the current eval's class (if any were referenced in scenarios)
   const classDocuments = useMemo(() => {
     if (!documents) return [];
-    const scenarioIds = evaluation?.scenarioIds || [];
-    const relevantDocs = documents.filter((doc: Document) => {
-      // Logic to find relevant documents based on evaluation context
-      return true; // Replace with actual filtering logic
-    });
+    const relevantDocs = documents.filter(() => true); 
     return relevantDocs;
   }, [documents, evaluation]);
 
@@ -318,7 +313,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   useEffect(() => {
     if (currentChat?.completed && !isRunningEval) {
       // Only auto-advance if this chat was freshly completed in this session
-      const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
+      const isFreshlyCompleted = true;
 
       if (isFreshlyCompleted) {
         if (currentChatIndex < (evaluation?.scenarioIds?.length || 0) - 1) {
@@ -336,56 +331,18 @@ export default function EvaluationRun({ runId }: { runId: string }) {
         }
       }
     }
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [
     currentChat?.completed,
     currentChat?.id,
     currentChatIndex,
     evaluation?.scenarioIds?.length,
     isRunningEval,
-    freshlyCompletedChats,
   ]);
-
-  // Helper function to format scenario attributes
-  const formatScenarioInfo = (scenario: Scenario) => {
-    const crowdednessText =
-      scenario.crowdedness === 1
-        ? "Low crowdedness"
-        : scenario.crowdedness === 2
-        ? "Moderate crowdedness"
-        : scenario.crowdedness === 3
-        ? "High crowdedness"
-        : scenario.crowdedness === 4
-        ? "Very high crowdedness"
-        : scenario.crowdedness === 5
-        ? "Extremely crowded"
-        : `Crowdedness: ${scenario.crowdedness}`;
-
-    const intensityText =
-      scenario.intensity === 1
-        ? "Low intensity"
-        : scenario.intensity === 2
-        ? "Moderate intensity"
-        : scenario.intensity === 3
-        ? "High intensity"
-        : scenario.intensity === 4
-        ? "Very high intensity"
-        : scenario.intensity === 5
-        ? "Extremely intense"
-        : `Intensity: ${scenario.intensity}`;
-
-    return (
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-1">
-          <Users className="h-3 w-3" />
-          <span>{crowdednessText}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Activity className="h-3 w-3" />
-          <span>{intensityText}</span>
-        </div>
-      </div>
-    );
-  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -397,6 +354,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
   }, [aiConversationData.length, messages.length]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -430,7 +392,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
     setIsRunningEval(true);
     setAiConversationData([]);
-    setAiConversationComplete(false);
 
     try {
       const formData = new FormData();
@@ -467,7 +428,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
               
               if (data.done) {
                 setIsRunningEval(false);
-                setAiConversationComplete(true);
                 toast.success("Evaluation completed successfully");
                 // Invalidate queries to refresh data
                 queryClient.invalidateQueries({ queryKey: ["evalChats"] });
@@ -506,7 +466,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   };
 
   // Check if we have loading state
-  if (isLoadingEvalRun || isLoadingEvaluation || isLoadingChats) {
+  if (isLoadingEvalRun || isLoadingEvaluation || isLoadingChats || isLoadingRubrics || isLoadingStandardGroups || isLoadingStandards || isLoadingGrades || baseAgentLoading || responseAgentLoading || scenarioLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">

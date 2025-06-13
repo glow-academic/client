@@ -1,29 +1,21 @@
 # app/routes/document.py
-import os
-import uuid
 import json
-import shutil
 import logging
+import mimetypes
+import os
+import shutil
+import uuid
 import zipfile
-from fastapi import (
-    APIRouter,
-    Request,
-    Response,
-    Form,
-    HTTPException,
-    Depends,
-    UploadFile,
-    File,
-)
-from fastapi.responses import JSONResponse, FileResponse
-from sqlmodel import Session, select
-from app.models import Documents
+
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-import mimetypes
-
+from app.models import Documents
 from app.services.agents.classify import run_classify_agent
 from app.services.agents.course import run_course_agent
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, Request,
+                     Response, UploadFile)
+from fastapi.responses import FileResponse, JSONResponse
+from sqlmodel import Session, select
 
 # Create uploads directory if it doesn't exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -638,7 +630,8 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
                 if auto_classify and class_id:
                     try:
                         # Call the classify agent directly
-                        from app.services.agents.classify import run_classify_agent
+                        from app.services.agents.classify import \
+                            run_classify_agent
 
                         classification_result = await run_classify_agent(
                             class_id, session

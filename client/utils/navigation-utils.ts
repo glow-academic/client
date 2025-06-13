@@ -73,9 +73,9 @@ export const isSectionAvailableForRole = (section: string, role: ProfileRole): b
   const availableSections = getAvailableSectionsForRole(role);
   
   // Handle dynamic sections (class-*, agent-*, etc.)
-  if (section.includes("-")) {
+  if (section && section.includes("-")) {
     const baseSection = section.split("-")[0];
-    return availableSections.some(s => s.startsWith(baseSection));
+    return availableSections.some(s => s.startsWith(baseSection || ""));
   }
   
   return availableSections.includes(section);
@@ -194,7 +194,6 @@ export const getBreadcrumbSectionRoute = (section: string): string => {
  */
 export const createSectionChangeHandler = (
   router: AppRouterInstance,
-  defaultRoute: string = "/home",
 ) => {
   return (section: string) => {
     const route = getSectionRoute(section);
@@ -208,7 +207,6 @@ export const createSectionChangeHandler = (
  */
 export const createBreadcrumbSectionChangeHandler = (
   router: AppRouterInstance,
-  defaultRoute: string = "/home",
 ) => {
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section);
@@ -251,7 +249,6 @@ export const createRoleAwareSectionChangeHandler = (
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
   onSectionChange?: (section: string) => void,
-  defaultRoute: string = "/home",
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)

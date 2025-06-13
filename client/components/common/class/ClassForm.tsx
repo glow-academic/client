@@ -49,14 +49,6 @@ import { updateClass } from "@/utils/mutations/classes/update-class";
 import { Class, Document, DocumentType } from "@/types";
 import { updateDocument } from "@/utils/mutations/documents/update-document";
 
-interface FileUploadStatus {
-  id: string;
-  name: string;
-  progress: number;
-  status: "uploading" | "complete" | "error";
-  error?: string;
-}
-
 interface FormErrors {
   name?: string;
   classCode?: string;
@@ -81,7 +73,6 @@ export default function ClassForm({
   const router = useRouter();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // Document management state
   const [searchQuery, setSearchQuery] = useState("");
@@ -98,10 +89,7 @@ export default function ClassForm({
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
 
   // Upload state
-  const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [fileUploads, setFileUploads] = useState<FileUploadStatus[]>([]);
-  const [overallProgress, setOverallProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Course processing state
@@ -303,8 +291,6 @@ export default function ClassForm({
           status: "uploading" as const,
         }));
 
-        setFileUploads(initialStatuses);
-
         // Show toast for multiple files
         let toastId: string | number = "";
         if (fileArray.length > 1) {
@@ -345,19 +331,6 @@ export default function ClassForm({
               onError: (error) => {
                 console.error(`Failed to upload ${file.name}: `, error);
 
-                // Update file status
-                setFileUploads((prev) =>
-                  prev.map((item) =>
-                    item.id === fileId
-                      ? {
-                          ...item,
-                          status: "error" as const,
-                          error: error.message || "Unknown error",
-                        }
-                      : item,
-                  ),
-                );
-
                 toast.error(
                   `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
                 );
@@ -368,27 +341,7 @@ export default function ClassForm({
                 const percentage = Math.round(
                   (bytesUploaded / bytesTotal) * 100,
                 );
-
-                // Update file status
-                setFileUploads((prev) => {
-                  const updated = prev.map((item) =>
-                    item.id === fileId
-                      ? { ...item, progress: percentage }
-                      : item,
-                  );
-
-                  // Calculate overall progress inline to avoid dependency issues
-                  const totalProgress = updated.reduce(
-                    (sum, file) => sum + file.progress,
-                    0,
-                  );
-                  const overallPercent = Math.round(
-                    totalProgress / updated.length,
-                  );
-                  setOverallProgress(overallPercent);
-
-                  return updated;
-                });
+                console.log(`${file.name} uploaded ${percentage}%`);
               },
               onSuccess: async () => {
                 // Finalize the upload
@@ -422,39 +375,10 @@ export default function ClassForm({
                     );
                   }
 
-                  // Update file status
-                  setFileUploads((prev) =>
-                    prev.map((item) =>
-                      item.id === fileId
-                        ? {
-                            ...item,
-                            status: "complete" as const,
-                            progress: 100,
-                          }
-                        : item,
-                    ),
-                  );
-
                   toast.success(`${file.name} uploaded successfully!`);
                   resolve();
                 } catch (error) {
                   console.error(`Finalization error for ${file.name}:`, error);
-
-                  // Update file status
-                  setFileUploads((prev) =>
-                    prev.map((item) =>
-                      item.id === fileId
-                        ? {
-                            ...item,
-                            status: "error" as const,
-                            error:
-                              error instanceof Error
-                                ? error.message
-                                : "Unknown error",
-                          }
-                        : item,
-                    ),
-                  );
 
                   toast.error(
                     `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -477,36 +401,10 @@ export default function ClassForm({
           // Dismiss the loading toast
           toast.dismiss(toastId);
 
-          // Check if all uploads were successful - use current state
-          setFileUploads((currentUploads) => {
-            const allSuccessful = currentUploads.every(
-              (f) => f.status === "complete",
-            );
-
-            // Show final toast
-            if (allSuccessful) {
-              if (fileArray.length > 1) {
-                toast.success(
-                  `All ${fileArray.length} files uploaded successfully!`,
-                );
-              }
-            } else {
-              const failedCount = currentUploads.filter(
-                (f) => f.status === "error",
-              ).length;
-              toast.error(
-                `${failedCount} of ${fileArray.length} files failed to upload.`,
-              );
-            }
-
-            return currentUploads;
-          });
-
           // Reset form
           if (fileInputRef.current) {
             fileInputRef.current.value = "";
           }
-          setFileUploads([]);
 
           // Invalidate queries to refresh data
           queryClient.invalidateQueries({ queryKey: ["documents", classId] });
@@ -516,8 +414,6 @@ export default function ClassForm({
           toast.dismiss(toastId);
         } finally {
           setIsUploading(false);
-          setOverallProgress(0);
-          setFileUploads([]);
         }
       } catch (error) {
         console.error("Upload initialization error:", error);
@@ -525,7 +421,6 @@ export default function ClassForm({
           `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`,
         );
         setIsUploading(false);
-        setFileUploads([]);
       }
     },
     [classId, queryClient],
@@ -535,20 +430,17 @@ export default function ClassForm({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(true);
   }, []);
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsDragOver(false);
   }, []);
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      setIsDragOver(false);
 
       const files = e.dataTransfer.files;
       if (files && files.length > 0) {
@@ -572,10 +464,6 @@ export default function ClassForm({
       fileInputRef.current?.click();
     }
   }, [isUploading]);
-
-  const removeFile = useCallback((fileId: string) => {
-    setFileUploads((prev) => prev.filter((file) => file.id !== fileId));
-  }, []);
 
   const handleDeleteDocument = async (documentId: string) => {
     try {
@@ -651,7 +539,7 @@ export default function ClassForm({
     return typeInfo.icon;
   };
 
-  const getDocumentIcon = (filename: string, docType?: string) => {
+  const getDocumentIcon = (filename: string) => {
     const extension = filename.split(".").pop()?.toLowerCase();
 
     if (
@@ -941,7 +829,6 @@ export default function ClassForm({
                     {viewMode === "grid" ? (
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                         {filteredDocuments.map((doc) => {
-                          const typeInfo = getDocumentTypeInfo(doc.type);
                           return (
                             <div
                               key={doc.id}
@@ -1014,7 +901,7 @@ export default function ClassForm({
 
                               {/* Image area */}
                               <div className="aspect-square bg-muted rounded-lg flex items-center justify-center relative">
-                                {getDocumentIcon(doc.name, doc.type)}
+                                {getDocumentIcon(doc.name)}
 
                                 {/* Title in bottom right of image */}
                                 <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded max-w-[calc(100%-1rem)] truncate">
@@ -1028,14 +915,13 @@ export default function ClassForm({
                     ) : (
                       <div className="space-y-2">
                         {filteredDocuments.map((doc) => {
-                          const typeInfo = getDocumentTypeInfo(doc.type);
                           return (
                             <div
                               key={doc.id}
                               className="flex items-center gap-4 p-3 border rounded-lg hover:shadow-sm transition-all"
                             >
                               <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center flex-shrink-0">
-                                {getDocumentIcon(doc.name, doc.type)}
+                                {getDocumentIcon(doc.name)}
                               </div>
 
                               <div className="flex-1 min-w-0">

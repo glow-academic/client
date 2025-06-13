@@ -29,14 +29,15 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
       case "attempt":
         const attemptData = await getSimulationAttempt(id);
+        if (!attemptData) {
+          return `Attempt ${id.substring(0, 8)}...`;
+        }
         // get simulation for attempt
         const attemptSimulation = await getSimulation(
           attemptData?.simulationId,
         );
         // Attempts don't have a title, so we'll use a generic name with timestamp
-        return attemptSimulation
-          ? `${attemptSimulation.title}`
-          : `Attempt ${id.substring(0, 8)}...`;
+        return attemptSimulation?.title || `Attempt ${id.substring(0, 8)}...`;
 
       case "scenario":
         const scenarioData = await getScenario(id);
@@ -69,10 +70,13 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "eval-run":
         const evalRunData = await getEvalRun(id);
         // get the agent for the eval run
+        if (!evalRunData) {
+          return `Eval Run ${id.substring(0, 8)}...`;
+        }
         const agentEvalData = await getAgent(evalRunData?.agentId);
         // get base agent from eval
-        const evalRunEvalData = await getEval(evalRunData?.evalId);
-        const baseAgent = await getAgent(evalRunEvalData?.baseAgentId);
+        const evalRunEvalData = await getEval(evalRunData?.evalId || "");
+        const baseAgent = await getAgent(evalRunEvalData?.baseAgentId || "");
         return `${baseAgent?.name} vs ${agentEvalData?.name}`;
 
       default:
@@ -94,10 +98,9 @@ export const generateEnhancedBreadcrumbs = async (
   for (let i = 0; i < segments.length; i++) {
     const segment = segments[i];
     const prevSegment = i > 0 ? segments[i - 1] : "";
-    const nextSegment = i < segments.length - 1 ? segments[i + 1] : "";
 
     // Skip single letter segments that are just route markers
-    if (shouldDropSegment(segment)) {
+    if (shouldDropSegment(segment || "")) {
       continue;
     }
 
@@ -108,10 +111,10 @@ export const generateEnhancedBreadcrumbs = async (
     // Check if this is an ID that needs resolution
     // IDs are typically UUIDs or hex strings with dashes, not regular words
     const isLikelyId =
-      /^[a-f0-9-]{8,}/.test(segment) ||
-      (segment.length > 15 &&
-        /^[a-zA-Z0-9-]+$/.test(segment) &&
-        segment.includes("-"));
+      /^[a-f0-9-]{8,}/.test(segment || "") ||
+      (segment?.length && segment?.length > 15 &&
+        /^[a-zA-Z0-9-]+$/.test(segment || "") &&
+        segment?.includes("-"));
 
     if (isLikelyId) {
       // Determine context based on route structure
@@ -138,7 +141,7 @@ export const generateEnhancedBreadcrumbs = async (
       }
 
       if (context) {
-        title = await fetchNameForId(segment, context);
+        title = await fetchNameForId(segment || "", context);
       }
     } else {
       // Convert segment to readable title for non-IDs
@@ -217,12 +220,14 @@ export const generateEnhancedBreadcrumbs = async (
           break;
 
         default:
-          title = segment.charAt(0).toUpperCase() + segment.slice(1);
+          if (segment) {
+            title = segment.charAt(0).toUpperCase() + segment.slice(1);
+          }
       }
     }
 
     breadcrumbs.push({
-      title,
+      title: title || "",
       section: getSectionFromSegments(segments.slice(0, i + 1)),
     });
   }
@@ -354,7 +359,7 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
     const segment = segments[i];
 
     // Skip single letter segments
-    if (shouldDropSegment(segment)) {
+    if (shouldDropSegment(segment || "")) {
       continue;
     }
 
@@ -431,15 +436,15 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       default:
         // For IDs, try to make them more readable
         // Only truncate if it looks like an ID (contains dashes and is long)
-        if (segment.length > 15 && segment.includes("-")) {
+        if (segment && segment.length && segment.length > 15 && segment.includes("-")) {
           title = `${segment.substring(0, 8)}...`;
-        } else {
+        } else if (segment) {
           title = segment.charAt(0).toUpperCase() + segment.slice(1);
         }
     }
 
     breadcrumbs.push({
-      title,
+      title: title || "",
       section: getSectionFromSegments(segments.slice(0, i + 1)),
     });
   }

@@ -1,6 +1,6 @@
 describe('Agents End-to-End Tests', () => {
   // Handle uncaught exceptions to prevent test failures from application errors
-  Cypress.on('uncaught:exception', (err, runnable) => {
+  Cypress.on('uncaught:exception', (err) => {
     // Log the error for debugging
     console.log('Uncaught exception:', err.message);
     
@@ -100,7 +100,6 @@ describe('Agents End-to-End Tests', () => {
     // Use timestamp to ensure unique agent names
     const timestamp = Date.now();
     const uniqueAgentName = `Agent for Editing ${timestamp}`;
-    let createdAgentCard: any;
     
     beforeEach(() => {
       cy.loginAsAdmin();
@@ -381,7 +380,6 @@ describe('Agents End-to-End Tests', () => {
       
       // Check that no undefined text appears on the page
       cy.get('body').then(($body) => {
-        const bodyText = $body.text();
         // Only fail if "undefined" appears as actual text content, not in attributes or hidden elements
         const visibleText = $body.find(':visible').text();
         expect(visibleText).to.not.include('undefined');

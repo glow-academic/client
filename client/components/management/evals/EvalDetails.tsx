@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { EvalRun } from "@/types";
 import { getEvalRunsByEval } from "@/utils/queries/eval_runs/get-eval-runs-by-eval";
-import { getEval } from "@/utils/queries/evals/get-eval";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { useState } from "react";
@@ -45,15 +44,9 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
         agentName: string;
         rubricName: string;
     } | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [runningEvals, setRunningEvals] = useState<Set<string>>(new Set());
     const router = useRouter();
     const queryClient = useQueryClient();
-
-    const { data: evalData, isLoading: isLoadingEval } = useQuery({
-        queryKey: ["eval", evalId],
-        queryFn: () => getEval(evalId),
-    });
 
     const { data: runs, isLoading: isLoadingRuns } = useQuery({
         queryKey: ["evalRuns", evalId],
@@ -243,7 +236,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
         };
     };
 
-    if (isLoadingEval || isLoadingRuns) {
+    if (isLoadingRuns || isLoadingEvalChats || isLoadingGrades) {
         return (
             <div className="flex items-center justify-center p-8">
                 <div className="text-center space-y-2">
@@ -404,13 +397,12 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
-                            disabled={isDeleting}
                             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                            {isDeleting ? "Deleting..." : "Delete"}
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

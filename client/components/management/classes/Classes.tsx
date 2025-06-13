@@ -557,7 +557,8 @@ export default function ClassesGeneralPage() {
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||
-    isLoadingFeedbacks
+    isLoadingFeedbacks ||
+    isLoadingSimulations
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -686,7 +687,7 @@ export default function ClassesGeneralPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ personality, value, percent }) =>
+                  label={({ personality, percent }) =>
                     `${personality}: ${(percent * 100).toFixed(0)}%`
                   }
                   outerRadius={80}
@@ -917,7 +918,7 @@ export default function ClassesGeneralPage() {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ range, count, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ range, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"

@@ -115,7 +115,7 @@ export default function Agent({
       } else {
         const newAgent = await createAgent(formData);
         queryClient.invalidateQueries({ queryKey: ["agents"] });
-        queryClient.invalidateQueries({ queryKey: ["agent", newAgent.id] });
+        queryClient.invalidateQueries({ queryKey: ["agent", newAgent?.id] });
         toast.success("Agent created successfully!");
       }
 
@@ -129,10 +129,6 @@ export default function Agent({
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const handleCancel = () => {
-    router.push("/management/agents");
   };
 
   if (isEditMode && isLoading) {
@@ -277,7 +273,7 @@ export default function Agent({
               onValueChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,
-                  temperature: value[0],
+                  temperature: value[0] || 0,
                 }))
               }
               className="w-full"

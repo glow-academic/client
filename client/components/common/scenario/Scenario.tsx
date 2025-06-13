@@ -39,13 +39,11 @@ import { ScenarioSlider } from "./ScenarioSlider";
 // Types and API functions
 import { Document, Agent, Class, type Scenario } from "@/types";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
-import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
 
 interface ScenarioProps {
     scenarioId?: string;
@@ -82,9 +80,6 @@ export default function Scenario({
 
     // State management
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
-    const [scenarioToDelete, setScenarioToDelete] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [showDocumentModal, setShowDocumentModal] = useState(false);
     const [previewDocument] = useState<Document | null>(null);
     const [editingScenarioId, setEditingScenarioId] = useState<string | null>(null);
@@ -114,11 +109,6 @@ export default function Scenario({
     const { data: documents = [] } = useQuery({
         queryKey: ["documents"],
         queryFn: () => getAllDocuments(),
-    });
-
-    const { data: scenarios = [] } = useQuery({
-        queryKey: ["scenarios"],
-        queryFn: () => getAllScenarios(),
     });
 
     const { data: agents = [] } = useQuery({
@@ -218,7 +208,7 @@ export default function Scenario({
     // Event handlers
     const handleInputChange = (
         field: keyof ScenarioFormData,
-        value: string | number | boolean | string[] | null,
+        value: string | number | boolean | string[] | null | undefined,
     ) => {
         setFormData((prev) => ({ ...prev, [field]: value }));
         if (errors[field as keyof FormErrors]) {
@@ -284,10 +274,6 @@ export default function Scenario({
         setSeniorityExplicitlySet(false);
     };
 
-    const handleEditScenarioClick = (scenarioId: string) => {
-        setEditingScenarioId(scenarioId);
-    };
-
     const handleSubmit = async () => {
         if (!validateForm()) {
             toast.error("Please fill in all required fields");
@@ -334,33 +320,6 @@ export default function Scenario({
             setIsSubmitting(false);
         }
     };
-
-    const handleDeleteScenario = async () => {
-        if (!scenarioToDelete) return;
-
-        try {
-            setIsDeleting(true);
-            toast.loading("Deleting scenario...");
-
-            await deleteScenario(scenarioToDelete);
-
-            queryClient.invalidateQueries({ queryKey: ["scenarios"] });
-
-            toast.dismiss();
-            toast.success("Scenario deleted successfully");
-            setShowDeleteDialog(false);
-            setScenarioToDelete(null);
-        } catch (error) {
-            console.error("Error deleting scenario:", error);
-            toast.dismiss();
-            toast.error(
-                `Failed to delete scenario: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
     const handleGenerateScenario = async () => {
         // Allow generation with incomplete data - the AI can work with what's available
         setIsGeneratingScenario(true);
@@ -597,8 +556,8 @@ export default function Scenario({
                                 models={seniorityModels}
                                 types={["Scenarios"]}
                                 label="Seniority"
-                                placeholder="Select seniority level..."
-                                description="Choose the student seniority level for this scenario."
+                                placeholder="Select student seniority"
+                                description="Choose the academic level of the student"
                                 onSelect={handleSenioritySelect}
                                 selectedModel={seniorityExplicitlySet ? seniorityModels.find(model => model.id === formData.seniority) : undefined}
                             />
