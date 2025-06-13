@@ -96,7 +96,7 @@ bash run.sh --test
 ```bash
 cd client && yarn test          # Unit tests (vitest)
 cd server && make test          # Unit tests (pytest)  
-cd database && yarn test:cypress # E2E tests (cypress)
+cd database && yarn test        # Database E2E tests (cypress)
 ```
 
 ## Notes

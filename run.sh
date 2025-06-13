@@ -112,9 +112,9 @@ cd database
 
 if $CLEAN_DB; then
   log_info "Clean flag detected - will clean database"
-  bash run.sh --clean &
+  bash start.sh --clean &
 else
-  bash run.sh &
+  bash start.sh &
 fi
 
 DB_PID=$!
@@ -234,13 +234,13 @@ if $RUN_TESTS; then
   fi
   cd ..
   
-  # Cypress E2E tests
-  log_info "Running Cypress E2E tests..."
+  # Database E2E tests (Cypress)
+  log_info "Running database E2E tests..."
   cd database
-  if yarn test:cypress; then
-    log_success "Cypress tests passed"
+  if yarn test; then
+    log_success "Database E2E tests passed"
   else
-    log_warning "Cypress tests had issues"
+    log_warning "Database E2E tests had issues"
   fi
   cd ..
 fi

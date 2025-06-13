@@ -67,10 +67,11 @@ cd client && yarn test
 cd server && make test
 ```
 
-**End-to-End Tests** (Cypress):
+**Database E2E Tests** (Cypress):
 ```bash
-cd database && yarn test:cypress
+cd database && yarn test
 # Note: All services must be running first
+# Tests database operations end-to-end via API calls
 ```
 
 ## Database Migrations
@@ -124,6 +125,25 @@ cd server && make typecheck
 - **Schema Sync**: Client schema changes automatically generate and apply migrations
 - **Graceful Errors**: If migrations fail, the system continues with the current database state
 - **Fresh Start**: Migration files start fresh (old ones were cleaned up)
+
+## Docker Deployment
+
+**Development Environment:**
+```bash
+docker compose --profile dev up --build -d
+```
+
+**Production Environment:**
+```bash
+docker compose --profile prod up --build -d
+```
+
+**Individual Test Services:**
+```bash
+docker compose --profile test run --rm client-test      # Client unit tests
+docker compose --profile test run --rm server-test      # Server unit tests  
+docker compose --profile test run --rm database-test    # Database E2E tests
+```
 
 ## Folder Structure
 

@@ -5,13 +5,18 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "bash run.sh",
-    "start:clean": "bash run.sh --clean",
-    "test:cypress": "cd ../client && yarn test:cypress",
+    "start": "bash start.sh",
+    "start:clean": "bash start.sh --clean",
+    "test": "yarn test:cypress",
+    "test:cypress": "cypress run --headless",
+    "test:cypress:open": "cypress open",
     "migrate": "cd ../client && npx drizzle-kit migrate",
     "generate": "cd ../client && npx drizzle-kit generate",
     "studio": "cd ../client && npx drizzle-kit studio"
   },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "cypress": "^13.6.0",
+    "@types/node": "^20.0.0"
+  }
 }
