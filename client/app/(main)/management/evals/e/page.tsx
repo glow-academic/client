@@ -7,6 +7,6 @@
 
 import { redirect } from "next/navigation";
 
-export default function EvalDetailsPage() {
+export default function EvalDetailsPage({}) {
   return redirect("/management/evals/new");
 }

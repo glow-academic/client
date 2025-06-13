@@ -154,6 +154,10 @@ export default function Evals() {
     router.push(`/management/evals/e/${id}/edit`);
   };
 
+  const handlePreview = (id: string) => {
+    router.push(`/management/evals/e/${id}`);
+  };
+
   const handleRun = async (id: string) => {
     if (!classes) {
       toast.error("No classes found. Please contact an administrator.");
@@ -345,25 +349,36 @@ export default function Evals() {
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleRun(evaluation.id)}
-                      disabled={runningEvalId === evaluation.id}
-                      className="text-green-600 hover:text-green-700"
-                    >
-                      {runningEvalId === evaluation.id ? (
-                        <>
-                          <div className="animate-spin h-3 w-3 border-2 border-green-600 border-t-transparent rounded-full mr-1" />
-                          Starting...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4 mr-1" />
-                          Run
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRun(evaluation.id)}
+                        disabled={runningEvalId === evaluation.id}
+                        className="text-green-600 hover:text-green-700"
+                      >
+                        {runningEvalId === evaluation.id ? (
+                          <>
+                            <div className="animate-spin h-3 w-3 border-2 border-green-600 border-t-transparent rounded-full mr-1" />
+                            Starting...
+                          </>
+                        ) : (
+                          <>
+                            <Play className="h-4 w-4 mr-1" />
+                            Run
+                          </>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handlePreview(evaluation.id)}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Eye className="h-4 w-4 mr-1" />
+                        Preview
+                      </Button>
+                    </div>
                     <div className="flex gap-2">
                       <Button
                         variant="outline"
@@ -406,121 +421,6 @@ export default function Evals() {
         )}
       </div>
 
-      {/* Past Evaluation Runs */}
-      {evalRunsWithChats.length > 0 && (
-        <div>
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold">Recent Evaluation Runs</h2>
-            <p className="text-sm text-muted-foreground">
-              View past evaluation runs and their results
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {evalRunsWithChats.map((evalRun) => {
-              const evaluation = evals?.find(e => e.id === evalRun.evalId);
-              const completedChats = evalRun.chats.filter(chat => chat.completedAt);
-              const avgScore = evalRun.grades.length > 0 
-                ? Math.round(evalRun.grades.reduce((sum, grade) => sum + grade.score, 0) / evalRun.grades.length)
-                : 0;
-
-              return (
-                <Card 
-                  key={evalRun.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => router.push(`/management/evals/e/${evalRun.evalId}/r/${evalRun.id}`)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <CardTitle className="text-sm font-medium">
-                          {evaluation?.name || "Unknown Evaluation"}
-                        </CardTitle>
-                        <CardDescription className="text-xs">
-                          Run {evalRunsWithChats.indexOf(evalRun) + 1} • {formatDate(evalRun.createdAt)}
-                        </CardDescription>
-                      </div>
-                      {completedChats.length > 0 && (
-                        <Badge variant="outline" className="text-xs">
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Complete
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {/* Stats */}
-                      <div className="grid grid-cols-3 gap-2 text-center">
-                        <div>
-                          <div className="text-lg font-semibold">{evalRun.chats.length}</div>
-                          <div className="text-xs text-muted-foreground">Chats</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold">{completedChats.length}</div>
-                          <div className="text-xs text-muted-foreground">Completed</div>
-                        </div>
-                        <div>
-                          <div className="text-lg font-semibold">{avgScore}</div>
-                          <div className="text-xs text-muted-foreground">Avg Score</div>
-                        </div>
-                      </div>
-
-                      {/* Recent Chats */}
-                      {evalRun.chats.length > 0 && (
-                        <div className="space-y-2">
-                          <div className="text-xs font-medium text-muted-foreground">Recent Chats</div>
-                          <div className="space-y-1">
-                            {evalRun.chats.slice(0, 2).map((chat) => {
-                              const chatGrade = grades?.find(g => g.evalChatId === chat.id);
-                              return (
-                                <div 
-                                  key={chat.id}
-                                  className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs hover:bg-muted/50 transition-colors"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleViewChat(chat.id);
-                                  }}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className="flex items-center gap-1">
-                                      {chat.completedAt ? (
-                                        <CheckCircle className="h-3 w-3 text-green-500" />
-                                      ) : (
-                                        <Clock className="h-3 w-3 text-yellow-500" />
-                                      )}
-                                      <span className="truncate max-w-[120px]">
-                                        {chat.title || "Untitled Chat"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    {chatGrade && (
-                                      <Badge variant="outline" className="text-xs px-1 py-0">
-                                        {chatGrade.score}
-                                      </Badge>
-                                    )}
-                                    <Eye className="h-3 w-3" />
-                                  </div>
-                                </div>
-                              );
-                            })}
-                            {evalRun.chats.length > 2 && (
-                              <div className="text-xs text-muted-foreground text-center py-1">
-                                +{evalRun.chats.length - 2} more chats
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

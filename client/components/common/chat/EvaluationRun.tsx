@@ -128,7 +128,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     if (isRunningEval && evalRun?.id) {
       const pollStatus = async () => {
         try {
-          const response = await fetch(`/api/evals/run/${evalRun.id}/status`);
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run/${evalRun.id}/status`);
           if (response.ok) {
             const status = await response.json();
             setRunStatus(status);
@@ -445,7 +445,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       const formData = new FormData();
       formData.append('eval_run_id', evalRun.id);
 
-      const response = await fetch('/api/evals/run', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run`, {
         method: 'POST',
         body: formData,
       });
@@ -589,7 +589,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           <span className="text-sm font-medium" data-testid="timer">
                             {selectedDynamicRubric?.timeTaken !== undefined
                               ? formatTime(selectedDynamicRubric.timeTaken)
-                              : "No time data"}
+                              : formatTime(0)}
                           </span>
                         </div>
                       </TooltipTrigger>
@@ -842,7 +842,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
             )}
           </CardContent>
 
-          <CardFooter className="flex-shrink-0 p-4 border-t">
+          {isRunningEval && <CardFooter className="flex-shrink-0 p-4 border-t">
             <div className="w-full flex justify-between items-center">
               <div className="flex items-center gap-4">
                 {/* Run Evaluation Button */}
@@ -872,7 +872,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                 )}
               </div>
             </div>
-          </CardFooter>
+          </CardFooter>}
         </Card>
       </div>
 

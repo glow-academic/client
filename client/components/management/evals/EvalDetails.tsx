@@ -4,8 +4,8 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-
-import { Play, Trash2, Eye } from "lucide-react";
+"use client";
+import { Play, Trash2, Eye, CheckCircle, Clock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
+  CardContent,
 } from "@/components/ui/card";
 import {
   AlertDialog,
@@ -28,26 +29,24 @@ import {
 import { EvalRun } from "@/types";
 import { getEvalRunsByEval } from "@/utils/queries/eval_runs/get-eval-runs-by-eval";
 import { getEval } from "@/utils/queries/evals/get-eval";
-import { use, useState } from "react";
+import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getRubric } from "@/utils/queries/rubrics/get-rubric";
+import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
+import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
-export default function EvalDetails({
-    params,
-}: {
-    params: Promise<{ evalId: string }>;
-}) {
+export default function EvalDetails({ evalId }: { evalId: string }) {
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const [deleteItem, setDeleteItem] = useState<{
         id: string;
-        agentId: string;
-        rubricId: string;
+        agentName: string;
+        rubricName: string;
     } | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [runningEvals, setRunningEvals] = useState<Set<string>>(new Set());
-    const { evalId } = use(params);
     const router = useRouter();
     const queryClient = useQueryClient();
 
@@ -61,9 +60,36 @@ export default function EvalDetails({
         queryFn: () => getEvalRunsByEval(evalId),
     });
 
-    const {data: evalChats, isLoading: isLoadingEvalChats} = useQuery({
+    const { data: evalChats, isLoading: isLoadingEvalChats } = useQuery({
         queryKey: ["evalChats", runs?.map((run: EvalRun) => run.id)],
         queryFn: () => getEvalChatsByEvalRuns(runs!.map((run: EvalRun) => run.id)),
+        enabled: !!runs && runs.length > 0,
+    });
+
+    const { data: grades, isLoading: isLoadingGrades } = useQuery({
+        queryKey: ["evalGrades", evalChats?.map((chat: any) => chat.id)],
+        queryFn: () => getEvalChatGradesByEvalChats(evalChats!.map((chat: any) => chat.id)),
+        enabled: !!evalChats && evalChats.length > 0,
+    });
+
+    // Fetch agent and rubric data for each run
+    const { data: agents } = useQuery({
+        queryKey: ["agents", runs?.map((run: EvalRun) => run.agentId)],
+        queryFn: async () => {
+            if (!runs) return [];
+            const agentPromises = runs.map((run: EvalRun) => getAgent(run.agentId));
+            return Promise.all(agentPromises);
+        },
+        enabled: !!runs && runs.length > 0,
+    });
+
+    const { data: rubrics } = useQuery({
+        queryKey: ["rubrics", runs?.map((run: EvalRun) => run.rubricId)],
+        queryFn: async () => {
+            if (!runs) return [];
+            const rubricPromises = runs.map((run: EvalRun) => getRubric(run.rubricId));
+            return Promise.all(rubricPromises);
+        },
         enabled: !!runs && runs.length > 0,
     });
 
@@ -113,6 +139,7 @@ export default function EvalDetails({
                                 // Invalidate queries to refresh data
                                 queryClient.invalidateQueries({ queryKey: ["evalChats"] });
                                 queryClient.invalidateQueries({ queryKey: ["evalRuns"] });
+                                queryClient.invalidateQueries({ queryKey: ["evalGrades"] });
                                 break;
                             }
                             
@@ -153,11 +180,11 @@ export default function EvalDetails({
     };
 
     const handleView = (runId: string) => {
-        router.push(`/management/evals/run/${runId}`);
+        router.push(`/management/evals/e/${evalId}/r/${runId}`);
     };
 
-    const handleDeleteClick = (id: string, agentId: string, rubricId: string) => {
-        setDeleteItem({ id, agentId, rubricId });
+    const handleDeleteClick = (id: string, agentName: string, rubricName: string) => {
+        setDeleteItem({ id, agentName, rubricName });
         setShowDeleteDialog(true);
     };
 
@@ -186,67 +213,185 @@ export default function EvalDetails({
         }
     };
 
+    const formatDate = (dateString: string) => {
+        return new Date(dateString).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+    };
+
+    const getRunData = (run: EvalRun) => {
+        const runChats = evalChats?.filter((chat: any) => chat.evalRunId === run.id) || [];
+        const completedChats = runChats.filter((chat: any) => chat.completed);
+        const runGrades = grades?.filter((grade: any) => 
+            runChats.some((chat: any) => chat.id === grade.evalChatId)
+        ) || [];
+        const avgScore = runGrades.length > 0 
+            ? Math.round(runGrades.reduce((sum: number, grade: any) => sum + grade.score, 0) / runGrades.length)
+            : 0;
+
+        const agent = agents?.find((agent: any) => agent?.id === run.agentId);
+        const rubric = rubrics?.find((rubric: any) => rubric?.id === run.rubricId);
+
+        return {
+            runChats,
+            completedChats,
+            avgScore,
+            agent,
+            rubric
+        };
+    };
+
+    if (isLoadingEval || isLoadingRuns) {
+        return (
+            <div className="flex items-center justify-center p-8">
+                <div className="text-center space-y-2">
+                    <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full mx-auto"></div>
+                    <p className="text-sm text-muted-foreground">Loading evaluation runs...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
-            <div className="grid gap-4">
+
+            {/* Runs Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                 {runs?.map((run: EvalRun) => {
                     const status = getRunStatus(run);
                     const isRunning = runningEvals.has(run.id);
+                    const { runChats, completedChats, avgScore, agent, rubric } = getRunData(run);
                     
                     return (
                         <Card key={run.id} className="hover:shadow-md transition-shadow">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-start justify-between">
                                     <div className="space-y-1">
-                                        <CardTitle className="text-base">{run.agentId || 'Unnamed Agent'}</CardTitle>
-                                        <CardDescription>{run.rubricId || 'No rubric'}</CardDescription>
-                                        <p className="text-sm text-muted-foreground">
-                                            Created: {new Date(run.createdAt).toLocaleDateString()}
-                                        </p>
+                                        <CardTitle className="text-sm font-medium">
+                                            {agent?.name || 'Unknown Agent'}
+                                        </CardTitle>
+                                        <CardDescription className="text-xs">
+                                            {rubric?.name || 'No rubric'} • {formatDate(run.createdAt)}
+                                        </CardDescription>
                                     </div>
-                                    <div className="flex gap-2 items-center">
-                                        <Badge variant={getStatusVariant(status)}>
-                                            {status}
-                                        </Badge>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleView(run.id)}
-                                        >
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleRun(run.id)}
-                                            disabled={isRunning || status === "Completed"}
-                                        >
-                                            {isRunning ? (
-                                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                                            ) : (
-                                                <Play className="h-4 w-4" />
-                                            )}
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleDeleteClick(run.id, run.agentId || 'Unnamed Agent', run.rubricId || 'No rubric')}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                                    <Badge variant={getStatusVariant(status)} className="text-xs">
+                                        {status === "Completed" && <CheckCircle className="h-3 w-3 mr-1" />}
+                                        {status === "In Progress" && <Clock className="h-3 w-3 mr-1" />}
+                                        {status}
+                                    </Badge>
                                 </div>
                             </CardHeader>
+                            
+                            <CardContent className="pt-0 space-y-4">
+                                {/* Stats */}
+                                <div className="grid grid-cols-3 gap-2 text-center">
+                                    <div>
+                                        <div className="text-lg font-semibold">{runChats.length}</div>
+                                        <div className="text-xs text-muted-foreground">Chats</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-lg font-semibold">{completedChats.length}</div>
+                                        <div className="text-xs text-muted-foreground">Completed</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-lg font-semibold">{avgScore}</div>
+                                        <div className="text-xs text-muted-foreground">Avg Score</div>
+                                    </div>
+                                </div>
+
+                                {/* Recent Chats Preview */}
+                                {runChats.length > 0 && (
+                                    <div className="space-y-2">
+                                        <div className="text-xs font-medium text-muted-foreground">Recent Chats</div>
+                                        <div className="space-y-1">
+                                            {runChats.slice(0, 2).map((chat: any) => {
+                                                const chatGrade = grades?.find((g: any) => g.evalChatId === chat.id);
+                                                return (
+                                                    <div 
+                                                        key={chat.id}
+                                                        className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs hover:bg-muted/50 transition-colors cursor-pointer"
+                                                        onClick={() => handleView(run.id)}
+                                                    >
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="flex items-center gap-1">
+                                                                {chat.completed ? (
+                                                                    <CheckCircle className="h-3 w-3 text-green-500" />
+                                                                ) : (
+                                                                    <Clock className="h-3 w-3 text-yellow-500" />
+                                                                )}
+                                                                <span className="truncate max-w-[80px]">
+                                                                    Chat {runChats.indexOf(chat) + 1}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-2">
+                                                            {chatGrade && (
+                                                                <Badge variant="outline" className="text-xs px-1 py-0">
+                                                                    {chatGrade.score}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                            {runChats.length > 2 && (
+                                                <div className="text-xs text-muted-foreground text-center py-1">
+                                                    +{runChats.length - 2} more chats
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Action Buttons */}
+                                <div className="flex gap-2 pt-2">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleView(run.id)}
+                                        className="flex-1"
+                                    >
+                                        <Eye className="h-4 w-4 mr-1" />
+                                        View
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleRun(run.id)}
+                                        disabled={isRunning || status === "Completed"}
+                                        className="flex-1"
+                                    >
+                                        {isRunning ? (
+                                            <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
+                                        ) : (
+                                            <Play className="h-4 w-4 mr-1" />
+                                        )}
+                                        {isRunning ? "Running" : "Run"}
+                                    </Button>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDeleteClick(run.id, agent?.name || 'Unknown Agent', rubric?.name || 'No rubric')}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </CardContent>
                         </Card>
                     );
                 })}
-
-                {runs?.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                        No runs found. Create your first run to get started.
-                    </div>
-                )}
             </div>
+
+            {runs?.length === 0 && (
+                <div className="text-center py-12">
+                    <div className="text-muted-foreground space-y-2">
+                        <p className="text-lg">No evaluation runs found</p>
+                        <p className="text-sm">Create your first run to get started.</p>
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
@@ -254,7 +399,7 @@ export default function EvalDetails({
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This will permanently delete the run "{deleteItem?.agentId} - {deleteItem?.rubricId} - {deleteItem?.id}". This
+                            This will permanently delete the run "{deleteItem?.agentName} - {deleteItem?.rubricName}". This
                             action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
