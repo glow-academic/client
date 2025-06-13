@@ -170,15 +170,16 @@ function extractTableInfo() {
     const tables = [];
 
     // Extract tables from snapshot
-    Object.entries(snapshot.tables || {}).forEach(([_, tableData]) => {
+    Object.entries(snapshot.tables || {}).forEach(([, tableData]) => {
       const tableName = tableData.name;
       const exportName = getExportNameFromSchema(tableName);
 
       // Parse columns
       const fields = Object.entries(tableData.columns || {}).map(
-        ([_, columnData]) => ({
+        ([, columnData]) => ({
           name: columnData.name,
           type: mapDrizzleType(columnData.type),
+          dbType: columnData.type,
           isRequired: columnData.notNull,
           isPrimaryKey: columnData.primaryKey,
           hasDefault: columnData.default !== undefined,
@@ -191,16 +192,34 @@ function extractTableInfo() {
 
       // Parse foreign keys
       const foreignKeys = Object.entries(tableData.foreignKeys || {}).map(
-        ([_, fkData]) => ({
+        ([, fkData]) => ({
           columnName: fkData.columnsFrom[0], // Taking first column for simplicity
           foreignTable: fkData.tableTo,
           name: fkData.name,
         })
       );
 
-      // Find primary key
-      const primaryKeyField = fields.find((f) => f.isPrimaryKey);
-      const primaryKey = primaryKeyField ? primaryKeyField.name : "id";
+      // Find primary key(s) and determine type
+      const primaryKeyFields = fields.filter((f) => f.isPrimaryKey);
+      let primaryKey = null;
+      let primaryKeyType = "string";
+      let isCompositePrimaryKey = false;
+
+      if (primaryKeyFields.length === 0) {
+        // No explicit primary key found, assume 'id'
+        primaryKey = "id";
+        primaryKeyType = "string";
+      } else if (primaryKeyFields.length === 1) {
+        // Single primary key
+        const pkField = primaryKeyFields[0];
+        primaryKey = pkField.name;
+        primaryKeyType = getPrimaryKeyType(pkField.dbType);
+      } else {
+        // Composite primary key
+        isCompositePrimaryKey = true;
+        primaryKey = primaryKeyFields.map((f) => f.name);
+        primaryKeyType = "composite";
+      }
 
       tables.push({
         exportName,
@@ -209,14 +228,24 @@ function extractTableInfo() {
         fields,
         foreignKeys,
         primaryKey,
+        primaryKeyType,
+        isCompositePrimaryKey,
       });
     });
 
     return tables;
-  } catch {
-    console.error("❌ Error parsing snapshot");
+  } catch (error) {
+    console.error("❌ Error parsing snapshot:", error);
     process.exit(1);
   }
+}
+
+/**
+ * Determine the TypeScript type for a primary key based on database type
+ */
+function getPrimaryKeyType(dbType) {
+  const integerTypes = ["integer", "serial", "bigserial", "smallint", "bigint"];
+  return integerTypes.includes(dbType) ? "number" : "string";
 }
 
 /**
@@ -257,6 +286,8 @@ function mapDrizzleType(dbType) {
     varchar: "string",
     char: "string",
     integer: "number",
+    serial: "number",
+    bigserial: "number",
     bigint: "number",
     smallint: "number",
     numeric: "number",
@@ -345,8 +376,15 @@ function generateQueries(tables) {
   let updated = 0;
 
   tables.forEach((table) => {
-    const { exportName, tableName, singularName, foreignKeys, primaryKey } =
-      table;
+    const {
+      exportName,
+      tableName,
+      singularName,
+      foreignKeys,
+      primaryKey,
+      primaryKeyType,
+      isCompositePrimaryKey,
+    } = table;
 
     // Create table-specific directory
     const tableDir = path.join(QUERIES_DIR, tableName);
@@ -364,20 +402,27 @@ function generateQueries(tables) {
     if (getAllResult.created) created++;
     else updated++;
 
-    // 2. Get single item by ID
-    const getByIdQuery = generateGetByIdQuery(
-      exportName,
-      tableName,
-      singularName,
-      primaryKey
-    );
-    const getByIdResult = writeQueryFile(
-      tableName,
-      `get-${toKebabCase(singularName)}.ts`,
-      getByIdQuery
-    );
-    if (getByIdResult.created) created++;
-    else updated++;
+    // 2. Get single item by ID (skip for composite primary keys)
+    if (!isCompositePrimaryKey) {
+      const getByIdQuery = generateGetByIdQuery(
+        exportName,
+        tableName,
+        singularName,
+        primaryKey,
+        primaryKeyType
+      );
+      const getByIdResult = writeQueryFile(
+        tableName,
+        `get-${toKebabCase(singularName)}.ts`,
+        getByIdQuery
+      );
+      if (getByIdResult.created) created++;
+      else updated++;
+    } else {
+      console.log(
+        `⏭️  Skipping get-by-id for ${tableName} (composite primary key)`
+      );
+    }
 
     // 3. Get items by foreign key relationships (singular)
     foreignKeys.forEach((fk) => {
@@ -444,7 +489,15 @@ function generateMutations(tables) {
   let updated = 0;
 
   tables.forEach((table) => {
-    const { exportName, tableName, singularName, fields, primaryKey } = table;
+    const {
+      exportName,
+      tableName,
+      singularName,
+      fields,
+      primaryKey,
+      primaryKeyType,
+      isCompositePrimaryKey,
+    } = table;
 
     // Create table-specific directory
     const tableDir = path.join(MUTATIONS_DIR, tableName);
@@ -482,67 +535,87 @@ function generateMutations(tables) {
     if (createMultipleResult.created) created++;
     else updated++;
 
-    // 3. Update single
-    const updateMutation = generateUpdateMutation(
-      exportName,
-      tableName,
-      singularName,
-      fields,
-      primaryKey
-    );
-    const updateResult = writeMutationFile(
-      tableName,
-      `update-${toKebabCase(singularName)}.ts`,
-      updateMutation
-    );
-    if (updateResult.created) created++;
-    else updated++;
+    // 3. Update single (skip for composite primary keys)
+    if (!isCompositePrimaryKey) {
+      const updateMutation = generateUpdateMutation(
+        exportName,
+        tableName,
+        singularName,
+        fields,
+        primaryKey,
+        primaryKeyType
+      );
+      const updateResult = writeMutationFile(
+        tableName,
+        `update-${toKebabCase(singularName)}.ts`,
+        updateMutation
+      );
+      if (updateResult.created) created++;
+      else updated++;
+    } else {
+      console.log(
+        `⏭️  Skipping update mutations for ${tableName} (composite primary key)`
+      );
+    }
 
-    // 4. Update multiple
-    const updateMultipleMutation = generateUpdateMultipleMutation(
-      exportName,
-      tableName,
-      singularName,
-      fields,
-      primaryKey
-    );
-    const updateMultipleResult = writeMutationFile(
-      tableName,
-      `update-${toKebabCase(tableName)}.ts`,
-      updateMultipleMutation
-    );
-    if (updateMultipleResult.created) created++;
-    else updated++;
+    // 4. Update multiple (skip for composite primary keys)
+    if (!isCompositePrimaryKey) {
+      const updateMultipleMutation = generateUpdateMultipleMutation(
+        exportName,
+        tableName,
+        singularName,
+        fields,
+        primaryKey,
+        primaryKeyType
+      );
+      const updateMultipleResult = writeMutationFile(
+        tableName,
+        `update-${toKebabCase(tableName)}.ts`,
+        updateMultipleMutation
+      );
+      if (updateMultipleResult.created) created++;
+      else updated++;
+    }
 
-    // 5. Delete single
-    const deleteMutation = generateDeleteMutation(
-      exportName,
-      tableName,
-      singularName,
-      primaryKey
-    );
-    const deleteResult = writeMutationFile(
-      tableName,
-      `delete-${toKebabCase(singularName)}.ts`,
-      deleteMutation
-    );
-    if (deleteResult.created) created++;
-    else updated++;
+    // 5. Delete single (skip for composite primary keys)
+    if (!isCompositePrimaryKey) {
+      const deleteMutation = generateDeleteMutation(
+        exportName,
+        tableName,
+        singularName,
+        primaryKey,
+        primaryKeyType
+      );
+      const deleteResult = writeMutationFile(
+        tableName,
+        `delete-${toKebabCase(singularName)}.ts`,
+        deleteMutation
+      );
+      if (deleteResult.created) created++;
+      else updated++;
+    } else {
+      console.log(
+        `⏭️  Skipping delete mutations for ${tableName} (composite primary key)`
+      );
+    }
 
-    // 6. Delete multiple
-    const deleteMultipleMutation = generateDeleteMultipleMutation(
-      exportName,
-      tableName,
-      singularName,
-      primaryKey
-    );
-    const deleteMultipleResult = writeMutationFile(
-      tableName,
-      `delete-${toKebabCase(tableName)}.ts`,
-      deleteMultipleMutation
-    );
-    if (deleteMultipleResult.created) created++;
-    else updated++;
+    // 6. Delete multiple (skip for composite primary keys)
+    if (!isCompositePrimaryKey) {
+      const deleteMultipleMutation = generateDeleteMultipleMutation(
+        exportName,
+        tableName,
+        singularName,
+        primaryKey,
+        primaryKeyType
+      );
+      const deleteMultipleResult = writeMutationFile(
+        tableName,
+        `delete-${toKebabCase(tableName)}.ts`,
+        deleteMultipleMutation
+      );
+      if (deleteMultipleResult.created) created++;
+      else updated++;
+    }
   });
 
   console.log(
@@ -573,14 +646,20 @@ export async function getAll${capitalize(exportName)}() {
 /**
  * Generate get by ID query
  */
-function generateGetByIdQuery(exportName, tableName, singularName, primaryKey) {
+function generateGetByIdQuery(
+  exportName,
+  tableName,
+  singularName,
+  primaryKey,
+  primaryKeyType
+) {
   return `// utils/queries/${tableName}/get-${toKebabCase(singularName)}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function get${capitalize(singularName)}(${primaryKey}: string) {
+export async function get${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.select().from(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey}));
     return result[0] || null;
@@ -692,7 +771,8 @@ function generateUpdateMutation(
   tableName,
   singularName,
   fields,
-  primaryKey
+  primaryKey,
+  primaryKeyType
 ) {
   return `// utils/mutations/${tableName}/update-${toKebabCase(singularName)}.ts
 "use server";
@@ -700,7 +780,7 @@ import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function update${capitalize(singularName)}(${primaryKey}: string, data: Partial<typeof ${exportName}.$inferInsert>) {
+export async function update${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}, data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     const result = await db.update(${exportName}).set(data).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
@@ -720,7 +800,8 @@ function generateUpdateMultipleMutation(
   tableName,
   singularName,
   fields,
-  primaryKey
+  primaryKey,
+  primaryKeyType
 ) {
   return `// utils/mutations/${tableName}/update-${toKebabCase(tableName)}.ts
 "use server";
@@ -728,7 +809,7 @@ import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function update${capitalize(exportName)}(${primaryKey}s: string[], data: Partial<typeof ${exportName}.$inferInsert>) {
+export async function update${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[], data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     return await db.update(${exportName}).set(data).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
@@ -746,7 +827,8 @@ function generateDeleteMutation(
   exportName,
   tableName,
   singularName,
-  primaryKey
+  primaryKey,
+  primaryKeyType
 ) {
   return `// utils/mutations/${tableName}/delete-${toKebabCase(singularName)}.ts
 "use server";
@@ -754,7 +836,7 @@ import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function delete${capitalize(singularName)}(${primaryKey}: string) {
+export async function delete${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.delete(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
@@ -773,7 +855,8 @@ function generateDeleteMultipleMutation(
   exportName,
   tableName,
   singularName,
-  primaryKey
+  primaryKey,
+  primaryKeyType
 ) {
   return `// utils/mutations/${tableName}/delete-${toKebabCase(tableName)}.ts
 "use server";
@@ -781,7 +864,7 @@ import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function delete${capitalize(exportName)}(${primaryKey}s: string[]) {
+export async function delete${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[]) {
   try {
     return await db.delete(${exportName}).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {

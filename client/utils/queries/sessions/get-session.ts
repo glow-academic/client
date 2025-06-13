@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function getSession(id: string) {
+export async function getSession(id: number) {
   try {
     const result = await db.select().from(sessions).where(eq(sessions.id, id));
     return result[0] || null;

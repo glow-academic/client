@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { accounts } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function updateAccounts(ids: string[], data: Partial<typeof accounts.$inferInsert>) {
+export async function updateAccounts(ids: number[], data: Partial<typeof accounts.$inferInsert>) {
   try {
     return await db.update(accounts).set(data).where(inArray(accounts.id, ids)).returning();
   } catch (error) {

@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { appLogs } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function deleteAppLogs(ids: string[]) {
+export async function deleteAppLogs(ids: number[]) {
   try {
     return await db.delete(appLogs).where(inArray(appLogs.id, ids)).returning();
   } catch (error) {

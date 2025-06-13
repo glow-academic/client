@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { accounts } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function updateAccount(id: string, data: Partial<typeof accounts.$inferInsert>) {
+export async function updateAccount(id: number, data: Partial<typeof accounts.$inferInsert>) {
   try {
     const result = await db.update(accounts).set(data).where(eq(accounts.id, id)).returning();
     return result[0];

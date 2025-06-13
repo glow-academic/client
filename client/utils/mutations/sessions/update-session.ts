@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function updateSession(id: string, data: Partial<typeof sessions.$inferInsert>) {
+export async function updateSession(id: number, data: Partial<typeof sessions.$inferInsert>) {
   try {
     const result = await db.update(sessions).set(data).where(eq(sessions.id, id)).returning();
     return result[0];

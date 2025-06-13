@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { appLogs } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function getAppLog(id: string) {
+export async function getAppLog(id: number) {
   try {
     const result = await db.select().from(appLogs).where(eq(appLogs.id, id));
     return result[0] || null;

@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { appLogs } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function updateAppLogs(ids: string[], data: Partial<typeof appLogs.$inferInsert>) {
+export async function updateAppLogs(ids: number[], data: Partial<typeof appLogs.$inferInsert>) {
   try {
     return await db.update(appLogs).set(data).where(inArray(appLogs.id, ids)).returning();
   } catch (error) {

@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { appLogs } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 
-export async function deleteAppLog(id: string) {
+export async function deleteAppLog(id: number) {
   try {
     const result = await db.delete(appLogs).where(eq(appLogs.id, id)).returning();
     return result[0];

@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { users } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function deleteUsers(ids: string[]) {
+export async function deleteUsers(ids: number[]) {
   try {
     return await db.delete(users).where(inArray(users.id, ids)).returning();
   } catch (error) {

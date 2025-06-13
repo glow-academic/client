@@ -4,7 +4,7 @@ import { db } from "@/utils/drizzle/database";
 import { sessions } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
 
-export async function deleteSessions(ids: string[]) {
+export async function deleteSessions(ids: number[]) {
   try {
     return await db.delete(sessions).where(inArray(sessions.id, ids)).returning();
   } catch (error) {
