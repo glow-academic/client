@@ -791,8 +791,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
       if (viewport) {
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-        // Hide scroll button after scrolling to bottom
-        setTimeout(() => setShowScrollButton(false), 500);
+        // Hide scroll button after scrolling to bottom with a slight delay
+        setTimeout(() => setShowScrollButton(false), 300);
       }
     }
   };
@@ -837,11 +837,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   useEffect(() => {
     if (!inputPanelRef.current) return;
 
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setInputPanelHeight(entry.contentRect.height);
-      }
-    });
+          const resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const newHeight = entry.contentRect.height;
+          setInputPanelHeight(newHeight);
+        }
+      });
 
     resizeObserver.observe(inputPanelRef.current);
 
@@ -1231,18 +1232,27 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <div className="flex items-center gap-2">
                           {/* Documents Toggle */}
                           {classDocuments.length > 0 && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setShowDocuments(!showDocuments)}
-                              className="p-2"
-                            >
-                              {showDocuments ? (
-                                <PanelRightClose className="h-4 w-4" />
-                              ) : (
-                                <PanelRightOpen className="h-4 w-4" />
-                              )}
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setShowDocuments(!showDocuments)}
+                                    className="p-2"
+                                  >
+                                    {showDocuments ? (
+                                      <PanelRightClose className="h-4 w-4" />
+                                    ) : (
+                                      <PanelRightOpen className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{showDocuments ? 'Hide Documents' : 'Show Documents'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           
                           <TooltipProvider>
@@ -1363,27 +1373,29 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       </div>
                     </ScrollArea>
 
-                    {/* Scroll to bottom button */}
-                    {showScrollButton && (
-                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={scrollToBottom}
-                          className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
-                          data-testid="scroll-to-bottom-button"
-                        >
-                          <ArrowDown className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    )}
+                    {/* Scroll to bottom button with smooth fade transition */}
+                    <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
+                      showScrollButton 
+                        ? 'opacity-100 translate-y-0 pointer-events-auto' 
+                        : 'opacity-0 translate-y-2 pointer-events-none'
+                    }`}>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={scrollToBottom}
+                        className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+                        data-testid="scroll-to-bottom-button"
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </div>
               </ResizablePanel>
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
-                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center">
+                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1425,7 +1437,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '80px',
-                                height: `${Math.max(80, inputPanelHeight - 100)}px`
+                                height: `${Math.max(80, inputPanelHeight - 80)}px`,
+                                maxHeight: `${Math.max(80, inputPanelHeight - 80)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1476,9 +1489,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '40px',
-                                height: `${Math.max(40, inputPanelHeight - 60)}px`
+                                height: `${Math.max(40, inputPanelHeight - 40)}px`,
+                                maxHeight: `${Math.max(40, inputPanelHeight - 40)}px`
                               }}
-                              rows={1}
                             />
                             <div className="flex gap-2 shrink-0">
                               <Button
