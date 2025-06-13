@@ -799,6 +799,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   };
 
+  const [isTall, setIsTall] = useState(false);
+
+  useEffect(() => {
+    if (!inputPanelRef.current) return;
+    const ro = new ResizeObserver(([entry]) =>
+      setIsTall(entry.contentRect.height > 160)
+    );
+    ro.observe(inputPanelRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   const scrollToBottom = () => {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
@@ -846,7 +857,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [messages.length]);
 
-    // Track input panel height for dynamic layout
+  // Track input panel height for dynamic layout
   useEffect(() => {
     if (!inputPanelRef.current) return;
 
@@ -854,7 +865,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       for (const entry of entries) {
         const newHeight = entry.contentRect.height;
         setInputPanelHeight(newHeight);
-        
+
         // Calculate textarea height based on available space
         if (newHeight > 160) {
           // Vertical layout - more space for textarea
@@ -1011,24 +1022,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
-  // Helper function to get user initials from profile
-  const getUserInitials = (profile: any): string => {
-    if (!profile) return "U";
-    
-    const firstName = profile.firstName || "";
-    const lastName = profile.lastName || "";
-    
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    } else if (firstName) {
-      return firstName.charAt(0).toUpperCase();
-    } else if (lastName) {
-      return lastName.charAt(0).toUpperCase();
-    }
-    
-    return "U";
-  };
-
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -1133,21 +1126,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             </Tooltip>
                           </TooltipProvider>
                         )}
-                        
+
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
-                                  ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
+                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
+                                ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
+                                  ? "bg-green-100 dark:bg-green-900/30"
+                                  : "bg-red-100 dark:bg-red-900/30"
+                                : aggregatedResults
+                                  ? aggregatedResults.overallPassed
                                     ? "bg-green-100 dark:bg-green-900/30"
                                     : "bg-red-100 dark:bg-red-900/30"
-                                  : aggregatedResults
-                                    ? aggregatedResults.overallPassed
-                                      ? "bg-green-100 dark:bg-green-900/30"
-                                      : "bg-red-100 dark:bg-red-900/30"
-                                    : "bg-muted"
-                              }`}>
+                                  : "bg-muted"
+                                }`}>
                                 <Clock className="h-4 w-4" />
                                 <span className="text-sm font-medium" data-testid="timer">
                                   {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
@@ -1161,14 +1153,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
                               <TooltipContent>
                                 <p>
-                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
+                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"}
                                   ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
                                 </p>
                               </TooltipContent>
                             ) : aggregatedResults ? (
                               <TooltipContent>
                                 <p>
-                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
+                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"}
                                   ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
                                 </p>
                               </TooltipContent>
@@ -1314,8 +1306,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     {/* Document viewer with minimal padding */}
                     <div className="flex-1 min-h-0 p-2">
                       {selectedDocument && (
-                        <DocumentViewer 
-                          key={selectedDocument.id} 
+                        <DocumentViewer
+                          key={selectedDocument.id}
                           document={selectedDocument}
                         />
                       )}
@@ -1395,10 +1387,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${currentChat?.completed && currentDynamicRubric
-                                    ? currentDynamicRubric.passed
-                                      ? "bg-green-100 dark:bg-green-900/30"
-                                      : "bg-red-100 dark:bg-red-900/30"
-                                    : "bg-muted"
+                                  ? currentDynamicRubric.passed
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-red-100 dark:bg-red-900/30"
+                                  : "bg-muted"
                                   }`}>
                                   <Clock className="h-4 w-4" />
                                   <span className="text-sm font-medium" data-testid="timer">
@@ -1509,8 +1501,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                     {/* Scroll to bottom button with smooth fade transition */}
                     <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${showScrollButton
-                        ? 'opacity-100 translate-y-0 pointer-events-auto'
-                        : 'opacity-0 translate-y-2 pointer-events-none'
+                      ? 'opacity-100 translate-y-0 pointer-events-auto'
+                      : 'opacity-0 translate-y-2 pointer-events-none'
                       }`}>
                       <Button
                         variant="default"
@@ -1528,146 +1520,52 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
-                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0">
-                  {currentChat?.completed ? (
-                    <div className="w-full text-center py-4">
-                      <p className="text-muted-foreground mb-2">
-                        This chat has been completed.
-                      </p>
-                      {currentDynamicRubric && (
-                        <div className="text-sm">
-                          <Badge
-                            variant={
-                              currentDynamicRubric.passed ? "default" : "destructive"
-                            }
-                          >
-                            Score: {currentDynamicRubric.score}/
-                            {currentDynamicRubric.totalPossiblePoints} -{" "}
-                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
-                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
-                        {/* Dynamic layout based on panel height - threshold increased to 160px for better UX */}
-                        {inputPanelHeight > 160 ? (
-                          /* Vertical layout for larger panels with expanded textarea */
-                          <div className="flex flex-col gap-3 flex-1">
-                            <Textarea
-                              ref={textareaRef}
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              placeholder="Type your message..."
-                              disabled={simulation?.timeLimit ? !isActive : false}
-                              className="flex-1 resize-none text-md"
-                              data-testid="message-input"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSendMessage(e as any);
-                                }
-                              }}
-                              style={{
-                                height: `${textareaHeight}px`,
-                                minHeight: `${textareaHeight}px`,
-                                maxHeight: `${textareaHeight}px`
-                              }}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                type="submit"
-                                disabled={
-                                  !newMessage.trim() ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                data-testid="send-button"
-                                className="min-h-[40px] h-[40px] px-4"
-                              >
-                                <Send className="h-4 w-4 mr-2" />
-                                Send
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleEndChat}
-                                disabled={
-                                  endChatLoading ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-                              >
-                                {endChatLoading
-                                  ? "Ending..."
-                                  : isSingleChatAttempt
-                                    ? "End Session"
-                                    : "End Chat"}
-                              </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          /* Horizontal layout for smaller panels */
-                          <div className="flex gap-2 flex-1 min-h-[40px]">
-                            <Textarea
-                              ref={textareaRef}
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              placeholder="Type your message..."
-                              disabled={simulation?.timeLimit ? !isActive : false}
-                              className="flex-1 resize-none text-md"
-                              data-testid="message-input"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSendMessage(e as any);
-                                }
-                              }}
-                              style={{
-                                height: `${textareaHeight}px`,
-                                minHeight: `${textareaHeight}px`,
-                                maxHeight: `${textareaHeight}px`
-                              }}
-                            />
-                            <div className="flex gap-2 shrink-0">
-                              <Button
-                                type="submit"
-                                disabled={
-                                  !newMessage.trim() ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                data-testid="send-button"
-                                className="min-h-[40px] h-[40px] px-3"
-                              >
-                                <Send className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleEndChat}
-                                disabled={
-                                  endChatLoading ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
-                              >
-                                {endChatLoading
-                                  ? "Ending..."
-                                  : isSingleChatAttempt
-                                    ? "End Session"
-                                    : "End Chat"}
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </form>
-                      {simulation?.timeLimit && !isActive && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          Time's up! The session has ended.
-                        </p>
-                      )}
-                    </div>
-                  )}
+                <CardFooter
+                  ref={inputPanelRef}
+                  className="h-full p-4 border-t grid gap-2"
+                  /* When the footer is short we want a single row;
+                     when it's tall we want textarea + buttons */
+                  style={{
+                    gridTemplateRows: isTall ? "1fr auto" : "auto",
+                  }}
+                >
+                  {/* Row 1 – Textarea grows/shrinks automatically */}
+                  <Textarea
+                    ref={textareaRef}
+                    value={newMessage}
+                    onChange={e => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    className="w-full h-full resize-none overflow-y-auto text-md"
+                    disabled={simulation?.timeLimit ? !isActive : false}
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage(e as any);
+                      }
+                    }}
+                  />
+
+                  {/* Row 2 – Buttons stick to the bottom/right */}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="submit"
+                      disabled={!newMessage.trim() || (simulation?.timeLimit ? !isActive : false)}
+                      data-testid="send-button"
+                      className="min-h-[40px] h-[40px] px-3"
+                    >
+                      <Send className="h-4 w-4 mr-1" /> Send
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleEndChat}
+                      disabled={endChatLoading || (simulation?.timeLimit ? !isActive : false)}
+                      className="min-h-[40px] h-[40px] px-3 text-sm whitespace-nowrap"
+                    >
+                      {endChatLoading ? "Ending…" : isSingleChatAttempt ? "End Session" : "End Chat"}
+                    </Button>
+                  </div>
                 </CardFooter>
               </ResizablePanel>
             </ResizablePanelGroup>
