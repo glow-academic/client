@@ -10,6 +10,11 @@ const __dirname = path.dirname(__filename);
 
 // Path configurations
 const SCHEMA_PATH = path.join(__dirname, "../drizzle/schema.ts");
+const CLIENT_MIGRATIONS_PATH = path.join(__dirname, "../drizzle");
+const DATABASE_MIGRATIONS_PATH = path.join(
+  __dirname,
+  "../../database/migrations"
+);
 
 /**
  * Clean unused imports from schema file
@@ -93,9 +98,120 @@ function cleanSchema() {
   }
 }
 
+/**
+ * Copy migration files and schema files from client to database directory
+ */
+function copyFilesToDatabase() {
+  console.log("📋 Copying files to database directory...");
+
+  try {
+    // Check if client drizzle directory exists
+    if (!fs.existsSync(CLIENT_MIGRATIONS_PATH)) {
+      console.log("ℹ️  No client drizzle directory found, skipping copy");
+      return;
+    }
+
+    // Create database migrations directory if it doesn't exist
+    if (!fs.existsSync(DATABASE_MIGRATIONS_PATH)) {
+      fs.mkdirSync(DATABASE_MIGRATIONS_PATH, { recursive: true });
+      console.log("📁 Created database migrations directory");
+    }
+
+    // Get all files from client drizzle directory
+    const files = fs.readdirSync(CLIENT_MIGRATIONS_PATH);
+
+    // Filter for files we want to copy: SQL files, schema.ts, and relations.ts
+    const filesToCopy = files.filter(
+      (file) =>
+        file.endsWith(".sql") || file === "schema.ts" || file === "relations.ts"
+    );
+
+    if (filesToCopy.length === 0) {
+      console.log("ℹ️  No files found to copy");
+      return;
+    }
+
+    let copiedCount = 0;
+    let skippedCount = 0;
+
+    for (const file of filesToCopy) {
+      const sourcePath = path.join(CLIENT_MIGRATIONS_PATH, file);
+      const destPath = path.join(DATABASE_MIGRATIONS_PATH, file);
+
+      // Check if file already exists in destination
+      if (fs.existsSync(destPath)) {
+        // Compare file contents to see if they're different
+        const sourceContent = fs.readFileSync(sourcePath, "utf8");
+        const destContent = fs.readFileSync(destPath, "utf8");
+
+        if (sourceContent === destContent) {
+          console.log(`⏭️  Skipping ${file} (already exists and identical)`);
+          skippedCount++;
+          continue;
+        } else {
+          console.log(`🔄 Updating ${file} (content differs)`);
+        }
+      } else {
+        console.log(`📄 Copying ${file}`);
+      }
+
+      // Copy the file
+      fs.copyFileSync(sourcePath, destPath);
+      copiedCount++;
+    }
+
+    if (copiedCount > 0) {
+      console.log(`✅ Successfully copied/updated ${copiedCount} file(s)`);
+    }
+    if (skippedCount > 0) {
+      console.log(`ℹ️  Skipped ${skippedCount} identical file(s)`);
+    }
+
+    // Also copy the meta directory if it exists
+    const clientMetaPath = path.join(CLIENT_MIGRATIONS_PATH, "meta");
+    const databaseMetaPath = path.join(DATABASE_MIGRATIONS_PATH, "meta");
+
+    if (fs.existsSync(clientMetaPath)) {
+      if (!fs.existsSync(databaseMetaPath)) {
+        fs.mkdirSync(databaseMetaPath, { recursive: true });
+      }
+
+      const metaFiles = fs.readdirSync(clientMetaPath);
+      let metaCopiedCount = 0;
+
+      for (const metaFile of metaFiles) {
+        const sourceMetaPath = path.join(clientMetaPath, metaFile);
+        const destMetaPath = path.join(databaseMetaPath, metaFile);
+
+        // Only copy if file doesn't exist or is different
+        if (!fs.existsSync(destMetaPath)) {
+          fs.copyFileSync(sourceMetaPath, destMetaPath);
+          metaCopiedCount++;
+        } else {
+          const sourceContent = fs.readFileSync(sourceMetaPath, "utf8");
+          const destContent = fs.readFileSync(destMetaPath, "utf8");
+
+          if (sourceContent !== destContent) {
+            fs.copyFileSync(sourceMetaPath, destMetaPath);
+            metaCopiedCount++;
+          }
+        }
+      }
+
+      if (metaCopiedCount > 0) {
+        console.log(`📁 Copied/updated ${metaCopiedCount} meta file(s)`);
+      }
+    }
+  } catch (error) {
+    console.error("❌ Error copying files:", error.message);
+    process.exit(1);
+  }
+}
+
 // Run if called directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   cleanSchema();
+  copyFilesToDatabase();
 }
 
-export { cleanSchema };
+export { cleanSchema, copyFilesToDatabase };

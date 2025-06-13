@@ -58,6 +58,7 @@ import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/g
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { EvalChat, EvalMessage, Document } from "@/types";
+import { logError } from "@/utils/logger";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {
@@ -132,7 +133,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
             }
           }
         } catch (error) {
-          console.error("Error polling status:", error);
+          toast.error("Error polling status: " + (error as Error).message);
+          logError("Error polling status:", error as Error);
         }
       };
 
@@ -221,7 +223,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     if (!documents) return [];
     const relevantDocs = documents.filter(() => true); 
     return relevantDocs;
-  }, [documents, evaluation]);
+  }, [documents]);
 
   // Auto-select first completed chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
@@ -458,8 +460,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       }
 
     } catch (error) {
-      console.error('Error running evaluation:', error);
       toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      logError("Error running evaluation:", error as Error);
       setIsRunningEval(false);
     }
   };

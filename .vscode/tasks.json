@@ -120,8 +120,8 @@
         "args": [
           ".",
           "--format=stylish",
-          "--ignore-pattern=.next"
-          
+          "--ignore-pattern=.next",
+          "--ignore-pattern=scripts"
         ],
         "options": {
           "cwd": "${workspaceFolder}/client"

@@ -12,6 +12,7 @@ import {
   getSectionRoute,
   isSectionAvailableForRole 
 } from "@/utils/navigation-utils";
+import { logInfo } from "@/utils/logger";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
@@ -214,7 +215,7 @@ export function RoleProvider({ children, ProfileRole }: RoleProviderProps) {
         guestMode: isClient ? localStorage.getItem("guestMode") : null,
       },
     }),
-    [ProfileRole, isClient, simulatedRole, isGuestMode],
+    [ProfileRole, isClient],
   );
 
   const value: RoleContextType = {
@@ -240,7 +241,7 @@ export const useRoleDebug = () => {
 
   React.useEffect(() => {
     if (process.env.NODE_ENV === "development") {
-      console.log("Role Debug:", {
+      logInfo("Role Debug:", {
         effectiveRole,
         simulatedRole,
         isGuestMode,

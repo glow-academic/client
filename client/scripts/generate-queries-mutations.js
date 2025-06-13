@@ -155,7 +155,7 @@ function extractTableInfo() {
     try {
       snapshotPath = getLatestSnapshotPath();
       console.log(`📄 Using snapshot: ${path.basename(snapshotPath)}`);
-    } catch (error) {
+    } catch {
       console.log("📄 No snapshot found, generating one...");
       generateSnapshot();
       snapshotPath = getLatestSnapshotPath();
@@ -170,13 +170,13 @@ function extractTableInfo() {
     const tables = [];
 
     // Extract tables from snapshot
-    Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
+    Object.entries(snapshot.tables || {}).forEach(([_, tableData]) => {
       const tableName = tableData.name;
       const exportName = getExportNameFromSchema(tableName);
 
       // Parse columns
       const fields = Object.entries(tableData.columns || {}).map(
-        ([columnKey, columnData]) => ({
+        ([_, columnData]) => ({
           name: columnData.name,
           type: mapDrizzleType(columnData.type),
           isRequired: columnData.notNull,
@@ -191,7 +191,7 @@ function extractTableInfo() {
 
       // Parse foreign keys
       const foreignKeys = Object.entries(tableData.foreignKeys || {}).map(
-        ([fkKey, fkData]) => ({
+        ([_, fkData]) => ({
           columnName: fkData.columnsFrom[0], // Taking first column for simplicity
           foreignTable: fkData.tableTo,
           name: fkData.name,
@@ -213,8 +213,8 @@ function extractTableInfo() {
     });
 
     return tables;
-  } catch (error) {
-    console.error("❌ Error parsing snapshot:", error.message);
+  } catch {
+    console.error("❌ Error parsing snapshot");
     process.exit(1);
   }
 }
@@ -239,7 +239,7 @@ function getExportNameFromSchema(tableName) {
 
     // Fallback: convert table name to camelCase
     return tableName.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
-  } catch (error) {
+  } catch {
     console.warn(
       `⚠️  Could not find export name for table ${tableName}, using fallback`
     );
