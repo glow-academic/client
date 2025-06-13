@@ -149,6 +149,9 @@ if $CONNECT_DB; then
   echo "   SELECT * FROM users;   - Query users table"
   echo "   \\q                     - Quit"
   echo ""
+  echo "⚠️  Important: Each SQL command must end with a semicolon (;)"
+  echo "⚠️  If you see 'mydb->' prompt, you forgot the semicolon - just type ';' and press Enter"
+  echo ""
   
   # Start interactive psql session
   psql "$USER_CONN"
@@ -158,5 +161,5 @@ elif [[ -f /.dockerenv ]]; then
   tail -f /dev/null
 else
   echo "💡 Database is ready for connections. Use 'psql \"$USER_CONN\"' to connect."
-  echo "💡 Or use 'yarn start --connect' for an interactive session."
+  echo "💡 Or use 'yarn connect' for an interactive session."
 fi
