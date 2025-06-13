@@ -156,14 +156,14 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
     return (
         <div className="space-y-4 w-full">
             <div className="overflow-auto max-h-[70vh]">
-                <Table className="min-w-[600px] text-sm">
+                <Table className="min-w-[600px] text-sm table-fixed">
                     <TableHeader className="sticky top-0 z-10">
                         <TableRow>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[120px] text-xs">
+                            <TableHead className="bg-primary text-primary-foreground font-semibold text-xs" style={{ width: '20%' }}>
                                 Criteria
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
-                                <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2">
+                                <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2" style={{ width: `${(100 - 20) / maxStandards}%` }}>
                                     {groupedStandards[0].standards[i].name}
                                 </TableHead>
                             ))}
@@ -172,8 +172,8 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                     <TableBody>
                         {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
                             <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
-                                <TableCell className="font-medium align-top p-2 text-xs w-[120px] max-w-[120px]">
-                                    <div className="break-words">{group.name}</div>
+                                <TableCell className="font-medium align-top p-2 text-xs" style={{ width: '20%' }}>
+                                    <div className="break-words whitespace-normal overflow-hidden">{group.name}</div>
                                 </TableCell>
                                 {Array.from({ length: maxStandards }, (_, standardIndex) => {
                                     const standard = groupStandards[standardIndex];

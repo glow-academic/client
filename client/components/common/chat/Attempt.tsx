@@ -72,7 +72,7 @@ import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
-import { Document, SimulationChat, SimulationMessage } from "@/types";
+import { Document, Scenario, SimulationChat, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
@@ -164,34 +164,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     enabled: !!attempt?.simulationId,
   });
 
-  // Fetch scenarios to derive classId
-  const { data: scenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  // Derive classId from scenarios
-  const derivedClassId = useMemo(() => {
-    if (!simulation?.scenarioIds || !scenarios) return null;
-
-    // Find the first scenario that has a classId
-    for (const scenarioId of simulation.scenarioIds) {
-      if (scenarioId === "RAY") continue; // Skip default RAY scenario
-      const scenario = scenarios.find((s: any) => s.id === scenarioId);
-      if (scenario?.classId) {
-        return scenario.classId;
-      }
-    }
-    return null;
-  }, [simulation?.scenarioIds, scenarios]);
-
-  // Fetch class data for starter prompts
-  const { data: classData } = useQuery({
-    queryKey: ["class", derivedClassId],
-    queryFn: () => getClass(derivedClassId!),
-    enabled: !!derivedClassId,
-  });
-
   const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attempt?.id],
     queryFn: () => getSimulationChatsByAttempt(attempt!.id),
@@ -259,6 +231,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     queryKey: ["interaction", currentChat?.scenarioId],
     queryFn: () => getScenario(currentChat!.scenarioId),
     enabled: !!currentChat?.scenarioId,
+  });
+
+  const { data: classData } = useQuery({
+    queryKey: ["class", scenario?.classId],
+    queryFn: () => getClass(scenario!.classId!),
+    enabled: !!scenario?.classId,
   });
 
   // Helper function to calculate actual time taken from database timestamps
@@ -407,16 +385,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Fetch documents for the attempt class
   const { data: documents = [] } = useQuery({
-    queryKey: ["documents", derivedClassId],
+    queryKey: ["documents", classData?.id],
     queryFn: () => getAllDocuments(),
-    enabled: !!derivedClassId,
+    enabled: !!classData?.id,
   });
 
   // Filter documents for the current attempt's class
   const classDocuments = useMemo(() => {
-    if (!derivedClassId || !documents) return [];
-    return documents.filter((doc: Document) => doc.classId === derivedClassId);
-  }, [documents, derivedClassId]);
+    if (!classData?.id || !documents) return [];
+    return documents.filter((doc: Document) => doc.classId === classData.id);
+  }, [documents, classData?.id]);
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
   const isSingleChatAttempt = simulation?.scenarioIds?.length === 1;
