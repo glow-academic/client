@@ -124,7 +124,7 @@ export default function Evals() {
       formData.append("class_id", classId);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/evals/start`,
+        `${process.env['NEXT_PUBLIC_API_URL']}/evals/start`,
         {
           method: "POST",
           body: formData,

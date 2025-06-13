@@ -698,7 +698,7 @@ export function useColumns({
     // If showAll is false, filter to show only current user's data
     data = data.filter(
       (attempt: unknown) =>
-        (attempt as Record<string, unknown>).profileId === profile?.id,
+        (attempt as Record<string, unknown>)['profileId'] === profile?.id,
     );
   } else if (!user) {
     // If there's no user, show empty data

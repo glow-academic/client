@@ -323,7 +323,7 @@ export default function Reports() {
         includeFeedback: options.includeFeedback.toString(),
       });
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/profiles/${profileId}?${queryParams}`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/profiles/${profileId}?${queryParams}`, {
         method: 'GET',
       });
 

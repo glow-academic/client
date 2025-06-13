@@ -80,7 +80,7 @@ export default function NewClass() {
       const toastId = toast.loading(`Uploading ${file.name}...`);
 
       // Get the API URL from environment
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || "";
 
       // Upload the ZIP file using tus
       await new Promise<void>((resolve, reject) => {

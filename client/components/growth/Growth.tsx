@@ -187,12 +187,12 @@ export default function Growth() {
       },
       {
         metric: "Adaptability",
-        value: skillScores.adaptability || skillScores.flexibility || 50,
+        value: skillScores['adaptability'] || skillScores['flexibility'] || 50,
         fullMark: 100,
       },
       {
         metric: "Listening Skills",
-        value: skillScores.listening || skillScores.communication || 50,
+        value: skillScores['listening'] || skillScores['communication'] || 50,
         fullMark: 100,
       },
       {

@@ -349,7 +349,7 @@ export default function Scenario({
                 formDataToSend.append('intensity', formData.intensity.toString());
             }
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/new`, {
+            const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/scenarios/new`, {
                 method: 'POST',
                 body: formDataToSend,
             });
@@ -398,7 +398,7 @@ export default function Scenario({
             formDataToSend.append('description', formData.description || "");
             formDataToSend.append('query', query);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/scenarios/test`, {
+            const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/scenarios/test`, {
                 method: 'POST',
                 body: formDataToSend,
             });

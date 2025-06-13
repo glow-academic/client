@@ -98,7 +98,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
             const formData = new FormData();
             formData.append('eval_run_id', runId);
 
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run`, {
+            const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run`, {
                 method: 'POST',
                 body: formData,
             });

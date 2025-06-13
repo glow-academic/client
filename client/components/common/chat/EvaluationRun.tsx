@@ -120,7 +120,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     if (isRunningEval && evalRun?.id) {
       const pollStatus = async () => {
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run/${evalRun.id}/status`);
+          const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run/${evalRun.id}/status`);
           if (response.ok) {
             const status = await response.json();
             setRunStatus(status);
@@ -397,7 +397,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       const formData = new FormData();
       formData.append('eval_run_id', evalRun.id);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run`, {
+      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run`, {
         method: 'POST',
         body: formData,
       });

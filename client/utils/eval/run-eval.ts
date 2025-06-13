@@ -28,7 +28,7 @@ export async function runEval(evalRunId: string): Promise<Response> {
   const formData = new FormData();
   formData.append('eval_run_id', evalRunId);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run`, {
+  const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run`, {
     method: 'POST',
     body: formData,
   });
@@ -41,7 +41,7 @@ export async function runEval(evalRunId: string): Promise<Response> {
 }
 
 export async function getEvalRunStatus(evalRunId: string): Promise<EvalRunStatus> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/run/${evalRunId}/status`);
+  const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run/${evalRunId}/status`);
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -54,7 +54,7 @@ export async function startEval(evalId: string): Promise<EvalRunResponse> {
   const formData = new FormData();
   formData.append('eval_id', evalId);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/evals/start`, {
+  const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/start`, {
     method: 'POST',
     body: formData,
   });

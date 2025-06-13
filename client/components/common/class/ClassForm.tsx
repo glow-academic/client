@@ -111,7 +111,7 @@ export default function ClassForm({
 
       const toastId = toast.loading("Processing course information...");
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || "";
       const response = await fetch(
         `${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`,
         {
@@ -300,7 +300,7 @@ export default function ClassForm({
         }
 
         // Get the API URL from environment
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+        const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || "http://localhost:3000";
 
         const uploadPromises = fileArray.map((file, index) => {
           return new Promise<void>((resolve, reject) => {
@@ -470,7 +470,7 @@ export default function ClassForm({
       setIsDeletingDoc(true);
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${documentId}?force=true`,
+        `${process.env['NEXT_PUBLIC_API_URL']}/documents/id/${documentId}?force=true`,
         {
           method: "DELETE",
           headers: {

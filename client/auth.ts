@@ -6,9 +6,9 @@ import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 
-const clientId = process.env.AUTH_MICROSOFT_ENTRA_ID_ID || "";
-const clientSecret = process.env.AUTH_MICROSOFT_ENTRA_ID_SECRET || "";
-const secret = process.env.AUTH_SECRET || "";
+const clientId = process.env['AUTH_MICROSOFT_ENTRA_ID_ID'] || "";
+const clientSecret = process.env['AUTH_MICROSOFT_ENTRA_ID_SECRET'] || "";
+const secret = process.env['AUTH_SECRET'] || "";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [MicrosoftEntraID({

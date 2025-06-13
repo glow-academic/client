@@ -25,6 +25,12 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "useUnknownInCatchVariables": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "strictBindCallApply": true,
+    "strictPropertyInitialization": true,
+    "alwaysStrict": true,
+    "noPropertyAccessFromIndexSignature": true,
     "plugins": [
       {
         "name": "next"

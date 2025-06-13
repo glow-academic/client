@@ -654,7 +654,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       formData.append("message", userMsg.query);
 
       const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/simulations/message`,
+        `${process.env['NEXT_PUBLIC_API_URL']}/simulations/message`,
         {
           method: "POST",
           headers: { Accept: "text/event-stream" },
@@ -735,7 +735,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       formData.append("chat_id", currentChat.id);
       formData.append("attempt_id", attemptId);
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/simulations/continue`,
+        `${process.env['NEXT_PUBLIC_API_URL']}/simulations/continue`,
         {
           method: "POST",
           body: formData,

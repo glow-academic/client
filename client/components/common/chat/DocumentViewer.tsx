@@ -84,7 +84,7 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/documents/id/${docId}`,
+          `${process.env['NEXT_PUBLIC_API_URL']}/documents/id/${docId}`,
         );
         if (!res.ok) throw new Error("Failed to load document");
 

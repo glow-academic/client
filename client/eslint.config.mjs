@@ -20,7 +20,7 @@ const eslintConfig = [
       "@typescript-eslint/no-unused-vars": "off", // Turn off the base rule
       "unused-imports/no-unused-imports": "error",
       "unused-imports/no-unused-vars": [
-        "warn",
+        "error",
         {
           vars: "all",
           varsIgnorePattern: "^_",
@@ -29,8 +29,9 @@ const eslintConfig = [
         },
       ],
       "@typescript-eslint/no-explicit-any": "error",
-      "react-hooks/exhaustive-deps": "warn",
+      "react-hooks/exhaustive-deps": "error",
       "react/no-unescaped-entities": ["error", { forbid: [">", "}"] }],
+      "no-console": process.env.NODE_ENV === "production" ? "error" : "warn",
     },
   },
 ];

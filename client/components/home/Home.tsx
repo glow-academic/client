@@ -640,7 +640,7 @@ export default function Home() {
       }
 
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/simulations/start`,
+        `${process.env['NEXT_PUBLIC_API_URL']}/simulations/start`,
         {
           method: "POST",
           body: formData,
