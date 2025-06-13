@@ -121,11 +121,7 @@ export default function Agent({
 
       router.push("/management/agents");
     } catch (error) {
-      console.error(
-        `Error ${isEditMode ? "updating" : "creating"} agent:`,
-        error,
-      );
-      toast.error(`Failed to ${isEditMode ? "update" : "create"} agent`);
+      toast.error(`Failed to ${isEditMode ? "update" : "create"} agent: ${error}`);
     } finally {
       setIsSubmitting(false);
     }

@@ -52,6 +52,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { Profile, Scenario, Simulation, SimulationAttempt } from "@/types";
 
 type ClassDetailsProps = {
   classId: string;
@@ -100,8 +101,8 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
 
   // Get all attempts for all profiles
   const { data: allAttempts = [], isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["allAttempts", allProfiles?.map((profile: any) => profile.id)],
-    queryFn: () => getSimulationAttemptsByProfiles(allProfiles!.map((profile: any) => profile.id)),
+    queryKey: ["allAttempts", allProfiles?.map((profile: Profile) => profile.id)],
+    queryFn: () => getSimulationAttemptsByProfiles(allProfiles!.map((profile: Profile) => profile.id)),
     enabled: !!allProfiles && allProfiles.length > 0,
   });
 
@@ -110,16 +111,16 @@ export default function ClassDetails({ classId }: ClassDetailsProps) {
     if (!allAttempts || !scenarios || !simulations) return [];
     
     // Find scenarios for this class
-    const classScenarios = scenarios.filter((scenario: any) => scenario.classId === classId);
+    const classScenarios = scenarios.filter((scenario: Scenario) => scenario.classId === classId);
     
     // Find simulations that use these scenarios
-    const classSimulations = simulations.filter((simulation: any) => 
-      classScenarios.some((scenario: any) => simulation.scenarioIds?.includes(scenario.id))
+    const classSimulations = simulations.filter((simulation: Simulation) => 
+      classScenarios.some((scenario: Scenario) => simulation.scenarioIds?.includes(scenario.id))
     );
     
     // Filter attempts for these simulations
-    return allAttempts.filter((attempt: any) => 
-      classSimulations.some((simulation: any) => simulation.id === attempt.simulationId)
+    return allAttempts.filter((attempt: SimulationAttempt) => 
+      classSimulations.some((simulation: Simulation) => simulation.id === attempt.simulationId)
     );
   }, [allAttempts, scenarios, simulations, classId]);
 

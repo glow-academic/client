@@ -5,17 +5,14 @@
  * 06/07/2025
  */
 "use client";
-import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
 
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Award, AlertTriangle, Download, Search, Loader2, Clock, Target, Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -23,22 +20,35 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import {
+  AlertTriangle,
+  Award,
+  Clock,
+  Download,
+  Loader2,
+  Search,
+  Target,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 
 interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -49,14 +59,21 @@ interface ReportOptions {
   includeFeedback: boolean;
 }
 
-type SortOption = "score-desc" | "score-asc" | "name-asc" | "name-desc" | "sessions-desc";
+type SortOption =
+  | "score-desc"
+  | "score-asc"
+  | "name-asc"
+  | "name-desc"
+  | "sessions-desc";
 type FilterOption = "all" | "struggling" | "performing-well";
 
 export default function Reports() {
   const [sortBy, setSortBy] = useState<SortOption>("score-desc");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [downloadingReports, setDownloadingReports] = useState<Set<string>>(new Set());
+  const [downloadingReports, setDownloadingReports] = useState<Set<string>>(
+    new Set()
+  );
 
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -80,7 +97,7 @@ export default function Reports() {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -92,7 +109,8 @@ export default function Reports() {
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
     enabled: !!profiles && profiles.length > 0,
   });
 
@@ -114,7 +132,7 @@ export default function Reports() {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -135,131 +153,162 @@ export default function Reports() {
     const tas = profiles.filter((profile) => profile.role === "ta");
 
     // TA leaderboard based on actual grades
-    const taPerformance = tas
-      .map((ta) => {
-        const taAttempts =
-          attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
-        const taChats = chats.filter((chat) =>
-          taAttempts.some((attempt) => attempt.id === chat.attemptId),
-        );
-        const taGrades = grades.filter((grade) =>
-          taChats.some((chat) => chat.id === grade.simulationChatId),
-        );
+    const taPerformance = tas.map((ta) => {
+      const taAttempts =
+        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
+      const taChats = chats.filter((chat) =>
+        taAttempts.some((attempt) => attempt.id === chat.attemptId)
+      );
+      const taGrades = grades.filter((grade) =>
+        taChats.some((chat) => chat.id === grade.simulationChatId)
+      );
 
-        const avgScore =
-          taGrades.length > 0
-            ? Math.round(
-              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
+      const avgScore =
+        taGrades.length > 0
+          ? Math.round(
+              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
             )
-            : 0;
+          : 0;
 
-        const completedSessions = taChats.filter(
-          (chat) => chat.completed,
-        ).length;
-        const totalSessions = taChats.length;
+      const completedSessions = taChats.filter((chat) => chat.completed).length;
+      const totalSessions = taChats.length;
 
-        // Calculate skill breakdown for this TA using only simulation chat rubrics
-        const taFeedbacks = feedbacks.filter((f) =>
-          taGrades.some((g) => g.id === f.simulationChatGradeId),
+      // Calculate skill breakdown for this TA using only simulation chat rubrics
+      const taFeedbacks = feedbacks.filter((f) =>
+        taGrades.some((g) => g.id === f.simulationChatGradeId)
+      );
+
+      const validRubrics = rubrics?.filter((r) =>
+        simulations?.some((s) => s.rubricId === r.id)
+      );
+      const validGroupStandards = standardGroups?.filter((g) =>
+        validRubrics?.some((r) => r.id === g.rubricId)
+      );
+      const validStandards = standards?.filter((s) =>
+        validGroupStandards?.some((g) => g.id === s.standardGroupId)
+      );
+
+      const skillBreakdown = validGroupStandards.map((group) => {
+        const groupStandards = validStandards.filter(
+          (s) => s.standardGroupId === group.id
+        );
+        const groupFeedbacks = taFeedbacks.filter((f) =>
+          groupStandards.some((s) => s.id === f.standardId)
         );
 
-        const validRubrics = rubrics?.filter((r) => simulations?.some((s) => s.rubricId === r.id));
-        const validGroupStandards = standardGroups?.filter((g) => validRubrics?.some((r) => r.id === g.rubricId));
-        const validStandards = standards?.filter((s) => validGroupStandards?.some((g) => g.id === s.standardGroupId));
-
-        const skillBreakdown = validGroupStandards.map((group) => {
-          const groupStandards = validStandards.filter(
-            (s) => s.standardGroupId === group.id,
-          );
-          const groupFeedbacks = taFeedbacks.filter((f) =>
-            groupStandards.some((s) => s.id === f.standardId),
-          );
-
-          const avgSkillScore =
-            groupFeedbacks.length > 0
-              ? Math.round(
+        const avgSkillScore =
+          groupFeedbacks.length > 0
+            ? Math.round(
                 (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
                   groupFeedbacks.length /
-                  (groupStandards[0]?.points || 1)) * 100,
+                  (groupStandards[0]?.points || 1)) *
+                  100
               )
-              : 0;
-
-          return {
-            skill: group.shortName,
-            score: avgSkillScore,
-            feedbackCount: groupFeedbacks.length,
-          };
-        });
-
-        // Find weakest and strongest skills
-        const weakestSkill = skillBreakdown.reduce(
-          (min, skill) => (skill.score < min.score ? skill : min),
-          skillBreakdown[0] || { skill: "Unknown", score: 100, feedbackCount: 0 },
-        );
-
-        const strongestSkill = skillBreakdown.reduce(
-          (max, skill) => (skill.score > max.score ? skill : max),
-          skillBreakdown[0] || { skill: "Unknown", score: 0, feedbackCount: 0 },
-        );
-
-        // Calculate average time taken
-        const avgTimeMinutes = taGrades.length > 0
-          ? Math.round(taGrades.reduce((sum, g) => sum + g.timeTaken, 0) / taGrades.length / 60)
-          : 0;
-
-        // Calculate pass rate
-        const passRate = taGrades.length > 0
-          ? Math.round((taGrades.filter(g => g.passed).length / taGrades.length) * 100)
-          : 0;
-
-        // Determine if struggling (no sessions OR low performance)
-        const isStruggling = totalSessions === 0 || (avgScore < 70 && totalSessions > 0);
-
-        // Calculate trend (last 3 vs first 3 sessions)
-        const sortedGrades = taGrades.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-        let trend = "stable";
-        if (sortedGrades.length >= 3) {
-          const firstThree = sortedGrades.slice(0, 3);
-          const lastThree = sortedGrades.slice(-3);
-          const firstAvg = firstThree.reduce((sum, g) => sum + g.score, 0) / firstThree.length;
-          const lastAvg = lastThree.reduce((sum, g) => sum + g.score, 0) / lastThree.length;
-          
-          if (lastAvg > firstAvg + 5) trend = "improving";
-          else if (lastAvg < firstAvg - 5) trend = "declining";
-        }
+            : 0;
 
         return {
-          id: ta.id,
-          firstName: ta.firstName,
-          lastName: ta.lastName,
-          username: ta.alias,
-          avgScore,
-          completedSessions,
-          totalSessions,
-          completionRate:
-            totalSessions > 0
-              ? Math.round((completedSessions / totalSessions) * 100)
-              : 0,
-          initials: ta.firstName + " " + ta.lastName
+          skill: group.shortName,
+          score: avgSkillScore,
+          feedbackCount: groupFeedbacks.length,
+        };
+      });
+
+      // Find weakest and strongest skills
+      const weakestSkill = skillBreakdown.reduce(
+        (min, skill) => (skill.score < min.score ? skill : min),
+        skillBreakdown[0] || { skill: "Unknown", score: 100, feedbackCount: 0 }
+      );
+
+      const strongestSkill = skillBreakdown.reduce(
+        (max, skill) => (skill.score > max.score ? skill : max),
+        skillBreakdown[0] || { skill: "Unknown", score: 0, feedbackCount: 0 }
+      );
+
+      // Calculate average time taken
+      const avgTimeMinutes =
+        taGrades.length > 0
+          ? Math.round(
+              taGrades.reduce((sum, g) => sum + g.timeTaken, 0) /
+                taGrades.length /
+                60
+            )
+          : 0;
+
+      // Calculate pass rate
+      const passRate =
+        taGrades.length > 0
+          ? Math.round(
+              (taGrades.filter((g) => g.passed).length / taGrades.length) * 100
+            )
+          : 0;
+
+      // Determine if struggling (no sessions OR low performance)
+      const isStruggling =
+        totalSessions === 0 || (avgScore < 70 && totalSessions > 0);
+
+      // Calculate trend (last 3 vs first 3 sessions)
+      const sortedGrades = taGrades.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+      let trend = "stable";
+      if (sortedGrades.length >= 3) {
+        const firstThree = sortedGrades.slice(0, 3);
+        const lastThree = sortedGrades.slice(-3);
+        const firstAvg =
+          firstThree.reduce((sum, g) => sum + g.score, 0) / firstThree.length;
+        const lastAvg =
+          lastThree.reduce((sum, g) => sum + g.score, 0) / lastThree.length;
+
+        if (lastAvg > firstAvg + 5) trend = "improving";
+        else if (lastAvg < firstAvg - 5) trend = "declining";
+      }
+
+      return {
+        id: ta.id,
+        firstName: ta.firstName,
+        lastName: ta.lastName,
+        username: ta.alias,
+        avgScore,
+        completedSessions,
+        totalSessions,
+        completionRate:
+          totalSessions > 0
+            ? Math.round((completedSessions / totalSessions) * 100)
+            : 0,
+        initials:
+          ta.firstName +
+          " " +
+          ta.lastName
             .split(" ")
             .map((n) => n[0])
             .join("")
             .toUpperCase(),
-          skillBreakdown,
-          weakestSkill,
-          strongestSkill,
-          avgTimeMinutes,
-          passRate,
-          trend,
-          isStruggling,
-          hasNoSessions: totalSessions === 0,
-        };
-      });
+        skillBreakdown,
+        weakestSkill,
+        strongestSkill,
+        avgTimeMinutes,
+        passRate,
+        trend,
+        isStruggling,
+        hasNoSessions: totalSessions === 0,
+      };
+    });
 
     return {
       taPerformance,
     };
-  }, [profiles, chats, grades, feedbacks, standards, standardGroups, attempts, rubrics]);
+  }, [
+    profiles,
+    chats,
+    grades,
+    feedbacks,
+    standards,
+    standardGroups,
+    attempts,
+    rubrics,
+    simulations,
+  ]);
 
   // Sort, filter, and search TAs
   const sortedFilteredAndSearchedTAs = useMemo(() => {
@@ -270,20 +319,21 @@ export default function Reports() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(ta => 
-        ta.firstName.toLowerCase().includes(query) || 
-        ta.lastName.toLowerCase().includes(query) || 
-        ta.username.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (ta) =>
+          ta.firstName.toLowerCase().includes(query) ||
+          ta.lastName.toLowerCase().includes(query) ||
+          ta.username.toLowerCase().includes(query)
       );
     }
 
     // Apply performance filter
     switch (filterBy) {
       case "struggling":
-        filtered = filtered.filter(ta => ta.isStruggling);
+        filtered = filtered.filter((ta) => ta.isStruggling);
         break;
       case "performing-well":
-        filtered = filtered.filter(ta => !ta.isStruggling);
+        filtered = filtered.filter((ta) => !ta.isStruggling);
         break;
       // "all" shows everyone
     }
@@ -310,8 +360,11 @@ export default function Reports() {
     return filtered;
   }, [analytics, sortBy, filterBy, searchQuery]);
 
-  const handleDownloadReport = async (profileId: string, options: ReportOptions) => {
-    setDownloadingReports(prev => new Set(prev).add(profileId));
+  const handleDownloadReport = async (
+    profileId: string,
+    options: ReportOptions
+  ) => {
+    setDownloadingReports((prev) => new Set(prev).add(profileId));
 
     try {
       const queryParams = new URLSearchParams({
@@ -323,37 +376,41 @@ export default function Reports() {
         includeFeedback: options.includeFeedback.toString(),
       });
 
-      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/profiles/${profileId}?${queryParams}`, {
-        method: 'GET',
-      });
+      const response = await fetch(
+        `${process.env["NEXT_PUBLIC_API_URL"]}/profiles/${profileId}?${queryParams}`,
+        {
+          method: "GET",
+        }
+      );
 
       if (!response.ok) {
-        throw new Error('Failed to generate report');
+        throw new Error("Failed to generate report");
       }
 
       // Get the filename from the response headers
-      const contentDisposition = response.headers.get('content-disposition');
+      const contentDisposition = response.headers.get("content-disposition");
       const filename = contentDisposition
-        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        ? contentDisposition.split("filename=")[1]?.replace(/"/g, "")
         : `TA_Report_${profileId}.pdf`;
 
       // Create blob and download
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = filename || 'report.pdf';
+      a.download = filename || "report.pdf";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
 
-      toast.success('Report downloaded successfully');
+      toast.success("Report downloaded successfully");
     } catch (error) {
-      console.error('Error downloading report:', error);
-      toast.error('Failed to download report');
+      toast.error(
+        `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
-      setDownloadingReports(prev => {
+      setDownloadingReports((prev) => {
         const newSet = new Set(prev);
         newSet.delete(profileId);
         return newSet;
@@ -399,8 +456,13 @@ export default function Reports() {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Label htmlFor="filter" className="text-sm font-medium">Filter:</Label>
-            <Select value={filterBy} onValueChange={(value: FilterOption) => setFilterBy(value)}>
+            <Label htmlFor="filter" className="text-sm font-medium">
+              Filter:
+            </Label>
+            <Select
+              value={filterBy}
+              onValueChange={(value: FilterOption) => setFilterBy(value)}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -412,8 +474,13 @@ export default function Reports() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <Label htmlFor="sort" className="text-sm font-medium">Sort:</Label>
-            <Select value={sortBy} onValueChange={(value: SortOption) => setSortBy(value)}>
+            <Label htmlFor="sort" className="text-sm font-medium">
+              Sort:
+            </Label>
+            <Select
+              value={sortBy}
+              onValueChange={(value: SortOption) => setSortBy(value)}
+            >
               <SelectTrigger className="w-[160px]">
                 <SelectValue />
               </SelectTrigger>
@@ -422,7 +489,9 @@ export default function Reports() {
                 <SelectItem value="score-asc">Score (Low to High)</SelectItem>
                 <SelectItem value="name-asc">Name (A to Z)</SelectItem>
                 <SelectItem value="name-desc">Name (Z to A)</SelectItem>
-                <SelectItem value="sessions-desc">Sessions (Most to Least)</SelectItem>
+                <SelectItem value="sessions-desc">
+                  Sessions (Most to Least)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -434,10 +503,11 @@ export default function Reports() {
           sortedFilteredAndSearchedTAs.map((ta, index) => (
             <Card
               key={ta.id}
-              className={`transition-colors ${ta.isStruggling
-                ? "border-orange-200 bg-orange-50/30"
-                : "hover:bg-muted/30"
-                }`}
+              className={`transition-colors ${
+                ta.isStruggling
+                  ? "border-orange-200 bg-orange-50/30"
+                  : "hover:bg-muted/30"
+              }`}
             >
               <CardContent className="px-6">
                 <div className="flex items-start justify-between">
@@ -446,23 +516,35 @@ export default function Reports() {
                       #{index + 1}
                     </div>
                     <Avatar className="h-12 w-12">
-                      <AvatarFallback className={ta.isStruggling ? "bg-orange-100 text-orange-800" : ""}>
+                      <AvatarFallback
+                        className={
+                          ta.isStruggling ? "bg-orange-100 text-orange-800" : ""
+                        }
+                      >
                         {ta.initials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">{ta.firstName} {ta.lastName}</h3>
+                        <h3 className="font-semibold text-lg">
+                          {ta.firstName} {ta.lastName}
+                        </h3>
                         {ta.isStruggling && (
                           <AlertTriangle className="h-5 w-5 text-orange-500" />
                         )}
                         {ta.trend === "improving" && (
-                          <Badge variant="secondary" className="text-green-700 bg-green-100">
+                          <Badge
+                            variant="secondary"
+                            className="text-green-700 bg-green-100"
+                          >
                             Improving
                           </Badge>
                         )}
                         {ta.trend === "declining" && (
-                          <Badge variant="secondary" className="text-red-700 bg-red-100">
+                          <Badge
+                            variant="secondary"
+                            className="text-red-700 bg-red-100"
+                          >
                             Declining
                           </Badge>
                         )}
@@ -470,10 +552,12 @@ export default function Reports() {
                       <p className="text-muted-foreground mb-3">
                         {ta.username}@purdue.edu
                       </p>
-                      
+
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Average Score</p>
+                          <p className="text-sm text-muted-foreground">
+                            Average Score
+                          </p>
                           <div className="flex items-center gap-2">
                             <Badge
                               variant={
@@ -489,9 +573,11 @@ export default function Reports() {
                             </Badge>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Sessions</p>
+                          <p className="text-sm text-muted-foreground">
+                            Sessions
+                          </p>
                           <p className="font-medium">
                             {ta.completedSessions}/{ta.totalSessions}
                           </p>
@@ -499,34 +585,42 @@ export default function Reports() {
                             {ta.completionRate}% completion
                           </p>
                         </div>
-                        
+
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Pass Rate</p>
+                          <p className="text-sm text-muted-foreground">
+                            Pass Rate
+                          </p>
                           <p className="font-medium">
                             {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
                           </p>
                         </div>
-                        
+
                         <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">Avg Time</p>
+                          <p className="text-sm text-muted-foreground">
+                            Avg Time
+                          </p>
                           <p className="font-medium">
-                            {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}min`}
+                            {ta.hasNoSessions
+                              ? "N/A"
+                              : `${ta.avgTimeMinutes}min`}
                           </p>
                         </div>
                       </div>
-                      
+
                       {!ta.hasNoSessions && (
                         <div className="mt-4">
-                          <p className="text-sm text-muted-foreground mb-2">Skill Performance</p>
+                          <p className="text-sm text-muted-foreground mb-2">
+                            Skill Performance
+                          </p>
                           <div className="flex flex-wrap gap-2">
                             {ta.skillBreakdown.map((skill, skillIndex) => (
                               <Badge
                                 key={skillIndex}
                                 variant="outline"
                                 className={`text-xs ${
-                                  skill.score < 70 
-                                    ? "border-red-200 text-red-700 bg-red-50" 
-                                    : skill.score >= 85 
+                                  skill.score < 70
+                                    ? "border-red-200 text-red-700 bg-red-50"
+                                    : skill.score >= 85
                                       ? "border-green-200 text-green-700 bg-green-50"
                                       : ""
                                 }`}
@@ -539,7 +633,7 @@ export default function Reports() {
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2">
                     {ta.isStruggling && (
                       <Dialog>
@@ -552,7 +646,8 @@ export default function Reports() {
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>
-                              Support Recommendations for {ta.firstName} {ta.lastName}
+                              Support Recommendations for {ta.firstName}{" "}
+                              {ta.lastName}
                             </DialogTitle>
                           </DialogHeader>
                           <div className="space-y-6">
@@ -567,27 +662,42 @@ export default function Reports() {
                                 <CardContent>
                                   <div className="space-y-4">
                                     <p className="text-red-700">
-                                      This TA has not completed any training simulations yet.
+                                      This TA has not completed any training
+                                      simulations yet.
                                     </p>
-                                    
+
                                     <div className="space-y-3">
-                                      <h4 className="font-medium text-red-800">Immediate Actions Required:</h4>
+                                      <h4 className="font-medium text-red-800">
+                                        Immediate Actions Required:
+                                      </h4>
                                       <ul className="space-y-2 text-sm text-red-700">
                                         <li className="flex items-start gap-2">
                                           <Target className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>Schedule mandatory training session within 48 hours</span>
+                                          <span>
+                                            Schedule mandatory training session
+                                            within 48 hours
+                                          </span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                           <Users className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>Assign experienced TA mentor for guidance</span>
+                                          <span>
+                                            Assign experienced TA mentor for
+                                            guidance
+                                          </span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                           <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>Provide training timeline and expectations document</span>
+                                          <span>
+                                            Provide training timeline and
+                                            expectations document
+                                          </span>
                                         </li>
                                         <li className="flex items-start gap-2">
                                           <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>Follow up daily until first simulation is completed</span>
+                                          <span>
+                                            Follow up daily until first
+                                            simulation is completed
+                                          </span>
                                         </li>
                                       </ul>
                                     </div>
@@ -605,20 +715,36 @@ export default function Reports() {
                                     </CardHeader>
                                     <CardContent className="space-y-2">
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Average Score:</span>
-                                        <span className="font-medium text-orange-800">{ta.avgScore}%</span>
+                                        <span className="text-muted-foreground">
+                                          Average Score:
+                                        </span>
+                                        <span className="font-medium text-orange-800">
+                                          {ta.avgScore}%
+                                        </span>
                                       </div>
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Pass Rate:</span>
-                                        <span className="font-medium text-orange-800">{ta.passRate}%</span>
+                                        <span className="text-muted-foreground">
+                                          Pass Rate:
+                                        </span>
+                                        <span className="font-medium text-orange-800">
+                                          {ta.passRate}%
+                                        </span>
                                       </div>
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Completion Rate:</span>
-                                        <span className="font-medium text-orange-800">{ta.completionRate}%</span>
+                                        <span className="text-muted-foreground">
+                                          Completion Rate:
+                                        </span>
+                                        <span className="font-medium text-orange-800">
+                                          {ta.completionRate}%
+                                        </span>
                                       </div>
                                       <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Avg Time:</span>
-                                        <span className="font-medium text-orange-800">{ta.avgTimeMinutes}min</span>
+                                        <span className="text-muted-foreground">
+                                          Avg Time:
+                                        </span>
+                                        <span className="font-medium text-orange-800">
+                                          {ta.avgTimeMinutes}min
+                                        </span>
                                       </div>
                                     </CardContent>
                                   </Card>
@@ -631,25 +757,41 @@ export default function Reports() {
                                     </CardHeader>
                                     <CardContent className="space-y-2">
                                       <div className="text-sm">
-                                        <span className="text-muted-foreground">Weakest Skill:</span>
+                                        <span className="text-muted-foreground">
+                                          Weakest Skill:
+                                        </span>
                                         <div className="font-medium text-red-600 mt-1">
-                                          {ta.weakestSkill.skill} ({ta.weakestSkill.score}%)
+                                          {ta.weakestSkill.skill} (
+                                          {ta.weakestSkill.score}%)
                                         </div>
                                       </div>
                                       <div className="text-sm">
-                                        <span className="text-muted-foreground">Strongest Skill:</span>
+                                        <span className="text-muted-foreground">
+                                          Strongest Skill:
+                                        </span>
                                         <div className="font-medium text-green-600 mt-1">
-                                          {ta.strongestSkill.skill} ({ta.strongestSkill.score}%)
+                                          {ta.strongestSkill.skill} (
+                                          {ta.strongestSkill.score}%)
                                         </div>
                                       </div>
                                       <div className="text-sm">
-                                        <span className="text-muted-foreground">Trend:</span>
-                                        <div className={`font-medium mt-1 ${
-                                          ta.trend === "improving" ? "text-green-600" :
-                                          ta.trend === "declining" ? "text-red-600" : "text-gray-600"
-                                        }`}>
-                                          {ta.trend === "improving" ? "📈 Improving" :
-                                           ta.trend === "declining" ? "📉 Declining" : "➡️ Stable"}
+                                        <span className="text-muted-foreground">
+                                          Trend:
+                                        </span>
+                                        <div
+                                          className={`font-medium mt-1 ${
+                                            ta.trend === "improving"
+                                              ? "text-green-600"
+                                              : ta.trend === "declining"
+                                                ? "text-red-600"
+                                                : "text-gray-600"
+                                          }`}
+                                        >
+                                          {ta.trend === "improving"
+                                            ? "📈 Improving"
+                                            : ta.trend === "declining"
+                                              ? "📉 Declining"
+                                              : "➡️ Stable"}
                                         </div>
                                       </div>
                                     </CardContent>
@@ -663,7 +805,9 @@ export default function Reports() {
                     )}
                     <ReportDownloadDialog
                       ta={ta}
-                      onDownload={(options) => handleDownloadReport(ta.id, options)}
+                      onDownload={(options) =>
+                        handleDownloadReport(ta.id, options)
+                      }
                       isDownloading={downloadingReports.has(ta.id)}
                     />
                   </div>
@@ -675,19 +819,15 @@ export default function Reports() {
           <div className="text-center py-12">
             <Award className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h3 className="text-lg font-medium mb-2">
-              {searchQuery.trim() 
-                ? `No TAs found matching "${searchQuery}"` 
-                : "No TAs match the current filter"
-              }
+              {searchQuery.trim()
+                ? `No TAs found matching "${searchQuery}"`
+                : "No TAs match the current filter"}
             </h3>
             <p className="text-muted-foreground mb-4">
               Try adjusting your search or filter criteria
             </p>
             {searchQuery.trim() && (
-              <Button 
-                variant="outline" 
-                onClick={() => setSearchQuery("")}
-              >
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
                 Clear search
               </Button>
             )}
@@ -709,7 +849,11 @@ interface ReportDownloadDialogProps {
   isDownloading: boolean;
 }
 
-function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadDialogProps) {
+function ReportDownloadDialog({
+  ta,
+  onDownload,
+  isDownloading,
+}: ReportDownloadDialogProps) {
   const [options, setOptions] = useState<ReportOptions>({
     includeStudentTypeChart: true,
     includePerformanceChart: true,
@@ -720,19 +864,25 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
   });
 
   const handleOptionChange = (key: keyof ReportOptions, value: boolean) => {
-    setOptions(prev => ({ ...prev, [key]: value }));
+    setOptions((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
     <Dialog>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" disabled={isDownloading}>
-          {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {isDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Download Report for {ta.firstName} {ta.lastName}</DialogTitle>
+          <DialogTitle>
+            Download Report for {ta.firstName} {ta.lastName}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
@@ -745,7 +895,10 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
                 id="studentTypeChart"
                 checked={options.includeStudentTypeChart}
                 onCheckedChange={(checked) =>
-                  handleOptionChange("includeStudentTypeChart", checked as boolean)
+                  handleOptionChange(
+                    "includeStudentTypeChart",
+                    checked as boolean
+                  )
                 }
               />
               <Label htmlFor="studentTypeChart" className="text-sm">
@@ -758,7 +911,10 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
                 id="performanceChart"
                 checked={options.includePerformanceChart}
                 onCheckedChange={(checked) =>
-                  handleOptionChange("includePerformanceChart", checked as boolean)
+                  handleOptionChange(
+                    "includePerformanceChart",
+                    checked as boolean
+                  )
                 }
               />
               <Label htmlFor="performanceChart" className="text-sm">
@@ -797,7 +953,10 @@ function ReportDownloadDialog({ ta, onDownload, isDownloading }: ReportDownloadD
                 id="detailedScores"
                 checked={options.includeDetailedScores}
                 onCheckedChange={(checked) =>
-                  handleOptionChange("includeDetailedScores", checked as boolean)
+                  handleOptionChange(
+                    "includeDetailedScores",
+                    checked as boolean
+                  )
                 }
               />
               <Label htmlFor="detailedScores" className="text-sm">

@@ -5,35 +5,21 @@
  * 06/09/2025
  */
 "use client";
-import React from "react";
-import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { toast } from "sonner";
 
 // UI Components
-import {
-  Card,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import {
   Command,
   CommandEmpty,
@@ -47,9 +33,34 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Send, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, Check, ChevronsUpDown, FileText } from "lucide-react";
+import {
+  ArrowDown,
+  Check,
+  ChevronsUpDown,
+  Clock,
+  FileText,
+  PanelRightClose,
+  PanelRightOpen,
+  Send,
+  Users,
+} from "lucide-react";
 
 // Tooltip
 import {
@@ -62,19 +73,19 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
-import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
+import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
-import { getClass } from "@/utils/queries/classes/get-class";
 
 // Timer is now integrated directly into the component layout
 
@@ -110,7 +121,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
   const [isTall, setIsTall] = useState(false);
-  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
+    null
+  );
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -152,7 +165,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -173,7 +186,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -185,7 +198,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     // Find the chat that matches the current chat simulation ID
     const currentChatSimulationId = simulation.scenarioIds[currentChatIndex];
     const chat = chats.find(
-      (chat) => chat.scenarioId === currentChatSimulationId,
+      (chat) => chat.scenarioId === currentChatSimulationId
     );
     return chat || chats[0];
   }, [chats, simulation?.scenarioIds, currentChatIndex]);
@@ -211,12 +224,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   });
 
   // Helper function to calculate actual time taken from database timestamps
-  const calculateActualTimeTaken = (chat: SimulationChat): number => {
-    return (
-      grades?.find((grade) => grade.simulationChatId === chat.id)?.timeTaken ||
-      0
-    );
-  };
+  const calculateActualTimeTaken = useCallback(
+    (chat: SimulationChat): number => {
+      return (
+        grades?.find((grade) => grade.simulationChatId === chat.id)
+          ?.timeTaken || 0
+      );
+    },
+    [grades]
+  );
 
   // Create dynamic rubric for current chat based on grades/feedback
   const currentDynamicRubric = useMemo((): DynamicRubric | null => {
@@ -230,12 +246,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       return null;
 
     const chatGrade = grades.find(
-      (grade) => grade.simulationChatId === currentChat.id,
+      (grade) => grade.simulationChatId === currentChat.id
     );
     if (!chatGrade) return null;
 
     const chatFeedbacks = feedbacks.filter(
-      (feedback) => feedback.simulationChatGradeId === chatGrade.id,
+      (feedback) => feedback.simulationChatGradeId === chatGrade.id
     );
 
     // Calculate skill scores and feedbacks
@@ -245,17 +261,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     standardGroups.forEach((group) => {
       const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group.id,
+        (s) => s.standardGroupId === group.id
       );
       const groupFeedbacks = chatFeedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId),
+        groupStandards.some((s) => s.id === f.standardId)
       );
 
       if (groupFeedbacks.length > 0) {
         // Use group.points instead of max standard points for correct total calculation
         const groupMaxPoints = group.points;
         const maxStandardPoints = Math.max(
-          ...groupStandards.map((s) => s.points),
+          ...groupStandards.map((s) => s.points)
         );
         const avgScore =
           groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
@@ -290,18 +306,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       return [];
 
     const completedChats = chats.filter(
-      (chat: SimulationChat) => chat.completed,
+      (chat: SimulationChat) => chat.completed
     );
 
     return completedChats
       .map((chat) => {
         const chatGrade = grades.find(
-          (grade) => grade.simulationChatId === chat.id,
+          (grade) => grade.simulationChatId === chat.id
         );
         if (!chatGrade) return null;
 
         const chatFeedbacks = feedbacks.filter(
-          (feedback) => feedback.simulationChatGradeId === chatGrade.id,
+          (feedback) => feedback.simulationChatGradeId === chatGrade.id
         );
 
         // Calculate skill scores and feedbacks
@@ -311,23 +327,23 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
         standardGroups.forEach((group) => {
           const groupStandards = standards.filter(
-            (s) => s.standardGroupId === group.id,
+            (s) => s.standardGroupId === group.id
           );
           const groupFeedbacks = chatFeedbacks.filter((f) =>
-            groupStandards.some((s) => s.id === f.standardId),
+            groupStandards.some((s) => s.id === f.standardId)
           );
 
           if (groupFeedbacks.length > 0) {
             // Use group.points instead of max standard points for correct total calculation
             const groupMaxPoints = group.points;
             const maxStandardPoints = Math.max(
-              ...groupStandards.map((s) => s.points),
+              ...groupStandards.map((s) => s.points)
             );
             const avgScore =
               groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length;
             const normalizedScore = Math.round(
-              (avgScore / maxStandardPoints) * 5,
+              (avgScore / maxStandardPoints) * 5
             ); // Convert to 1-5 scale
 
             skillScores[group.name] = normalizedScore;
@@ -379,7 +395,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Auto-select first completed chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
     if (showResults && chats && chats.length > 0 && !selectedChatId) {
-      const completedChats = chats.filter((chat: SimulationChat) => chat.completed);
+      const completedChats = chats.filter(
+        (chat: SimulationChat) => chat.completed
+      );
       if (completedChats.length > 0 && completedChats[0]) {
         setSelectedChatId(completedChats[0].id);
 
@@ -392,18 +410,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }, [showResults, chats, selectedChatId]);
 
   // Fetch scenario for results display
-  const { data: resultsScenario, isLoading: resultsScenarioLoading } = useQuery({
-    queryKey: ["resultsScenario", selectedChat?.scenarioId],
-    queryFn: () => getScenario(selectedChat!.scenarioId),
-    enabled: !!selectedChat?.scenarioId && showResults,
-  });
+  const { data: resultsScenario, isLoading: resultsScenarioLoading } = useQuery(
+    {
+      queryKey: ["resultsScenario", selectedChat?.scenarioId],
+      queryFn: () => getScenario(selectedChat!.scenarioId),
+      enabled: !!selectedChat?.scenarioId && showResults,
+    }
+  );
 
   // Fetch messages for selected chat in results
-  const { data: resultsMessages = [], isLoading: resultsMessagesLoading } = useQuery({
-    queryKey: ["resultsMessages", selectedChat?.id],
-    queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
-    enabled: !!selectedChat?.id && showResults,
-  });
+  const { data: resultsMessages = [], isLoading: resultsMessagesLoading } =
+    useQuery({
+      queryKey: ["resultsMessages", selectedChat?.id],
+      queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
+      enabled: !!selectedChat?.id && showResults,
+    });
 
   // Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
@@ -413,7 +434,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     const calculateTimerValues = () => {
       const attemptStartTime = new Date(attempt.createdAt);
       const currentTime = new Date();
-      const elapsedSeconds = Math.floor((currentTime.getTime() - attemptStartTime.getTime()) / 1000);
+      const elapsedSeconds = Math.floor(
+        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
+      );
 
       if (simulation.timeLimit) {
         // For time-limited attempts, calculate remaining time
@@ -427,7 +450,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
 
     // Initial calculation
-    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } = calculateTimerValues();
+    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
+      calculateTimerValues();
     setElapsedTime(initialElapsed);
     setTimeRemaining(initialRemaining);
 
@@ -436,13 +460,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       setIsActive(false);
       setShowResults(true);
       toast.success(
-        isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+        isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
       );
       return;
     }
 
     const timer = setInterval(() => {
-      const { elapsedTime: newElapsed, timeRemaining: newRemaining } = calculateTimerValues();
+      const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
+        calculateTimerValues();
       setElapsedTime(newElapsed);
       setTimeRemaining(newRemaining);
 
@@ -451,7 +476,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         setIsActive(false);
         setShowResults(true);
         toast.success(
-          isSingleChatAttempt ? "Session completed!" : "Attempt completed!",
+          isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
         );
       }
     }, 1000);
@@ -463,6 +488,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     showResults,
     isActive,
     isSingleChatAttempt,
+    simulation,
+    currentChatIndex,
   ]);
 
   // Reset chat state when moving to next chat
@@ -483,10 +510,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       const firstIncompleteIndex = simulation.scenarioIds.findIndex(
         (scenarioId: string) => {
           const chat = chats.find(
-            (c: SimulationChat) => c.scenarioId === scenarioId,
+            (c: SimulationChat) => c.scenarioId === scenarioId
           );
           return chat && !chat.completed;
-        },
+        }
       );
 
       // If we found an incomplete chat, set the index to it
@@ -499,7 +526,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [chats, simulation?.scenarioIds, currentChatIndex]);
 
-  // Check if current chat is completed and move to next or show results 
+  // Check if current chat is completed and move to next or show results
   useEffect(() => {
     if (currentChat?.completed && !showResults) {
       // Only auto-advance if this chat was freshly completed in this session
@@ -515,7 +542,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
-                `Moving to chat ${nextIndex + 1} of ${simulation?.scenarioIds?.length || 0}`,
+                `Moving to chat ${nextIndex + 1} of ${simulation?.scenarioIds?.length || 0}`
               );
               return nextIndex;
             });
@@ -545,7 +572,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     if (chats && chats.length > 0 && simulation?.scenarioIds && !showResults) {
       const totalExpectedChats = simulation.scenarioIds.length;
       const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed,
+        (chat: SimulationChat) => chat.completed
       ).length;
 
       // For completed chats, also check if we have grading data available
@@ -558,7 +585,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           completedChatIds.length === 0 ||
           (grades &&
             grades.some((grade) =>
-              completedChatIds.includes(grade.simulationChatId),
+              completedChatIds.includes(grade.simulationChatId)
             ));
 
         if (hasGradingData) {
@@ -581,7 +608,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     ) {
       const totalExpectedChats = simulation.scenarioIds.length;
       const completedChats = chats.filter(
-        (chat: SimulationChat) => chat.completed,
+        (chat: SimulationChat) => chat.completed
       ).length;
 
       // If all chats are completed and we now have grading data, show results
@@ -590,7 +617,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           .filter((chat: SimulationChat) => chat.completed)
           .map((chat) => chat.id);
         const hasGradingForAllCompleted = completedChatIds.every((chatId) =>
-          grades.some((grade) => grade.simulationChatId === chatId),
+          grades.some((grade) => grade.simulationChatId === chatId)
         );
 
         if (hasGradingForAllCompleted) {
@@ -610,7 +637,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Updated streaming message handler from chat page
   const handleSendMessage = async (
     e: React.FormEvent<HTMLFormElement> | null,
-    initialMessage?: string,
+    initialMessage?: string
   ) => {
     if (e) e.preventDefault();
 
@@ -640,7 +667,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     queryClient.setQueryData(
       ["messages", currentChat.id],
-      (old: SimulationMessage[] = []) => [...old, userMsg, aiMsg],
+      (old: SimulationMessage[] = []) => [...old, userMsg, aiMsg]
     );
 
     let accumulated = ""; // running buffer
@@ -654,14 +681,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       formData.append("message", userMsg.query);
 
       const res = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL']}/simulations/message`,
+        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/message`,
         {
           method: "POST",
           headers: { Accept: "text/event-stream" },
           cache: "no-cache",
           body: formData,
           signal: ctrl.signal,
-        },
+        }
       );
 
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -693,8 +720,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               ["messages", currentChat.id],
               (old: SimulationMessage[] = []) =>
                 old.map((m) =>
-                  m.id === aiMsg.id ? { ...m, response: accumulated } : m,
-                ),
+                  m.id === aiMsg.id ? { ...m, response: accumulated } : m
+                )
             );
           }
 
@@ -707,18 +734,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         }
       }
     } catch (err) {
-      console.error("sendMessage error:", err);
+      toast.error(`Failed to send message: ${err}`);
       queryClient.setQueryData(
         ["messages", currentChat.id],
         (old: SimulationMessage[] = []) =>
           old.map((m) =>
             m.id === aiMsg.id
               ? {
-                ...m,
-                response: "⚠️ Error - please try again.",
-              }
-              : m,
-          ),
+                  ...m,
+                  response: "⚠️ Error - please try again.",
+                }
+              : m
+          )
       );
     } finally {
       if (streaming) ctrl.abort(); // ensure closure if unmount during stream
@@ -735,11 +762,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       formData.append("chat_id", currentChat.id);
       formData.append("attempt_id", attemptId);
       const response = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL']}/simulations/continue`,
+        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/continue`,
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       if (!response.ok) {
@@ -763,10 +790,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         throw new Error(result.error || "Failed to end chat");
       }
     } catch (error) {
-      console.error("Error ending chat:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to end chat",
-      );
+      toast.error(`Failed to end chat: ${error}`);
     } finally {
       setEndChatLoading(false);
     }
@@ -775,9 +799,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const scrollToBottom = () => {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
-      const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+      const viewport = scrollArea.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      ) as HTMLElement;
       if (viewport) {
-        viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
+        viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
         // Hide scroll button after scrolling to bottom with a slight delay
         setTimeout(() => setShowScrollButton(false), 300);
       }
@@ -798,7 +824,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
 
-    const viewport = scrollArea.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+    const viewport = scrollArea.querySelector(
+      "[data-radix-scroll-area-viewport]"
+    ) as HTMLElement;
     if (!viewport) return;
 
     const handleScrollEvent = () => {
@@ -813,10 +841,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     handleScrollEvent();
 
     // Add scroll listener
-    viewport.addEventListener('scroll', handleScrollEvent);
+    viewport.addEventListener("scroll", handleScrollEvent);
 
     return () => {
-      viewport.removeEventListener('scroll', handleScrollEvent);
+      viewport.removeEventListener("scroll", handleScrollEvent);
     };
   }, [messages.length]);
 
@@ -829,31 +857,31 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Get the currently selected document
   const selectedDocument = useMemo(() => {
-    return classDocuments.find(doc => doc.id === selectedDocumentId) || null;
+    return classDocuments.find((doc) => doc.id === selectedDocumentId) || null;
   }, [classDocuments, selectedDocumentId]);
-  
+
   // Calculate aggregated results for final display
   const aggregatedResults = useMemo(() => {
     if (allDynamicRubrics.length === 0) return null;
 
     const totalScore = allDynamicRubrics.reduce(
       (sum: number, rubric: DynamicRubric) => sum + rubric.score,
-      0,
+      0
     );
     const averageScore = totalScore / allDynamicRubrics.length;
     const passedChats = allDynamicRubrics.filter(
-      (rubric: DynamicRubric) => rubric.passed,
+      (rubric: DynamicRubric) => rubric.passed
     ).length;
 
     // Calculate total time using actual database timestamps instead of rubric timeTaken
     const totalTime = chats
       ? chats
-        .filter((chat: SimulationChat) => chat.completed)
-        .reduce(
-          (sum: number, chat: SimulationChat) =>
-            sum + calculateActualTimeTaken(chat),
-          0,
-        )
+          .filter((chat: SimulationChat) => chat.completed)
+          .reduce(
+            (sum: number, chat: SimulationChat) =>
+              sum + calculateActualTimeTaken(chat),
+            0
+          )
       : 0;
 
     return {
@@ -863,7 +891,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       totalTime: totalTime, // Keep in seconds for detailed formatting
       overallPassed: passedChats === allDynamicRubrics.length,
     };
-  }, [allDynamicRubrics, chats]);
+  }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
 
   // Generate starter prompts
   const starterPrompts = useMemo(() => {
@@ -928,19 +956,19 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         !e.altKey &&
         !e.metaKey &&
         e.key.length === 1 &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA' &&
+        document.activeElement?.tagName !== "INPUT" &&
+        document.activeElement?.tagName !== "TEXTAREA" &&
         textareaRef.current
       ) {
         // Focus the textarea and add the typed character
         textareaRef.current.focus();
-        setNewMessage(prev => prev + e.key);
+        setNewMessage((prev) => prev + e.key);
         e.preventDefault();
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
   useEffect(() => {
@@ -955,7 +983,19 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => ro.disconnect();
   }, []);
 
-  if (attemptLoading || simulationLoading || scenarioLoading || isLoadingChats || isLoadingRubrics || isLoadingFeedbacks || isLoadingGrades || isLoadingStandardGroups || isLoadingStandards || resultsMessagesLoading || resultsScenarioLoading) {
+  if (
+    attemptLoading ||
+    simulationLoading ||
+    scenarioLoading ||
+    isLoadingChats ||
+    isLoadingRubrics ||
+    isLoadingFeedbacks ||
+    isLoadingGrades ||
+    isLoadingStandardGroups ||
+    isLoadingStandards ||
+    resultsMessagesLoading ||
+    resultsScenarioLoading
+  ) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -988,10 +1028,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Show results screen
   if (showResults) {
     return (
-      <div className="h-[calc(100vh-4rem)]"> {/* Account for breadcrumbs */}
+      <div className="h-[calc(100vh-4rem)]">
+        {" "}
+        {/* Account for breadcrumbs */}
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
-          <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
+          <ResizablePanel
+            defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}
+          >
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
                 {/* Timer and Controls Header - consistent with main chat layout */}
@@ -1021,14 +1065,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   variant={showGrades ? "default" : "outline"}
                                   size="sm"
                                   onClick={() => setShowGrades(!showGrades)}
-                                  className={`p-2 ${showGrades ? 'bg-primary text-primary-foreground' : ''}`}
+                                  className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
                                 >
                                   <FileText className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{showGrades ? 'Hide Rubric' : 'Show Rubric'}</p>
-                                <p className="text-xs text-muted-foreground">View detailed scoring and feedback</p>
+                                <p>
+                                  {showGrades ? "Hide Rubric" : "Show Rubric"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  View detailed scoring and feedback
+                                </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -1043,7 +1091,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => setShowDocuments(!showDocuments)}
+                                  onClick={() =>
+                                    setShowDocuments(!showDocuments)
+                                  }
                                   className="p-2"
                                 >
                                   {showDocuments ? (
@@ -1054,7 +1104,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
-                                <p>{showDocuments ? 'Hide Documents' : 'Show Documents'}</p>
+                                <p>
+                                  {showDocuments
+                                    ? "Hide Documents"
+                                    : "Show Documents"}
+                                </p>
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -1063,38 +1117,85 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
-                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
-                                ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
-                                  ? "bg-green-100 dark:bg-green-900/30"
-                                  : "bg-red-100 dark:bg-red-900/30"
-                                : aggregatedResults
-                                  ? aggregatedResults.overallPassed
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : "bg-red-100 dark:bg-red-900/30"
-                                  : "bg-muted"
-                                }`}>
+                              <div
+                                className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                  selectedChat &&
+                                  allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )
+                                    ? allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === selectedChat.id
+                                      )?.passed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : aggregatedResults
+                                      ? aggregatedResults.overallPassed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : "bg-muted"
+                                }`}
+                              >
                                 <Clock className="h-4 w-4" />
-                                <span className="text-sm font-medium" data-testid="timer">
-                                  {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
-                                    ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
+                                <span
+                                  className="text-sm font-medium"
+                                  data-testid="timer"
+                                >
+                                  {selectedChat &&
+                                  allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )?.timeTaken !== undefined
+                                    ? formatTime(
+                                        allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === selectedChat.id
+                                        )?.timeTaken ?? 0
+                                      )
                                     : aggregatedResults?.totalTime !== undefined
                                       ? formatTime(aggregatedResults.totalTime)
                                       : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
-                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
+                            {selectedChat &&
+                            allDynamicRubrics.find(
+                              (rubric) => rubric.chatId === selectedChat.id
+                            ) ? (
                               <TooltipContent>
                                 <p>
-                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"}
-                                  ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
+                                  {allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )?.passed
+                                    ? "Passed"
+                                    : "Failed"}
+                                  (
+                                  {
+                                    allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === selectedChat.id
+                                    )?.score
+                                  }
+                                  /
+                                  {
+                                    allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === selectedChat.id
+                                    )?.totalPossiblePoints
+                                  }
+                                  )
                                 </p>
                               </TooltipContent>
                             ) : aggregatedResults ? (
                               <TooltipContent>
                                 <p>
-                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"}
-                                  ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
+                                  {aggregatedResults.overallPassed
+                                    ? "Passed"
+                                    : "Failed"}
+                                  ({aggregatedResults.passedChats}/
+                                  {aggregatedResults.totalChats} chats passed)
                                 </p>
                               </TooltipContent>
                             ) : null}
@@ -1142,31 +1243,40 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
-                          {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-3">
-                              {/* User Message */}
-                              {message.query && (
-                                <div className="flex justify-end mb-3">
-                                  <div className="max-w-[80%]">
-                                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                      <Markdown>{message.query}</Markdown>
+                          {resultsMessages
+                            .sort(
+                              (a: SimulationMessage, b: SimulationMessage) =>
+                                new Date(a.createdAt).getTime() -
+                                new Date(b.createdAt).getTime()
+                            )
+                            .map((message: SimulationMessage) => (
+                              <div key={message.id} className="space-y-3">
+                                {/* User Message */}
+                                {message.query && (
+                                  <div className="flex justify-end mb-3">
+                                    <div className="max-w-[80%]">
+                                      <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                        <Markdown>{message.query}</Markdown>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
-                              {/* Assistant Response */}
-                              {message.response !== undefined && message.query !== "" && (
-                                <div className="flex justify-start mb-3">
-                                  <div className="max-w-[80%]">
-                                    <div className="bg-muted rounded-lg p-3">
-                                      <Markdown>{message.response}</Markdown>
+                                {/* Assistant Response */}
+                                {message.response !== undefined &&
+                                  message.query !== "" && (
+                                    <div className="flex justify-start mb-3">
+                                      <div className="max-w-[80%]">
+                                        <div className="bg-muted rounded-lg p-3">
+                                          <Markdown>
+                                            {message.response}
+                                          </Markdown>
+                                        </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ))}
+                                  )}
+                              </div>
+                            ))}
                         </div>
                       ) : (
                         /* Fallback content when no chat is selected */
@@ -1193,7 +1303,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     {/* Select dropdown directly above document */}
                     {classDocuments.length > 1 && (
                       <div className="p-3 pb-2 border-b">
-                        <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
+                        <Popover
+                          open={documentSearchOpen}
+                          onOpenChange={setDocumentSearchOpen}
+                        >
                           <PopoverTrigger asChild>
                             <Button
                               variant="outline"
@@ -1202,7 +1315,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               className="w-full justify-between"
                             >
                               {selectedDocumentId
-                                ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
+                                ? classDocuments.find(
+                                    (doc) => doc.id === selectedDocumentId
+                                  )?.name
                                 : "Select document..."}
                               <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
@@ -1223,10 +1338,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                       }}
                                     >
                                       <Check
-                                        className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
-                                          }`}
+                                        className={`mr-2 h-4 w-4 ${
+                                          selectedDocumentId === doc.id
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
                                       />
-                                      <span className="truncate">{doc.name}</span>
+                                      <span className="truncate">
+                                        {doc.name}
+                                      </span>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
@@ -1256,10 +1376,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="h-[calc(100vh-4rem)]"> {/* Account for breadcrumbs */}
+    <div className="h-[calc(100vh-4rem)]">
+      {" "}
+      {/* Account for breadcrumbs */}
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
-        <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
+        <ResizablePanel
+          defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}
+        >
           <Card className="h-full flex flex-col py-4">
             <ResizablePanelGroup direction="vertical" className="h-full">
               <ResizablePanel defaultSize={85} minSize={60}>
@@ -1299,7 +1423,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    onClick={() => setShowDocuments(!showDocuments)}
+                                    onClick={() =>
+                                      setShowDocuments(!showDocuments)
+                                    }
                                     className="p-2"
                                   >
                                     {showDocuments ? (
@@ -1310,7 +1436,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
-                                  <p>{showDocuments ? 'Hide Documents' : 'Show Documents'}</p>
+                                  <p>
+                                    {showDocuments
+                                      ? "Hide Documents"
+                                      : "Show Documents"}
+                                  </p>
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
@@ -1319,31 +1449,46 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${currentChat?.completed && currentDynamicRubric
-                                  ? currentDynamicRubric.passed
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : "bg-red-100 dark:bg-red-900/30"
-                                  : "bg-muted"
-                                  }`}>
+                                <div
+                                  className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                    currentChat?.completed &&
+                                    currentDynamicRubric
+                                      ? currentDynamicRubric.passed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : "bg-muted"
+                                  }`}
+                                >
                                   <Clock className="h-4 w-4" />
-                                  <span className="text-sm font-medium" data-testid="timer">
-                                    {simulation?.timeLimit && timeRemaining !== null
+                                  <span
+                                    className="text-sm font-medium"
+                                    data-testid="timer"
+                                  >
+                                    {simulation?.timeLimit &&
+                                    timeRemaining !== null
                                       ? formatTime(timeRemaining)
                                       : formatTime(elapsedTime)}
                                   </span>
                                   {simulation?.timeLimit && !isActive && (
-                                    <span className="text-xs text-red-500 ml-1">(Expired)</span>
+                                    <span className="text-xs text-red-500 ml-1">
+                                      (Expired)
+                                    </span>
                                   )}
                                 </div>
                               </TooltipTrigger>
-                              {currentChat?.completed && currentDynamicRubric && (
-                                <TooltipContent>
-                                  <p>
-                                    {currentDynamicRubric.passed ? "Passed" : "Failed"}
-                                    ({currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints})
-                                  </p>
-                                </TooltipContent>
-                              )}
+                              {currentChat?.completed &&
+                                currentDynamicRubric && (
+                                  <TooltipContent>
+                                    <p>
+                                      {currentDynamicRubric.passed
+                                        ? "Passed"
+                                        : "Failed"}
+                                      ({currentDynamicRubric.score}/
+                                      {currentDynamicRubric.totalPossiblePoints}
+                                      )
+                                    </p>
+                                  </TooltipContent>
+                                )}
                             </Tooltip>
                           </TooltipProvider>
                         </div>
@@ -1380,7 +1525,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   key={index}
                                   variant="outline"
                                   className="h-auto p-4 text-left justify-start whitespace-normal"
-                                  onClick={() => handleStarterPromptClick(prompt)}
+                                  onClick={() =>
+                                    handleStarterPromptClick(prompt)
+                                  }
                                   disabled={
                                     currentChat?.completed ||
                                     (simulation?.timeLimit ? !isActive : false)
@@ -1392,51 +1539,62 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             </div>
                           </div>
                         ) : (
-                          messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-3">
-                              {/* User Message */}
-                              {message.query && (
-                                <div className="flex justify-end mb-3">
-                                  <div className="max-w-[80%]">
-                                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                      <Markdown>{message.query}</Markdown>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {/* Assistant Response */}
-                              {message.response !== undefined &&
-                                message.query !== "" && (
-                                  <div className="flex justify-start mb-3">
+                          messages
+                            .sort(
+                              (a: SimulationMessage, b: SimulationMessage) =>
+                                new Date(a.createdAt).getTime() -
+                                new Date(b.createdAt).getTime()
+                            )
+                            .map((message: SimulationMessage) => (
+                              <div key={message.id} className="space-y-3">
+                                {/* User Message */}
+                                {message.query && (
+                                  <div className="flex justify-end mb-3">
                                     <div className="max-w-[80%]">
-                                      <div className="bg-muted rounded-lg p-3">
-                                        {message.response === "" ? (
-                                          <div className="flex items-center">
-                                            <span className="text-gray-500 mr-2">
-                                              Analyzing
-                                            </span>
-                                            <LoadingDots />
-                                          </div>
-                                        ) : (
-                                          <Markdown>{message.response}</Markdown>
-                                        )}
+                                      <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                        <Markdown>{message.query}</Markdown>
                                       </div>
                                     </div>
                                   </div>
                                 )}
-                            </div>
-                          ))
+
+                                {/* Assistant Response */}
+                                {message.response !== undefined &&
+                                  message.query !== "" && (
+                                    <div className="flex justify-start mb-3">
+                                      <div className="max-w-[80%]">
+                                        <div className="bg-muted rounded-lg p-3">
+                                          {message.response === "" ? (
+                                            <div className="flex items-center">
+                                              <span className="text-gray-500 mr-2">
+                                                Analyzing
+                                              </span>
+                                              <LoadingDots />
+                                            </div>
+                                          ) : (
+                                            <Markdown>
+                                              {message.response}
+                                            </Markdown>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                              </div>
+                            ))
                         )}
                         <div ref={messagesEndRef} />
                       </div>
                     </ScrollArea>
 
                     {/* Scroll to bottom button with smooth fade transition */}
-                    <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${showScrollButton
-                      ? 'opacity-100 translate-y-0 pointer-events-auto'
-                      : 'opacity-0 translate-y-2 pointer-events-none'
-                      }`}>
+                    <div
+                      className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
+                        showScrollButton
+                          ? "opacity-100 translate-y-0 pointer-events-auto"
+                          : "opacity-0 translate-y-2 pointer-events-none"
+                      }`}
+                    >
                       <Button
                         variant="default"
                         size="sm"
@@ -1453,7 +1611,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0">
+                <CardFooter
+                  ref={inputPanelRef}
+                  className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0"
+                >
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1463,7 +1624,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <div className="text-sm">
                           <Badge
                             variant={
-                              currentDynamicRubric.passed ? "default" : "destructive"
+                              currentDynamicRubric.passed
+                                ? "default"
+                                : "destructive"
                             }
                           >
                             Score: {currentDynamicRubric.score}/
@@ -1475,7 +1638,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     </div>
                   ) : (
                     <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2 p-1">
-                      <form onSubmit={handleSendMessage} className={`flex flex-col gap-2 h-full ${isTall ? '' : 'max-h-full overflow-hidden'}`}>
+                      <form
+                        onSubmit={handleSendMessage}
+                        className={`flex flex-col gap-2 h-full ${isTall ? "" : "max-h-full overflow-hidden"}`}
+                      >
                         {isTall ? (
                           /* Vertical layout for larger panels with expanded textarea */
                           <div className="flex flex-col gap-3 flex-1 p-1">
@@ -1484,18 +1650,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
-                              disabled={simulation?.timeLimit ? !isActive : false}
+                              disabled={
+                                simulation?.timeLimit ? !isActive : false
+                              }
                               className="flex-1 resize-y overflow-y-auto text-md"
                               data-testid="message-input"
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
+                                if (e.key === "Enter" && !e.shiftKey) {
                                   e.preventDefault();
-                                  handleSendMessage(e as any);
+                                  handleSendMessage(null);
                                 }
                               }}
                               style={{
-                                minHeight: '80px',
-                                maxHeight: '300px'
+                                minHeight: "80px",
+                                maxHeight: "300px",
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1537,19 +1705,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
-                              disabled={simulation?.timeLimit ? !isActive : false}
+                              disabled={
+                                simulation?.timeLimit ? !isActive : false
+                              }
                               className="flex-1 resize-none overflow-hidden text-md"
                               data-testid="message-input"
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter' && !e.shiftKey) {
+                                if (e.key === "Enter" && !e.shiftKey) {
                                   e.preventDefault();
-                                  handleSendMessage(e as any);
+                                  handleSendMessage(null);
                                 }
                               }}
                               style={{
-                                height: '40px',
-                                minHeight: '40px',
-                                maxHeight: '40px'
+                                height: "40px",
+                                minHeight: "40px",
+                                maxHeight: "40px",
                               }}
                             />
                             <div className="flex gap-2 shrink-0">
@@ -1607,7 +1777,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   {/* Select dropdown directly above document */}
                   {classDocuments.length > 1 && (
                     <div className="p-3 pb-2 border-b">
-                      <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
+                      <Popover
+                        open={documentSearchOpen}
+                        onOpenChange={setDocumentSearchOpen}
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -1616,7 +1789,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             className="w-full justify-between"
                           >
                             {selectedDocumentId
-                              ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
+                              ? classDocuments.find(
+                                  (doc) => doc.id === selectedDocumentId
+                                )?.name
                               : "Select document..."}
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
@@ -1637,8 +1812,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     }}
                                   >
                                     <Check
-                                      className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
-                                        }`}
+                                      className={`mr-2 h-4 w-4 ${
+                                        selectedDocumentId === doc.id
+                                          ? "opacity-100"
+                                          : "opacity-0"
+                                      }`}
                                     />
                                     <span className="truncate">{doc.name}</span>
                                   </CommandItem>

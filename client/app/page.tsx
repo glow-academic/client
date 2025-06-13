@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { toast } from "sonner";
 
 // Microsoft Icon Component
 const MicrosoftIcon = () => (
@@ -101,7 +102,6 @@ const AnimatedSparkles = () => {
 };
 
 export default function Home() {
-  const [error, setError] = useState("");
   const [loadingGuest, setLoadingGuest] = useState(false);
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
@@ -136,8 +136,7 @@ export default function Home() {
       
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
     } catch (error) {
-      console.error("Error logging in:", error);
-      setError("An error occurred during login: " + (error as Error).message);
+      toast.error("An error occurred during login: " + (error as Error).message);
     } finally {
       setLoadingMicrosoft(false);
     }
@@ -153,8 +152,7 @@ export default function Home() {
       localStorage.setItem("simulatedRole", "guest");
       router.push("/home");
     } catch (error) {
-      console.error("Error logging in:", error);
-      setError("An error occurred during login: " + (error as Error).message);
+      toast.error("An error occurred during login: " + (error as Error).message);
     } finally {
       setLoadingGuest(false);
     }
@@ -190,17 +188,6 @@ export default function Home() {
 
         {/* Form */}
         <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 delay-500">
-          {error && (
-            <div className="p-4 bg-red-500/20 border border-red-400/30 text-red-200 text-sm rounded-xl animate-in slide-in-from-top-2 duration-300 backdrop-blur-sm">
-              <div className="flex items-center space-x-2">
-                <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
-                <span>{error}</span>
-              </div>
-            </div>
-          )}
-
           <div className="space-y-4">
             {/* Microsoft Login Button */}
             <Button
