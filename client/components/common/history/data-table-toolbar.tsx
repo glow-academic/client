@@ -38,6 +38,10 @@ export function DataTableToolbar<TData>({
     table.getState().columnFilters.filter((filter) => filter.id !== "createdAt")
       .length > 0;
 
+  const profileIdColumn = table.getColumn("profileId");
+  const classIdColumn = table.getColumn("classId");
+  const averageScoreColumn = table.getColumn("averageScore");
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -57,25 +61,25 @@ export function DataTableToolbar<TData>({
             className="h-8 w-[150px] lg:w-[250px]"
           />
           {/* Name filter - only show if profileId column exists */}
-          {table.getColumn("profileId") && (
+          {profileIdColumn && (
             <DataTableFacetedFilter
-              column={table.getColumn("profileId")}
+              column={profileIdColumn}
               title="Name"
               options={profileOptions}
             />
           )}
           {/* Class filter */}
-          {table.getColumn("classId") && (
+          {classIdColumn && (
             <DataTableFacetedFilter
-              column={table.getColumn("classId")}
+              column={classIdColumn}
               title="Class"
               options={classOptions}
             />
           )}
           {/* Score filter */}
-          {table.getColumn("averageScore") && (
+          {averageScoreColumn && (
             <DataTableFacetedFilter
-              column={table.getColumn("averageScore")}
+              column={averageScoreColumn}
               title="Score"
               options={scoreRangeOptions}
             />
@@ -106,7 +110,6 @@ export function DataTableToolbar<TData>({
               table={table}
               profileOptions={profileOptions}
               classOptions={classOptions}
-              scoreRangeOptions={scoreRangeOptions}
             />
           )}
 

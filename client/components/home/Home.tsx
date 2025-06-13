@@ -66,55 +66,6 @@ interface AttemptData {
   createdAt: string;
 }
 
-// Progress Circle Component
-const ProgressCircle = ({ percentage, size = 40 }: { percentage: number; size?: number }) => {
-  const radius = (size - 4) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDasharray = `${(percentage / 100) * circumference} ${circumference}`;
-  
-  const getColor = (percent: number) => {
-    if (percent >= 80) return "#10b981"; // green
-    if (percent >= 60) return "#f59e0b"; // yellow
-    return "#ef4444"; // red
-  };
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg
-        className="transform -rotate-90"
-        width={size}
-        height={size}
-      >
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="currentColor"
-          strokeWidth="2"
-          fill="transparent"
-          className="text-gray-200 dark:text-gray-700"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={getColor(percentage)}
-          strokeWidth="2"
-          fill="transparent"
-          strokeDasharray={strokeDasharray}
-          strokeLinecap="round"
-          className="transition-all duration-300"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-semibold" style={{ color: getColor(percentage) }}>
-          {percentage}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 // Rubric Modal Component
 const RubricModal = React.memo(({ simulationId, rubrics, standardGroups, standards }: {
   simulationId: string;
@@ -189,7 +140,7 @@ const RubricModal = React.memo(({ simulationId, rubrics, standardGroups, standar
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rubricData.map((group: any, groupIndex: number) => 
+                  {rubricData.map((group: any) => 
                     group.standards.map((standard: any, standardIndex: number) => (
                       <TableRow 
                         key={`${group.groupName}-${standard.id}`}
@@ -677,21 +628,6 @@ export default function Home() {
       setLoadingSimulation(simulationId);
       toast.loading("Starting simulation...");
 
-      // For guests, use all available classes; for users, use their assigned classes or all if none assigned
-      const availableClasses =
-        effectiveRole === "guest"
-          ? classes
-          : profile?.classIds?.length || 0 > 0
-            ? classes.filter((c) => profile?.classIds.includes(c.id))
-            : classes;
-
-      const classId =
-        availableClasses.length > 0
-          ? availableClasses[
-              Math.floor(Math.random() * availableClasses.length)
-            ].id
-          : classes[Math.floor(Math.random() * classes.length)].id;
-
       const formData = new FormData();
       formData.append("simulation_id", simulationId);
 
@@ -928,11 +864,11 @@ export default function Home() {
               loadingSimulation={loadingSimulation}
               effectiveRole={effectiveRole}
               rubricData={getRealRubricData(simulation.id)}
-              scenarios={scenarios}
-              agents={agents}
-              rubrics={rubrics}
-              standardGroups={standardGroups}
-              standards={standards}
+              scenarios={scenarios ?? []}
+              agents={agents ?? []}
+              rubrics={rubrics ?? []}
+              standardGroups={standardGroups ?? []}
+              standards={standards ?? []}
             />
           ))}
         </div>

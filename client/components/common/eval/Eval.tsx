@@ -42,7 +42,6 @@ import {
 
 // API imports
 import { getEval } from "@/utils/queries/evals/get-eval";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -89,7 +88,6 @@ export default function Eval({
   const isEditMode = mode === "edit" && !!evalId;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
 
   const initialFormData: EvalFormData = {
@@ -115,11 +113,6 @@ export default function Eval({
   });
 
   // Fetch related data
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   const { data: agents = [] } = useQuery({
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
@@ -243,9 +236,9 @@ export default function Eval({
     const draggedIndex = newOrder.findIndex((id) => id === draggedItem);
     const targetIndex = newOrder.findIndex((id) => id === targetItemId);
 
-    if (draggedIndex !== -1 && targetIndex !== -1 && draggedItem) {
+    if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
-      newOrder.splice(targetIndex, 0, removed);
+      newOrder.splice(targetIndex, 0, removed!);
 
       setFormData((prev) => ({ ...prev, [field]: newOrder }));
     }

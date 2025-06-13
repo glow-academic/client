@@ -236,7 +236,6 @@ export default function Overview() {
         // Last hour in 10-minute intervals
         return Array.from({ length: 6 }, (_, i) => {
           const time = subHours(new Date(), (5 - i) * (1/6)); // 10-minute intervals
-          const timeStr = format(time, "yyyy-MM-dd HH:mm");
           
           const intervalChats = chats.filter((chat) => {
             const chatTime = new Date(chat.createdAt);

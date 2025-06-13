@@ -86,7 +86,7 @@ export function ScenarioPicker({
       setInternalSelectedModel(undefined)
     }
     // Call onSelect with a special "clear" model to indicate clearing
-    onSelect?.({ id: "", name: "", description: "", type: types[0] })
+    onSelect?.({ id: "", name: "", description: "", type: types[0]! })
     setOpen(false)
   }
 

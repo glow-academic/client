@@ -26,7 +26,6 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
@@ -75,11 +74,6 @@ export default function Growth() {
     queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
     enabled: !!user,
-  });
-
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -238,79 +232,6 @@ export default function Growth() {
     const change = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
     return { value: Math.abs(change), isPositive: change >= 0 };
   }, [grades]);
-
-  // Get performance insights based on actual data
-  const insights = useMemo(() => {
-    if (!growthData || growthData.length === 0) return [];
-
-    const insights = [];
-
-    const overallScore =
-      growthData.find((d) => d.metric === "Overall Score")?.value || 0;
-    const adaptability =
-      growthData.find((d) => d.metric === "Adaptability")?.value || 0;
-    const listening =
-      growthData.find((d) => d.metric === "Listening Skills")?.value || 0;
-    const timeManagement =
-      growthData.find((d) => d.metric === "Time Management")?.value || 0;
-    const engagement =
-      growthData.find((d) => d.metric === "Engagement")?.value || 0;
-
-    if (overallScore >= 80) {
-      insights.push({
-        type: "success",
-        message: "Excellent overall performance!",
-      });
-    } else if (overallScore < 60) {
-      insights.push({
-        type: "warning",
-        message: "Overall performance needs improvement",
-      });
-    }
-
-    if (adaptability < 60) {
-      insights.push({
-        type: "improvement",
-        message: "Focus on adapting to different student needs",
-      });
-    }
-
-    if (listening < 60) {
-      insights.push({
-        type: "improvement",
-        message: "Work on active listening skills",
-      });
-    }
-
-    if (timeManagement < 60) {
-      insights.push({
-        type: "improvement",
-        message: "Improve time management during sessions",
-      });
-    }
-
-    if (engagement >= 80) {
-      insights.push({
-        type: "success",
-        message: "Great student engagement levels!",
-      });
-    }
-
-    // Add insights based on recent performance trends
-    if (growthTrend.isPositive && growthTrend.value > 10) {
-      insights.push({
-        type: "success",
-        message: `Performance improving by ${growthTrend.value}%!`,
-      });
-    } else if (!growthTrend.isPositive && growthTrend.value > 10) {
-      insights.push({
-        type: "warning",
-        message: "Recent performance shows room for improvement",
-      });
-    }
-
-    return insights;
-  }, [growthData, growthTrend]);
 
   const isLoading =
     isLoadingAttempts ||

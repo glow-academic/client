@@ -38,7 +38,6 @@ interface EnhancedAttempt extends SimulationAttempt {
   agentsTested: string[];
   simulationTitle: string;
   interactionIds: string[];
-  classId: string | null;
   classIds: string[];
 }
 
@@ -245,7 +244,6 @@ export function useColumns({
         simulationTitle:
           simulation?.title || `Simulation ${attempt.simulationId}`,
         interactionIds: simulation?.scenarioIds || [],
-        classId: derivedClassIds.length > 0 ? derivedClassIds[0] : null, // Keep first class for filtering
         classIds: derivedClassIds, // Add all class IDs for display
       };
     });
@@ -443,7 +441,7 @@ export function useColumns({
       },
       // Class column
       {
-        accessorKey: "classId",
+        accessorKey: "classIds",
         header: ({ column }) => (
           <DataTableColumnHeader
             column={column}
@@ -642,7 +640,7 @@ export function useColumns({
           );
         },
         enableSorting: true,
-        filterFn: (row, id, value) => {
+        filterFn: (row, _, value) => {
           const chats = row.getValue("chats") as SimulationChat[];
           if (!chats || chats.length === 0) {
             return value.includes("not-graded");
@@ -719,6 +717,7 @@ export function useColumns({
     isLoadingGrades ||
     isLoadingFeedbacks ||
     isLoadingClasses ||
+    isLoadingSimulations ||
     isLoadingScenarios;
 
   return {

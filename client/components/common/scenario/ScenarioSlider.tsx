@@ -68,7 +68,7 @@ export function ScenarioSlider({
               id="slider"
               min={min}
               max={max}
-              defaultValue={value}
+              defaultValue={value ?? []}
               step={step}
               onValueChange={handleValueChange}
               className={`[&_[role=slider]]:h-4 [&_[role=slider]]:w-4 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}

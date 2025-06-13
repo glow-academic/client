@@ -35,8 +35,7 @@ interface DataTableProps<TData, TValue> {
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   scoreRangeOptions: { value: string; label: string }[];
-  showExport?: boolean;
-  scoreOptions?: { value: string; label: string }[];
+    showExport?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -46,7 +45,6 @@ export function DataTable<TData, TValue>({
   classOptions,
   scoreRangeOptions,
   showExport = true,
-  scoreOptions = [],
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =

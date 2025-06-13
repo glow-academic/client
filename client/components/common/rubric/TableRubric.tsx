@@ -123,7 +123,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         return standard.points <= achievedStandard.points;
     };
 
-    if (loadingRubric || loadingStandardGroups || loadingStandards) {
+    if (loadingRubric || loadingStandardGroups || loadingStandards || loadingSimulationGrades || loadingSimulationFeedbacks || loadingEvaluationGrades || loadingEvaluationFeedbacks) {
         return (
             <div className="flex items-center justify-center p-8">
                 <div className="text-center space-y-2">
@@ -134,7 +134,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         );
     }
 
-    if (!rubric || !standardGroups || !standards) {
+    if (!rubric || !standardGroups || !standards || !simulationGrades || !simulationFeedbacks || !evaluationGrades || !evaluationFeedbacks) {
         return (
             <div className="text-center p-8">
                 <p className="text-muted-foreground">Unable to load rubric data</p>
@@ -164,7 +164,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
                                 <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2" style={{ width: `${(100 - 20) / maxStandards}%` }}>
-                                    {groupedStandards[0].standards[i].name}
+                                    {groupedStandards[0]?.standards[i]?.name}
                                 </TableHead>
                             ))}
                         </TableRow>

@@ -281,7 +281,7 @@ export default function Rubric({
       // Extract rating from name (e.g., "Excellent (5)" -> 5)
       const ratingMatch = standard.name.match(/\((\d+)\)/);
       if (ratingMatch) {
-        const rating = parseInt(ratingMatch[1]);
+        const rating = parseInt(ratingMatch[1]!);
         ratingMap[rating] = standard;
       }
     });
@@ -558,7 +558,7 @@ export default function Rubric({
             return (
               <Card key={group.id} className="overflow-hidden">
                 <Collapsible
-                  open={isOpen}
+                  open={isOpen ?? false}
                   onOpenChange={() => toggleCard(index)}
                 >
                   <CollapsibleTrigger asChild>

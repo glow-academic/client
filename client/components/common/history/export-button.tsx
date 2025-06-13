@@ -67,14 +67,12 @@ interface ExportButtonProps<TData> {
   table: Table<TData>;
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
-  scoreRangeOptions?: { value: string; label: string }[];
 }
 
 export function ExportButton<TData>({
   table,
   profileOptions,
   classOptions,
-  scoreRangeOptions = [],
 }: ExportButtonProps<TData>) {
   const selectedRows = Object.keys(table.getState().rowSelection).length;
   const [exportPopoverOpen, setExportPopoverOpen] = useState(false);

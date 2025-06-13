@@ -498,7 +498,7 @@ export function UnifiedSidebar({
                       handleItemClick({
                         title: item.title,
                         url: item.url,
-                        section: item.section,
+                        section: item.section!,
                       })
                     }
                     className={`flex items-center gap-2 px-2 py-1.5 ${activeSection === item.section ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}`}
