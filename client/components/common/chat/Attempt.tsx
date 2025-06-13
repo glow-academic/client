@@ -1120,15 +1120,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
               <Card className="h-full flex flex-col ml-4">
-                <CardHeader className="flex-shrink-0 pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Documents</CardTitle>
-                    {classDocuments.length > 1 && (
+                <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                  {/* Select dropdown directly above document */}
+                  {classDocuments.length > 1 && (
+                    <div className="p-3 pb-2 border-b">
                       <Select
                         value={selectedDocumentId || ""}
                         onValueChange={setSelectedDocumentId}
                       >
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select document" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1141,16 +1141,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+                  {/* Document viewer with minimal padding */}
+                  <div className="flex-1 min-h-0 p-2">
+                    {selectedDocument && (
+                      <DocumentViewer 
+                        key={selectedDocument.id} 
+                        document={selectedDocument}
+                      />
                     )}
                   </div>
-                </CardHeader>
-                <CardContent className="flex-1 p-0 min-h-0">
-                  {selectedDocument && (
-                    <DocumentViewer 
-                      key={selectedDocument.id} 
-                      document={selectedDocument}
-                    />
-                  )}
                 </CardContent>
               </Card>
             </ResizablePanel>
@@ -1161,7 +1162,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="h-screen">
+    <div className="h-[calc(100vh-4rem)]"> {/* Account for breadcrumbs */}
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
@@ -1350,7 +1351,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
-                <CardFooter ref={inputPanelRef} className="h-full p-4 border-t flex flex-col justify-center">
+                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-6 border-t flex flex-col justify-center">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1392,7 +1393,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '60px',
-                                height: `${Math.max(60, inputPanelHeight - 120)}px`
+                                height: `${Math.max(60, inputPanelHeight - 140)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1494,14 +1495,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
               <Card className="h-full flex flex-col ml-4">
-                <CardHeader className="flex-shrink-0 pb-2">
-                  <div className="flex items-center justify-between">
-                    {classDocuments.length > 1 && (
+                <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                  {/* Select dropdown directly above document */}
+                  {classDocuments.length > 1 && (
+                    <div className="p-3 pb-2 border-b">
                       <Select
                         value={selectedDocumentId || ""}
                         onValueChange={setSelectedDocumentId}
                       >
-                        <SelectTrigger className="w-48">
+                        <SelectTrigger className="w-full">
                           <SelectValue placeholder="Select document" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1514,16 +1516,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+                  )}
+                  {/* Document viewer with minimal padding */}
+                  <div className="flex-1 min-h-0 p-2">
+                    {selectedDocument && (
+                      <DocumentViewer 
+                        key={selectedDocument.id} 
+                        document={selectedDocument}
+                      />
                     )}
                   </div>
-                </CardHeader>
-                <CardContent className="flex-1 p-0 min-h-0">
-                  {selectedDocument && (
-                    <DocumentViewer 
-                      key={selectedDocument.id} 
-                      document={selectedDocument}
-                    />
-                  )}
                 </CardContent>
               </Card>
             </ResizablePanel>
