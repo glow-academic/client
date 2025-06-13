@@ -121,6 +121,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showDocuments, setShowDocuments] = useState(true);
   const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
   const [inputPanelHeight, setInputPanelHeight] = useState(0);
+  const [textareaHeight, setTextareaHeight] = useState(40);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
@@ -875,6 +876,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       for (const entry of entries) {
         const newHeight = entry.contentRect.height;
         setInputPanelHeight(newHeight);
+        
+        // Calculate textarea height based on available space
+        if (newHeight > 160) {
+          // Vertical layout - more space for textarea
+          const availableHeight = newHeight - 100; // Account for buttons and padding
+          setTextareaHeight(Math.max(100, Math.min(availableHeight, 300)));
+        } else {
+          // Horizontal layout - constrained height
+          const availableHeight = newHeight - 80; // Account for padding
+          setTextareaHeight(Math.max(40, Math.min(availableHeight, 80)));
+        }
       }
     });
 
@@ -1217,7 +1229,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                   <ScrollArea className="flex-1 px-4 min-h-0">
-                    <div className="space-y-3 py-4">
+                    <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
                       {showGrades && selectedChat && simulation?.rubricId ? (
                         <TableRubric
@@ -1226,12 +1238,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         />
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                           {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-2">
+                            <div key={message.id} className="space-y-3">
                               {/* User Message */}
                               {message.query && (
-                                <div className="flex justify-end mb-2">
+                                <div className="flex justify-end mb-3">
                                   <div className="max-w-[80%]">
                                     <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                       <Markdown>{message.query}</Markdown>
@@ -1242,7 +1254,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                               {/* Assistant Response */}
                               {message.response !== undefined && message.query !== "" && (
-                                <div className="flex justify-start mb-2">
+                                <div className="flex justify-start mb-3">
                                   <div className="max-w-[80%]">
                                     <div className="bg-muted rounded-lg p-3">
                                       <Markdown>{message.response}</Markdown>
@@ -1441,7 +1453,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       className="flex-1 px-4 min-h-0"
                       ref={scrollAreaRef}
                     >
-                      <div className="space-y-3 py-4">
+                      <div className="space-y-4 py-4">
                         {messagesLoading ? (
                           <div className="space-y-4">
                             {[1, 2, 3].map((i) => (
@@ -1478,10 +1490,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           </div>
                         ) : (
                           messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-2">
+                            <div key={message.id} className="space-y-3">
                               {/* User Message */}
                               {message.query && (
-                                <div className="flex justify-end mb-2">
+                                <div className="flex justify-end mb-3">
                                   <div className="max-w-[80%]">
                                     <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                       <Markdown>{message.query}</Markdown>
@@ -1493,7 +1505,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {/* Assistant Response */}
                               {message.response !== undefined &&
                                 message.query !== "" && (
-                                  <div className="flex justify-start mb-2">
+                                  <div className="flex justify-start mb-3">
                                     <div className="max-w-[80%]">
                                       <div className="bg-muted rounded-lg p-3">
                                         {message.response === "" ? (
@@ -1580,10 +1592,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }
                               }}
                               style={{
-                                minHeight: '100px',
-                                // Make textarea height more responsive to available space
-                                height: `${Math.max(100, inputPanelHeight - 100)}px`,
-                                maxHeight: `${Math.max(100, inputPanelHeight - 100)}px`
+                                height: `${textareaHeight}px`,
+                                minHeight: `${textareaHeight}px`,
+                                maxHeight: `${textareaHeight}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1635,10 +1646,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }
                               }}
                               style={{
-                                minHeight: '40px',
-                                // Make textarea height more responsive to available space
-                                height: `${Math.max(40, inputPanelHeight - 80)}px`,
-                                maxHeight: `${Math.max(40, inputPanelHeight - 80)}px`
+                                height: `${textareaHeight}px`,
+                                minHeight: `${textareaHeight}px`,
+                                maxHeight: `${textareaHeight}px`
                               }}
                             />
                             <div className="flex gap-2 shrink-0">

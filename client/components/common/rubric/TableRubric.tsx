@@ -154,16 +154,16 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
     const maxStandards = Math.max(...groupedStandards.map(g => g.standards.length));
 
     return (
-        <div className="space-y-6 w-full">
+        <div className="space-y-4 w-full">
             <div className="overflow-auto max-h-[70vh]">
-                <Table className="min-w-[800px]">
+                <Table className="min-w-[600px] text-sm">
                     <TableHeader className="sticky top-0 z-10">
                         <TableRow>
-                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[80px]">
+                            <TableHead className="bg-primary text-primary-foreground font-semibold w-[120px] text-xs">
                                 Criteria
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
-                                <TableHead key={i} className="bg-primary text-primary-foreground font-semibold">
+                                <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2">
                                     {groupedStandards[0].standards[i].name}
                                 </TableHead>
                             ))}
@@ -172,11 +172,13 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                     <TableBody>
                         {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
                             <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
-                                <TableCell className="font-medium align-top p-2 text-sm">{group.name}</TableCell>
+                                <TableCell className="font-medium align-top p-2 text-xs w-[120px] max-w-[120px]">
+                                    <div className="break-words">{group.name}</div>
+                                </TableCell>
                                 {Array.from({ length: maxStandards }, (_, standardIndex) => {
                                     const standard = groupStandards[standardIndex];
                                     if (!standard) {
-                                        return <TableCell key={standardIndex} className="whitespace-normal text-xs align-top p-3"></TableCell>;
+                                        return <TableCell key={standardIndex} className="whitespace-normal text-xs align-top p-2"></TableCell>;
                                     }
 
                                     const feedback = getFeedbackForStandard(standard.id);
@@ -184,19 +186,19 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                                     const shouldHighlightCell = shouldHighlight(standard, groupStandards);
 
                                     return (
-                                                                                <TableCell 
+                                        <TableCell 
                                             key={standard.id} 
-                                            className={`whitespace-normal text-xs relative align-top p-3 ${shouldHighlightCell
+                                            className={`whitespace-normal text-xs relative align-top p-2 ${shouldHighlightCell
                                                 ? isAchieved
                                                     ? "bg-green-200 dark:bg-green-900/40"
                                                     : "bg-green-100 dark:bg-green-900/20"
                                                 : ""
                                             }`}
                                         >
-                                            <div className="space-y-2">
+                                            <div className="space-y-1">
                                                 {isAchieved && feedback ? (
-                                                    <div>{feedback.feedback}</div>
-                                                ) : <div className="text-xs">
+                                                    <div className="text-xs leading-tight">{feedback.feedback}</div>
+                                                ) : <div className="text-xs leading-tight">
                                                     {standard.description}
                                                 </div>}
                                             </div>
