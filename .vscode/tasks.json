@@ -5,7 +5,10 @@
       "label": "Database: Start",
       "type": "shell",
       "command": "bash",
-      "args": ["run.sh", "--clean"],
+      "args": [
+        "run.sh",
+        "--clean"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/database"
       },
@@ -16,7 +19,10 @@
       "label": "Client: Start Development",
       "type": "shell",
       "command": "yarn",
-      "args": ["run", "dev"],
+      "args": [
+        "run",
+        "dev"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },
@@ -27,7 +33,9 @@
       "label": "Server: Start Development",
       "type": "shell",
       "command": "make",
-      "args": ["run"],
+      "args": [
+        "run"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/server"
       },
@@ -38,7 +46,9 @@
       "label": "Client: Test",
       "type": "shell",
       "command": "yarn",
-      "args": ["test"],
+      "args": [
+        "test"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },
@@ -48,7 +58,9 @@
       "label": "Server: Test",
       "type": "shell",
       "command": "make",
-      "args": ["test"],
+      "args": [
+        "test"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/server"
       },
@@ -58,7 +70,10 @@
       "label": "Client: Test Cypress",
       "type": "shell",
       "command": "yarn",
-      "args": ["run", "test:cypress"],
+      "args": [
+        "run",
+        "test:cypress"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },
@@ -68,7 +83,10 @@
       "label": "Client: Type Check",
       "type": "shell",
       "command": "npx",
-      "args": ["tsc", "--noEmit"],
+      "args": [
+        "tsc",
+        "--noEmit"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/client"
       },
@@ -78,11 +96,67 @@
       "label": "Server: Type Check",
       "type": "shell",
       "command": "make",
-      "args": ["typecheck"],
+      "args": [
+        "typecheck"
+      ],
       "options": {
         "cwd": "${workspaceFolder}/server"
       },
       "group": "build"
-    }
+    },
+          {
+        "type": "typescript",
+        "tsconfig": "client/tsconfig.json",
+        "problemMatcher": [
+          "$tsc"
+        ],
+        "group": "build",
+        "label": "tsc: build - client/tsconfig.json"
+      },
+      {
+        "label": "eslint: lint - client",
+        "type": "shell",
+        "command": "${workspaceFolder}/client/node_modules/.bin/eslint",
+        "args": [
+          ".",
+          "--format=stylish"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/client"
+        },
+        "group": "build",
+        "problemMatcher": "$eslint-stylish",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": true,
+          "clear": false
+        }
+      },
+      {
+        "label": "eslint: fix - client",
+        "type": "shell",
+        "command": "${workspaceFolder}/client/node_modules/.bin/eslint",
+        "args": [
+          ".",
+          "--fix",
+          "--format=stylish"
+        ],
+        "options": {
+          "cwd": "${workspaceFolder}/client"
+        },
+        "group": "build",
+        "problemMatcher": "$eslint-stylish",
+        "presentation": {
+          "echo": true,
+          "reveal": "always",
+          "focus": false,
+          "panel": "shared",
+          "showReuseMessage": true,
+          "clear": false
+        }
+      }
   ]
 }
