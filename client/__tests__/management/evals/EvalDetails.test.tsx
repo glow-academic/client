@@ -144,7 +144,7 @@ describe('EvalDetails', () => {
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
+ * - Client component: true
  * - Uses hooks: user, useState, useQuery, useQueryClient, useRouter
  * - Uses router: true
  * - Has API calls: true

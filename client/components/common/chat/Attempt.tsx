@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,9 +35,14 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 // Icons
-import { Send, ChevronDown, Users, Clock } from "lucide-react";
+import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose } from "lucide-react";
 
 // Tooltip
 import {
@@ -96,6 +102,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showResults, setShowResults] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(true);
+  const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1093,257 +1101,299 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="flex h-screen gap-4 p-4">
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <Card className="flex-1 flex flex-col min-h-0">
-          {/* Timer and Controls Header - consistent with results layout */}
-          <div className="p-4 pt-0 border-b flex flex-col gap-2">
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                {/* Show scenario information */}
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">
-                    {scenario?.description || currentChat?.title}
-                  </span>
-                  {!isSingleChatAttempt && (
-                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      <span data-testid="chat-counter">
-                        Chat {currentChatIndex + 1} of{" "}
-                        {simulation?.scenarioIds?.length || 0}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-start justify-end gap-2">
-                <div className="flex items-center gap-4">
-                  {currentChat?.completed && (
-                    <Badge variant="default">Completed</Badge>
-                  )}
-                </div>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                        currentChat?.completed && currentDynamicRubric
-                          ? currentDynamicRubric.passed
-                            ? "bg-green-100 dark:bg-green-900/30"
-                            : "bg-red-100 dark:bg-red-900/30"
-                          : "bg-muted"
-                      }`}>
-                        <Clock className="h-4 w-4" />
-                        <span className="text-sm font-medium" data-testid="timer">
-                          {simulation?.timeLimit && timeRemaining !== null
-                            ? formatTime(timeRemaining)
-                            : formatTime(elapsedTime)}
-                        </span>
-                        {simulation?.timeLimit && !isActive && (
-                          <span className="text-xs text-red-500 ml-1">(Expired)</span>
-                        )}
-                      </div>
-                    </TooltipTrigger>
-                    {currentChat?.completed && currentDynamicRubric && (
-                      <TooltipContent>
-                        <p>
-                          {currentDynamicRubric.passed ? "Passed" : "Failed"} 
-                          ({currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints})
-                        </p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-            </div>
-          </div>
-
-          <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
-            <ScrollArea
-              className="flex-1 px-4 min-h-0"
-              ref={scrollAreaRef}
-              onScrollCapture={handleScroll}
-            >
-              <div className="space-y-4 py-4">
-                {messagesLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="space-y-2">
-                        <Skeleton className="h-4 w-20" />
-                        <Skeleton className="h-16 w-full" />
-                      </div>
-                    ))}
-                  </div>
-                ) : messages.length === 0 ? (
-                  /* Starter Prompts - shown when no messages */
-                  <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
-                    <div className="text-center space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        Choose a prompt below or type your own message
-                      </p>
-                    </div>
-                    <div className="flex flex-col gap-3 w-full max-w-md">
-                      {starterPrompts.map((prompt, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          className="h-auto p-4 text-left justify-start whitespace-normal"
-                          onClick={() => handleStarterPromptClick(prompt)}
-                          disabled={
-                            currentChat?.completed ||
-                            (simulation?.timeLimit ? !isActive : false)
-                          }
-                        >
-                          <span className="text-sm">{prompt}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                    <div key={message.id} className="space-y-4">
-                      {/* User Message */}
-                      {message.query && (
-                        <div className="flex justify-end">
-                          <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
-                            <Markdown>{message.query}</Markdown>
-                          </div>
+    <div className="h-screen p-4">
+      <ResizablePanelGroup direction="horizontal" className="h-full">
+        {/* Main Chat Area */}
+        <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
+          <Card className="h-full flex flex-col">
+            <ResizablePanelGroup direction="vertical" className="h-full">
+              <ResizablePanel defaultSize={85} minSize={60}>
+                <div className="h-full flex flex-col">
+                  {/* Timer and Controls Header - consistent with results layout */}
+                  <div className="p-4 pt-0 border-b flex flex-col gap-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-4">
+                        {/* Show scenario information */}
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">
+                            {scenario?.description || currentChat?.title}
+                          </span>
+                          {!isSingleChatAttempt && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              <span data-testid="chat-counter">
+                                Chat {currentChatIndex + 1} of{" "}
+                                {simulation?.scenarioIds?.length || 0}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
+                      <div className="flex items-start justify-end gap-2">
+                        <div className="flex items-center gap-4">
+                          {currentChat?.completed && (
+                            <Badge variant="default">Completed</Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {/* Documents Toggle */}
+                          {classDocuments.length > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setShowDocuments(!showDocuments)}
+                              className="p-2"
+                            >
+                              {showDocuments ? (
+                                <PanelRightClose className="h-4 w-4" />
+                              ) : (
+                                <PanelRightOpen className="h-4 w-4" />
+                              )}
+                            </Button>
+                          )}
+                          
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                  currentChat?.completed && currentDynamicRubric
+                                    ? currentDynamicRubric.passed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : "bg-muted"
+                                }`}>
+                                  <Clock className="h-4 w-4" />
+                                  <span className="text-sm font-medium" data-testid="timer">
+                                    {simulation?.timeLimit && timeRemaining !== null
+                                      ? formatTime(timeRemaining)
+                                      : formatTime(elapsedTime)}
+                                  </span>
+                                  {simulation?.timeLimit && !isActive && (
+                                    <span className="text-xs text-red-500 ml-1">(Expired)</span>
+                                  )}
+                                </div>
+                              </TooltipTrigger>
+                              {currentChat?.completed && currentDynamicRubric && (
+                                <TooltipContent>
+                                  <p>
+                                    {currentDynamicRubric.passed ? "Passed" : "Failed"} 
+                                    ({currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints})
+                                  </p>
+                                </TooltipContent>
+                              )}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                      {/* Assistant Response */}
-                      {message.response !== undefined &&
-                        message.query !== "" && (
-                          <div className="flex justify-start">
-                            <div className="flex gap-3 max-w-[80%]">
-                              <Avatar className="h-8 w-8 flex-shrink-0">
-                                <AvatarFallback>AI</AvatarFallback>
-                              </Avatar>
-                              <div className="bg-muted rounded-lg p-3 flex-1">
-                                {message.response === "" ? (
-                                  <div className="flex items-center">
-                                    <span className="text-gray-500 mr-2">
-                                      Analyzing
-                                    </span>
-                                    <LoadingDots />
-                                  </div>
-                                ) : (
-                                  <Markdown>{message.response}</Markdown>
-                                )}
+                  <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
+                    <ScrollArea
+                      className="flex-1 px-4 min-h-0"
+                      ref={scrollAreaRef}
+                      onScrollCapture={handleScroll}
+                    >
+                      <div className="space-y-4 py-4">
+                        {messagesLoading ? (
+                          <div className="space-y-4">
+                            {[1, 2, 3].map((i) => (
+                              <div key={i} className="space-y-2">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-16 w-full" />
                               </div>
+                            ))}
+                          </div>
+                        ) : messages.length === 0 ? (
+                          /* Starter Prompts - shown when no messages */
+                          <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                            <div className="text-center space-y-2">
+                              <p className="text-sm text-muted-foreground">
+                                Choose a prompt below or type your own message
+                              </p>
+                            </div>
+                            <div className="flex flex-col gap-3 w-full max-w-md">
+                              {starterPrompts.map((prompt, index) => (
+                                <Button
+                                  key={index}
+                                  variant="outline"
+                                  className="h-auto p-4 text-left justify-start whitespace-normal"
+                                  onClick={() => handleStarterPromptClick(prompt)}
+                                  disabled={
+                                    currentChat?.completed ||
+                                    (simulation?.timeLimit ? !isActive : false)
+                                  }
+                                >
+                                  <span className="text-sm">{prompt}</span>
+                                </Button>
+                              ))}
                             </div>
                           </div>
+                        ) : (
+                          messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
+                            <div key={message.id} className="space-y-4">
+                              {/* User Message */}
+                              {message.query && (
+                                <div className="flex justify-end">
+                                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
+                                    <Markdown>{message.query}</Markdown>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Assistant Response */}
+                              {message.response !== undefined &&
+                                message.query !== "" && (
+                                  <div className="flex justify-start">
+                                    <div className="flex gap-3 max-w-[80%]">
+                                      <Avatar className="h-8 w-8 flex-shrink-0">
+                                        <AvatarFallback>AI</AvatarFallback>
+                                      </Avatar>
+                                      <div className="bg-muted rounded-lg p-3 flex-1">
+                                        {message.response === "" ? (
+                                          <div className="flex items-center">
+                                            <span className="text-gray-500 mr-2">
+                                              Analyzing
+                                            </span>
+                                            <LoadingDots />
+                                          </div>
+                                        ) : (
+                                          <Markdown>{message.response}</Markdown>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                )}
+                            </div>
+                          ))
                         )}
-                    </div>
-                  ))
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </ScrollArea>
+                        <div ref={messagesEndRef} />
+                      </div>
+                    </ScrollArea>
 
-            {/* Scroll to bottom button */}
-            {showScrollButton && (
-              <div className="absolute bottom-4 right-8 z-10">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={scrollToBottom}
-                  className="rounded-full h-10 w-10 p-0 shadow-lg"
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter className="flex-shrink-0 p-4 border-t">
-            {currentChat?.completed ? (
-              <div className="w-full text-center py-4">
-                <p className="text-muted-foreground mb-2">
-                  This chat has been completed.
-                </p>
-                {currentDynamicRubric && (
-                  <div className="text-sm">
-                    <Badge
-                      variant={
-                        currentDynamicRubric.passed ? "default" : "destructive"
-                      }
-                    >
-                      Score: {currentDynamicRubric.score}/
-                      {currentDynamicRubric.totalPossiblePoints} -{" "}
-                      {currentDynamicRubric.passed ? "Passed" : "Failed"}
-                    </Badge>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="w-full space-y-2">
-                <form onSubmit={handleSendMessage} className="flex gap-2">
-                  <Input
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    placeholder="Type your message..."
-                    disabled={simulation?.timeLimit ? !isActive : false}
-                    className="flex-1"
-                    data-testid="message-input"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={
-                      !newMessage.trim() ||
-                      (simulation?.timeLimit ? !isActive : false)
-                    }
-                    data-testid="send-button"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleEndChat}
-                    disabled={
-                      endChatLoading ||
-                      (simulation?.timeLimit ? !isActive : false)
-                    }
-                    className="whitespace-nowrap"
-                  >
-                    {endChatLoading
-                      ? "Ending..."
-                      : isSingleChatAttempt
-                        ? "End Session"
-                        : "End Chat"}
-                  </Button>
-                </form>
-                {simulation?.timeLimit && !isActive && (
-                  <p className="text-sm text-muted-foreground text-center">
-                    Time's up! The session has ended.
-                  </p>
-                )}
-              </div>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
-
-      {/* Right Panel - Documents */}
-      {classDocuments.length > 0 && (
-        <div className="w-80 flex-shrink-0">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="flex-shrink-0">
-              <CardTitle className="text-lg">Documents</CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-0 min-h-0">
-              <ScrollArea className="h-full">
-                <div className="p-4 space-y-4">
-                  {classDocuments.map((doc: Document) => (
-                    <DocumentViewer key={doc.id} document={doc} />
-                  ))}
+                    {/* Scroll to bottom button */}
+                    {showScrollButton && (
+                      <div className="absolute bottom-4 right-8 z-10">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={scrollToBottom}
+                          className="rounded-full h-10 w-10 p-0 shadow-lg"
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
                 </div>
-              </ScrollArea>
-            </CardContent>
+              </ResizablePanel>
+
+              <ResizableHandle />
+              <ResizablePanel defaultSize={15} minSize={10} maxSize={40}>
+                <CardFooter className="h-full p-4 border-t">
+                  {currentChat?.completed ? (
+                    <div className="w-full text-center py-4">
+                      <p className="text-muted-foreground mb-2">
+                        This chat has been completed.
+                      </p>
+                      {currentDynamicRubric && (
+                        <div className="text-sm">
+                          <Badge
+                            variant={
+                              currentDynamicRubric.passed ? "default" : "destructive"
+                            }
+                          >
+                            Score: {currentDynamicRubric.score}/
+                            {currentDynamicRubric.totalPossiblePoints} -{" "}
+                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex flex-col gap-2">
+                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
+                        <div className="flex gap-2 flex-1">
+                          <Textarea
+                            value={newMessage}
+                            onChange={(e) => setNewMessage(e.target.value)}
+                            placeholder="Type your message..."
+                            disabled={simulation?.timeLimit ? !isActive : false}
+                            className="flex-1 resize-none"
+                            data-testid="message-input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage(e as any);
+                              }
+                            }}
+                          />
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              type="submit"
+                              disabled={
+                                !newMessage.trim() ||
+                                (simulation?.timeLimit ? !isActive : false)
+                              }
+                              data-testid="send-button"
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleEndChat}
+                              disabled={
+                                endChatLoading ||
+                                (simulation?.timeLimit ? !isActive : false)
+                              }
+                              className="whitespace-nowrap"
+                            >
+                              {endChatLoading
+                                ? "Ending..."
+                                : isSingleChatAttempt
+                                  ? "End Session"
+                                  : "End Chat"}
+                            </Button>
+                          </div>
+                        </div>
+                      </form>
+                      {simulation?.timeLimit && !isActive && (
+                        <p className="text-sm text-muted-foreground text-center">
+                          Time's up! The session has ended.
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </CardFooter>
+              </ResizablePanel>
+            </ResizablePanelGroup>
           </Card>
-        </div>
-      )}
+        </ResizablePanel>
+
+        {/* Right Panel - Documents */}
+        {showDocuments && classDocuments.length > 0 && (
+          <>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <Card className="h-full flex flex-col ml-4">
+                <CardHeader className="flex-shrink-0">
+                  <CardTitle className="text-lg">Documents</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 p-0 min-h-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-4 space-y-4">
+                      {classDocuments.map((doc: Document) => (
+                        <DocumentViewer key={doc.id} document={doc} />
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }
