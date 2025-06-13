@@ -28,7 +28,7 @@ const eslintConfig = [
           argsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
       "react-hooks/exhaustive-deps": "warn",
       "react/no-unescaped-entities": ["error", { forbid: [">", "}"] }],
     },
