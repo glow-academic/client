@@ -817,7 +817,7 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={getMetricDetails('totalSessions')?.data}>
+                <AreaChart data={getMetricDetails('totalSessions')?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -849,7 +849,7 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={getMetricDetails('avgOverallScore')?.data}>
+                <RechartsBarChart data={getMetricDetails('avgOverallScore')?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="range" />
                   <YAxis />
@@ -880,7 +880,7 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getMetricDetails('completionRate')?.data}>
+                <LineChart data={getMetricDetails('completionRate')?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[0, 100]} />
@@ -913,7 +913,7 @@ export default function ClassesGeneralPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={getMetricDetails('avgTrainingTime')?.data}
+                    data={getMetricDetails('avgTrainingTime')?.data || []}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
@@ -952,7 +952,7 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={getMetricDetails('passRate')?.data}>
+                <RechartsBarChart data={getMetricDetails('passRate')?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />

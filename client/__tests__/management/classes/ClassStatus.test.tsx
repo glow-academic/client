@@ -1,25 +1,15 @@
+/**
+ * ClassStatus.test.tsx
+ * Test suite for the ClassStatus component
+ */
+
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ClassStatus from '@/components/management/classes/ClassStatus';
 
-// Mock external dependencies
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => '/'),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
-
-// Mock API calls
+// Mock the queries
 vi.mock('@/utils/queries/classes/get-class', () => ({
   getClass: vi.fn(),
 }));
@@ -40,354 +30,278 @@ vi.mock('@/utils/queries/documents/get-documents-by-class', () => ({
   getDocumentsByClass: vi.fn(),
 }));
 
-// Import mocked functions
-import { getClass } from '@/utils/queries/classes/get-class';
-import { getTopicsByClass } from '@/utils/queries/topics/get-topics-by-class';
-import { getSchedulesByClass } from '@/utils/queries/schedules/get-schedules-by-class';
-import { getEventsBySchedules } from '@/utils/queries/events/get-events-by-schedules';
-import { getDocumentsByClass } from '@/utils/queries/documents/get-documents-by-class';
-
-const mockPush = vi.fn();
-const mockRouter = {
-  push: mockPush,
-  back: vi.fn(),
-  forward: vi.fn(),
-  refresh: vi.fn(),
-  replace: vi.fn(),
-};
-
 // Mock data
 const mockClass = {
-  id: 'class-1',
-  name: 'Mathematics 101',
-  classCode: 'MATH101',
-  year: 2024,
+  id: 'class1',
+  name: 'Introduction to Computer Science',
+  classCode: 'CS101',
   term: 'fall',
-  description: 'Introduction to Mathematics',
+  year: 2024,
+  description: 'Basic computer science concepts',
+  createdAt: '2024-01-01T00:00:00Z',
 };
 
 const mockDocuments = [
   {
-    id: 'doc-1',
+    id: 'doc1',
     name: 'syllabus.pdf',
     type: 'syllabus',
-    classId: 'class-1',
-    createdAt: '2024-01-15T10:00:00Z',
+    classId: 'class1',
+    createdAt: '2024-01-01T00:00:00Z',
   },
   {
-    id: 'doc-2',
+    id: 'doc2',
     name: 'homework1.pdf',
     type: 'homework',
-    classId: 'class-1',
-    createdAt: '2024-01-16T10:00:00Z',
+    classId: 'class1',
+    createdAt: '2024-01-02T00:00:00Z',
   },
   {
-    id: 'doc-3',
-    name: 'lecture1.pdf',
-    type: 'lecture',
-    classId: 'class-1',
-    createdAt: '2024-01-17T10:00:00Z',
+    id: 'doc3',
+    name: 'project1.pdf',
+    type: 'project',
+    classId: 'class1',
+    createdAt: '2024-01-03T00:00:00Z',
   },
 ];
 
 const mockTopics = [
-  { id: 'topic-1', name: 'Algebra', classId: 'class-1' },
-  { id: 'topic-2', name: 'Geometry', classId: 'class-1' },
+  {
+    id: 'topic1',
+    name: 'Variables and Data Types',
+    classId: 'class1',
+    createdAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: 'topic2',
+    name: 'Control Structures',
+    classId: 'class1',
+    createdAt: '2024-01-02T00:00:00Z',
+  },
 ];
 
 const mockSchedules = [
-  { id: 'schedule-1', name: 'Fall 2024', classId: 'class-1' },
+  {
+    id: 'schedule1',
+    name: 'Lecture Schedule',
+    description: 'MWF 10:00-11:00',
+    classId: 'class1',
+    createdAt: '2024-01-01T00:00:00Z',
+  },
 ];
 
 const mockEvents = [
-  { id: 'event-1', name: 'Midterm Exam', scheduleId: 'schedule-1' },
+  {
+    id: 'event1',
+    name: 'Midterm Exam',
+    scheduleId: 'schedule1',
+    createdAt: '2024-01-01T00:00:00Z',
+  },
 ];
 
-describe('ClassStatus', () => {
+describe('ClassStatus Component', () => {
   let queryClient: QueryClient;
-  
+
   beforeEach(() => {
-    vi.clearAllMocks();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
         mutations: { retry: false },
       },
     });
-    
-    (useRouter as any).mockReturnValue(mockRouter);
-    (getClass as any).mockResolvedValue(mockClass);
-    (getTopicsByClass as any).mockResolvedValue(mockTopics);
-    (getSchedulesByClass as any).mockResolvedValue(mockSchedules);
-    (getEventsBySchedules as any).mockResolvedValue(mockEvents);
-    (getDocumentsByClass as any).mockResolvedValue(mockDocuments);
+
+    // Setup mock implementations
+    const { getClass } = require('@/utils/queries/classes/get-class');
+    const { getTopicsByClass } = require('@/utils/queries/topics/get-topics-by-class');
+    const { getSchedulesByClass } = require('@/utils/queries/schedules/get-schedules-by-class');
+    const { getEventsBySchedules } = require('@/utils/queries/events/get-events-by-schedules');
+    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
+
+    getClass.mockResolvedValue(mockClass);
+    getTopicsByClass.mockResolvedValue(mockTopics);
+    getSchedulesByClass.mockResolvedValue(mockSchedules);
+    getEventsBySchedules.mockResolvedValue(mockEvents);
+    getDocumentsByClass.mockResolvedValue(mockDocuments);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
+  const renderComponent = (classId = 'class1') => {
+    return render(
       <QueryClientProvider client={queryClient}>
-        {children}
+        <ClassStatus classId={classId} />
       </QueryClientProvider>
     );
-
-    return render(ui, { wrapper: AllProviders, ...options });
   };
 
-  describe('Rendering', () => {
-    it('should render without crashing', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Mathematics 101')).toBeInTheDocument();
-      });
-    });
+  it('renders loading state initially', () => {
+    renderComponent();
+    expect(screen.getByText('Loading class analytics...')).toBeInTheDocument();
+  });
 
-    it('should render with required classId prop', async () => {
-      const classId = 'test-class-123';
-      renderWithProviders(<ClassStatus classId={classId} />);
-      
-      await waitFor(() => {
-        expect(getClass).toHaveBeenCalledWith(classId);
-      });
-    });
+  it('renders class information when loaded', async () => {
+    renderComponent();
 
-    it('should display class information', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Mathematics 101')).toBeInTheDocument();
-        expect(screen.getByText('MATH101')).toBeInTheDocument();
-      });
-    });
-
-    it('should display processing status', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Processing complete!/)).toBeInTheDocument();
-      });
-    });
-
-    it('should display document statistics', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Documents processed:/)).toBeInTheDocument();
-        expect(screen.getByText('Syllabus detected')).toBeInTheDocument();
-      });
-    });
-
-    it('should have correct accessibility attributes', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        const progressBar = screen.getByRole('progressbar');
-        expect(progressBar).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Class Information')).toBeInTheDocument();
+      expect(screen.getByText('Introduction to Computer Science')).toBeInTheDocument();
+      expect(screen.getByText('CS101')).toBeInTheDocument();
+      expect(screen.getByText('fall 2024')).toBeInTheDocument();
     });
   });
 
-  describe('User Interactions', () => {
-    it('should display class information without interactive elements', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Mathematics 101')).toBeInTheDocument();
-        expect(screen.getByText('Processing complete!')).toBeInTheDocument();
-      });
+  it('displays processing status with progress', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Processing complete!/)).toBeInTheDocument();
+      expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
   });
 
-  describe('Processing Status', () => {
-    it('should show extracting stage for no documents', async () => {
-      (getDocumentsByClass as any).mockResolvedValue([]);
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Extracting files from ZIP/)).toBeInTheDocument();
-      });
-    });
+  it('shows document classification when documents are available', async () => {
+    renderComponent();
 
-    it('should show analyzing stage for partial processing', async () => {
-      const partialDocs = [
-        { ...mockDocuments[0], type: 'syllabus' },
-        { ...mockDocuments[1], type: '' }, // Unclassified
-      ];
-      (getDocumentsByClass as any).mockResolvedValue(partialDocs);
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Analyzing document content and structure/)).toBeInTheDocument();
-      });
-    });
-
-    it('should show complete stage for fully processed documents', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Processing complete!/)).toBeInTheDocument();
-      });
-    });
-
-    it('should display progress bar', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        const progressBar = document.querySelector('[role="progressbar"]');
-        expect(progressBar).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Document Classification')).toBeInTheDocument();
+      expect(screen.getByText('Syllabus')).toBeInTheDocument();
+      expect(screen.getByText('Homework')).toBeInTheDocument();
+      expect(screen.getByText('Project')).toBeInTheDocument();
     });
   });
 
-  describe('API Integration', () => {
-    it('should fetch all required data', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(getClass).toHaveBeenCalledWith('class-1');
-        expect(getTopicsByClass).toHaveBeenCalledWith(['class-1']);
-        expect(getSchedulesByClass).toHaveBeenCalledWith(['class-1']);
-        expect(getDocumentsByClass).toHaveBeenCalledWith(['class-1']);
-      });
-    });
+  it('displays syllabus detection badge when syllabus is found', async () => {
+    renderComponent();
 
-    it('should handle loading states', () => {
-      (getClass as any).mockImplementation(() => new Promise(() => {})); // Never resolves
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      // Should show loading skeletons
-      expect(document.querySelector('.animate-pulse')).toBeInTheDocument();
-    });
-
-    it('should handle API errors gracefully', async () => {
-      (getClass as any).mockRejectedValue(new Error('API Error'));
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      // Should not crash on API error
-      await waitFor(() => {
-        expect(getClass).toHaveBeenCalledWith('class-1');
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Syllabus detected')).toBeInTheDocument();
     });
   });
 
-  describe('Document Analysis', () => {
-    it('should detect syllabus document', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Syllabus detected')).toBeInTheDocument();
-      });
-    });
+  it('shows identified topics', async () => {
+    renderComponent();
 
-    it('should categorize document types', async () => {
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText('Syllabus detected')).toBeInTheDocument();
-      });
-    });
-
-    it('should handle unknown document types', async () => {
-      const docsWithUnknown = [
-        ...mockDocuments,
-        {
-          id: 'doc-4',
-          name: 'unknown.pdf',
-          type: null,
-          classId: 'class-1',
-          createdAt: '2024-01-18T10:00:00Z',
-        },
-      ];
-      (getDocumentsByClass as any).mockResolvedValue(docsWithUnknown);
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        // Check that the component renders with the additional document
-        expect(screen.getByText(/Documents processed:/)).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Topics Identified')).toBeInTheDocument();
+      expect(screen.getByText('Variables and Data Types')).toBeInTheDocument();
+      expect(screen.getByText('Control Structures')).toBeInTheDocument();
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle empty class data', async () => {
-      (getClass as any).mockResolvedValue(null);
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      // Should not crash with null class data
-      await waitFor(() => {
-        expect(getClass).toHaveBeenCalledWith('class-1');
-      });
-    });
+  it('displays schedules and events', async () => {
+    renderComponent();
 
-    it('should handle empty documents list', async () => {
-      (getDocumentsByClass as any).mockResolvedValue([]);
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      await waitFor(() => {
-        expect(screen.getByText(/Extracting files from ZIP/)).toBeInTheDocument();
-      });
+    await waitFor(() => {
+      expect(screen.getByText('Schedules')).toBeInTheDocument();
+      expect(screen.getByText('Lecture Schedule')).toBeInTheDocument();
+      expect(screen.getByText('Upcoming Events')).toBeInTheDocument();
+      expect(screen.getByText('Midterm Exam')).toBeInTheDocument();
     });
+  });
 
-    it('should handle network errors gracefully', async () => {
-      (getDocumentsByClass as any).mockRejectedValue(new Error('Network error'));
-      
-      renderWithProviders(<ClassStatus classId="class-1" />);
-      
-      // Should not crash on network error
-      await waitFor(() => {
-        expect(getDocumentsByClass).toHaveBeenCalledWith(['class-1']);
-      });
+  it('handles class not found error', async () => {
+    const { getClass } = require('@/utils/queries/classes/get-class');
+    getClass.mockResolvedValue(null);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Class Not Found')).toBeInTheDocument();
+      expect(screen.getByText('The requested class could not be found.')).toBeInTheDocument();
     });
+  });
 
-    it('should handle invalid classId', async () => {
-      renderWithProviders(<ClassStatus classId="" />);
-      
-      // Should still make API calls even with empty classId
-      expect(getClass).toHaveBeenCalledWith('');
+  it('shows processing stages correctly', async () => {
+    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
+    
+    // Test with partially processed documents
+    const partialDocuments = [
+      { ...mockDocuments[0] },
+      { ...mockDocuments[1], type: null }, // Unprocessed
+    ];
+    getDocumentsByClass.mockResolvedValue(partialDocuments);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Analyzing document content/)).toBeInTheDocument();
+    });
+  });
+
+  it('handles empty documents state', async () => {
+    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
+    getDocumentsByClass.mockResolvedValue([]);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Class Information')).toBeInTheDocument();
+      // Should not show document classification section
+      expect(screen.queryByText('Document Classification')).not.toBeInTheDocument();
+    });
+  });
+
+  it('limits topic display to 12 items with overflow indicator', async () => {
+    const manyTopics = Array.from({ length: 15 }, (_, i) => ({
+      id: `topic${i}`,
+      name: `Topic ${i + 1}`,
+      classId: 'class1',
+      createdAt: '2024-01-01T00:00:00Z',
+    }));
+
+    const { getTopicsByClass } = require('@/utils/queries/topics/get-topics-by-class');
+    getTopicsByClass.mockResolvedValue(manyTopics);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('+3 more')).toBeInTheDocument();
+    });
+  });
+
+  it('limits schedule and event display with overflow indicators', async () => {
+    const manySchedules = Array.from({ length: 5 }, (_, i) => ({
+      id: `schedule${i}`,
+      name: `Schedule ${i + 1}`,
+      description: `Description ${i + 1}`,
+      classId: 'class1',
+      createdAt: '2024-01-01T00:00:00Z',
+    }));
+
+    const manyEvents = Array.from({ length: 5 }, (_, i) => ({
+      id: `event${i}`,
+      name: `Event ${i + 1}`,
+      scheduleId: 'schedule1',
+      createdAt: '2024-01-01T00:00:00Z',
+    }));
+
+    const { getSchedulesByClass } = require('@/utils/queries/schedules/get-schedules-by-class');
+    const { getEventsBySchedules } = require('@/utils/queries/events/get-events-by-schedules');
+    
+    getSchedulesByClass.mockResolvedValue(manySchedules);
+    getEventsBySchedules.mockResolvedValue(manyEvents);
+
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('+2 more schedules')).toBeInTheDocument();
+      expect(screen.getByText('+2 more events')).toBeInTheDocument();
+    });
+  });
+
+  it('calculates document type counts correctly', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('1 files')).toBeInTheDocument(); // Syllabus
+      expect(screen.getByText('1 files')).toBeInTheDocument(); // Homework
+      expect(screen.getByText('1 files')).toBeInTheDocument(); // Project
+    });
+  });
+
+  it('shows ready status when processing is complete', async () => {
+    renderComponent();
+
+    await waitFor(() => {
+      expect(screen.getByText('Ready')).toBeInTheDocument();
     });
   });
 });
-
-/*
- * Component Analysis for ClassStatus:
- * Path: management/classes/ClassStatus.tsx
- * 
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: useState, useEffect, useRouter, useQuery, useQueryClient
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: false
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- * 
- * TODO: Implement the failing tests above with actual test logic
- * 
- * Example implementations:
- * 
- * Basic rendering:
- * render(<ClassStatus />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
- * Props testing:
- * const props = { ... };
- * render(<ClassStatus {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */

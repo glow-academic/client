@@ -126,11 +126,11 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     setIsSubmitting(true);
     try {
       await updateProfile(profileId, {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        alias: formData.alias,
-        classIds: formData.classIds,
-        role: formData.role,
+        firstName: formData.firstName || "",
+        lastName: formData.lastName || "",
+        alias: formData.alias || "",
+        classIds: formData.classIds || [],
+        role: formData.role || "ta",
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
@@ -311,7 +311,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                 <div className="space-y-2">
                   <Label htmlFor="role">Role</Label>
                   <Select
-                    value={formData.role}
+                    value={formData.role || ""}
                     onValueChange={(value: ProfileRole) => handleInputChange("role", value)}
                     disabled={isSubmitting}
                   >

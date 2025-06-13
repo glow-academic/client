@@ -7,15 +7,11 @@ describe('users Table Tests', () => {
       // TODO: Test UUID generation for users
       throw new Error('IMPLEMENT: UUID primary key test for users');
     });
-    it('should automatically set timestamps', () => {
-      // TODO: Test timestamp fields (created_at, updated_at) for users
-      throw new Error('IMPLEMENT: Timestamp validation test for users');
-    });
     it('should enforce required fields', () => {
-      // TODO: Test required fields: id, viewedIntro
+      // TODO: Test required fields: id, email
       // Required fields that should be validated:
             // - id (uuid)
-      // - viewedIntro (boolean)
+      // - email (text)
       
       throw new Error('IMPLEMENT: Required fields validation for users');
     });
@@ -33,10 +29,7 @@ describe('users Table Tests', () => {
       // TODO: Test record creation
       // Sample data structure:
             // id: // Auto-generated UUID
-      // viewedIntro: true
-      // createdAt: // Auto-generated timestamp
-      // withTimezone: "withTimezone_value"
-      // mode: "mode_value"
+      // email: "sample email"
       
       throw new Error('IMPLEMENT: users creation test');
     });
@@ -94,10 +87,7 @@ describe('users Table Tests', () => {
  * 
  * Fields:
  * - id: uuid (required) (primary key)
- * - viewedIntro: boolean (required)
- * - createdAt: timestamp
- * - withTimezone: unknown
- * - mode: unknown
+ * - email: text (required)
  * 
  * Constraints:
 

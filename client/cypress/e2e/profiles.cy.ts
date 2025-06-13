@@ -7,16 +7,11 @@ describe('profiles Table Tests', () => {
       // TODO: Test UUID generation for profiles
       throw new Error('IMPLEMENT: UUID primary key test for profiles');
     });
-    it('should automatically set timestamps', () => {
-      // TODO: Test timestamp fields (created_at, updated_at) for profiles
-      throw new Error('IMPLEMENT: Timestamp validation test for profiles');
-    });
     it('should enforce required fields', () => {
-      // TODO: Test required fields: id, userId, viewedIntro
+      // TODO: Test required fields: id, userId
       // Required fields that should be validated:
             // - id (uuid)
-      // - userId (integer)
-      // - viewedIntro (boolean)
+      // - userId (uuid)
       
       throw new Error('IMPLEMENT: Required fields validation for profiles');
     });
@@ -34,9 +29,8 @@ describe('profiles Table Tests', () => {
       // TODO: Test record creation
       // Sample data structure:
             // id: // Auto-generated UUID
-      // userId: 123
-      // viewedIntro: true
-      // createdAt: // Auto-generated timestamp
+      // userId: "userId_value"
+      // lastLogin: "lastLogin_value"
       // withTimezone: "withTimezone_value"
       // mode: "mode_value"
       
@@ -96,9 +90,8 @@ describe('profiles Table Tests', () => {
  * 
  * Fields:
  * - id: uuid (required) (primary key)
- * - userId: integer (required)
- * - viewedIntro: boolean (required)
- * - createdAt: timestamp
+ * - userId: uuid (required)
+ * - lastLogin: timestamp
  * - withTimezone: unknown
  * - mode: unknown
  * 

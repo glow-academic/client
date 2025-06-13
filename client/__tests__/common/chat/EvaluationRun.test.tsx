@@ -49,7 +49,7 @@ describe('EvaluationRun', () => {
   describe('Rendering', () => {
     it('should render without crashing', () => {
       // TODO: Implement basic rendering test for EvaluationRun
-      renderWithProviders(<EvaluationRun runId="1" />);
+      renderWithProviders(<EvaluationRun />);
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for EvaluationRun

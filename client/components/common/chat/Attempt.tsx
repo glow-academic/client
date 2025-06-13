@@ -112,9 +112,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
-  const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
-  const [inputPanelHeight, setInputPanelHeight] = useState(0);
-  const [textareaHeight, setTextareaHeight] = useState(40);
+  const [isTall, setIsTall] = useState(false);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
@@ -792,20 +790,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   };
 
-  const [isTall, setIsTall] = useState(false);
-
-  useEffect(() => {
-    if (!inputPanelRef.current) return;
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setIsTall(entry.contentRect.height > 160);
-      }
-    });
-    ro.observe(inputPanelRef.current);
-    return () => ro.disconnect();
-  }, []);
-
   const scrollToBottom = () => {
     const scrollArea = scrollAreaRef.current;
     if (scrollArea) {
@@ -853,35 +837,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [messages.length]);
 
-  // Track input panel height for dynamic layout
-  useEffect(() => {
-    if (!inputPanelRef.current) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const newHeight = entry.contentRect.height;
-        setInputPanelHeight(newHeight);
-
-        // Calculate textarea height based on available space
-        if (newHeight > 160) {
-          // Vertical layout - more space for textarea
-          const availableHeight = newHeight - 100; // Account for buttons and padding
-          setTextareaHeight(Math.max(100, Math.min(availableHeight, 300)));
-        } else {
-          // Horizontal layout - constrained height
-          const availableHeight = newHeight - 80; // Account for padding
-          setTextareaHeight(Math.max(40, Math.min(availableHeight, 80)));
-        }
-      }
-    });
-
-    resizeObserver.observe(inputPanelRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
-
   // Set default selected document
   useEffect(() => {
     if (classDocuments.length > 0 && !selectedDocumentId && classDocuments[0]) {
@@ -893,20 +848,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const selectedDocument = useMemo(() => {
     return classDocuments.find(doc => doc.id === selectedDocumentId) || null;
   }, [classDocuments, selectedDocumentId]);
-
-  // Helper function to format time in minutes and seconds
-  const formatTimeDetailed = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    if (minutes === 0) {
-      return `${remainingSeconds}s`;
-    } else if (remainingSeconds === 0) {
-      return `${minutes}m`;
-    } else {
-      return `${minutes}m ${remainingSeconds}s`;
-    }
-  };
-
+  
   // Calculate aggregated results for final display
   const aggregatedResults = useMemo(() => {
     if (allDynamicRubrics.length === 0) return null;
@@ -1018,23 +960,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
-  // Helper function to get user initials from profile
-  const getUserInitials = (profile: any): string => {
-    if (!profile) return "U";
-    
-    const firstName = profile.firstName || "";
-    const lastName = profile.lastName || "";
-    
-    if (firstName && lastName) {
-      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
-    } else if (firstName) {
-      return firstName.charAt(0).toUpperCase();
-    } else if (lastName) {
-      return lastName.charAt(0).toUpperCase();
-    }
-    
-    return "U";
-  };
+  useEffect(() => {
+    if (!inputPanelRef.current) return;
+    const ro = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setIsTall(entry.contentRect.height > 160);
+      }
+    });
+    ro.observe(inputPanelRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (

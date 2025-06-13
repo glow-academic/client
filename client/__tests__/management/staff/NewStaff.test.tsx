@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import NewStaff from "@/components/management/staff/NewStaff";
+import { useSession } from 'next-auth/react';
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -17,6 +18,10 @@ vi.mock("next/navigation", () => ({
   })),
   usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
+
+vi.mock('next-auth/react', () => ({
+  useSession: vi.fn(),
 }));
 
 describe("NewStaff", () => {
@@ -38,6 +43,10 @@ describe("NewStaff", () => {
       forward: vi.fn(),
       refresh: vi.fn(),
       replace: vi.fn(),
+    });
+
+    (useSession as any).mockReturnValue({
+      data: { user: { email: 'redacted@purdue.edu' } },
     });
   });
 

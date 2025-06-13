@@ -168,7 +168,11 @@ export default function Evals() {
       toast.loading("Starting evaluation...");
 
       // Use the first available class for now
-      const classId = classes[0].id;
+      const firstClass = classes[0];
+      if (!firstClass) {
+        throw new Error("No classes available");
+      }
+      const classId = firstClass.id;
 
       const formData = new FormData();
       formData.append("eval_id", id);
