@@ -40,7 +40,7 @@ const getDocumentTypeInfo = (type: string) => {
 export default function DocumentViewer({
   document,
   classId,
-  bare = false,
+  bare = true,
 }: DocumentViewerProps) {
   const [docId, setDocId] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);

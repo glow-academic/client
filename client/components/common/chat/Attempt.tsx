@@ -105,6 +105,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showDocuments, setShowDocuments] = useState(true);
   const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
   const [inputPanelHeight, setInputPanelHeight] = useState(0);
+  const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -824,6 +825,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Determine if we should use vertical layout (when panel is tall enough)
   const useVerticalLayout = inputPanelHeight > 100;
 
+  // Set default selected document
+  useEffect(() => {
+    if (classDocuments.length > 0 && !selectedDocumentId) {
+      setSelectedDocumentId(classDocuments[0].id);
+    }
+  }, [classDocuments, selectedDocumentId]);
+
+  // Get the currently selected document
+  const selectedDocument = useMemo(() => {
+    return classDocuments.find(doc => doc.id === selectedDocumentId) || null;
+  }, [classDocuments, selectedDocumentId]);
+
   // Helper function to format time in minutes and seconds
   const formatTimeDetailed = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -1102,23 +1115,46 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         </div>
 
         {/* Right Panel - Documents */}
-        {classDocuments.length > 0 && (
-          <div className="w-80 flex-shrink-0">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle className="text-lg">Documents</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-12rem)]">
-                  <div className="p-4 space-y-4">
-                    {classDocuments.map((doc: Document) => (
-                      <DocumentViewer key={doc.id} document={doc} bare={true} />
-                    ))}
+        {showDocuments && classDocuments.length > 0 && (
+          <>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <Card className="h-full flex flex-col ml-4">
+                <CardHeader className="flex-shrink-0 pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Documents</CardTitle>
+                    {classDocuments.length > 1 && (
+                      <Select
+                        value={selectedDocumentId || ""}
+                        onValueChange={setSelectedDocumentId}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select document" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classDocuments.map((doc: Document) => (
+                            <SelectItem key={doc.id} value={doc.id}>
+                              <div className="flex items-center gap-2">
+                                <span className="truncate">{doc.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
                   </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </div>
+                </CardHeader>
+                <CardContent className="flex-1 p-0 min-h-0">
+                  {selectedDocument && (
+                    <DocumentViewer 
+                      key={selectedDocument.id} 
+                      document={selectedDocument}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </ResizablePanel>
+          </>
         )}
       </div>
     );
@@ -1346,13 +1382,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
                               disabled={simulation?.timeLimit ? !isActive : false}
-                              className="flex-1 resize-none text-md min-h-[60px] max-h-[200px]"
+                              className="flex-1 resize-none text-md"
                               data-testid="message-input"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
                                   e.preventDefault();
                                   handleSendMessage(e as any);
                                 }
+                              }}
+                              style={{
+                                minHeight: '60px',
+                                height: `${Math.max(60, inputPanelHeight - 120)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1454,17 +1494,36 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             <ResizableHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
               <Card className="h-full flex flex-col ml-4">
-                <CardHeader className="flex-shrink-0">
-                  <CardTitle className="text-lg">Documents</CardTitle>
+                <CardHeader className="flex-shrink-0 pb-2">
+                  <div className="flex items-center justify-between">
+                    {classDocuments.length > 1 && (
+                      <Select
+                        value={selectedDocumentId || ""}
+                        onValueChange={setSelectedDocumentId}
+                      >
+                        <SelectTrigger className="w-48">
+                          <SelectValue placeholder="Select document" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classDocuments.map((doc: Document) => (
+                            <SelectItem key={doc.id} value={doc.id}>
+                              <div className="flex items-center gap-2">
+                                <span className="truncate">{doc.name}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 min-h-0">
-                  <ScrollArea className="h-full">
-                    <div className="p-4">
-                      {classDocuments.map((doc: Document) => (
-                        <DocumentViewer key={doc.id} document={doc} bare={true} />
-                      ))}
-                    </div>
-                  </ScrollArea>
+                  {selectedDocument && (
+                    <DocumentViewer 
+                      key={selectedDocument.id} 
+                      document={selectedDocument}
+                    />
+                  )}
                 </CardContent>
               </Card>
             </ResizablePanel>
