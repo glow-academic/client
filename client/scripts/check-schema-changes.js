@@ -2,19 +2,37 @@
 
 import { execSync, spawn } from "child_process";
 import { existsSync } from "fs";
-import { createInterface } from "readline";
 
-const rl = createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
+async function runCommand(command, args, description) {
+  console.log(`🚀 ${description}...`);
 
-function askQuestion(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
+  return new Promise((resolve, reject) => {
+    const process = spawn(command, args, {
+      stdio: "inherit",
+      shell: true,
+    });
+
+    process.on("close", (code) => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`${description} failed with code ${code}`));
+      }
     });
   });
+}
+
+async function checkForMigrationGenerated() {
+  try {
+    // Check if a new migration file was created in the last minute
+    const result = execSync(
+      'find drizzle -name "*.sql" -newermt "1 minute ago" | wc -l',
+      { encoding: "utf8" }
+    );
+    return parseInt(result.trim()) > 0;
+  } catch {
+    return false;
+  }
 }
 
 async function checkSchemaChanges() {
@@ -27,81 +45,49 @@ async function checkSchemaChanges() {
       return;
     }
 
-    // Run drizzle-kit check to see if there are pending changes
-    try {
-      execSync("npx drizzle-kit check", { stdio: "pipe" });
-      console.log("✅ Schema is up to date");
-      return;
-    } catch (error) {
-      // If check fails, there might be schema changes
-      const output = error.stdout?.toString() || error.stderr?.toString() || "";
+    // Step 1: Pull latest schema from database
+    await runCommand(
+      "npx",
+      ["drizzle-kit", "pull"],
+      "Syncing schema from database"
+    );
 
-      if (
-        output.includes("No schema changes found") ||
-        output.includes("up to date")
-      ) {
-        console.log("✅ Schema is up to date");
-        return;
-      }
+    // Step 2: Generate migrations if there are changes
+    await runCommand(
+      "npx",
+      ["drizzle-kit", "generate"],
+      "Checking for migration generation"
+    );
 
-      console.log("⚠️  Schema changes detected!");
-      console.log("📋 Your database schema differs from your Drizzle schema.");
+    // Step 3: Check if a migration was actually generated
+    const hasChanges = await checkForMigrationGenerated();
 
-      const answer = await askQuestion(
-        "🤔 Would you like to generate a migration? (y/N): "
-      );
+    if (hasChanges) {
+      console.log("✅ Migration generated successfully!");
 
-      if (answer.toLowerCase() === "y" || answer.toLowerCase() === "yes") {
-        console.log("🚀 Generating migration...");
-
-        // Run drizzle-kit generate interactively
-        const generateProcess = spawn("npx", ["drizzle-kit", "generate"], {
-          stdio: "inherit",
-          shell: true,
-        });
-
-        await new Promise((resolve, reject) => {
-          generateProcess.on("close", (code) => {
-            if (code === 0) {
-              console.log("✅ Migration generated successfully!");
-
-              // Copy migration to database directory
-              try {
-                const latestMigration = execSync(
-                  "ls -t drizzle/*.sql | head -n1",
-                  { encoding: "utf8" }
-                ).trim();
-                if (latestMigration) {
-                  execSync(`cp "${latestMigration}" ../database/migrations/`);
-                  console.log("📁 Migration copied to database/migrations/");
-                }
-              } catch (copyError) {
-                console.log(
-                  "⚠️  Could not copy migration to database directory:",
-                  copyError.message
-                );
-              }
-
-              resolve();
-            } else {
-              reject(
-                new Error(`Migration generation failed with code ${code}`)
-              );
-            }
-          });
-        });
-      } else {
-        console.log("⏭️  Skipping migration generation");
+      // Copy migration to database directory
+      try {
+        const latestMigration = execSync("ls -t drizzle/*.sql | head -n1", {
+          encoding: "utf8",
+        }).trim();
+        if (latestMigration) {
+          execSync(`cp "${latestMigration}" ../database/migrations/`);
+          console.log("📁 Migration copied to database/migrations/");
+        }
+      } catch (copyError) {
         console.log(
-          '💡 You can run "npx drizzle-kit generate" later if needed'
+          "⚠️  Could not copy migration to database directory:",
+          copyError.message
         );
       }
+    } else {
+      console.log(
+        "✅ No schema changes detected - continuing with development"
+      );
     }
   } catch (error) {
     console.log("⚠️  Could not check schema changes:", error.message);
     console.log("💡 Continuing with development...");
-  } finally {
-    rl.close();
   }
 }
 
