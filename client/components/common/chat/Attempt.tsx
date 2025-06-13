@@ -1072,13 +1072,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Show results screen
   if (showResults) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex gap-4"> {/* Account for breadcrumbs */}
-        <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
+      <div className="h-[calc(100vh-4rem)]"> {/* Account for breadcrumbs */}
+        <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
-            <Card className="h-full flex flex-col">
-              <CardContent className="flex-1 flex flex-col p-0">
-                {/* Chat Selector and Controls */}
+            <Card className="h-full flex flex-col py-4">
+              <div className="h-full flex flex-col">
+                {/* Timer and Controls Header - consistent with main chat layout */}
                 <div className="p-4 pt-0 border-b flex flex-col gap-2">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
@@ -1087,9 +1087,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <span className="font-medium">
                           {resultsScenario?.description || "Session Results"}
                         </span>
+                        {!isSingleChatAttempt && (
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            <span>Results</span>
+                          </div>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-end justify-end flex-col gap-2">
+                    <div className="flex items-start justify-end gap-2">
                       <div className="flex items-center gap-4">
                         {selectedChat && (
                           <div className="flex items-center gap-2">
@@ -1103,150 +1109,166 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             />
                           </div>
                         )}
-                        <div className="flex items-center gap-2">
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {/* Documents Toggle */}
+                        {classDocuments.length > 0 && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
-                                    ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
-                                      ? "bg-green-100 dark:bg-green-900/30"
-                                      : "bg-red-100 dark:bg-red-900/30"
-                                    : aggregatedResults
-                                      ? aggregatedResults.overallPassed
-                                        ? "bg-green-100 dark:bg-green-900/30"
-                                        : "bg-red-100 dark:bg-red-900/30"
-                                      : "bg-muted"
-                                  }`}>
-                                  <Clock className="h-4 w-4" />
-                                  <span className="text-sm font-medium" data-testid="timer">
-                                    {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
-                                      ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
-                                      : aggregatedResults?.totalTime !== undefined
-                                        ? formatTime(aggregatedResults.totalTime)
-                                        : "No time limit"}
-                                  </span>
-                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setShowDocuments(!showDocuments)}
+                                  className="p-2"
+                                >
+                                  {showDocuments ? (
+                                    <PanelRightClose className="h-4 w-4" />
+                                  ) : (
+                                    <PanelRightOpen className="h-4 w-4" />
+                                  )}
+                                </Button>
                               </TooltipTrigger>
-                              {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
-                                <TooltipContent>
-                                  <p>
-                                    {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"}
-                                    ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
-                                  </p>
-                                </TooltipContent>
-                              ) : aggregatedResults ? (
-                                <TooltipContent>
-                                  <p>
-                                    {aggregatedResults.overallPassed ? "Passed" : "Failed"}
-                                    ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
-                                  </p>
-                                </TooltipContent>
-                              ) : null}
+                              <TooltipContent>
+                                <p>{showDocuments ? 'Hide Documents' : 'Show Documents'}</p>
+                              </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
-                        </div>
+                        )}
+                        
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
+                                  ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
+                                    ? "bg-green-100 dark:bg-green-900/30"
+                                    : "bg-red-100 dark:bg-red-900/30"
+                                  : aggregatedResults
+                                    ? aggregatedResults.overallPassed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : "bg-muted"
+                              }`}>
+                                <Clock className="h-4 w-4" />
+                                <span className="text-sm font-medium" data-testid="timer">
+                                  {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
+                                    ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
+                                    : aggregatedResults?.totalTime !== undefined
+                                      ? formatTime(aggregatedResults.totalTime)
+                                      : "No time limit"}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
+                              <TooltipContent>
+                                <p>
+                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
+                                  ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
+                                </p>
+                              </TooltipContent>
+                            ) : aggregatedResults ? (
+                              <TooltipContent>
+                                <p>
+                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
+                                  ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
+                                </p>
+                              </TooltipContent>
+                            ) : null}
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
-
-                      {/* Show completion status for completed attempts */}
-                      {!isSingleChatAttempt && (
-                        <Select
-                          value={selectedChatId || ""}
-                          onValueChange={setSelectedChatId}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select chat to view results" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {chats
-                              ?.filter((chat: SimulationChat) => chat.completed)
-                              .map((chat: SimulationChat, index: number) => (
-                                <SelectItem key={chat.id} value={chat.id}>
-                                  <div className="flex items-center gap-2">
-                                    <span>{chat.title}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
-                      )}
                     </div>
                   </div>
+
+                  {/* Show completion status for completed attempts */}
+                  {!isSingleChatAttempt && (
+                    <div className="flex justify-end">
+                      <Select
+                        value={selectedChatId || ""}
+                        onValueChange={setSelectedChatId}
+                      >
+                        <SelectTrigger className="w-64">
+                          <SelectValue placeholder="Select chat to view results" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {chats
+                            ?.filter((chat: SimulationChat) => chat.completed)
+                            .map((chat: SimulationChat, index: number) => (
+                              <SelectItem key={chat.id} value={chat.id}>
+                                <div className="flex items-center gap-2">
+                                  <span>{chat.title}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
 
-                <ScrollArea className="flex-1 px-4">
-                  <div className="space-y-4 py-4">
-                    {/* Show rubric when toggle is on */}
-                    {showGrades && selectedChat && simulation?.rubricId ? (
-                      <div className="h-full flex flex-col">
-                        {/* Rubric Header - matching chat style */}
-                        <div className="p-4 pt-0 border-b">
-                          <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">
-                                Rubric Results - {resultsScenario?.description || "Session"}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {/* Rubric Content in ScrollArea - matching chat layout */}
-                        <ScrollArea className="flex-1 px-4">
-                          <div className="py-4">
-                            <TableRubric
-                              rubricId={simulation.rubricId}
-                              simulationChatId={selectedChat.id}
-                            />
-                          </div>
-                        </ScrollArea>
-                      </div>
-                    ) : selectedChat ? (
-                      /* Show chat messages for both single and multi-chat attempts */
-                      <div className="space-y-4">
-                        {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                          <div key={message.id} className="space-y-4">
-                            {/* User Message */}
-                            {message.query && (
-                              <div className="flex justify-end">
-                                <div className="flex gap-3 max-w-[80%]">
-                                  <div className="bg-primary text-primary-foreground rounded-lg p-3 flex-1">
-                                    <Markdown>{message.query}</Markdown>
+                <CardContent className="flex-1 flex flex-col p-0 min-h-0">
+                  <ScrollArea className="flex-1 px-4 min-h-0">
+                    <div className="space-y-4 py-4">
+                      {/* Show rubric when toggle is on */}
+                      {showGrades && selectedChat && simulation?.rubricId ? (
+                        <TableRubric
+                          rubricId={simulation.rubricId}
+                          simulationChatId={selectedChat.id}
+                        />
+                      ) : selectedChat ? (
+                        /* Show chat messages for both single and multi-chat attempts */
+                        <div className="space-y-4">
+                          {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
+                            <div key={message.id} className="space-y-4">
+                              {/* User Message */}
+                              {message.query && (
+                                <div className="flex justify-end">
+                                  <div className="max-w-[80%] space-y-2">
+                                    <div className="flex justify-end">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                          {getUserInitials(profile)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    </div>
+                                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                      <Markdown>{message.query}</Markdown>
+                                    </div>
                                   </div>
-                                  <Avatar className="h-8 w-8 flex-shrink-0">
-                                    <AvatarFallback className="bg-primary text-primary-foreground">
-                                      {getUserInitials(profile)}
-                                    </AvatarFallback>
-                                  </Avatar>
                                 </div>
-                              </div>
-                            )}
+                              )}
 
-                            {/* Assistant Response */}
-                            {message.response !== undefined && message.query !== "" && (
-                              <div className="flex justify-start">
-                                <div className="flex gap-3 max-w-[80%]">
-                                  <Avatar className="h-8 w-8 flex-shrink-0">
-                                    <AvatarFallback>AI</AvatarFallback>
-                                  </Avatar>
-                                  <div className="bg-muted rounded-lg p-3 flex-1">
-                                    <Markdown>{message.response}</Markdown>
+                              {/* Assistant Response */}
+                              {message.response !== undefined && message.query !== "" && (
+                                <div className="flex justify-start">
+                                  <div className="max-w-[80%] space-y-2">
+                                    <div className="flex justify-start">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="text-xs">AI</AvatarFallback>
+                                      </Avatar>
+                                    </div>
+                                    <div className="bg-muted rounded-lg p-3">
+                                      <Markdown>{message.response}</Markdown>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      /* Fallback content when no chat is selected */
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          Select a chat to view its conversation and results.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        /* Fallback content when no chat is selected */
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            Select a chat to view its conversation and results.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+              </div>
             </Card>
           </ResizablePanel>
 
@@ -1254,66 +1276,61 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           {showDocuments && classDocuments.length > 0 && (
             <>
               <ResizableHandle />
-              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
-                <Card className="h-full border-l-0 rounded-l-none">
-                  <CardContent className="h-full p-3 flex flex-col">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-sm font-medium">Documents</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowDocuments(false)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          aria-expanded={documentSearchOpen}
-                          className="w-full justify-between"
-                        >
-                          {selectedDocumentId
-                            ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
-                            : "Select document..."}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-full p-0" align="start">
-                        <Command>
-                          <CommandInput placeholder="Search documents..." />
-                          <CommandList>
-                            <CommandEmpty>No document found.</CommandEmpty>
-                            <CommandGroup>
-                              {classDocuments.map((doc: Document) => (
-                                <CommandItem
-                                  key={doc.id}
-                                  value={doc.name}
-                                  onSelect={() => {
-                                    setSelectedDocumentId(doc.id);
-                                    setDocumentSearchOpen(false);
-                                  }}
-                                >
-                                  <Check
-                                    className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
-                                      }`}
-                                  />
-                                  <span className="truncate">{doc.name}</span>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </CommandList>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                    <div className="flex-1 min-h-0">
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+                <Card className="h-full flex flex-col ml-4 p-0">
+                  <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                    {/* Select dropdown directly above document */}
+                    {classDocuments.length > 1 && (
+                      <div className="p-3 pb-2 border-b">
+                        <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={documentSearchOpen}
+                              className="w-full justify-between"
+                            >
+                              {selectedDocumentId
+                                ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
+                                : "Select document..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search documents..." />
+                              <CommandList>
+                                <CommandEmpty>No document found.</CommandEmpty>
+                                <CommandGroup>
+                                  {classDocuments.map((doc: Document) => (
+                                    <CommandItem
+                                      key={doc.id}
+                                      value={doc.name}
+                                      onSelect={() => {
+                                        setSelectedDocumentId(doc.id);
+                                        setDocumentSearchOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
+                                          }`}
+                                      />
+                                      <span className="truncate">{doc.name}</span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                    {/* Document viewer with minimal padding */}
+                    <div className="flex-1 min-h-0 p-2">
                       {selectedDocument && (
-                        <DocumentViewer
+                        <DocumentViewer 
+                          key={selectedDocument.id} 
                           document={selectedDocument}
-                          bare={true}
                         />
                       )}
                     </div>
@@ -1469,15 +1486,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {/* User Message */}
                               {message.query && (
                                 <div className="flex justify-end">
-                                  <div className="flex gap-3 max-w-[80%]">
-                                    <div className="bg-primary text-primary-foreground rounded-lg p-3 flex-1">
+                                  <div className="max-w-[80%] space-y-2">
+                                    <div className="flex justify-end">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                                          {getUserInitials(profile)}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                    </div>
+                                    <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                       <Markdown>{message.query}</Markdown>
                                     </div>
-                                    <Avatar className="h-8 w-8 flex-shrink-0">
-                                      <AvatarFallback className="bg-primary text-primary-foreground">
-                                        {getUserInitials(profile)}
-                                      </AvatarFallback>
-                                    </Avatar>
                                   </div>
                                 </div>
                               )}
@@ -1486,11 +1505,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {message.response !== undefined &&
                                 message.query !== "" && (
                                   <div className="flex justify-start">
-                                    <div className="flex gap-3 max-w-[80%]">
-                                      <Avatar className="h-8 w-8 flex-shrink-0">
-                                        <AvatarFallback>AI</AvatarFallback>
-                                      </Avatar>
-                                      <div className="bg-muted rounded-lg p-3 flex-1">
+                                    <div className="max-w-[80%] space-y-2">
+                                      <div className="flex justify-start">
+                                        <Avatar className="h-6 w-6">
+                                          <AvatarFallback className="text-xs">AI</AvatarFallback>
+                                        </Avatar>
+                                      </div>
+                                      <div className="bg-muted rounded-lg p-3">
                                         {message.response === "" ? (
                                           <div className="flex items-center">
                                             <span className="text-gray-500 mr-2">
