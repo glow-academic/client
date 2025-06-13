@@ -82,6 +82,9 @@ import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/querie
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { useSession } from "next-auth/react";
+import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 
 // Timer is now integrated directly into the component layout
 
@@ -126,6 +129,23 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+
+  const session = useSession();
+  const userEmail = session.data?.user?.email;
+
+  const { data: user } = useQuery({
+    queryKey: ["user", userEmail],
+    queryFn: () => getUserByEmail(userEmail!),
+    enabled: !!userEmail,
+  });
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userEmail],
+    queryFn: () => getProfilesByUser(user!.id!),
+    select: (data) => data[0],
+    enabled: !!user,
+  });
+
   // Fetch attempt data
   const {
     data: attempt,
@@ -152,7 +172,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Derive classId from scenarios
   const derivedClassId = useMemo(() => {
     if (!simulation?.scenarioIds || !scenarios) return null;
-    
+
     // Find the first scenario that has a classId
     for (const scenarioId of simulation.scenarioIds) {
       if (scenarioId === "RAY") continue; // Skip default RAY scenario
@@ -847,16 +867,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [messages.length]);
 
-  // Track input panel height for dynamic layout
+    // Track input panel height for dynamic layout
   useEffect(() => {
     if (!inputPanelRef.current) return;
 
-          const resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const newHeight = entry.contentRect.height;
-          setInputPanelHeight(newHeight);
-        }
-      });
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const newHeight = entry.contentRect.height;
+        setInputPanelHeight(newHeight);
+      }
+    });
 
     resizeObserver.observe(inputPanelRef.current);
 
@@ -1001,6 +1021,24 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
+  // Helper function to get user initials from profile
+  const getUserInitials = (profile: any): string => {
+    if (!profile) return "U";
+    
+    const firstName = profile.firstName || "";
+    const lastName = profile.lastName || "";
+    
+    if (firstName && lastName) {
+      return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    } else if (firstName) {
+      return firstName.charAt(0).toUpperCase();
+    } else if (lastName) {
+      return lastName.charAt(0).toUpperCase();
+    }
+    
+    return "U";
+  };
+
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -1069,8 +1107,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                  selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
                                     ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
@@ -1079,7 +1116,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                         ? "bg-green-100 dark:bg-green-900/30"
                                         : "bg-red-100 dark:bg-red-900/30"
                                       : "bg-muted"
-                                }`}>
+                                  }`}>
                                   <Clock className="h-4 w-4" />
                                   <span className="text-sm font-medium" data-testid="timer">
                                     {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
@@ -1093,14 +1130,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
                                 <TooltipContent>
                                   <p>
-                                    {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
+                                    {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"}
                                     ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
                                   </p>
                                 </TooltipContent>
                               ) : aggregatedResults ? (
                                 <TooltipContent>
                                   <p>
-                                    {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
+                                    {aggregatedResults.overallPassed ? "Passed" : "Failed"}
                                     ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
                                   </p>
                                 </TooltipContent>
@@ -1140,10 +1177,28 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   <div className="space-y-4 py-4">
                     {/* Show rubric when toggle is on */}
                     {showGrades && selectedChat && simulation?.rubricId ? (
-                      <TableRubric
-                        rubricId={simulation.rubricId}
-                        simulationChatId={selectedChat.id}
-                      />
+                      <div className="h-full flex flex-col">
+                        {/* Rubric Header - matching chat style */}
+                        <div className="p-4 pt-0 border-b">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">
+                                Rubric Results - {resultsScenario?.description || "Session"}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Rubric Content in ScrollArea - matching chat layout */}
+                        <ScrollArea className="flex-1 px-4">
+                          <div className="py-4">
+                            <TableRubric
+                              rubricId={simulation.rubricId}
+                              simulationChatId={selectedChat.id}
+                            />
+                          </div>
+                        </ScrollArea>
+                      </div>
                     ) : selectedChat ? (
                       /* Show chat messages for both single and multi-chat attempts */
                       <div className="space-y-4">
@@ -1152,8 +1207,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             {/* User Message */}
                             {message.query && (
                               <div className="flex justify-end">
-                                <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
-                                  <Markdown>{message.query}</Markdown>
+                                <div className="flex gap-3 max-w-[80%]">
+                                  <div className="bg-primary text-primary-foreground rounded-lg p-3 flex-1">
+                                    <Markdown>{message.query}</Markdown>
+                                  </div>
+                                  <Avatar className="h-8 w-8 flex-shrink-0">
+                                    <AvatarFallback className="bg-primary text-primary-foreground">
+                                      {getUserInitials(profile)}
+                                    </AvatarFallback>
+                                  </Avatar>
                                 </div>
                               </div>
                             )}
@@ -1236,9 +1298,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   }}
                                 >
                                   <Check
-                                    className={`mr-2 h-4 w-4 ${
-                                      selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
-                                    }`}
+                                    className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
+                                      }`}
                                   />
                                   <span className="truncate">{doc.name}</span>
                                 </CommandItem>
@@ -1326,17 +1387,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               </Tooltip>
                             </TooltipProvider>
                           )}
-                          
+
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
-                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                  currentChat?.completed && currentDynamicRubric
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${currentChat?.completed && currentDynamicRubric
                                     ? currentDynamicRubric.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
                                     : "bg-muted"
-                                }`}>
+                                  }`}>
                                   <Clock className="h-4 w-4" />
                                   <span className="text-sm font-medium" data-testid="timer">
                                     {simulation?.timeLimit && timeRemaining !== null
@@ -1351,7 +1411,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {currentChat?.completed && currentDynamicRubric && (
                                 <TooltipContent>
                                   <p>
-                                    {currentDynamicRubric.passed ? "Passed" : "Failed"} 
+                                    {currentDynamicRubric.passed ? "Passed" : "Failed"}
                                     ({currentDynamicRubric.score}/{currentDynamicRubric.totalPossiblePoints})
                                   </p>
                                 </TooltipContent>
@@ -1409,8 +1469,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {/* User Message */}
                               {message.query && (
                                 <div className="flex justify-end">
-                                  <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
-                                    <Markdown>{message.query}</Markdown>
+                                  <div className="flex gap-3 max-w-[80%]">
+                                    <div className="bg-primary text-primary-foreground rounded-lg p-3 flex-1">
+                                      <Markdown>{message.query}</Markdown>
+                                    </div>
+                                    <Avatar className="h-8 w-8 flex-shrink-0">
+                                      <AvatarFallback className="bg-primary text-primary-foreground">
+                                        {getUserInitials(profile)}
+                                      </AvatarFallback>
+                                    </Avatar>
                                   </div>
                                 </div>
                               )}
@@ -1446,11 +1513,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     </ScrollArea>
 
                     {/* Scroll to bottom button with smooth fade transition */}
-                    <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
-                      showScrollButton 
-                        ? 'opacity-100 translate-y-0 pointer-events-auto' 
+                    <div className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${showScrollButton
+                        ? 'opacity-100 translate-y-0 pointer-events-auto'
                         : 'opacity-0 translate-y-2 pointer-events-none'
-                    }`}>
+                      }`}>
                       <Button
                         variant="default"
                         size="sm"
@@ -1511,8 +1577,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               style={{
                                 minHeight: '80px',
                                 // Make textarea height more responsive to available space
-                                height: `${Math.max(80, inputPanelHeight - 100)}px`,
-                                maxHeight: `${Math.max(80, inputPanelHeight - 100)}px`
+                                height: `${Math.max(80, inputPanelHeight - 120)}px`,
+                                maxHeight: `${Math.max(80, inputPanelHeight - 120)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1565,8 +1631,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               style={{
                                 minHeight: '40px',
                                 // Make textarea height more responsive to available space
-                                height: `${Math.max(40, inputPanelHeight - 60)}px`,
-                                maxHeight: `${Math.max(40, inputPanelHeight - 60)}px`
+                                height: `${Math.max(40, inputPanelHeight - 80)}px`,
+                                maxHeight: `${Math.max(40, inputPanelHeight - 80)}px`
                               }}
                             />
                             <div className="flex gap-2 shrink-0">
@@ -1654,9 +1720,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     }}
                                   >
                                     <Check
-                                      className={`mr-2 h-4 w-4 ${
-                                        selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
-                                      }`}
+                                      className={`mr-2 h-4 w-4 ${selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
+                                        }`}
                                     />
                                     <span className="truncate">{doc.name}</span>
                                   </CommandItem>
@@ -1671,8 +1736,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   {/* Document viewer with minimal padding */}
                   <div className="flex-1 min-h-0 p-2">
                     {selectedDocument && (
-                      <DocumentViewer 
-                        key={selectedDocument.id} 
+                      <DocumentViewer
+                        key={selectedDocument.id}
                         document={selectedDocument}
                       />
                     )}
