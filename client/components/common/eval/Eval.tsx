@@ -50,7 +50,7 @@ import { createEval } from "@/utils/mutations/evals/create-eval";
 import { updateEval } from "@/utils/mutations/evals/update-eval";
 
 // Types
-import { Agent, Scenario, Rubric, Class } from "@/types";
+import { Agent, Scenario, Rubric } from "@/types";
 
 interface EvalProps {
   evalId?: string;

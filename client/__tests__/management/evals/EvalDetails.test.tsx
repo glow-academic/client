@@ -49,7 +49,7 @@ describe('EvalDetails', () => {
   describe('Rendering', () => {
     it('should render without crashing', () => {
       // TODO: Implement basic rendering test for EvalDetails
-      renderWithProviders(<EvalDetails />);
+      renderWithProviders(<EvalDetails evalId="1" />);
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for EvalDetails

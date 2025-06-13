@@ -53,7 +53,7 @@ describe("EvaluationPage", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should show loading state initially
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -61,14 +61,14 @@ describe("EvaluationPage", () => {
 
     it("should render with evaluation ID prop", () => {
       const evaluationId = "test-evaluation-123";
-      renderWithProviders(<EvaluationPage evaluationId={evaluationId} />);
+      renderWithProviders(<EvaluationPage runId={evaluationId} />);
 
       // Component should accept and use the evaluationId prop
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
     });
 
     it("should have correct accessibility attributes", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should have proper ARIA labels and roles
       const mainContent =
@@ -95,7 +95,7 @@ describe("EvaluationPage", () => {
           json: () => Promise.resolve([{ id: "run-1", evalId: "eval-1" }]),
         });
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Wait for component to load and test interaction
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -106,7 +106,7 @@ describe("EvaluationPage", () => {
     it("should handle run evaluation button click", async () => {
       const user = userEvent.setup();
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Test would involve clicking run evaluation button
       expect(true).toBe(true); // Placeholder for actual test
@@ -115,7 +115,7 @@ describe("EvaluationPage", () => {
     it("should handle grades toggle switch", async () => {
       const user = userEvent.setup();
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Test would involve toggling the grades switch
       expect(true).toBe(true); // Placeholder for actual test
@@ -124,7 +124,7 @@ describe("EvaluationPage", () => {
     it("should handle run all evaluations button click", async () => {
       const user = userEvent.setup();
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Test would involve clicking run all evaluations button
       expect(true).toBe(true); // Placeholder for actual test
@@ -140,7 +140,7 @@ describe("EvaluationPage", () => {
         json: () => Promise.resolve(mockEvaluation),
       });
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should make API call for evaluation data
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -149,7 +149,7 @@ describe("EvaluationPage", () => {
     });
 
     it("should handle loading states", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should show loading state
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -158,7 +158,7 @@ describe("EvaluationPage", () => {
     it("should handle error states", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("API Error"));
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should handle API errors gracefully
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -169,14 +169,14 @@ describe("EvaluationPage", () => {
 
   describe("AI Conversation Display", () => {
     it("should display AI vs AI conversation correctly", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should be able to display AI conversation with proper styling
       expect(true).toBe(true); // Placeholder for conversation display test
     });
 
     it("should handle streaming conversation updates", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should handle real-time conversation updates
       expect(true).toBe(true); // Placeholder for streaming test
@@ -185,21 +185,21 @@ describe("EvaluationPage", () => {
 
   describe("Rubric Overlay Display", () => {
     it("should display rubric grades when toggle is enabled", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should show rubric grades/feedback overlay when toggle is on
       expect(true).toBe(true); // Placeholder for rubric overlay test
     });
 
     it("should hide chat messages when showing rubric grades", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should hide chat messages when rubric overlay is active
       expect(true).toBe(true); // Placeholder for chat hiding test
     });
 
     it("should display skill feedback in alternating layout", () => {
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should display skill feedback cards in alternating left/right layout
       expect(true).toBe(true); // Placeholder for alternating layout test
@@ -208,7 +208,7 @@ describe("EvaluationPage", () => {
 
   describe("Edge Cases", () => {
     it("should handle missing evaluation ID", () => {
-      renderWithProviders(<EvaluationPage evaluationId="" />);
+      renderWithProviders(<EvaluationPage runId="" />);
 
       // Should handle empty evaluation ID gracefully
       expect(screen.getByText(/loading/i)).toBeInTheDocument();
@@ -220,7 +220,7 @@ describe("EvaluationPage", () => {
         status: 404,
       });
 
-      renderWithProviders(<EvaluationPage evaluationId="nonexistent-id" />);
+      renderWithProviders(<EvaluationPage runId="nonexistent-id" />);
 
       // Should show appropriate error message
       await new Promise((resolve) => setTimeout(resolve, 100));
@@ -231,7 +231,7 @@ describe("EvaluationPage", () => {
     it("should handle network errors gracefully", async () => {
       global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
 
-      renderWithProviders(<EvaluationPage evaluationId="test-eval-id" />);
+      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
 
       // Should handle network errors without crashing
       await new Promise((resolve) => setTimeout(resolve, 100));

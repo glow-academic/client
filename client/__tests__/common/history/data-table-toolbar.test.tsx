@@ -54,6 +54,11 @@ const mockClassOptions = [
   { value: "class2", label: "Class 2" },
 ];
 
+const mockScoreRangeOptions = [
+  { value: "0-10", label: "0-10" },
+  { value: "10-20", label: "10-20" },
+];
+
 describe("DataTableToolbar", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -66,6 +71,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -80,6 +86,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -95,6 +102,7 @@ describe("DataTableToolbar", () => {
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           showExport={true}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -108,6 +116,7 @@ describe("DataTableToolbar", () => {
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           showExport={false}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -120,6 +129,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -136,6 +146,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -164,6 +175,7 @@ describe("DataTableToolbar", () => {
           table={tableWithFilter as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -179,6 +191,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -196,6 +209,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -208,6 +222,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -220,6 +235,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -245,7 +261,8 @@ describe("DataTableToolbar", () => {
           table={tableWithFilters as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-        />,
+          scoreRangeOptions={mockScoreRangeOptions}
+          />,
       );
 
       expect(screen.getByText("Reset")).toBeInTheDocument();
@@ -257,6 +274,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -276,6 +294,7 @@ describe("DataTableToolbar", () => {
           table={tableWithDateFilter as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -296,6 +315,7 @@ describe("DataTableToolbar", () => {
           table={tableWithFilters as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -316,6 +336,7 @@ describe("DataTableToolbar", () => {
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           setDateRange={mockSetDateRange}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -328,6 +349,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions} 
         />,
       );
 
@@ -345,6 +367,7 @@ describe("DataTableToolbar", () => {
           classOptions={mockClassOptions}
           dateRange={mockDateRange}
           setDateRange={mockSetDateRange}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -366,6 +389,7 @@ describe("DataTableToolbar", () => {
           dateRange={mockDateRange}
           setDateRange={mockSetDateRange}
           showExport={true}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -380,6 +404,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -396,6 +421,7 @@ describe("DataTableToolbar", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -415,6 +441,7 @@ describe("DataTableToolbar", () => {
           table={tableWithMissingColumns as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 

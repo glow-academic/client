@@ -21,10 +21,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -34,7 +32,6 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 // Icons
 import { Users, Activity, Play, ChevronDown, Clock } from "lucide-react";
@@ -62,7 +59,7 @@ import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/g
 import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getAgent } from "@/utils/queries/agents/get-agent";
-import { Document, EvalChat, EvalRun, EvalMessage, Scenario } from "@/types";
+import { Document, EvalChat, EvalMessage, Scenario } from "@/types";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {

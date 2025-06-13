@@ -16,14 +16,10 @@ import {
   Card,
   CardContent,
   CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -33,8 +29,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -55,7 +49,7 @@ import {
 } from "@/components/ui/popover";
 
 // Icons
-import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X, Check, ChevronsUpDown, FileText } from "lucide-react";
+import { Send, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, Check, ChevronsUpDown, FileText } from "lucide-react";
 
 // Tooltip
 import {
@@ -72,7 +66,7 @@ import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
-import { Document, Scenario, SimulationChat, SimulationMessage } from "@/types";
+import { Document, SimulationChat, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
@@ -81,7 +75,6 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 import { getClass } from "@/utils/queries/classes/get-class";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { useSession } from "next-auth/react";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";

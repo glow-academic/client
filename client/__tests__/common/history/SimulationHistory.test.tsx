@@ -187,6 +187,7 @@ describe("SimulationHistory", () => {
         scoreOptions: [],
         isLoading: false,
         showAll: false,
+        scoreRangeOptions: [],
       });
 
       renderWithProviders(<SimulationHistory showAll={false} />);
@@ -207,6 +208,7 @@ describe("SimulationHistory", () => {
         scoreOptions: [],
         isLoading: true,
         showAll: false,
+        scoreRangeOptions: [],
       });
 
       renderWithProviders(<SimulationHistory showAll={false} />);
@@ -238,6 +240,7 @@ describe("SimulationHistory", () => {
         scoreOptions: [],
         isLoading: false,
         showAll: false,
+        scoreRangeOptions: [],
       });
 
       renderWithProviders(<SimulationHistory showAll={false} />);

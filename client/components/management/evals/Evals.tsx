@@ -21,7 +21,6 @@ import {
   Clock,
   Settings,
   Eye,
-  CheckCircle,
 } from "lucide-react";
 
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";

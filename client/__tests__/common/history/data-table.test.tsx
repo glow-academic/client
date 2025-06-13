@@ -88,6 +88,11 @@ const mockClassOptions = [
   { value: "class2", label: "Class 2" },
 ];
 
+const mockScoreRangeOptions = [
+  { value: "0-10", label: "0-10" },
+  { value: "10-20", label: "10-20" },
+];
+
 // Create a base mock table object
 const createMockTable = (overrides = {}) => ({
   getHeaderGroups: vi.fn(() => [
@@ -138,6 +143,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -152,6 +158,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -165,6 +172,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -178,6 +186,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -193,6 +202,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -206,6 +216,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -224,6 +235,7 @@ describe("DataTable", () => {
           data={[]}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -240,6 +252,7 @@ describe("DataTable", () => {
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showExport={true}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -254,6 +267,7 @@ describe("DataTable", () => {
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showExport={false}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -279,6 +293,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -293,6 +308,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -309,6 +325,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -348,6 +365,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -361,6 +379,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -378,6 +397,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -397,6 +417,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={[]}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -410,6 +431,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={[]}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -423,6 +445,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -436,6 +459,7 @@ describe("DataTable", () => {
           data={[]}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
@@ -450,6 +474,7 @@ describe("DataTable", () => {
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
+          scoreRangeOptions={mockScoreRangeOptions}
         />,
       );
 
