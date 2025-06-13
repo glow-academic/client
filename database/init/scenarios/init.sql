@@ -10,6 +10,7 @@ CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophomore', 'junior', 'senior
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   agent_id UUID         NULL REFERENCES agents(id)  ON DELETE SET NULL,

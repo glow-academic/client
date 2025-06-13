@@ -310,7 +310,10 @@ export default function Scenario({
 
             const targetScenarioId = scenarioId || editingScenarioId;
             if (targetScenarioId) {
-                await updateScenario(targetScenarioId, payload);
+                await updateScenario(targetScenarioId, {
+                    ...payload,
+                    updatedAt: new Date().toISOString(),
+                });
                 toast.success("Scenario updated successfully!");
             } else {
                 await createScenario(payload);

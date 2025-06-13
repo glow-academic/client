@@ -78,7 +78,7 @@ export function Scenarios() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
-        {scenarios.map((scenario: Scenario) => (
+        {scenarios.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((scenario: Scenario) => (
           <Card key={scenario.id} className="hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex justify-between items-start">

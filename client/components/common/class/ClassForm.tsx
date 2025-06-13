@@ -259,6 +259,7 @@ export default function ClassForm({
 
         queryClient.invalidateQueries({ queryKey: ["classes"] });
         queryClient.invalidateQueries({ queryKey: ["class", classId] });
+        queryClient.invalidateQueries({ queryKey: ["documents", classId] });
         toast.success("Class updated successfully!");
         if (onSuccess) {
           onSuccess(classId);

@@ -287,7 +287,7 @@ export default function Simulation({
           ? "Simulation updated successfully!"
           : "Simulation created successfully!",
       );
-      router.push(`/simulations/${result.id}`);
+      router.push(`/create/simulations/s/${result.id}`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(

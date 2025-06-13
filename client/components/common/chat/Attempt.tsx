@@ -104,9 +104,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
   const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
+  const [inputPanelHeight, setInputPanelHeight] = useState(0);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const inputPanelRef = useRef<HTMLDivElement>(null);
 
   // Fetch attempt data
   const {
@@ -802,6 +804,26 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [messages.length]);
 
+  // Track input panel height for dynamic layout
+  useEffect(() => {
+    if (!inputPanelRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setInputPanelHeight(entry.contentRect.height);
+      }
+    });
+
+    resizeObserver.observe(inputPanelRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Determine if we should use vertical layout (when panel is tall enough)
+  const useVerticalLayout = inputPanelHeight > 100;
+
   // Helper function to format time in minutes and seconds
   const formatTimeDetailed = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -1090,7 +1112,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                 <ScrollArea className="h-[calc(100vh-12rem)]">
                   <div className="p-4 space-y-4">
                     {classDocuments.map((doc: Document) => (
-                      <DocumentViewer key={doc.id} document={doc} />
+                      <DocumentViewer key={doc.id} document={doc} bare={true} />
                     ))}
                   </div>
                 </ScrollArea>
@@ -1103,7 +1125,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }
 
   return (
-    <div className="h-screen p-4">
+    <div className="h-screen">
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
@@ -1275,7 +1297,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                     {/* Scroll to bottom button */}
                     {showScrollButton && (
-                      <div className="absolute bottom-6 right-6 z-10">
+                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
                         <Button
                           variant="default"
                           size="sm"
@@ -1291,8 +1313,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               </ResizablePanel>
 
               <ResizableHandle />
-              <ResizablePanel defaultSize={15} minSize={18} maxSize={40}>
-                <CardFooter className="h-full p-4 border-t flex flex-col justify-center">
+              <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
+                <CardFooter ref={inputPanelRef} className="h-full p-4 border-t flex flex-col justify-center">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1313,53 +1335,105 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[100px]">
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px]">
                       <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
-                        <div className="flex gap-2 flex-1 min-h-[60px]">
-                          <Textarea
-                            value={newMessage}
-                            onChange={(e) => setNewMessage(e.target.value)}
-                            placeholder="Type your message..."
-                            disabled={simulation?.timeLimit ? !isActive : false}
-                            className="flex-1 resize-none text-md min-h-[40px]"
-                            data-testid="message-input"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendMessage(e as any);
-                              }
-                            }}
-                          />
-                          <div className="flex flex-col gap-2 min-w-[120px] justify-center">
-                            <Button
-                              type="submit"
-                              disabled={
-                                !newMessage.trim() ||
-                                (simulation?.timeLimit ? !isActive : false)
-                              }
-                              data-testid="send-button"
-                              className="min-h-[36px] h-[36px]"
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={handleEndChat}
-                              disabled={
-                                endChatLoading ||
-                                (simulation?.timeLimit ? !isActive : false)
-                              }
-                              className="whitespace-nowrap min-h-[36px] h-[36px] px-2"
-                            >
-                              {endChatLoading
-                                ? "Ending..."
-                                : isSingleChatAttempt
-                                  ? "End Session"
-                                  : "End Chat"}
-                            </Button>
+                        {/* Dynamic layout based on panel height */}
+                        {useVerticalLayout ? (
+                          /* Vertical layout for larger panels */
+                          <div className="flex flex-col gap-2 flex-1">
+                            <Textarea
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Type your message..."
+                              disabled={simulation?.timeLimit ? !isActive : false}
+                              className="flex-1 resize-none text-md min-h-[60px] max-h-[200px]"
+                              data-testid="message-input"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendMessage(e as any);
+                                }
+                              }}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                type="submit"
+                                disabled={
+                                  !newMessage.trim() ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                data-testid="send-button"
+                                className="min-h-[40px] h-[40px] px-3"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleEndChat}
+                                disabled={
+                                  endChatLoading ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
+                              >
+                                {endChatLoading
+                                  ? "Ending..."
+                                  : isSingleChatAttempt
+                                    ? "End Session"
+                                    : "End Chat"}
+                              </Button>
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          /* Horizontal layout for smaller panels */
+                          <div className="flex gap-2 flex-1 min-h-[40px]">
+                            <Textarea
+                              value={newMessage}
+                              onChange={(e) => setNewMessage(e.target.value)}
+                              placeholder="Type your message..."
+                              disabled={simulation?.timeLimit ? !isActive : false}
+                              className="flex-1 resize-none text-md min-h-[40px] max-h-[40px]"
+                              data-testid="message-input"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  handleSendMessage(e as any);
+                                }
+                              }}
+                              rows={1}
+                            />
+                            <div className="flex gap-2 shrink-0">
+                              <Button
+                                type="submit"
+                                disabled={
+                                  !newMessage.trim() ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                data-testid="send-button"
+                                className="min-h-[40px] h-[40px] px-3"
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleEndChat}
+                                disabled={
+                                  endChatLoading ||
+                                  (simulation?.timeLimit ? !isActive : false)
+                                }
+                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
+                              >
+                                {endChatLoading
+                                  ? "Ending..."
+                                  : isSingleChatAttempt
+                                    ? "End Session"
+                                    : "End Chat"}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                       </form>
                       {simulation?.timeLimit && !isActive && (
                         <p className="text-sm text-muted-foreground text-center mt-2">
@@ -1385,9 +1459,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                 </CardHeader>
                 <CardContent className="flex-1 p-0 min-h-0">
                   <ScrollArea className="h-full">
-                    <div className="p-4 space-y-4">
+                    <div className="p-4">
                       {classDocuments.map((doc: Document) => (
-                        <DocumentViewer key={doc.id} document={doc} />
+                        <DocumentViewer key={doc.id} document={doc} bare={true} />
                       ))}
                     </div>
                   </ScrollArea>
