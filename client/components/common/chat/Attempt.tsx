@@ -40,9 +40,22 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 // Icons
-import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X } from "lucide-react";
+import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X, Check, ChevronsUpDown } from "lucide-react";
 
 // Tooltip
 import {
@@ -106,10 +119,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [inputAreaHeight, setInputAreaHeight] = useState(120); // Default height in pixels
   const [inputPanelHeight, setInputPanelHeight] = useState(0);
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(null);
+  const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputPanelRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Fetch attempt data
   const {
@@ -797,8 +812,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   };
 
-
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
@@ -807,7 +820,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [messages.length]);
 
-  // Set up scroll event listener for the ScrollArea
+  // Set up scroll event listener for the ScrollArea with increased threshold
   useEffect(() => {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
@@ -817,7 +830,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     const handleScrollEvent = () => {
       const { scrollTop, scrollHeight, clientHeight } = viewport;
-      const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
+      // Increased threshold from 20 to 100 pixels for less sensitivity
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
       const hasScrollableContent = scrollHeight > clientHeight + 10;
       setShowScrollButton(hasScrollableContent && !isNearBottom);
     };
@@ -850,8 +864,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       resizeObserver.disconnect();
     };
   }, []);
-
-
 
   // Set default selected document
   useEffect(() => {
@@ -955,6 +967,39 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   );
 
   // Timer is now displayed directly in the component, no need for layout integration
+
+  // Auto-focus typing functionality
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only auto-focus if:
+      // 1. Not in results view
+      // 2. Chat is not completed
+      // 3. Session is active (if time-limited)
+      // 4. Not pressing special keys (Ctrl, Alt, etc.)
+      // 5. Not already focused on an input/textarea
+      // 6. Key is a printable character
+      if (
+        !showResults &&
+        !currentChat?.completed &&
+        (simulation?.timeLimit ? isActive : true) &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        e.key.length === 1 &&
+        document.activeElement?.tagName !== 'INPUT' &&
+        document.activeElement?.tagName !== 'TEXTAREA' &&
+        textareaRef.current
+      ) {
+        // Focus the textarea and add the typed character
+        textareaRef.current.focus();
+        setNewMessage(prev => prev + e.key);
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
   if (attemptLoading || simulationLoading || scenarioLoading) {
     return (
@@ -1161,21 +1206,48 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    <Select
-                      value={selectedDocumentId || ""}
-                      onValueChange={setSelectedDocumentId}
-                    >
-                      <SelectTrigger className="mb-2">
-                        <SelectValue placeholder="Select a document" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {documents?.map((doc) => (
-                          <SelectItem key={doc.id} value={doc.id}>
-                            {doc.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          aria-expanded={documentSearchOpen}
+                          className="w-full justify-between"
+                        >
+                          {selectedDocumentId
+                            ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
+                            : "Select document..."}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-full p-0" align="start">
+                        <Command>
+                          <CommandInput placeholder="Search documents..." />
+                          <CommandList>
+                            <CommandEmpty>No document found.</CommandEmpty>
+                            <CommandGroup>
+                              {classDocuments.map((doc: Document) => (
+                                <CommandItem
+                                  key={doc.id}
+                                  value={doc.name}
+                                  onSelect={() => {
+                                    setSelectedDocumentId(doc.id);
+                                    setDocumentSearchOpen(false);
+                                  }}
+                                >
+                                  <Check
+                                    className={`mr-2 h-4 w-4 ${
+                                      selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
+                                    }`}
+                                  />
+                                  <span className="truncate">{doc.name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                     <div className="flex-1 min-h-0">
                       {selectedDocument && (
                         <DocumentViewer
@@ -1423,6 +1495,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           /* Vertical layout for larger panels */
                           <div className="flex flex-col gap-2 flex-1">
                             <Textarea
+                              ref={textareaRef}
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
@@ -1437,8 +1510,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '80px',
-                                height: `${Math.max(80, inputPanelHeight - 80)}px`,
-                                maxHeight: `${Math.max(80, inputPanelHeight - 80)}px`
+                                // Make textarea height more responsive to available space
+                                height: `${Math.max(80, inputPanelHeight - 100)}px`,
+                                maxHeight: `${Math.max(80, inputPanelHeight - 100)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1475,6 +1549,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           /* Horizontal layout for smaller panels */
                           <div className="flex gap-2 flex-1 min-h-[40px]">
                             <Textarea
+                              ref={textareaRef}
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
@@ -1489,8 +1564,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '40px',
-                                height: `${Math.max(40, inputPanelHeight - 40)}px`,
-                                maxHeight: `${Math.max(40, inputPanelHeight - 40)}px`
+                                // Make textarea height more responsive to available space
+                                height: `${Math.max(40, inputPanelHeight - 60)}px`,
+                                maxHeight: `${Math.max(40, inputPanelHeight - 60)}px`
                               }}
                             />
                             <div className="flex gap-2 shrink-0">
@@ -1548,23 +1624,48 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   {/* Select dropdown directly above document */}
                   {classDocuments.length > 1 && (
                     <div className="p-3 pb-2 border-b">
-                      <Select
-                        value={selectedDocumentId || ""}
-                        onValueChange={setSelectedDocumentId}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select document" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classDocuments.map((doc: Document) => (
-                            <SelectItem key={doc.id} value={doc.id}>
-                              <div className="flex items-center gap-2">
-                                <span className="truncate">{doc.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover open={documentSearchOpen} onOpenChange={setDocumentSearchOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={documentSearchOpen}
+                            className="w-full justify-between"
+                          >
+                            {selectedDocumentId
+                              ? classDocuments.find((doc) => doc.id === selectedDocumentId)?.name
+                              : "Select document..."}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0" align="start">
+                          <Command>
+                            <CommandInput placeholder="Search documents..." />
+                            <CommandList>
+                              <CommandEmpty>No document found.</CommandEmpty>
+                              <CommandGroup>
+                                {classDocuments.map((doc: Document) => (
+                                  <CommandItem
+                                    key={doc.id}
+                                    value={doc.name}
+                                    onSelect={() => {
+                                      setSelectedDocumentId(doc.id);
+                                      setDocumentSearchOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={`mr-2 h-4 w-4 ${
+                                        selectedDocumentId === doc.id ? "opacity-100" : "opacity-0"
+                                      }`}
+                                    />
+                                    <span className="truncate">{doc.name}</span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   )}
                   {/* Document viewer with minimal padding */}
