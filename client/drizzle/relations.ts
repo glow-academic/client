@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { classes, topics, users, profiles, schedules, events, documents, rubrics, standardGroups, agents, scenarios, standards, simulations, simulationAttempts, simulationChatGrades, simulationChats, simulationMessages, simulationChatFeedbacks, evals, evalRuns, evalChats, evalMessages, evalChatGrades, evalChatFeedbacks } from "./schema";
+import { classes, topics, schedules, events, documents, users, profiles, rubrics, standardGroups, standards, agents, scenarios, simulations, simulationAttempts, simulationChats, evalChats, evalRuns, simulationMessages, simulationChatGrades, simulationChatFeedbacks, evals, evalChatGrades, evalMessages, evalChatFeedbacks } from "./schema";
 
 export const topicsRelations = relations(topics, ({one}) => ({
 	class: one(classes, {
@@ -13,18 +13,6 @@ export const classesRelations = relations(classes, ({many}) => ({
 	schedules: many(schedules),
 	documents: many(documents),
 	scenarios: many(scenarios),
-}));
-
-export const profilesRelations = relations(profiles, ({one, many}) => ({
-	user: one(users, {
-		fields: [profiles.userId],
-		references: [users.id]
-	}),
-	simulationAttempts: many(simulationAttempts),
-}));
-
-export const usersRelations = relations(users, ({many}) => ({
-	profiles: many(profiles),
 }));
 
 export const schedulesRelations = relations(schedules, ({one, many}) => ({
@@ -49,6 +37,18 @@ export const documentsRelations = relations(documents, ({one}) => ({
 	}),
 }));
 
+export const profilesRelations = relations(profiles, ({one, many}) => ({
+	user: one(users, {
+		fields: [profiles.userId],
+		references: [users.id]
+	}),
+	simulationAttempts: many(simulationAttempts),
+}));
+
+export const usersRelations = relations(users, ({many}) => ({
+	profiles: many(profiles),
+}));
+
 export const standardGroupsRelations = relations(standardGroups, ({one, many}) => ({
 	rubric: one(rubrics, {
 		fields: [standardGroups.rubricId],
@@ -63,6 +63,15 @@ export const rubricsRelations = relations(rubrics, ({many}) => ({
 	simulationChatGrades: many(simulationChatGrades),
 	evalRuns: many(evalRuns),
 	evalChatGrades: many(evalChatGrades),
+}));
+
+export const standardsRelations = relations(standards, ({one, many}) => ({
+	standardGroup: one(standardGroups, {
+		fields: [standards.standardGroupId],
+		references: [standardGroups.id]
+	}),
+	simulationChatFeedbacks: many(simulationChatFeedbacks),
+	evalChatFeedbacks: many(evalChatFeedbacks),
 }));
 
 export const scenariosRelations = relations(scenarios, ({one, many}) => ({
@@ -82,15 +91,6 @@ export const agentsRelations = relations(agents, ({many}) => ({
 	scenarios: many(scenarios),
 	evals: many(evals),
 	evalRuns: many(evalRuns),
-}));
-
-export const standardsRelations = relations(standards, ({one, many}) => ({
-	standardGroup: one(standardGroups, {
-		fields: [standards.standardGroupId],
-		references: [standardGroups.id]
-	}),
-	simulationChatFeedbacks: many(simulationChatFeedbacks),
-	evalChatFeedbacks: many(evalChatFeedbacks),
 }));
 
 export const simulationsRelations = relations(simulations, ({one, many}) => ({
@@ -113,6 +113,55 @@ export const simulationAttemptsRelations = relations(simulationAttempts, ({one, 
 	simulationChats: many(simulationChats),
 }));
 
+export const simulationChatsRelations = relations(simulationChats, ({one, many}) => ({
+	scenario: one(scenarios, {
+		fields: [simulationChats.scenarioId],
+		references: [scenarios.id]
+	}),
+	simulationAttempt: one(simulationAttempts, {
+		fields: [simulationChats.attemptId],
+		references: [simulationAttempts.id]
+	}),
+	simulationMessages: many(simulationMessages),
+	simulationChatGrades: many(simulationChatGrades),
+}));
+
+export const evalChatsRelations = relations(evalChats, ({one, many}) => ({
+	scenario: one(scenarios, {
+		fields: [evalChats.scenarioId],
+		references: [scenarios.id]
+	}),
+	evalRun: one(evalRuns, {
+		fields: [evalChats.evalRunId],
+		references: [evalRuns.id]
+	}),
+	evalChatGrades: many(evalChatGrades),
+	evalMessages: many(evalMessages),
+}));
+
+export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
+	evalChats: many(evalChats),
+	eval: one(evals, {
+		fields: [evalRuns.evalId],
+		references: [evals.id]
+	}),
+	agent: one(agents, {
+		fields: [evalRuns.agentId],
+		references: [agents.id]
+	}),
+	rubric: one(rubrics, {
+		fields: [evalRuns.rubricId],
+		references: [rubrics.id]
+	}),
+}));
+
+export const simulationMessagesRelations = relations(simulationMessages, ({one}) => ({
+	simulationChat: one(simulationChats, {
+		fields: [simulationMessages.chatId],
+		references: [simulationChats.id]
+	}),
+}));
+
 export const simulationChatGradesRelations = relations(simulationChatGrades, ({one, many}) => ({
 	rubric: one(rubrics, {
 		fields: [simulationChatGrades.rubricId],
@@ -123,26 +172,6 @@ export const simulationChatGradesRelations = relations(simulationChatGrades, ({o
 		references: [simulationChats.id]
 	}),
 	simulationChatFeedbacks: many(simulationChatFeedbacks),
-}));
-
-export const simulationChatsRelations = relations(simulationChats, ({one, many}) => ({
-	simulationChatGrades: many(simulationChatGrades),
-	scenario: one(scenarios, {
-		fields: [simulationChats.scenarioId],
-		references: [scenarios.id]
-	}),
-	simulationAttempt: one(simulationAttempts, {
-		fields: [simulationChats.attemptId],
-		references: [simulationAttempts.id]
-	}),
-	simulationMessages: many(simulationMessages),
-}));
-
-export const simulationMessagesRelations = relations(simulationMessages, ({one}) => ({
-	simulationChat: one(simulationChats, {
-		fields: [simulationMessages.chatId],
-		references: [simulationChats.id]
-	}),
 }));
 
 export const simulationChatFeedbacksRelations = relations(simulationChatFeedbacks, ({one}) => ({
@@ -164,42 +193,6 @@ export const evalsRelations = relations(evals, ({one, many}) => ({
 	evalRuns: many(evalRuns),
 }));
 
-export const evalRunsRelations = relations(evalRuns, ({one, many}) => ({
-	eval: one(evals, {
-		fields: [evalRuns.evalId],
-		references: [evals.id]
-	}),
-	agent: one(agents, {
-		fields: [evalRuns.agentId],
-		references: [agents.id]
-	}),
-	rubric: one(rubrics, {
-		fields: [evalRuns.rubricId],
-		references: [rubrics.id]
-	}),
-	evalChats: many(evalChats),
-}));
-
-export const evalChatsRelations = relations(evalChats, ({one, many}) => ({
-	scenario: one(scenarios, {
-		fields: [evalChats.scenarioId],
-		references: [scenarios.id]
-	}),
-	evalRun: one(evalRuns, {
-		fields: [evalChats.evalRunId],
-		references: [evalRuns.id]
-	}),
-	evalMessages: many(evalMessages),
-	evalChatGrades: many(evalChatGrades),
-}));
-
-export const evalMessagesRelations = relations(evalMessages, ({one}) => ({
-	evalChat: one(evalChats, {
-		fields: [evalMessages.chatId],
-		references: [evalChats.id]
-	}),
-}));
-
 export const evalChatGradesRelations = relations(evalChatGrades, ({one, many}) => ({
 	rubric: one(rubrics, {
 		fields: [evalChatGrades.rubricId],
@@ -210,6 +203,13 @@ export const evalChatGradesRelations = relations(evalChatGrades, ({one, many}) =
 		references: [evalChats.id]
 	}),
 	evalChatFeedbacks: many(evalChatFeedbacks),
+}));
+
+export const evalMessagesRelations = relations(evalMessages, ({one}) => ({
+	evalChat: one(evalChats, {
+		fields: [evalMessages.chatId],
+		references: [evalChats.id]
+	}),
 }));
 
 export const evalChatFeedbacksRelations = relations(evalChatFeedbacks, ({one}) => ({

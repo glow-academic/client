@@ -48,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // remove @onwards from the email
         const alias = user.email.split("@")[0];
 
-        const userId = user.id;
+        const userId = parseInt(user.id);
 
         const databaseUser = await getUserByEmail(user.email);
 
