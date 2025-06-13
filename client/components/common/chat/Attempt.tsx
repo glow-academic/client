@@ -42,7 +42,7 @@ import {
 } from "@/components/ui/resizable";
 
 // Icons
-import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown } from "lucide-react";
+import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X } from "lucide-react";
 
 // Tooltip
 import {
@@ -787,11 +787,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Hide scroll button after scrolling to bottom
+    setTimeout(() => setShowScrollButton(false), 500);
   };
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
     const hasScrollableContent = scrollHeight > clientHeight + 10;
     // Show button when there's scrollable content AND user is not near the bottom AND there are messages
     setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 2);
@@ -805,20 +807,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [messages.length]);
 
-  // Check if scroll button should be shown when messages change
+  // Check scroll position when messages change
   useEffect(() => {
-    if (messages.length > 2 && scrollAreaRef.current) {
-      const timer = setTimeout(() => {
-        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
-        if (scrollArea) {
-          const { scrollTop, scrollHeight, clientHeight } = scrollArea;
-          const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
-          const hasScrollableContent = scrollHeight > clientHeight + 10;
-          const shouldShow = hasScrollableContent && !isNearBottom;
-          setShowScrollButton(shouldShow);
-        }
-      }, 200);
-      return () => clearTimeout(timer);
+    const messagesContainer = messagesEndRef.current?.parentElement;
+    if (messagesContainer) {
+      const { scrollTop, scrollHeight, clientHeight } = messagesContainer;
+      const isNearBottom = scrollHeight - scrollTop - clientHeight < 20;
+      const hasScrollableContent = scrollHeight > clientHeight + 10;
+      setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 2);
     }
   }, [messages.length]);
 
@@ -1136,37 +1132,40 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           {showDocuments && classDocuments.length > 0 && (
             <>
               <ResizableHandle />
-              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <Card className="h-full flex flex-col ml-4">
-                  <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                    {/* Select dropdown directly above document */}
-                    {classDocuments.length > 1 && (
-                      <div className="p-3 pb-2 border-b">
-                        <Select
-                          value={selectedDocumentId || ""}
-                          onValueChange={setSelectedDocumentId}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select document" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {classDocuments.map((doc: Document) => (
-                              <SelectItem key={doc.id} value={doc.id}>
-                                <div className="flex items-center gap-2">
-                                  <span className="truncate">{doc.name}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                    {/* Document viewer with minimal padding */}
-                    <div className="flex-1 min-h-0 p-2">
+              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
+                <Card className="h-full border-l-0 rounded-l-none">
+                  <CardContent className="h-full p-3 flex flex-col">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-medium">Documents</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowDocuments(false)}
+                        className="h-6 w-6 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Select
+                      value={selectedDocumentId || ""}
+                      onValueChange={setSelectedDocumentId}
+                    >
+                      <SelectTrigger className="mb-2">
+                        <SelectValue placeholder="Select a document" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {documents?.map((doc) => (
+                          <SelectItem key={doc.id} value={doc.id}>
+                            {doc.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="flex-1 min-h-0">
                       {selectedDocument && (
-                        <DocumentViewer 
-                          key={selectedDocument.id} 
+                        <DocumentViewer
                           document={selectedDocument}
+                          bare={true}
                         />
                       )}
                     </div>
@@ -1352,7 +1351,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     </ScrollArea>
 
                     {/* Scroll to bottom button */}
-                    {(showScrollButton || messages.length > 3) && (
+                    {showScrollButton && (
                       <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20">
                         <Button
                           variant="default"
@@ -1371,7 +1370,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
               <ResizableHandle />
               <ResizablePanel defaultSize={12} minSize={8} maxSize={40}>
-                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-6 border-t flex flex-col justify-center">
+                <CardFooter ref={inputPanelRef} className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center">
                   {currentChat?.completed ? (
                     <div className="w-full text-center py-4">
                       <p className="text-muted-foreground mb-2">
@@ -1392,7 +1391,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px]">
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
                       <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
                         {/* Dynamic layout based on panel height */}
                         {useVerticalLayout ? (
@@ -1413,7 +1412,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               }}
                               style={{
                                 minHeight: '60px',
-                                height: `${Math.max(60, inputPanelHeight - 140)}px`
+                                height: `${Math.max(60, inputPanelHeight - 120)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1497,7 +1496,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         )}
                       </form>
                       {simulation?.timeLimit && !isActive && (
-                        <p className="text-sm text-muted-foreground text-center mt-2">
+                        <p className="text-sm text-muted-foreground text-center">
                           Time's up! The session has ended.
                         </p>
                       )}
