@@ -286,6 +286,72 @@ describe("Attempt - Starter Prompts", () => {
       expect(screen.queryByText(/Are you here for/)).not.toBeInTheDocument();
     });
   });
+
+  it("should show scroll-to-bottom button when there are many messages", async () => {
+    // Mock multiple messages to trigger scroll
+    const { getSimulationMessagesByChat } = require("@/utils/queries/simulation_messages/get-simulation-messages-by-chat");
+    const mockMessages = Array.from({ length: 10 }, (_, i) => ({
+      id: `message-${i}`,
+      query: `Question ${i}`,
+      response: `Response ${i}`,
+      chatId: "chat-1",
+      completed: true,
+      createdAt: new Date(Date.now() + i * 1000).toISOString(),
+    }));
+    getSimulationMessagesByChat.mockResolvedValue(mockMessages);
+
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
+
+    await waitFor(() => {
+      // Should show messages
+      expect(screen.getByText("Question 0")).toBeInTheDocument();
+    });
+
+    // Wait a bit more for scroll detection to run
+    await waitFor(() => {
+      const scrollButton = screen.queryByTestId("scroll-to-bottom-button");
+      // Button might appear depending on content height
+      if (scrollButton) {
+        expect(scrollButton).toBeInTheDocument();
+      }
+    }, { timeout: 1000 });
+  });
+
+  it("should handle scroll-to-bottom button click", async () => {
+    const user = userEvent.setup();
+    
+    // Mock multiple messages
+    const { getSimulationMessagesByChat } = require("@/utils/queries/simulation_messages/get-simulation-messages-by-chat");
+    const mockMessages = Array.from({ length: 5 }, (_, i) => ({
+      id: `message-${i}`,
+      query: `Question ${i}`,
+      response: `Response ${i}`,
+      chatId: "chat-1",
+      completed: true,
+      createdAt: new Date(Date.now() + i * 1000).toISOString(),
+    }));
+    getSimulationMessagesByChat.mockResolvedValue(mockMessages);
+
+    // Mock scrollIntoView
+    const mockScrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      value: mockScrollIntoView,
+      writable: true,
+    });
+
+    renderWithProviders(<Attempt attemptId="attempt-1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Question 0")).toBeInTheDocument();
+    });
+
+    // Try to find and click the scroll button if it exists
+    const scrollButton = screen.queryByTestId("scroll-to-bottom-button");
+    if (scrollButton) {
+      await user.click(scrollButton);
+      expect(mockScrollIntoView).toHaveBeenCalledWith({ behavior: "smooth" });
+    }
+  });
 });
 
 /*

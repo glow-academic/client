@@ -791,16 +791,33 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
-    const hasScrollableContent = scrollHeight > clientHeight;
-    // Show button when there's scrollable content AND user is not near the bottom
-    setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 0);
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+    const hasScrollableContent = scrollHeight > clientHeight + 10;
+    // Show button when there's scrollable content AND user is not near the bottom AND there are messages
+    setShowScrollButton(hasScrollableContent && !isNearBottom && messages.length > 2);
   };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     if (messages.length > 0) {
       const timer = setTimeout(scrollToBottom, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [messages.length]);
+
+  // Check if scroll button should be shown when messages change
+  useEffect(() => {
+    if (messages.length > 2 && scrollAreaRef.current) {
+      const timer = setTimeout(() => {
+        const scrollArea = scrollAreaRef.current?.querySelector('[data-radix-scroll-area-viewport]') as HTMLElement;
+        if (scrollArea) {
+          const { scrollTop, scrollHeight, clientHeight } = scrollArea;
+          const isNearBottom = scrollHeight - scrollTop - clientHeight < 50;
+          const hasScrollableContent = scrollHeight > clientHeight + 10;
+          const shouldShow = hasScrollableContent && !isNearBottom;
+          setShowScrollButton(shouldShow);
+        }
+      }, 200);
       return () => clearTimeout(timer);
     }
   }, [messages.length]);
@@ -961,202 +978,204 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Show results screen
   if (showResults) {
     return (
-      <div className="flex flex-1 gap-4">
-        {/* Main Results Area */}
-        <div className="flex-1">
-          <Card className="h-full flex flex-col">
-            <CardContent className="flex-1 flex flex-col p-0">
-              {/* Chat Selector and Controls */}
-              <div className="p-4 pt-0 border-b flex flex-col gap-2">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    {/* Show scenario information */}
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">
-                        {resultsScenario?.description || "Session Results"}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-end justify-end flex-col gap-2">
+      <div className="h-[calc(100vh-4rem)] flex gap-4"> {/* Account for breadcrumbs */}
+        <ResizablePanelGroup direction="horizontal" className="h-full flex-1">
+          {/* Main Results Area */}
+          <ResizablePanel defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}>
+            <Card className="h-full flex flex-col">
+              <CardContent className="flex-1 flex flex-col p-0">
+                {/* Chat Selector and Controls */}
+                <div className="p-4 pt-0 border-b flex flex-col gap-2">
+                  <div className="flex items-start justify-between">
                     <div className="flex items-center gap-4">
-                      {selectedChat && (
-                        <div className="flex items-center gap-2">
-                          <Label htmlFor="show-grades" className="text-sm">
-                            Show Rubric
-                          </Label>
-                          <Switch
-                            id="show-grades"
-                            checked={showGrades}
-                            onCheckedChange={setShowGrades}
-                          />
-                        </div>
-                      )}
+                      {/* Show scenario information */}
                       <div className="flex items-center gap-2">
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
-                                  ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
-                                    ? "bg-green-100 dark:bg-green-900/30"
-                                    : "bg-red-100 dark:bg-red-900/30"
-                                  : aggregatedResults
-                                    ? aggregatedResults.overallPassed
-                                      ? "bg-green-100 dark:bg-green-900/30"
-                                      : "bg-red-100 dark:bg-red-900/30"
-                                    : "bg-muted"
-                              }`}>
-                                <Clock className="h-4 w-4" />
-                                <span className="text-sm font-medium" data-testid="timer">
-                                  {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
-                                    ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
-                                    : aggregatedResults?.totalTime !== undefined
-                                      ? formatTime(aggregatedResults.totalTime)
-                                      : "No time limit"}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
-                              <TooltipContent>
-                                <p>
-                                  {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
-                                  ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
-                                </p>
-                              </TooltipContent>
-                            ) : aggregatedResults ? (
-                              <TooltipContent>
-                                <p>
-                                  {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
-                                  ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
-                                </p>
-                              </TooltipContent>
-                            ) : null}
-                          </Tooltip>
-                        </TooltipProvider>
+                        <span className="font-medium">
+                          {resultsScenario?.description || "Session Results"}
+                        </span>
                       </div>
                     </div>
+                    <div className="flex items-end justify-end flex-col gap-2">
+                      <div className="flex items-center gap-4">
+                        {selectedChat && (
+                          <div className="flex items-center gap-2">
+                            <Label htmlFor="show-grades" className="text-sm">
+                              Show Rubric
+                            </Label>
+                            <Switch
+                              id="show-grades"
+                              checked={showGrades}
+                              onCheckedChange={setShowGrades}
+                            />
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                  selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)
+                                    ? allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : aggregatedResults
+                                      ? aggregatedResults.overallPassed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : "bg-muted"
+                                }`}>
+                                  <Clock className="h-4 w-4" />
+                                  <span className="text-sm font-medium" data-testid="timer">
+                                    {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken !== undefined
+                                      ? formatTime(allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.timeTaken ?? 0)
+                                      : aggregatedResults?.totalTime !== undefined
+                                        ? formatTime(aggregatedResults.totalTime)
+                                        : "No time limit"}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              {selectedChat && allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id) ? (
+                                <TooltipContent>
+                                  <p>
+                                    {allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.passed ? "Passed" : "Failed"} 
+                                    ({allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.score}/{allDynamicRubrics.find(rubric => rubric.chatId === selectedChat.id)?.totalPossiblePoints})
+                                  </p>
+                                </TooltipContent>
+                              ) : aggregatedResults ? (
+                                <TooltipContent>
+                                  <p>
+                                    {aggregatedResults.overallPassed ? "Passed" : "Failed"} 
+                                    ({aggregatedResults.passedChats}/{aggregatedResults.totalChats} chats passed)
+                                  </p>
+                                </TooltipContent>
+                              ) : null}
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
 
-                    {/* Show completion status for completed attempts */}
-                    {!isSingleChatAttempt && (
-                      <Select
-                        value={selectedChatId || ""}
-                        onValueChange={setSelectedChatId}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select chat to view results" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {chats
-                            ?.filter((chat: SimulationChat) => chat.completed)
-                            .map((chat: SimulationChat, index: number) => (
-                              <SelectItem key={chat.id} value={chat.id}>
+                      {/* Show completion status for completed attempts */}
+                      {!isSingleChatAttempt && (
+                        <Select
+                          value={selectedChatId || ""}
+                          onValueChange={setSelectedChatId}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select chat to view results" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {chats
+                              ?.filter((chat: SimulationChat) => chat.completed)
+                              .map((chat: SimulationChat, index: number) => (
+                                <SelectItem key={chat.id} value={chat.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{chat.title}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <ScrollArea className="flex-1 px-4">
+                  <div className="space-y-4 py-4">
+                    {/* Show rubric when toggle is on */}
+                    {showGrades && selectedChat && simulation?.rubricId ? (
+                      <TableRubric
+                        rubricId={simulation.rubricId}
+                        simulationChatId={selectedChat.id}
+                      />
+                    ) : selectedChat ? (
+                      /* Show chat messages for both single and multi-chat attempts */
+                      <div className="space-y-4">
+                        {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
+                          <div key={message.id} className="space-y-4">
+                            {/* User Message */}
+                            {message.query && (
+                              <div className="flex justify-end">
+                                <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
+                                  <Markdown>{message.query}</Markdown>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Assistant Response */}
+                            {message.response !== undefined && message.query !== "" && (
+                              <div className="flex justify-start">
+                                <div className="flex gap-3 max-w-[80%]">
+                                  <Avatar className="h-8 w-8 flex-shrink-0">
+                                    <AvatarFallback>AI</AvatarFallback>
+                                  </Avatar>
+                                  <div className="bg-muted rounded-lg p-3 flex-1">
+                                    <Markdown>{message.response}</Markdown>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      /* Fallback content when no chat is selected */
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">
+                          Select a chat to view its conversation and results.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </ResizablePanel>
+
+          {/* Right Panel - Documents */}
+          {showDocuments && classDocuments.length > 0 && (
+            <>
+              <ResizableHandle />
+              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+                <Card className="h-full flex flex-col ml-4">
+                  <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
+                    {/* Select dropdown directly above document */}
+                    {classDocuments.length > 1 && (
+                      <div className="p-3 pb-2 border-b">
+                        <Select
+                          value={selectedDocumentId || ""}
+                          onValueChange={setSelectedDocumentId}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select document" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {classDocuments.map((doc: Document) => (
+                              <SelectItem key={doc.id} value={doc.id}>
                                 <div className="flex items-center gap-2">
-                                  <span>{chat.title}</span>
+                                  <span className="truncate">{doc.name}</span>
                                 </div>
                               </SelectItem>
                             ))}
-                        </SelectContent>
-                      </Select>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
-                  </div>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1 px-4">
-                <div className="space-y-4 py-4">
-                  {/* Show rubric when toggle is on */}
-                  {showGrades && selectedChat && simulation?.rubricId ? (
-                    <TableRubric
-                      rubricId={simulation.rubricId}
-                      simulationChatId={selectedChat.id}
-                    />
-                  ) : selectedChat ? (
-                    /* Show chat messages for both single and multi-chat attempts */
-                    <div className="space-y-4">
-                      {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                        <div key={message.id} className="space-y-4">
-                          {/* User Message */}
-                          {message.query && (
-                            <div className="flex justify-end">
-                              <div className="max-w-[80%] bg-primary text-primary-foreground rounded-lg p-3">
-                                <Markdown>{message.query}</Markdown>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Assistant Response */}
-                          {message.response !== undefined && message.query !== "" && (
-                            <div className="flex justify-start">
-                              <div className="flex gap-3 max-w-[80%]">
-                                <Avatar className="h-8 w-8 flex-shrink-0">
-                                  <AvatarFallback>AI</AvatarFallback>
-                                </Avatar>
-                                <div className="bg-muted rounded-lg p-3 flex-1">
-                                  <Markdown>{message.response}</Markdown>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                    {/* Document viewer with minimal padding */}
+                    <div className="flex-1 min-h-0 p-2">
+                      {selectedDocument && (
+                        <DocumentViewer 
+                          key={selectedDocument.id} 
+                          document={selectedDocument}
+                        />
+                      )}
                     </div>
-                  ) : (
-                    /* Fallback content when no chat is selected */
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground">
-                        Select a chat to view its conversation and results.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Panel - Documents */}
-        {showDocuments && classDocuments.length > 0 && (
-          <>
-            <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-              <Card className="h-full flex flex-col ml-4">
-                <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                  {/* Select dropdown directly above document */}
-                  {classDocuments.length > 1 && (
-                    <div className="p-3 pb-2 border-b">
-                      <Select
-                        value={selectedDocumentId || ""}
-                        onValueChange={setSelectedDocumentId}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select document" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classDocuments.map((doc: Document) => (
-                            <SelectItem key={doc.id} value={doc.id}>
-                              <div className="flex items-center gap-2">
-                                <span className="truncate">{doc.name}</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  {/* Document viewer with minimal padding */}
-                  <div className="flex-1 min-h-0 p-2">
-                    {selectedDocument && (
-                      <DocumentViewer 
-                        key={selectedDocument.id} 
-                        document={selectedDocument}
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </ResizablePanel>
-          </>
-        )}
+                  </CardContent>
+                </Card>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
       </div>
     );
   }
@@ -1333,15 +1352,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     </ScrollArea>
 
                     {/* Scroll to bottom button */}
-                    {showScrollButton && (
-                      <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10">
+                    {(showScrollButton || messages.length > 3) && (
+                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20">
                         <Button
                           variant="default"
                           size="sm"
                           onClick={scrollToBottom}
-                          className="rounded-full h-12 w-12 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+                          className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+                          data-testid="scroll-to-bottom-button"
                         >
-                          <ArrowDown className="h-5 w-5" />
+                          <ArrowDown className="h-4 w-4" />
                         </Button>
                       </div>
                     )}
