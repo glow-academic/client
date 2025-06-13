@@ -1559,8 +1559,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
-                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
+                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] max-h-full pt-2 overflow-hidden">
+                      <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full max-h-full overflow-hidden">
                         {isTall ? (
                           /* Vertical layout for larger panels with expanded textarea */
                           <div className="flex flex-col gap-3 flex-1">
@@ -1616,14 +1616,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           </div>
                         ) : (
                           /* Horizontal layout for smaller panels - original compact view */
-                          <div className="flex gap-2 flex-1 min-h-[40px]">
+                          <div className="flex gap-2 flex-1 min-h-[40px] max-h-[40px] items-center">
                             <Textarea
                               ref={textareaRef}
                               value={newMessage}
                               onChange={(e) => setNewMessage(e.target.value)}
                               placeholder="Type your message..."
                               disabled={simulation?.timeLimit ? !isActive : false}
-                              className="flex-1 resize-none overflow-y-auto text-md"
+                              className="flex-1 resize-none overflow-hidden text-md"
                               data-testid="message-input"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -1632,8 +1632,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }
                               }}
                               style={{
+                                height: '40px',
                                 minHeight: '40px',
-                                maxHeight: '80px'
+                                maxHeight: '40px'
                               }}
                             />
                             <div className="flex gap-2 shrink-0">
