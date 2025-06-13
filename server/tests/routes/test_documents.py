@@ -1,7 +1,7 @@
 """
 Tests for app.routes.documents
 
-Auto-generated on: 2025-06-12T22:58:48.816993
+Auto-generated on: 2025-06-13T07:53:22.611156
 """
 
 import pytest

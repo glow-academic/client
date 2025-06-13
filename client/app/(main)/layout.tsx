@@ -35,8 +35,6 @@ export default function MainLayout({
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
   >([]);
-  // Check if we're on the logs page
-  const isLogsPage = pathname === "/analytics/logs";
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
