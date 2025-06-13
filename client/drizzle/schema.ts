@@ -1,4 +1,4 @@
-import { pgTable, serial, integer, varchar, text, bigint, uuid, timestamp, foreignKey, boolean, primaryKey, pgEnum } from "drizzle-orm/pg-core"
+import { pgTable, serial, integer, varchar, text, bigint, uuid, timestamp, foreignKey, boolean, bigserial, jsonb, primaryKey, pgEnum } from "drizzle-orm/pg-core"
 export const agentType = pgEnum("agent_type", ['student', 'ta'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
@@ -170,6 +170,13 @@ export const standards = pgTable("standards", {
 		}).onDelete("cascade"),
 ]);
 
+export const appLogs = pgTable("app_logs", {
+	id: bigserial({ mode: "bigint" }).primaryKey().notNull(),
+	level: text().notNull(),
+	message: text(),
+	context: jsonb(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow()});
+
 export const scenarios = pgTable("scenarios", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -246,26 +253,6 @@ export const simulationChats = pgTable("simulation_chats", {
 		}).onDelete("cascade"),
 ]);
 
-export const evalChats = pgTable("eval_chats", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
-	title: text().notNull(),
-	scenarioId: uuid("scenario_id").notNull(),
-	evalRunId: uuid("eval_run_id").notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
-	foreignKey({
-			columns: [table.scenarioId],
-			foreignColumns: [scenarios.id],
-			name: "eval_chats_scenario_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.evalRunId],
-			foreignColumns: [evalRuns.id],
-			name: "eval_chats_eval_run_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const simulationMessages = pgTable("simulation_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -300,44 +287,6 @@ export const simulationChatGrades = pgTable("simulation_chat_grades", {
 		}).onDelete("cascade"),
 ]);
 
-export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	standardId: uuid("standard_id").notNull(),
-	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
-	total: integer().notNull(),
-	feedback: text()}, (table) => [
-	foreignKey({
-			columns: [table.standardId],
-			foreignColumns: [standards.id],
-			name: "simulation_chat_feedbacks_standard_id_fkey"
-		}).onDelete("cascade"),
-	foreignKey({
-			columns: [table.simulationChatGradeId],
-			foreignColumns: [simulationChatGrades.id],
-			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const evals = pgTable("evals", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	baseAgentId: uuid("base_agent_id").notNull(),
-	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
-	agentIds: uuid("agent_ids").array().default(["RAY"]).notNull(),
-	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
-	evalType: evalType("eval_type").default('student').notNull(),
-	maxTurns: integer("max_turns").notNull(),
-	maxParallelRuns: integer("max_parallel_runs").notNull()}, (table) => [
-	foreignKey({
-			columns: [table.baseAgentId],
-			foreignColumns: [agents.id],
-			name: "evals_base_agent_id_fkey"
-		}).onDelete("cascade"),
-]);
-
 export const evalRuns = pgTable("eval_runs", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -361,6 +310,78 @@ export const evalRuns = pgTable("eval_runs", {
 		}).onDelete("cascade"),
 ]);
 
+export const simulationChatFeedbacks = pgTable("simulation_chat_feedbacks", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	standardId: uuid("standard_id").notNull(),
+	simulationChatGradeId: uuid("simulation_chat_grade_id").notNull(),
+	total: integer().notNull(),
+	feedback: text()}, (table) => [
+	foreignKey({
+			columns: [table.standardId],
+			foreignColumns: [standards.id],
+			name: "simulation_chat_feedbacks_standard_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.simulationChatGradeId],
+			foreignColumns: [simulationChatGrades.id],
+			name: "simulation_chat_feedbacks_simulation_chat_grade_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const evalChats = pgTable("eval_chats", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
+	title: text().notNull(),
+	scenarioId: uuid("scenario_id").notNull(),
+	evalRunId: uuid("eval_run_id").notNull(),
+	completed: boolean().default(false).notNull()}, (table) => [
+	foreignKey({
+			columns: [table.scenarioId],
+			foreignColumns: [scenarios.id],
+			name: "eval_chats_scenario_id_fkey"
+		}).onDelete("cascade"),
+	foreignKey({
+			columns: [table.evalRunId],
+			foreignColumns: [evalRuns.id],
+			name: "eval_chats_eval_run_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const evals = pgTable("evals", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	baseAgentId: uuid("base_agent_id").notNull(),
+	scenarioIds: uuid("scenario_ids").array().default(["RAY"]).notNull(),
+	agentIds: uuid("agent_ids").array().default(["RAY"]).notNull(),
+	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
+	evalType: evalType("eval_type").default('student').notNull(),
+	maxTurns: integer("max_turns").notNull(),
+	maxParallelRuns: integer("max_parallel_runs").notNull()}, (table) => [
+	foreignKey({
+			columns: [table.baseAgentId],
+			foreignColumns: [agents.id],
+			name: "evals_base_agent_id_fkey"
+		}).onDelete("cascade"),
+]);
+
+export const evalMessages = pgTable("eval_messages", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	chatId: uuid("chat_id").notNull(),
+	content: text().notNull(),
+	type: evalMessageType().notNull(),
+	completed: boolean().default(false).notNull()}, (table) => [
+	foreignKey({
+			columns: [table.chatId],
+			foreignColumns: [evalChats.id],
+			name: "eval_messages_chat_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const evalChatGrades = pgTable("eval_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -378,20 +399,6 @@ export const evalChatGrades = pgTable("eval_chat_grades", {
 			columns: [table.evalChatId],
 			foreignColumns: [evalChats.id],
 			name: "eval_chat_grades_eval_chat_id_fkey"
-		}).onDelete("cascade"),
-]);
-
-export const evalMessages = pgTable("eval_messages", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	chatId: uuid("chat_id").notNull(),
-	content: text().notNull(),
-	type: evalMessageType().notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
-	foreignKey({
-			columns: [table.chatId],
-			foreignColumns: [evalChats.id],
-			name: "eval_messages_chat_id_fkey"
 		}).onDelete("cascade"),
 ]);
 

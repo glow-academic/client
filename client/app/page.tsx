@@ -5,18 +5,24 @@
  * 05/14/2025
  */
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { signIn, useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
+import { logError, logInfo } from "@/utils/logger";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { useQuery } from "@tanstack/react-query";
+import { signIn, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
 
 // Microsoft Icon Component
 const MicrosoftIcon = () => (
-  <svg className="w-5 h-5" viewBox="0 0 23 23" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className="w-5 h-5"
+    viewBox="0 0 23 23"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path d="M1 1h10v10H1z" fill="#f25022" />
     <path d="M12 1h10v10H12z" fill="#00a4ef" />
     <path d="M1 12h10v10H1z" fill="#ffb900" />
@@ -26,14 +32,30 @@ const MicrosoftIcon = () => (
 
 // User Icon Component
 const UserIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+    />
   </svg>
 );
 
 // Sparkle Icon Component
 const SparkleIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
     <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z" />
   </svg>
 );
@@ -62,7 +84,9 @@ const AnimatedSparkles = () => {
             animationDuration: `${sparkle.animationDuration}s`,
           }}
         >
-          <SparkleIcon className={`w-${Math.floor(sparkle.size)} h-${Math.floor(sparkle.size)}`} />
+          <SparkleIcon
+            className={`w-${Math.floor(sparkle.size)} h-${Math.floor(sparkle.size)}`}
+          />
         </div>
       ))}
 
@@ -124,6 +148,10 @@ export default function Home() {
   const handleMicrosoftLogin = async () => {
     try {
       setLoadingMicrosoft(true);
+
+      // Log the login attempt start
+      await logInfo("Microsoft login attempt started");
+
       // Clear guest mode and simulated role from localStorage
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
@@ -133,26 +161,63 @@ export default function Home() {
       if (profile?.role !== "ta") {
         redirectTo = "/analytics";
       }
-      
+
       await signIn("microsoft-entra-id", { redirectTo: redirectTo });
+
+      // Log successful login attempt
+      await logInfo("Microsoft login attempt successful", {
+        redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
+      });
+
+      toast.success("Successfully signed in with Microsoft!");
     } catch (error) {
-      toast.error("An error occurred during login: " + (error as Error).message);
+      const errorMessage = (error as Error).message;
+
+      // Log the error to database
+      await logError("Microsoft login attempt failed", error as Error);
+
+      // Log failed login attempt
+      await logError("Microsoft login attempt failed", error as Error, {
+        redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
+      });
+      toast.error("An error occurred during login: " + errorMessage);
     } finally {
       setLoadingMicrosoft(false);
     }
   };
 
-  const handleGuestAccess = () => {
+  const handleGuestAccess = async () => {
     try {
-      // Set guest mode in localStorage and redirect
       setLoadingGuest(true);
+
+      // Log guest access attempt
+      await logInfo("Guest access attempt started", {
+        redirectTo: "/home",
+      });
+
+      // Set guest mode in localStorage and redirect
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
       localStorage.setItem("guestMode", "true");
       localStorage.setItem("simulatedRole", "guest");
+
+      // Log successful guest access
+      await logInfo("Guest access attempt successful", {
+        redirectTo: "/home",
+      });
+
+      toast.success("Accessing as guest!");
       router.push("/home");
     } catch (error) {
-      toast.error("An error occurred during login: " + (error as Error).message);
+      const errorMessage = (error as Error).message;
+
+      // Log the error to database
+      await logError("Guest access attempt failed", error as Error);
+
+      // Log failed guest access
+      await logError("Guest access attempt failed", error as Error);
+
+      toast.error("An error occurred during login: " + errorMessage);
     } finally {
       setLoadingGuest(false);
     }
@@ -170,10 +235,16 @@ export default function Home() {
             {/* Logo sparkles */}
             <div className="absolute inset-0 flex items-center justify-center">
               <SparkleIcon className="w-6 h-6 text-white animate-pulse" />
-              <div className="absolute top-2 right-2 animate-ping" style={{ animationDelay: '0.5s' }}>
+              <div
+                className="absolute top-2 right-2 animate-ping"
+                style={{ animationDelay: "0.5s" }}
+              >
                 <SparkleIcon className="w-3 h-3 text-white/70" />
               </div>
-              <div className="absolute bottom-2 left-2 animate-pulse" style={{ animationDelay: '1s' }}>
+              <div
+                className="absolute bottom-2 left-2 animate-pulse"
+                style={{ animationDelay: "1s" }}
+              >
                 <SparkleIcon className="w-2 h-2 text-white/50" />
               </div>
             </div>
@@ -203,7 +274,9 @@ export default function Home() {
                   <MicrosoftIcon />
                 )}
                 <span className="text-base">
-                  {loadingMicrosoft ? "Signing in..." : "Continue with Microsoft"}
+                  {loadingMicrosoft
+                    ? "Signing in..."
+                    : "Continue with Microsoft"}
                 </span>
               </div>
             </Button>

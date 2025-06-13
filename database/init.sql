@@ -14,6 +14,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i init/users/init.sql
 \i init/agents/init.sql
 \i init/rubrics/init.sql
+\i init/logs/init.sql
 
 -- 2. Tables that depend on agents (scenarios references agents)
 \i init/scenarios/init.sql

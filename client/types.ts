@@ -12,18 +12,19 @@ import {
   rubrics as Rubrics,
   standardGroups as StandardGroups,
   standards as Standards,
+  appLogs as AppLogs,
   scenarios as Scenarios,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
-  evalChats as EvalChats,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
-  simulationChatFeedbacks as SimulationChatFeedbacks,
-  evals as Evals,
   evalRuns as EvalRuns,
-  evalChatGrades as EvalChatGrades,
+  simulationChatFeedbacks as SimulationChatFeedbacks,
+  evalChats as EvalChats,
+  evals as Evals,
   evalMessages as EvalMessages,
+  evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
   agentType, classTerm, documentType, evalMessageType, evalType, profileRole, rubricType, seniorityLevels
@@ -43,18 +44,19 @@ type Agent = typeof Agents.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
+type AppLog = typeof AppLogs.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
-type EvalChat = typeof EvalChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
-type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
-type Eval = typeof Evals.$inferSelect;
 type EvalRun = typeof EvalRuns.$inferSelect;
-type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
+type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
+type EvalChat = typeof EvalChats.$inferSelect;
+type Eval = typeof Evals.$inferSelect;
 type EvalMessage = typeof EvalMessages.$inferSelect;
+type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
 type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
@@ -81,18 +83,19 @@ export type {
   Rubric,
   StandardGroup,
   Standard,
+  AppLog,
   Scenario,
   Simulation,
   SimulationAttempt,
   SimulationChat,
-  EvalChat,
   SimulationMessage,
   SimulationChatGrade,
-  SimulationChatFeedback,
-  Eval,
   EvalRun,
-  EvalChatGrade,
+  SimulationChatFeedback,
+  EvalChat,
+  Eval,
   EvalMessage,
+  EvalChatGrade,
   EvalChatFeedback,
   VerificationToken,
   AgentType,
