@@ -134,6 +134,13 @@
       "when": 1749790360728,
       "tag": "0018_watery_firebrand",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1749832886285,
+      "tag": "0019_amused_hellfire_club",
+      "breakpoints": true
     }
   ]
 }
