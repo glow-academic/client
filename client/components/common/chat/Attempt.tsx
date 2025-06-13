@@ -55,7 +55,7 @@ import {
 } from "@/components/ui/popover";
 
 // Icons
-import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X, Check, ChevronsUpDown } from "lucide-react";
+import { Send, ChevronDown, Users, Clock, PanelRightOpen, PanelRightClose, ArrowDown, X, Check, ChevronsUpDown, FileText } from "lucide-react";
 
 // Tooltip
 import {
@@ -549,7 +549,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [chats, simulation?.scenarioIds, currentChatIndex]);
 
-  // Check if current chat is completed and move to next or show results
+  // Check if current chat is completed and move to next or show results 
   useEffect(() => {
     if (currentChat?.completed && !showResults) {
       // Only auto-advance if this chat was freshly completed in this session
@@ -1098,16 +1098,24 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                     <div className="flex items-start justify-end gap-2">
                       <div className="flex items-center gap-4">
                         {selectedChat && (
-                          <div className="flex items-center gap-2">
-                            <Label htmlFor="show-grades" className="text-sm">
-                              Show Rubric
-                            </Label>
-                            <Switch
-                              id="show-grades"
-                              checked={showGrades}
-                              onCheckedChange={setShowGrades}
-                            />
-                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant={showGrades ? "default" : "outline"}
+                                  size="sm"
+                                  onClick={() => setShowGrades(!showGrades)}
+                                  className={`p-2 ${showGrades ? 'bg-primary text-primary-foreground' : ''}`}
+                                >
+                                  <FileText className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{showGrades ? 'Hide Rubric' : 'Show Rubric'}</p>
+                                <p className="text-xs text-muted-foreground">View detailed scoring and feedback</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
@@ -1209,7 +1217,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                 <CardContent className="flex-1 flex flex-col p-0 min-h-0">
                   <ScrollArea className="flex-1 px-4 min-h-0">
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-3 py-4">
                       {/* Show rubric when toggle is on */}
                       {showGrades && selectedChat && simulation?.rubricId ? (
                         <TableRubric
@@ -1218,20 +1226,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         />
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                           {resultsMessages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-4">
+                            <div key={message.id} className="space-y-2">
                               {/* User Message */}
                               {message.query && (
-                                <div className="flex justify-end">
-                                  <div className="max-w-[80%] space-y-2">
-                                    <div className="flex justify-end">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                          {getUserInitials(profile)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    </div>
+                                <div className="flex justify-end mb-2">
+                                  <div className="max-w-[80%]">
                                     <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                       <Markdown>{message.query}</Markdown>
                                     </div>
@@ -1241,13 +1242,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
                               {/* Assistant Response */}
                               {message.response !== undefined && message.query !== "" && (
-                                <div className="flex justify-start">
-                                  <div className="max-w-[80%] space-y-2">
-                                    <div className="flex justify-start">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="text-xs">AI</AvatarFallback>
-                                      </Avatar>
-                                    </div>
+                                <div className="flex justify-start mb-2">
+                                  <div className="max-w-[80%]">
                                     <div className="bg-muted rounded-lg p-3">
                                       <Markdown>{message.response}</Markdown>
                                     </div>
@@ -1445,7 +1441,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       className="flex-1 px-4 min-h-0"
                       ref={scrollAreaRef}
                     >
-                      <div className="space-y-4 py-4">
+                      <div className="space-y-3 py-4">
                         {messagesLoading ? (
                           <div className="space-y-4">
                             {[1, 2, 3].map((i) => (
@@ -1482,18 +1478,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           </div>
                         ) : (
                           messages.sort((a: SimulationMessage, b: SimulationMessage) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()).map((message: SimulationMessage) => (
-                            <div key={message.id} className="space-y-4">
+                            <div key={message.id} className="space-y-2">
                               {/* User Message */}
                               {message.query && (
-                                <div className="flex justify-end">
-                                  <div className="max-w-[80%] space-y-2">
-                                    <div className="flex justify-end">
-                                      <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-                                          {getUserInitials(profile)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                    </div>
+                                <div className="flex justify-end mb-2">
+                                  <div className="max-w-[80%]">
                                     <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                       <Markdown>{message.query}</Markdown>
                                     </div>
@@ -1504,13 +1493,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               {/* Assistant Response */}
                               {message.response !== undefined &&
                                 message.query !== "" && (
-                                  <div className="flex justify-start">
-                                    <div className="max-w-[80%] space-y-2">
-                                      <div className="flex justify-start">
-                                        <Avatar className="h-6 w-6">
-                                          <AvatarFallback className="text-xs">AI</AvatarFallback>
-                                        </Avatar>
-                                      </div>
+                                  <div className="flex justify-start mb-2">
+                                    <div className="max-w-[80%]">
                                       <div className="bg-muted rounded-lg p-3">
                                         {message.response === "" ? (
                                           <div className="flex items-center">
@@ -1577,10 +1561,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                   ) : (
                     <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2">
                       <form onSubmit={handleSendMessage} className="flex flex-col gap-2 h-full">
-                        {/* Dynamic layout based on panel height - threshold increased to 140px */}
-                        {inputPanelHeight > 140 ? (
-                          /* Vertical layout for larger panels */
-                          <div className="flex flex-col gap-2 flex-1">
+                        {/* Dynamic layout based on panel height - threshold increased to 160px for better UX */}
+                        {inputPanelHeight > 160 ? (
+                          /* Vertical layout for larger panels with expanded textarea */
+                          <div className="flex flex-col gap-3 flex-1">
                             <Textarea
                               ref={textareaRef}
                               value={newMessage}
@@ -1596,10 +1580,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }
                               }}
                               style={{
-                                minHeight: '80px',
+                                minHeight: '100px',
                                 // Make textarea height more responsive to available space
-                                height: `${Math.max(80, inputPanelHeight - 120)}px`,
-                                maxHeight: `${Math.max(80, inputPanelHeight - 120)}px`
+                                height: `${Math.max(100, inputPanelHeight - 100)}px`,
+                                maxHeight: `${Math.max(100, inputPanelHeight - 100)}px`
                               }}
                             />
                             <div className="flex gap-2 justify-end">
@@ -1610,9 +1594,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   (simulation?.timeLimit ? !isActive : false)
                                 }
                                 data-testid="send-button"
-                                className="min-h-[40px] h-[40px] px-3"
+                                className="min-h-[40px] h-[40px] px-4"
                               >
-                                <Send className="h-4 w-4" />
+                                <Send className="h-4 w-4 mr-2" />
+                                Send
                               </Button>
                               <Button
                                 type="button"
@@ -1622,7 +1607,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   endChatLoading ||
                                   (simulation?.timeLimit ? !isActive : false)
                                 }
-                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
+                                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
                               >
                                 {endChatLoading
                                   ? "Ending..."
