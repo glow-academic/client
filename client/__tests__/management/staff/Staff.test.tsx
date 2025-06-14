@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -37,7 +37,7 @@ describe("Staff", () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    (useRouter as Mock).mockReturnValue({
       push: mockPush,
       back: vi.fn(),
       forward: vi.fn(),
@@ -84,7 +84,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getAllUsers as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<Staff />);
 
@@ -96,7 +96,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -118,7 +118,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -136,7 +136,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -160,7 +160,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -176,7 +176,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -195,7 +195,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -215,7 +215,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -240,7 +240,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -265,7 +265,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -291,7 +291,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -317,7 +317,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -335,7 +335,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -346,7 +346,7 @@ describe("Staff", () => {
 
       // Click on the first edit button
       const editButtons = screen.getAllByRole("button", { name: /edit user/i });
-      await user.click(editButtons[0]);
+      await user.click(editButtons[0]!);
 
       expect(mockPush).toHaveBeenCalledWith("/management/staff/u/1");
     });
@@ -356,7 +356,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -367,7 +367,7 @@ describe("Staff", () => {
 
       // Click on the second edit button (Dr. Jane Smith)
       const editButtons = screen.getAllByRole("button", { name: /edit user/i });
-      await user.click(editButtons[1]);
+      await user.click(editButtons[1]!);
 
       expect(mockPush).toHaveBeenCalledWith("/management/staff/u/2");
     });
@@ -377,7 +377,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<Staff />);
@@ -388,7 +388,7 @@ describe("Staff", () => {
 
       // Click on the third edit button (John Doe)
       const editButtons = screen.getAllByRole("button", { name: /edit user/i });
-      await user.click(editButtons[2]);
+      await user.click(editButtons[2]!);
 
       expect(mockPush).toHaveBeenCalledWith("/management/staff/u/3");
     });
@@ -400,7 +400,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue([]);
+      (getAllUsers as Mock).mockResolvedValue([]);
 
       renderWithProviders(<Staff />);
 
@@ -414,7 +414,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue([]);
+      (getAllUsers as Mock).mockResolvedValue([]);
 
       renderWithProviders(<Staff />);
 
@@ -429,7 +429,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue([]);
+      (getAllUsers as Mock).mockResolvedValue([]);
 
       renderWithProviders(<Staff />);
 
@@ -448,7 +448,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -464,7 +464,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -484,7 +484,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockResolvedValue(mockStaffUsers);
+      (getAllUsers as Mock).mockResolvedValue(mockStaffUsers);
 
       renderWithProviders(<Staff />);
 
@@ -507,7 +507,7 @@ describe("Staff", () => {
         "@/utils/queries/users/get-all-users"
       );
 
-      (getAllUsers as any).mockRejectedValue(new Error("API Error"));
+      (getAllUsers as Mock).mockRejectedValue(new Error("API Error"));
 
       renderWithProviders(<Staff />);
 
@@ -530,7 +530,7 @@ describe("Staff", () => {
         },
       ];
 
-      (getAllUsers as any).mockResolvedValue(usersWithMissingData);
+      (getAllUsers as Mock).mockResolvedValue(usersWithMissingData);
 
       renderWithProviders(<Staff />);
 
@@ -562,7 +562,7 @@ describe("Staff", () => {
         },
       ];
 
-      (getAllUsers as any).mockResolvedValue(mixedUsers);
+      (getAllUsers as Mock).mockResolvedValue(mixedUsers);
 
       renderWithProviders(<Staff />);
 

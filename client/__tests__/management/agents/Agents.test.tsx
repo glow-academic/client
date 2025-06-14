@@ -160,7 +160,7 @@ describe("Agents Component", () => {
 
     await waitFor(() => {
       const editButtons = screen.getAllByLabelText("Edit agent");
-      fireEvent.click(editButtons[0]);
+      fireEvent.click(editButtons[0]!);
     });
 
     expect(mockPush).toHaveBeenCalledWith("/management/agents/a/agent1/edit");
@@ -171,7 +171,7 @@ describe("Agents Component", () => {
 
     await waitFor(() => {
       const deleteButtons = screen.getAllByLabelText("Delete agent");
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(deleteButtons[0]!);
     });
 
     await waitFor(() => {
@@ -189,7 +189,7 @@ describe("Agents Component", () => {
 
     await waitFor(() => {
       const deleteButtons = screen.getAllByLabelText("Delete agent");
-      fireEvent.click(deleteButtons[0]);
+      fireEvent.click(deleteButtons[0]!);
     });
 
     await waitFor(() => {
@@ -346,13 +346,13 @@ describe("Agents Component", () => {
 
   it("truncates long system prompts", async () => {
     const longPromptAgent = {
-      id: mockAgents[0].id,
-      name: mockAgents[0].name,
-      subtitle: mockAgents[0].subtitle,
-      description: mockAgents[0].description,
-      agentType: mockAgents[0].agentType,
-      temperature: mockAgents[0].temperature,
-      createdAt: mockAgents[0].createdAt,
+      id: mockAgents[0]!.id,
+      name: mockAgents[0]!.name,
+      subtitle: mockAgents[0]!.subtitle,
+      description: mockAgents[0]!.description,
+      agentType: mockAgents[0]!.agentType,
+      temperature: mockAgents[0]!.temperature,
+      createdAt: mockAgents[0]!.createdAt,
       systemPrompt:
         "This is a very long system prompt that should be truncated when displayed in the card view to prevent the UI from becoming cluttered and unreadable.",
     };

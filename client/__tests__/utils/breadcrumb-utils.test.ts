@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import {
   generateBreadcrumbs,
   generateEnhancedBreadcrumbs,
@@ -333,7 +333,7 @@ describe("breadcrumb-utils", () => {
     it("should handle API errors gracefully", async () => {
       // Mock API error
       const { getClass } = await import("@/utils/queries/classes/get-class");
-      (getClass as any).mockRejectedValueOnce(new Error("API Error"));
+      (getClass as Mock).mockRejectedValueOnce(new Error("API Error"));
 
       const result = await generateEnhancedBreadcrumbs(
         "/classes/c/class-123456789012",
@@ -405,7 +405,7 @@ describe("breadcrumb-utils", () => {
     it("should handle very long IDs", () => {
       const longId = "very-long-id-123456789012345678901234567890";
       const result = generateBreadcrumbs(`/classes/c/${longId}`);
-      expect(result[1].title).toBe("very-lon...");
+      expect(result[1]?.title).toBe("very-lon...");
     });
   });
 });

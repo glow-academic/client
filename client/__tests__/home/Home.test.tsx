@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
@@ -133,7 +134,6 @@ vi.mock("@/utils/agents", () => ({
 }));
 
 // Import mocked functions
-import { useRole } from "@/contexts/role-context";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -153,14 +153,6 @@ const mockRouter = {
   refresh: vi.fn(),
   replace: vi.fn(),
   prefetch: vi.fn(),
-};
-
-// Mock data
-const _mockUser = {
-  id: "user-1",
-  name: "Test User",
-  username: "testuser",
-  role: "student",
 };
 
 const mockClasses = [
@@ -288,9 +280,6 @@ describe("Home", () => {
     });
 
     vi.mocked(useRouter).mockReturnValue(mockRouter);
-    vi.mocked(useRole).mockReturnValue({
-      effectiveRole: "ta" as const,
-    } as any);
     vi.mocked(getAllClasses).mockResolvedValue(mockClasses);
     vi.mocked(getAllSimulations).mockResolvedValue(mockAllSimulations);
     vi.mocked(getAllScenarios).mockResolvedValue(mockScenarios);
@@ -384,9 +373,6 @@ describe("Home", () => {
 
   describe("Role-based Access Control", () => {
     it("should render guest view correctly", async () => {
-      vi.mocked(useRole).mockReturnValue({
-        effectiveRole: "guest" as const,
-      } as any);
 
       renderWithProviders(<Home />);
 
@@ -400,9 +386,6 @@ describe("Home", () => {
     });
 
     it("should render regular user view with SimulationHistory", async () => {
-      vi.mocked(useRole).mockReturnValue({
-        effectiveRole: "ta" as const,
-      } as any);
 
       renderWithProviders(<Home />);
 
@@ -414,9 +397,6 @@ describe("Home", () => {
     });
 
     it("should handle different user roles", async () => {
-      vi.mocked(useRole).mockReturnValue({
-        effectiveRole: "instructor" as const,
-      } as any);
 
       renderWithProviders(<Home />);
 
@@ -449,7 +429,7 @@ describe("Home", () => {
     });
 
     it("should prevent clicks when loading simulation", async () => {
-      const _user = userEvent.setup();
+
       renderWithProviders(<Home />);
 
       await waitFor(() => {

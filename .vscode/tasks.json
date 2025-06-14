@@ -119,7 +119,8 @@
         "command": "${workspaceFolder}/client/node_modules/.bin/eslint",
         "args": [
           ".",
-          "--format=stylish"
+          "--format=stylish",
+          "--ignore-pattern=.next"
         ],
         "options": {
           "cwd": "${workspaceFolder}/client"

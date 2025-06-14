@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import { Profile } from '@/components/profile/Profile';
@@ -97,8 +97,8 @@ describe('Profile', () => {
       },
     });
     
-    (getUser as any).mockResolvedValue(mockUser);
-    (getAllClasses as any).mockResolvedValue(mockClasses);
+    (getUser as Mock).mockResolvedValue(mockUser);
+    (getAllClasses as Mock).mockResolvedValue(mockClasses);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -173,7 +173,7 @@ describe('Profile', () => {
 
   describe('Role-based Display', () => {
     it('should display admin role information correctly', async () => {
-      (getUser as any).mockResolvedValue(mockAdminUser);
+      (getUser as Mock).mockResolvedValue(mockAdminUser);
       
       renderWithProviders(<Profile />);
       
@@ -199,7 +199,7 @@ describe('Profile', () => {
     });
 
     it('should display TA role information correctly', async () => {
-      (getUser as any).mockResolvedValue(mockTAUser);
+      (getUser as Mock).mockResolvedValue(mockTAUser);
       
       renderWithProviders(<Profile />);
       
@@ -213,7 +213,7 @@ describe('Profile', () => {
     });
 
     it('should display instructional staff role information correctly', async () => {
-      (getUser as any).mockResolvedValue(mockInstructionalUser);
+      (getUser as Mock).mockResolvedValue(mockInstructionalUser);
       
       renderWithProviders(<Profile />);
       
@@ -228,7 +228,7 @@ describe('Profile', () => {
 
     it('should handle unknown role gracefully', async () => {
       const unknownRoleUser = { ...mockUser, role: 'unknown' };
-      (getUser as any).mockResolvedValue(unknownRoleUser);
+      (getUser as Mock).mockResolvedValue(unknownRoleUser);
       
       renderWithProviders(<Profile />);
       
@@ -254,7 +254,7 @@ describe('Profile', () => {
 
     it('should not display assigned classes section when user has no classes', async () => {
       const userWithoutClasses = { ...mockUser, classIds: [] };
-      (getUser as any).mockResolvedValue(userWithoutClasses);
+      (getUser as Mock).mockResolvedValue(userWithoutClasses);
       
       renderWithProviders(<Profile />);
       
@@ -267,7 +267,7 @@ describe('Profile', () => {
 
     it('should handle classes that no longer exist', async () => {
       const userWithMissingClass = { ...mockUser, classIds: ['class-1', 'nonexistent-class'] };
-      (getUser as any).mockResolvedValue(userWithMissingClass);
+      (getUser as Mock).mockResolvedValue(userWithMissingClass);
       
       renderWithProviders(<Profile />);
       
@@ -292,7 +292,7 @@ describe('Profile', () => {
     });
 
     it('should handle multiple assigned classes', async () => {
-      (getUser as any).mockResolvedValue(mockInstructionalUser);
+      (getUser as Mock).mockResolvedValue(mockInstructionalUser);
       
       renderWithProviders(<Profile />);
       
@@ -306,7 +306,7 @@ describe('Profile', () => {
 
   describe('Loading and Error States', () => {
     it('should display loading state while fetching user data', () => {
-      (getUser as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getUser as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
       
       renderWithProviders(<Profile />);
       
@@ -314,7 +314,7 @@ describe('Profile', () => {
     });
 
     it('should display guest user state when no user data', async () => {
-      (getUser as any).mockResolvedValue(null);
+      (getUser as Mock).mockResolvedValue(null);
       
       renderWithProviders(<Profile />);
       
@@ -337,7 +337,7 @@ describe('Profile', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      (getUser as any).mockRejectedValue(new Error('API Error'));
+      (getUser as Mock).mockRejectedValue(new Error('API Error'));
       
       renderWithProviders(<Profile />);
       
@@ -347,7 +347,7 @@ describe('Profile', () => {
     });
 
     it('should handle classes API errors gracefully', async () => {
-      (getAllClasses as any).mockRejectedValue(new Error('Classes API Error'));
+      (getAllClasses as Mock).mockRejectedValue(new Error('Classes API Error'));
       
       renderWithProviders(<Profile />);
       
@@ -372,7 +372,7 @@ describe('Profile', () => {
 
     it('should handle missing user name gracefully', async () => {
       const userWithoutName = { ...mockUser, name: undefined };
-      (getUser as any).mockResolvedValue(userWithoutName);
+      (getUser as Mock).mockResolvedValue(userWithoutName);
       
       renderWithProviders(<Profile />);
       
@@ -383,7 +383,7 @@ describe('Profile', () => {
 
     it('should handle single name correctly', async () => {
       const userWithSingleName = { ...mockUser, name: 'John' };
-      (getUser as any).mockResolvedValue(userWithSingleName);
+      (getUser as Mock).mockResolvedValue(userWithSingleName);
       
       renderWithProviders(<Profile />);
       
@@ -395,7 +395,7 @@ describe('Profile', () => {
 
     it('should handle very long names correctly', async () => {
       const userWithLongName = { ...mockUser, name: 'Dr. Elizabeth Catherine Johnson-Smith' };
-      (getUser as any).mockResolvedValue(userWithLongName);
+      (getUser as Mock).mockResolvedValue(userWithLongName);
       
       renderWithProviders(<Profile />);
       
@@ -425,7 +425,7 @@ describe('Profile', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty classes array', async () => {
-      (getAllClasses as any).mockResolvedValue([]);
+      (getAllClasses as Mock).mockResolvedValue([]);
       
       renderWithProviders(<Profile />);
       
@@ -442,7 +442,7 @@ describe('Profile', () => {
         id: 'user-1',
         // Missing required fields
       };
-      (getUser as any).mockResolvedValue(malformedUser);
+      (getUser as Mock).mockResolvedValue(malformedUser);
       
       renderWithProviders(<Profile />);
       
@@ -458,7 +458,7 @@ describe('Profile', () => {
           // Missing name, classCode, etc.
         },
       ];
-      (getAllClasses as any).mockResolvedValue(malformedClasses);
+      (getAllClasses as Mock).mockResolvedValue(malformedClasses);
       
       renderWithProviders(<Profile />);
       
@@ -496,7 +496,7 @@ describe('Profile', () => {
 
     it('should handle missing createdAt date', async () => {
       const userWithoutCreatedAt = { ...mockUser, createdAt: undefined };
-      (getUser as any).mockResolvedValue(userWithoutCreatedAt);
+      (getUser as Mock).mockResolvedValue(userWithoutCreatedAt);
       
       renderWithProviders(<Profile />);
       
@@ -509,7 +509,7 @@ describe('Profile', () => {
     });
 
     it('should handle network timeouts', async () => {
-      (getUser as any).mockImplementation(() => 
+      (getUser as Mock).mockImplementation(() => 
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 100)
         )

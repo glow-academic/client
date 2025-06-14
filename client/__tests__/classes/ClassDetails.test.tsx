@@ -2,7 +2,6 @@ import ClassDetails from "@/components/classes/ClassDetails";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -244,7 +243,6 @@ describe("ClassDetails", () => {
 
   describe("User Interactions", () => {
     it("should handle time range selection", async () => {
-      const _user = userEvent.setup();
       renderWithProviders(<ClassDetails classId="test-class-id" />);
 
       await waitFor(() => {
@@ -257,7 +255,6 @@ describe("ClassDetails", () => {
     });
 
     it("should handle topic filtering", async () => {
-      const _user = userEvent.setup();
       renderWithProviders(<ClassDetails classId="test-class-id" />);
 
       await waitFor(() => {

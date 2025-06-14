@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -113,12 +113,12 @@ describe('NewEval', () => {
       },
     });
     
-    (useRouter as any).mockReturnValue(mockRouter);
-    (getAllClasses as any).mockResolvedValue(mockClasses);
-    (getAllAgents as any).mockResolvedValue(mockAgents);
-    (getAllScenarios as any).mockResolvedValue(mockScenarios);
-    (getAllRubrics as any).mockResolvedValue(mockRubrics);
-    (createEval as any).mockResolvedValue({ id: 'new-eval-id' });
+    (useRouter as Mock).mockReturnValue(mockRouter);
+    (getAllClasses as Mock).mockResolvedValue(mockClasses);
+    (getAllAgents as Mock).mockResolvedValue(mockAgents);
+    (getAllScenarios as Mock).mockResolvedValue(mockScenarios);
+    (getAllRubrics as Mock).mockResolvedValue(mockRubrics);
+    (createEval as Mock).mockResolvedValue({ id: 'new-eval-id' });
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -313,7 +313,7 @@ describe('NewEval', () => {
     });
 
     it('should handle API errors through Eval component', async () => {
-      (getAllClasses as any).mockRejectedValue(new Error('API Error'));
+      (getAllClasses as Mock).mockRejectedValue(new Error('API Error'));
       
       renderWithProviders(<NewEval />);
       
@@ -420,8 +420,8 @@ describe('NewEval', () => {
 
     it('should handle missing dependencies gracefully', () => {
       // Test with missing API responses
-      (getAllClasses as any).mockResolvedValue([]);
-      (getAllAgents as any).mockResolvedValue([]);
+      (getAllClasses as Mock).mockResolvedValue([]);
+      (getAllAgents as Mock).mockResolvedValue([]);
       
       renderWithProviders(<NewEval />);
       

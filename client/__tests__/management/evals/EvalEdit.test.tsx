@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
@@ -118,13 +118,13 @@ describe('EvalEdit', () => {
       },
     });
     
-    (useRouter as any).mockReturnValue(mockRouter);
-    (getEval as any).mockResolvedValue(mockEval);
-    (getAllClasses as any).mockResolvedValue(mockClasses);
-    (getAllAgents as any).mockResolvedValue(mockAgents);
-    (getAllScenarios as any).mockResolvedValue(mockScenarios);
-    (getAllRubrics as any).mockResolvedValue(mockRubrics);
-    (updateEval as any).mockResolvedValue(undefined);
+    (useRouter as Mock).mockReturnValue(mockRouter);
+    (getEval as Mock).mockResolvedValue(mockEval);
+    (getAllClasses as Mock).mockResolvedValue(mockClasses);
+    (getAllAgents as Mock).mockResolvedValue(mockAgents);
+    (getAllScenarios as Mock).mockResolvedValue(mockScenarios);
+    (getAllRubrics as Mock).mockResolvedValue(mockRubrics);
+    (updateEval as Mock).mockResolvedValue(undefined);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -157,7 +157,7 @@ describe('EvalEdit', () => {
     });
 
     it('should display loading state while fetching eval data', () => {
-      (getEval as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getEval as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
       
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       
@@ -247,7 +247,6 @@ describe('EvalEdit', () => {
     });
 
     it('should handle scenario selection and management', async () => {
-      const user = userEvent.setup();
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       
       await waitFor(() => {
@@ -283,7 +282,7 @@ describe('EvalEdit', () => {
     });
 
     it('should handle loading states correctly', () => {
-      (getEval as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getEval as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
       
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       
@@ -344,7 +343,7 @@ describe('EvalEdit', () => {
     });
 
     it('should handle eval not found', async () => {
-      (getEval as any).mockRejectedValue(new Error('Eval not found'));
+      (getEval as Mock).mockRejectedValue(new Error('Eval not found'));
       
       renderWithProviders(<EvalEdit evalId="nonexistent-eval" />);
       
@@ -355,10 +354,10 @@ describe('EvalEdit', () => {
     });
 
     it('should handle empty data arrays', async () => {
-      (getAllClasses as any).mockResolvedValue([]);
-      (getAllAgents as any).mockResolvedValue([]);
-      (getAllScenarios as any).mockResolvedValue([]);
-      (getAllRubrics as any).mockResolvedValue([]);
+      (getAllClasses as Mock).mockResolvedValue([]);
+      (getAllAgents as Mock).mockResolvedValue([]);
+      (getAllScenarios as Mock).mockResolvedValue([]);
+      (getAllRubrics as Mock).mockResolvedValue([]);
       
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       
@@ -377,7 +376,7 @@ describe('EvalEdit', () => {
         agentIds: ['agent-1', 'RAY'],
         rubricIds: ['RAY', 'rubric-1'],
       };
-      (getEval as any).mockResolvedValue(evalWithRAY);
+      (getEval as Mock).mockResolvedValue(evalWithRAY);
       
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       
@@ -393,7 +392,7 @@ describe('EvalEdit', () => {
     });
 
     it('should handle network errors gracefully', async () => {
-      (getEval as any).mockRejectedValue(new Error('Network error'));
+      (getEval as Mock).mockRejectedValue(new Error('Network error'));
       
       renderWithProviders(<EvalEdit evalId="eval-1" />);
       

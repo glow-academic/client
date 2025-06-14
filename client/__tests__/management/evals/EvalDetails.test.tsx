@@ -1,6 +1,5 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import EvalDetails from '@/components/management/evals/EvalDetails';
@@ -48,7 +47,7 @@ describe('EvalDetails', () => {
   describe('Rendering', () => {
     it('should render without crashing', () => {
       // TODO: Implement basic rendering test for EvalDetails
-      renderWithProviders(<EvalDetails />);
+      renderWithProviders(<EvalDetails evalId="1" />);
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for EvalDetails
@@ -67,7 +66,6 @@ describe('EvalDetails', () => {
   describe('User Interactions', () => {
     it('should handle form submissions', async () => {
       // TODO: Test form handling
-      const user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Form handling test for EvalDetails
@@ -75,7 +73,6 @@ describe('EvalDetails', () => {
 
     it('should handle state changes', async () => {
       // TODO: Test state management
-      const user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for EvalDetails
@@ -83,7 +80,6 @@ describe('EvalDetails', () => {
 
     it('should handle user events', async () => {
       // TODO: Test click, hover, focus events
-      const user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for EvalDetails

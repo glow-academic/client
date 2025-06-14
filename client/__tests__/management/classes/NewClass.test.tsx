@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { useRouter } from 'next/navigation';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -51,7 +51,7 @@ vi.mock('@/components/common/class/ClassForm', () => ({
 
 // Mock tus-js-client
 vi.mock('tus-js-client', () => ({
-  Upload: vi.fn().mockImplementation((file, options) => ({
+  Upload: vi.fn().mockImplementation((_, options) => ({
     start: vi.fn(() => {
       // Simulate successful upload
       setTimeout(() => {
@@ -95,9 +95,9 @@ describe('NewClass', () => {
       },
     });
     
-    (useRouter as any).mockReturnValue(mockRouter);
-    (createClass as any).mockResolvedValue({ id: 'test-class-id' });
-    (global.fetch as any).mockResolvedValue({
+    (useRouter as Mock).mockReturnValue(mockRouter);
+    (createClass as Mock).mockResolvedValue({ id: 'test-class-id' });
+    (global.fetch as Mock).mockResolvedValue({
       ok: true,
       json: () => Promise.resolve({ success: true }),
     });
@@ -305,7 +305,7 @@ describe('NewClass', () => {
 
     it('should handle class creation errors', async () => {
       const user = userEvent.setup();
-      (createClass as any).mockRejectedValue(new Error('Creation failed'));
+      (createClass as Mock).mockRejectedValue(new Error('Creation failed'));
       
       renderWithProviders(<NewClass />);
       
@@ -344,7 +344,7 @@ describe('NewClass', () => {
 
     it('should handle finalization errors', async () => {
       const user = userEvent.setup();
-      (global.fetch as any).mockResolvedValue({
+      (global.fetch as Mock).mockResolvedValue({
         ok: false,
         json: () => Promise.resolve({ message: 'Finalization failed' }),
       });
@@ -452,10 +452,8 @@ describe('NewClass', () => {
 
   describe('Edge Cases', () => {
     it('should handle invalid file types', async () => {
-      const user = userEvent.setup();
       renderWithProviders(<NewClass />);
       
-      const file = new File(['test content'], 'test.txt', { type: 'text/plain' });
       const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
       
       // File input should only accept .zip files
@@ -500,7 +498,7 @@ describe('NewClass', () => {
 
     it('should handle missing environment variables', async () => {
       const user = userEvent.setup();
-      delete process.env.NEXT_PUBLIC_API_URL;
+      delete process.env['NEXT_PUBLIC_API_URL'];
       
       renderWithProviders(<NewClass />);
       
@@ -520,7 +518,7 @@ describe('NewClass', () => {
 
     it('should handle network timeouts', async () => {
       const user = userEvent.setup();
-      (global.fetch as any).mockImplementation(() => 
+      (global.fetch as Mock).mockImplementation(() => 
         new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Timeout')), 100)
         )
