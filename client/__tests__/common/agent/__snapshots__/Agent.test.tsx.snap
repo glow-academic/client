@@ -1,0 +1,246 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Agent Component > matches snapshot 1`] = `
+<div
+  class="space-y-6 py-4 px-4"
+>
+  <div
+    class="w-full"
+  >
+    <form
+      class="space-y-4"
+    >
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="name"
+        >
+          Agent Name *
+        </label>
+        <input
+          class="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
+          data-slot="input"
+          id="name"
+          placeholder="e.g., Enthusiastic Student Agent"
+          required=""
+          value=""
+        />
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="subtitle"
+        >
+          Subtitle *
+        </label>
+        <input
+          class="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input flex h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive"
+          data-slot="input"
+          id="subtitle"
+          placeholder="Brief description of the agent"
+          required=""
+          value=""
+        />
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="description"
+        >
+          Description *
+        </label>
+        <textarea
+          class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          id="description"
+          placeholder="Detailed behavior description and personality traits"
+          required=""
+          rows="4"
+        />
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="systemPrompt"
+        >
+          System Prompt *
+        </label>
+        <textarea
+          class="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          id="systemPrompt"
+          placeholder="System prompt that defines how the agent should behave and respond"
+          required=""
+          rows="6"
+        />
+        <p
+          class="text-sm text-muted-foreground"
+        >
+          This prompt defines the agent's behavior and personality in conversations.
+        </p>
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="agentType"
+        >
+          Agent Type
+        </label>
+        <button
+          aria-autocomplete="none"
+          aria-controls="radix-«r1a»"
+          aria-expanded="false"
+          class="border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+          data-size="default"
+          data-slot="select-trigger"
+          data-state="closed"
+          dir="ltr"
+          role="combobox"
+          type="button"
+        >
+          <span
+            data-slot="select-value"
+            style="pointer-events: none;"
+          >
+            Student
+          </span>
+          <svg
+            aria-hidden="true"
+            class="lucide lucide-chevron-down size-4 opacity-50"
+            fill="none"
+            height="24"
+            stroke="currentColor"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+            width="24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="m6 9 6 6 6-6"
+            />
+          </svg>
+        </button>
+        <select
+          aria-hidden="true"
+          style="position: absolute; border: 0px; width: 1px; height: 1px; padding: 0px; overflow: hidden; clip: rect(0px, 0px, 0px, 0px); white-space: nowrap; word-wrap: normal;"
+          tabindex="-1"
+        >
+          <option
+            selected=""
+            value="student"
+          >
+            Student
+          </option>
+          <option
+            value="ta"
+          >
+            Teaching Assistant
+          </option>
+          <option
+            value="default"
+          >
+            Default
+          </option>
+        </select>
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="flex items-center gap-2 text-sm leading-none font-medium select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 peer-disabled:cursor-not-allowed peer-disabled:opacity-50"
+          data-slot="label"
+          for="temperature"
+        >
+          Temperature: 
+          0
+        </label>
+        <span
+          aria-disabled="false"
+          class="relative flex touch-none items-center select-none data-[disabled]:opacity-50 data-[orientation=vertical]:h-full data-[orientation=vertical]:min-h-44 data-[orientation=vertical]:w-auto data-[orientation=vertical]:flex-col w-full"
+          data-orientation="horizontal"
+          data-slot="slider"
+          data-testid="temperature-slider"
+          dir="ltr"
+          id="temperature"
+          style="--radix-slider-thumb-transform: translateX(-50%);"
+        >
+          <span
+            class="bg-muted relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5"
+            data-orientation="horizontal"
+            data-slot="slider-track"
+          >
+            <span
+              class="bg-primary absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full"
+              data-orientation="horizontal"
+              data-slot="slider-range"
+              style="left: 0%; right: 100%;"
+            />
+          </span>
+          <span
+            style="transform: var(--radix-slider-thumb-transform); position: absolute; left: calc(0% + 0px);"
+          >
+            <span
+              aria-orientation="horizontal"
+              aria-valuemax="100"
+              aria-valuemin="0"
+              aria-valuenow="0"
+              class="border-primary bg-background ring-ring/50 block size-4 shrink-0 rounded-full border shadow-sm transition-[color,box-shadow] hover:ring-4 focus-visible:ring-4 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+              data-orientation="horizontal"
+              data-radix-collection-item=""
+              data-slot="slider-thumb"
+              role="slider"
+              style=""
+              tabindex="0"
+            />
+            <input
+              style="display: none;"
+              value="0"
+            />
+          </span>
+        </span>
+        <div
+          class="flex justify-between text-xs text-muted-foreground"
+        >
+          <span>
+            0 (Deterministic)
+          </span>
+          <span>
+            100 (Creative)
+          </span>
+        </div>
+        <p
+          class="text-sm text-muted-foreground"
+        >
+          Temperature value for response randomness (0-100). Lower values are more deterministic.
+        </p>
+      </div>
+      <div
+        class="flex gap-2 justify-end"
+      >
+        <button
+          class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-primary text-primary-foreground shadow-xs hover:bg-primary/90 h-9 px-4 py-2 has-[>svg]:px-3"
+          data-slot="button"
+          type="submit"
+        >
+          Create Agent
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+`;

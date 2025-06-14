@@ -5,7 +5,7 @@ import { profiles } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
-export async function getProfilesByUser(userId: string) {
+export async function getProfilesByUser(userId: number) {
   try {
     return await db.select().from(profiles).where(eq(profiles.userId, userId));
   } catch (error) {

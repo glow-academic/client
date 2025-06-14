@@ -429,7 +429,8 @@ function generateQueries(tables) {
       const getByFkQuery = generateGetByForeignKeyQuery(
         exportName,
         tableName,
-        fk
+        fk,
+        tables
       );
       const paramName = fk.columnName
         .replace(/Id$/, "")
@@ -450,7 +451,8 @@ function generateQueries(tables) {
       const getByFkPluralQuery = generateGetByForeignKeyPluralQuery(
         exportName,
         tableName,
-        fk
+        fk,
+        tables
       );
       const paramName = fk.columnName
         .replace(/Id$/, "")
@@ -631,13 +633,13 @@ function generateGetAllQuery(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function getAll${capitalize(exportName)}() {
   try {
     return await db.select().from(${exportName});
   } catch (error) {
-    console.error("Error fetching all ${tableName}:", error);
+    logError("Error fetching all ${tableName}:", error);
     throw error;
   }
 }
@@ -659,14 +661,14 @@ function generateGetByIdQuery(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function get${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.select().from(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey}));
     return result[0] || null;
   } catch (error) {
-    console.error("Error fetching ${singularName}:", error);
+    logError("Error fetching ${singularName}:", error);
     throw error;
   }
 }
@@ -676,23 +678,35 @@ export async function get${capitalize(singularName)}(${primaryKey}: ${primaryKey
 /**
  * Generate get by foreign key query
  */
-function generateGetByForeignKeyQuery(exportName, tableName, foreignKey) {
+function generateGetByForeignKeyQuery(
+  exportName,
+  tableName,
+  foreignKey,
+  tables
+) {
   // Get the TypeScript property name from the schema (camelCase)
   const tsPropertyName = getTsPropertyName(foreignKey.columnName);
   const paramName = toCamelCase(tsPropertyName.replace(/Id$/, ""));
   const cleanParamName = toKebabCase(paramName);
+
+  // Determine the correct parameter type by looking up the foreign table
+  const foreignTable = tables.find(
+    (t) => t.tableName === foreignKey.foreignTable
+  );
+  const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+
   return `// utils/queries/${tableName}/get-${toKebabCase(tableName)}-by-${cleanParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
-export async function get${capitalize(exportName)}By${capitalize(paramName)}(${paramName}Id: string) {
+export async function get${capitalize(exportName)}By${capitalize(paramName)}(${paramName}Id: ${paramType}) {
   try {
     return await db.select().from(${exportName}).where(eq(${exportName}.${tsPropertyName}, ${paramName}Id));
   } catch (error) {
-    console.error("Error fetching ${tableName} by ${paramName}:", error);
+    logError("Error fetching ${tableName} by ${paramName}:", error);
     throw error;
   }
 }
@@ -702,24 +716,36 @@ export async function get${capitalize(exportName)}By${capitalize(paramName)}(${p
 /**
  * Generate get by foreign key query (plural version)
  */
-function generateGetByForeignKeyPluralQuery(exportName, tableName, foreignKey) {
+function generateGetByForeignKeyPluralQuery(
+  exportName,
+  tableName,
+  foreignKey,
+  tables
+) {
   // Get the TypeScript property name from the schema (camelCase)
   const tsPropertyName = getTsPropertyName(foreignKey.columnName);
   const paramName = toCamelCase(tsPropertyName.replace(/Id$/, ""));
   const pluralParamName = paramName.endsWith("s") ? paramName : paramName + "s";
   const cleanPluralParamName = toKebabCase(pluralParamName);
+
+  // Determine the correct parameter type by looking up the foreign table
+  const foreignTable = tables.find(
+    (t) => t.tableName === foreignKey.foreignTable
+  );
+  const paramType = foreignTable ? foreignTable.primaryKeyType : "string";
+
   return `// utils/queries/${tableName}/get-${toKebabCase(tableName)}-by-${cleanPluralParamName}.ts
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
-export async function get${capitalize(exportName)}By${capitalize(pluralParamName)}(${paramName}Ids: string[]) {
+export async function get${capitalize(exportName)}By${capitalize(pluralParamName)}(${paramName}Ids: ${paramType}[]) {
   try {
     return await db.select().from(${exportName}).where(inArray(${exportName}.${tsPropertyName}, ${paramName}Ids));
   } catch (error) {
-    console.error("Error fetching ${tableName} by ${pluralParamName}:", error);
+    logError("Error fetching ${tableName} by ${pluralParamName}:", error);
     throw error;
   }
 }
@@ -734,14 +760,14 @@ function generateCreateMutation(exportName, tableName, singularName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function create${capitalize(singularName)}(data: typeof ${exportName}.$inferInsert) {
   try {
     const result = await db.insert(${exportName}).values(data).returning();
     return result[0];
   } catch (error) {
-    console.error("Error creating ${singularName}:", error);
+    logError("Error creating ${singularName}:", error);
     throw error;
   }
 }
@@ -756,13 +782,13 @@ function generateCreateMultipleMutation(exportName, tableName) {
 "use server";
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function create${capitalize(exportName)}(data: (typeof ${exportName}.$inferInsert)[]) {
   try {
     return await db.insert(${exportName}).values(data).returning();
   } catch (error) {
-    console.error("Error creating multiple ${tableName}:", error);
+    logError("Error creating multiple ${tableName}:", error);
     throw error;
   }
 }
@@ -785,14 +811,14 @@ function generateUpdateMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function update${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}, data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     const result = await db.update(${exportName}).set(data).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    console.error("Error updating ${singularName}:", error);
+    logError("Error updating ${singularName}:", error);
     throw error;
   }
 }
@@ -815,13 +841,13 @@ function generateUpdateMultipleMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function update${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[], data: Partial<typeof ${exportName}.$inferInsert>) {
   try {
     return await db.update(${exportName}).set(data).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    console.error("Error updating multiple ${tableName}:", error);
+    logError("Error updating multiple ${tableName}:", error);
     throw error;
   }
 }
@@ -843,14 +869,14 @@ function generateDeleteMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { eq } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function delete${capitalize(singularName)}(${primaryKey}: ${primaryKeyType}) {
   try {
     const result = await db.delete(${exportName}).where(eq(${exportName}.${primaryKey}, ${primaryKey})).returning();
     return result[0];
   } catch (error) {
-    console.error("Error deleting ${singularName}:", error);
+    logError("Error deleting ${singularName}:", error);
     throw error;
   }
 }
@@ -872,13 +898,13 @@ function generateDeleteMultipleMutation(
 import { db } from "@/utils/drizzle/database";
 import { ${exportName} } from "@/drizzle/schema";
 import { inArray } from "drizzle-orm";
-import { console.error } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 
 export async function delete${capitalize(exportName)}(${primaryKey}s: ${primaryKeyType}[]) {
   try {
     return await db.delete(${exportName}).where(inArray(${exportName}.${primaryKey}, ${primaryKey}s)).returning();
   } catch (error) {
-    console.error("Error deleting multiple ${tableName}:", error);
+    logError("Error deleting multiple ${tableName}:", error);
     throw error;
   }
 }
