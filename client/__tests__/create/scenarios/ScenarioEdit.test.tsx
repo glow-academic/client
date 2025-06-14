@@ -1,10 +1,10 @@
+import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
-import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -50,7 +50,7 @@ describe("ScenarioEdit", () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
       back: vi.fn(),
       forward: vi.fn(),
@@ -79,7 +79,7 @@ describe("ScenarioEdit", () => {
       const { getScenario } = await import(
         "@/utils/queries/scenarios/get-scenario"
       );
-      (getScenario as any).mockResolvedValue({
+      vi.mocked(getScenario).mockResolvedValue({
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
@@ -91,8 +91,8 @@ describe("ScenarioEdit", () => {
         expect(screen.getByText("Edit Scenario")).toBeInTheDocument();
         expect(
           screen.getByText(
-            "Modify the context and setting for this conversation scenario",
-          ),
+            "Modify the context and setting for this conversation scenario"
+          )
         ).toBeInTheDocument();
       });
     });
@@ -101,7 +101,7 @@ describe("ScenarioEdit", () => {
       const { getScenario } = await import(
         "@/utils/queries/scenarios/get-scenario"
       );
-      (getScenario as any).mockResolvedValue({
+      vi.mocked(getScenario).mockResolvedValue({
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
@@ -129,12 +129,12 @@ describe("ScenarioEdit", () => {
         "@/utils/mutations/scenarios/update-scenario"
       );
 
-      (getScenario as any).mockResolvedValue({
+      vi.mocked(getScenario).mockResolvedValue({
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
       });
-      (updateScenario as any).mockResolvedValue({ id: testScenarioId });
+      vi.mocked(updateScenario).mockResolvedValue({ id: testScenarioId });
 
       const user = userEvent.setup();
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
@@ -164,7 +164,7 @@ describe("ScenarioEdit", () => {
       const { getScenario } = await import(
         "@/utils/queries/scenarios/get-scenario"
       );
-      (getScenario as any).mockResolvedValue({
+      vi.mocked(getScenario).mockResolvedValue({
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
@@ -175,7 +175,7 @@ describe("ScenarioEdit", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /cancel/i }),
+          screen.getByRole("button", { name: /cancel/i })
         ).toBeInTheDocument();
       });
 
@@ -198,14 +198,14 @@ describe("ScenarioEdit", () => {
       const { getScenario } = await import(
         "@/utils/queries/scenarios/get-scenario"
       );
-      (getScenario as any).mockResolvedValue(null);
+      vi.mocked(getScenario).mockResolvedValue(null);
 
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
 
       await waitFor(() => {
         expect(screen.getByText("Scenario Not Found")).toBeInTheDocument();
         expect(
-          screen.getByText("The scenario you're looking for doesn't exist."),
+          screen.getByText("The scenario you're looking for doesn't exist.")
         ).toBeInTheDocument();
       });
     });
@@ -216,7 +216,7 @@ describe("ScenarioEdit", () => {
       const { getScenario } = await import(
         "@/utils/queries/scenarios/get-scenario"
       );
-      (getScenario as any).mockResolvedValue(null);
+      vi.mocked(getScenario).mockResolvedValue(null);
 
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
 
@@ -246,16 +246,16 @@ describe("ScenarioEdit", () => {
         seniority: "junior" as const,
       };
 
-      (getScenario as any).mockResolvedValue(mockScenario);
+      vi.mocked(getScenario).mockResolvedValue(mockScenario);
 
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
 
       await waitFor(() => {
         expect(
-          screen.getByDisplayValue("Original Scenario"),
+          screen.getByDisplayValue("Original Scenario")
         ).toBeInTheDocument();
         expect(
-          screen.getByDisplayValue("Original Description"),
+          screen.getByDisplayValue("Original Description")
         ).toBeInTheDocument();
       });
     });

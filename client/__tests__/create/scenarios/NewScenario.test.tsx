@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 import NewScenario from "@/components/create/scenarios/NewScenario";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -58,7 +58,7 @@ describe("NewScenario", () => {
 
       expect(screen.getByText("Create Scenario")).toBeInTheDocument();
       expect(
-        screen.getByText("Create a new conversation scenario"),
+        screen.getByText("Create a new conversation scenario")
       ).toBeInTheDocument();
     });
 
@@ -68,10 +68,10 @@ describe("NewScenario", () => {
       expect(screen.getByLabelText(/scenario name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /create scenario/i }),
+        screen.getByRole("button", { name: /create scenario/i })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /cancel/i }),
+        screen.getByRole("button", { name: /cancel/i })
       ).toBeInTheDocument();
     });
 
@@ -84,11 +84,11 @@ describe("NewScenario", () => {
       expect(nameInput).toHaveAttribute("required");
       expect(nameInput).toHaveAttribute(
         "placeholder",
-        "e.g., Office Hours Help Session",
+        "e.g., Office Hours Help Session"
       );
       expect(descriptionTextarea).toHaveAttribute(
         "placeholder",
-        "Describe the scenario context, setting, and expected interactions",
+        "Describe the scenario context, setting, and expected interactions"
       );
     });
   });
@@ -130,8 +130,8 @@ describe("NewScenario", () => {
       expect(screen.getByText("Create Scenario")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "Define the context and setting for this conversation scenario.",
-        ),
+          "Define the context and setting for this conversation scenario."
+        )
       ).toBeInTheDocument();
     });
   });
@@ -141,7 +141,7 @@ describe("NewScenario", () => {
       const { createScenario } = await import(
         "@/utils/mutations/scenarios/create-scenario"
       );
-      (createScenario as any).mockResolvedValue({ id: "new-scenario-id" });
+      vi.mocked(createScenario).mockResolvedValue({ id: "new-scenario-id" });
 
       const user = userEvent.setup();
       renderWithProviders(<NewScenario />);

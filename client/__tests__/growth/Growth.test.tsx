@@ -1,8 +1,18 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 import Growth from "@/components/growth/Growth";
+import { useAuth } from "@/hooks/use-auth";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationAttemptsByUser } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-user";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { getUser } from "@/utils/queries/users/get-user";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -42,7 +52,7 @@ vi.mock(
   "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
   () => ({
     getStandardGroupsByRubrics: vi.fn(),
-  }),
+  })
 );
 
 vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
@@ -53,28 +63,28 @@ vi.mock(
   "@/utils/queries/simulation_attempts/get-simulation-attempts-by-user",
   () => ({
     getSimulationAttemptsByUser: vi.fn(),
-  }),
+  })
 );
 
 vi.mock(
   "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts",
   () => ({
     getSimulationChatsByAttempts: vi.fn(),
-  }),
+  })
 );
 
 vi.mock(
   "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
   () => ({
     getSimulationChatGradesBySimulationChats: vi.fn(),
-  }),
+  })
 );
 
 vi.mock(
   "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
   () => ({
     getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
-  }),
+  })
 );
 
 // Mock chart components
@@ -275,33 +285,19 @@ describe("Growth", () => {
     ];
 
     // Apply mocks
-    require("@/utils/queries/users/get-user").getUser.mockResolvedValue(
-      mockUser,
+    vi.mocked(getUser).mockResolvedValue(mockUser);
+    vi.mocked(getAllAgents).mockResolvedValue(mockAgents);
+    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
+    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue(mockStandardGroups);
+    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
+    vi.mocked(getSimulationAttemptsByUser).mockResolvedValue(mockAttempts);
+    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
+    vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
+      mockGrades
     );
-    require("@/utils/queries/agents/get-all-agents").getAllAgents.mockResolvedValue(
-      mockAgents,
-    );
-    require("@/utils/queries/rubrics/get-all-rubrics").getAllRubrics.mockResolvedValue(
-      mockRubrics,
-    );
-    require("@/utils/queries/standard_groups/get-standard-groups-by-rubrics").getStandardGroupsByRubrics.mockResolvedValue(
-      mockStandardGroups,
-    );
-    require("@/utils/queries/standards/get-standards-by-standardgroups").getStandardsByStandardGroups.mockResolvedValue(
-      mockStandards,
-    );
-    require("@/utils/queries/simulation_attempts/get-simulation-attempts-by-user").getSimulationAttemptsByUser.mockResolvedValue(
-      mockAttempts,
-    );
-    require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts").getSimulationChatsByAttempts.mockResolvedValue(
-      mockChats,
-    );
-    require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-      mockGrades,
-    );
-    require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades").getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(
-      mockFeedbacks,
-    );
+    vi.mocked(
+      getSimulationChatFeedbacksBySimulationChatGrades
+    ).mockResolvedValue(mockFeedbacks);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -341,29 +337,22 @@ describe("Growth", () => {
       renderWithProviders(<Growth />);
 
       await waitFor(() => {
-        expect(
-          require("@/utils/queries/users/get-user").getUser,
-        ).toHaveBeenCalledWith("test-user-id");
-        expect(
-          require("@/utils/queries/simulation_attempts/get-simulation-attempts-by-user")
-            .getSimulationAttemptsByUser,
-        ).toHaveBeenCalledWith("test-user-id");
+        expect(getUser).toHaveBeenCalledWith("test-user-id");
+        expect(getSimulationAttemptsByUser).toHaveBeenCalledWith(
+          "test-user-id"
+        );
       });
     });
 
     it("should handle loading states", () => {
       // Mock loading state
-      require("@/utils/queries/users/get-user").getUser.mockImplementation(
-        () => new Promise(() => {}),
-      );
+      vi.mocked(getUser).mockImplementation(() => new Promise(() => {}));
 
       renderWithProviders(<Growth />);
     });
 
     it("should handle no data state", async () => {
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        [],
-      );
+      vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
 
       renderWithProviders(<Growth />);
 
@@ -371,8 +360,8 @@ describe("Growth", () => {
         expect(screen.getByText("No Data Available")).toBeInTheDocument();
         expect(
           screen.getByText(
-            "Complete some teaching sessions to see your growth metrics.",
-          ),
+            "Complete some teaching sessions to see your growth metrics."
+          )
         ).toBeInTheDocument();
       });
     });
@@ -388,11 +377,9 @@ describe("Growth", () => {
 
         // Should show performance sections
         expect(
-          screen.getByText("Average performance score"),
+          screen.getByText("Average performance score")
         ).toBeInTheDocument();
-        expect(
-          screen.getByText("Skill performance"),
-        ).toBeInTheDocument();
+        expect(screen.getByText("Skill performance")).toBeInTheDocument();
         expect(screen.getByText("Time per session")).toBeInTheDocument();
       });
     });
@@ -421,14 +408,14 @@ describe("Growth", () => {
       renderWithProviders(<Growth />);
 
       await waitFor(() => {
-        expect(require("@/hooks/use-auth").useAuth).toHaveBeenCalled();
+        expect(useAuth).toHaveBeenCalled();
       });
     });
   });
 
   describe("Edge Cases", () => {
     it("should handle missing user gracefully", async () => {
-      require("@/utils/queries/users/get-user").getUser.mockResolvedValue(null);
+      vi.mocked(getUser).mockResolvedValue(null);
 
       renderWithProviders(<Growth />);
 
@@ -438,9 +425,7 @@ describe("Growth", () => {
     });
 
     it("should handle empty grades array", async () => {
-      require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-        [],
-      );
+      vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue([]);
 
       renderWithProviders(<Growth />);
 
@@ -450,9 +435,7 @@ describe("Growth", () => {
     });
 
     it("should handle API errors gracefully", async () => {
-      require("@/utils/queries/users/get-user").getUser.mockRejectedValue(
-        new Error("API Error"),
-      );
+      vi.mocked(getUser).mockRejectedValue(new Error("API Error"));
 
       renderWithProviders(<Growth />);
 

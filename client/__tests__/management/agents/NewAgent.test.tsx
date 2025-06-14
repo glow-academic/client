@@ -1,8 +1,10 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 import NewAgent from "@/components/management/agents/NewAgent";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useRouter } from "next/navigation";
+import { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -32,6 +34,7 @@ vi.mock("sonner", () => ({
 
 describe("NewAgent", () => {
   let queryClient: QueryClient;
+  let mockPush: jest.Mock;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -40,6 +43,17 @@ describe("NewAgent", () => {
         queries: { retry: false },
         mutations: { retry: false },
       },
+    });
+
+    mockPush = vi.fn();
+
+    vi.mocked(useRouter).mockReturnValue({
+      push: mockPush,
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
     });
   });
 
@@ -64,11 +78,11 @@ describe("NewAgent", () => {
       expect(screen.getByText("Create Agent")).toBeInTheDocument();
       expect(
         screen.getByText(
-          "Create a new AI student agent with specific personality and behavior characteristics",
-        ),
+          "Create a new AI student agent with specific personality and behavior characteristics"
+        )
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /create agent/i }),
+        screen.getByRole("button", { name: /create agent/i })
       ).toBeInTheDocument();
     });
 
@@ -81,7 +95,7 @@ describe("NewAgent", () => {
       expect(nameInput).toHaveAttribute("required");
       expect(nameInput).toHaveAttribute(
         "placeholder",
-        "e.g., Enthusiastic Student Agent",
+        "e.g., Enthusiastic Student Agent"
       );
       expect(subtitleInput).toHaveAttribute("required");
     });
@@ -94,8 +108,47 @@ describe("NewAgent", () => {
       // The component should render the Agent component in create mode
       expect(screen.getByText("Create Agent")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /create agent/i }),
+        screen.getByRole("button", { name: /create agent/i })
       ).toBeInTheDocument();
+    });
+
+    it("should handle form submission with valid data", async () => {
+      const { createAgent } = await import(
+        "@/utils/mutations/agents/create-agent"
+      );
+      vi.mocked(createAgent).mockResolvedValue({ id: "new-agent-id" });
+
+      const user = userEvent.setup();
+      renderWithProviders(<NewAgent />);
+
+      const nameInput = screen.getByLabelText(/agent name/i);
+      const subtitleInput = screen.getByLabelText(/subtitle/i);
+      const descriptionTextarea = screen.getByLabelText(/description/i);
+      const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
+      const temperatureSlider = screen.getByLabelText(/temperature/i);
+      const submitButton = screen.getByRole("button", {
+        name: /create agent/i,
+      });
+
+      await user.type(nameInput, "Test Agent");
+      await user.type(subtitleInput, "Test Subtitle");
+      await user.type(descriptionTextarea, "Test Description");
+      await user.type(systemPromptTextarea, "Test System Prompt");
+      await user.clear(temperatureSlider);
+      await user.type(temperatureSlider, "0.8");
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(createAgent).toHaveBeenCalledWith({
+          name: "Test Agent",
+          subtitle: "Test Subtitle",
+          description: "Test Description",
+          systemPrompt: "Test System Prompt",
+          agentType: "student",
+          temperature: 0.8,
+        });
+        expect(mockPush).toHaveBeenCalledWith("/management/agents");
+      });
     });
   });
 });
