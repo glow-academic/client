@@ -1,9 +1,8 @@
 from typing import List
 
 from agents.items import TResponseInputItem
+from app.models import Rubrics, StandardGroups, Standards
 from sqlalchemy import UUID
-
-from server.app.models import Rubrics, StandardGroups, Standards
 
 rubric = """
 ;5 - Excellent;4 - Good;3 - Acceptable;2 - Marginal;1 - Poor

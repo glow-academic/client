@@ -1,19 +1,15 @@
 # utils/scenario.py
 
-import random
 import logging
+import random
+
+from app.models import Agents, Classes, Documents, Scenarios
 from sqlmodel import Session, select
-from app.models import (
-    Agents,
-    Scenarios,
-    Classes,
-    Documents,
-)
 
 logger = logging.getLogger(__name__)
 
 
-def get_seniority_info(seniority: str) -> dict:
+def get_seniority_info(seniority: str) -> dict[str, str]:
     """
     Get the seniority information for a given seniority.
     """
@@ -143,4 +139,5 @@ async def randomly_fill_scenario_attributes(
         crowdedness=scenario_crowdedness,
         intensity=scenario_intensity,
     )
+
 

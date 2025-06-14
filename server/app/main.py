@@ -5,18 +5,17 @@ import sys
 import time
 from typing import Generator
 
+from app.db import get_session, init_db
+from app.models import SimulationChats
+from app.routes.documents import router as documents_router
+from app.routes.evals import router as evals_router
+from app.routes.profiles import router as profiles_router
+from app.routes.scenarios import router as scenarios_router
+from app.routes.simulations import router as simulations_router
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
-
-from server.app.db import get_session, init_db
-from server.app.models import SimulationChats
-from server.app.routes.documents import router as documents_router
-from server.app.routes.evals import router as evals_router
-from server.app.routes.profiles import router as profiles_router
-from server.app.routes.scenarios import router as scenarios_router
-from server.app.routes.simulations import router as simulations_router
 
 app = FastAPI(title="GLOW API", on_startup=[init_db])
 app.include_router(documents_router, prefix="/documents")

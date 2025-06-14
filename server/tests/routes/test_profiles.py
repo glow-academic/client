@@ -5,18 +5,17 @@ Auto-generated on: 2025-06-10T16:21:22.276313
 Updated with report customization tests
 """
 
-import pytest
-from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch, mock_open
-from sqlmodel import Session
-from app.main import app
-from server.app.routes.profiles import (
-    create_student_type_chart,
-    create_student_type_performance,
-    create_score_radar_chart,
-    create_time_series_chart,
-)
 from datetime import datetime
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
+from app.main import app
+from app.routes.profiles import (create_score_radar_chart,
+                                 create_student_type_chart,
+                                 create_student_type_performance,
+                                 create_time_series_chart)
+from fastapi.testclient import TestClient
+from sqlmodel import Session
 
 # Import the router being tested
 

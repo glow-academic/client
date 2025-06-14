@@ -2,10 +2,9 @@ import random
 from typing import List
 
 from agents.items import TResponseInputItem
+from app.models import (Agents, EvalChats, EvalMessages, Scenarios,
+                        SimulationChats, SimulationMessages)
 from sqlmodel import Session, select
-
-from server.app.models import (Agents, EvalChats, EvalMessages, Scenarios,
-                               SimulationChats, SimulationMessages)
 
 
 def get_conversation_history(

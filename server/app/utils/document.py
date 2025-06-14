@@ -1,9 +1,8 @@
 import uuid
 from typing import List
 
+from app.models import Documents
 from sqlmodel import Session, select
-
-from server.app.models import Documents
 
 
 def get_document_info(document_ids: List[uuid.UUID], session: Session) -> dict[str, str]:

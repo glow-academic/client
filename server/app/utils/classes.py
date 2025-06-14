@@ -1,7 +1,6 @@
+from app.models import Classes
 from sqlalchemy import UUID
 from sqlmodel import Session, select
-
-from server.app.models import Classes
 
 
 def get_class_info(class_id: UUID[str], session: Session) -> dict[str, str]:

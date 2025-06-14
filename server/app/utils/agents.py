@@ -1,8 +1,7 @@
 # app/utils/agents.py
+from app.models import Agents
 from sqlalchemy import UUID
 from sqlmodel import Session, select
-
-from server.app.models import Agents
 
 
 def get_agent_info(agent_id: UUID[str], session: Session) -> dict[str, str]:
