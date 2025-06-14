@@ -393,7 +393,9 @@ describe("Performance Component", () => {
 
     // Find and click 7 days filter
     const timeRangeButtons = screen.getAllByText("7 days");
-    fireEvent.click(timeRangeButtons[0]);
+    if (timeRangeButtons[0]) {
+      fireEvent.click(timeRangeButtons[0]);
+    }
 
     // Should update the chart data
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();
@@ -410,7 +412,9 @@ describe("Performance Component", () => {
 
     // Find and click 90 days filter for skill development
     const skillTimeButtons = screen.getAllByText("90 days");
-    fireEvent.click(skillTimeButtons[1]); // Second one should be for skills
+    if (skillTimeButtons[1]) {
+      fireEvent.click(skillTimeButtons[1]); // Second one should be for skills
+    }
 
     expect(screen.getByTestId("line-chart")).toBeInTheDocument();
   });
@@ -598,7 +602,9 @@ describe("Performance Component", () => {
 
     // Change time range
     const timeRangeButton = screen.getAllByText("7 days")[0];
-    fireEvent.click(timeRangeButton);
+    if (timeRangeButton) {
+      fireEvent.click(timeRangeButton);
+    }
 
     // Chart should still be present (data might change but chart remains)
     expect(screen.getByTestId("bar-chart")).toBeInTheDocument();

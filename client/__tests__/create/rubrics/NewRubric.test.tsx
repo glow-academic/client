@@ -270,13 +270,26 @@ describe("NewRubric", () => {
         },
       });
 
-      const NewWrapper = ({ children }: { children: ReactNode }) => (
+      rerender(
         <QueryClientProvider client={newQueryClient}>
-          {children}
+          <NewRubric />
         </QueryClientProvider>
       );
 
-      rerender(
+      expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
+    });
+  });
+
+  describe("Query Client Isolation", () => {
+    it("should use isolated query client", () => {
+      const newQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+
+      render(
         <QueryClientProvider client={newQueryClient}>
           <NewRubric />
         </QueryClientProvider>

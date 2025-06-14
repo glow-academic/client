@@ -1,9 +1,106 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 import ClassDetails from "@/components/classes/ClassDetails";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@testing-library/jest-dom";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import React from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Mock next/navigation
+vi.mock("next/navigation", () => ({
+  useRouter: vi.fn(),
+}));
+
+// Mock sonner
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+// Mock all query functions
+vi.mock("@/utils/queries/classes/get-class", () => ({
+  getClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/profiles/get-profiles-by-class", () => ({
+  getProfilesByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/agents/get-agents-by-class", () => ({
+  getAgentsByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/scenarios/get-scenarios-by-class", () => ({
+  getScenariosByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/simulations/get-simulations-by-class", () => ({
+  getSimulationsByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/documents/get-documents-by-class", () => ({
+  getDocumentsByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/rubrics/get-rubrics-by-class", () => ({
+  getRubricsByClass: vi.fn(),
+}));
+
+vi.mock(
+  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-class",
+  () => ({
+    getSimulationAttemptsByClass: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-by-class",
+  () => ({
+    getSimulationChatsByClass: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_messages/get-simulation-messages-by-class",
+  () => ({
+    getSimulationMessagesByClass: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-class",
+  () => ({
+    getSimulationChatGradesByClass: vi.fn(),
+  })
+);
+
+vi.mock(
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-class",
+  () => ({
+    getSimulationChatFeedbacksByClass: vi.fn(),
+  })
+);
+
+vi.mock("@/utils/mutations/classes/delete-class", () => ({
+  deleteClass: vi.fn(),
+}));
+
+// Import mocked functions
+import { deleteClass } from "@/utils/mutations/classes/delete-class";
+import { getAgentsByClass } from "@/utils/queries/agents/get-agents-by-class";
+import { getClass } from "@/utils/queries/classes/get-class";
+import { getDocumentsByClass } from "@/utils/queries/documents/get-documents-by-class";
+import { getProfilesByClass } from "@/utils/queries/profiles/get-profiles-by-class";
+import { getRubricsByClass } from "@/utils/queries/rubrics/get-rubrics-by-class";
+import { getScenariosByClass } from "@/utils/queries/scenarios/get-scenarios-by-class";
+import { getSimulationAttemptsByClass } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-class";
+import { getSimulationChatFeedbacksByClass } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-class";
+import { getSimulationChatGradesByClass } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-class";
+import { getSimulationChatsByClass } from "@/utils/queries/simulation_chats/get-simulation-chats-by-class";
+import { getSimulationMessagesByClass } from "@/utils/queries/simulation_messages/get-simulation-messages-by-class";
+import { getSimulationsByClass } from "@/utils/queries/simulations/get-simulations-by-class";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -19,63 +116,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 // Mock API calls
-vi.mock("@/utils/queries/classes/get-class", () => ({
-  getClass: vi.fn(),
-}));
-
 vi.mock("@/utils/queries/topics/get-topics-by-class", () => ({
   getTopicsByClass: vi.fn(),
-}));
-
-vi.mock("@/utils/queries/simulations/get-simulations-by-class", () => ({
-  getSimulationsByClass: vi.fn(),
-}));
-
-vi.mock(
-  "@/utils/queries/simulation_attempts/get-simulation-attempts-by-class",
-  () => ({
-    getSimulationAttemptsByClass: vi.fn(),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts",
-  () => ({
-    getSimulationChatsByAttempts: vi.fn(),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats",
-  () => ({
-    getSimulationChatGradesBySimulationChats: vi.fn(),
-  }),
-);
-
-vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
-  () => ({
-    getSimulationChatFeedbacksBySimulationChatGrades: vi.fn(),
-  }),
-);
-
-vi.mock("@/utils/queries/users/get-all-users", () => ({
-  getAllUsers: vi.fn(),
-}));
-
-vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
-  getAllRubrics: vi.fn(),
-}));
-
-vi.mock(
-  "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
-  () => ({
-    getStandardGroupsByRubrics: vi.fn(),
-  }),
-);
-
-vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
-  getStandardsByStandardGroups: vi.fn(),
 }));
 
 vi.mock("@/utils/queries/schedules/get-schedules-by-class", () => ({
@@ -88,7 +130,7 @@ vi.mock("@/utils/queries/events/get-all-events", () => ({
 
 // Mock chart components
 vi.mock("recharts", () => ({
-  AreaChart: ({ children }: { children: ReactNode }) => (
+  AreaChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="area-chart">{children}</div>
   ),
   Area: () => <div data-testid="area" />,
@@ -96,15 +138,125 @@ vi.mock("recharts", () => ({
   YAxis: () => <div data-testid="y-axis" />,
   CartesianGrid: () => <div data-testid="cartesian-grid" />,
   Tooltip: () => <div data-testid="tooltip" />,
-  ResponsiveContainer: ({ children }: { children: ReactNode }) => (
+  ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="responsive-container">{children}</div>
   ),
-  PieChart: ({ children }: { children: ReactNode }) => (
+  PieChart: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="pie-chart">{children}</div>
   ),
   Pie: () => <div data-testid="pie" />,
   Cell: () => <div data-testid="cell" />,
 }));
+
+// Mock data at module level
+const mockProfiles = [
+  {
+    id: "profile1",
+    userId: 1,
+    firstName: "John",
+    lastName: "Doe",
+    alias: "jdoe",
+    role: "ta" as const,
+    lastLogin: new Date().toISOString(),
+    viewedIntro: true,
+    createdAt: new Date().toISOString(),
+    classIds: ["class1"],
+  },
+];
+
+const mockAgents = [
+  {
+    id: "agent1",
+    name: "Test Agent",
+    subtitle: "Test Subtitle",
+    description: "Test Description",
+    systemPrompt: "Test System Prompt",
+    agentType: "student" as const,
+    temperature: 0.7,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockScenarios = [
+  {
+    id: "scenario1",
+    name: "Test Scenario",
+    description: "A test scenario",
+    classId: "class1",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    agentId: null,
+    crowdedness: null,
+    intensity: null,
+    seniority: null,
+    documents: null,
+  },
+];
+
+const mockDocuments = [
+  {
+    id: "doc1",
+    name: "Test Document",
+    filePath: "/path/to/doc.pdf",
+    mimeType: "application/pdf",
+    classId: "class1",
+    type: "syllabus" as const,
+    classified: true,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockRubrics = [
+  {
+    id: "rubric1",
+    name: "Test Rubric",
+    description: "A test rubric",
+    points: 100,
+    passPoints: 70,
+    rubricType: "simulation" as const,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockMessages = [
+  {
+    id: "message1",
+    chatId: "chat1",
+    query: "Hello",
+    response: "Hi there",
+    completed: true,
+    createdAt: new Date().toISOString(),
+  },
+];
+
+const mockFeedbacks = [
+  {
+    id: "feedback1",
+    simulationChatGradeId: "grade1",
+    standardId: "standard1",
+    total: 4,
+    feedback: "Good work",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// Mock additional query functions
+vi.mock("@/utils/queries/topics/get-topics-by-class", () => ({
+  getTopicsByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/schedules/get-schedules-by-class", () => ({
+  getSchedulesByClass: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/events/get-all-events", () => ({
+  getAllEvents: vi.fn(),
+}));
+
+// Import additional mocked functions
+import { getAllEvents } from "@/utils/queries/events/get-all-events";
+import { getSchedulesByClass } from "@/utils/queries/schedules/get-schedules-by-class";
+import { getTopicsByClass } from "@/utils/queries/topics/get-topics-by-class";
 
 describe("ClassDetails", () => {
   let queryClient: QueryClient;
@@ -124,7 +276,7 @@ describe("ClassDetails", () => {
       name: "Test Class",
       classCode: "CS101",
       year: 2024,
-      term: "fall",
+      term: "fall" as const,
       description: "Test class description",
       createdAt: "2024-01-01T00:00:00Z",
     };
@@ -154,7 +306,6 @@ describe("ClassDetails", () => {
         title: "Test Simulation",
         classId: "test-class-id",
         createdAt: "2024-01-01T00:00:00Z",
-        documents: [],
         timeLimit: 30,
         active: true,
         scenarioIds: [],
@@ -165,8 +316,7 @@ describe("ClassDetails", () => {
     const mockAttempts = [
       {
         id: "attempt-1",
-        userId: "user-1",
-        classId: "test-class-id",
+        profileId: "profile-1",
         simulationId: "sim-1",
         createdAt: "2024-01-01T00:00:00Z",
       },
@@ -188,7 +338,9 @@ describe("ClassDetails", () => {
       {
         id: "grade-1",
         simulationChatId: "chat-1",
+        rubricId: "rubric-1",
         score: 85,
+        passed: true,
         timeTaken: 1800,
         createdAt: "2024-01-01T00:00:00Z",
       },
@@ -204,48 +356,41 @@ describe("ClassDetails", () => {
       },
     ];
 
-    // Apply mocks
-    require("@/utils/queries/classes/get-class").getClass.mockResolvedValue(mockClass);
-    require("@/utils/queries/topics/get-topics-by-class").getTopicsByClass.mockResolvedValue(
-      mockTopics,
+    // Mock all query functions with default resolved values
+    vi.mocked(getClass).mockResolvedValue(mockClass);
+    vi.mocked(getProfilesByClass).mockResolvedValue(mockProfiles);
+    vi.mocked(getAgentsByClass).mockResolvedValue(mockAgents);
+    vi.mocked(getScenariosByClass).mockResolvedValue(mockScenarios);
+    vi.mocked(getSimulationsByClass).mockResolvedValue(mockSimulations);
+    vi.mocked(getDocumentsByClass).mockResolvedValue(mockDocuments);
+    vi.mocked(getRubricsByClass).mockResolvedValue(mockRubrics);
+    vi.mocked(getSimulationAttemptsByClass).mockResolvedValue(mockAttempts);
+    vi.mocked(getSimulationChatsByClass).mockResolvedValue(mockChats);
+    vi.mocked(getSimulationMessagesByClass).mockResolvedValue(mockMessages);
+    vi.mocked(getSimulationChatGradesByClass).mockResolvedValue(mockGrades);
+    vi.mocked(getSimulationChatFeedbacksByClass).mockResolvedValue(
+      mockFeedbacks
     );
-    require("@/utils/queries/simulations/get-simulations-by-class").getSimulationsByClass.mockResolvedValue(
-      mockSimulations,
-    );
-    require("@/utils/queries/simulation_attempts/get-simulation-attempts-by-class").getSimulationAttemptsByClass.mockResolvedValue(
-      mockAttempts,
-    );
-    require("@/utils/queries/simulation_chats/get-simulation-chats-by-attempts").getSimulationChatsByAttempts.mockResolvedValue(
-      mockChats,
-    );
-    require("@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats").getSimulationChatGradesBySimulationChats.mockResolvedValue(
-      mockGrades,
-    );
-    require("@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades").getSimulationChatFeedbacksBySimulationChatGrades.mockResolvedValue(
-      [],
-    );
-    require("@/utils/queries/users/get-all-users").getAllUsers.mockResolvedValue(
-      [],
-    );
-    require("@/utils/queries/rubrics/get-all-rubrics").getAllRubrics.mockResolvedValue(
-      [],
-    );
-    require("@/utils/queries/standard_groups/get-standard-groups-by-rubrics").getStandardGroupsByRubrics.mockResolvedValue(
-      [],
-    );
-    require("@/utils/queries/standards/get-standards-by-standardgroups").getStandardsByStandardGroups.mockResolvedValue(
-      [],
-    );
-    require("@/utils/queries/schedules/get-schedules-by-class").getSchedulesByClass.mockResolvedValue(
-      mockSchedules,
-    );
-    require("@/utils/queries/events/get-all-events").getAllEvents.mockResolvedValue(
-      [],
-    );
+    vi.mocked(deleteClass).mockResolvedValue(undefined);
+
+    // Mock additional functions
+    vi.mocked(getTopicsByClass).mockResolvedValue(mockTopics);
+    vi.mocked(getSchedulesByClass).mockResolvedValue(mockSchedules);
+    vi.mocked(getAllEvents).mockResolvedValue([]);
+
+    // Mock router
+    vi.mocked(useRouter).mockReturnValue({
+      push: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+    });
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
+    const AllProviders = ({ children }: { children: React.ReactNode }) => (
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
 
@@ -288,19 +433,18 @@ describe("ClassDetails", () => {
 
       await waitFor(() => {
         expect(
-          require("@/utils/queries/classes/get-class").getClass,
+          require("@/utils/queries/classes/get-class").getClass
         ).toHaveBeenCalledWith("test-class-id");
         expect(
-          require("@/utils/queries/topics/get-topics-by-class")
-            .getTopicsByClass,
+          require("@/utils/queries/topics/get-topics-by-class").getTopicsByClass
         ).toHaveBeenCalledWith(["test-class-id"]);
         expect(
           require("@/utils/queries/simulations/get-simulations-by-class")
-            .getSimulationsByClass,
+            .getSimulationsByClass
         ).toHaveBeenCalledWith(["test-class-id"]);
         expect(
           require("@/utils/queries/schedules/get-schedules-by-class")
-            .getSchedulesByClass,
+            .getSchedulesByClass
         ).toHaveBeenCalledWith(["test-class-id"]);
       });
     });
@@ -308,7 +452,7 @@ describe("ClassDetails", () => {
     it("should handle loading states", () => {
       // Mock loading state
       require("@/utils/queries/classes/get-class").getClass.mockImplementation(
-        () => new Promise(() => {}),
+        () => new Promise(() => {})
       );
 
       renderWithProviders(<ClassDetails classId="test-class-id" />);
@@ -318,7 +462,7 @@ describe("ClassDetails", () => {
 
     it("should handle error states when class not found", async () => {
       require("@/utils/queries/classes/get-class").getClass.mockResolvedValue(
-        null,
+        null
       );
 
       renderWithProviders(<ClassDetails classId="non-existent-id" />);
@@ -326,7 +470,7 @@ describe("ClassDetails", () => {
       await waitFor(() => {
         expect(screen.getByText("Class Not Found")).toBeInTheDocument();
         expect(
-          screen.getByText("The class you're looking for doesn't exist."),
+          screen.getByText("The class you're looking for doesn't exist.")
         ).toBeInTheDocument();
       });
     });

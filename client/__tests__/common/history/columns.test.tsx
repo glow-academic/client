@@ -385,8 +385,9 @@ describe("useColumns", () => {
         expect(result.current.data).toBeDefined();
         // When showAll is false, data should be filtered to current user's profile
         if (result.current.data.length > 0) {
-          result.current.data.forEach((item: { profileId: string }) => {
-            expect(item.profileId).toBe("profile1"); // Current user's profile
+          result.current.data.forEach((item: unknown) => {
+            const typedItem = item as { profileId: string };
+            expect(typedItem.profileId).toBe("profile1"); // Current user's profile
           });
         }
       });
@@ -411,9 +412,10 @@ describe("useColumns", () => {
 
       await waitFor(() => {
         expect(result.current.columns).toBeDefined();
-        const nameColumn = result.current.columns.find(
-          (col: { accessorKey?: string }) => col.accessorKey === "profileId"
-        );
+        const nameColumn = result.current.columns.find((col: unknown) => {
+          const typedCol = col as { accessorKey?: string };
+          return typedCol.accessorKey === "profileId";
+        });
         expect(nameColumn).toBeDefined();
       });
     });
@@ -425,9 +427,10 @@ describe("useColumns", () => {
 
       await waitFor(() => {
         expect(result.current.columns).toBeDefined();
-        const nameColumn = result.current.columns.find(
-          (col: { accessorKey?: string }) => col.accessorKey === "profileId"
-        );
+        const nameColumn = result.current.columns.find((col: unknown) => {
+          const typedCol = col as { accessorKey?: string };
+          return typedCol.accessorKey === "profileId";
+        });
         expect(nameColumn).toBeUndefined();
       });
     });
@@ -443,8 +446,9 @@ describe("useColumns", () => {
         expect(result.current.data).toBeDefined();
         // All data should belong to the current user's profile when showAll is false
         if (result.current.data.length > 0) {
-          result.current.data.forEach((item: { profileId: string }) => {
-            expect(item.profileId).toBe("profile1");
+          result.current.data.forEach((item: unknown) => {
+            const typedItem = item as { profileId: string };
+            expect(typedItem.profileId).toBe("profile1");
           });
         }
       });
@@ -527,9 +531,10 @@ describe("useColumns", () => {
         expect(result.current.data).toBeDefined();
         // Check that class information is properly derived
         if (result.current.data.length > 0) {
-          result.current.data.forEach((item: { classId?: string }) => {
-            if (item.classId) {
-              expect(typeof item.classId).toBe("string");
+          result.current.data.forEach((item: unknown) => {
+            const typedItem = item as { classId?: string };
+            if (typedItem.classId) {
+              expect(typeof typedItem.classId).toBe("string");
             }
           });
         }

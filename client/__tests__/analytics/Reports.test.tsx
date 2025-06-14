@@ -432,7 +432,9 @@ describe("Reports", () => {
       // Find the filter select (first combobox)
       const filterSelects = screen.getAllByRole("combobox");
       const filterSelect = filterSelects[0];
-      await user.click(filterSelect);
+      if (filterSelect) {
+        await user.click(filterSelect);
+      }
 
       await waitFor(() => {
         expect(screen.getByText("Struggling TAs")).toBeInTheDocument();
@@ -459,7 +461,9 @@ describe("Reports", () => {
       // Find the filter select (first combobox)
       const filterSelects = screen.getAllByRole("combobox");
       const filterSelect = filterSelects[0];
-      await user.click(filterSelect);
+      if (filterSelect) {
+        await user.click(filterSelect);
+      }
 
       await user.click(screen.getByText("Performing Well"));
 
@@ -482,7 +486,9 @@ describe("Reports", () => {
       // Find the sort select (second combobox)
       const sortSelects = screen.getAllByRole("combobox");
       const sortSelect = sortSelects[1];
-      await user.click(sortSelect);
+      if (sortSelect) {
+        await user.click(sortSelect);
+      }
 
       await waitFor(() => {
         expect(screen.getByText("Name (A to Z)")).toBeInTheDocument();
@@ -540,7 +546,9 @@ describe("Reports", () => {
             button.querySelector("svg") &&
             !button.textContent?.includes("Support")
         );
-      await user.click(downloadButtons[0]);
+      if (downloadButtons[0]) {
+        await user.click(downloadButtons[0]);
+      }
 
       await waitFor(() => {
         expect(

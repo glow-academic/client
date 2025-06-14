@@ -7,14 +7,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock the column object for testing
 const mockColumn: Partial<Column<unknown, unknown>> = {
   getCanSort: vi.fn(() => true),
-  getIsSorted: vi.fn(() => false),
+  getIsSorted: vi.fn(() => false as const),
   toggleSorting: vi.fn(),
   toggleVisibility: vi.fn(),
 };
 
 const mockNonSortableColumn: Partial<Column<unknown, unknown>> = {
   getCanSort: vi.fn(() => false),
-  getIsSorted: vi.fn(() => false),
+  getIsSorted: vi.fn(() => false as const),
   toggleSorting: vi.fn(),
   toggleVisibility: vi.fn(),
 };
@@ -136,7 +136,7 @@ describe("DataTableColumnHeader", () => {
     it("should show ascending arrow when sorted ascending", () => {
       const ascColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
-        getIsSorted: vi.fn(() => "asc"),
+        getIsSorted: vi.fn(() => "asc" as const),
       };
 
       render(
@@ -153,7 +153,7 @@ describe("DataTableColumnHeader", () => {
     it("should show descending arrow when sorted descending", () => {
       const descColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
-        getIsSorted: vi.fn(() => "desc"),
+        getIsSorted: vi.fn(() => "desc" as const),
       };
 
       render(
@@ -213,7 +213,7 @@ describe("DataTableColumnHeader", () => {
     it("should handle null sort state", () => {
       const nullSortColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
-        getIsSorted: vi.fn(() => null),
+        getIsSorted: vi.fn(() => false as const),
       };
 
       render(
@@ -229,7 +229,7 @@ describe("DataTableColumnHeader", () => {
     it("should handle undefined sort state", () => {
       const undefinedSortColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
-        getIsSorted: vi.fn(() => undefined),
+        getIsSorted: vi.fn(() => false as const),
       };
 
       render(

@@ -97,9 +97,9 @@ const mockColumn: Partial<Column<unknown, unknown>> = {
 };
 
 const mockOptions = [
-  { label: "Option 1", value: "option1", icon: undefined },
-  { label: "Option 2", value: "option2", icon: undefined },
-  { label: "Option 3", value: "option3", icon: undefined },
+  { label: "Option 1", value: "option1" },
+  { label: "Option 2", value: "option2" },
+  { label: "Option 3", value: "option3" },
 ];
 
 describe("DataTableFacetedFilter", () => {
@@ -251,7 +251,10 @@ describe("DataTableFacetedFilter", () => {
       );
 
       const commandItems = screen.getAllByTestId("command-item");
-      await user.click(commandItems[0]);
+      const firstItem = commandItems[0];
+      if (firstItem) {
+        await user.click(firstItem);
+      }
 
       expect(mockSetFilterValue).toHaveBeenCalled();
     });
@@ -512,14 +515,14 @@ describe("DataTableFacetedFilter", () => {
  * Features detected:
  * - Default export: false
  * - Named exports: DataTableFacetedFilter
- * - Has props: false
- * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: None
+ * - Has props: true
+ * - Props interface: DataTableFacetedFilterProps
+ * - Client component: true
+ * - Uses hooks: useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  *
@@ -528,12 +531,12 @@ describe("DataTableFacetedFilter", () => {
  * Example implementations:
  *
  * Basic rendering:
- * render(<data-table-faceted-filter />);
+ * render(<DataTableFacetedFilter {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  *
  * Props testing:
  * const props = { ... };
- * render(<data-table-faceted-filter {...props} />);
+ * render(<DataTableFacetedFilter {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  *
  * User interaction:
