@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, UUID, BigInteger, Boolean, Column, DateTime,
                         Enum, ForeignKeyConstraint, Integer,
@@ -37,7 +37,7 @@ class Agents(_Base, table=True):
         PrimaryKeyConstraint('id', name='agents_pkey'),
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     subtitle: str = Field(sa_column=Column('subtitle', Text))
@@ -60,7 +60,7 @@ class AppLogs(_Base, table=True):
     id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
     level: str = Field(sa_column=Column('level', Text))
     message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
-    context: Optional[dict] = Field(default=None, sa_column=Column('context', JSONB))
+    context: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('context', JSONB))
     created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
 
 
@@ -69,7 +69,7 @@ class Classes(_Base, table=True):
         PrimaryKeyConstraint('id', name='classes_pkey'),
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
@@ -88,7 +88,7 @@ class Rubrics(_Base, table=True):
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
@@ -145,12 +145,12 @@ class Documents(_Base, table=True):
         PrimaryKeyConstraint('id', name='documents_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    class_id: uuid.UUID = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
     type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
     classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
 
@@ -163,14 +163,14 @@ class Evals(_Base, table=True):
         PrimaryKeyConstraint('id', name='evals_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    base_agent_id: UUID = Field(sa_column=Column('base_agent_id', Uuid))
-    scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    agent_ids: list = Field(sa_column=Column('agent_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    rubric_ids: list = Field(sa_column=Column('rubric_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    base_agent_id: uuid.UUID = Field(sa_column=Column('base_agent_id', Uuid(as_uuid=True)))
+    scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    agent_ids: List[uuid.UUID] = Field(sa_column=Column('agent_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    rubric_ids: List[uuid.UUID] = Field(sa_column=Column('rubric_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     eval_type: str = Field(sa_column=Column('eval_type', Enum('student', 'ta', name='eval_type'), server_default=text("'student'::eval_type")))
     max_turns: int = Field(sa_column=Column('max_turns', Integer))
     max_parallel_runs: int = Field(sa_column=Column('max_parallel_runs', Integer))
@@ -185,7 +185,7 @@ class Profiles(_Base, table=True):
         PrimaryKeyConstraint('id', name='profiles_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     user_id: int = Field(sa_column=Column('user_id', Integer))
     last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), server_default=text('now()')))
     first_name: str = Field(sa_column=Column('first_name', Text))
@@ -194,7 +194,7 @@ class Profiles(_Base, table=True):
     viewed_intro: bool = Field(sa_column=Column('viewed_intro', Boolean, server_default=text('false')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), server_default=text("'ta'::profile_role")))
-    class_ids: list = Field(sa_column=Column('class_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
+    class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
@@ -207,17 +207,17 @@ class Scenarios(_Base, table=True):
         PrimaryKeyConstraint('id', name='scenarios_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    agent_id: Optional[UUID] = Field(default=None, sa_column=Column('agent_id', Uuid))
-    class_id: Optional[UUID] = Field(default=None, sa_column=Column('class_id', Uuid))
+    agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
+    class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
     intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
     seniority: Optional[str] = Field(default=None, sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels')))
-    documents: Optional[list] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid())))
+    documents: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid(as_uuid=True))))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')
@@ -231,11 +231,11 @@ class Schedules(_Base, table=True):
         PrimaryKeyConstraint('id', name='schedules_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    class_id: uuid.UUID = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
 
     class_: Optional['Classes'] = Relationship(back_populates='schedules')
     events: List['Events'] = Relationship(back_populates='schedule')
@@ -247,12 +247,12 @@ class Simulations(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulations_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    scenario_ids: list = Field(sa_column=Column('scenario_ids', ARRAY(Uuid()), server_default=text('ARRAY[]::uuid[]')))
-    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
+    scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    rubric_id: uuid.UUID = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')
@@ -266,14 +266,14 @@ class StandardGroups(_Base, table=True):
         PrimaryKeyConstraint('id', name='standard_groups_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     short_name: str = Field(sa_column=Column('short_name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
     pass_points: int = Field(sa_column=Column('pass_points', Integer))
-    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
+    rubric_id: uuid.UUID = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='standard_groups')
     standards: List['Standards'] = Relationship(back_populates='standard_group')
@@ -285,12 +285,12 @@ class Topics(_Base, table=True):
         PrimaryKeyConstraint('id', name='topics_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, server_default=text('false')))
-    class_id: UUID = Field(sa_column=Column('class_id', Uuid))
+    class_id: uuid.UUID = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
 
     class_: Optional['Classes'] = Relationship(back_populates='topics')
 
@@ -304,11 +304,11 @@ class EvalRuns(_Base, table=True):
         PrimaryKeyConstraint('id', name='eval_runs_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    eval_id: UUID = Field(sa_column=Column('eval_id', Uuid))
-    agent_id: UUID = Field(sa_column=Column('agent_id', Uuid))
-    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
+    eval_id: uuid.UUID = Field(sa_column=Column('eval_id', Uuid(as_uuid=True)))
+    agent_id: uuid.UUID = Field(sa_column=Column('agent_id', Uuid(as_uuid=True)))
+    rubric_id: uuid.UUID = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
 
     agent: Optional['Agents'] = Relationship(back_populates='eval_runs')
     eval: Optional['Evals'] = Relationship(back_populates='eval_runs')
@@ -322,12 +322,12 @@ class Events(_Base, table=True):
         PrimaryKeyConstraint('id', name='events_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     time: datetime = Field(sa_column=Column('time', DateTime(True)))
-    schedule_id: UUID = Field(sa_column=Column('schedule_id', Uuid))
+    schedule_id: uuid.UUID = Field(sa_column=Column('schedule_id', Uuid(as_uuid=True)))
     document_type: Optional[str] = Field(default=None, sa_column=Column('document_type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type')))
 
     schedule: Optional['Schedules'] = Relationship(back_populates='events')
@@ -341,10 +341,10 @@ class SimulationAttempts(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_attempts_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    simulation_id: UUID = Field(sa_column=Column('simulation_id', Uuid))
-    profile_id: Optional[UUID] = Field(default=None, sa_column=Column('profile_id', Uuid))
+    simulation_id: uuid.UUID = Field(sa_column=Column('simulation_id', Uuid(as_uuid=True)))
+    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
 
     profile: Optional['Profiles'] = Relationship(back_populates='simulation_attempts')
     simulation: Optional['Simulations'] = Relationship(back_populates='simulation_attempts')
@@ -357,12 +357,12 @@ class Standards(_Base, table=True):
         PrimaryKeyConstraint('id', name='standards_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
-    standard_group_id: UUID = Field(sa_column=Column('standard_group_id', Uuid))
+    standard_group_id: uuid.UUID = Field(sa_column=Column('standard_group_id', Uuid(as_uuid=True)))
 
     standard_group: Optional['StandardGroups'] = Relationship(back_populates='standards')
     eval_chat_feedbacks: List['EvalChatFeedbacks'] = Relationship(back_populates='standard')
@@ -377,11 +377,11 @@ class EvalChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='eval_chats_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
-    scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
-    eval_run_id: UUID = Field(sa_column=Column('eval_run_id', Uuid))
+    scenario_id: uuid.UUID = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
+    eval_run_id: uuid.UUID = Field(sa_column=Column('eval_run_id', Uuid(as_uuid=True)))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
@@ -399,11 +399,11 @@ class SimulationChats(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chats_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
-    scenario_id: UUID = Field(sa_column=Column('scenario_id', Uuid))
-    attempt_id: UUID = Field(sa_column=Column('attempt_id', Uuid))
+    scenario_id: uuid.UUID = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
+    attempt_id: uuid.UUID = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
@@ -421,13 +421,13 @@ class EvalChatGrades(_Base, table=True):
         PrimaryKeyConstraint('id', name='eval_chat_grades_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     passed: bool = Field(sa_column=Column('passed', Boolean))
     score: int = Field(sa_column=Column('score', Integer))
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
-    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
-    eval_chat_id: UUID = Field(sa_column=Column('eval_chat_id', Uuid))
+    rubric_id: uuid.UUID = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
+    eval_chat_id: uuid.UUID = Field(sa_column=Column('eval_chat_id', Uuid(as_uuid=True)))
 
     eval_chat: Optional['EvalChats'] = Relationship(back_populates='eval_chat_grades')
     rubric: Optional['Rubrics'] = Relationship(back_populates='eval_chat_grades')
@@ -441,9 +441,9 @@ class EvalMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='eval_messages_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    chat_id: UUID = Field(sa_column=Column('chat_id', Uuid))
+    chat_id: uuid.UUID = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     content: str = Field(sa_column=Column('content', Text))
     type: str = Field(sa_column=Column('type', Enum('query', 'response', name='eval_message_type')))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
@@ -459,13 +459,13 @@ class SimulationChatGrades(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_grades_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     passed: bool = Field(sa_column=Column('passed', Boolean))
     score: int = Field(sa_column=Column('score', Integer))
     time_taken: int = Field(sa_column=Column('time_taken', Integer))
-    rubric_id: UUID = Field(sa_column=Column('rubric_id', Uuid))
-    simulation_chat_id: UUID = Field(sa_column=Column('simulation_chat_id', Uuid))
+    rubric_id: uuid.UUID = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
+    simulation_chat_id: uuid.UUID = Field(sa_column=Column('simulation_chat_id', Uuid(as_uuid=True)))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulation_chat_grades')
     simulation_chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_chat_grades')
@@ -479,9 +479,9 @@ class SimulationMessages(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_messages_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    chat_id: UUID = Field(sa_column=Column('chat_id', Uuid))
+    chat_id: uuid.UUID = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     query: str = Field(sa_column=Column('query', Text))
     response: str = Field(sa_column=Column('response', Text))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
@@ -497,10 +497,10 @@ class EvalChatFeedbacks(_Base, table=True):
         PrimaryKeyConstraint('id', name='eval_chat_feedbacks_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    standard_id: UUID = Field(sa_column=Column('standard_id', Uuid))
-    eval_chat_grade_id: UUID = Field(sa_column=Column('eval_chat_grade_id', Uuid))
+    standard_id: uuid.UUID = Field(sa_column=Column('standard_id', Uuid(as_uuid=True)))
+    eval_chat_grade_id: uuid.UUID = Field(sa_column=Column('eval_chat_grade_id', Uuid(as_uuid=True)))
     total: int = Field(sa_column=Column('total', Integer))
     feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
 
@@ -516,13 +516,12 @@ class SimulationChatFeedbacks(_Base, table=True):
         PrimaryKeyConstraint('id', name='simulation_chat_feedbacks_pkey')
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    standard_id: UUID = Field(sa_column=Column('standard_id', Uuid))
-    simulation_chat_grade_id: UUID = Field(sa_column=Column('simulation_chat_grade_id', Uuid))
+    standard_id: uuid.UUID = Field(sa_column=Column('standard_id', Uuid(as_uuid=True)))
+    simulation_chat_grade_id: uuid.UUID = Field(sa_column=Column('simulation_chat_grade_id', Uuid(as_uuid=True)))
     total: int = Field(sa_column=Column('total', Integer))
     feedback: Optional[str] = Field(default=None, sa_column=Column('feedback', Text))
 
     simulation_chat_grade: Optional['SimulationChatGrades'] = Relationship(back_populates='simulation_chat_feedbacks')
-    standard: Optional['Standards'] = Relationship(back_populates='simulation_chat_feedbacks')
     standard: Optional['Standards'] = Relationship(back_populates='simulation_chat_feedbacks')

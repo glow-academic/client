@@ -69,7 +69,7 @@ def generate_route_test(module_name: str, functions: List[str]) -> str:
     test_content = f'''"""
 Tests for app.routes.{module_name}
 
-Auto-generated on: {datetime.now().isoformat()}
+
 """
 
 import pytest
@@ -121,7 +121,7 @@ def generate_service_test(module_path: str, functions: List[str]) -> str:
     test_content = f'''"""
 Tests for app.{import_path}
 
-Auto-generated on: {datetime.now().isoformat()}
+
 """
 
 import pytest
@@ -164,7 +164,7 @@ def generate_conftest():
     return f'''"""
 Pytest configuration and shared fixtures.
 
-Auto-generated on: {datetime.now().isoformat()}
+
 """
 
 import pytest

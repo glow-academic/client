@@ -20,6 +20,12 @@
     "server/app"
   ],
   "mypy.enabled": true,
+  "mypy.args": [
+    "--python-path=${workspaceFolder}/server"
+  ],
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/server"
+  ],
   "eslint.workingDirectories": [
     "client"
   ],

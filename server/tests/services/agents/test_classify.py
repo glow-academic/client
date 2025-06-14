@@ -1,7 +1,7 @@
 """
 Tests for app.services.agents.classify
 
-Auto-generated on: 2025-06-14T10:17:49.856909
+
 """
 
 import pytest

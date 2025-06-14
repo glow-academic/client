@@ -43,7 +43,7 @@ def generate_sqlmodel_from_sql():
         import_lines = [
             "import uuid",
             "from datetime import datetime",
-            "from typing import Any, List, Optional",
+            "from typing import Any, Dict, List, Optional",
             "",
             "from sqlalchemy import (ARRAY, UUID, BigInteger, Boolean, Column, DateTime,",
             "                        Enum, ForeignKeyConstraint, Integer,",
@@ -104,47 +104,80 @@ def generate_sqlmodel_from_sql():
                     f"Fixed inheritance: {child_class} now uses composition instead of inheriting from {parent_class}"
                 )
 
-        # Replace UUID[str] with Mapped[uuid.UUID] for primary key UUID fields
-        # Pattern to match UUID primary key fields
-        uuid_pk_pattern = r"(\w+): UUID\[str\] = Field\(sa_column=Column\('(\w+)', Uuid(?:\(as_uuid=True\))?, primary_key=True"
+        # Apply type transformations
+        print("Applying type transformations...")
+        
+        # 1. Replace bare UUID with uuid.UUID (for primary keys and regular fields)
         class_definitions = re.sub(
-            uuid_pk_pattern,
-            r"\1: Mapped[uuid.UUID] = Field(sa_column=Column('\2', Uuid(as_uuid=True), primary_key=True",
+            r"(\w+): UUID = Field\(sa_column=Column\('(\w+)', Uuid, primary_key=True",
+            r"\1: uuid.UUID = Field(sa_column=Column('\2', Uuid(as_uuid=True), primary_key=True",
             class_definitions
         )
         
-        # Replace other UUID[str] fields with Mapped[uuid.UUID] where appropriate
-        # This handles non-primary key UUID fields
-        uuid_field_pattern = r"(\w+): UUID\[str\] = Field\(sa_column=Column\('(\w+)', Uuid\)\)"
         class_definitions = re.sub(
-            uuid_field_pattern,
-            r"\1: Mapped[uuid.UUID] = Field(sa_column=Column('\2', Uuid(as_uuid=True)))",
+            r"(\w+): UUID = Field\(sa_column=Column\('(\w+)', Uuid\)\)",
+            r"\1: uuid.UUID = Field(sa_column=Column('\2', Uuid(as_uuid=True)))",
             class_definitions
         )
         
-        # Handle Optional UUID fields
-        optional_uuid_pattern = r"(\w+): Optional\[UUID\[str\]\] = Field\(default=None, sa_column=Column\('(\w+)', Uuid\)\)"
+        # 2. Replace Optional[UUID] with Optional[uuid.UUID]
         class_definitions = re.sub(
-            optional_uuid_pattern,
-            r"\1: Optional[Mapped[uuid.UUID]] = Field(default=None, sa_column=Column('\2', Uuid(as_uuid=True)))",
-            class_definitions
-        )
-
-        # Handle UUID arrays
-        uuid_array_pattern = r"(\w+): list\[UUID\[str\]\] = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)"
-        class_definitions = re.sub(
-            uuid_array_pattern,
-            r"\1: list[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))",
+            r"(\w+): Optional\[UUID\] = Field\(default=None, sa_column=Column\('(\w+)', Uuid\)\)",
+            r"\1: Optional[uuid.UUID] = Field(default=None, sa_column=Column('\2', Uuid(as_uuid=True)))",
             class_definitions
         )
         
-        # Handle Optional UUID arrays
-        optional_uuid_array_pattern = r"(\w+): Optional\[list\[UUID\[str\]\]\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)"
+        # 3. Replace bare list with List[uuid.UUID] for UUID arrays
         class_definitions = re.sub(
-            optional_uuid_array_pattern,
-            r"\1: Optional[list[uuid.UUID]] = Field(default=None, sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
+            r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)",
+            r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))",
             class_definitions
         )
+        
+        # 4. Replace Optional[list] with Optional[List[uuid.UUID]] for optional UUID arrays
+        class_definitions = re.sub(
+            r"(\w+): Optional\[list\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)",
+            r"\1: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
+            class_definitions
+        )
+        
+        # 5. Replace bare dict with Dict[str, Any]
+        class_definitions = re.sub(
+            r"(\w+): Optional\[dict\] = Field\(default=None, sa_column=Column\('(\w+)', JSONB\)\)",
+            r"\1: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('\2', JSONB))",
+            class_definitions
+        )
+        
+        # 6. Fix any remaining Uuid() to Uuid(as_uuid=True) in ARRAY contexts
+        class_definitions = re.sub(
+            r"ARRAY\(Uuid\(\)\)",
+            r"ARRAY(Uuid(as_uuid=True))",
+            class_definitions
+        )
+        
+        # 7. Remove duplicate relationship definitions (fix the duplicate 'standard' issue)
+        lines = class_definitions.split('\n')
+        cleaned_lines = []
+        seen_relationships = {}
+        current_class = None
+        
+        for line in lines:
+            # Track current class
+            if line.strip().startswith('class ') and '(_Base, table=True):' in line:
+                current_class = line.split('class ')[1].split('(')[0]
+                seen_relationships[current_class] = set()
+                cleaned_lines.append(line)
+            elif current_class and ': ' in line and 'Relationship(' in line:
+                # Extract relationship name (handle both Optional and List types)
+                rel_name = line.split(':')[0].strip()
+                if rel_name not in seen_relationships[current_class]:
+                    seen_relationships[current_class].add(rel_name)
+                    cleaned_lines.append(line)
+                # Skip duplicate relationships
+            else:
+                cleaned_lines.append(line)
+        
+        class_definitions = '\n'.join(cleaned_lines)
 
         # Combine imports and class definitions
         final_code = import_section + class_definitions
@@ -157,11 +190,12 @@ def generate_sqlmodel_from_sql():
             f.write(final_code)
 
         print(f"SQLModel classes generated successfully and saved to {output_path}!")
-        print("Applied UUID field transformations:")
-        print("- UUID[str] primary keys → Mapped[uuid.UUID]")
-        print("- UUID[str] fields → Mapped[uuid.UUID]")
-        print("- Optional[UUID[str]] → Optional[Mapped[uuid.UUID]]")
-        print("- list[UUID[str]] → list[uuid.UUID]")
+        print("Applied transformations:")
+        print("- UUID → uuid.UUID with Uuid(as_uuid=True)")
+        print("- Optional[UUID] → Optional[uuid.UUID]")
+        print("- list → List[uuid.UUID] for UUID arrays")
+        print("- dict → Dict[str, Any]")
+        print("- Removed duplicate relationships")
         
     except subprocess.CalledProcessError as e:
         print(f"Error generating SQLModel classes: {e}")
@@ -170,5 +204,4 @@ def generate_sqlmodel_from_sql():
 
 
 if __name__ == "__main__":
-    generate_sqlmodel_from_sql()
     generate_sqlmodel_from_sql()
