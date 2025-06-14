@@ -123,7 +123,7 @@ const mockTable: Partial<Table<unknown>> = {
     createMockColumn("averageScore", true, false),
     createMockColumn("select", false, true), // Non-hideable
     createMockColumn("actions", false, true), // Non-hideable
-  ]),
+  ] as unknown as Column<unknown, unknown>[]),
 };
 
 describe("DataTableViewOptions", () => {
@@ -233,7 +233,7 @@ describe("DataTableViewOptions", () => {
             ...createMockColumn("createdAt", true, true),
             toggleVisibility: mockToggleVisibility,
           },
-        ]),
+        ] as unknown as Column<unknown, unknown>[]),
       };
 
       render(
@@ -267,7 +267,7 @@ describe("DataTableViewOptions", () => {
             getIsVisible: vi.fn(() => true),
             toggleVisibility: vi.fn(),
           } as Partial<Column<unknown, unknown>>,
-        ]),
+        ] as unknown as Column<unknown, unknown>[]),
       };
 
       expect(() => {
@@ -287,7 +287,7 @@ describe("DataTableViewOptions", () => {
             getCanHide: vi.fn(() => true),
             toggleVisibility: vi.fn(),
           } as Partial<Column<unknown, unknown>>,
-        ]),
+        ] as unknown as Column<unknown, unknown>[]),
       };
 
       expect(() => {
@@ -359,7 +359,7 @@ describe("DataTableViewOptions", () => {
             true,
             true
           ),
-        ]),
+        ] as unknown as Column<unknown, unknown>[]),
       };
 
       render(
@@ -375,7 +375,7 @@ describe("DataTableViewOptions", () => {
       const tableWithSpecialChars: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
           createMockColumn("column&with<special>chars", true, true),
-        ]),
+        ] as unknown as Column<unknown, unknown>[]),
       };
 
       render(
@@ -393,7 +393,7 @@ describe("DataTableViewOptions", () => {
       );
 
       const tableWithManyColumns: Partial<Table<unknown>> = {
-        getAllColumns: vi.fn(() => manyColumns),
+        getAllColumns: vi.fn(() => manyColumns as unknown as Column<unknown, unknown>[]),
       };
 
       render(
@@ -413,7 +413,9 @@ describe("DataTableViewOptions", () => {
       ];
 
       const mixedTable: Partial<Table<unknown>> = {
-        getAllColumns: vi.fn(() => mixedColumns),
+        getAllColumns: vi.fn(() =>
+          mixedColumns as unknown as Column<unknown, unknown>[]
+        ),
       };
 
       render(<DataTableViewOptions table={mixedTable as Table<unknown>} />);

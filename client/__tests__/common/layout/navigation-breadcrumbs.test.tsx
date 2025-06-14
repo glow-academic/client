@@ -91,14 +91,6 @@ describe("NavigationBreadcrumbs", () => {
       expect(container.firstChild).toBeNull();
     });
 
-    it("should render with right content", () => {
-      const _rightContent = <button data-testid="right-content">Action</button>;
-      render(<NavigationBreadcrumbs breadcrumbs={mockBreadcrumbs} />);
-
-      // Note: rightContent is not actually used in this component
-      expect(screen.getByTestId("breadcrumb")).toBeInTheDocument();
-    });
-
     it("should have correct accessibility attributes", () => {
       render(<NavigationBreadcrumbs breadcrumbs={mockBreadcrumbs} />);
 

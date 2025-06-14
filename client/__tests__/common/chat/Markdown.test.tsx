@@ -3,11 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import Markdown from '@/components/common/chat/Markdown';
+import Image from 'next/image';
 
 // Mock external dependencies
 vi.mock('@/components/common/chat/MarkdownImage', () => ({
   default: ({ src, alt }: { src: string; alt: string }) => (
-    <img src={src} alt={alt} data-testid="markdown-image" />
+    <Image src={src} alt={alt} data-testid="markdown-image" />
   ),
 }));
 

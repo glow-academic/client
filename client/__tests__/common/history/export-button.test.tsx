@@ -1,4 +1,5 @@
 import { ExportButton } from "@/components/common/history/export-button";
+import { Table } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -98,21 +99,21 @@ beforeEach(() => {
   // Mock document.createElement
   vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
     if (tagName === "a") {
-      return mockLink as any;
+      return mockLink as unknown as HTMLElement;
     }
     return document.createElement(tagName);
   });
 
   // Mock document.body.appendChild and removeChild
   vi.spyOn(document.body, "appendChild").mockImplementation(
-    () => mockLink as any
+    () => mockLink as unknown as HTMLElement
   );
   vi.spyOn(document.body, "removeChild").mockImplementation(
-    () => mockLink as any
+    () => mockLink as unknown as HTMLElement
   );
 
   // Mock URL methods
-  global.URL = mockURL as any;
+  global.URL = mockURL as unknown as typeof URL;
 
   // Mock Blob constructor
   global.Blob = vi.fn().mockImplementation((content, options) => ({
@@ -120,7 +121,7 @@ beforeEach(() => {
     options,
     size: content ? content[0].length : 0,
     type: options?.type || "",
-  })) as any;
+  })) as unknown as typeof Blob;
 });
 
 afterEach(() => {
@@ -142,7 +143,7 @@ describe("ExportButton", () => {
     it("should render without crashing", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -154,7 +155,7 @@ describe("ExportButton", () => {
     it("should render export button with correct text", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -168,7 +169,7 @@ describe("ExportButton", () => {
     it("should show download icon", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -191,7 +192,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={tableWithSelection as any}
+          table={tableWithSelection as unknown as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />
@@ -203,7 +204,7 @@ describe("ExportButton", () => {
     it("should show export text without count when no rows selected", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
         />
@@ -220,7 +221,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -244,7 +245,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={emptyTable as any}
+          table={emptyTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -258,7 +259,7 @@ describe("ExportButton", () => {
     it("should handle empty options arrays", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -277,7 +278,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={differentTable as any}
+          table={differentTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -291,7 +292,7 @@ describe("ExportButton", () => {
     it("should have proper button attributes", () => {
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -307,7 +308,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={mockTable as any}
+          table={mockTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -338,7 +339,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={malformedTable as any}
+          table={malformedTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />
@@ -366,7 +367,7 @@ describe("ExportButton", () => {
 
       render(
         <ExportButton
-          table={largeDataTable as any}
+          table={largeDataTable as unknown as Table<unknown>}
           profileOptions={[]}
           classOptions={[]}
         />

@@ -34,7 +34,7 @@ vi.mock("sonner", () => ({
 
 describe("NewAgent", () => {
   let queryClient: QueryClient;
-  let mockPush: jest.Mock;
+  let mockPush: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -116,7 +116,16 @@ describe("NewAgent", () => {
       const { createAgent } = await import(
         "@/utils/mutations/agents/create-agent"
       );
-      vi.mocked(createAgent).mockResolvedValue({ id: "new-agent-id" });
+      vi.mocked(createAgent).mockResolvedValue({
+        id: "new-agent-id",
+        createdAt: "2024-01-01T00:00:00Z",
+        name: "Test Agent",
+        description: "Test Description",
+        subtitle: "Test Subtitle",
+        systemPrompt: "Test System Prompt",
+        agentType: "student" as const,
+        temperature: 0.8,
+      });
 
       const user = userEvent.setup();
       renderWithProviders(<NewAgent />);

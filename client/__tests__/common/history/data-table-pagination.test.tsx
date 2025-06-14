@@ -1,5 +1,5 @@
 import { DataTablePagination } from "@/components/common/history/data-table-pagination";
-import { Table } from "@tanstack/react-table";
+import { RowModel, Table, TableState } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,16 +8,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mockTable: Partial<Table<unknown>> = {
   getFilteredSelectedRowModel: vi.fn(() => ({
     rows: [{ id: "1" }, { id: "2" }],
-  })),
+  }) as unknown as RowModel<unknown>),
   getFilteredRowModel: vi.fn(() => ({
     rows: Array.from({ length: 50 }, (_, i) => ({ id: i.toString() })),
-  })),
+  }) as unknown as RowModel<unknown>),
   getState: vi.fn(() => ({
     pagination: {
       pageSize: 10,
       pageIndex: 0,
     },
-  })),
+  }) as unknown as TableState),
   setPageSize: vi.fn(),
   getPageCount: vi.fn(() => 5),
   setPageIndex: vi.fn(),
@@ -81,7 +81,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 1, // Not on last page
           },
-        })),
+        }) as unknown as TableState),
       };
 
       const user = userEvent.setup();
@@ -107,7 +107,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 1, // Not on first page
           },
-        })),
+        }) as unknown as TableState),
       };
 
       const user = userEvent.setup();
@@ -133,7 +133,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 2, // Not on first page
           },
-        })),
+        }) as unknown as TableState),
       };
 
       const user = userEvent.setup();
@@ -159,7 +159,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 2, // Not on last page
           },
-        })),
+        }) as unknown as TableState),
       };
 
       const user = userEvent.setup();
@@ -203,7 +203,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 4, // Last page (pageCount - 1)
           },
-        })),
+        }) as unknown as TableState),
       };
 
       render(<DataTablePagination table={tableOnLastPage as Table<unknown>} />);
@@ -231,7 +231,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 2, // Middle page
           },
-        })),
+        }) as unknown as TableState),
       };
 
       render(<DataTablePagination table={tableInMiddle as Table<unknown>} />);
@@ -253,8 +253,12 @@ describe("DataTablePagination", () => {
       const emptyTable: Partial<Table<unknown>> = {
         ...mockTable,
         getPageCount: vi.fn(() => 0),
-        getFilteredRowModel: vi.fn(() => ({ rows: [] })),
-        getFilteredSelectedRowModel: vi.fn(() => ({ rows: [] })),
+        getFilteredRowModel: vi.fn(() => ({
+          rows: [],
+        }) as unknown as RowModel<unknown>),
+        getFilteredSelectedRowModel: vi.fn(() => ({
+          rows: [],
+        }) as unknown as RowModel<unknown>),
       };
 
       render(<DataTablePagination table={emptyTable as Table<unknown>} />);
@@ -285,7 +289,7 @@ describe("DataTablePagination", () => {
             pageSize: 10,
             pageIndex: 500,
           },
-        })),
+        }) as unknown as TableState),
       };
 
       render(<DataTablePagination table={largePageTable as Table<unknown>} />);

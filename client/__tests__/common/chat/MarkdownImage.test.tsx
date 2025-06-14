@@ -1,5 +1,6 @@
 import MarkdownImage from "@/components/common/chat/MarkdownImage";
 import { render, screen } from "@testing-library/react";
+import Image from "next/image";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
@@ -9,10 +10,10 @@ vi.mock("next/image", () => ({
     alt,
     ...props
   }: {
-    src?: string;
-    alt?: string;
+    src: string;
+    alt: string;
     [key: string]: unknown;
-  }) => <img src={src} alt={alt} {...props} data-testid="next-image" />,
+  }) => <Image src={src} alt={alt} {...props} data-testid="next-image" />,
 }));
 
 describe("MarkdownImage", () => {

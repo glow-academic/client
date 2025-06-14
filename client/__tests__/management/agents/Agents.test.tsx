@@ -33,30 +33,40 @@ vi.mock("@/utils/mutations/agents/delete-agent", () => ({
   deleteAgent: vi.fn(),
 }));
 
+// Import mocked functions
+import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+
 // Mock data
 const mockAgents = [
   {
     id: "agent1",
     name: "Helpful Assistant",
     subtitle: "A friendly and helpful AI assistant",
-    agentType: "student",
+    description: "A helpful AI assistant for students",
+    agentType: "student" as const,
     systemPrompt: "You are a helpful assistant.",
+    temperature: 0.7,
     createdAt: "2024-01-01T00:00:00Z",
   },
   {
     id: "agent2",
     name: "Strict Teacher",
     subtitle: "A demanding but fair educator",
-    agentType: "instructor",
+    description: "A strict but fair teaching assistant",
+    agentType: "ta" as const,
     systemPrompt: "You are a strict teacher.",
+    temperature: 0.5,
     createdAt: "2024-01-02T00:00:00Z",
   },
   {
     id: "agent3",
     name: "Curious Student",
     subtitle: "An eager learner with many questions",
-    agentType: "student",
+    description: "An eager and curious student agent",
+    agentType: "student" as const,
     systemPrompt: "You are a curious student.",
+    temperature: 0.8,
     createdAt: "2024-01-03T00:00:00Z",
   },
 ];
@@ -173,8 +183,7 @@ describe("Agents Component", () => {
   });
 
   it("handles delete agent", async () => {
-    const { deleteAgent } = require("@/utils/mutations/agents/delete-agent");
-    deleteAgent.mockResolvedValue({});
+    vi.mocked(deleteAgent).mockResolvedValue(undefined);
 
     renderComponent();
 
@@ -207,9 +216,8 @@ describe("Agents Component", () => {
     });
   });
 
-  it("handles create first agent from empty state", async () => {
-    const { getAllAgents } = require("@/utils/queries/agents/get-all-agents");
-    getAllAgents.mockResolvedValue([]);
+  it("should handle create first agent from empty state", async () => {
+    vi.mocked(getAllAgents).mockResolvedValue([]);
 
     renderComponent();
 
@@ -253,7 +261,7 @@ describe("Agents Component", () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText("Math Tutor")).toBeInTheDocument();
+      expect(screen.getByText("Helpful Assistant")).toBeInTheDocument();
     });
 
     const deleteButtons = screen.getAllByRole("button");
@@ -284,7 +292,7 @@ describe("Agents Component", () => {
     renderComponent();
 
     // Component should render without agents while loading
-    expect(screen.queryByText("Math Tutor")).not.toBeInTheDocument();
+    expect(screen.queryByText("Helpful Assistant")).not.toBeInTheDocument();
   });
 
   it("should show deleting state", async () => {
@@ -300,7 +308,7 @@ describe("Agents Component", () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText("Math Tutor")).toBeInTheDocument();
+      expect(screen.getByText("Helpful Assistant")).toBeInTheDocument();
     });
 
     const deleteButtons = screen.getAllByRole("button");
@@ -338,13 +346,18 @@ describe("Agents Component", () => {
 
   it("truncates long system prompts", async () => {
     const longPromptAgent = {
-      ...mockAgents[0],
+      id: mockAgents[0].id,
+      name: mockAgents[0].name,
+      subtitle: mockAgents[0].subtitle,
+      description: mockAgents[0].description,
+      agentType: mockAgents[0].agentType,
+      temperature: mockAgents[0].temperature,
+      createdAt: mockAgents[0].createdAt,
       systemPrompt:
         "This is a very long system prompt that should be truncated when displayed in the card view to prevent the UI from becoming cluttered and unreadable.",
     };
 
-    const { getAllAgents } = require("@/utils/queries/agents/get-all-agents");
-    getAllAgents.mockResolvedValue([longPromptAgent]);
+    vi.mocked(getAllAgents).mockResolvedValue([longPromptAgent]);
 
     renderComponent();
 

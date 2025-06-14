@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -117,14 +117,14 @@ describe('Simulation', () => {
       },
     });
     
-    (getAllDocuments as any).mockResolvedValue(mockDocuments);
-    (getAllScenarios as any).mockResolvedValue(mockScenarios);
-    (getAllRubrics as any).mockResolvedValue(mockRubrics);
-    (getAllSimulations as any).mockResolvedValue(mockSimulations);
-    (getAllClasses as any).mockResolvedValue(mockClasses);
-    (createSimulation as any).mockResolvedValue({ id: 'new-sim-id' });
-    (updateSimulation as any).mockResolvedValue(undefined);
-    (deleteSimulation as any).mockResolvedValue(undefined);
+    (getAllDocuments as Mock).mockResolvedValue(mockDocuments);
+    (getAllScenarios as Mock).mockResolvedValue(mockScenarios);
+    (getAllRubrics as Mock).mockResolvedValue(mockRubrics);
+    (getAllSimulations as Mock).mockResolvedValue(mockSimulations);
+    (getAllClasses as Mock).mockResolvedValue(mockClasses);
+    (createSimulation as Mock).mockResolvedValue({ id: 'new-sim-id' });
+    (updateSimulation as Mock).mockResolvedValue(undefined);
+    (deleteSimulation as Mock).mockResolvedValue(undefined);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -421,7 +421,7 @@ describe('Simulation', () => {
     });
 
     it('should show empty state when no simulations exist', async () => {
-      (getAllSimulations as any).mockResolvedValue([]);
+      (getAllSimulations as Mock).mockResolvedValue([]);
       
       renderWithProviders(<Simulation mode="list" />);
       
@@ -495,7 +495,7 @@ describe('Simulation', () => {
 
     it('should handle form submission errors', async () => {
       const user = userEvent.setup();
-      (createSimulation as any).mockRejectedValue(new Error('Creation failed'));
+      (createSimulation as Mock).mockRejectedValue(new Error('Creation failed'));
       
       renderWithProviders(<Simulation />);
       
@@ -618,7 +618,7 @@ describe('Simulation', () => {
     });
 
     it('should handle API errors gracefully', async () => {
-      (getAllDocuments as any).mockRejectedValue(new Error('API Error'));
+      (getAllDocuments as Mock).mockRejectedValue(new Error('API Error'));
       
       renderWithProviders(<Simulation />);
       
@@ -670,9 +670,9 @@ describe('Simulation', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty data arrays', async () => {
-      (getAllDocuments as any).mockResolvedValue([]);
-      (getAllScenarios as any).mockResolvedValue([]);
-      (getAllRubrics as any).mockResolvedValue([]);
+      (getAllDocuments as Mock).mockResolvedValue([]);
+      (getAllScenarios as Mock).mockResolvedValue([]);
+      (getAllRubrics as Mock).mockResolvedValue([]);
       
       renderWithProviders(<Simulation />);
       
@@ -693,7 +693,7 @@ describe('Simulation', () => {
         documents: ['doc-1', 'RAY'],
         scenarioIds: ['scenario-1', 'RAY', 'scenario-2'],
       };
-      (getAllSimulations as any).mockResolvedValue([simulationWithRAY]);
+      (getAllSimulations as Mock).mockResolvedValue([simulationWithRAY]);
       
       renderWithProviders(<Simulation simulationId="sim-1" />);
       

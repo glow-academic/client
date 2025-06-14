@@ -5,7 +5,8 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
+import { toast } from "sonner";
 
 // Mock next/navigation
 vi.mock("next/navigation", () => ({
@@ -43,15 +44,6 @@ import { updateClass } from "@/utils/mutations/classes/update-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllUsers } from "@/utils/queries/users/get-all-users";
 
-const mockPush = vi.fn();
-const mockRouter = {
-  push: mockPush,
-  back: vi.fn(),
-  forward: vi.fn(),
-  refresh: vi.fn(),
-  replace: vi.fn(),
-};
-
 // Mock data
 const mockClass = {
   id: "class-1",
@@ -66,11 +58,10 @@ const mockClass = {
 const mockUsers = [
   {
     id: 1,
-    firstName: "John",
-    lastName: "Doe",
+    name: "John Doe",
     email: "john@example.com",
-    role: "ta" as const,
-    createdAt: new Date().toISOString(),
+    emailVerified: new Date().toISOString(),
+    image: "https://example.com/image.jpg",
   },
 ];
 
@@ -406,7 +397,7 @@ describe("ClassForm", () => {
 
     it("should handle API errors", async () => {
       const user = userEvent.setup();
-      (createClass as any).mockRejectedValue(new Error("API Error"));
+      (createClass as Mock).mockRejectedValue(new Error("API Error"));
 
       renderWithProviders(<ClassForm mode="create" />);
 
@@ -427,7 +418,7 @@ describe("ClassForm", () => {
 
     it("should handle loading states", async () => {
       const user = userEvent.setup();
-      (createClass as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (createClass as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<ClassForm mode="create" />);
 
@@ -455,7 +446,7 @@ describe("ClassForm", () => {
     });
 
     it("should handle empty documents list", async () => {
-      (getAllDocuments as any).mockResolvedValue([]);
+      (getAllDocuments as Mock).mockResolvedValue([]);
 
       renderWithProviders(
         <ClassForm mode="edit" classId="class-1" initialData={mockClass} />
@@ -467,7 +458,7 @@ describe("ClassForm", () => {
     });
 
     it("should handle network errors gracefully", async () => {
-      (getAllDocuments as any).mockRejectedValue(new Error("Network error"));
+      (getAllDocuments as Mock).mockRejectedValue(new Error("Network error"));
 
       renderWithProviders(
         <ClassForm mode="edit" classId="class-1" initialData={mockClass} />

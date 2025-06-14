@@ -481,7 +481,7 @@ describe("DataTableFacetedFilter", () => {
         <DataTableFacetedFilter
           column={mockColumn as Column<unknown, unknown>}
           title="Test Filter"
-          options={longOptions}
+          options={longOptions as typeof mockOptions}
         />
       );
 
@@ -498,7 +498,7 @@ describe("DataTableFacetedFilter", () => {
         <DataTableFacetedFilter
           column={mockColumn as Column<unknown, unknown>}
           title="Test Filter"
-          options={specialOptions}
+          options={specialOptions as typeof mockOptions}
         />
       );
 

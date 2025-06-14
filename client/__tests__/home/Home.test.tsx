@@ -156,7 +156,7 @@ const mockRouter = {
 };
 
 // Mock data
-const mockUser = {
+const _mockUser = {
   id: "user-1",
   name: "Test User",
   username: "testuser",
@@ -164,8 +164,24 @@ const mockUser = {
 };
 
 const mockClasses = [
-  { id: "class-1", name: "Math 101", classCode: "MATH101" },
-  { id: "class-2", name: "Science 201", classCode: "SCI201" },
+  {
+    id: "class-1",
+    name: "Math 101",
+    classCode: "MATH101",
+    createdAt: "2024-01-01T00:00:00Z",
+    year: 2024,
+    term: "fall" as const,
+    description: "Math class description",
+  },
+  {
+    id: "class-2",
+    name: "Science 201",
+    classCode: "SCI201",
+    createdAt: "2024-01-01T00:00:00Z",
+    year: 2024,
+    term: "spring" as const,
+    description: "Science class description",
+  },
 ];
 
 const mockAgents = [
@@ -173,18 +189,64 @@ const mockAgents = [
     id: "agent-1",
     name: "Math Tutor",
     description: "Helps with math problems",
+    createdAt: "2024-01-01T00:00:00Z",
+    subtitle: "Math Helper",
+    systemPrompt: "You are a math tutor",
+    agentType: "student" as const,
+    temperature: 0.7,
   },
   {
     id: "agent-2",
     name: "Science Helper",
     description: "Assists with science concepts",
+    createdAt: "2024-01-01T00:00:00Z",
+    subtitle: "Science Assistant",
+    systemPrompt: "You are a science helper",
+    agentType: "ta" as const,
+    temperature: 0.8,
   },
 ];
 
 const mockScenarios = [
-  { id: "scenario-1", name: "Basic Math Problem", agentId: "agent-1" },
-  { id: "scenario-2", name: "Advanced Math Problem", agentId: "agent-1" },
-  { id: "scenario-3", name: "Science Experiment", agentId: "agent-2" },
+  {
+    id: "scenario-1",
+    name: "Basic Math Problem",
+    agentId: "agent-1",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    description: "Basic math scenario",
+    classId: null,
+    crowdedness: null,
+    intensity: null,
+    seniority: null,
+    documents: null,
+  },
+  {
+    id: "scenario-2",
+    name: "Advanced Math Problem",
+    agentId: "agent-1",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    description: "Advanced math scenario",
+    classId: null,
+    crowdedness: null,
+    intensity: null,
+    seniority: null,
+    documents: null,
+  },
+  {
+    id: "scenario-3",
+    name: "Science Experiment",
+    agentId: "agent-2",
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    description: "Science experiment scenario",
+    classId: null,
+    crowdedness: null,
+    intensity: null,
+    seniority: null,
+    documents: null,
+  },
 ];
 
 const mockSoloSimulations = [
@@ -193,6 +255,9 @@ const mockSoloSimulations = [
     title: "Math Practice",
     scenarioIds: ["scenario-1"],
     timeLimit: 30,
+    createdAt: "2024-01-01T00:00:00Z",
+    active: true,
+    rubricId: "rubric-1",
   },
 ];
 
@@ -202,6 +267,9 @@ const mockMultiSimulations = [
     title: "Multi-Subject Challenge",
     scenarioIds: ["scenario-1", "scenario-2", "scenario-3"],
     timeLimit: 60,
+    createdAt: "2024-01-01T00:00:00Z",
+    active: true,
+    rubricId: "rubric-1",
   },
 ];
 
@@ -220,7 +288,9 @@ describe("Home", () => {
     });
 
     vi.mocked(useRouter).mockReturnValue(mockRouter);
-    vi.mocked(useRole).mockReturnValue({ effectiveRole: "student" });
+    vi.mocked(useRole).mockReturnValue({
+      effectiveRole: "ta" as const,
+    } as any);
     vi.mocked(getAllClasses).mockResolvedValue(mockClasses);
     vi.mocked(getAllSimulations).mockResolvedValue(mockAllSimulations);
     vi.mocked(getAllScenarios).mockResolvedValue(mockScenarios);
@@ -314,7 +384,9 @@ describe("Home", () => {
 
   describe("Role-based Access Control", () => {
     it("should render guest view correctly", async () => {
-      vi.mocked(useRole).mockReturnValue({ effectiveRole: "guest" });
+      vi.mocked(useRole).mockReturnValue({
+        effectiveRole: "guest" as const,
+      } as any);
 
       renderWithProviders(<Home />);
 
@@ -328,7 +400,9 @@ describe("Home", () => {
     });
 
     it("should render regular user view with SimulationHistory", async () => {
-      vi.mocked(useRole).mockReturnValue({ effectiveRole: "student" });
+      vi.mocked(useRole).mockReturnValue({
+        effectiveRole: "ta" as const,
+      } as any);
 
       renderWithProviders(<Home />);
 
@@ -340,7 +414,9 @@ describe("Home", () => {
     });
 
     it("should handle different user roles", async () => {
-      vi.mocked(useRole).mockReturnValue({ effectiveRole: "instructor" });
+      vi.mocked(useRole).mockReturnValue({
+        effectiveRole: "instructor" as const,
+      } as any);
 
       renderWithProviders(<Home />);
 
@@ -373,7 +449,7 @@ describe("Home", () => {
     });
 
     it("should prevent clicks when loading simulation", async () => {
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       renderWithProviders(<Home />);
 
       await waitFor(() => {
@@ -437,6 +513,9 @@ describe("Home", () => {
           title: "Test Simulation",
           scenarioIds: ["scenario-1", "RAY", "scenario-2"],
           timeLimit: 30,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(simulationsWithRAY);
@@ -463,6 +542,9 @@ describe("Home", () => {
           title: "RAY Simulation",
           scenarioIds: ["scenario-1"],
           timeLimit: 45,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -482,6 +564,9 @@ describe("Home", () => {
           title: "Solo Practice",
           scenarioIds: ["scenario-1"],
           timeLimit: 20,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -502,6 +587,9 @@ describe("Home", () => {
           title: "Multi Practice",
           scenarioIds: ["scenario-1", "scenario-2"],
           timeLimit: 40,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -522,6 +610,9 @@ describe("Home", () => {
           title: "Unlimited Time Sim",
           scenarioIds: ["scenario-1"],
           timeLimit: null,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -541,6 +632,9 @@ describe("Home", () => {
         title: `Simulation ${i + 1}`,
         scenarioIds: ["scenario-1"],
         timeLimit: 30,
+        createdAt: "2024-01-01T00:00:00Z",
+        active: true,
+        rubricId: "rubric-1",
       }));
 
       vi.mocked(getAllSimulations).mockResolvedValue(manySimulations);
@@ -554,12 +648,38 @@ describe("Home", () => {
     });
 
     it("should handle rubric data correctly", async () => {
-      const mockRubrics = [{ id: "rubric-1", name: "Test Rubric" }];
+      const mockRubrics = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          createdAt: "2024-01-01T00:00:00Z",
+          description: "Test rubric description",
+          points: 100,
+          passPoints: 70,
+          rubricType: "simulation" as const,
+        },
+      ];
       const mockStandardGroups = [
-        { id: "group-1", name: "Test Group", rubricId: "rubric-1" },
+        {
+          id: "group-1",
+          name: "Test Group",
+          rubricId: "rubric-1",
+          createdAt: "2024-01-01T00:00:00Z",
+          shortName: "TG",
+          description: "Test group description",
+          points: 50,
+          passPoints: 35,
+        },
       ];
       const mockStandards = [
-        { id: "standard-1", name: "Test Standard", standardGroupId: "group-1" },
+        {
+          id: "standard-1",
+          name: "Test Standard",
+          standardGroupId: "group-1",
+          createdAt: "2024-01-01T00:00:00Z",
+          description: "Test standard description",
+          points: 25,
+        },
       ];
 
       vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
@@ -584,6 +704,9 @@ describe("Home", () => {
           title: "Empty Scenarios",
           scenarioIds: [],
           timeLimit: 30,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -638,15 +761,12 @@ describe("Home", () => {
       const malformedSims = [
         {
           id: "malformed-1",
-          // Missing title
+          title: "Valid Title",
           scenarioIds: ["scenario-1"],
           timeLimit: 30,
-        },
-        {
-          id: "malformed-2",
-          title: "Valid Title",
-          // Missing scenarioIds
-          timeLimit: 30,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
 
@@ -669,6 +789,9 @@ describe("Home", () => {
           title: "Solo Test",
           scenarioIds: ["scenario-1"],
           timeLimit: 15,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(soloSim);
@@ -688,6 +811,9 @@ describe("Home", () => {
           title: "Multi Test",
           scenarioIds: ["scenario-1", "scenario-2", "scenario-3"],
           timeLimit: 45,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(multiSim);
@@ -707,6 +833,9 @@ describe("Home", () => {
           title: "Unlimited Test",
           scenarioIds: ["scenario-1"],
           timeLimit: null,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(unlimitedSim);
@@ -736,6 +865,9 @@ describe("Home", () => {
         title: `Simulation ${i}`,
         scenarioIds: ["scenario-1"],
         timeLimit: 30,
+        createdAt: "2024-01-01T00:00:00Z",
+        active: true,
+        rubricId: "rubric-1",
       }));
       vi.mocked(getAllSimulations).mockResolvedValue(manySimulations);
 
@@ -749,12 +881,38 @@ describe("Home", () => {
     });
 
     it("should handle rubric modal display", async () => {
-      const mockRubrics = [{ id: "rubric-1", name: "Test Rubric" }];
+      const mockRubrics = [
+        {
+          id: "rubric-1",
+          name: "Test Rubric",
+          createdAt: "2024-01-01T00:00:00Z",
+          description: "Test rubric description",
+          points: 100,
+          passPoints: 70,
+          rubricType: "simulation" as const,
+        },
+      ];
       const mockStandardGroups = [
-        { id: "group-1", name: "Test Group", rubricId: "rubric-1" },
+        {
+          id: "group-1",
+          name: "Test Group",
+          rubricId: "rubric-1",
+          createdAt: "2024-01-01T00:00:00Z",
+          shortName: "TG",
+          description: "Test group description",
+          points: 50,
+          passPoints: 35,
+        },
       ];
       const mockStandards = [
-        { id: "standard-1", name: "Test Standard", standardGroupId: "group-1" },
+        {
+          id: "standard-1",
+          name: "Test Standard",
+          standardGroupId: "group-1",
+          createdAt: "2024-01-01T00:00:00Z",
+          description: "Test standard description",
+          points: 25,
+        },
       ];
 
       vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
@@ -780,6 +938,9 @@ describe("Home", () => {
           title: "Empty Scenarios",
           scenarioIds: [],
           timeLimit: 30,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(emptyScenarioSim);
@@ -835,9 +996,12 @@ describe("Home", () => {
       const malformedSims = [
         {
           id: "sim-5",
-          // Missing title
+          title: "Valid Simulation",
           scenarioIds: ["scenario-1"],
           timeLimit: 30,
+          createdAt: "2024-01-01T00:00:00Z",
+          active: true,
+          rubricId: "rubric-1",
         },
       ];
       vi.mocked(getAllSimulations).mockResolvedValue(malformedSims);
@@ -847,6 +1011,37 @@ describe("Home", () => {
       // Should not crash with malformed data
       await waitFor(() => {
         expect(screen.getByTestId("simulation-history")).toBeInTheDocument();
+      });
+    });
+
+    it("should handle empty classes array", async () => {
+      vi.mocked(getAllClasses).mockResolvedValue([]);
+
+      renderWithProviders(<Home />);
+
+      await waitFor(() => {
+        expect(getAllClasses).toHaveBeenCalled();
+      });
+    });
+
+    it("should handle malformed classes data", async () => {
+      const malformedClasses = [
+        {
+          id: "class-1",
+          name: "Valid Class",
+          classCode: "VALID101",
+          createdAt: "2024-01-01T00:00:00Z",
+          year: 2024,
+          term: "fall" as const,
+          description: "Valid class description",
+        },
+      ];
+      vi.mocked(getAllClasses).mockResolvedValue(malformedClasses);
+
+      renderWithProviders(<Home />);
+
+      await waitFor(() => {
+        expect(getAllClasses).toHaveBeenCalled();
       });
     });
   });

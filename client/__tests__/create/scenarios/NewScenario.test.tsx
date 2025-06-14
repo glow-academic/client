@@ -1,4 +1,5 @@
 import NewScenario from "@/components/create/scenarios/NewScenario";
+import { Scenario } from "@/types";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -141,7 +142,9 @@ describe("NewScenario", () => {
       const { createScenario } = await import(
         "@/utils/mutations/scenarios/create-scenario"
       );
-      vi.mocked(createScenario).mockResolvedValue({ id: "new-scenario-id" });
+      vi.mocked(createScenario).mockResolvedValue({
+        id: "new-scenario-id",
+      } as unknown as Scenario);
 
       const user = userEvent.setup();
       renderWithProviders(<NewScenario />);

@@ -70,10 +70,10 @@ describe("Evaluation", () => {
     vi.mocked(getSimulationChatsByAttempt).mockResolvedValue(mockChats);
   });
 
-  const renderEvaluation = (attemptId = "attempt1") => {
+  const renderEvaluation = () => {
     return render(
       <QueryClientProvider client={queryClient}>
-        <Evaluation attemptId={attemptId} />
+        <Evaluation />
       </QueryClientProvider>
     );
   };
@@ -114,7 +114,7 @@ describe("Evaluation", () => {
   it("handles evaluation errors", async () => {
     vi.mocked(getSimulationAttempt).mockRejectedValue(new Error("Not found"));
 
-    renderEvaluation("invalid-attempt");
+    renderEvaluation();
 
     await waitFor(() => {
       expect(screen.getByText("Error loading evaluation")).toBeInTheDocument();
