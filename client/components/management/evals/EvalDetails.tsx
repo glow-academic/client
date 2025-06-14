@@ -26,7 +26,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { EvalRun } from "@/types";
+import { Agent, EvalChat, EvalChatGrade, EvalRun, Rubric } from "@/types";
+import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
 import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
@@ -36,7 +37,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 export default function EvalDetails({ evalId }: { evalId: string }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -61,9 +61,9 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
   });
 
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["evalGrades", evalChats?.map((chat: any) => chat.id)],
+    queryKey: ["evalGrades", evalChats?.map((chat: EvalChat) => chat.id)],
     queryFn: () =>
-      getEvalChatGradesByEvalChats(evalChats!.map((chat: any) => chat.id)),
+      getEvalChatGradesByEvalChats(evalChats!.map((chat: EvalChat) => chat.id)),
     enabled: !!evalChats && evalChats.length > 0,
   });
 
@@ -199,8 +199,10 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
   const getRunStatus = (run: EvalRun) => {
     if (!evalChats) return "Unknown";
 
-    const runChats = evalChats.filter((chat: any) => chat.evalRunId === run.id);
-    const completedChats = runChats.filter((chat: any) => chat.completed);
+    const runChats = evalChats.filter(
+      (chat: EvalChat) => chat.evalRunId === run.id
+    );
+    const completedChats = runChats.filter((chat: EvalChat) => chat.completed);
 
     if (runChats.length === 0) return "No chats";
     if (completedChats.length === runChats.length) return "Completed";
@@ -231,24 +233,27 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
 
   const getRunData = (run: EvalRun) => {
     const runChats =
-      evalChats?.filter((chat: any) => chat.evalRunId === run.id) || [];
-    const completedChats = runChats.filter((chat: any) => chat.completed);
+      evalChats?.filter((chat: EvalChat) => chat.evalRunId === run.id) || [];
+    const completedChats = runChats.filter((chat: EvalChat) => chat.completed);
     const runGrades =
-      grades?.filter((grade: any) =>
-        runChats.some((chat: any) => chat.id === grade.evalChatId)
+      grades?.filter((grade: EvalChatGrade) =>
+        runChats.some((chat: EvalChat) => chat.id === grade.evalChatId)
       ) || [];
     const avgScore =
       runGrades.length > 0
         ? Math.round(
             runGrades.reduce(
-              (sum: number, grade: any) => sum + grade.score,
+              (sum: number, grade: EvalChatGrade) => sum + grade.score,
               0
             ) / runGrades.length
           )
         : 0;
 
-    const agent = agents?.find((agent: any) => agent?.id === run.agentId);
-    const rubric = rubrics?.find((rubric: any) => rubric?.id === run.rubricId);
+    const agent =
+      agents?.find((agent: Agent | null) => agent?.id === run.agentId) || null;
+    const rubric =
+      rubrics?.find((rubric: Rubric | null) => rubric?.id === run.rubricId) ||
+      null;
 
     return {
       runChats,
@@ -339,9 +344,9 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                       Recent Chats
                     </div>
                     <div className="space-y-1">
-                      {runChats.slice(0, 2).map((chat: any) => {
+                      {runChats.slice(0, 2).map((chat: EvalChat) => {
                         const chatGrade = grades?.find(
-                          (g: any) => g.evalChatId === chat.id
+                          (g: EvalChatGrade) => g.evalChatId === chat.id
                         );
                         return (
                           <div

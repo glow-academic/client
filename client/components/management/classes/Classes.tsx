@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getAgentConfig } from "@/utils/agents";
+import { logError } from "@/utils/logger";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
@@ -81,7 +82,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { logError } from "@/utils/logger";
 
 // Color palette for charts
 const COLORS = {
@@ -304,6 +304,7 @@ export default function ClassesGeneralPage() {
     standardGroups,
     classes,
     attempts,
+    simulations,
   ]);
 
   // Generate aggregated score trend data using grades
@@ -448,7 +449,7 @@ export default function ClassesGeneralPage() {
         };
       })
       .filter((item) => item.sessions > 0); // Only show classes with activity
-  }, [classes, attempts, grades, chats]);
+  }, [classes, attempts, grades, chats, scenarios, simulations]);
 
   // Generate detailed metric data for dialogs
   const getMetricDetails = (metricType: string) => {
@@ -903,35 +904,40 @@ export default function ClassesGeneralPage() {
               <DialogTitle>TA Performance Breakdown</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {getMetricDetails("totalTAs")?.data.map(
-                (ta: any, index: number) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-3 border rounded-lg"
-                  >
-                    <div>
-                      <p className="font-medium">{ta.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {ta.sessions} sessions
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold">{ta.avgScore}%</p>
-                      <Badge
-                        variant={
-                          ta.status === "Excellent"
-                            ? "default"
-                            : ta.status === "Good"
-                              ? "secondary"
-                              : "destructive"
-                        }
-                      >
-                        {ta.status}
-                      </Badge>
-                    </div>
+              {(
+                getMetricDetails("totalTAs")?.data as {
+                  name: string;
+                  sessions: number;
+                  avgScore: number;
+                  status: string;
+                }[]
+              )?.map((ta, index: number) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 border rounded-lg"
+                >
+                  <div>
+                    <p className="font-medium">{ta.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {ta.sessions} sessions
+                    </p>
                   </div>
-                )
-              )}
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{ta.avgScore}%</p>
+                    <Badge
+                      variant={
+                        ta.status === "Excellent"
+                          ? "default"
+                          : ta.status === "Good"
+                            ? "secondary"
+                            : "destructive"
+                      }
+                    >
+                      {ta.status}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
             </div>
           </DialogContent>
         </Dialog>
@@ -1143,11 +1149,15 @@ export default function ClassesGeneralPage() {
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {getMetricDetails("avgTrainingTime")?.data.map(
-                      (entry: any, index: number) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      )
-                    )}
+                    {(
+                      getMetricDetails("avgTrainingTime")?.data as {
+                        range: string;
+                        count: number;
+                        color: string;
+                      }[]
+                    )?.map((entry, index: number) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
                   </Pie>
                   <Tooltip formatter={(value: number) => [value, "Sessions"]} />
                 </PieChart>

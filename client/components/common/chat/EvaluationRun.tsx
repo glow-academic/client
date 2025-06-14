@@ -6,12 +6,12 @@
  */
 "use client";
 
-import React from "react";
-import { useState, useEffect, useRef, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,9 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -29,11 +28,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 // Icons
-import { Play, ChevronDown, Clock } from "lucide-react";
+import { ChevronDown, Clock, Play } from "lucide-react";
 
 // Tooltip
 import {
@@ -46,19 +45,19 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
+import { Document, EvalChat, EvalMessage } from "@/types";
+import { logError } from "@/utils/logger";
+import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getEval } from "@/utils/queries/evals/get-eval";
-import { getEvalRun } from "@/utils/queries/eval_runs/get-eval-run";
+import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
 import { getEvalChatsByEvalRun } from "@/utils/queries/eval_chats/get-eval-chats-by-evalrun";
 import { getEvalMessagesByChat } from "@/utils/queries/eval_messages/get-eval-messages-by-chat";
+import { getEvalRun } from "@/utils/queries/eval_runs/get-eval-run";
+import { getEval } from "@/utils/queries/evals/get-eval";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getAgent } from "@/utils/queries/agents/get-agent";
-import { EvalChat, EvalMessage, Document } from "@/types";
-import { logError } from "@/utils/logger";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {
@@ -68,6 +67,29 @@ interface SimpleRubric {
   totalPossiblePoints: number;
 }
 
+// Define proper types for conversation data and run status
+interface ConversationData {
+  type: string;
+  message?: string;
+  token?: string;
+  chat_id?: string;
+  chat_index?: number;
+  timestamp: string;
+  speaker?: string;
+  turn?: number;
+  chatIndex?: number;
+  response?: string;
+  evalGradeId?: string;
+  chatId?: string;
+  [key: string]: unknown;
+}
+
+interface RunStatus {
+  completed_chats: number;
+  total_chats: number;
+  [key: string]: unknown;
+}
+
 export default function EvaluationRun({ runId }: { runId: string }) {
   const queryClient = useQueryClient();
 
@@ -75,15 +97,17 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isRunningEval, setIsRunningEval] = useState(false);
-  const [aiConversationData, setAiConversationData] = useState<any[]>([]);
+  const [aiConversationData, setAiConversationData] = useState<
+    ConversationData[]
+  >([]);
   const [showGrades, setShowGrades] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [runStatus, setRunStatus] = useState<any>(null);
+  const [runStatus, setRunStatus] = useState<RunStatus | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Fetch eval run data
   const {
     data: evalRun,
@@ -96,20 +120,14 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   });
 
   // Fetch eval data for this run
-  const {
-    data: evaluation,
-    isLoading: isLoadingEvaluation,
-  } = useQuery({
+  const { data: evaluation, isLoading: isLoadingEvaluation } = useQuery({
     queryKey: ["eval", evalRun?.evalId],
     queryFn: () => getEval(evalRun!.evalId),
     enabled: !!evalRun?.evalId,
   });
 
   // Fetch chats for this eval run with polling when running
-  const { 
-    data: chats, 
-    isLoading: isLoadingChats 
-  } = useQuery({
+  const { data: chats, isLoading: isLoadingChats } = useQuery({
     queryKey: ["evalChats", evalRun?.id],
     queryFn: () => getEvalChatsByEvalRun(evalRun!.id),
     enabled: !!evalRun?.id,
@@ -121,13 +139,18 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     if (isRunningEval && evalRun?.id) {
       const pollStatus = async () => {
         try {
-          const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run/${evalRun.id}/status`);
+          const response = await fetch(
+            `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run/${evalRun.id}/status`
+          );
           if (response.ok) {
             const status = await response.json();
             setRunStatus(status);
-            
+
             // Check if all chats are completed
-            if (status.completed_chats === status.total_chats && status.total_chats > 0) {
+            if (
+              status.completed_chats === status.total_chats &&
+              status.total_chats > 0
+            ) {
               setIsRunningEval(false);
               toast.success("All evaluations completed!");
             }
@@ -170,7 +193,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
     // Find the chat that matches the current scenario ID
     const currentScenarioId = evaluation.scenarioIds[currentChatIndex];
-    const chat = chats.find(chat => chat.scenarioId === currentScenarioId);
+    const chat = chats.find((chat) => chat.scenarioId === currentScenarioId);
     return chat || chats[0];
   }, [chats, evaluation?.scenarioIds, currentChatIndex]);
 
@@ -193,22 +216,26 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     enabled: !!evalRun?.rubricId,
   });
 
-  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery({
-    queryKey: ["standardGroups", rubrics?.map(rubric => rubric.id)],
-    queryFn: () => getStandardGroupsByRubrics(rubrics!.map(rubric => rubric.id)),
-    enabled: !!rubrics && rubrics.length > 0,
-  });
+  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
+    {
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+      queryFn: () =>
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+      enabled: !!rubrics && rubrics.length > 0,
+    }
+  );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map(group => group.id)],
-    queryFn: () => getStandardsByStandardGroups(standardGroups!.map(group => group.id)),
+    queryKey: ["standards", standardGroups?.map((group) => group.id)],
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups && standardGroups.length > 0,
   });
 
   // Get grades for chats
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["evalGrades", chats?.map(chat => chat.id)],
-    queryFn: () => getEvalChatGradesByEvalChats(chats!.map(chat => chat.id)),
+    queryKey: ["evalGrades", chats?.map((chat) => chat.id)],
+    queryFn: () => getEvalChatGradesByEvalChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
   });
 
@@ -221,7 +248,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   // Filter documents for the current eval's class (if any were referenced in scenarios)
   const classDocuments = useMemo(() => {
     if (!documents) return [];
-    const relevantDocs = documents.filter(() => true); 
+    const relevantDocs = documents.filter(() => true);
     return relevantDocs;
   }, [documents]);
 
@@ -243,24 +270,28 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
     if (!selectedChatId || !chats) return currentChat;
-    return chats.find((chat: EvalChat) => chat.id === selectedChatId) || currentChat;
+    return (
+      chats.find((chat: EvalChat) => chat.id === selectedChatId) || currentChat
+    );
   }, [selectedChatId, chats, currentChat]);
 
   // Get basic rubric info for timer tooltip
   const selectedChatGrade = useMemo(() => {
     if (!selectedChat?.id || !grades) return null;
-    return grades.find(grade => grade.evalChatId === selectedChat.id);
+    return grades.find((grade) => grade.evalChatId === selectedChat.id);
   }, [selectedChat?.id, grades]);
 
   const selectedDynamicRubric: SimpleRubric | null = useMemo(() => {
     if (!selectedChatGrade || !standards || !standardGroups) return null;
-    
+
     // Calculate total possible points
     let totalPossiblePoints = 0;
-    standardGroups.forEach(group => {
-      const groupStandards = standards.filter(s => s.standardGroupId === group.id);
+    standardGroups.forEach((group) => {
+      const groupStandards = standards.filter(
+        (s) => s.standardGroupId === group.id
+      );
       if (groupStandards.length > 0) {
-        totalPossiblePoints += Math.max(...groupStandards.map(s => s.points));
+        totalPossiblePoints += Math.max(...groupStandards.map((s) => s.points));
       }
     });
 
@@ -289,23 +320,27 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     enabled: !!selectedChat?.scenarioId,
   });
 
-
-
   // Auto-select first incomplete chat when data loads
   useEffect(() => {
-    if (chats && chats.length > 0 && evaluation?.scenarioIds && currentChatIndex === 0) {
+    if (
+      chats &&
+      chats.length > 0 &&
+      evaluation?.scenarioIds &&
+      currentChatIndex === 0
+    ) {
       // Find the first incomplete chat
       const firstIncompleteIndex = evaluation.scenarioIds.findIndex(
         (scenarioId: string) => {
-          const chat = chats.find(
-            (c: EvalChat) => c.scenarioId === scenarioId
-          );
+          const chat = chats.find((c: EvalChat) => c.scenarioId === scenarioId);
           return chat && !chat.completed;
-        },
+        }
       );
 
       // If we found an incomplete chat, set the index to it
-      if (firstIncompleteIndex !== -1 && firstIncompleteIndex !== currentChatIndex) {
+      if (
+        firstIncompleteIndex !== -1 &&
+        firstIncompleteIndex !== currentChatIndex
+      ) {
         setCurrentChatIndex(firstIncompleteIndex);
       }
     }
@@ -397,12 +432,15 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
     try {
       const formData = new FormData();
-      formData.append('eval_run_id', evalRun.id);
+      formData.append("eval_run_id", evalRun.id);
 
-      const response = await fetch(`${process.env['NEXT_PUBLIC_API_URL']}/evals/run`, {
-        method: 'POST',
-        body: formData,
-      });
+      const response = await fetch(
+        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -410,7 +448,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
       const reader = response.body?.getReader();
       if (!reader) {
-        throw new Error('No response body reader available');
+        throw new Error("No response body reader available");
       }
 
       toast.success("Evaluation started successfully");
@@ -421,13 +459,13 @@ export default function EvaluationRun({ runId }: { runId: string }) {
         if (done) break;
 
         const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split('\n');
+        const lines = chunk.split("\n");
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
+          if (line.startsWith("data: ")) {
             try {
               const data = JSON.parse(line.slice(6));
-              
+
               if (data.done) {
                 setIsRunningEval(false);
                 toast.success("Evaluation completed successfully");
@@ -436,38 +474,55 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                 queryClient.invalidateQueries({ queryKey: ["evalMessages"] });
                 break;
               }
-              
-              if (data.type === 'error') {
+
+              if (data.type === "error") {
                 toast.error(`Error: ${data.error}`);
                 setIsRunningEval(false);
                 break;
               }
-              
+
               // Add streaming data to conversation
-              setAiConversationData(prev => [...prev, {
-                type: data.type,
-                message: data.message || data.token || '',
-                chat_id: data.chat_id,
-                chat_index: data.chat_index,
-                timestamp: new Date().toISOString(),
-                ...data
-              }]);
+              setAiConversationData((prev) => [
+                ...prev,
+                {
+                  type: data.type,
+                  message: data.message || data.token || "",
+                  chat_id: data.chat_id,
+                  chat_index: data.chat_index,
+                  timestamp: new Date().toISOString(),
+                  ...data,
+                },
+              ]);
             } catch (parseError) {
-              toast.error(`Error parsing SSE data: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
+              toast.error(
+                `Error parsing SSE data: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+              );
             }
           }
         }
       }
-
     } catch (error) {
-      toast.error(`Failed to run evaluation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(
+        `Failed to run evaluation: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
       logError("Error running evaluation:", error as Error);
       setIsRunningEval(false);
     }
   };
 
   // Check if we have loading state
-  if (isLoadingEvalRun || isLoadingEvaluation || isLoadingChats || isLoadingRubrics || isLoadingStandardGroups || isLoadingStandards || isLoadingGrades || baseAgentLoading || responseAgentLoading || scenarioLoading) {
+  if (
+    isLoadingEvalRun ||
+    isLoadingEvaluation ||
+    isLoadingChats ||
+    isLoadingRubrics ||
+    isLoadingStandardGroups ||
+    isLoadingStandards ||
+    isLoadingGrades ||
+    baseAgentLoading ||
+    responseAgentLoading ||
+    scenarioLoading
+  ) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -508,7 +563,9 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                 {/* Show scenario information */}
                 <div className="flex items-center gap-2">
                   <span className="font-medium">
-                    {scenario?.description || currentChat?.title || "AI Evaluation"}
+                    {scenario?.description ||
+                      currentChat?.title ||
+                      "AI Evaluation"}
                   </span>
                 </div>
               </div>
@@ -525,20 +582,25 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       onCheckedChange={setShowGrades}
                     />
                   </div>
-                  
+
                   {/* Timer with Pass/Fail Status */}
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <div className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                          selectedDynamicRubric
-                            ? selectedDynamicRubric.passed
-                              ? "bg-green-100 dark:bg-green-900/30"
-                              : "bg-red-100 dark:bg-red-900/30"
-                            : "bg-muted"
-                        }`}>
+                        <div
+                          className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                            selectedDynamicRubric
+                              ? selectedDynamicRubric.passed
+                                ? "bg-green-100 dark:bg-green-900/30"
+                                : "bg-red-100 dark:bg-red-900/30"
+                              : "bg-muted"
+                          }`}
+                        >
                           <Clock className="h-4 w-4" />
-                          <span className="text-sm font-medium" data-testid="timer">
+                          <span
+                            className="text-sm font-medium"
+                            data-testid="timer"
+                          >
                             {selectedDynamicRubric?.timeTaken !== undefined
                               ? formatTime(selectedDynamicRubric.timeTaken)
                               : formatTime(0)}
@@ -548,8 +610,9 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       {selectedDynamicRubric && (
                         <TooltipContent>
                           <p>
-                            {selectedDynamicRubric.passed ? "Passed" : "Failed"} 
-                            ({selectedDynamicRubric.score}/{selectedDynamicRubric.totalPossiblePoints})
+                            {selectedDynamicRubric.passed ? "Passed" : "Failed"}
+                            ({selectedDynamicRubric.score}/
+                            {selectedDynamicRubric.totalPossiblePoints})
                           </p>
                         </TooltipContent>
                       )}
@@ -563,10 +626,14 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                   onValueChange={(value) => {
                     setSelectedChatId(value);
                     // Update current chat index to match selected chat
-                    const chatIndex = evaluation.scenarioIds.findIndex((scenarioId: string) => {
-                      const chat = chats?.find((c: EvalChat) => c.scenarioId === scenarioId);
-                      return chat?.id === value;
-                    });
+                    const chatIndex = evaluation.scenarioIds.findIndex(
+                      (scenarioId: string) => {
+                        const chat = chats?.find(
+                          (c: EvalChat) => c.scenarioId === scenarioId
+                        );
+                        return chat?.id === value;
+                      }
+                    );
                     if (chatIndex !== -1) {
                       setCurrentChatIndex(chatIndex);
                     }
@@ -603,7 +670,9 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       </div>
                     ))}
                   </div>
-                ) : showGrades && selectedChat?.completed && evalRun?.rubricId ? (
+                ) : showGrades &&
+                  selectedChat?.completed &&
+                  evalRun?.rubricId ? (
                   <TableRubric
                     rubricId={evalRun.rubricId}
                     evaluationChatId={selectedChat.id}
@@ -714,7 +783,10 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           );
                         }
 
-                        if (item.type === "message" || item.type === "streaming") {
+                        if (
+                          item.type === "message" ||
+                          item.type === "streaming"
+                        ) {
                           const isBaseAgent = item.speaker === baseAgent?.name;
                           return (
                             <div key={index} className="space-y-2">
@@ -744,7 +816,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                                       <LoadingDots />
                                     </div>
                                   ) : (
-                                    <Markdown>{item.message}</Markdown>
+                                    <Markdown>{item.message || ""}</Markdown>
                                   )}
                                 </div>
                               </div>
@@ -766,13 +838,15 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                     )}
 
                     {/* No content state */}
-                    {!selectedChat?.completed && !isRunningEval && messages.length === 0 && (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">
-                          Click "Run Evaluation" to start this chat.
-                        </p>
-                      </div>
-                    )}
+                    {!selectedChat?.completed &&
+                      !isRunningEval &&
+                      messages.length === 0 && (
+                        <div className="text-center py-8">
+                          <p className="text-muted-foreground">
+                            Click "Run Evaluation" to start this chat.
+                          </p>
+                        </div>
+                      )}
                   </>
                 )}
                 <div ref={messagesEndRef} />
@@ -794,37 +868,40 @@ export default function EvaluationRun({ runId }: { runId: string }) {
             )}
           </CardContent>
 
-          {isRunningEval && <CardFooter className="flex-shrink-0 p-4 border-t">
-            <div className="w-full flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                {/* Run Evaluation Button */}
-                {!isRunningEval && !currentChat?.completed && (
-                  <Button
-                    onClick={startEvaluationRun}
-                    variant="default"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Play className="h-4 w-4" />
-                    Run Evaluation
-                  </Button>
-                )}
-                
-                {/* Running Status */}
-                {isRunningEval && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Running evaluation...
-                    {runStatus && (
-                      <span>
-                        ({runStatus.completed_chats}/{runStatus.total_chats} chats completed)
-                      </span>
-                    )}
-                  </div>
-                )}
+          {isRunningEval && (
+            <CardFooter className="flex-shrink-0 p-4 border-t">
+              <div className="w-full flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  {/* Run Evaluation Button */}
+                  {!isRunningEval && !currentChat?.completed && (
+                    <Button
+                      onClick={startEvaluationRun}
+                      variant="default"
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Play className="h-4 w-4" />
+                      Run Evaluation
+                    </Button>
+                  )}
+
+                  {/* Running Status */}
+                  {isRunningEval && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      Running evaluation...
+                      {runStatus && (
+                        <span>
+                          ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
+                          chats completed)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          </CardFooter>}
+            </CardFooter>
+          )}
         </Card>
       </div>
 
