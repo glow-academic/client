@@ -3,13 +3,8 @@
   "python.testing.pytestArgs": [
     "tests"
   ],
-  "python.testing.unittestEnabled": true,
   "python.testing.pytestEnabled": true,
-  "python.defaultInterpreterPath": "${workspaceFolder}/server/.venv/bin/python",
   "python.analysis.typeCheckingMode": "off",
-  "python.analysis.autoImportCompletions": true,
-  "python.analysis.diagnosticMode": "workspace",
-  "python.analysis.stubPath": "${workspaceFolder}/server/.venv/lib/python3.11/site-packages",
   "[python]": {
     "editor.defaultFormatter": "ms-python.python",
     "editor.formatOnSave": true,
@@ -24,20 +19,9 @@
     "server/app"
   ],
   "mypy.enabled": true,
-  "files.associations": {
-    "*.py": "python"
-  },
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/server"
-  ],
-  "python.analysis.include": [
-    "${workspaceFolder}/server/**"
-  ],
-  "eslint.enable": true,
   "eslint.workingDirectories": [
     "client"
   ],
-  "eslint.useFlatConfig": true,
   "[typescript]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode",
     "editor.formatOnSave": true,

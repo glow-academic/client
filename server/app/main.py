@@ -1,21 +1,21 @@
 # server/app/main.py
+import logging
 import platform
 import sys
 import time
 from typing import Generator
-import logging
 
-from fastapi import FastAPI, Depends
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
-from sqlmodel import Session, select
+from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
+from app.routes.evals import router as evals_router
 from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
 from app.routes.simulations import router as simulations_router
-from app.routes.evals import router as evals_router
-from app.db import init_db, get_session
+from fastapi import Depends, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlmodel import Session, select
 
 app = FastAPI(title="GLOW API", on_startup=[init_db])
 app.include_router(documents_router, prefix="/documents")
@@ -46,7 +46,7 @@ eval_logger.setLevel(logging.INFO)
 
 
 @app.get("/")
-async def root_info():
+async def root_info() -> JSONResponse:
     """
     Return general server information.
     """

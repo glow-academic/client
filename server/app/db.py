@@ -1,6 +1,8 @@
 import os
+from typing import Generator
+
 from dotenv import load_dotenv
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import Session, SQLModel, create_engine
 
 load_dotenv()
 
@@ -18,10 +20,10 @@ if not db_url:
 engine = create_engine(db_url)
 
 
-def init_db():
+def init_db() -> None:
     SQLModel.metadata.create_all(engine)
 
 
-def get_session():
+def get_session() -> Generator[Session, None, None]:
     with Session(engine) as session:
         yield session

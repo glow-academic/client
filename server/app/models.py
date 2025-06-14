@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import ARRAY, Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, Text, UUID, Uuid, text
+from sqlalchemy import ARRAY, BigInteger, Boolean, Column, DateTime, Enum, ForeignKeyConstraint, Integer, PrimaryKeyConstraint, String, Text, UUID, Uuid, text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -9,6 +10,25 @@ from sqlmodel import Field, Relationship, SQLModel
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
+class Accounts(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='accounts_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    userId: int = Field(sa_column=Column('userId', Integer))
+    type: str = Field(sa_column=Column('type', String(255)))
+    provider: str = Field(sa_column=Column('provider', String(255)))
+    providerAccountId: str = Field(sa_column=Column('providerAccountId', String(255)))
+    refresh_token: Optional[str] = Field(default=None, sa_column=Column('refresh_token', Text))
+    access_token: Optional[str] = Field(default=None, sa_column=Column('access_token', Text))
+    expires_at: Optional[int] = Field(default=None, sa_column=Column('expires_at', BigInteger))
+    id_token: Optional[str] = Field(default=None, sa_column=Column('id_token', Text))
+    scope: Optional[str] = Field(default=None, sa_column=Column('scope', Text))
+    session_state: Optional[str] = Field(default=None, sa_column=Column('session_state', Text))
+    token_type: Optional[str] = Field(default=None, sa_column=Column('token_type', Text))
+
+
 class Agents(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='agents_pkey'),
@@ -26,6 +46,19 @@ class Agents(_Base, table=True):
     evals: List['Evals'] = Relationship(back_populates='base_agent')
     scenarios: List['Scenarios'] = Relationship(back_populates='agent')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='agent')
+
+
+class AppLogs(_Base, table=True):
+    __tablename__ = 'app_logs'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='app_logs_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    level: str = Field(sa_column=Column('level', Text))
+    message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
+    context: Optional[dict] = Field(default=None, sa_column=Column('context', JSONB))
+    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
 
 
 class Classes(_Base, table=True):
@@ -67,15 +100,40 @@ class Rubrics(_Base, table=True):
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='rubric')
 
 
+class Sessions(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='sessions_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    userId: int = Field(sa_column=Column('userId', Integer))
+    expires: datetime = Field(sa_column=Column('expires', DateTime(True)))
+    sessionToken: str = Field(sa_column=Column('sessionToken', String(255)))
+
+
 class Users(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='users_pkey'),
     )
 
-    id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True))
-    email: str = Field(sa_column=Column('email', Text))
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    name: Optional[str] = Field(default=None, sa_column=Column('name', String(255)))
+    email: Optional[str] = Field(default=None, sa_column=Column('email', String(255)))
+    emailVerified: Optional[datetime] = Field(default=None, sa_column=Column('emailVerified', DateTime(True)))
+    image: Optional[str] = Field(default=None, sa_column=Column('image', Text))
 
     profiles: List['Profiles'] = Relationship(back_populates='user')
+
+
+class VerificationToken(_Base, table=True):
+    __tablename__ = 'verification_token'
+    __table_args__ = (
+        PrimaryKeyConstraint('identifier', 'token', name='verification_token_pkey'),
+    )
+
+    identifier: str = Field(sa_column=Column('identifier', Text, primary_key=True))
+    expires: datetime = Field(sa_column=Column('expires', DateTime(True)))
+    token: str = Field(sa_column=Column('token', Text, primary_key=True))
 
 
 class Documents(_Base, table=True):
@@ -125,7 +183,7 @@ class Profiles(_Base, table=True):
     )
 
     id: UUID = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    user_id: UUID = Field(sa_column=Column('user_id', Uuid))
+    user_id: int = Field(sa_column=Column('user_id', Integer))
     last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), server_default=text('now()')))
     first_name: str = Field(sa_column=Column('first_name', Text))
     last_name: str = Field(sa_column=Column('last_name', Text))
