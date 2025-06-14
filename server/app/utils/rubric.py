@@ -1,6 +1,9 @@
-from agents.items import TResponseInputItem
-from app.models import Rubrics, StandardGroups, Standards
 from typing import List
+
+from agents.items import TResponseInputItem
+from sqlalchemy import UUID
+
+from server.app.models import Rubrics, StandardGroups, Standards
 
 rubric = """
 ;5 - Excellent;4 - Good;3 - Acceptable;2 - Marginal;1 - Poor
@@ -51,7 +54,7 @@ def get_dynamic_rubric(
     ]
 
     # Group standards by standard_group_id
-    standards_by_group = {}
+    standards_by_group: dict[UUID[str], list[Standards]] = {}
     for standard in standards:
         group_id = standard.standard_group_id
         if group_id not in standards_by_group:

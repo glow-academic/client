@@ -1,10 +1,11 @@
 # app/utils/agents.py
-from sqlmodel import Session
-from app.models import Agents
-from sqlmodel import select
+from sqlalchemy import UUID
+from sqlmodel import Session, select
+
+from server.app.models import Agents
 
 
-def get_agent_info(agent_id: str, session: Session) -> dict:
+def get_agent_info(agent_id: UUID[str], session: Session) -> dict[str, str]:
     """
     Get the agent information for a given agent.
     """
@@ -53,7 +54,7 @@ def student_prompt(agent_name: str, agent_prompt: str, advanced: bool = False) -
         )
 
 
-def gta_prompt(agent_name: str, agent_prompt, advanced: bool = False) -> str:
+def gta_prompt(agent_name: str, agent_prompt: str, advanced: bool = False) -> str:
     if advanced:
         return (
             f"Your only purpose is to imitate a Graduate Level Teaching Assistant and to help a {agent_name} college student with whatever they ask you."

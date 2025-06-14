@@ -5,17 +5,18 @@ import sys
 import time
 from typing import Generator
 
-from app.db import get_session, init_db
-from app.models import SimulationChats
-from app.routes.documents import router as documents_router
-from app.routes.evals import router as evals_router
-from app.routes.profiles import router as profiles_router
-from app.routes.scenarios import router as scenarios_router
-from app.routes.simulations import router as simulations_router
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
+
+from server.app.db import get_session, init_db
+from server.app.models import SimulationChats
+from server.app.routes.documents import router as documents_router
+from server.app.routes.evals import router as evals_router
+from server.app.routes.profiles import router as profiles_router
+from server.app.routes.scenarios import router as scenarios_router
+from server.app.routes.simulations import router as simulations_router
 
 app = FastAPI(title="GLOW API", on_startup=[init_db])
 app.include_router(documents_router, prefix="/documents")
@@ -62,11 +63,11 @@ async def root_info() -> JSONResponse:
 
 
 @app.get("/health")
-async def health_check():
+async def health_check() -> JSONResponse:
     """
     Simple health check endpoint.
     """
-    return {"status": "ok"}
+    return JSONResponse(content={"status": "ok"})
 
 
 def fake_chat_stream(user_message: str) -> Generator[bytes, None, None]:
@@ -83,15 +84,17 @@ def fake_chat_stream(user_message: str) -> Generator[bytes, None, None]:
 
 
 @app.get("/db-test")
-async def test_db_connection(session: Session = Depends(get_session)):
+async def test_db_connection(session: Session = Depends(get_session)) -> JSONResponse:
     """Test database connection"""
     try:
         # Try a simple query
         session.exec(select(SimulationChats)).first()
-        return {"status": "Database connection successful"}
+        return JSONResponse(content={"status": "Database connection successful"})
     except Exception as e:
         logger.exception(f"Database connection error: {str(e)}")
-        return {"status": "Database connection failed", "error": str(e)}
+        return JSONResponse(
+            content={"status": "Database connection failed", "error": str(e)}
+        )
 
 
 if __name__ == "__main__":

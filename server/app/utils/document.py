@@ -1,9 +1,12 @@
-from app.models import Documents
-from sqlmodel import Session, select
+import uuid
 from typing import List
 
+from sqlmodel import Session, select
 
-def get_document_info(document_ids: List[str], session: Session) -> dict:
+from server.app.models import Documents
+
+
+def get_document_info(document_ids: List[uuid.UUID], session: Session) -> dict[str, str]:
     """
     Get the document information for a given document ids.
     """
@@ -16,7 +19,7 @@ def get_document_info(document_ids: List[str], session: Session) -> dict:
 
     document_info_string = "\n".join(
         [
-            f"Document Name: {document.name}\nDocument File Type: {document.file_type}"
+            f"Document Name: {document.name}\nDocument File Type: {document.mime_type}"
             for document in document_info
         ]
     )
@@ -25,3 +28,4 @@ def get_document_info(document_ids: List[str], session: Session) -> dict:
         "role": "assistant",
         "content": f"The following is the document information: {document_info_string}",
     }
+    

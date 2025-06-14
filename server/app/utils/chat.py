@@ -1,15 +1,12 @@
+import random
 from typing import List
-from app.models import (
-    SimulationMessages,
-    SimulationChats,
-    Scenarios,
-    EvalMessages,
-    EvalChats,
-    Agents,
-)
+
 from agents.items import TResponseInputItem
 from sqlmodel import Session, select
-import random
+
+from server.app.models import (Agents, EvalChats, EvalMessages, Scenarios,
+                               SimulationChats, SimulationMessages)
+
 
 def get_conversation_history(
     messages: List[SimulationMessages],
@@ -23,14 +20,14 @@ def get_conversation_history(
     Returns:
         List of message objects formatted for OpenAI API consumption
     """
-    conversation_history = []
+    conversation_history: list[TResponseInputItem] = []
 
     for message in messages:
         if message.query:
-            user_message_item = {"role": "user", "content": message.query}
+            user_message_item: TResponseInputItem = {"role": "user", "content": message.query}
             conversation_history.append(user_message_item)
         if message.response:
-            assistant_message_item = {"role": "assistant", "content": message.response}
+            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.response}
             conversation_history.append(assistant_message_item)
 
     return conversation_history
@@ -47,20 +44,20 @@ def get_eval_conversation_history(
     Returns:
         List of message objects formatted for OpenAI API consumption
     """
-    conversation_history = []
+    conversation_history: list[TResponseInputItem] = []
 
     for message in messages:
         if message.type == "query":
-            user_message_item = {"role": "user", "content": message.content}
+            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
             conversation_history.append(user_message_item)
         if message.type == "response":
-            assistant_message_item = {"role": "assistant", "content": message.content}
+            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
             conversation_history.append(assistant_message_item)
 
     return conversation_history
 
 
-def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> dict:
+def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> dict[str, str]:
     """
     Get the scenario for a given chat.
     """

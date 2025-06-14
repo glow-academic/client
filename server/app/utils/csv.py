@@ -1,11 +1,12 @@
 # app/utils/csv.py
 import csv
-import hashlib
 import io
 import uuid
-from typing import Dict, Any
-from sqlmodel import Session
-from app.models import Users
+from typing import Any, Dict
+
+from sqlmodel import Session, select
+
+from server.app.models import Profiles
 
 
 def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
@@ -13,9 +14,9 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
     Process a CSV file containing user data and insert users into the database.
 
     Expected CSV format:
-    name,username,password
-    John Doe,john_doe,password123
-    Jane Smith,jane_smith,password456
+    name,username
+    John Doe,john_doe
+    Jane Smith,jane_smith
 
     Args:
         file_path: Path to the CSV file
@@ -40,7 +41,7 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
             csv_reader = csv.DictReader(csv_file)
 
             # Validate headers
-            expected_headers = {"name", "username", "password"}
+            expected_headers = {"name", "username"}
             actual_headers = set(csv_reader.fieldnames or [])
 
             if not expected_headers.issubset(actual_headers):
@@ -60,17 +61,16 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                     # Extract and validate data
                     name = row.get("name", "").strip()
                     username = row.get("username", "").strip()
-                    password = row.get("password", "").strip()
 
-                    if not name or not username or not password:
+                    if not name or not username:
                         errors.append(
-                            f"Row {row_num}: Missing required fields (name, username, or password)"
+                            f"Row {row_num}: Missing required fields (name, username)"
                         )
                         continue
 
                     # Check if user already exists
                     existing_user = (
-                        session.query(Users).filter(Users.username == username).first()
+                        session.exec(select(Profiles).where(Profiles.alias == username)).first()
                     )
                     if existing_user:
                         users_skipped.append(
@@ -78,20 +78,14 @@ def process_csv_file(file_path: str, session: Session) -> Dict[str, Any]:
                         )
                         continue
 
-                    # Hash the password
-                    hashed_password = hashlib.sha256(
-                        password.encode("utf-8")
-                    ).hexdigest()
-
                     # Create new user
-                    new_user = Users(
+                    new_user = Profiles(
                         id=uuid.uuid4(),
-                        name=name,
-                        username=username,
-                        password=hashed_password,
-                        admin=False,
+                        first_name=name,
+                        alias=username,
+                        role="ta",
                         viewed_intro=False,
-                        classes=[],  # Empty array as specified
+                        class_ids=[]
                     )
 
                     session.add(new_user)
@@ -140,7 +134,7 @@ def validate_csv_format(file_path: str) -> Dict[str, Any]:
             csv_reader = csv.DictReader(csv_file)
 
             # Check headers
-            expected_headers = {"name", "username", "password"}
+            expected_headers = {"name", "username"}
             actual_headers = set(csv_reader.fieldnames or [])
 
             if not expected_headers.issubset(actual_headers):
