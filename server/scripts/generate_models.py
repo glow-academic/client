@@ -126,16 +126,30 @@ def generate_sqlmodel_from_sql():
             class_definitions
         )
         
-        # 3. Replace bare list with List[uuid.UUID] for UUID arrays
+        # 3. Replace bare list with List[uuid.UUID] for UUID arrays - FIXED REGEX
         class_definitions = re.sub(
-            r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)",
-            r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))",
+            r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)",
+            r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
             class_definitions
         )
         
-        # 4. Replace Optional[list] with Optional[List[uuid.UUID]] for optional UUID arrays
+        # 3b. Handle list fields with server_default (more comprehensive pattern)
         class_definitions = re.sub(
-            r"(\w+): Optional\[list\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)",
+            r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(as_uuid=True\)\), server_default=text\('([^']+)'\)\)\)",
+            r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))",
+            class_definitions
+        )
+        
+        # 3c. Handle list fields with server_default (before Uuid transformation)
+        class_definitions = re.sub(
+            r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\), server_default=text\('([^']+)'\)\)\)",
+            r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))",
+            class_definitions
+        )
+        
+        # 4. Replace Optional[list] with Optional[List[uuid.UUID]] for optional UUID arrays - FIXED REGEX
+        class_definitions = re.sub(
+            r"(\w+): Optional\[list\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)",
             r"\1: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
             class_definitions
         )
@@ -195,6 +209,7 @@ def generate_sqlmodel_from_sql():
         print("- list → List[uuid.UUID] for UUID arrays")
         print("- dict → Dict[str, Any]")
         print("- Removed duplicate relationships")
+        print("- Fixed parentheses in ARRAY field definitions")
         
     except subprocess.CalledProcessError as e:
         print(f"Error generating SQLModel classes: {e}")

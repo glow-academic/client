@@ -2,11 +2,12 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
-                        Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, String, Text, Uuid, text)
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, Enum,
+                        ForeignKeyConstraint, Integer, PrimaryKeyConstraint,
+                        String, Text, Uuid, text)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
+
 
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
@@ -215,7 +216,7 @@ class Scenarios(_Base, table=True):
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
     intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
     seniority: Optional[str] = Field(default=None, sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels')))
-    documents: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid(as_uuid=True)))))
+    documents: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid(as_uuid=True))))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')

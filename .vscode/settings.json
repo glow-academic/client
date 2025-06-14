@@ -24,10 +24,9 @@
   "mypy.runUsingActiveInterpreter": true,
   "mypy.configFile": "server/mypy.ini",
   "mypy.targets": [
-    "app"
+    "server/app"
   ],
   "mypy.enabled": true,
-  "mypy.cwd": "${workspaceFolder}/server",
   "eslint.workingDirectories": [
     "client"
   ],
