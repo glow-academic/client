@@ -1,9 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import Chat from "@/components/common/chat/Chat";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useRouter } from "next/navigation";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -19,10 +19,10 @@ vi.mock("@/utils/queries/rubrics/get-all-rubrics");
 vi.mock("@/utils/queries/standard_groups/get-standard-groups-by-rubric");
 vi.mock("@/utils/queries/standards/get-standards-by-standardgroups");
 vi.mock(
-  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchat",
+  "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchat"
 );
 vi.mock(
-  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades",
+  "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades"
 );
 
 const mockPush = vi.fn();
@@ -120,15 +120,20 @@ const createWrapper = () => {
       },
     },
   });
-  return ({ children }: { children: React.ReactNode }) => (
+
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
+
+  Wrapper.displayName = "QueryClientWrapper";
+
+  return Wrapper;
 };
 
 describe("Chat", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    (useRouter as any).mockReturnValue(mockRouter);
+    vi.mocked(useRouter).mockReturnValue(mockRouter);
 
     // Mock successful queries by default
     vi.doMock("@/utils/queries/simulation_chats/get-simulationChat", () => ({
@@ -139,7 +144,7 @@ describe("Chat", () => {
       "@/utils/queries/simulation_attempts/get-simulationAttempt",
       () => ({
         getSimulationAttempt: vi.fn().mockResolvedValue(mockAttempt),
-      }),
+      })
     );
 
     vi.doMock("@/utils/queries/scenarios/get-scenario", () => ({
@@ -154,7 +159,7 @@ describe("Chat", () => {
       "@/utils/queries/simulation_messages/get-simulation-messages-by-chat",
       () => ({
         getSimulationMessagesByChat: vi.fn().mockResolvedValue(mockMessages),
-      }),
+      })
     );
 
     vi.doMock(
@@ -163,14 +168,14 @@ describe("Chat", () => {
         getStandardGroupsByRubric: vi
           .fn()
           .mockResolvedValue(mockStandardGroups),
-      }),
+      })
     );
 
     vi.doMock(
       "@/utils/queries/standards/get-standards-by-standardgroups",
       () => ({
         getStandardsByStandardGroups: vi.fn().mockResolvedValue(mockStandards),
-      }),
+      })
     );
 
     vi.doMock(
@@ -179,7 +184,7 @@ describe("Chat", () => {
         getSimulationChatGradesBySimulationChat: vi
           .fn()
           .mockResolvedValue(mockGrades),
-      }),
+      })
     );
 
     vi.doMock(
@@ -188,7 +193,7 @@ describe("Chat", () => {
         getSimulationChatFeedbacksBySimulationChatGrades: vi
           .fn()
           .mockResolvedValue(mockFeedbacks),
-      }),
+      })
     );
   });
 
@@ -226,7 +231,7 @@ describe("Chat", () => {
         const chatContainer = screen.getByRole("main");
         expect(chatContainer).toHaveAttribute(
           "aria-label",
-          "Chat conversation",
+          "Chat conversation"
         );
       });
     });
@@ -274,7 +279,7 @@ describe("Chat", () => {
           getSimulationChatGradesBySimulationChat: vi
             .fn()
             .mockResolvedValue(lowScoreGrades),
-        }),
+        })
       );
 
       vi.doMock("@/utils/queries/simulation_chats/get-simulationChat", () => ({
@@ -339,7 +344,7 @@ describe("Chat", () => {
       await waitFor(() => {
         expect(screen.getByText("Hello, how can I help?")).toBeInTheDocument();
         expect(
-          screen.getByText("I need assistance with this issue."),
+          screen.getByText("I need assistance with this issue.")
         ).toBeInTheDocument();
       });
     });
@@ -349,14 +354,14 @@ describe("Chat", () => {
         "@/utils/queries/simulation_messages/get-simulation-messages-by-chat",
         () => ({
           getSimulationMessagesByChat: vi.fn().mockResolvedValue([]),
-        }),
+        })
       );
 
       render(<Chat chatId="chat-1" />, { wrapper: createWrapper() });
 
       await waitFor(() => {
         expect(
-          screen.getByText("No messages in this chat yet."),
+          screen.getByText("No messages in this chat yet.")
         ).toBeInTheDocument();
       });
     });
@@ -370,7 +375,7 @@ describe("Chat", () => {
           getSimulationChatGradesBySimulationChat: vi
             .fn()
             .mockResolvedValue([]),
-        }),
+        })
       );
 
       vi.doMock("@/utils/queries/simulation_chats/get-simulationChat", () => ({
@@ -382,7 +387,7 @@ describe("Chat", () => {
       await waitFor(() => {
         // Should not show performance results without grades
         expect(
-          screen.queryByText("Performance Results"),
+          screen.queryByText("Performance Results")
         ).not.toBeInTheDocument();
       });
     });
@@ -394,7 +399,7 @@ describe("Chat", () => {
           getSimulationChatFeedbacksBySimulationChatGrades: vi
             .fn()
             .mockResolvedValue([]),
-        }),
+        })
       );
 
       vi.doMock("@/utils/queries/simulation_chats/get-simulationChat", () => ({
@@ -406,7 +411,7 @@ describe("Chat", () => {
       await waitFor(() => {
         // Should not show performance results without feedbacks
         expect(
-          screen.queryByText("Performance Results"),
+          screen.queryByText("Performance Results")
         ).not.toBeInTheDocument();
       });
     });

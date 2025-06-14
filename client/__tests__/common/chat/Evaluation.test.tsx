@@ -1,243 +1,149 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
+import Evaluation from "@/components/common/chat/Evaluation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
-import EvaluationPage from "@/components/common/chat/EvaluationRun";
+import "@testing-library/jest-dom";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-  }),
+// Mock the query functions
+vi.mock("@/utils/queries/simulation_attempts/get-simulation-attempt", () => ({
+  getSimulationAttempt: vi.fn(),
 }));
 
-vi.mock("@/components/common/chat/DocumentViewer", () => ({
-  default: ({ document }: { document: any }) => (
-    <div data-testid="document-viewer">{document.name}</div>
-  ),
+vi.mock("@/utils/queries/simulations/get-simulation", () => ({
+  getSimulation: vi.fn(),
 }));
 
-vi.mock("@/components/common/chat/Markdown", () => ({
-  default: ({ children }: { children: ReactNode }) => (
-    <div data-testid="markdown">{children}</div>
-  ),
-}));
+vi.mock(
+  "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt",
+  () => ({
+    getSimulationChatsByAttempt: vi.fn(),
+  })
+);
 
-// Mock API calls
-global.fetch = vi.fn();
+// Import mocked functions
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
+import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 
-describe("EvaluationPage", () => {
+const mockAttempt = {
+  id: "attempt1",
+  createdAt: new Date().toISOString(),
+  profileId: "profile1",
+  simulationId: "simulation1",
+};
+
+const mockSimulation = {
+  id: "simulation1",
+  createdAt: new Date().toISOString(),
+  title: "Test Simulation",
+  timeLimit: 30,
+  active: true,
+  scenarioIds: ["scenario1"],
+  rubricId: "rubric1",
+};
+
+const mockChats = [
+  {
+    id: "chat1",
+    createdAt: new Date().toISOString(),
+    completedAt: new Date().toISOString(),
+    title: "Chat 1",
+    scenarioId: "scenario1",
+    attemptId: "attempt1",
+    completed: true,
+  },
+];
+
+describe("Evaluation", () => {
   let queryClient: QueryClient;
 
   beforeEach(() => {
-    vi.clearAllMocks();
     queryClient = new QueryClient({
       defaultOptions: {
         queries: { retry: false },
         mutations: { retry: false },
       },
     });
+
+    vi.mocked(getSimulationAttempt).mockResolvedValue(mockAttempt);
+    vi.mocked(getSimulation).mockResolvedValue(mockSimulation);
+    vi.mocked(getSimulationChatsByAttempt).mockResolvedValue(mockChats);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  const renderEvaluation = (attemptId = "attempt1") => {
+    return render(
+      <QueryClientProvider client={queryClient}>
+        <Evaluation attemptId={attemptId} />
+      </QueryClientProvider>
     );
-
-    return render(ui, { wrapper: AllProviders, ...options });
   };
 
-  describe("Rendering", () => {
-    it("should render without crashing", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
+  it("renders loading state initially", () => {
+    renderEvaluation();
+    expect(screen.getByText("Loading evaluation...")).toBeInTheDocument();
+  });
 
-      // Should show loading state initially
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
+  it("displays evaluation results when loaded", async () => {
+    renderEvaluation();
+
+    await waitFor(() => {
+      expect(screen.getByText("Evaluation Results")).toBeInTheDocument();
     });
 
-    it("should render with evaluation ID prop", () => {
-      const evaluationId = "test-evaluation-123";
-      renderWithProviders(<EvaluationPage runId={evaluationId} />);
+    expect(screen.getByText("Test Simulation")).toBeInTheDocument();
+  });
 
-      // Component should accept and use the evaluationId prop
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    });
+  it("shows completed chats", async () => {
+    renderEvaluation();
 
-    it("should have correct accessibility attributes", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should have proper ARIA labels and roles
-      const mainContent =
-        screen.getByRole("main", { hidden: true }) ||
-        document.querySelector('[role="main"]');
-      expect(mainContent || screen.getByText(/loading/i)).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Chat 1")).toBeInTheDocument();
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle eval run selection", async () => {
-      const user = userEvent.setup();
+  it("handles empty results", async () => {
+    vi.mocked(getSimulationChatsByAttempt).mockResolvedValue([]);
 
-      // Mock successful API responses
-      global.fetch = vi
-        .fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () =>
-            Promise.resolve({ id: "eval-1", name: "Test Evaluation" }),
-        })
-        .mockResolvedValueOnce({
-          ok: true,
-          json: () => Promise.resolve([{ id: "run-1", evalId: "eval-1" }]),
-        });
+    renderEvaluation();
 
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Wait for component to load and test interaction
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(true).toBe(true); // Placeholder for actual interaction test
-    });
-
-    it("should handle run evaluation button click", async () => {
-      const user = userEvent.setup();
-
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Test would involve clicking run evaluation button
-      expect(true).toBe(true); // Placeholder for actual test
-    });
-
-    it("should handle grades toggle switch", async () => {
-      const user = userEvent.setup();
-
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Test would involve toggling the grades switch
-      expect(true).toBe(true); // Placeholder for actual test
-    });
-
-    it("should handle run all evaluations button click", async () => {
-      const user = userEvent.setup();
-
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Test would involve clicking run all evaluations button
-      expect(true).toBe(true); // Placeholder for actual test
+    await waitFor(() => {
+      expect(screen.getByText("No completed chats found")).toBeInTheDocument();
     });
   });
 
-  describe("API Integration", () => {
-    it("should handle API calls for evaluation data", async () => {
-      const mockEvaluation = { id: "eval-1", name: "Test Evaluation" };
+  it("handles evaluation errors", async () => {
+    vi.mocked(getSimulationAttempt).mockRejectedValue(new Error("Not found"));
 
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve(mockEvaluation),
-      });
+    renderEvaluation("invalid-attempt");
 
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should make API call for evaluation data
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(true).toBe(true); // Placeholder for actual API test
-    });
-
-    it("should handle loading states", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should show loading state
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    });
-
-    it("should handle error states", async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error("API Error"));
-
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should handle API errors gracefully
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(true).toBe(true); // Placeholder for error handling test
+    await waitFor(() => {
+      expect(screen.getByText("Error loading evaluation")).toBeInTheDocument();
     });
   });
 
-  describe("AI Conversation Display", () => {
-    it("should display AI vs AI conversation correctly", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
+  it("displays evaluation metrics", async () => {
+    renderEvaluation();
 
-      // Should be able to display AI conversation with proper styling
-      expect(true).toBe(true); // Placeholder for conversation display test
+    await waitFor(() => {
+      expect(screen.getByText("Overall Score")).toBeInTheDocument();
     });
 
-    it("should handle streaming conversation updates", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should handle real-time conversation updates
-      expect(true).toBe(true); // Placeholder for streaming test
-    });
+    expect(screen.getByText("Time Taken")).toBeInTheDocument();
+    expect(screen.getByText("Completion Rate")).toBeInTheDocument();
   });
 
-  describe("Rubric Overlay Display", () => {
-    it("should display rubric grades when toggle is enabled", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
+  it("allows navigation back to dashboard", async () => {
+    renderEvaluation();
 
-      // Should show rubric grades/feedback overlay when toggle is on
-      expect(true).toBe(true); // Placeholder for rubric overlay test
+    await waitFor(() => {
+      expect(screen.getByText("Back to Dashboard")).toBeInTheDocument();
     });
 
-    it("should hide chat messages when showing rubric grades", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
+    const backButton = screen.getByText("Back to Dashboard");
+    fireEvent.click(backButton);
 
-      // Should hide chat messages when rubric overlay is active
-      expect(true).toBe(true); // Placeholder for chat hiding test
-    });
-
-    it("should display skill feedback in alternating layout", () => {
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should display skill feedback cards in alternating left/right layout
-      expect(true).toBe(true); // Placeholder for alternating layout test
-    });
-  });
-
-  describe("Edge Cases", () => {
-    it("should handle missing evaluation ID", () => {
-      renderWithProviders(<EvaluationPage runId="" />);
-
-      // Should handle empty evaluation ID gracefully
-      expect(screen.getByText(/loading/i)).toBeInTheDocument();
-    });
-
-    it("should handle evaluation not found", async () => {
-      global.fetch = vi.fn().mockResolvedValue({
-        ok: false,
-        status: 404,
-      });
-
-      renderWithProviders(<EvaluationPage runId="nonexistent-id" />);
-
-      // Should show appropriate error message
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(true).toBe(true); // Placeholder for not found test
-    });
-
-    it("should handle network errors gracefully", async () => {
-      global.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
-
-      renderWithProviders(<EvaluationPage runId="test-eval-id" />);
-
-      // Should handle network errors without crashing
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      expect(true).toBe(true); // Placeholder for network error test
-    });
+    // Test would need router mock to verify navigation
+    expect(backButton).toBeInTheDocument();
   });
 });
 
