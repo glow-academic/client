@@ -1,28 +1,22 @@
 from typing import AsyncGenerator, Optional
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
+
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
+                    RunConfig, Runner)
 from agents.items import TResponseInputItem
-from openai.types import Reasoning
-from app.extensions import get_gemini
-from app.utils.chat import generate_natural_opening, get_chat_scenario, get_eval_conversation_history, get_conversation_history
-from app.utils.classes import get_class_info
 from app.db import get_session
-from sqlmodel import Session, select
-from app.models import (
-    SimulationMessages,
-    SimulationChats,
-    SimulationAttempts,
-    EvalMessages,
-    EvalChats,
-    EvalRuns,
-    Agents,
-    Scenarios,
-    Evals,
-)
+from app.extensions import get_gemini
+from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
+                        Scenarios, SimulationAttempts, SimulationChats,
+                        SimulationMessages)
 from app.utils.agents import gta_prompt, student_prompt
+from app.utils.chat import (generate_natural_opening, get_chat_scenario,
+                            get_conversation_history,
+                            get_eval_conversation_history)
+from app.utils.classes import get_class_info
 from fastapi import Depends
-from openai.types.responses import (
-    ResponseTextDeltaEvent,
-)
+from openai.types import Reasoning
+from openai.types.responses import ResponseTextDeltaEvent
+from sqlmodel import Session, select
 
 
 async def run_generic_agent_bare(
@@ -317,7 +311,7 @@ class GenericAgent:
             self.system_prompt = agent_prompt
         self.temperature = temperature
 
-    def agent(self):
+    def agent(self) -> Agent:
         return Agent(
             name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,

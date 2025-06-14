@@ -1,30 +1,23 @@
 # app/routes/evals.py
-from fastapi import APIRouter, Form, HTTPException, Depends
-from app.models import (
-    EvalRuns,
-    EvalChats,
-    EvalMessages,
-    Agents,
-    Scenarios,
-    Evals,
-    Rubrics,
-)
-from app.db import get_session
-from sqlmodel import Session, select
+import json
 import logging
 import random
-from app.services.agents.evaluate import run_evaluate_agent
-from app.services.agents.generic import GenericAgent
-from fastapi.responses import StreamingResponse
-import json
-from typing import AsyncIterator
 from datetime import datetime
-from agents import Runner, RunConfig
-from openai.types.responses import ResponseTextDeltaEvent
-from app.utils.scenario import randomly_fill_scenario_attributes
+from typing import AsyncIterator
+
+from agents import RunConfig, Runner
+from app.db import get_session
+from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
+                        Rubrics, Scenarios)
 from app.services.agents.advanced import run_advanced_agent
+from app.services.agents.evaluate import run_evaluate_agent
+from app.services.agents.generic import GenericAgent, run_generic_agent
 from app.services.agents.scenario import run_scenario_agent
-from app.services.agents.generic import run_generic_agent
+from app.utils.scenario import randomly_fill_scenario_attributes
+from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
+from openai.types.responses import ResponseTextDeltaEvent
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +28,7 @@ router = APIRouter()
 async def start_eval(
     eval_id: str = Form(...),
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     Create eval runs for all combinations of agents, scenarios, and rubrics in the evaluation.
     This endpoint sets up all the eval runs that will be executed later.
@@ -164,7 +157,7 @@ async def start_eval(
 async def run_eval(
     eval_run_id: str = Form(...),
     session: Session = Depends(get_session),
-):
+) -> StreamingResponse:
     """
     Execute a specific eval run by running an agent-to-agent conversation
     followed by evaluation. Streams the conversation progress back to the client.
@@ -305,7 +298,7 @@ async def run_eval(
 async def get_eval_run_status(
     eval_run_id: str,
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     Get the current status of an eval run
     """
@@ -341,13 +334,16 @@ async def get_eval_run_status(
                 "scenario_id": chat.scenario_id
             })
 
-        return {
+        return JSONResponse(
+            status_code=200,
+            content={
             "eval_run_id": eval_run_id,
             "total_chats": total_chats,
             "completed_chats": completed_chats,
             "progress_percentage": (completed_chats / total_chats * 100) if total_chats > 0 else 0,
             "chat_statuses": chat_statuses
-        }
+            }
+        )
 
     except HTTPException:
         raise

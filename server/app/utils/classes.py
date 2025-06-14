@@ -1,9 +1,11 @@
+import uuid
+
+from agents.items import TResponseInputItem
 from app.models import Classes
-from sqlalchemy import UUID
 from sqlmodel import Session, select
 
 
-def get_class_info(class_id: UUID[str], session: Session) -> dict[str, str]:
+def get_class_info(class_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
     Get the class information for a given class id.
     """

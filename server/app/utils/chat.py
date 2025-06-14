@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 
 def get_conversation_history(
-    messages: List[SimulationMessages],
+    messages: List[SimulationMessages | EvalMessages],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.

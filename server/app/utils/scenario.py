@@ -22,7 +22,7 @@ def get_seniority_info(seniority: str) -> dict[str, str]:
     }
 
 
-def get_crowdedness_info(crowdedness: int) -> dict:
+def get_crowdedness_info(crowdedness: int) -> dict[str, str]:
     """
     Get the crowdedness information for a given crowdedness.
     """
@@ -35,7 +35,7 @@ def get_crowdedness_info(crowdedness: int) -> dict:
     }
 
 
-def get_intensity_info(intensity: int) -> dict:
+def get_intensity_info(intensity: int) -> dict[str, str]:
     """
     Get the intensity information for a given intensity.
     """

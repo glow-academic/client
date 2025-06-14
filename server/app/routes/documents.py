@@ -32,7 +32,7 @@ router = APIRouter()
 async def classify_documents(
     class_id: str,
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     Classify documents for a class
     """
@@ -74,9 +74,8 @@ async def classify_documents(
 
 @router.post("/course")
 async def course_processing(
-    class_id: str,
-    session: Session = Depends(get_session),
-):
+    class_id: str, session: Session = Depends(get_session)
+) -> JSONResponse:
     """
     Process a course using the course agent to extract course information
     """
@@ -123,7 +122,7 @@ async def upload_document(
     files: list[UploadFile] = File(...),
     class_id: str = Form(...),
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     Upload one or more documents using regular multipart form data
     """
@@ -140,7 +139,7 @@ async def upload_document(
         document_id = str(uuid.uuid4())
 
         # Get file extension from filename
-        _, ext = os.path.splitext(file.filename)
+        _, ext = os.path.splitext(file.filename or "")
         if not ext:
             ext = ".bin"  # Default extension if none is provided
 
@@ -173,11 +172,15 @@ async def upload_document(
 
     session.commit()
 
-    return {
-        "message": f"Successfully uploaded {len(uploaded_documents)} document(s)",
-        "documents": uploaded_documents,
-        "count": len(uploaded_documents),
-    }
+    return JSONResponse(
+        status_code=200,
+        content={
+            "status": "success",
+            "message": f"Successfully uploaded {len(uploaded_documents)} document(s)",
+            "documents": uploaded_documents,
+            "count": len(uploaded_documents),
+        },
+    )
 
 
 # Get document by ID
@@ -185,7 +188,7 @@ async def upload_document(
 async def get_document(
     document_id: str,
     session: Session = Depends(get_session),
-):
+) -> FileResponse:
     """
     Retrieve a document by its ID
     """
@@ -211,7 +214,7 @@ async def get_document(
 
 # TUS Protocol Implementation
 @router.options("/tus")
-async def tus_options(request: Request):
+async def tus_options(request: Request) -> Response:
     """Handle OPTIONS request for tus protocol"""
     return Response(
         headers={
@@ -229,7 +232,7 @@ async def tus_options(request: Request):
 
 
 @router.post("/tus")
-async def tus_creation(request: Request):
+async def tus_creation(request: Request) -> Response:
     """Handle POST request for tus protocol - create upload"""
     # Check tus version
     if request.headers.get("Tus-Resumable") != "1.0.0":
@@ -315,7 +318,7 @@ async def tus_creation(request: Request):
 
 
 @router.head("/tus/{upload_id}")
-async def tus_head(upload_id: str, request: Request):
+async def tus_head(upload_id: str, request: Request) -> Response:
     """Handle HEAD request for tus protocol - get upload info"""
     upload_dir = os.path.join(TUS_UPLOADS_DIR, upload_id)
 
@@ -342,7 +345,7 @@ async def tus_head(upload_id: str, request: Request):
 
 
 @router.patch("/tus/{upload_id}")
-async def tus_patch(upload_id: str, request: Request):
+async def tus_patch(upload_id: str, request: Request) -> Response:
     """Handle PATCH request for tus protocol - upload chunk"""
     upload_dir = os.path.join(TUS_UPLOADS_DIR, upload_id)
 
@@ -391,7 +394,7 @@ async def tus_patch(upload_id: str, request: Request):
 
 
 @router.options("/tus/{upload_id}")
-async def tus_options_upload_id(upload_id: str, request: Request):
+async def tus_options_upload_id(upload_id: str, request: Request) -> Response:
     """Handle OPTIONS request for specific upload"""
     return Response(
         headers={
@@ -408,7 +411,9 @@ async def tus_options_upload_id(upload_id: str, request: Request):
 
 
 @router.post("/tus/finalize")
-async def finalize_upload(request: Request, session: Session = Depends(get_session)):
+async def finalize_upload(
+    request: Request, session: Session = Depends(get_session)
+) -> JSONResponse:
     """Finalize an upload and process the file"""
     try:
         # Parse request body
@@ -803,7 +808,7 @@ async def finalize_upload(request: Request, session: Session = Depends(get_sessi
 async def delete_document(
     document_id: str,
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     Delete a document by its ID - removes both database entry and file from filesystem
     """

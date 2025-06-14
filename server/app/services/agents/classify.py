@@ -1,20 +1,22 @@
+import logging
+import uuid
+from typing import Any
+
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
 from app.db import get_session
-from sqlmodel import Session
+from app.extensions import get_gemini
 from app.models import Classes, Documents
 from fastapi import Depends
-import logging
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
 from openai.types import Reasoning
-from app.extensions import get_gemini
-from sqlmodel import select
 from pydantic import BaseModel
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
 
 async def run_classify_agent(
-    class_id: str, session: Session = Depends(get_session)
-) -> dict:
+    class_id: uuid.UUID, session: Session = Depends(get_session)
+) -> dict[str, Any]:
     """
     This function is used to run the classify agent.
     Returns a dictionary with classification results.
@@ -128,7 +130,7 @@ class Classify(BaseModel):
 
 
 class ClassifyAgent:
-    def __init__(self):
+    def __init__(self) -> None:
         self.gemini_client = get_gemini()
         self.system_prompt = """Your purpose is to classify documents given for a class. You will receive a numbered list of document names and need to categorize each document by its number.
 
@@ -154,7 +156,10 @@ Return a JSON object with arrays containing the document numbers (as strings) fo
 
 Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category."""
 
-    def agent(self):
+    def agent(self) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not initialized")
+        
         return Agent(
             name="Classify Agent",
             instructions=self.system_prompt,

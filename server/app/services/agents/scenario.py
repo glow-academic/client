@@ -1,30 +1,28 @@
-from app.db import get_session
-from sqlmodel import Session
-from app.models import Agents, Classes
-from fastapi import Depends
 import logging
+import uuid
+from typing import List, Tuple
+
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from app.db import get_session
+from app.extensions import get_gemini
+from app.models import Agents, Classes
 from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
-from app.utils.scenario import (
-    get_seniority_info,
-    get_crowdedness_info,
-    get_intensity_info,
-)
 from app.utils.document import get_document_info
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
+from app.utils.scenario import (get_crowdedness_info, get_intensity_info,
+                                get_seniority_info)
+from fastapi import Depends
 from openai.types import Reasoning
-from app.extensions import get_gemini
 from pydantic import BaseModel
-from sqlmodel import select
-from typing import Tuple, List
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
 
 async def run_scenario_agent(
-    agent_id: str | None = None,
-    class_id: str | None = None,
-    document_ids: List[str] | None = None,
+    agent_id: uuid.UUID | None = None,
+    class_id: uuid.UUID | None = None,
+    document_ids: List[uuid.UUID] | None = None,
     seniority: str | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,

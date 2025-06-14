@@ -50,6 +50,7 @@ def generate_sqlmodel_from_sql():
             "                        PrimaryKeyConstraint, String, Text, Uuid, text)",
             "from sqlalchemy.dialects.postgresql import JSONB",
             "from sqlmodel import Field, Relationship, SQLModel",
+            "from sqlalchemy.orm import Mapped",
         ]
         
         # Replace the existing imports with our custom imports
@@ -106,65 +107,74 @@ def generate_sqlmodel_from_sql():
         # Apply type transformations
         print("Applying type transformations...")
         
-        # 1. Replace bare UUID with uuid.UUID (for primary keys and regular fields)
+        # 1. Replace ALL uuid.UUID fields with Mapped[uuid.UUID] - comprehensive approach
+        # This will catch all patterns: primary keys, regular fields, with/without server_default
         class_definitions = re.sub(
-            r"(\w+): UUID = Field\(sa_column=Column\('(\w+)', Uuid, primary_key=True",
-            r"\1: uuid.UUID = Field(sa_column=Column('\2', Uuid(as_uuid=True), primary_key=True",
+            r"(\w+): uuid\.UUID = Field\(",
+            r"\1: Mapped[uuid.UUID] = Field(",
             class_definitions
         )
         
+        # 2. Replace bare UUID with Mapped[uuid.UUID] (for any remaining cases)
         class_definitions = re.sub(
-            r"(\w+): UUID = Field\(sa_column=Column\('(\w+)', Uuid\)\)",
-            r"\1: uuid.UUID = Field(sa_column=Column('\2', Uuid(as_uuid=True)))",
+            r"(\w+): UUID = Field\(",
+            r"\1: Mapped[uuid.UUID] = Field(",
             class_definitions
         )
         
-        # 2. Replace Optional[UUID] with Optional[uuid.UUID]
+        # 3. Replace Optional[UUID] with Optional[uuid.UUID]
         class_definitions = re.sub(
             r"(\w+): Optional\[UUID\] = Field\(default=None, sa_column=Column\('(\w+)', Uuid\)\)",
             r"\1: Optional[uuid.UUID] = Field(default=None, sa_column=Column('\2', Uuid(as_uuid=True)))",
             class_definitions
         )
         
-        # 3. Replace bare list with List[uuid.UUID] for UUID arrays - FIXED REGEX
+        # 4. Replace bare list with List[uuid.UUID] for UUID arrays - FIXED REGEX
         class_definitions = re.sub(
             r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)",
             r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
             class_definitions
         )
         
-        # 3b. Handle list fields with server_default (more comprehensive pattern)
+        # 5. Handle list fields with server_default (more comprehensive pattern)
         class_definitions = re.sub(
             r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(as_uuid=True\)\), server_default=text\('([^']+)'\)\)\)",
             r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))",
             class_definitions
         )
         
-        # 3c. Handle list fields with server_default (before Uuid transformation)
+        # 6. Handle list fields with server_default (before Uuid transformation)
         class_definitions = re.sub(
             r"(\w+): list = Field\(sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\), server_default=text\('([^']+)'\)\)\)",
             r"\1: List[uuid.UUID] = Field(sa_column=Column('\2', ARRAY(Uuid(as_uuid=True)), server_default=text('\3')))",
             class_definitions
         )
         
-        # 4. Replace Optional[list] with Optional[List[uuid.UUID]] for optional UUID arrays - FIXED REGEX
+        # 7. Replace Optional[list] with Optional[List[uuid.UUID]] for optional UUID arrays - FIXED REGEX
         class_definitions = re.sub(
             r"(\w+): Optional\[list\] = Field\(default=None, sa_column=Column\('(\w+)', ARRAY\(Uuid\(\)\)\)\)",
             r"\1: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('\2', ARRAY(Uuid(as_uuid=True))))",
             class_definitions
         )
         
-        # 5. Replace bare dict with Dict[str, Any]
+        # 8. Replace bare dict with Dict[str, Any]
         class_definitions = re.sub(
             r"(\w+): Optional\[dict\] = Field\(default=None, sa_column=Column\('(\w+)', JSONB\)\)",
             r"\1: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('\2', JSONB))",
             class_definitions
         )
         
-        # 6. Fix any remaining Uuid() to Uuid(as_uuid=True) in ARRAY contexts
+        # 9. Fix any remaining Uuid() to Uuid(as_uuid=True) in ARRAY contexts
         class_definitions = re.sub(
             r"ARRAY\(Uuid\(\)\)",
             r"ARRAY(Uuid(as_uuid=True))",
+            class_definitions
+        )
+        
+        # 10. Fix any remaining bare Uuid() to Uuid(as_uuid=True) in Column contexts
+        class_definitions = re.sub(
+            r"Column\('(\w+)', Uuid\)",
+            r"Column('\1', Uuid(as_uuid=True))",
             class_definitions
         )
         
@@ -204,7 +214,7 @@ def generate_sqlmodel_from_sql():
 
         print(f"SQLModel classes generated successfully and saved to {output_path}!")
         print("Applied transformations:")
-        print("- UUID → uuid.UUID with Uuid(as_uuid=True)")
+        print("- UUID → Mapped[uuid.UUID] with Uuid(as_uuid=True)")
         print("- Optional[UUID] → Optional[uuid.UUID]")
         print("- list → List[uuid.UUID] for UUID arrays")
         print("- dict → Dict[str, Any]")

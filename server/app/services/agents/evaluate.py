@@ -1,27 +1,20 @@
-from app.db import get_session
-from sqlmodel import Session
-from app.models import (
-    Rubrics,
-    EvalChats,
-    EvalMessages,
-    EvalRuns,
-    StandardGroups,
-    Standards,
-    EvalChatGrades,
-    EvalChatFeedbacks,
-)
-from fastapi import Depends
 import logging
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
-from openai.types import Reasoning
-from app.extensions import get_gemini
-from app.utils.chat import get_conversation_history
-from app.utils.rubric import get_dynamic_rubric
-from sqlmodel import select
-from pydantic import BaseModel, Field, create_model
-from datetime import datetime
-from typing import List
 import re
+from datetime import datetime
+from typing import Any, List
+
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from app.db import get_session
+from app.extensions import get_gemini
+from app.models import (EvalChatFeedbacks, EvalChatGrades, EvalChats,
+                        EvalMessages, EvalRuns, Rubrics, StandardGroups,
+                        Standards)
+from app.utils.chat import get_eval_conversation_history
+from app.utils.rubric import get_dynamic_rubric
+from fastapi import Depends
+from openai.types import Reasoning
+from pydantic import BaseModel, Field, create_model
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +46,7 @@ def create_dynamic_rubric_model(
     Returns:
         Dynamic Pydantic model class
     """
-    fields = {}
+    fields: dict[str, Any] = {}
 
     for group in standard_groups:
         # Create safe field names by removing special characters and spaces
@@ -78,7 +71,7 @@ def create_dynamic_rubric_model(
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
 
-    return create_model("DynamicRubricEvaluation", **fields)
+    return create_model("DynamicRubricEvaluation", **fields)  # type: ignore
 
 
 async def run_evaluate_agent(
@@ -102,11 +95,14 @@ async def run_evaluate_agent(
         messages = session.exec(
             select(EvalMessages)
             .where(EvalMessages.chat_id == eval_chat_id)
-            .order_by(EvalMessages.created_at)
         ).all()
 
+        # sort messages by created_at
+        messages = list(messages)
+        messages = sorted(messages, key=lambda x: x.created_at)
+
         # prepare conversation history from chat_id
-        conversation_history = get_conversation_history(messages)
+        conversation_history = get_eval_conversation_history(messages)
 
         eval_run_id = chat.eval_run_id
 
@@ -139,10 +135,10 @@ async def run_evaluate_agent(
         )
 
         # Build dynamic rubric using utility function
-        rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
+        rubric_input = get_dynamic_rubric(rubric, list(standard_groups), list(standards))
 
         # Create dynamic Pydantic model for the rubric
-        DynamicRubric = create_dynamic_rubric_model(standard_groups)
+        DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
 
         # Log the expected field names for debugging
         expected_fields = []
@@ -177,8 +173,8 @@ async def run_evaluate_agent(
         time_taken = max(0, int((current_time - chat_created_at).total_seconds()))
 
         # Extract overall evaluation data
-        overall_score = evaluation_result.overall_score
-        passed = evaluation_result.passed
+        overall_score = getattr(evaluation_result, "overall_score", 0)
+        passed = getattr(evaluation_result, "passed", False)
 
         logger.info(f"Evaluation results: score={overall_score}, passed={passed}")
 
@@ -265,7 +261,7 @@ async def run_evaluate_agent(
 
 
 class EvaluateAgent:
-    def __init__(self):
+    def __init__(self) -> None:
         self.gemini_client = get_gemini()
         self.system_prompt = """You are an expert evaluator tasked with assessing conversations based on provided rubrics. 
 
@@ -284,7 +280,10 @@ For each criterion:
 
 Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation."""
 
-    def agent(self, output_type: type[BaseModel]):
+    def agent(self, output_type: type[BaseModel]) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not initialized")
+        
         return Agent(
             name="Evaluate Agent",
             instructions=self.system_prompt,

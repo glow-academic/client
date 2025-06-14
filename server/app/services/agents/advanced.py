@@ -1,21 +1,24 @@
-from typing import AsyncGenerator, List
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner, RunConfig
-from openai.types import Reasoning
-from datetime import datetime
-from app.extensions import get_gemini
-from app.utils.chat import generate_natural_opening, get_eval_conversation_history
-from app.utils.classes import get_class_info
-from app.db import get_session
-from sqlmodel import Session, select
-from app.models import EvalMessages, EvalChats, EvalRuns, Agents, Scenarios, Evals
-from app.utils.agents import gta_prompt, student_prompt
-from fastapi import Depends
-from openai.types.responses import (
-    ResponseTextDeltaEvent,
-)
-import logging
-from pydantic import BaseModel
 import json
+import logging
+from datetime import datetime
+from typing import Any, AsyncGenerator, List
+
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
+                    RunConfig, Runner)
+from agents.items import TResponseInputItem
+from app.db import get_session
+from app.extensions import get_gemini
+from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
+                        Scenarios)
+from app.utils.agents import gta_prompt, student_prompt
+from app.utils.chat import (generate_natural_opening,
+                            get_eval_conversation_history)
+from app.utils.classes import get_class_info
+from fastapi import Depends
+from openai.types import Reasoning
+from openai.types.responses import ResponseTextDeltaEvent
+from pydantic import BaseModel
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ class ParallelOutput(BaseModel):
 async def run_advanced_agent(
     eval_chat_ids: List[str],
     session: Session,
-) -> AsyncGenerator[dict, None]:
+) -> AsyncGenerator[dict[str, Any], None]:
     """
     Run multiple agent conversations simultaneously using a single agent call.
     This function processes all conversation histories at once and gets multiple responses
@@ -98,16 +101,19 @@ async def run_advanced_agent(
             message_type = "query"
 
         # Collect conversation histories for all chats
-        conversation_inputs = []
-        new_messages = []
+        conversation_inputs: list[dict[str, Any]] = []
+        new_messages: list[EvalMessages] = []
         
         for i, chat in enumerate(eval_chats):
             # Get existing messages for this chat
             existing_messages = session.exec(
                 select(EvalMessages)
                 .where(EvalMessages.chat_id == chat.id)
-                .order_by(EvalMessages.created_at)
             ).all()
+
+            # sort by created_at
+            existing_messages = list(existing_messages)
+            existing_messages.sort(key=lambda x: x.created_at)
 
             # For turn 0, generate opening if no messages exist
             if turn == 0 and len(existing_messages) == 0:
@@ -138,7 +144,7 @@ async def run_advanced_agent(
             scenario_context = f"Scenario {i+1}: {scenario.name} - {scenario.description}"
 
             # Get class info if available
-            class_info = ""
+            class_info: TResponseInputItem | None = None
             if scenario.class_id:
                 class_info = get_class_info(scenario.class_id, session)
 
@@ -146,7 +152,7 @@ async def run_advanced_agent(
             conversation_history = get_eval_conversation_history(existing_messages)
             
             # Build input for this conversation
-            chat_input = [scenario_context]
+            chat_input: list[TResponseInputItem] = [{"role": "assistant", "content": scenario_context}]
             if class_info:
                 chat_input.append(class_info)
             chat_input.extend(conversation_history)
@@ -160,7 +166,7 @@ async def run_advanced_agent(
         session.commit()
 
         # Prepare the combined input for the agent
-        combined_input = [
+        combined_input: list[str] = [
             f"You are responding to {len(eval_chats)} different conversations simultaneously.",
             f"This is turn {turn + 1} of {max_turns}.",
             f"You are currently acting as: {current_agent.name}",
@@ -168,7 +174,7 @@ async def run_advanced_agent(
         ]
 
         for conv_input in conversation_inputs:
-            combined_input.append(f"\n--- Conversation {conv_input['chat_index'] + 1} ---")
+            combined_input.append(f"\n--- Conversation {str(conv_input['chat_index']) + "1"} ---")
             combined_input.extend(conv_input['input'])
 
         combined_input.append(
@@ -182,7 +188,6 @@ async def run_advanced_agent(
             agent_prompt=current_agent.system_prompt,
             agent_type=current_agent.agent_type,
             temperature=current_agent.temperature,
-            advanced=True  # Enable parallel processing mode
         )
 
         # Run the agent
@@ -275,38 +280,34 @@ class AdvancedAgent:
         agent_prompt: str,
         agent_type: str,
         temperature: float = 0.0,
-        advanced: bool = False,
     ):
         self.gemini_client = get_gemini()
         self.agent_name = agent_name
         self.agent_prompt = agent_prompt
-        self.advanced = advanced
         
         if agent_type == "ta":
-            self.system_prompt = gta_prompt(agent_name, agent_prompt, advanced=advanced)
+            self.system_prompt = gta_prompt(agent_name, agent_prompt)
         elif agent_type == "student":
-            self.system_prompt = student_prompt(agent_name, agent_prompt, advanced=advanced)
+            self.system_prompt = student_prompt(agent_name, agent_prompt, True)
         else:
             self.system_prompt = agent_prompt
         self.temperature = temperature
 
-    def agent(self):
-        agent_config = {
-            "name": f"{self.agent_name} Agent",
-            "instructions": self.system_prompt,
-            "model": OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
-                openai_client=self.gemini_client,
-            ),
-            "model_settings": ModelSettings(
-                temperature=self.temperature,
-                include_usage=True,
-                reasoning=Reasoning(effort="low"),
-            ),
-        }
+    def agent(self) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not initialized")
         
-        # Only add output_type for advanced mode
-        if self.advanced:
-            agent_config["output_type"] = ParallelOutput
-            
-        return Agent(**agent_config)
+        return Agent(
+                name=f"{self.agent_name} Agent",
+                instructions=self.system_prompt,
+                model=OpenAIChatCompletionsModel(
+                    model="gemini-2.5-flash-preview-04-17",
+                    openai_client=self.gemini_client,
+                ),
+                model_settings=ModelSettings(
+                    temperature=self.temperature,
+                    include_usage=True,
+                    reasoning=Reasoning(effort="low"),
+                ),
+                output_type=ParallelOutput,
+            )

@@ -1,23 +1,19 @@
-from app.db import get_session
-from sqlmodel import Session
-from app.models import (
-    Classes,
-    Documents,
-    Topics,
-    Schedules,
-    Events,
-)
-from fastapi import Depends
 import logging
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
-from openai.types import Reasoning
-from app.extensions import get_gemini, UPLOAD_FOLDER
-from sqlmodel import select
-from pydantic import BaseModel
-from datetime import datetime
 import os
-import PyPDF2
+import uuid
+from datetime import datetime
+from typing import Any
+
 import docx
+import PyPDF2
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from app.db import get_session
+from app.extensions import UPLOAD_FOLDER, get_gemini
+from app.models import Classes, Documents, Events, Schedules, Topics
+from fastapi import Depends
+from openai.types import Reasoning
+from pydantic import BaseModel
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -108,8 +104,8 @@ def extract_text_from_file(file_path: str, mime_type: str) -> str:
 
 
 async def run_course_agent(
-    class_id: str, session: Session = Depends(get_session)
-) -> dict:
+    class_id: uuid.UUID, session: Session = Depends(get_session)
+) -> dict[str, Any]:
     """
     This function is used to run the course agent.
     Returns a dictionary with course results.
@@ -325,7 +321,7 @@ class Course(BaseModel):
 
 
 class CourseAgent:
-    def __init__(self):
+    def __init__(self) -> None:
         self.gemini_client = get_gemini()
         self.system_prompt = """Your purpose is to analyze a class based on its file names, document information, and syllabus content when available. You should try to fill in as much information as possible about the class. Here are some guidelines to help you:
 
@@ -380,7 +376,10 @@ class CourseAgent:
             "debug_info": "string"
         }"""
 
-    def agent(self):
+    def agent(self) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not initialized")
+        
         return Agent(
             name="Course Agent",
             instructions=self.system_prompt,
