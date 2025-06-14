@@ -51,7 +51,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
-import { Agent, Scenario, Simulation, Rubric, StandardGroup, Standard } from "@/types";
+import { Agent, Scenario, Simulation, StandardGroup, Standard } from "@/types";
 import { logInfo } from "@/utils/logger";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -242,7 +242,7 @@ const SimulationCard = React.memo(
     rubricData,
     scenarios,
     agents,
-    rubrics,
+    simulations,
     standardGroups,
     standards,
   }: {
@@ -254,7 +254,7 @@ const SimulationCard = React.memo(
     rubricData: { attempts: AttemptData[]; highestScore: number };
     scenarios?: Scenario[];
     agents?: Agent[];
-    rubrics?: Rubric[];
+    simulations?: Simulation[];
     standardGroups?: StandardGroup[];
     standards?: Standard[];
   }) => {
@@ -452,7 +452,7 @@ const SimulationCard = React.memo(
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {rubrics && standardGroups && standards && (
+                    {simulations && standardGroups && standards && (
                       <RubricModal
                         simulations={simulations}
                         simulationId={simulation.id}
@@ -969,7 +969,7 @@ export default function Home() {
                 rubricData={getRealRubricData(simulation.id)}
                 scenarios={scenarios ?? []}
                 agents={agents ?? []}
-                rubrics={rubrics ?? []}
+                simulations={simulations ?? []}
                 standardGroups={standardGroups ?? []}
                 standards={standards ?? []}
               />
@@ -1004,7 +1004,6 @@ export default function Home() {
       getRealRubricData,
       scenarios,
       agents,
-      rubrics,
       standardGroups,
       standards,
     ]

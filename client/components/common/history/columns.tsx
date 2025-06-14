@@ -58,7 +58,7 @@ export function useColumns({
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!.toString()),
+    queryFn: () => getProfilesByUser(user!.id!),
     select: (data) => data[0],
     enabled: !!user,
   });

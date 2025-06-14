@@ -36,7 +36,8 @@ import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useSession } from "next-auth/react";
-import { logError } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
+import { Class as ClassData } from "@/types";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -178,7 +179,7 @@ export default function NewStaff() {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to create staff member
-      console.log("Creating staff member:", formData);
+      logInfo("Creating staff member:", formData);
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -260,7 +261,7 @@ export default function NewStaff() {
     setIsSubmitting(true);
     try {
       // TODO: Implement API call to bulk create staff members
-      console.log("Creating staff members from CSV:", csvPreview);
+      logInfo("Creating staff members from CSV:", { csvPreview });
 
       // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -363,9 +364,9 @@ export default function NewStaff() {
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No classes available
                   </p>
-                ) : (
+                ) : ( 
                   <div className="space-y-3">
-                    {allClasses.map((classItem: any) => (
+                    {allClasses.map((classItem: ClassData) => (
                       <div
                         key={classItem.id}
                         className="flex items-center space-x-2"

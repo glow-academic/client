@@ -36,7 +36,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Profile, ProfileRole } from "@/types";
+import { Class as ClassData, Profile, ProfileRole } from "@/types";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
@@ -375,7 +375,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {allClasses.map((classItem: any) => (
+                      {allClasses.map((classItem: ClassData) => (
                         <div
                           key={classItem.id}
                           className="flex items-center space-x-2"
