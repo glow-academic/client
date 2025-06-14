@@ -1,10 +1,10 @@
+import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
-import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -67,21 +67,28 @@ vi.mock("@/utils/navigation-utils", () => ({
 
 // Mock UI components
 vi.mock("@/components/ui/sidebar", () => ({
-  Sidebar: ({ children, ...props }: any) => (
+  Sidebar: ({ children, ...props }: React.ComponentProps<"div">) => (
     <div data-testid="sidebar" {...props}>
       {children}
     </div>
   ),
-  SidebarContent: ({ children }: any) => (
+  SidebarContent: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-content">{children}</div>
   ),
-  SidebarGroup: ({ children }: any) => (
+  SidebarGroup: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-group">{children}</div>
   ),
-  SidebarGroupContent: ({ children }: any) => (
+  SidebarGroupContent: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-group-content">{children}</div>
   ),
-  SidebarGroupLabel: ({ children, asChild, ...props }: any) =>
+  SidebarGroupLabel: ({
+    children,
+    asChild,
+    ...props
+  }: {
+    children: ReactNode;
+    asChild?: boolean;
+  } & React.ComponentProps<"div">) =>
     asChild ? (
       <div {...props}>{children}</div>
     ) : (
@@ -89,13 +96,22 @@ vi.mock("@/components/ui/sidebar", () => ({
         {children}
       </div>
     ),
-  SidebarHeader: ({ children }: any) => (
+  SidebarHeader: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-header">{children}</div>
   ),
-  SidebarMenu: ({ children }: any) => (
+  SidebarMenu: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-menu">{children}</div>
   ),
-  SidebarMenuButton: ({ children, onClick, isActive, ...props }: any) => (
+  SidebarMenuButton: ({
+    children,
+    onClick,
+    isActive,
+    ...props
+  }: {
+    children: ReactNode;
+    onClick?: () => void;
+    isActive?: boolean;
+  } & React.ComponentProps<"button">) => (
     <button
       data-testid="sidebar-menu-button"
       onClick={onClick}
@@ -105,47 +121,64 @@ vi.mock("@/components/ui/sidebar", () => ({
       {children}
     </button>
   ),
-  SidebarMenuItem: ({ children }: any) => (
+  SidebarMenuItem: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-menu-item">{children}</div>
   ),
   SidebarRail: () => <div data-testid="sidebar-rail" />,
-  SidebarInput: ({ onChange, ...props }: any) => (
+  SidebarInput: ({
+    onChange,
+    ...props
+  }: {
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  } & React.ComponentProps<"input">) => (
     <input data-testid="sidebar-input" onChange={onChange} {...props} />
   ),
-  SidebarFooter: ({ children }: any) => (
+  SidebarFooter: ({ children }: { children: ReactNode }) => (
     <div data-testid="sidebar-footer">{children}</div>
   ),
 }));
 
 vi.mock("@/components/ui/collapsible", () => ({
-  Collapsible: ({ children }: any) => (
+  Collapsible: ({ children }: { children: ReactNode }) => (
     <div data-testid="collapsible">{children}</div>
   ),
-  CollapsibleContent: ({ children }: any) => (
+  CollapsibleContent: ({ children }: { children: ReactNode }) => (
     <div data-testid="collapsible-content">{children}</div>
   ),
-  CollapsibleTrigger: ({ children }: any) => (
+  CollapsibleTrigger: ({ children }: { children: ReactNode }) => (
     <button data-testid="collapsible-trigger">{children}</button>
   ),
 }));
 
 vi.mock("@/components/ui/dropdown-menu", () => ({
-  DropdownMenu: ({ children }: any) => (
+  DropdownMenu: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-menu">{children}</div>
   ),
-  DropdownMenuContent: ({ children }: any) => (
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-menu-content">{children}</div>
   ),
-  DropdownMenuItem: ({ children, onSelect }: any) => (
+  DropdownMenuItem: ({
+    children,
+    onSelect,
+  }: {
+    children: ReactNode;
+    onSelect?: () => void;
+  }) => (
     <button data-testid="dropdown-menu-item" onClick={onSelect}>
       {children}
     </button>
   ),
-  DropdownMenuLabel: ({ children }: any) => (
+  DropdownMenuLabel: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-menu-label">{children}</div>
   ),
   DropdownMenuSeparator: () => <div data-testid="dropdown-menu-separator" />,
-  DropdownMenuTrigger: ({ children, asChild }: any) =>
+  DropdownMenuTrigger: ({
+    children,
+    asChild,
+  }: {
+    children: ReactNode;
+    asChild?: boolean;
+  }) =>
     asChild ? (
       children
     ) : (
@@ -154,14 +187,19 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
 }));
 
 vi.mock("@/components/ui/avatar", () => ({
-  Avatar: ({ children }: any) => <div data-testid="avatar">{children}</div>,
-  AvatarFallback: ({ children }: any) => (
+  Avatar: ({ children }: { children: ReactNode }) => (
+    <div data-testid="avatar">{children}</div>
+  ),
+  AvatarFallback: ({ children }: { children: ReactNode }) => (
     <div data-testid="avatar-fallback">{children}</div>
   ),
 }));
 
 vi.mock("@/components/ui/label", () => ({
-  Label: ({ children, ...props }: any) => (
+  Label: ({
+    children,
+    ...props
+  }: { children: ReactNode } & React.ComponentProps<"label">) => (
     <label data-testid="label" {...props}>
       {children}
     </label>
@@ -186,6 +224,7 @@ describe("UnifiedSidebar", () => {
     forward: vi.fn(),
     refresh: vi.fn(),
     replace: vi.fn(),
+    prefetch: vi.fn(),
   };
 
   beforeEach(() => {
@@ -197,7 +236,7 @@ describe("UnifiedSidebar", () => {
       },
     });
 
-    (useRouter as any).mockReturnValue(mockRouter);
+    vi.mocked(useRouter).mockReturnValue(mockRouter);
     mockGetFirstAvailableSection.mockReturnValue("overview");
     mockIsSectionAvailable.mockReturnValue(true);
 
@@ -224,7 +263,7 @@ describe("UnifiedSidebar", () => {
 
     it("should render with required props", () => {
       renderWithProviders(
-        <UnifiedSidebar activeSection="analytics" onSectionChange={vi.fn()} />,
+        <UnifiedSidebar activeSection="analytics" onSectionChange={vi.fn()} />
       );
 
       expect(screen.getByTestId("sidebar")).toBeInTheDocument();
@@ -252,9 +291,9 @@ describe("UnifiedSidebar", () => {
 
       // Find and click dropdown menu items (role switcher)
       const dropdownItems = screen.getAllByTestId("dropdown-menu-item");
-      
+
       // Simulate clicking on guest mode (assuming it's one of the dropdown items)
-      if (dropdownItems.length > 0) {
+      if (dropdownItems.length > 0 && dropdownItems[0]) {
         await user.click(dropdownItems[0]);
         // The actual role switching logic would be tested with proper mocking
       }
@@ -298,7 +337,7 @@ describe("UnifiedSidebar", () => {
         <UnifiedSidebar
           activeSection="home"
           onSectionChange={mockOnSectionChange}
-        />,
+        />
       );
 
       // Component should render without errors
@@ -314,14 +353,16 @@ describe("UnifiedSidebar", () => {
       expect(menuButtons.length).toBeGreaterThan(0);
 
       // Test that we can interact with the first menu button
-      await user.click(menuButtons[0]);
+      if (menuButtons[0]) {
+        await user.click(menuButtons[0]);
+      }
     });
   });
 
   describe("Section Availability", () => {
     it("should check section availability for current role", () => {
       renderWithProviders(<UnifiedSidebar activeSection="overview" />);
-      
+
       expect(mockIsSectionAvailable).toHaveBeenCalledWith("overview");
     });
 
@@ -329,7 +370,9 @@ describe("UnifiedSidebar", () => {
       mockIsSectionAvailable.mockReturnValue(false);
       mockGetFirstAvailableSection.mockReturnValue("home");
 
-      renderWithProviders(<UnifiedSidebar activeSection="restricted-section" />);
+      renderWithProviders(
+        <UnifiedSidebar activeSection="restricted-section" />
+      );
 
       expect(mockGetFirstAvailableSection).toHaveBeenCalled();
     });
@@ -380,7 +423,7 @@ describe("UnifiedSidebar", () => {
         <UnifiedSidebar
           activeSection="home"
           onSectionChange={mockOnSectionChange}
-        />,
+        />
       );
 
       // Component should render navigation elements

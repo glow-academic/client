@@ -1,18 +1,14 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DataTable } from "@/components/common/history/data-table";
+import { render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the child components
 vi.mock("@/components/common/history/data-table-pagination", () => ({
-  DataTablePagination: ({ table }: any) => (
-    <div data-testid="pagination">Pagination</div>
-  ),
+  DataTablePagination: () => <div data-testid="pagination">Pagination</div>,
 }));
 
 vi.mock("@/components/common/history/data-table-toolbar", () => ({
-  DataTableToolbar: ({ table, profileOptions, classOptions }: any) => (
-    <div data-testid="toolbar">Toolbar</div>
-  ),
+  DataTableToolbar: () => <div data-testid="toolbar">Toolbar</div>,
 }));
 
 // Mock react-table
@@ -138,12 +134,12 @@ describe("DataTable", () => {
     it("should render without crashing", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -153,12 +149,12 @@ describe("DataTable", () => {
     it("should render table structure", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByRole("table")).toBeInTheDocument();
@@ -167,12 +163,12 @@ describe("DataTable", () => {
     it("should render toolbar with correct props", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -181,12 +177,12 @@ describe("DataTable", () => {
     it("should render pagination with correct props", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("pagination")).toBeInTheDocument();
@@ -197,12 +193,12 @@ describe("DataTable", () => {
     it("should render table headers", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("Test Header")).toBeInTheDocument();
@@ -211,12 +207,12 @@ describe("DataTable", () => {
     it("should render table cells", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("Test Cell")).toBeInTheDocument();
@@ -226,16 +222,16 @@ describe("DataTable", () => {
       const mockEmptyTable = createMockTable({
         getRowModel: vi.fn(() => ({ rows: [] })),
       });
-      mockUseReactTable.mockReturnValue(mockEmptyTable as any);
+      mockUseReactTable.mockReturnValue(mockEmptyTable as never);
 
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={[]}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("No results.")).toBeInTheDocument();
@@ -246,13 +242,13 @@ describe("DataTable", () => {
     it("should pass showExport prop to toolbar when provided", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showExport={true}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -261,13 +257,13 @@ describe("DataTable", () => {
     it("should handle showExport false", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           showExport={false}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -284,16 +280,16 @@ describe("DataTable", () => {
       const mockTableWithColumn = createMockTable({
         getColumn: vi.fn(() => mockColumn),
       });
-      mockUseReactTable.mockReturnValue(mockTableWithColumn as any);
+      mockUseReactTable.mockReturnValue(mockTableWithColumn as never);
 
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       // The useEffect for date filtering should be tested through integration
@@ -303,12 +299,12 @@ describe("DataTable", () => {
     it("should handle date range state", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       // Date range state should be managed internally
@@ -320,12 +316,12 @@ describe("DataTable", () => {
     it("should initialize with correct default state", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(mockUseReactTable).toHaveBeenCalledWith(
@@ -333,7 +329,7 @@ describe("DataTable", () => {
           data: mockData,
           columns: mockColumns,
           enableRowSelection: true,
-        }),
+        })
       );
     });
 
@@ -356,16 +352,16 @@ describe("DataTable", () => {
         })),
       });
 
-      mockUseReactTable.mockReturnValue(mockTableWithSelection as any);
+      mockUseReactTable.mockReturnValue(mockTableWithSelection as never);
 
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("Selected Cell")).toBeInTheDocument();
@@ -374,36 +370,36 @@ describe("DataTable", () => {
     it("should handle sorting state", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(mockUseReactTable).toHaveBeenCalledWith(
         expect.objectContaining({
           getSortedRowModel: expect.any(Function),
-        }),
+        })
       );
     });
 
     it("should handle filtering state", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(mockUseReactTable).toHaveBeenCalledWith(
         expect.objectContaining({
           getFilteredRowModel: expect.any(Function),
-        }),
+        })
       );
     });
   });
@@ -412,12 +408,12 @@ describe("DataTable", () => {
     it("should handle empty profileOptions", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={[]}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -426,12 +422,12 @@ describe("DataTable", () => {
     it("should handle empty classOptions", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={[]}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -440,12 +436,12 @@ describe("DataTable", () => {
     it("should handle undefined showExport prop", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={mockData}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("pagination")).toBeInTheDocument();
@@ -454,12 +450,12 @@ describe("DataTable", () => {
     it("should handle empty data array", () => {
       render(
         <DataTable
-          columns={mockColumns as any}
+          columns={mockColumns as never[]}
           data={[]}
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
@@ -474,7 +470,7 @@ describe("DataTable", () => {
           profileOptions={mockprofileOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
-        />,
+        />
       );
 
       expect(screen.getByTestId("toolbar")).toBeInTheDocument();
