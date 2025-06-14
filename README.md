@@ -8,6 +8,7 @@ GLOW provides AI student profiles to assist graduate teaching assistants in thei
 
 ## Getting Started
 
+
 ### Quick Start (Recommended)
 
 The easiest way to start the entire development environment:
