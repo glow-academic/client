@@ -1,13 +1,14 @@
+import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getRubric } from "./queries/rubrics/get-rubric";
+import { getEvalRun } from "./queries/eval_runs/get-eval-run";
 import { getEval } from "./queries/evals/get-eval";
+import { getProfile } from "./queries/profiles/get-profile";
+import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { getProfile } from "./queries/profiles/get-profile";
-import { getEvalRun } from "./queries/eval_runs/get-eval-run";
+import { logError } from "@/utils/logger";
 
 interface BreadcrumbItem {
   title: string;
@@ -34,7 +35,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         }
         // get simulation for attempt
         const attemptSimulation = await getSimulation(
-          attemptData?.simulationId,
+          attemptData?.simulationId
         );
         // Attempts don't have a title, so we'll use a generic name with timestamp
         return attemptSimulation?.title || `Attempt ${id.substring(0, 8)}...`;
@@ -57,7 +58,10 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
       case "profile":
         const profileData = await getProfile(id);
-        return profileData?.firstName + " " + profileData?.lastName || `Profile ${id.substring(0, 8)}...`;
+        return (
+          profileData?.firstName + " " + profileData?.lastName ||
+          `Profile ${id.substring(0, 8)}...`
+        );
 
       case "rubric":
         const rubricData = await getRubric(id);
@@ -66,7 +70,7 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "eval":
         const evalData = await getEval(id);
         return evalData?.name || `Evaluation ${id.substring(0, 8)}...`;
-      
+
       case "eval-run":
         const evalRunData = await getEvalRun(id);
         // get the agent for the eval run
@@ -83,14 +87,14 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
   } catch (error) {
-    console.error(`Error fetching name for ${context} ID ${id}:`, error);
+    logError(`Error fetching name for ${context} ID ${id}:`, error);
     return id.length > 10 ? `${id.substring(0, 8)}...` : id;
   }
 };
 
 // Enhanced breadcrumb generation with async ID resolution
 export const generateEnhancedBreadcrumbs = async (
-  pathname: string,
+  pathname: string
 ): Promise<BreadcrumbItem[]> => {
   const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs: BreadcrumbItem[] = [];
@@ -112,7 +116,8 @@ export const generateEnhancedBreadcrumbs = async (
     // IDs are typically UUIDs or hex strings with dashes, not regular words
     const isLikelyId =
       /^[a-f0-9-]{8,}/.test(segment || "") ||
-      (segment?.length && segment?.length > 15 &&
+      (segment?.length &&
+        segment?.length > 15 &&
         /^[a-zA-Z0-9-]+$/.test(segment || "") &&
         segment?.includes("-"));
 
@@ -436,7 +441,12 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       default:
         // For IDs, try to make them more readable
         // Only truncate if it looks like an ID (contains dashes and is long)
-        if (segment && segment.length && segment.length > 15 && segment.includes("-")) {
+        if (
+          segment &&
+          segment.length &&
+          segment.length > 15 &&
+          segment.includes("-")
+        ) {
           title = `${segment.substring(0, 8)}...`;
         } else if (segment) {
           title = segment.charAt(0).toUpperCase() + segment.slice(1);

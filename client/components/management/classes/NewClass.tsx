@@ -5,18 +5,19 @@
  * 06/07/2025
  */
 "use client";
-import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import React, { useRef, useState } from "react";
 import { toast } from "sonner";
 import * as tus from "tus-js-client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Archive, CheckCircle, Loader2 } from "lucide-react";
+import { Archive, CheckCircle, Loader2, Plus } from "lucide-react";
+import { logError } from "@/utils/logger";
 
-import { createClass } from "@/utils/mutations/classes/create-class";
 import ClassForm from "@/components/common/class/ClassForm";
+import { createClass } from "@/utils/mutations/classes/create-class";
 
 type ProcessingStep =
   | "idle"
@@ -80,7 +81,7 @@ export default function NewClass() {
       const toastId = toast.loading(`Uploading ${file.name}...`);
 
       // Get the API URL from environment
-      const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || "";
+      const apiUrl = process.env["NEXT_PUBLIC_API_URL"] || "";
 
       // Upload the ZIP file using tus
       await new Promise<void>((resolve, reject) => {
@@ -99,7 +100,7 @@ export default function NewClass() {
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: tusMetadata,
           onError: (error) => {
-            console.error(`Failed to upload ${file.name}: `, error);
+            logError(`Failed to upload ${file.name}: `, error);
             setFileUploads((prev) =>
               prev.map((item) =>
                 item.id === fileUploadStatus.id
@@ -108,12 +109,12 @@ export default function NewClass() {
                       status: "error",
                       error: error.message || "Unknown error",
                     }
-                  : item,
-              ),
+                  : item
+              )
             );
             toast.dismiss(toastId);
             toast.error(
-              `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
+              `Failed to upload ${file.name}: ${error.message || "Unknown error"}`
             );
             reject(error);
           },
@@ -124,8 +125,8 @@ export default function NewClass() {
               prev.map((item) =>
                 item.id === fileUploadStatus.id
                   ? { ...item, progress: percentage }
-                  : item,
-              ),
+                  : item
+              )
             );
           },
           onSuccess: async () => {
@@ -152,7 +153,7 @@ export default function NewClass() {
               if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(
-                  errorData.message || "Failed to finalize upload",
+                  errorData.message || "Failed to finalize upload"
                 );
               }
 
@@ -160,13 +161,13 @@ export default function NewClass() {
                 prev.map((item) =>
                   item.id === fileUploadStatus.id
                     ? { ...item, status: "complete", progress: 100 }
-                    : item,
-                ),
+                    : item
+                )
               );
 
               toast.dismiss(toastId);
               toast.success(
-                `${file.name} uploaded and processed successfully!`,
+                `${file.name} uploaded and processed successfully!`
               );
 
               setProcessingStep("complete");
@@ -178,7 +179,7 @@ export default function NewClass() {
 
               resolve();
             } catch (error) {
-              console.error(`Finalization error for ${file.name}:`, error);
+              logError(`Finalization error for ${file.name}:`, error);
               setFileUploads((prev) =>
                 prev.map((item) =>
                   item.id === fileUploadStatus.id
@@ -190,12 +191,12 @@ export default function NewClass() {
                             ? error.message
                             : "Unknown error",
                       }
-                    : item,
-                ),
+                    : item
+                )
               );
               toast.dismiss(toastId);
               toast.error(
-                `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+                `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`
               );
               reject(error);
             }
@@ -205,9 +206,9 @@ export default function NewClass() {
         upload.start();
       });
     } catch (error) {
-      console.error("ZIP upload error:", error);
+      logError("ZIP upload error:", error);
       toast.error(
-        `Failed to upload ZIP: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to upload ZIP: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setProcessingStep("idle");
     }

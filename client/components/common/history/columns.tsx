@@ -1,36 +1,35 @@
 "use client";
-import React from "react";
-import { ColumnDef, Row, Table } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/common/history/data-table-column-header";
 import { DataTableRowActions } from "@/components/common/history/data-table-row-actions";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { Badge } from "../../ui/badge";
-import { getAgentConfig } from "@/utils/agents";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Agent,
   Class,
-  SimulationChat,
-  SimulationAttempt,
   Profile,
   Scenario,
+  SimulationAttempt,
+  SimulationChat,
 } from "@/types";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getAgentConfig } from "@/utils/agents";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useSession } from "next-auth/react";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { useQuery } from "@tanstack/react-query";
+import { ColumnDef, Row, Table } from "@tanstack/react-table";
+import { useSession } from "next-auth/react";
+import { useMemo } from "react";
+import { Badge } from "../../ui/badge";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -59,7 +58,7 @@ export function useColumns({
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryFn: () => getProfilesByUser(user!.id!.toString()),
     select: (data) => data[0],
     enabled: !!user,
   });
@@ -100,7 +99,7 @@ export function useColumns({
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -112,7 +111,8 @@ export function useColumns({
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
     enabled: !!profiles && profiles.length > 0,
   });
 
@@ -134,7 +134,7 @@ export function useColumns({
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -162,14 +162,16 @@ export function useColumns({
   // Create class options - only include classes that are used in scenarios
   const classOptions = useMemo(() => {
     if (!classes || !scenarios) return [];
-    
+
     // Get unique class IDs from scenarios
-    const usedClassIds = [...new Set(
-      scenarios
-        .map((scenario: Scenario) => scenario.classId)
-        .filter((classId): classId is string => classId !== null)
-    )];
-    
+    const usedClassIds = [
+      ...new Set(
+        scenarios
+          .map((scenario: Scenario) => scenario.classId)
+          .filter((classId): classId is string => classId !== null)
+      ),
+    ];
+
     return classes
       .filter((cls: Class) => usedClassIds.includes(cls.id))
       .map((cls: Class) => ({
@@ -188,13 +190,17 @@ export function useColumns({
   // Filter valid standard groups based on valid rubrics
   const validStandardGroups = useMemo(() => {
     if (!standardGroups || !validRubrics) return [];
-    return standardGroups.filter((g) => validRubrics.some((r) => r.id === g.rubricId));
+    return standardGroups.filter((g) =>
+      validRubrics.some((r) => r.id === g.rubricId)
+    );
   }, [standardGroups, validRubrics]);
 
   // Filter valid standards based on valid standard groups
   const validStandards = useMemo(() => {
     if (!standards || !validStandardGroups) return [];
-    return standards.filter((s) => validStandardGroups.some((g) => g.id === s.standardGroupId));
+    return standards.filter((s) =>
+      validStandardGroups.some((g) => g.id === s.standardGroupId)
+    );
   }, [standards, validStandardGroups]);
 
   // Create enhanced attempts data
@@ -203,9 +209,9 @@ export function useColumns({
 
     return attempts.map((attempt: SimulationAttempt): EnhancedAttempt => {
       const attemptChats = chats.filter(
-        (chat) => chat.attemptId === attempt.id,
+        (chat) => chat.attemptId === attempt.id
       );
-      
+
       // Get agents from all scenarios in the chats
       const agentsTested = [
         ...new Set(
@@ -214,27 +220,33 @@ export function useColumns({
             const scenario = scenarios.find((s) => s.id === chat.scenarioId);
             if (scenario) {
               // Find agent by the agentId in the scenario
-              const scenarioAgent = agents.find((a) => a.id === scenario.agentId);
+              const scenarioAgent = agents.find(
+                (a) => a.id === scenario.agentId
+              );
               return scenarioAgent?.name || "Unknown Agent";
             }
-            
+
             return "Unknown Agent";
-          }),
+          })
         ),
-      ].filter(name => name !== "Unknown Agent"); // Filter out unknown agents
+      ].filter((name) => name !== "Unknown Agent"); // Filter out unknown agents
 
       const simulation = simulations?.find(
-        (s) => s.id === attempt.simulationId,
+        (s) => s.id === attempt.simulationId
       );
 
       // Derive all classIds from all scenarios in the chats
       const derivedClassIds = [
         ...new Set(
-          attemptChats.map((chat) => {
-            const scenario = scenarios.find((s: Scenario) => s.id === chat.scenarioId);
-            return scenario?.classId;
-          }).filter((classId): classId is string => classId !== null)
-        )
+          attemptChats
+            .map((chat) => {
+              const scenario = scenarios.find(
+                (s: Scenario) => s.id === chat.scenarioId
+              );
+              return scenario?.classId;
+            })
+            .filter((classId): classId is string => classId !== null)
+        ),
       ];
 
       return {
@@ -257,10 +269,10 @@ export function useColumns({
 
     validStandardGroups.forEach((group) => {
       const groupStandards = validStandards.filter(
-        (s) => s.standardGroupId === group.id,
+        (s) => s.standardGroupId === group.id
       );
       const groupFeedbacks = feedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId),
+        groupStandards.some((s) => s.id === f.standardId)
       );
 
       if (groupFeedbacks.length > 0) {
@@ -285,24 +297,27 @@ export function useColumns({
   }, [validStandardGroups]);
 
   // Create score range options for filtering
-  const scoreRangeOptions = useMemo(() => [
-    {
-      value: "excellent",
-      label: "Excellent (80%+)",
-    },
-    {
-      value: "good",
-      label: "Good (70-79%)",
-    },
-    {
-      value: "needs-improvement",
-      label: "Needs Improvement (<70%)",
-    },
-    {
-      value: "not-graded",
-      label: "Not Graded",
-    },
-  ], []);
+  const scoreRangeOptions = useMemo(
+    () => [
+      {
+        value: "excellent",
+        label: "Excellent (80%+)",
+      },
+      {
+        value: "good",
+        label: "Good (70-79%)",
+      },
+      {
+        value: "needs-improvement",
+        label: "Needs Improvement (<70%)",
+      },
+      {
+        value: "not-graded",
+        label: "Not Graded",
+      },
+    ],
+    []
+  );
 
   // Define columns - only attempts view
   const columns = useMemo(() => {
@@ -344,10 +359,7 @@ export function useColumns({
       {
         accessorKey: "createdAt",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Date"
-          />
+          <DataTableColumnHeader column={column} title="Date" />
         ),
         cell: ({ row }) => {
           const date = row.getValue("createdAt");
@@ -388,22 +400,17 @@ export function useColumns({
         ? [
             {
               accessorKey: "profileId",
-              header: ({ column }: any) => (
-                <DataTableColumnHeader
-                  column={column}
-                  title="Name"
-                />
+              header: ({ column }: { column: any }) => (
+                <DataTableColumnHeader column={column} title="Name" />
               ),
-              cell: ({ row }: any) => {
+              cell: ({ row }: { row: any }) => {
                 const profileOption = profileOptions.find(
-                  (profile) => profile.value === row.getValue("profileId"),
+                  (profile) => profile.value === row.getValue("profileId")
                 );
 
                 if (!profileOption) {
                   return (
-                    <span className="text-muted-foreground">
-                      Unknown User
-                    </span>
+                    <span className="text-muted-foreground">Unknown User</span>
                   );
                 }
 
@@ -424,10 +431,7 @@ export function useColumns({
       {
         accessorKey: "simulationTitle",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Simulation"
-          />
+          <DataTableColumnHeader column={column} title="Simulation" />
         ),
         cell: ({ row }) => {
           return (
@@ -443,27 +447,28 @@ export function useColumns({
       {
         accessorKey: "classIds",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Classes"
-          />
+          <DataTableColumnHeader column={column} title="Classes" />
         ),
         cell: ({ row }) => {
           const classIds = row.original.classIds || [];
-          
+
           if (!classIds || classIds.length === 0) {
             return <span className="text-muted-foreground">No Classes</span>;
           }
 
-          const classLabels = classIds.map(classId => {
-            const classOption = classOptions.find(
-              (cls) => cls.value === classId,
-            );
-            return classOption ? classOption.label : "Unknown Class";
-          }).filter(label => label !== "Unknown Class");
+          const classLabels = classIds
+            .map((classId) => {
+              const classOption = classOptions.find(
+                (cls) => cls.value === classId
+              );
+              return classOption ? classOption.label : "Unknown Class";
+            })
+            .filter((label) => label !== "Unknown Class");
 
           if (classLabels.length === 0) {
-            return <span className="text-muted-foreground">Unknown Classes</span>;
+            return (
+              <span className="text-muted-foreground">Unknown Classes</span>
+            );
           }
 
           return (
@@ -491,10 +496,7 @@ export function useColumns({
       {
         accessorKey: "chats",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Chats"
-          />
+          <DataTableColumnHeader column={column} title="Chats" />
         ),
         cell: ({ row }) => {
           const chats = row.getValue("chats") as SimulationChat[];
@@ -519,10 +521,7 @@ export function useColumns({
       {
         accessorKey: "agentsTested",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Agents"
-          />
+          <DataTableColumnHeader column={column} title="Agents" />
         ),
         cell: ({ row }) => {
           const agentsTested = row.getValue("agentsTested") as string[];
@@ -561,8 +560,8 @@ export function useColumns({
           if (!value || value.length === 0) return true;
           return value.some((filterAgent: string) =>
             agentsTested?.some((agent) =>
-              agent.toLowerCase().includes(filterAgent.toLowerCase()),
-            ),
+              agent.toLowerCase().includes(filterAgent.toLowerCase())
+            )
           );
         },
       },
@@ -570,10 +569,7 @@ export function useColumns({
       {
         accessorKey: "averageScore",
         header: ({ column }) => (
-          <DataTableColumnHeader
-            column={column}
-            title="Score"
-          />
+          <DataTableColumnHeader column={column} title="Score" />
         ),
         accessorFn: (row: EnhancedAttempt) => {
           const chats = row.chats;
@@ -581,7 +577,7 @@ export function useColumns({
 
           const chatGrades = chats
             .map((chat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id),
+              grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
@@ -589,7 +585,7 @@ export function useColumns({
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0,
+            0
           );
           return totalScore / chatGrades.length;
         },
@@ -601,23 +597,21 @@ export function useColumns({
 
           const chatGrades = chats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id),
+              grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
           if (chatGrades.length === 0) {
             const completedChats = chats.filter((chat) => chat.completed);
             if (completedChats.length > 0) {
-              return (
-                <div className="text-amber-500">Grading in progress</div>
-              );
+              return <div className="text-amber-500">Grading in progress</div>;
             }
             return <div className="text-muted-foreground">Not graded</div>;
           }
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0,
+            0
           );
           const averageScore = totalScore / chatGrades.length;
           const scorePercent = Math.round(averageScore);
@@ -648,7 +642,7 @@ export function useColumns({
 
           const chatGrades = chats
             .map((chat: SimulationChat) =>
-              grades?.find((grade) => grade.simulationChatId === chat.id),
+              grades?.find((grade) => grade.simulationChatId === chat.id)
             )
             .filter(Boolean);
 
@@ -658,7 +652,7 @@ export function useColumns({
 
           const totalScore = chatGrades.reduce(
             (sum: number, grade) => sum + (grade?.score || 0),
-            0,
+            0
           );
           const averageScore = totalScore / chatGrades.length;
           const scorePercent = Math.round(averageScore);
@@ -678,11 +672,7 @@ export function useColumns({
         cell: ({ row }) => {
           const attempt = row.original;
 
-          return (
-            <DataTableRowActions
-              id={attempt.id}
-            />
-          );
+          return <DataTableRowActions id={attempt.id} />;
         },
       },
     ];
@@ -698,7 +688,7 @@ export function useColumns({
     // If showAll is false, filter to show only current user's data
     data = data.filter(
       (attempt: unknown) =>
-        (attempt as Record<string, unknown>)['profileId'] === profile?.id,
+        (attempt as Record<string, unknown>)["profileId"] === profile?.id
     );
   } else if (!user) {
     // If there's no user, show empty data

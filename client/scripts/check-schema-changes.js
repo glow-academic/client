@@ -3,6 +3,7 @@
 import { execSync, spawn } from "child_process";
 import { existsSync } from "fs";
 
+
 async function runCommand(command, args, description) {
   console.log(`🚀 ${description}...`);
 

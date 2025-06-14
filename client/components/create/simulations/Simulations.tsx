@@ -5,32 +5,16 @@
  * 06/07/2025
  */
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Edit, Plus, Sparkles, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Edit,
-  Trash2,
-  Timer,
-  Users,
-  Plus,
-  Sparkles,
-} from "lucide-react";
+import { logError } from "@/utils/logger";
 
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,6 +25,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Simulation } from "@/types";
 
 export function Simulations() {
@@ -68,7 +62,7 @@ export function Simulations() {
       toast.success("Simulation deleted successfully");
       refetchSimulations();
     } catch (error) {
-      console.error("Error deleting simulation:", error);
+      logError("Error deleting simulation:", error);
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -105,8 +99,9 @@ export function Simulations() {
                   </CardTitle>
                   <CardDescription className="flex items-center gap-2">
                     <Timer className="h-3 w-3" />
-                    {simulation.timeLimit ? `${simulation.timeLimit} minutes` : "No time limit"}
-
+                    {simulation.timeLimit
+                      ? `${simulation.timeLimit} minutes`
+                      : "No time limit"}
 
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Users className="h-3 w-3" />

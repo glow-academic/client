@@ -5,25 +5,6 @@
  * 06/09/2025
  */
 "use client";
-import React, { useMemo, useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, compareAsc, startOfDay, subDays } from "date-fns";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -34,6 +15,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -41,37 +31,57 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Trash2, Calendar, Users, TrendingUp, Activity, Clock, Target, Award } from "lucide-react";
 import {
-  LineChart,
-  Line,
-  BarChart as RechartsBarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-} from "recharts";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getAgentConfig } from "@/utils/agents";
 import { deleteClass } from "@/utils/mutations/classes/delete-class";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { compareAsc, format, startOfDay, subDays } from "date-fns";
+import {
+  Activity,
+  Award,
+  Calendar,
+  Clock,
+  Target,
+  Trash2,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  BarChart as RechartsBarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { logError } from "@/utils/logger";
 
 // Color palette for charts
 const COLORS = {
@@ -89,8 +99,12 @@ export default function ClassesGeneralPage() {
   const queryClient = useQueryClient();
 
   // State for time range filters and delete dialog
-  const [scoreTrendTimeRange, setScoreTrendTimeRange] = useState<"7d" | "30d" | "90d">("7d");
-  const [personalityTimeRange, setPersonalityTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [scoreTrendTimeRange, setScoreTrendTimeRange] = useState<
+    "7d" | "30d" | "90d"
+  >("7d");
+  const [personalityTimeRange, setPersonalityTimeRange] = useState<
+    "7d" | "30d" | "90d"
+  >("30d");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
@@ -104,7 +118,7 @@ export default function ClassesGeneralPage() {
       setClassToDelete(null);
     },
     onError: (error) => {
-      console.error("Failed to delete class:", error);
+      logError("Failed to delete class:", error);
     },
   });
 
@@ -140,7 +154,7 @@ export default function ClassesGeneralPage() {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -157,7 +171,8 @@ export default function ClassesGeneralPage() {
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
     enabled: !!profiles && profiles.length > 0,
   });
 
@@ -179,7 +194,7 @@ export default function ClassesGeneralPage() {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -208,48 +223,63 @@ export default function ClassesGeneralPage() {
     const avgOverallScore =
       grades.length > 0
         ? Math.round(
-          grades.reduce((sum, g) => sum + g.score, 0) / grades.length,
-        )
+            grades.reduce((sum, g) => sum + g.score, 0) / grades.length
+          )
         : 0;
 
     // Calculate average training time from grades (convert seconds to minutes)
     const avgTrainingTime =
       grades.length > 0
         ? Math.round(
-          grades.reduce((sum, g) => sum + g.timeTaken, 0) /
-          grades.length /
-          60,
-        )
+            grades.reduce((sum, g) => sum + g.timeTaken, 0) / grades.length / 60
+          )
         : 0;
 
     // Calculate pass rate
-    const passRate = grades.length > 0
-      ? Math.round((grades.filter(g => g.passed).length / grades.length) * 100)
-      : 0;
+    const passRate =
+      grades.length > 0
+        ? Math.round(
+            (grades.filter((g) => g.passed).length / grades.length) * 100
+          )
+        : 0;
 
     // Calculate active classes (classes with recent activity)
-    const activeClasses = classes.filter(classItem => {
-      const classScenarios = scenarios?.filter(scenario => scenario.classId === classItem.id) || [];
+    const activeClasses = classes.filter((classItem) => {
+      const classScenarios =
+        scenarios?.filter((scenario) => scenario.classId === classItem.id) ||
+        [];
       // see if these scenarios were used in any simulations, and find attemmpts for those simulations
-      const classSimulations = simulations?.filter(simulation => classScenarios.some(scenario => simulation.scenarioIds.includes(scenario.id))) || [];
-      const classAttempts = attempts?.filter(attempt => classSimulations.some(simulation => simulation.id === attempt.simulationId)) || [];
+      const classSimulations =
+        simulations?.filter((simulation) =>
+          classScenarios.some((scenario) =>
+            simulation.scenarioIds.includes(scenario.id)
+          )
+        ) || [];
+      const classAttempts =
+        attempts?.filter((attempt) =>
+          classSimulations.some(
+            (simulation) => simulation.id === attempt.simulationId
+          )
+        ) || [];
       return classAttempts.length > 0;
     }).length;
 
     // Calculate struggling TAs (below 70% average)
-    const strugglingTAs = tas.filter(ta => {
-      const taAttempts = attempts?.filter(attempt => attempt.profileId === ta.id) || [];
-      const taChats = chats.filter(chat =>
-        taAttempts.some(attempt => attempt.id === chat.attemptId)
+    const strugglingTAs = tas.filter((ta) => {
+      const taAttempts =
+        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
+      const taChats = chats.filter((chat) =>
+        taAttempts.some((attempt) => attempt.id === chat.attemptId)
       );
-      const taGrades = grades.filter(grade =>
-        taChats.some(chat => chat.id === grade.simulationChatId)
+      const taGrades = grades.filter((grade) =>
+        taChats.some((chat) => chat.id === grade.simulationChatId)
       );
-      
-      const avgScore = taGrades.length > 0
-        ? taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
-        : 0;
-      
+
+      const avgScore =
+        taGrades.length > 0
+          ? taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
+          : 0;
+
       return avgScore < 70;
     }).length;
 
@@ -263,7 +293,7 @@ export default function ClassesGeneralPage() {
       activeClasses,
       strugglingTAs,
     };
-      }, [
+  }, [
     profiles,
     chats,
     grades,
@@ -280,7 +310,12 @@ export default function ClassesGeneralPage() {
   const scoreTrendData = useMemo(() => {
     if (!grades || grades.length === 0) return [];
 
-    const days = scoreTrendTimeRange === "7d" ? 7 : scoreTrendTimeRange === "30d" ? 30 : 90;
+    const days =
+      scoreTrendTimeRange === "7d"
+        ? 7
+        : scoreTrendTimeRange === "30d"
+          ? 30
+          : 90;
     const today = startOfDay(new Date());
     const dates: Record<string, { date: Date; scores: number[] }> = {};
 
@@ -307,18 +342,21 @@ export default function ClassesGeneralPage() {
         const avgScore =
           data.scores.length > 0
             ? Math.round(
-              data.scores.reduce((sum, score) => sum + score, 0) /
-              data.scores.length,
-            )
+                data.scores.reduce((sum, score) => sum + score, 0) /
+                  data.scores.length
+              )
             : 0;
 
         return {
-          date: format(data.date, scoreTrendTimeRange === "7d" ? "MM/dd" : "MM/dd"),
+          date: format(
+            data.date,
+            scoreTrendTimeRange === "7d" ? "MM/dd" : "MM/dd"
+          ),
           avgScore,
         };
       })
       .sort((a, b) =>
-        compareAsc(new Date(`2024-${a.date}`), new Date(`2024-${b.date}`)),
+        compareAsc(new Date(`2024-${a.date}`), new Date(`2024-${b.date}`))
       );
   }, [grades, scoreTrendTimeRange]);
 
@@ -326,7 +364,12 @@ export default function ClassesGeneralPage() {
   const personalityData = useMemo(() => {
     if (!chats || !agents || !scenarios) return [];
 
-    const days = personalityTimeRange === "7d" ? 7 : personalityTimeRange === "30d" ? 30 : 90;
+    const days =
+      personalityTimeRange === "7d"
+        ? 7
+        : personalityTimeRange === "30d"
+          ? 30
+          : 90;
     const cutoffDate = subDays(new Date(), days);
 
     // Count sessions by agent personality within time range
@@ -334,9 +377,11 @@ export default function ClassesGeneralPage() {
       .filter((agent) => agent.agentType === "student")
       .map((agent) => {
         const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
-        const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId) &&
-          new Date(chat.createdAt) >= cutoffDate,
+        const agentChats = chats.filter(
+          (chat) =>
+            agentScenarios.some(
+              (scenario) => scenario.id === chat.scenarioId
+            ) && new Date(chat.createdAt) >= cutoffDate
         );
 
         const config = getAgentConfig(agent.name);
@@ -365,24 +410,33 @@ export default function ClassesGeneralPage() {
 
     return classes
       .map((classItem) => {
-        const classScenarios = scenarios?.filter(scenario => scenario.classId === classItem.id) || [];  
-        const classSimulations = simulations?.filter(simulation => classScenarios.some(scenario => simulation.scenarioIds.includes(scenario.id))) || [];
-        const classAttempts = attempts.filter(
-          (attempt) => classSimulations.some(simulation => simulation.id === attempt.simulationId),
+        const classScenarios =
+          scenarios?.filter((scenario) => scenario.classId === classItem.id) ||
+          [];
+        const classSimulations =
+          simulations?.filter((simulation) =>
+            classScenarios.some((scenario) =>
+              simulation.scenarioIds.includes(scenario.id)
+            )
+          ) || [];
+        const classAttempts = attempts.filter((attempt) =>
+          classSimulations.some(
+            (simulation) => simulation.id === attempt.simulationId
+          )
         );
         const classChats = chats.filter((chat) =>
-          classAttempts.some((attempt) => attempt.id === chat.attemptId),
+          classAttempts.some((attempt) => attempt.id === chat.attemptId)
         );
         const classGrades = grades.filter((grade) =>
-          classChats.some((chat) => chat.id === grade.simulationChatId),
+          classChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
         const avgScore =
           classGrades.length > 0
             ? Math.round(
-              classGrades.reduce((sum, g) => sum + g.score, 0) /
-              classGrades.length,
-            )
+                classGrades.reduce((sum, g) => sum + g.score, 0) /
+                  classGrades.length
+              )
             : 0;
 
         return {
@@ -401,119 +455,180 @@ export default function ClassesGeneralPage() {
     if (!analytics || !profiles || !grades || !chats || !attempts) return null;
 
     switch (metricType) {
-      case 'totalTAs':
+      case "totalTAs":
         const taDetails = profiles
-          .filter(profile => profile.role === "ta")
-          .map(ta => {
-            const taAttempts = attempts.filter(attempt => attempt.profileId === ta.id);
-            const taChats = chats.filter(chat =>
-              taAttempts.some(attempt => attempt.id === chat.attemptId)
+          .filter((profile) => profile.role === "ta")
+          .map((ta) => {
+            const taAttempts = attempts.filter(
+              (attempt) => attempt.profileId === ta.id
             );
-            const taGrades = grades.filter(grade =>
-              taChats.some(chat => chat.id === grade.simulationChatId)
+            const taChats = chats.filter((chat) =>
+              taAttempts.some((attempt) => attempt.id === chat.attemptId)
             );
-            
-            const avgScore = taGrades.length > 0
-              ? Math.round(taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length)
-              : 0;
-            
+            const taGrades = grades.filter((grade) =>
+              taChats.some((chat) => chat.id === grade.simulationChatId)
+            );
+
+            const avgScore =
+              taGrades.length > 0
+                ? Math.round(
+                    taGrades.reduce((sum, g) => sum + g.score, 0) /
+                      taGrades.length
+                  )
+                : 0;
+
             return {
               name: ta.firstName + " " + ta.lastName,
               sessions: taChats.length,
               avgScore,
-              status: avgScore >= 80 ? 'Excellent' : avgScore >= 70 ? 'Good' : 'Needs Support'
+              status:
+                avgScore >= 80
+                  ? "Excellent"
+                  : avgScore >= 70
+                    ? "Good"
+                    : "Needs Support",
             };
           })
           .sort((a, b) => b.avgScore - a.avgScore);
-        
-        return { type: 'ta-breakdown', data: taDetails };
 
-      case 'totalSessions':
+        return { type: "ta-breakdown", data: taDetails };
+
+      case "totalSessions":
         const sessionTrend = Array.from({ length: 7 }, (_, i) => {
           const date = subDays(new Date(), 6 - i);
           const dateStr = format(date, "yyyy-MM-dd");
-          
-          const dayChats = chats.filter(chat => {
+
+          const dayChats = chats.filter((chat) => {
             const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
             return chatDate === dateStr;
           });
-          
+
           return {
             date: format(date, "MM/dd"),
             sessions: dayChats.length,
-            completed: dayChats.filter(chat => chat.completed).length
+            completed: dayChats.filter((chat) => chat.completed).length,
           };
         });
-        
-        return { type: 'session-trend', data: sessionTrend };
 
-      case 'avgOverallScore':
+        return { type: "session-trend", data: sessionTrend };
+
+      case "avgOverallScore":
         const scoreDistribution = [
-          { range: '90-100%', count: grades.filter(g => g.score >= 90).length, color: COLORS.success },
-          { range: '80-89%', count: grades.filter(g => g.score >= 80 && g.score < 90).length, color: COLORS.primary },
-          { range: '70-79%', count: grades.filter(g => g.score >= 70 && g.score < 80).length, color: COLORS.warning },
-          { range: '60-69%', count: grades.filter(g => g.score >= 60 && g.score < 70).length, color: COLORS.orange },
-          { range: '<60%', count: grades.filter(g => g.score < 60).length, color: COLORS.danger }
-        ].filter(item => item.count > 0);
-        
-        return { type: 'score-distribution', data: scoreDistribution };
+          {
+            range: "90-100%",
+            count: grades.filter((g) => g.score >= 90).length,
+            color: COLORS.success,
+          },
+          {
+            range: "80-89%",
+            count: grades.filter((g) => g.score >= 80 && g.score < 90).length,
+            color: COLORS.primary,
+          },
+          {
+            range: "70-79%",
+            count: grades.filter((g) => g.score >= 70 && g.score < 80).length,
+            color: COLORS.warning,
+          },
+          {
+            range: "60-69%",
+            count: grades.filter((g) => g.score >= 60 && g.score < 70).length,
+            color: COLORS.orange,
+          },
+          {
+            range: "<60%",
+            count: grades.filter((g) => g.score < 60).length,
+            color: COLORS.danger,
+          },
+        ].filter((item) => item.count > 0);
 
-      case 'completionRate':
+        return { type: "score-distribution", data: scoreDistribution };
+
+      case "completionRate":
         const completionTrend = Array.from({ length: 7 }, (_, i) => {
           const date = subDays(new Date(), 6 - i);
           const dateStr = format(date, "yyyy-MM-dd");
-          
-          const dayChats = chats.filter(chat => {
+
+          const dayChats = chats.filter((chat) => {
             const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
             return chatDate === dateStr;
           });
-          
-          const completionRate = dayChats.length > 0
-            ? Math.round((dayChats.filter(chat => chat.completed).length / dayChats.length) * 100)
-            : 0;
-          
+
+          const completionRate =
+            dayChats.length > 0
+              ? Math.round(
+                  (dayChats.filter((chat) => chat.completed).length /
+                    dayChats.length) *
+                    100
+                )
+              : 0;
+
           return {
             date: format(date, "MM/dd"),
             rate: completionRate,
-            total: dayChats.length
+            total: dayChats.length,
           };
         });
-        
-        return { type: 'completion-trend', data: completionTrend };
 
-      case 'avgTrainingTime':
+        return { type: "completion-trend", data: completionTrend };
+
+      case "avgTrainingTime":
         const timeDistribution = [
-          { range: '<15 min', count: grades.filter(g => g.timeTaken < 900).length, color: COLORS.success },
-          { range: '15-30 min', count: grades.filter(g => g.timeTaken >= 900 && g.timeTaken < 1800).length, color: COLORS.primary },
-          { range: '30-45 min', count: grades.filter(g => g.timeTaken >= 1800 && g.timeTaken < 2700).length, color: COLORS.warning },
-          { range: '45+ min', count: grades.filter(g => g.timeTaken >= 2700).length, color: COLORS.danger }
-        ].filter(item => item.count > 0);
-        
-        return { type: 'time-distribution', data: timeDistribution };
+          {
+            range: "<15 min",
+            count: grades.filter((g) => g.timeTaken < 900).length,
+            color: COLORS.success,
+          },
+          {
+            range: "15-30 min",
+            count: grades.filter(
+              (g) => g.timeTaken >= 900 && g.timeTaken < 1800
+            ).length,
+            color: COLORS.primary,
+          },
+          {
+            range: "30-45 min",
+            count: grades.filter(
+              (g) => g.timeTaken >= 1800 && g.timeTaken < 2700
+            ).length,
+            color: COLORS.warning,
+          },
+          {
+            range: "45+ min",
+            count: grades.filter((g) => g.timeTaken >= 2700).length,
+            color: COLORS.danger,
+          },
+        ].filter((item) => item.count > 0);
 
-      case 'passRate':
+        return { type: "time-distribution", data: timeDistribution };
+
+      case "passRate":
         const passFailTrend = Array.from({ length: 7 }, (_, i) => {
           const date = subDays(new Date(), 6 - i);
           const dateStr = format(date, "yyyy-MM-dd");
-          
-          const dayGrades = grades.filter(grade => {
+
+          const dayGrades = grades.filter((grade) => {
             const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
             return gradeDate === dateStr;
           });
-          
-          const passRate = dayGrades.length > 0
-            ? Math.round((dayGrades.filter(g => g.passed).length / dayGrades.length) * 100)
-            : 0;
-          
+
+          const passRate =
+            dayGrades.length > 0
+              ? Math.round(
+                  (dayGrades.filter((g) => g.passed).length /
+                    dayGrades.length) *
+                    100
+                )
+              : 0;
+
           return {
             date: format(date, "MM/dd"),
             passRate,
-            passed: dayGrades.filter(g => g.passed).length,
-            failed: dayGrades.filter(g => !g.passed).length
+            passed: dayGrades.filter((g) => g.passed).length,
+            failed: dayGrades.filter((g) => !g.passed).length,
           };
         });
-        
-        return { type: 'pass-trend', data: passFailTrend };
+
+        return { type: "pass-trend", data: passFailTrend };
 
       default:
         return null;
@@ -574,7 +689,6 @@ export default function ClassesGeneralPage() {
 
   return (
     <div className="space-y-6">
-
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {classes.map((classItem) => (
           <Card key={classItem.id} className="relative">
@@ -618,9 +732,7 @@ export default function ClassesGeneralPage() {
           {/* Line Chart - Score Trends */}
           <div className="h-80">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium">
-                Average Score
-              </h3>
+              <h3 className="text-sm font-medium">Average Score</h3>
               <Select
                 value={scoreTrendTimeRange}
                 onValueChange={(value: "7d" | "30d" | "90d") =>
@@ -661,9 +773,7 @@ export default function ClassesGeneralPage() {
           {/* Pie Chart - Student Personality Distribution */}
           <div className="h-80">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-sm font-medium">
-                Agent Distribution
-              </h3>
+              <h3 className="text-sm font-medium">Agent Distribution</h3>
               <Select
                 value={personalityTimeRange}
                 onValueChange={(value: "7d" | "30d" | "90d") =>
@@ -744,7 +854,9 @@ export default function ClassesGeneralPage() {
                           : "Completed Sessions",
                     ]}
                     labelFormatter={(label) => {
-                      const classData = classPerformanceData.find(item => item.className === label);
+                      const classData = classPerformanceData.find(
+                        (item) => item.className === label
+                      );
                       return `${classData?.fullName || label} (${label})`;
                     }}
                   />
@@ -763,16 +875,26 @@ export default function ClassesGeneralPage() {
 
       {/* Clickable Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Dialog open={selectedMetric === 'totalTAs'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "totalTAs"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('totalTAs')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("totalTAs")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total TAs</CardTitle>
                 <Users className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-blue-600">{analytics.totalTAs}</div>
-                <p className="text-xs text-muted-foreground">Teaching assistants</p>
+                <div className="text-2xl font-bold text-blue-600">
+                  {analytics.totalTAs}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Teaching assistants
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -781,34 +903,61 @@ export default function ClassesGeneralPage() {
               <DialogTitle>TA Performance Breakdown</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
-              {getMetricDetails('totalTAs')?.data.map((ta: any, index: number) => (
-                <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <p className="font-medium">{ta.name}</p>
-                    <p className="text-sm text-muted-foreground">{ta.sessions} sessions</p>
+              {getMetricDetails("totalTAs")?.data.map(
+                (ta: any, index: number) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-lg"
+                  >
+                    <div>
+                      <p className="font-medium">{ta.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {ta.sessions} sessions
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold">{ta.avgScore}%</p>
+                      <Badge
+                        variant={
+                          ta.status === "Excellent"
+                            ? "default"
+                            : ta.status === "Good"
+                              ? "secondary"
+                              : "destructive"
+                        }
+                      >
+                        {ta.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">{ta.avgScore}%</p>
-                    <Badge variant={ta.status === 'Excellent' ? 'default' : ta.status === 'Good' ? 'secondary' : 'destructive'}>
-                      {ta.status}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                )
+              )}
             </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={selectedMetric === 'totalSessions'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "totalSessions"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('totalSessions')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("totalSessions")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Sessions</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Total Sessions
+                </CardTitle>
                 <Activity className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">{analytics.totalSessions}</div>
-                <p className="text-xs text-muted-foreground">Training interactions</p>
+                <div className="text-2xl font-bold text-green-600">
+                  {analytics.totalSessions}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Training interactions
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -818,29 +967,55 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={getMetricDetails('totalSessions')?.data || []}>
+                <AreaChart data={getMetricDetails("totalSessions")?.data || []}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Area type="monotone" dataKey="sessions" stroke={COLORS.primary} fill={COLORS.primary} fillOpacity={0.6} name="Total Sessions" />
-                  <Area type="monotone" dataKey="completed" stroke={COLORS.success} fill={COLORS.success} fillOpacity={0.6} name="Completed" />
+                  <Area
+                    type="monotone"
+                    dataKey="sessions"
+                    stroke={COLORS.primary}
+                    fill={COLORS.primary}
+                    fillOpacity={0.6}
+                    name="Total Sessions"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="completed"
+                    stroke={COLORS.success}
+                    fill={COLORS.success}
+                    fillOpacity={0.6}
+                    name="Completed"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={selectedMetric === 'avgOverallScore'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "avgOverallScore"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('avgOverallScore')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("avgOverallScore")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Average Score</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Average Score
+                </CardTitle>
                 <TrendingUp className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-purple-600">{analytics.avgOverallScore}%</div>
-                <p className="text-xs text-muted-foreground">Overall TA performance</p>
+                <div className="text-2xl font-bold text-purple-600">
+                  {analytics.avgOverallScore}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Overall TA performance
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -850,28 +1025,46 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={getMetricDetails('avgOverallScore')?.data || []}>
+                <RechartsBarChart
+                  data={getMetricDetails("avgOverallScore")?.data || []}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="range" />
                   <YAxis />
                   <Tooltip formatter={(value: number) => [value, "Sessions"]} />
-                  <Bar dataKey="count" fill={COLORS.primary} radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="count"
+                    fill={COLORS.primary}
+                    radius={[4, 4, 0, 0]}
+                  />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={selectedMetric === 'completionRate'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "completionRate"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('completionRate')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("completionRate")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Completion Rate</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Completion Rate
+                </CardTitle>
                 <Target className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-orange-600">{Math.round(analytics.completionRate)}%</div>
-                <p className="text-xs text-muted-foreground">Sessions completed successfully</p>
+                <div className="text-2xl font-bold text-orange-600">
+                  {Math.round(analytics.completionRate)}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Sessions completed successfully
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -881,28 +1074,53 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getMetricDetails('completionRate')?.data || []}>
+                <LineChart
+                  data={getMetricDetails("completionRate")?.data || []}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis domain={[0, 100]} />
-                  <Tooltip formatter={(value: number) => [`${value}%`, "Completion Rate"]} />
-                  <Line type="monotone" dataKey="rate" stroke={COLORS.success} strokeWidth={2} dot={{ r: 4 }} />
+                  <Tooltip
+                    formatter={(value: number) => [
+                      `${value}%`,
+                      "Completion Rate",
+                    ]}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="rate"
+                    stroke={COLORS.success}
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </DialogContent>
         </Dialog>
 
-        <Dialog open={selectedMetric === 'avgTrainingTime'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "avgTrainingTime"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('avgTrainingTime')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("avgTrainingTime")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Avg Training Time</CardTitle>
+                <CardTitle className="text-sm font-medium">
+                  Avg Training Time
+                </CardTitle>
                 <Clock className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-teal-600">{analytics.avgTrainingTime}min</div>
-                <p className="text-xs text-muted-foreground">Per training session</p>
+                <div className="text-2xl font-bold text-teal-600">
+                  {analytics.avgTrainingTime}min
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Per training session
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -914,18 +1132,22 @@ export default function ClassesGeneralPage() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={getMetricDetails('avgTrainingTime')?.data || []}
+                    data={getMetricDetails("avgTrainingTime")?.data || []}
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ range, percent }) => `${range}: ${(percent * 100).toFixed(0)}%`}
+                    label={({ range, percent }) =>
+                      `${range}: ${(percent * 100).toFixed(0)}%`
+                    }
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="count"
                   >
-                    {getMetricDetails('avgTrainingTime')?.data.map((entry: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
+                    {getMetricDetails("avgTrainingTime")?.data.map(
+                      (entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      )
+                    )}
                   </Pie>
                   <Tooltip formatter={(value: number) => [value, "Sessions"]} />
                 </PieChart>
@@ -934,16 +1156,26 @@ export default function ClassesGeneralPage() {
           </DialogContent>
         </Dialog>
 
-        <Dialog open={selectedMetric === 'passRate'} onOpenChange={(open) => !open && setSelectedMetric(null)}>
+        <Dialog
+          open={selectedMetric === "passRate"}
+          onOpenChange={(open) => !open && setSelectedMetric(null)}
+        >
           <DialogTrigger asChild>
-            <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedMetric('passRate')}>
+            <Card
+              className="cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => setSelectedMetric("passRate")}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
                 <Award className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-emerald-600">{analytics.passRate}%</div>
-                <p className="text-xs text-muted-foreground">Sessions meeting criteria</p>
+                <div className="text-2xl font-bold text-emerald-600">
+                  {analytics.passRate}%
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Sessions meeting criteria
+                </p>
               </CardContent>
             </Card>
           </DialogTrigger>
@@ -953,13 +1185,25 @@ export default function ClassesGeneralPage() {
             </DialogHeader>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
-                <RechartsBarChart data={getMetricDetails('passRate')?.data || []}>
+                <RechartsBarChart
+                  data={getMetricDetails("passRate")?.data || []}
+                >
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
                   <Tooltip />
-                  <Bar dataKey="passed" fill={COLORS.success} name="Passed" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="failed" fill={COLORS.danger} name="Failed" radius={[4, 4, 0, 0]} />
+                  <Bar
+                    dataKey="passed"
+                    fill={COLORS.success}
+                    name="Passed"
+                    radius={[4, 4, 0, 0]}
+                  />
+                  <Bar
+                    dataKey="failed"
+                    fill={COLORS.danger}
+                    name="Failed"
+                    radius={[4, 4, 0, 0]}
+                  />
                 </RechartsBarChart>
               </ResponsiveContainer>
             </div>
@@ -973,7 +1217,9 @@ export default function ClassesGeneralPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Class</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete this class? This action cannot be undone and will remove all associated data including simulations, attempts, and grades.
+              Are you sure you want to delete this class? This action cannot be
+              undone and will remove all associated data including simulations,
+              attempts, and grades.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

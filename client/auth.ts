@@ -8,6 +8,7 @@ import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { createUser } from "./utils/mutations/users/create-user";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
+import { logError } from "@/utils/logger";
 
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
@@ -33,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, profile }) {
       try {
         if (!user.id || !user.email) {
-          console.error("Missing required user data:", {
+          logError("Missing required user data:", {
             id: user.id,
             email: user.email,
           });
@@ -110,7 +111,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return true;
       } catch (error) {
-        console.error("Error in signIn callback:", error);
+        logError("Error in signIn callback:", error);
         return false;
       }
     },

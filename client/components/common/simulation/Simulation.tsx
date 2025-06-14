@@ -5,14 +5,13 @@
  * 05/20/2025
  */
 "use client";
-import React, { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -20,6 +19,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -27,7 +28,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 
 import {
   AlertDialog,
@@ -39,23 +39,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Rubric, Scenario } from "@/types";
+import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
+import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
+import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import {
-  Trash2,
+  Clock,
   Edit,
   FileText,
-  Clock,
-  Shuffle,
   GripVertical,
   MessageSquare,
+  Shuffle,
+  Trash2,
 } from "lucide-react";
-import { Rubric, Scenario } from "@/types";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
-import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
-import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { useRouter } from "next/navigation";
+import { logError } from "@/utils/logger";
 
 interface SimulationProps {
   mode?: "list" | "create";
@@ -85,11 +86,11 @@ export default function Simulation({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [simulationToDelete, setSimulationToDelete] = useState<string | null>(
-    null,
+    null
   );
   const [isDeleting, setIsDeleting] = useState(false);
   const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null,
+    null
   );
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const router = useRouter();
@@ -126,7 +127,7 @@ export default function Simulation({
     const targetSimulationId = simulationId || editingSimulationId;
     if (targetSimulationId) {
       const simulationToEdit = simulations.find(
-        (s: any) => s.id === targetSimulationId,
+        (s: any) => s.id === targetSimulationId
       );
       if (simulationToEdit) {
         setFormData({
@@ -142,7 +143,7 @@ export default function Simulation({
 
   const handleInputChange = (
     field: keyof SimulationFormData,
-    value: string | number | boolean | string[] | null,
+    value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -270,13 +271,13 @@ export default function Simulation({
       toast.success(
         targetSimulationId
           ? "Simulation updated successfully!"
-          : "Simulation created successfully!",
+          : "Simulation created successfully!"
       );
       router.push(`/create/simulations/s/${result.id}`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -300,10 +301,10 @@ export default function Simulation({
       setShowDeleteDialog(false);
       setSimulationToDelete(null);
     } catch (error) {
-      console.error("Error deleting simulation:", error);
+      logError("Error deleting simulation:", error);
       toast.dismiss();
       toast.error(
-        `Failed to delete simulation: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to delete simulation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsDeleting(false);
@@ -348,15 +349,20 @@ export default function Simulation({
                         <span className="inline-flex items-center text-sm text-muted-foreground ml-4">
                           <MessageSquare className="h-4 w-4 mr-1" />
                           {simulation.scenarioIds?.filter(
-                            (id: string) => id !== "RAY",
+                            (id: string) => id !== "RAY"
                           ).length || 0}{" "}
                           {simulation.scenarioIds?.filter(
-                            (id: string) => id !== "RAY",
-                          ).length === 0 ? "scenarios (random selection)" : "scenarios"}
+                            (id: string) => id !== "RAY"
+                          ).length === 0
+                            ? "scenarios (random selection)"
+                            : "scenarios"}
                         </span>
                         <br />
                         <span className="inline-flex items-center text-sm text-muted-foreground">
-                          Rubric: {rubrics.find((rubric: any) => rubric.id === simulation.rubricId)?.name || "Unknown"}
+                          Rubric:{" "}
+                          {rubrics.find(
+                            (rubric: any) => rubric.id === simulation.rubricId
+                          )?.name || "Unknown"}
                         </span>
                       </CardDescription>
                     </div>
@@ -446,10 +452,7 @@ export default function Simulation({
             max="120"
             value={formData.timeLimit || ""}
             onChange={(e) =>
-              handleInputChange(
-                "timeLimit",
-                parseInt(e.target.value) || null,
-              )
+              handleInputChange("timeLimit", parseInt(e.target.value) || null)
             }
             className={errors.timeLimit ? "border-destructive" : ""}
             placeholder="Leave empty for no time limit"
@@ -465,15 +468,19 @@ export default function Simulation({
             value={formData.rubricId}
             onValueChange={(value) => handleInputChange("rubricId", value)}
           >
-            <SelectTrigger className={errors.rubricId ? "border-destructive" : ""}>
+            <SelectTrigger
+              className={errors.rubricId ? "border-destructive" : ""}
+            >
               <SelectValue placeholder="Select a rubric..." />
             </SelectTrigger>
             <SelectContent>
-              {rubrics.filter((rubric: Rubric) => rubric.rubricType === "simulation").map((rubric: Rubric) => (
-                <SelectItem key={rubric.id} value={rubric.id}>
-                  {rubric.name} ({rubric.points} points)
-                </SelectItem>
-              ))}
+              {rubrics
+                .filter((rubric: Rubric) => rubric.rubricType === "simulation")
+                .map((rubric: Rubric) => (
+                  <SelectItem key={rubric.id} value={rubric.id}>
+                    {rubric.name} ({rubric.points} points)
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
           {errors.rubricId && (
@@ -482,12 +489,12 @@ export default function Simulation({
         </div>
 
         <div className="space-y-2">
-
           <div className="flex justify-between items-center">
             <div>
               <Label htmlFor="scenarios">Scenarios</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                If no scenarios are selected, a random scenario will be chosen automatically
+                If no scenarios are selected, a random scenario will be chosen
+                automatically
               </p>
             </div>
             <div className="flex gap-2">
@@ -504,7 +511,7 @@ export default function Simulation({
                   {scenarios
                     .filter(
                       (scenario: Scenario) =>
-                        !formData.scenarioIds.includes(scenario.id),
+                        !formData.scenarioIds.includes(scenario.id)
                     )
                     .map((scenario: Scenario) => (
                       <SelectItem key={scenario.id} value={scenario.id}>
@@ -531,24 +538,23 @@ export default function Simulation({
           {formData.scenarioIds.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
-                <p className="font-medium mb-1">
-                  No scenarios selected
-                </p>
+                <p className="font-medium mb-1">No scenarios selected</p>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
               {formData.scenarioIds.map((scenarioId, index) => {
                 const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId,
+                  (s: Scenario) => s.id === scenarioId
                 );
                 if (!scenario) return null;
 
                 return (
                   <Card
                     key={scenarioId}
-                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${draggedScenario === scenarioId ? "opacity-50" : ""
-                      }`}
+                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                      draggedScenario === scenarioId ? "opacity-50" : ""
+                    }`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, scenarioId)}
                     onDragOver={handleDragOver}
@@ -594,21 +600,22 @@ export default function Simulation({
                         </div>
 
                         <Badge
-                          className={`text-xs ${scenario.seniority === "freshman"
-                            ? "bg-blue-100 text-blue-800"
-                            : scenario.seniority === "sophomore"
-                              ? "bg-green-100 text-green-800"
-                              : scenario.seniority === "junior"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : scenario.seniority === "senior"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-gray-100 text-gray-800"
-                            }`}
+                          className={`text-xs ${
+                            scenario.seniority === "freshman"
+                              ? "bg-blue-100 text-blue-800"
+                              : scenario.seniority === "sophomore"
+                                ? "bg-green-100 text-green-800"
+                                : scenario.seniority === "junior"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : scenario.seniority === "senior"
+                                    ? "bg-red-100 text-red-800"
+                                    : "bg-gray-100 text-gray-800"
+                          }`}
                         >
                           {scenario.seniority
-                            ? scenario.seniority.charAt(0).toUpperCase() + scenario.seniority.slice(1)
-                            : "No Level"
-                          }
+                            ? scenario.seniority.charAt(0).toUpperCase() +
+                              scenario.seniority.slice(1)
+                            : "No Level"}
                         </Badge>
                       </div>
                     </div>
@@ -617,7 +624,6 @@ export default function Simulation({
               })}
             </div>
           )}
-
         </div>
 
         {/* Submit Button */}

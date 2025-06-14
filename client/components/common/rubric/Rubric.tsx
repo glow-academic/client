@@ -6,21 +6,13 @@
  */
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { getRubric } from "@/utils/queries/rubrics/get-rubric";
-import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
-import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
-import { updateStandard } from "@/utils/mutations/standards/update-standard";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -28,8 +20,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -38,24 +36,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Textarea } from "@/components/ui/textarea";
+import { createRubric } from "@/utils/mutations/rubrics/create-rubric";
+import { updateRubric } from "@/utils/mutations/rubrics/update-rubric";
+import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
+import { updateStandard } from "@/utils/mutations/standards/update-standard";
+import { getRubric } from "@/utils/queries/rubrics/get-rubric";
+import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-standard-groups-by-rubric";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import {
   BookOpen,
-  Target,
-  Clock,
-  Users,
-  MessageSquare,
   ChevronDown,
   ChevronUp,
+  Clock,
   Edit,
+  MessageSquare,
   Save,
+  Target,
+  Users,
   X,
 } from "lucide-react";
-import { updateStandardGroup } from "@/utils/mutations/standard_groups/update-standard-group";
 
 // Icon mapping for different criteria
 const iconMap: Record<string, any> = {
@@ -217,7 +217,7 @@ export default function Rubric({
       router.push("/create/rubrics");
     },
     onError: (error) => {
-      console.error("Error creating rubric:", error);
+      logError("Error creating rubric:", error);
       toast.error("Failed to create rubric");
     },
   });
@@ -237,7 +237,7 @@ export default function Rubric({
       }
     },
     onError: (error) => {
-      console.error("Error updating rubric:", error);
+      logError("Error updating rubric:", error);
       toast.error("Failed to update rubric");
     },
   });
@@ -273,7 +273,7 @@ export default function Rubric({
     if (!standards) return {};
 
     const groupStandards = standards.filter(
-      (s) => s.standardGroupId === groupId,
+      (s) => s.standardGroupId === groupId
     );
     const ratingMap: Record<number, any> = {};
 
@@ -332,10 +332,7 @@ export default function Rubric({
         createMutation.mutate(formData);
       }
     } catch (error) {
-      console.error(
-        `Error ${isEditMode ? "updating" : "creating"} rubric:`,
-        error,
-      );
+      logError(`Error ${isEditMode ? "updating" : "creating"} rubric:`, error);
       toast.error(`Failed to ${isEditMode ? "update" : "create"} rubric`);
     } finally {
       setIsSubmitting(false);
@@ -348,7 +345,7 @@ export default function Rubric({
 
   const handleInputChange = (
     field: keyof typeof formData,
-    value: string | number,
+    value: string | number
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -468,7 +465,7 @@ export default function Rubric({
                           onChange={(e) =>
                             handleInputChange(
                               "points",
-                              parseInt(e.target.value) || 0,
+                              parseInt(e.target.value) || 0
                             )
                           }
                         />
@@ -483,7 +480,7 @@ export default function Rubric({
                           onChange={(e) =>
                             handleInputChange(
                               "passPoints",
-                              parseInt(e.target.value) || 0,
+                              parseInt(e.target.value) || 0
                             )
                           }
                         />
@@ -885,7 +882,7 @@ export default function Rubric({
                         onChange={(e) =>
                           handleInputChange(
                             "points",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                         placeholder="100"
@@ -907,7 +904,7 @@ export default function Rubric({
                         onChange={(e) =>
                           handleInputChange(
                             "passPoints",
-                            parseInt(e.target.value) || 0,
+                            parseInt(e.target.value) || 0
                           )
                         }
                         placeholder="70"
@@ -983,7 +980,7 @@ export default function Rubric({
                     <Badge variant="outline">
                       Pass: {formData.passPoints} points (
                       {Math.round(
-                        (formData.passPoints / formData.points) * 100,
+                        (formData.passPoints / formData.points) * 100
                       )}
                       %)
                     </Badge>

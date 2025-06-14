@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
 // Define proper types for the data structures
 interface ChatData {
@@ -131,7 +132,7 @@ export function ExportButton<TData>({
               const classIds = original.classIds || [cellValue];
               const classLabels = classIds.map((classId: string) => {
                 const classOption = classOptions.find(
-                  (cls) => cls.value === classId,
+                  (cls) => cls.value === classId
                 );
                 return classOption ? classOption.label : classId;
               });
@@ -165,9 +166,11 @@ export function ExportButton<TData>({
 
             if (column.id === "profileId" && cellValue) {
               const profileOption = profileOptions.find(
-                (profile) => profile.value === cellValue,
+                (profile) => profile.value === cellValue
               );
-              return profileOption ? `"${profileOption.label}"` : `"${cellValue}"`;
+              return profileOption
+                ? `"${profileOption.label}"`
+                : `"${cellValue}"`;
             }
 
             // Handle string values that might contain commas
@@ -209,7 +212,7 @@ export function ExportButton<TData>({
       toast?.success(`Exported ${selectedData.length} rows to CSV`);
       setExportPopoverOpen(false);
     } catch (error) {
-      console.error("Error exporting to CSV:", error);
+      logError("Error exporting to CSV:", error);
       toast?.error("Failed to export data");
     }
   };

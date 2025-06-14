@@ -4,48 +4,12 @@
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
-import * as React from "react";
-import {
-  ChevronRight,
-  Home,
-  BookOpen,
-  FileText,
-  GraduationCap,
-  Settings,
-  Search,
-  User,
-  LogOut,
-  Check,
-  ChevronsUpDown,
-  ChartBar,
-  TrendingUp,
-  Sparkles,
-} from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { signOut } from "next-auth/react";
-import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { useRole } from "@/contexts/role-context";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-  SidebarInput,
-  SidebarFooter,
-} from "@/components/ui/sidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -54,12 +18,48 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInput,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { useRole } from "@/contexts/role-context";
+import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useSession } from "next-auth/react";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { useQuery } from "@tanstack/react-query";
+import {
+  BookOpen,
+  ChartBar,
+  Check,
+  ChevronRight,
+  ChevronsUpDown,
+  FileText,
+  GraduationCap,
+  Home,
+  LogOut,
+  Search,
+  Settings,
+  Sparkles,
+  TrendingUp,
+  User,
+} from "lucide-react";
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import * as React from "react";
+import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -181,7 +181,7 @@ export function UnifiedSidebar({
       case "instructor":
         // Only classes the user is assigned to
         return classes.filter((cls: ClassData) =>
-          profile.classIds?.includes(cls.id),
+          profile.classIds?.includes(cls.id)
         );
       case "ta":
         return []; // No class access for TAs
@@ -344,7 +344,7 @@ export function UnifiedSidebar({
             section.items?.filter(
               (item) =>
                 item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.section?.toLowerCase().includes(searchTerm.toLowerCase()),
+                item.section?.toLowerCase().includes(searchTerm.toLowerCase())
             ) || [],
         }))
         .filter((section) => section.items.length > 0);
@@ -360,7 +360,7 @@ export function UnifiedSidebar({
 
   const handleSectionChange = createFlexibleSectionChangeHandler(
     router,
-    onSectionChange,
+    onSectionChange
   );
 
   const handleItemClick = (item: MenuItem) => {
@@ -404,12 +404,12 @@ export function UnifiedSidebar({
           localStorage.removeItem("guestAttemptIds");
           localStorage.removeItem("simulatedRole");
           localStorage.removeItem("guestMode");
-          await signOut({redirectTo: "/"});
+          await signOut({ redirectTo: "/" });
           return "Logged out successfully";
         } catch (error) {
-          console.error("Error logging out:", error);
+          logError("Error logging out:", error);
           throw new Error(
-            typeof error === "string" ? error : "Failed to log out",
+            typeof error === "string" ? error : "Failed to log out"
           );
         } finally {
           setIsLoggingOut(false);
@@ -419,7 +419,7 @@ export function UnifiedSidebar({
         loading: "Logging out...",
         success: (message) => message,
         error: (error) => error.message || "Failed to log out",
-      },
+      }
     );
   };
 
@@ -570,7 +570,9 @@ export function UnifiedSidebar({
                     <AvatarFallback>
                       {effectiveRole === "guest" || !profile
                         ? "GU"
-                        : getInitials(profile?.firstName + " " + profile?.lastName)}
+                        : getInitials(
+                            profile?.firstName + " " + profile?.lastName
+                          )}
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -600,7 +602,9 @@ export function UnifiedSidebar({
                       <AvatarFallback>
                         {effectiveRole === "guest" || !profile
                           ? "GU"
-                          : getInitials(profile?.firstName + " " + profile?.lastName)}
+                          : getInitials(
+                              profile?.firstName + " " + profile?.lastName
+                            )}
                       </AvatarFallback>
                     </Avatar>
                     <div className="grid flex-1 text-left text-sm leading-tight">

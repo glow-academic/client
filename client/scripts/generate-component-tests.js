@@ -122,10 +122,7 @@ function analyzeComponent(componentPath) {
 
     return analysis;
   } catch (error) {
-    console.error(
-      `❌ Error analyzing component ${componentPath}:`,
-      error.message
-    );
+    console.error(`❌ Error analyzing component ${componentPath}:`, error.message);
     return {
       hasDefaultExport: true,
       namedExports: [],

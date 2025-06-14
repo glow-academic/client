@@ -6,35 +6,6 @@
  */
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  ArrowLeft,
-  Save,
-  Trash2,
-  Shield,
-  GraduationCap,
-  User as UserIcon,
-} from "lucide-react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,16 +17,46 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Profile, ProfileRole } from "@/types";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
+import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { useSession } from "next-auth/react";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
-import { updateProfile } from "@/utils/mutations/profiles/update-profile";
-import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowLeft,
+  GraduationCap,
+  Save,
+  Shield,
+  Trash2,
+  User as UserIcon,
+} from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
 export default function StaffEdit({ profileId }: { profileId: string }) {
   const queryClient = useQueryClient();
@@ -80,12 +81,13 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     enabled: !!userEmail,
   });
 
-  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
-    select: (data) => data[0],
-    enabled: !!user,
-  });
+  const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } =
+    useQuery({
+      queryKey: ["profile", userEmail],
+      queryFn: () => getProfilesByUser(user!.id!),
+      select: (data) => data[0],
+      enabled: !!user,
+    });
 
   // Fetch all users to find the target user
   const { data: allProfiles = [], isLoading: isProfilesLoading } = useQuery({
@@ -99,11 +101,17 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
     queryFn: () => getAllClasses(),
   });
 
-  const targetUser = allProfiles.find((profile: Profile) => profile.id === profileId);
+  const targetUser = allProfiles.find(
+    (profile: Profile) => profile.id === profileId
+  );
   const isCurrentUserAdmin = currentUserProfile?.role === "admin";
 
   // Determine overall loading state
-  const isLoading = isProfilesLoading || isClassesLoading || isUserLoading || isCurrentUserProfileLoading;
+  const isLoading =
+    isProfilesLoading ||
+    isClassesLoading ||
+    isUserLoading ||
+    isCurrentUserProfileLoading;
   const isDataReady = !isLoading && targetUser;
 
   const handleInputChange = (field: string, value: string | string[]) => {
@@ -114,7 +122,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
   const handleClassToggle = (classId: string) => {
     const currentClassIds = formData.classIds;
     const newClassIds = currentClassIds?.includes(classId)
-      ? currentClassIds?.filter(id => id !== classId)
+      ? currentClassIds?.filter((id) => id !== classId)
       : [...(currentClassIds || []), classId];
 
     handleInputChange("classIds", newClassIds);
@@ -139,7 +147,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       toast.success("User updated successfully");
       router.push("/management/staff");
     } catch (error) {
-      console.error("Error updating user:", error);
+      logError("Error updating user:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -152,10 +160,10 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
       queryClient.invalidateQueries({ queryKey: ["profile", userEmail] });
-      toast.success("User deleted successfully"); 
+      toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {
-      console.error("Error deleting user:", error);
+      logError("Error deleting user:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,7 +180,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       default:
         return term;
     }
-  }
+  };
 
   // Initialize form data when user is loaded
   useEffect(() => {
@@ -241,7 +249,8 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
           <CardContent>
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
-                The user with ID "{profileId}" does not exist or you don't have permission to view it.
+                The user with ID "{profileId}" does not exist or you don't have
+                permission to view it.
               </p>
               <Button onClick={() => router.push("/management/staff")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -277,7 +286,9 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <Input
                     id="firstName"
                     value={formData.firstName || ""}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("firstName", e.target.value)
+                    }
                     placeholder="Jane"
                     required
                     disabled={isSubmitting}
@@ -288,7 +299,9 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <Input
                     id="lastName"
                     value={formData.lastName || ""}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("lastName", e.target.value)
+                    }
                     placeholder="Smith"
                     required
                     disabled={isSubmitting}
@@ -312,20 +325,23 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <Label htmlFor="role">Role</Label>
                   <Select
                     value={formData.role || ""}
-                    onValueChange={(value: ProfileRole) => handleInputChange("role", value)}
+                    onValueChange={(value: ProfileRole) =>
+                      handleInputChange("role", value)
+                    }
                     disabled={isSubmitting}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a role" />
                     </SelectTrigger>
                     <SelectContent>
-                      {isCurrentUserAdmin && <SelectItem value="admin">
-                        <div className="flex items-center gap-2">
-                          <Shield className="h-4 w-4 text-red-600" />
-                          Administrator
-                        </div>
-                      </SelectItem>
-                      }
+                      {isCurrentUserAdmin && (
+                        <SelectItem value="admin">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-4 w-4 text-red-600" />
+                            Administrator
+                          </div>
+                        </SelectItem>
+                      )}
                       <SelectItem value="instructional">
                         <div className="flex items-center gap-2">
                           <Shield className="h-4 w-4" />
@@ -360,11 +376,18 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   ) : (
                     <div className="space-y-3">
                       {allClasses.map((classItem: any) => (
-                        <div key={classItem.id} className="flex items-center space-x-2">
+                        <div
+                          key={classItem.id}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={`class-${classItem.id}`}
-                            checked={formData.classIds?.includes(classItem.id) || false}
-                            onCheckedChange={() => handleClassToggle(classItem.id)}
+                            checked={
+                              formData.classIds?.includes(classItem.id) || false
+                            }
+                            onCheckedChange={() =>
+                              handleClassToggle(classItem.id)
+                            }
                             disabled={isSubmitting}
                           />
                           <Label
@@ -372,12 +395,17 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                             className="text-sm font-normal cursor-pointer flex-1"
                           >
                             <div className="flex items-center justify-between gap-2">
-                              <div >
-                                <span className="font-medium">{classItem.classCode}</span>
-                                <span className="text-muted-foreground ml-2">{classItem.name}</span>
+                              <div>
+                                <span className="font-medium">
+                                  {classItem.classCode}
+                                </span>
+                                <span className="text-muted-foreground ml-2">
+                                  {classItem.name}
+                                </span>
                               </div>
                               <Badge variant="outline" className="text-xs">
-                                {formatClassTerm(classItem.term)} {classItem.year}
+                                {formatClassTerm(classItem.term)}{" "}
+                                {classItem.year}
                               </Badge>
                             </div>
                           </Label>
@@ -387,7 +415,8 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   )}
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {formData.classIds?.length || 0} class{(formData.classIds?.length || 0) !== 1 ? 'es' : ''} selected
+                  {formData.classIds?.length || 0} class
+                  {(formData.classIds?.length || 0) !== 1 ? "es" : ""} selected
                 </p>
               </div>
 
@@ -422,12 +451,15 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
                   <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                   <AlertDialogDescription>
                     This will permanently delete the user account for{" "}
-                    {formData.firstName + " " + formData.lastName} ({formData.alias}@purdue.edu). This action
-                    cannot be undone and will remove all associated data.
+                    {formData.firstName + " " + formData.lastName} (
+                    {formData.alias}@purdue.edu). This action cannot be undone
+                    and will remove all associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel disabled={isSubmitting}>
+                    Cancel
+                  </AlertDialogCancel>
                   <AlertDialogAction
                     onClick={handleDelete}
                     disabled={isSubmitting}

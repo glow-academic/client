@@ -5,31 +5,16 @@
  * 06/07/2025
  */
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { BookOpen, Edit, FileCheck, Plus, Star, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Edit,
-  Trash2,
-  FileCheck,
-  Star,
-  Plus,
-  BookOpen,
-} from "lucide-react";
+import { logError } from "@/utils/logger";
 
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +25,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Rubric } from "@/types";
 
 export default function Rubrics() {
@@ -67,7 +61,7 @@ export default function Rubrics() {
       toast.success("Rubric deleted successfully");
       refetchRubrics();
     } catch (error) {
-      console.error("Error deleting rubric:", error);
+      logError("Error deleting rubric:", error);
       toast.error("Failed to delete rubric");
     } finally {
       setIsDeleting(false);
@@ -149,7 +143,9 @@ export default function Rubrics() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteClick(rubric.id, rubric.name)}
+                        onClick={() =>
+                          handleDeleteClick(rubric.id, rubric.name)
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

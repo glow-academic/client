@@ -1,10 +1,11 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
 import { DataTablePagination } from "@/components/common/history/data-table-pagination";
+import { Table } from "@tanstack/react-table";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the table object for testing
-const mockTable = {
+const mockTable: Partial<Table<unknown>> = {
   getFilteredSelectedRowModel: vi.fn(() => ({
     rows: [{ id: "1" }, { id: "2" }],
   })),
@@ -33,25 +34,25 @@ describe("DataTablePagination", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("Rows per page")).toBeInTheDocument();
     });
 
     it("should show selected rows count", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("2 of 50 row(s) selected.")).toBeInTheDocument();
     });
 
     it("should display current page information", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("Page 1 of 5")).toBeInTheDocument();
     });
 
     it("should show page size selector", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("10")).toBeInTheDocument();
       expect(screen.getByText("Rows per page")).toBeInTheDocument();
@@ -62,7 +63,7 @@ describe("DataTablePagination", () => {
     it("should handle page size change", async () => {
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       const pageSizeSelect = screen.getByRole("combobox");
       await user.click(pageSizeSelect);
@@ -72,7 +73,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should handle next page click", async () => {
-      const mockTableWithNext = {
+      const mockTableWithNext: Partial<Table<unknown>> = {
         ...mockTable,
         getCanNextPage: vi.fn(() => true),
         getState: vi.fn(() => ({
@@ -85,7 +86,9 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTableWithNext as any} />);
+      render(
+        <DataTablePagination table={mockTableWithNext as Table<unknown>} />
+      );
 
       const nextButton = screen.getByRole("button", {
         name: /go to next page/i,
@@ -96,7 +99,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should handle previous page click", async () => {
-      const mockTableWithPrevious = {
+      const mockTableWithPrevious: Partial<Table<unknown>> = {
         ...mockTable,
         getCanPreviousPage: vi.fn(() => true),
         getState: vi.fn(() => ({
@@ -109,7 +112,9 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTableWithPrevious as any} />);
+      render(
+        <DataTablePagination table={mockTableWithPrevious as Table<unknown>} />
+      );
 
       const prevButton = screen.getByRole("button", {
         name: /go to previous page/i,
@@ -120,7 +125,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should handle first page click", async () => {
-      const mockTableWithFirst = {
+      const mockTableWithFirst: Partial<Table<unknown>> = {
         ...mockTable,
         getCanPreviousPage: vi.fn(() => true),
         getState: vi.fn(() => ({
@@ -133,7 +138,9 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTableWithFirst as any} />);
+      render(
+        <DataTablePagination table={mockTableWithFirst as Table<unknown>} />
+      );
 
       const firstButton = screen.getByRole("button", {
         name: /go to first page/i,
@@ -144,7 +151,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should handle last page click", async () => {
-      const mockTableWithLast = {
+      const mockTableWithLast: Partial<Table<unknown>> = {
         ...mockTable,
         getCanNextPage: vi.fn(() => true),
         getState: vi.fn(() => ({
@@ -157,7 +164,9 @@ describe("DataTablePagination", () => {
 
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTableWithLast as any} />);
+      render(
+        <DataTablePagination table={mockTableWithLast as Table<unknown>} />
+      );
 
       const lastButton = screen.getByRole("button", {
         name: /go to last page/i,
@@ -170,14 +179,14 @@ describe("DataTablePagination", () => {
 
   describe("Button States", () => {
     it("should disable previous page buttons when on first page", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       const prevButtons = screen
         .getAllByRole("button")
         .filter(
           (button) =>
             button.getAttribute("aria-label")?.includes("previous") ||
-            button.getAttribute("aria-label")?.includes("first"),
+            button.getAttribute("aria-label")?.includes("first")
         );
 
       prevButtons.forEach((button) => {
@@ -186,7 +195,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should disable next page buttons when on last page", () => {
-      const tableOnLastPage = {
+      const tableOnLastPage: Partial<Table<unknown>> = {
         ...mockTable,
         getCanNextPage: vi.fn(() => false),
         getState: vi.fn(() => ({
@@ -197,14 +206,14 @@ describe("DataTablePagination", () => {
         })),
       };
 
-      render(<DataTablePagination table={tableOnLastPage as any} />);
+      render(<DataTablePagination table={tableOnLastPage as Table<unknown>} />);
 
       const nextButtons = screen
         .getAllByRole("button")
         .filter(
           (button) =>
             button.getAttribute("aria-label")?.includes("next") ||
-            button.getAttribute("aria-label")?.includes("last"),
+            button.getAttribute("aria-label")?.includes("last")
         );
 
       nextButtons.forEach((button) => {
@@ -213,7 +222,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should enable all buttons when not on first or last page", () => {
-      const tableInMiddle = {
+      const tableInMiddle: Partial<Table<unknown>> = {
         ...mockTable,
         getCanPreviousPage: vi.fn(() => true),
         getCanNextPage: vi.fn(() => true),
@@ -225,12 +234,12 @@ describe("DataTablePagination", () => {
         })),
       };
 
-      render(<DataTablePagination table={tableInMiddle as any} />);
+      render(<DataTablePagination table={tableInMiddle as Table<unknown>} />);
 
       const allButtons = screen
         .getAllByRole("button")
         .filter((button) =>
-          button.getAttribute("aria-label")?.includes("page"),
+          button.getAttribute("aria-label")?.includes("page")
         );
 
       allButtons.forEach((button) => {
@@ -241,34 +250,34 @@ describe("DataTablePagination", () => {
 
   describe("Edge Cases", () => {
     it("should handle table with no pages gracefully", () => {
-      const emptyTable = {
+      const emptyTable: Partial<Table<unknown>> = {
         ...mockTable,
         getPageCount: vi.fn(() => 0),
         getFilteredRowModel: vi.fn(() => ({ rows: [] })),
         getFilteredSelectedRowModel: vi.fn(() => ({ rows: [] })),
       };
 
-      render(<DataTablePagination table={emptyTable as any} />);
+      render(<DataTablePagination table={emptyTable as Table<unknown>} />);
 
       expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
       expect(screen.getByText("0 of 0 row(s) selected.")).toBeInTheDocument();
     });
 
     it("should handle single page table", () => {
-      const singlePageTable = {
+      const singlePageTable: Partial<Table<unknown>> = {
         ...mockTable,
         getPageCount: vi.fn(() => 1),
         getCanPreviousPage: vi.fn(() => false),
         getCanNextPage: vi.fn(() => false),
       };
 
-      render(<DataTablePagination table={singlePageTable as any} />);
+      render(<DataTablePagination table={singlePageTable as Table<unknown>} />);
 
       expect(screen.getByText("Page 1 of 1")).toBeInTheDocument();
     });
 
     it("should handle large page counts", () => {
-      const largePageTable = {
+      const largePageTable: Partial<Table<unknown>> = {
         ...mockTable,
         getPageCount: vi.fn(() => 999),
         getState: vi.fn(() => ({
@@ -279,7 +288,7 @@ describe("DataTablePagination", () => {
         })),
       };
 
-      render(<DataTablePagination table={largePageTable as any} />);
+      render(<DataTablePagination table={largePageTable as Table<unknown>} />);
 
       expect(screen.getByText("Page 501 of 999")).toBeInTheDocument();
     });
@@ -289,7 +298,7 @@ describe("DataTablePagination", () => {
     it("should call setPageSize when page size is changed", async () => {
       const user = userEvent.setup();
 
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       const select = screen.getByRole("combobox");
       await user.click(select);
@@ -299,7 +308,7 @@ describe("DataTablePagination", () => {
     });
 
     it("should display current page size", () => {
-      render(<DataTablePagination table={mockTable as any} />);
+      render(<DataTablePagination table={mockTable as Table<unknown>} />);
 
       expect(screen.getByDisplayValue("10")).toBeInTheDocument();
     });

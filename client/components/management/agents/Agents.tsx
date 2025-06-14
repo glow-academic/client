@@ -5,23 +5,16 @@
  * 06/07/2025
  */
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Edit, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +25,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Agent } from "@/types";
 
 export default function Agents() {
@@ -59,7 +60,7 @@ export default function Agents() {
       toast.success("Agent deleted successfully");
       refetchAgents();
     } catch (error) {
-      console.error("Error deleting agent:", error);
+      logError("Error deleting agent:", error);
       toast.error("Failed to delete agent");
     } finally {
       setIsDeleting(false);
@@ -85,10 +86,14 @@ export default function Agents() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div className="space-y-1">
-                  <CardTitle className="text-base">{agent.name || 'Unnamed Agent'}</CardTitle>
-                  <CardDescription>{agent.subtitle || 'No subtitle'}</CardDescription>
+                  <CardTitle className="text-base">
+                    {agent.name || "Unnamed Agent"}
+                  </CardTitle>
+                  <CardDescription>
+                    {agent.subtitle || "No subtitle"}
+                  </CardDescription>
                   <p className="text-sm text-muted-foreground">
-                    {agent.description || 'No description available'}
+                    {agent.description || "No description available"}
                   </p>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -105,7 +110,9 @@ export default function Agents() {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteClick(agent.id, agent.name || 'Unnamed Agent')}
+                    onClick={() =>
+                      handleDeleteClick(agent.id, agent.name || "Unnamed Agent")
+                    }
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>

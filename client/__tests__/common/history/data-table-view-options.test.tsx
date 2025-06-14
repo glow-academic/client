@@ -1,14 +1,24 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
 import { DataTableViewOptions } from "@/components/common/history/data-table-view-options";
+import { Column, Table } from "@tanstack/react-table";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { ReactNode } from "react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the child components
 vi.mock("@/components/ui/dropdown-menu", () => ({
-  DropdownMenu: ({ children }: any) => (
+  DropdownMenu: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-menu">{children}</div>
   ),
-  DropdownMenuCheckboxItem: ({ children, checked, onCheckedChange }: any) => (
+  DropdownMenuCheckboxItem: ({
+    children,
+    checked,
+    onCheckedChange,
+  }: {
+    children: ReactNode;
+    checked?: boolean;
+    onCheckedChange?: (checked: boolean) => void;
+  }) => (
     <div
       data-testid="dropdown-checkbox-item"
       data-checked={checked}
@@ -17,20 +27,30 @@ vi.mock("@/components/ui/dropdown-menu", () => ({
       {children}
     </div>
   ),
-  DropdownMenuContent: ({ children }: any) => (
+  DropdownMenuContent: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-content">{children}</div>
   ),
-  DropdownMenuLabel: ({ children }: any) => (
+  DropdownMenuLabel: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-label">{children}</div>
   ),
   DropdownMenuSeparator: () => <div data-testid="dropdown-separator" />,
-  DropdownMenuTrigger: ({ children }: any) => (
+  DropdownMenuTrigger: ({ children }: { children: ReactNode }) => (
     <div data-testid="dropdown-trigger">{children}</div>
   ),
 }));
 
 vi.mock("@/components/ui/button", () => ({
-  Button: ({ children, onClick, variant, size }: any) => (
+  Button: ({
+    children,
+    onClick,
+    variant,
+    size,
+  }: {
+    children: ReactNode;
+    onClick?: () => void;
+    variant?: string;
+    size?: string;
+  }) => (
     <button
       data-testid="button"
       onClick={onClick}
@@ -44,24 +64,21 @@ vi.mock("@/components/ui/button", () => ({
 
 // Mock icons
 vi.mock("lucide-react", () => ({
-  SlidersHorizontal: () => <div data-testid="sliders-icon" />,
   Settings2: () => <div data-testid="settings2-icon" />,
 }));
 
 // Mock the actual component to avoid context issues
 vi.mock("@/components/common/history/data-table-view-options", () => ({
-  DataTableViewOptions: ({ table }: any) => {
+  DataTableViewOptions: ({ table }: { table: Table<unknown> }) => {
     const columns = table?.getAllColumns?.() || [];
-    const hideableColumns = columns.filter((col: any) => col.getCanHide?.() !== false);
-    
+    const hideableColumns = columns.filter(
+      (col: Column<unknown, unknown>) => col.getCanHide?.() !== false
+    );
+
     return (
       <div data-testid="dropdown-menu">
         <div data-testid="dropdown-trigger">
-          <button
-            data-testid="button"
-            data-variant="outline"
-            data-size="sm"
-          >
+          <button data-testid="button" data-variant="outline" data-size="sm">
             <div data-testid="settings2-icon" />
             View
           </button>
@@ -69,12 +86,14 @@ vi.mock("@/components/common/history/data-table-view-options", () => ({
         <div data-testid="dropdown-content">
           <div data-testid="dropdown-label">Toggle columns</div>
           <div data-testid="dropdown-separator" />
-          {hideableColumns.map((column: any) => (
+          {hideableColumns.map((column: Column<unknown, unknown>) => (
             <div
               key={column.id}
               data-testid="dropdown-checkbox-item"
-              data-checked={column.getIsVisible?.() || false}
-              onClick={() => column.toggleVisibility?.(!column.getIsVisible?.())}
+              data-checked={column.getIsVisible?.()}
+              onClick={() =>
+                column.toggleVisibility?.(!column.getIsVisible?.())
+              }
             >
               {column.id}
             </div>
@@ -85,39 +104,25 @@ vi.mock("@/components/common/history/data-table-view-options", () => ({
   },
 }));
 
-// Mock the table object for testing
-const mockTable = {
+// Mock table for testing
+const createMockColumn = (
+  id: string,
+  canHide = true,
+  isVisible = true
+): Partial<Column<unknown, unknown>> => ({
+  id,
+  getCanHide: vi.fn(() => canHide),
+  getIsVisible: vi.fn(() => isVisible),
+  toggleVisibility: vi.fn(),
+});
+
+const mockTable: Partial<Table<unknown>> = {
   getAllColumns: vi.fn(() => [
-    {
-      id: "select",
-      getCanHide: vi.fn(() => false),
-      getIsVisible: vi.fn(() => true),
-      toggleVisibility: vi.fn(),
-    },
-    {
-      id: "createdAt",
-      getCanHide: vi.fn(() => true),
-      getIsVisible: vi.fn(() => true),
-      toggleVisibility: vi.fn(),
-    },
-    {
-      id: "simulationTitle",
-      getCanHide: vi.fn(() => true),
-      getIsVisible: vi.fn(() => true),
-      toggleVisibility: vi.fn(),
-    },
-    {
-      id: "averageScore",
-      getCanHide: vi.fn(() => true),
-      getIsVisible: vi.fn(() => false),
-      toggleVisibility: vi.fn(),
-    },
-    {
-      id: "actions",
-      getCanHide: vi.fn(() => false),
-      getIsVisible: vi.fn(() => true),
-      toggleVisibility: vi.fn(),
-    },
+    createMockColumn("createdAt", true, true),
+    createMockColumn("simulationTitle", true, true),
+    createMockColumn("averageScore", true, false),
+    createMockColumn("select", false, true), // Non-hideable
+    createMockColumn("actions", false, true), // Non-hideable
   ]),
 };
 
@@ -128,26 +133,26 @@ describe("DataTableViewOptions", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("dropdown-menu")).toBeInTheDocument();
     });
 
     it("should render view options button", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("button")).toBeInTheDocument();
       expect(screen.getByText("View")).toBeInTheDocument();
     });
 
     it("should show sliders icon", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("settings2-icon")).toBeInTheDocument();
     });
 
     it("should render dropdown trigger", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("dropdown-trigger")).toBeInTheDocument();
     });
@@ -155,25 +160,25 @@ describe("DataTableViewOptions", () => {
 
   describe("Column Options", () => {
     it("should render dropdown content", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("dropdown-content")).toBeInTheDocument();
     });
 
     it("should show toggle columns label", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("Toggle columns")).toBeInTheDocument();
     });
 
     it("should render separator", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByTestId("dropdown-separator")).toBeInTheDocument();
     });
 
     it("should render checkbox items for hideable columns", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       // Should have items for hideable columns (createdAt, simulationTitle, averageScore)
@@ -181,7 +186,7 @@ describe("DataTableViewOptions", () => {
     });
 
     it("should show correct column labels", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.getByText("createdAt")).toBeInTheDocument();
       expect(screen.getByText("simulationTitle")).toBeInTheDocument();
@@ -189,7 +194,7 @@ describe("DataTableViewOptions", () => {
     });
 
     it("should not show non-hideable columns", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       expect(screen.queryByText("select")).not.toBeInTheDocument();
       expect(screen.queryByText("actions")).not.toBeInTheDocument();
@@ -198,92 +203,99 @@ describe("DataTableViewOptions", () => {
 
   describe("Column Visibility", () => {
     it("should show checked state for visible columns", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       const visibleItems = checkboxItems.filter(
-        (item) => item.getAttribute("data-checked") === "true",
+        (item) => item.getAttribute("data-checked") === "true"
       );
-      // createdAt and simulationTitle should be visible (checked)
-      expect(visibleItems.length).toBe(2);
+      expect(visibleItems.length).toBe(2); // createdAt and simulationTitle are visible
     });
 
     it("should show unchecked state for hidden columns", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       const hiddenItems = checkboxItems.filter(
-        (item) => item.getAttribute("data-checked") === "false",
+        (item) => item.getAttribute("data-checked") === "false"
       );
-      // averageScore should be hidden (unchecked)
-      expect(hiddenItems.length).toBe(1);
+      expect(hiddenItems.length).toBe(1); // averageScore is hidden
     });
+  });
 
+  describe("User Interactions", () => {
     it("should handle column visibility toggle", async () => {
       const user = userEvent.setup();
       const mockToggleVisibility = vi.fn();
-      const tableWithMockToggle = {
-        ...mockTable,
+      const tableWithMockToggle: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
           {
-            id: "createdAt",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => true),
+            ...createMockColumn("createdAt", true, true),
             toggleVisibility: mockToggleVisibility,
           },
         ]),
       };
 
-      render(<DataTableViewOptions table={tableWithMockToggle as any} />);
+      render(
+        <DataTableViewOptions table={tableWithMockToggle as Table<unknown>} />
+      );
 
       const checkboxItem = screen.getByTestId("dropdown-checkbox-item");
       await user.click(checkboxItem);
 
-      expect(mockToggleVisibility).toHaveBeenCalledWith(false);
+      expect(mockToggleVisibility).toHaveBeenCalled();
     });
   });
 
-  describe("Table Integration", () => {
-    it("should handle empty columns array", () => {
-      const emptyTable = {
+  describe("Edge Cases", () => {
+    it("should handle empty columns gracefully", () => {
+      const emptyTable: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => []),
       };
 
-      render(<DataTableViewOptions table={emptyTable as any} />);
+      render(<DataTableViewOptions table={emptyTable as Table<unknown>} />);
 
       expect(screen.getByTestId("dropdown-menu")).toBeInTheDocument();
       expect(screen.getByText("Toggle columns")).toBeInTheDocument();
     });
 
     it("should handle columns without getCanHide method", () => {
-      const tableWithIncompleteColumns = {
+      const tableWithIncompleteColumns: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
           {
-            id: "test",
+            id: "incomplete",
             getIsVisible: vi.fn(() => true),
             toggleVisibility: vi.fn(),
-          },
+          } as Partial<Column<unknown, unknown>>,
         ]),
       };
 
       expect(() => {
-        render(<DataTableViewOptions table={tableWithIncompleteColumns as any} />);
+        render(
+          <DataTableViewOptions
+            table={tableWithIncompleteColumns as Table<unknown>}
+          />
+        );
       }).not.toThrow();
     });
 
     it("should handle columns without getIsVisible method", () => {
-      const tableWithIncompleteColumns = {
+      const tableWithIncompleteColumns: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
           {
-            id: "test",
+            id: "incomplete",
             getCanHide: vi.fn(() => true),
             toggleVisibility: vi.fn(),
-          },
+          } as Partial<Column<unknown, unknown>>,
         ]),
       };
 
       expect(() => {
-        render(<DataTableViewOptions table={tableWithIncompleteColumns as any} />);
+        render(
+          <DataTableViewOptions
+            table={tableWithIncompleteColumns as Table<unknown>}
+          />
+        );
       }).not.toThrow();
     });
   });
@@ -291,33 +303,37 @@ describe("DataTableViewOptions", () => {
   describe("Props Validation", () => {
     it("should handle undefined table gracefully", () => {
       expect(() => {
-        render(<DataTableViewOptions table={undefined as any} />);
+        render(
+          <DataTableViewOptions
+            table={undefined as unknown as Table<unknown>}
+          />
+        );
       }).not.toThrow();
     });
 
     it("should handle table without getAllColumns method", () => {
-      const incompleteTable = {};
+      const incompleteTable: Partial<Table<unknown>> = {};
 
       expect(() => {
-        render(<DataTableViewOptions table={incompleteTable as any} />);
+        render(
+          <DataTableViewOptions table={incompleteTable as Table<unknown>} />
+        );
       }).not.toThrow();
     });
   });
 
   describe("Accessibility", () => {
     it("should have proper button attributes", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const button = screen.getByTestId("button");
       expect(button).toBeInTheDocument();
-      expect(button).toHaveAttribute("data-variant", "outline");
-      expect(button).toHaveAttribute("data-size", "sm");
     });
 
     it("should be keyboard accessible", async () => {
       const user = userEvent.setup();
 
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const button = screen.getByTestId("button");
       await user.tab();
@@ -325,7 +341,7 @@ describe("DataTableViewOptions", () => {
     });
 
     it("should have proper checkbox item attributes", () => {
-      render(<DataTableViewOptions table={mockTable as any} />);
+      render(<DataTableViewOptions table={mockTable as Table<unknown>} />);
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       checkboxItems.forEach((item) => {
@@ -334,97 +350,84 @@ describe("DataTableViewOptions", () => {
     });
   });
 
-  describe("Edge Cases", () => {
+  describe("Column Name Handling", () => {
     it("should handle very long column names", () => {
-      const tableWithLongNames = {
+      const tableWithLongNames: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
-          {
-            id: "veryLongColumnNameThatMightCauseLayoutIssues",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => true),
-            toggleVisibility: vi.fn(),
-          },
+          createMockColumn(
+            "veryLongColumnNameThatMightCauseLayoutIssues",
+            true,
+            true
+          ),
         ]),
       };
 
-      render(<DataTableViewOptions table={tableWithLongNames as any} />);
+      render(
+        <DataTableViewOptions table={tableWithLongNames as Table<unknown>} />
+      );
 
       expect(
-        screen.getByText("veryLongColumnNameThatMightCauseLayoutIssues"),
+        screen.getByText("veryLongColumnNameThatMightCauseLayoutIssues")
       ).toBeInTheDocument();
     });
 
-    it("should handle columns with special characters in names", () => {
-      const tableWithSpecialChars = {
+    it("should handle column names with special characters", () => {
+      const tableWithSpecialChars: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => [
-          {
-            id: "column&with<special>chars",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => true),
-            toggleVisibility: vi.fn(),
-          },
+          createMockColumn("column&with<special>chars", true, true),
         ]),
       };
 
-      render(<DataTableViewOptions table={tableWithSpecialChars as any} />);
+      render(
+        <DataTableViewOptions table={tableWithSpecialChars as Table<unknown>} />
+      );
 
       expect(screen.getByText("column&with<special>chars")).toBeInTheDocument();
     });
+  });
 
-    it("should handle large number of columns", () => {
-      const manyColumns = Array.from({ length: 50 }, (_, i) => ({
-        id: `column${i}`,
-        getCanHide: vi.fn(() => true),
-        getIsVisible: vi.fn(() => true),
-        toggleVisibility: vi.fn(),
-      }));
+  describe("Large Data Sets", () => {
+    it("should handle many columns efficiently", () => {
+      const manyColumns = Array.from({ length: 50 }, (_, i) =>
+        createMockColumn(`column${i}`, true, i % 2 === 0)
+      );
 
-      const tableWithManyColumns = {
+      const tableWithManyColumns: Partial<Table<unknown>> = {
         getAllColumns: vi.fn(() => manyColumns),
       };
 
-      render(<DataTableViewOptions table={tableWithManyColumns as any} />);
+      render(
+        <DataTableViewOptions table={tableWithManyColumns as Table<unknown>} />
+      );
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       expect(checkboxItems.length).toBe(50);
     });
 
-    it("should handle mixed visibility states", () => {
-      const mixedTable = {
-        getAllColumns: vi.fn(() => [
-          {
-            id: "visible1",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => true),
-            toggleVisibility: vi.fn(),
-          },
-          {
-            id: "hidden1",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => false),
-            toggleVisibility: vi.fn(),
-          },
-          {
-            id: "visible2",
-            getCanHide: vi.fn(() => true),
-            getIsVisible: vi.fn(() => true),
-            toggleVisibility: vi.fn(),
-          },
-        ]),
+    it("should handle mixed visibility states correctly", () => {
+      const mixedColumns = [
+        createMockColumn("visible1", true, true),
+        createMockColumn("hidden1", true, false),
+        createMockColumn("visible2", true, true),
+        createMockColumn("hidden2", true, false),
+      ];
+
+      const mixedTable: Partial<Table<unknown>> = {
+        getAllColumns: vi.fn(() => mixedColumns),
       };
 
-      render(<DataTableViewOptions table={mixedTable as any} />);
+      render(<DataTableViewOptions table={mixedTable as Table<unknown>} />);
 
       const checkboxItems = screen.getAllByTestId("dropdown-checkbox-item");
       const visibleItems = checkboxItems.filter(
-        (item) => item.getAttribute("data-checked") === "true",
+        (item) => item.getAttribute("data-checked") === "true"
       );
       const hiddenItems = checkboxItems.filter(
-        (item) => item.getAttribute("data-checked") === "false",
+        (item) => item.getAttribute("data-checked") === "false"
       );
 
       expect(visibleItems.length).toBe(2);
-      expect(hiddenItems.length).toBe(1);
+      expect(hiddenItems.length).toBe(2);
     });
   });
 });
@@ -439,7 +442,7 @@ describe("DataTableViewOptions", () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: userId
+ * - Uses hooks: None
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

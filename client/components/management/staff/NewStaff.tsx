@@ -6,17 +6,16 @@
  */
 
 "use client";
-import React from "react";
-import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Download, X, Shield, GraduationCap, User } from "lucide-react";
+import { Download, GraduationCap, Shield, User, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import React from "react";
 
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -32,10 +31,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
-import { useSession } from "next-auth/react";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { useSession } from "next-auth/react";
+import { logError } from "@/utils/logger";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -164,9 +165,9 @@ export default function NewStaff() {
   const handleClassToggle = (classId: string) => {
     const currentClassIds = formData.classIds;
     const newClassIds = currentClassIds.includes(classId)
-      ? currentClassIds.filter(id => id !== classId)
+      ? currentClassIds.filter((id) => id !== classId)
       : [...currentClassIds, classId];
-    
+
     handleInputChange("classIds", newClassIds);
   };
 
@@ -184,7 +185,7 @@ export default function NewStaff() {
 
       router.push("/management/staff");
     } catch (error) {
-      console.error("Error creating staff member:", error);
+      logError("Error creating staff member:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -222,7 +223,7 @@ export default function NewStaff() {
         })
         .filter(
           (user): user is CSVUser =>
-            Boolean(user.firstName) && Boolean(user.lastName),
+            Boolean(user.firstName) && Boolean(user.lastName)
         );
 
       setCsvPreview(users);
@@ -233,20 +234,8 @@ export default function NewStaff() {
   const downloadTemplate = () => {
     const headers = ["firstName", "lastName", "alias", "role", "classIds"];
     const examples = [
-      [
-        "Sarah",
-        "Johnson", 
-        "sjohnson",
-        "instructional",
-        "class1;class2",
-      ],
-      [
-        "Jane",
-        "Smith",
-        "jsmith",
-        "instructor",
-        "class1;class2",
-      ],
+      ["Sarah", "Johnson", "sjohnson", "instructional", "class1;class2"],
+      ["Jane", "Smith", "jsmith", "instructor", "class1;class2"],
       ["John", "Doe", "jdoe", "ta", "class1;class2"],
     ];
 
@@ -278,7 +267,7 @@ export default function NewStaff() {
 
       router.push("/management/staff");
     } catch (error) {
-      console.error("Error creating staff members from CSV:", error);
+      logError("Error creating staff members from CSV:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -300,7 +289,9 @@ export default function NewStaff() {
                 <Input
                   id="firstName"
                   value={formData.firstName}
-                  onChange={(e) => handleInputChange("firstName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("firstName", e.target.value)
+                  }
                   placeholder="Enter first name"
                   required
                 />
@@ -310,7 +301,9 @@ export default function NewStaff() {
                 <Input
                   id="lastName"
                   value={formData.lastName}
-                  onChange={(e) => handleInputChange("lastName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("lastName", e.target.value)
+                  }
                   placeholder="Enter last name"
                   required
                 />
@@ -335,7 +328,9 @@ export default function NewStaff() {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: ProfileRole) => handleInputChange("role", value)}
+                  onValueChange={(value: ProfileRole) =>
+                    handleInputChange("role", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
@@ -371,20 +366,29 @@ export default function NewStaff() {
                 ) : (
                   <div className="space-y-3">
                     {allClasses.map((classItem: any) => (
-                      <div key={classItem.id} className="flex items-center space-x-2">
+                      <div
+                        key={classItem.id}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={`class-${classItem.id}`}
                           checked={formData.classIds.includes(classItem.id)}
-                          onCheckedChange={() => handleClassToggle(classItem.id)}
+                          onCheckedChange={() =>
+                            handleClassToggle(classItem.id)
+                          }
                         />
-                        <Label 
+                        <Label
                           htmlFor={`class-${classItem.id}`}
                           className="text-sm font-normal cursor-pointer flex-1"
                         >
                           <div className="flex items-center justify-between">
                             <div>
-                              <span className="font-medium">{classItem.classCode}</span>
-                              <span className="text-muted-foreground ml-2">{classItem.name}</span>
+                              <span className="font-medium">
+                                {classItem.classCode}
+                              </span>
+                              <span className="text-muted-foreground ml-2">
+                                {classItem.name}
+                              </span>
                             </div>
                             <Badge variant="outline" className="text-xs">
                               {classItem.term} {classItem.year}
@@ -397,7 +401,8 @@ export default function NewStaff() {
                 )}
               </div>
               <p className="text-sm text-muted-foreground">
-                {formData.classIds.length} class{formData.classIds.length !== 1 ? 'es' : ''} selected
+                {formData.classIds.length} class
+                {formData.classIds.length !== 1 ? "es" : ""} selected
               </p>
             </div>
 
@@ -445,8 +450,8 @@ export default function NewStaff() {
                 </Button>
               </div>
               <div className="text-sm text-muted-foreground">
-                Include the following columns in the CSV file: firstName, lastName,
-                alias, role, classIds.
+                Include the following columns in the CSV file: firstName,
+                lastName, alias, role, classIds.
               </div>
             </div>
 

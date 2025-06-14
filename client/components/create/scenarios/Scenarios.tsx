@@ -5,19 +5,13 @@
  * 06/07/2025
  */
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Edit, Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,9 +22,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Scenario } from "@/types";
+import { deleteScenario } from "@/utils/mutations/scenarios/delete-scenario";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 export function Scenarios() {
   const router = useRouter();
@@ -57,7 +58,7 @@ export function Scenarios() {
       toast.success("Scenario deleted successfully");
       refetchScenarios();
     } catch (error) {
-      console.error("Error deleting scenario:", error);
+      logError("Error deleting scenario:", error);
       toast.error("Failed to delete scenario");
     } finally {
       setIsDeleting(false);
@@ -78,36 +79,51 @@ export function Scenarios() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
-        {scenarios.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).map((scenario: Scenario) => (
-          <Card key={scenario.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <CardTitle className="text-base">{scenario.name || "Unnamed Scenario"}</CardTitle>
-                  <CardDescription>{scenario.description || "No description provided"}</CardDescription>
+        {scenarios
+          .sort(
+            (a, b) =>
+              new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          )
+          .map((scenario: Scenario) => (
+            <Card
+              key={scenario.id}
+              className="hover:shadow-md transition-shadow"
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">
+                      {scenario.name || "Unnamed Scenario"}
+                    </CardTitle>
+                    <CardDescription>
+                      {scenario.description || "No description provided"}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(scenario.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDeleteClick(
+                          scenario.id,
+                          scenario.name || "Unnamed Scenario"
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(scenario.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleDeleteClick(scenario.id, scenario.name || "Unnamed Scenario")
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
+              </CardHeader>
+            </Card>
+          ))}
 
         {scenarios.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">

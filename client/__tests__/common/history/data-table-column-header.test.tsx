@@ -1,17 +1,18 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
 import { DataTableColumnHeader } from "@/components/common/history/data-table-column-header";
+import { Column } from "@tanstack/react-table";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the column object for testing
-const mockColumn = {
+const mockColumn: Partial<Column<unknown, unknown>> = {
   getCanSort: vi.fn(() => true),
   getIsSorted: vi.fn(() => false),
   toggleSorting: vi.fn(),
   toggleVisibility: vi.fn(),
 };
 
-const mockNonSortableColumn = {
+const mockNonSortableColumn: Partial<Column<unknown, unknown>> = {
   getCanSort: vi.fn(() => false),
   getIsSorted: vi.fn(() => false),
   toggleSorting: vi.fn(),
@@ -27,9 +28,9 @@ describe("DataTableColumnHeader", () => {
     it("should render without crashing for sortable column", () => {
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       expect(screen.getByText("Test Column")).toBeInTheDocument();
@@ -38,9 +39,9 @@ describe("DataTableColumnHeader", () => {
     it("should render simple div for non-sortable column", () => {
       render(
         <DataTableColumnHeader
-          column={mockNonSortableColumn as any}
+          column={mockNonSortableColumn as Column<unknown, unknown>}
           title="Non-sortable Column"
-        />,
+        />
       );
 
       expect(screen.getByText("Non-sortable Column")).toBeInTheDocument();
@@ -50,10 +51,10 @@ describe("DataTableColumnHeader", () => {
     it("should apply custom className when provided", () => {
       const { container } = render(
         <DataTableColumnHeader
-          column={mockNonSortableColumn as any}
+          column={mockNonSortableColumn as Column<unknown, unknown>}
           title="Test Column"
           className="custom-class"
-        />,
+        />
       );
 
       const div = container.firstChild as HTMLElement;
@@ -63,9 +64,9 @@ describe("DataTableColumnHeader", () => {
     it("should render dropdown menu for sortable columns", () => {
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Sortable Column"
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
@@ -78,9 +79,9 @@ describe("DataTableColumnHeader", () => {
 
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -97,9 +98,9 @@ describe("DataTableColumnHeader", () => {
 
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -116,9 +117,9 @@ describe("DataTableColumnHeader", () => {
 
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -133,13 +134,16 @@ describe("DataTableColumnHeader", () => {
 
   describe("Sort State Display", () => {
     it("should show ascending arrow when sorted ascending", () => {
-      const ascColumn = {
+      const ascColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
         getIsSorted: vi.fn(() => "asc"),
       };
 
       render(
-        <DataTableColumnHeader column={ascColumn as any} title="Test Column" />,
+        <DataTableColumnHeader
+          column={ascColumn as Column<unknown, unknown>}
+          title="Test Column"
+        />
       );
 
       // ArrowUp icon should be present
@@ -147,16 +151,16 @@ describe("DataTableColumnHeader", () => {
     });
 
     it("should show descending arrow when sorted descending", () => {
-      const descColumn = {
+      const descColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
         getIsSorted: vi.fn(() => "desc"),
       };
 
       render(
         <DataTableColumnHeader
-          column={descColumn as any}
+          column={descColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       // ArrowDown icon should be present
@@ -166,9 +170,9 @@ describe("DataTableColumnHeader", () => {
     it("should show unsorted state when not sorted", () => {
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       // ChevronsUpDown icon should be present for unsorted state
@@ -180,9 +184,9 @@ describe("DataTableColumnHeader", () => {
     it("should have proper button attributes for sortable columns", () => {
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -194,9 +198,9 @@ describe("DataTableColumnHeader", () => {
 
       render(
         <DataTableColumnHeader
-          column={mockColumn as any}
+          column={mockColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -207,32 +211,32 @@ describe("DataTableColumnHeader", () => {
 
   describe("Edge Cases", () => {
     it("should handle null sort state", () => {
-      const nullSortColumn = {
+      const nullSortColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
         getIsSorted: vi.fn(() => null),
       };
 
       render(
         <DataTableColumnHeader
-          column={nullSortColumn as any}
+          column={nullSortColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
     });
 
     it("should handle undefined sort state", () => {
-      const undefinedSortColumn = {
+      const undefinedSortColumn: Partial<Column<unknown, unknown>> = {
         ...mockColumn,
         getIsSorted: vi.fn(() => undefined),
       };
 
       render(
         <DataTableColumnHeader
-          column={undefinedSortColumn as any}
+          column={undefinedSortColumn as Column<unknown, unknown>}
           title="Test Column"
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();

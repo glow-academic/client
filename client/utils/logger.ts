@@ -1,7 +1,7 @@
 "use server";
 // This file should only be imported on the server side
-import postgres from "postgres";
 import { db_url } from "@/utils/drizzle/database";
+import postgres from "postgres";
 
 // Server-only PostgreSQL logger, log to console in non production
 const isProduction = process.env.NODE_ENV === "production";
@@ -72,7 +72,7 @@ export async function logError(
       : error;
 
   if (!isProduction) {
-    console.error(message, errorInfo);
+    logError(message, errorInfo);
   }
 
   return logToDatabase("error", message, {

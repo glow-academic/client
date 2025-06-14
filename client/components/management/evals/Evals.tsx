@@ -5,38 +5,29 @@
  * 06/07/2025
  */
 "use client";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import {
-  Edit,
-  Trash2,
-  Play,
-  Users,
   Bot,
-  MessageSquare,
-  Plus,
-  FileCheck,
   Clock,
-  Settings,
+  Edit,
   Eye,
+  FileCheck,
+  MessageSquare,
+  Play,
+  Plus,
+  Settings,
+  Trash2,
+  Users,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "sonner";
 
-import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
 import { deleteEval } from "@/utils/mutations/evals/delete-eval";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
+import { logError } from "@/utils/logger";
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +38,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Eval } from "@/types";
 
 export default function Evals() {
@@ -80,7 +81,7 @@ export default function Evals() {
       toast.success("Evaluation deleted successfully");
       refetchEvals();
     } catch (error) {
-      console.error("Error deleting evaluation:", error);
+      logError("Error deleting evaluation:", error);
       toast.error("Failed to delete evaluation");
     } finally {
       setIsDeleting(false);
@@ -124,17 +125,17 @@ export default function Evals() {
       formData.append("class_id", classId);
 
       const response = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL']}/evals/start`,
+        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/start`,
         {
           method: "POST",
           body: formData,
-        },
+        }
       );
 
       if (response.ok) {
         const data = await response.json();
         toast.success("Evaluation started successfully");
-        
+
         // Navigate to the evaluation page
         router.push(`/management/evals/e/${id}/r/${data.eval_run_id}`);
       } else {
@@ -142,11 +143,11 @@ export default function Evals() {
         throw new Error(
           errorData.detail ||
             response.statusText ||
-            "Failed to start evaluation",
+            "Failed to start evaluation"
         );
       }
     } catch (error) {
-      console.error("Error starting evaluation:", error);
+      logError("Error starting evaluation:", error);
       toast.error("Failed to start evaluation. Please try again.");
     } finally {
       setRunningEvalId(null);
@@ -186,7 +187,6 @@ export default function Evals() {
 
   return (
     <div className="space-y-8">
-
       {/* Evaluations Grid */}
       <div>
         {evals && evals.length > 0 ? (
@@ -213,7 +213,9 @@ export default function Evals() {
                         </CardDescription>
                       </div>
                       <div className="flex gap-1">
-                        <Badge variant={typeBadge.variant}>{typeBadge.text}</Badge>
+                        <Badge variant={typeBadge.variant}>
+                          {typeBadge.text}
+                        </Badge>
                         <Badge variant={complexityBadge.variant}>
                           {complexityBadge.text}
                         </Badge>
@@ -240,14 +242,16 @@ export default function Evals() {
                         <div className="flex items-center gap-1">
                           <Bot className="h-3 w-3" />
                           {
-                            evaluation.agentIds.filter((id) => id !== "RAY").length
+                            evaluation.agentIds.filter((id) => id !== "RAY")
+                              .length
                           }{" "}
                           agents
                         </div>
                         <div className="flex items-center gap-1">
                           <FileCheck className="h-3 w-3" />
                           {
-                            evaluation.rubricIds.filter((id) => id !== "RAY").length
+                            evaluation.rubricIds.filter((id) => id !== "RAY")
+                              .length
                           }{" "}
                           rubrics
                         </div>
@@ -259,8 +263,12 @@ export default function Evals() {
 
                       <div className="pt-2 border-t">
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
-                          <span>Parallel runs: {evaluation.maxParallelRuns}</span>
-                          <span>Created: {formatDate(evaluation.createdAt)}</span>
+                          <span>
+                            Parallel runs: {evaluation.maxParallelRuns}
+                          </span>
+                          <span>
+                            Created: {formatDate(evaluation.createdAt)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -327,7 +335,8 @@ export default function Evals() {
               <Settings className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">No evaluations yet</h3>
               <p className="text-muted-foreground text-center mb-4">
-                Create your first evaluation to start assessing agent performance
+                Create your first evaluation to start assessing agent
+                performance
               </p>
               <Button onClick={handleCreateNew}>
                 <Plus className="h-4 w-4 mr-2" />
@@ -337,7 +346,6 @@ export default function Evals() {
           </Card>
         )}
       </div>
-
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
