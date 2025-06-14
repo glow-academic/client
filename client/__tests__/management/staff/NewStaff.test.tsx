@@ -1,11 +1,11 @@
-import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
-import { useRouter } from "next/navigation";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactNode } from "react";
 import NewStaff from "@/components/management/staff/NewStaff";
-import { useSession } from 'next-auth/react';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { ReactNode } from "react";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
@@ -20,7 +20,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-vi.mock('next-auth/react', () => ({
+vi.mock("next-auth/react", () => ({
   useSession: vi.fn(),
 }));
 
@@ -37,7 +37,7 @@ describe("NewStaff", () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    (useRouter as Mock).mockReturnValue({
       push: mockPush,
       back: vi.fn(),
       forward: vi.fn(),
@@ -45,8 +45,8 @@ describe("NewStaff", () => {
       replace: vi.fn(),
     });
 
-    (useSession as any).mockReturnValue({
-      data: { user: { email: 'redacted@purdue.edu' } },
+    (useSession as Mock).mockReturnValue({
+      data: { user: { email: "redacted@purdue.edu" } },
     });
   });
 
@@ -63,10 +63,10 @@ describe("NewStaff", () => {
       renderWithProviders(<NewStaff />);
 
       expect(
-        screen.getByRole("tab", { name: /single user/i }),
+        screen.getByRole("tab", { name: /single user/i })
       ).toBeInTheDocument();
       expect(
-        screen.getByRole("tab", { name: /csv import/i }),
+        screen.getByRole("tab", { name: /csv import/i })
       ).toBeInTheDocument();
     });
 
@@ -143,8 +143,8 @@ describe("NewStaff", () => {
 
       expect(
         screen.getByText(
-          "Will have permissions to manage instructors and teaching assistants.",
-        ),
+          "Will have permissions to manage instructors and teaching assistants."
+        )
       ).toBeInTheDocument();
     });
 
@@ -152,7 +152,7 @@ describe("NewStaff", () => {
       renderWithProviders(<NewStaff />);
 
       expect(
-        screen.getByRole("button", { name: /create staff member/i }),
+        screen.getByRole("button", { name: /create staff member/i })
       ).toBeDisabled();
     });
 
@@ -165,7 +165,7 @@ describe("NewStaff", () => {
       await user.click(screen.getByText("Instructor"));
 
       expect(
-        screen.getByRole("button", { name: /create instructor/i }),
+        screen.getByRole("button", { name: /create instructor/i })
       ).not.toBeDisabled();
     });
   });
@@ -179,12 +179,12 @@ describe("NewStaff", () => {
       await user.click(csvTab);
 
       expect(
-        screen.getByRole("button", { name: /download template/i }),
+        screen.getByRole("button", { name: /download template/i })
       ).toBeInTheDocument();
       expect(
         screen.getByText(
-          "Include the following columns in the CSV file: name, username, password, role, classIds.",
-        ),
+          "Include the following columns in the CSV file: name, username, password, role, classIds."
+        )
       ).toBeInTheDocument();
     });
 
@@ -261,13 +261,13 @@ describe("NewStaff", () => {
       // Mock FileReader
       const mockFileReader = {
         readAsText: vi.fn(),
-        onload: null as any,
+        onload: null as ((event: ProgressEvent<FileReader>) => void) | null,
         result:
           "name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2",
       };
 
       vi.spyOn(window, "FileReader").mockImplementation(
-        () => mockFileReader as any,
+        () => mockFileReader as unknown as FileReader
       );
 
       const fileInput = screen.getByRole("textbox", { hidden: true });
@@ -279,7 +279,7 @@ describe("NewStaff", () => {
       if (mockFileReader.onload) {
         mockFileReader.onload({
           target: { result: mockFileReader.result },
-        } as any);
+        } as ProgressEvent<FileReader>);
       }
 
       await waitFor(() => {
@@ -322,7 +322,7 @@ describe("NewStaff", () => {
         () => {
           expect(mockPush).toHaveBeenCalledWith("/management/staff");
         },
-        { timeout: 2000 },
+        { timeout: 2000 }
       );
     });
 
@@ -336,13 +336,13 @@ describe("NewStaff", () => {
       // Mock FileReader and file upload
       const mockFileReader = {
         readAsText: vi.fn(),
-        onload: null as any,
+        onload: null as ((event: ProgressEvent<FileReader>) => void) | null,
         result:
           "name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2",
       };
 
       vi.spyOn(window, "FileReader").mockImplementation(
-        () => mockFileReader as any,
+        () => mockFileReader as unknown as FileReader
       );
 
       const fileInput = screen.getByRole("textbox", { hidden: true });
@@ -354,12 +354,12 @@ describe("NewStaff", () => {
       if (mockFileReader.onload) {
         mockFileReader.onload({
           target: { result: mockFileReader.result },
-        } as any);
+        } as ProgressEvent<FileReader>);
       }
 
       await waitFor(() => {
         expect(
-          screen.getByRole("button", { name: /create 1 staff members/i }),
+          screen.getByRole("button", { name: /create 1 staff members/i })
         ).toBeInTheDocument();
       });
 
@@ -381,13 +381,13 @@ describe("NewStaff", () => {
       // Mock FileReader and file upload
       const mockFileReader = {
         readAsText: vi.fn(),
-        onload: null as any,
+        onload: null as ((event: ProgressEvent<FileReader>) => void) | null,
         result:
           "name,username,password,role,classIds\nDr. Jane Smith,jsmith,password123,instructor,class1;class2",
       };
 
       vi.spyOn(window, "FileReader").mockImplementation(
-        () => mockFileReader as any,
+        () => mockFileReader as unknown as FileReader
       );
 
       const fileInput = screen.getByRole("textbox", { hidden: true });
@@ -399,7 +399,7 @@ describe("NewStaff", () => {
       if (mockFileReader.onload) {
         mockFileReader.onload({
           target: { result: mockFileReader.result },
-        } as any);
+        } as ProgressEvent<FileReader>);
       }
 
       await waitFor(() => {
@@ -426,11 +426,11 @@ describe("NewStaff", () => {
 
       expect(screen.getByLabelText(/full name/i)).toHaveAttribute(
         "placeholder",
-        "Dr. Sarah Johnson",
+        "Dr. Sarah Johnson"
       );
       expect(screen.getByLabelText(/username/i)).toHaveAttribute(
         "placeholder",
-        "sjohnson",
+        "sjohnson"
       );
 
       // Test instructor
@@ -439,11 +439,11 @@ describe("NewStaff", () => {
 
       expect(screen.getByLabelText(/full name/i)).toHaveAttribute(
         "placeholder",
-        "Dr. Jane Smith",
+        "Dr. Jane Smith"
       );
       expect(screen.getByLabelText(/username/i)).toHaveAttribute(
         "placeholder",
-        "jsmith",
+        "jsmith"
       );
     });
 
@@ -459,8 +459,8 @@ describe("NewStaff", () => {
 
       expect(
         screen.getByText(
-          "Will have permissions to manage assigned classes and teaching assistants.",
-        ),
+          "Will have permissions to manage assigned classes and teaching assistants."
+        )
       ).toBeInTheDocument();
 
       // Test TA permissions
@@ -469,8 +469,8 @@ describe("NewStaff", () => {
 
       expect(
         screen.getByText(
-          "Will have permissions to assist with assigned classes.",
-        ),
+          "Will have permissions to assist with assigned classes."
+        )
       ).toBeInTheDocument();
     });
 
@@ -485,7 +485,7 @@ describe("NewStaff", () => {
       await user.click(screen.getByText("Instructor"));
 
       expect(
-        screen.getByRole("button", { name: /create instructor/i }),
+        screen.getByRole("button", { name: /create instructor/i })
       ).toBeInTheDocument();
 
       // Test TA
@@ -493,7 +493,7 @@ describe("NewStaff", () => {
       await user.click(screen.getByText("Teaching Assistant"));
 
       expect(
-        screen.getByRole("button", { name: /create teaching assistant/i }),
+        screen.getByRole("button", { name: /create teaching assistant/i })
       ).toBeInTheDocument();
     });
   });

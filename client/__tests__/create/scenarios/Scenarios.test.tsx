@@ -50,6 +50,7 @@ const mockRouter = {
   forward: vi.fn(),
   refresh: vi.fn(),
   replace: vi.fn(),
+  prefetch: vi.fn(),
 };
 
 // Mock data
@@ -555,7 +556,7 @@ describe("Scenarios", () => {
       );
 
       if (editButtons.length >= 2) {
-        await user.click(editButtons[2]); // Click edit button for second scenario
+        await user.click(editButtons[2]!); // Click edit button for second scenario
 
         expect(mockPush).toHaveBeenCalledWith("/create/scenarios/s/scenario-2");
       }
@@ -569,9 +570,17 @@ describe("Scenarios", () => {
           id: "scenario-1",
           name: "Valid Scenario",
           description: "Valid description",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          agentId: "agent-id",
+          classId: "class-id",
+          crowdedness: 3,
+          intensity: 4,
+          seniority: "junior" as const,
+          documents: [],
         },
-        { id: "scenario-2", name: "", description: "Missing name" },
-        { id: "scenario-3", name: "Missing description", description: "" },
+        { id: "scenario-2", name: "", description: "Missing name", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), agentId: "agent-id", classId: "class-id", crowdedness: 3, intensity: 4, seniority: "junior" as const, documents: [] },
+        { id: "scenario-3", name: "Missing description", description: "", createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), agentId: "agent-id", classId: "class-id", crowdedness: 3, intensity: 4, seniority: "junior" as const, documents: [] },
       ];
 
       vi.mocked(getAllScenarios).mockResolvedValue(scenariosWithMissingData);
@@ -591,6 +600,14 @@ describe("Scenarios", () => {
           name: "This is a very long scenario name that might cause layout issues if not handled properly",
           description:
             "This is an extremely long description that goes on and on and might cause text overflow or layout problems if the component does not handle long text properly. It should be truncated or wrapped appropriately.",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          agentId: "agent-id",
+          classId: "class-id",
+          crowdedness: 3,
+          intensity: 4,
+          seniority: "junior" as const,
+          documents: [],
         },
       ];
 
@@ -646,7 +663,7 @@ describe("Scenarios", () => {
     });
 
     it("should handle null or undefined scenario data", async () => {
-      vi.mocked(getAllScenarios).mockResolvedValue(null);
+      vi.mocked(getAllScenarios).mockResolvedValue([]);
 
       renderWithProviders(<Scenarios />);
 

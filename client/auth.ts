@@ -8,7 +8,7 @@ import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { createUser } from "./utils/mutations/users/create-user";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
 import { getUserByEmail } from "./utils/user/get-user-by-email";
-import { logError } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const databaseUser = await getUserByEmail(user.email);
 
         if (!databaseUser) {
-          console.log("Creating user:", { id: userId, email: user.email });
+          logInfo("Creating user:", { id: userId, email: user.email });
           await createUser({
             id: userId,
             email: user.email,
@@ -70,7 +70,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             classIds: [],
           });
         } else {
-          console.log("User exists, updating profile:", {
+          logInfo("User exists, updating profile:", {
             existingUserId: databaseUser.id,
             microsoftId: userId,
             email: user.email,
@@ -89,14 +89,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               lastLogin: new Date().toISOString(),
             });
 
-            console.log("Updated existing user profile:", {
+            logInfo("Updated existing user profile:", {
               profileId: userProfile.id,
               userId: databaseUser.id,
               email: user.email,
             });
           } else {
             // Profile doesn't exist, create one
-            console.log("Creating profile for existing user:", databaseUser.id);
+            logInfo("Creating profile for existing user:", {
+              userId: databaseUser.id,
+              email: user.email,
+            });
             await createProfile({
               userId: databaseUser.id,
               firstName: firstName,

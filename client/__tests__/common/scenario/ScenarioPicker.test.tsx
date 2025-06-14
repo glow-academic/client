@@ -107,7 +107,7 @@ describe('ScenarioPicker', () => {
         />
       );
 
-      expect(screen.getByText(selectedModel.name)).toBeInTheDocument();
+      expect(screen.getByText(selectedModel?.name ?? '')).toBeInTheDocument();
     });
   });
 

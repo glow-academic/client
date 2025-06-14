@@ -8,6 +8,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import ClassStatus from '@/components/management/classes/ClassStatus';
+import { getClass } from '@/utils/queries/classes/get-class';
+import { getTopicsByClass } from '@/utils/queries/topics/get-topics-by-class';
+import { getSchedulesByClass } from '@/utils/queries/schedules/get-schedules-by-class';
+import { getEventsBySchedules } from '@/utils/queries/events/get-events-by-schedules';
+import { getDocumentsByClass } from '@/utils/queries/documents/get-documents-by-class';
+import { Document, Topic, Event } from '@/types';
 
 // Mock the queries
 vi.mock('@/utils/queries/classes/get-class', () => ({
@@ -35,7 +41,7 @@ const mockClass = {
   id: 'class1',
   name: 'Introduction to Computer Science',
   classCode: 'CS101',
-  term: 'fall',
+  term: 'fall' as const,
   year: 2024,
   description: 'Basic computer science concepts',
   createdAt: '2024-01-01T00:00:00Z',
@@ -45,23 +51,32 @@ const mockDocuments = [
   {
     id: 'doc1',
     name: 'syllabus.pdf',
-    type: 'syllabus',
+    type: 'syllabus' as const,
     classId: 'class1',
     createdAt: '2024-01-01T00:00:00Z',
+    filePath: 'syllabus.pdf',
+    mimeType: 'application/pdf',
+    classified: true,
   },
   {
     id: 'doc2',
     name: 'homework1.pdf',
-    type: 'homework',
+    type: 'homework' as const,
     classId: 'class1',
     createdAt: '2024-01-02T00:00:00Z',
+    filePath: 'homework1.pdf',
+    mimeType: 'application/pdf',
+    classified: true,
   },
   {
     id: 'doc3',
     name: 'project1.pdf',
-    type: 'project',
+    type: 'project' as const,
     classId: 'class1',
     createdAt: '2024-01-03T00:00:00Z',
+    filePath: 'project1.pdf',
+    mimeType: 'application/pdf',
+    classified: true,
   },
 ];
 
@@ -70,12 +85,16 @@ const mockTopics = [
     id: 'topic1',
     name: 'Variables and Data Types',
     classId: 'class1',
+    description: 'Variables and Data Types',
+    prerequisite: false,
     createdAt: '2024-01-01T00:00:00Z',
   },
   {
     id: 'topic2',
     name: 'Control Structures',
     classId: 'class1',
+    description: 'Control Structures',
+    prerequisite: false,
     createdAt: '2024-01-02T00:00:00Z',
   },
 ];
@@ -95,6 +114,9 @@ const mockEvents = [
     id: 'event1',
     name: 'Midterm Exam',
     scheduleId: 'schedule1',
+    description: 'Midterm Exam',
+    documentType: 'midterm' as const,
+    time: '10:00-11:00',
     createdAt: '2024-01-01T00:00:00Z',
   },
 ];
@@ -111,17 +133,13 @@ describe('ClassStatus Component', () => {
     });
 
     // Setup mock implementations
-    const { getClass } = require('@/utils/queries/classes/get-class');
-    const { getTopicsByClass } = require('@/utils/queries/topics/get-topics-by-class');
-    const { getSchedulesByClass } = require('@/utils/queries/schedules/get-schedules-by-class');
-    const { getEventsBySchedules } = require('@/utils/queries/events/get-events-by-schedules');
-    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
 
-    getClass.mockResolvedValue(mockClass);
-    getTopicsByClass.mockResolvedValue(mockTopics);
-    getSchedulesByClass.mockResolvedValue(mockSchedules);
-    getEventsBySchedules.mockResolvedValue(mockEvents);
-    getDocumentsByClass.mockResolvedValue(mockDocuments);
+
+    vi.mocked(getClass).mockResolvedValue(mockClass);
+    vi.mocked(getTopicsByClass).mockResolvedValue(mockTopics);
+    vi.mocked(getSchedulesByClass).mockResolvedValue(mockSchedules);
+    vi.mocked(getEventsBySchedules).mockResolvedValue(mockEvents);
+    vi.mocked(getDocumentsByClass).mockResolvedValue(mockDocuments);
   });
 
   const renderComponent = (classId = 'class1') => {
@@ -198,8 +216,7 @@ describe('ClassStatus Component', () => {
   });
 
   it('handles class not found error', async () => {
-    const { getClass } = require('@/utils/queries/classes/get-class');
-    getClass.mockResolvedValue(null);
+    vi.mocked(getClass).mockResolvedValue(null);
 
     renderComponent();
 
@@ -210,14 +227,14 @@ describe('ClassStatus Component', () => {
   });
 
   it('shows processing stages correctly', async () => {
-    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
+    
     
     // Test with partially processed documents
     const partialDocuments = [
-      { ...mockDocuments[0] },
-      { ...mockDocuments[1], type: null }, // Unprocessed
+      { ...mockDocuments[0] } as Document,
+      { ...mockDocuments[1], type: null } as unknown as Document, // Unprocessed
     ];
-    getDocumentsByClass.mockResolvedValue(partialDocuments);
+    vi.mocked(getDocumentsByClass).mockResolvedValue(partialDocuments);
 
     renderComponent();
 
@@ -227,8 +244,7 @@ describe('ClassStatus Component', () => {
   });
 
   it('handles empty documents state', async () => {
-    const { getDocumentsByClass } = require('@/utils/queries/documents/get-documents-by-class');
-    getDocumentsByClass.mockResolvedValue([]);
+    vi.mocked(getDocumentsByClass).mockResolvedValue([]);
 
     renderComponent();
 
@@ -245,10 +261,9 @@ describe('ClassStatus Component', () => {
       name: `Topic ${i + 1}`,
       classId: 'class1',
       createdAt: '2024-01-01T00:00:00Z',
-    }));
+    })) as Topic[];
 
-    const { getTopicsByClass } = require('@/utils/queries/topics/get-topics-by-class');
-    getTopicsByClass.mockResolvedValue(manyTopics);
+    vi.mocked(getTopicsByClass).mockResolvedValue(manyTopics);
 
     renderComponent();
 
@@ -271,13 +286,10 @@ describe('ClassStatus Component', () => {
       name: `Event ${i + 1}`,
       scheduleId: 'schedule1',
       createdAt: '2024-01-01T00:00:00Z',
-    }));
+    })) as Event[];
 
-    const { getSchedulesByClass } = require('@/utils/queries/schedules/get-schedules-by-class');
-    const { getEventsBySchedules } = require('@/utils/queries/events/get-events-by-schedules');
-    
-    getSchedulesByClass.mockResolvedValue(manySchedules);
-    getEventsBySchedules.mockResolvedValue(manyEvents);
+    vi.mocked(getSchedulesByClass).mockResolvedValue(manySchedules);
+    vi.mocked(getEventsBySchedules).mockResolvedValue(manyEvents);
 
     renderComponent();
 

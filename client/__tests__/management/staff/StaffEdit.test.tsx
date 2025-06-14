@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { useRouter } from "next/navigation";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -38,7 +38,7 @@ describe("StaffEdit", () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    (useRouter as Mock).mockReturnValue({
       push: mockPush,
       back: vi.fn(),
       forward: vi.fn(),
@@ -72,7 +72,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      (getAllProfiles as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -84,7 +84,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue([]); // Target user not in list
+      (getAllProfiles as Mock).mockResolvedValue([]); // Target user not in list
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -106,7 +106,7 @@ describe("StaffEdit", () => {
 
       const studentUser = { ...mockTargetUser, role: "student" };
 
-      (getAllProfiles as any).mockResolvedValue([studentUser]);
+      (getAllProfiles as Mock).mockResolvedValue([studentUser]);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -128,7 +128,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -150,7 +150,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -168,7 +168,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -184,7 +184,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -205,7 +205,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -229,7 +229,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -254,7 +254,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -276,7 +276,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -300,7 +300,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -322,7 +322,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -345,7 +345,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -374,7 +374,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -391,7 +391,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -413,7 +413,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -435,7 +435,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -468,7 +468,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -486,7 +486,9 @@ describe("StaffEdit", () => {
       const confirmDeleteButton = screen.getAllByRole("button", {
         name: /delete user/i,
       })[1]; // Second one in dialog
-      await user.click(confirmDeleteButton);
+      if (confirmDeleteButton) {
+        await user.click(confirmDeleteButton);
+      }
 
       // Should show loading state
       await waitFor(
@@ -504,7 +506,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockRejectedValue(new Error("API Error"));
+      (getAllProfiles as Mock).mockRejectedValue(new Error("API Error"));
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 
@@ -517,7 +519,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -547,7 +549,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue([]);
+      (getAllProfiles as Mock).mockResolvedValue([]);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -573,7 +575,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       const user = userEvent.setup();
       renderWithProviders(<StaffEdit profileId={testUserId} />);
@@ -595,7 +597,7 @@ describe("StaffEdit", () => {
         "@/utils/queries/profiles/get-all-profiles"
       );
 
-      (getAllProfiles as any).mockResolvedValue(mockAllUsers);
+      (getAllProfiles as Mock).mockResolvedValue(mockAllUsers);
 
       renderWithProviders(<StaffEdit profileId={testUserId} />);
 

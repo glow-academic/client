@@ -56,6 +56,7 @@ describe("ScenarioEdit", () => {
       forward: vi.fn(),
       refresh: vi.fn(),
       replace: vi.fn(),
+      prefetch: vi.fn(),
     });
   });
 
@@ -83,6 +84,14 @@ describe("ScenarioEdit", () => {
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        agentId: "agent-id",
+        classId: "class-id",
+        crowdedness: 3,
+        intensity: 4,
+        seniority: "junior",
+        documents: [],
       });
 
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
@@ -105,6 +114,14 @@ describe("ScenarioEdit", () => {
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        agentId: "agent-id",
+        classId: "class-id",
+        crowdedness: 3,
+        intensity: 4,
+        seniority: "junior",
+        documents: [],
       });
 
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
@@ -133,8 +150,28 @@ describe("ScenarioEdit", () => {
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        agentId: "agent-id",
+        classId: "class-id",
+        crowdedness: 3,
+        intensity: 4,
+        seniority: "junior",
+        documents: [],
       });
-      vi.mocked(updateScenario).mockResolvedValue({ id: testScenarioId });
+      vi.mocked(updateScenario).mockResolvedValue({
+        id: testScenarioId,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        name: "Test Scenario",
+        description: "Test Description",
+        agentId: "agent-id",
+        classId: "class-id",
+        crowdedness: 3,
+        intensity: 4,
+        seniority: "junior",
+        documents: [],
+      });
 
       const user = userEvent.setup();
       renderWithProviders(<ScenarioEdit scenarioId={testScenarioId} />);
@@ -168,6 +205,14 @@ describe("ScenarioEdit", () => {
         id: testScenarioId,
         name: "Test Scenario",
         description: "Test Description",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        agentId: "agent-id",
+        classId: "class-id",
+        crowdedness: 3,
+        intensity: 4,
+        seniority: "junior",
+        documents: [],
       });
 
       const user = userEvent.setup();
@@ -244,6 +289,10 @@ describe("ScenarioEdit", () => {
         crowdedness: 3,
         intensity: 4,
         seniority: "junior" as const,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        classId: "class-id",
+        documents: [],
       };
 
       vi.mocked(getScenario).mockResolvedValue(mockScenario);

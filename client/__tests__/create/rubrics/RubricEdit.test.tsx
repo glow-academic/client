@@ -90,7 +90,7 @@ describe('RubricEdit', () => {
     it('should handle empty rubricId', () => {
       renderWithProviders(<RubricEdit rubricId="" />);
       
-      expect(screen.getByText((content, element) => {
+      expect(screen.getByText((_content, element) => {
         return element?.textContent === 'Rubric ID: ';
       })).toBeInTheDocument();
     });

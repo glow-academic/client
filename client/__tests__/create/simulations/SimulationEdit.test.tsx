@@ -88,7 +88,7 @@ describe('SimulationEdit', () => {
     it('should handle empty simulationId', () => {
       renderWithProviders(<SimulationEdit simulationId="" />);
       
-      expect(screen.getByText((content, element) => {
+      expect(screen.getByText((_content, element) => {
         return element?.textContent === 'Simulation ID: ';
       })).toBeInTheDocument();
     });

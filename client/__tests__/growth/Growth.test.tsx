@@ -1,14 +1,13 @@
 import Growth from "@/components/growth/Growth";
-import { useAuth } from "@/hooks/use-auth";
+import { Agent, Rubric, StandardGroup, Standard, SimulationChat, SimulationAttempt, SimulationChatGrade, SimulationChatFeedback } from "@/types";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getSimulationAttemptsByUser } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-user";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getUser } from "@/utils/queries/users/get-user";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ReactNode } from "react";
@@ -119,16 +118,7 @@ describe("Growth", () => {
     });
 
     // Setup default mock implementations
-    const mockUser = {
-      id: "test-user-id",
-      name: "Test User",
-      role: "ta",
-      username: "testuser",
-      password: "password",
-      classIds: ["class-1"],
-      viewedIntro: false,
-      createdAt: "2024-01-01T00:00:00Z",
-    };
+
 
     const mockAgents = [
       {
@@ -139,6 +129,15 @@ describe("Growth", () => {
         systemPrompt: "Test prompt",
         agentType: "general",
         temperature: 0.7,
+        createdAt: "2024-01-01T00:00:00Z",
+      },
+    ];
+
+    const mockAttempts = [
+      {
+        id: "attempt-1",
+        profileId: "profile-1",
+        simulationId: "sim-1",
         createdAt: "2024-01-01T00:00:00Z",
       },
     ];
@@ -194,22 +193,7 @@ describe("Growth", () => {
       },
     ];
 
-    const mockAttempts = [
-      {
-        id: "attempt-1",
-        userId: "test-user-id",
-        classId: "class-1",
-        simulationId: "sim-1",
-        createdAt: "2024-01-01T00:00:00Z",
-      },
-      {
-        id: "attempt-2",
-        userId: "test-user-id",
-        classId: "class-1",
-        simulationId: "sim-1",
-        createdAt: "2024-01-02T00:00:00Z",
-      },
-    ];
+
 
     const mockChats = [
       {
@@ -285,19 +269,18 @@ describe("Growth", () => {
     ];
 
     // Apply mocks
-    vi.mocked(getUser).mockResolvedValue(mockUser);
-    vi.mocked(getAllAgents).mockResolvedValue(mockAgents);
-    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics);
-    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue(mockStandardGroups);
-    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards);
-    vi.mocked(getSimulationAttemptsByUser).mockResolvedValue(mockAttempts);
-    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats);
+    vi.mocked(getAllAgents).mockResolvedValue(mockAgents as Agent[]);
+    vi.mocked(getAllRubrics).mockResolvedValue(mockRubrics as Rubric[]);
+    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue(mockStandardGroups as StandardGroup[]);
+    vi.mocked(getStandardsByStandardGroups).mockResolvedValue(mockStandards as Standard[]);
+    vi.mocked(getSimulationChatsByAttempts).mockResolvedValue(mockChats as SimulationChat[]);
+    vi.mocked(getSimulationAttemptsByProfiles).mockResolvedValue(mockAttempts as SimulationAttempt[]);
     vi.mocked(getSimulationChatGradesBySimulationChats).mockResolvedValue(
-      mockGrades
+      mockGrades as SimulationChatGrade[]
     );
     vi.mocked(
       getSimulationChatFeedbacksBySimulationChatGrades
-    ).mockResolvedValue(mockFeedbacks);
+    ).mockResolvedValue(mockFeedbacks as SimulationChatFeedback[]);
   });
 
   const renderWithProviders = (ui: React.ReactElement, options = {}) => {
@@ -337,16 +320,13 @@ describe("Growth", () => {
       renderWithProviders(<Growth />);
 
       await waitFor(() => {
-        expect(getUser).toHaveBeenCalledWith("test-user-id");
-        expect(getSimulationAttemptsByUser).toHaveBeenCalledWith(
-          "test-user-id"
-        );
+        expect(getAllAgents).toHaveBeenCalledWith("test-user-id");
       });
     });
 
     it("should handle loading states", () => {
       // Mock loading state
-      vi.mocked(getUser).mockImplementation(() => new Promise(() => {}));
+      vi.mocked(getAllAgents).mockImplementation(() => new Promise(() => {}));
 
       renderWithProviders(<Growth />);
     });
@@ -403,19 +383,9 @@ describe("Growth", () => {
     });
   });
 
-  describe("User Interactions", () => {
-    it("should handle user authentication", async () => {
-      renderWithProviders(<Growth />);
-
-      await waitFor(() => {
-        expect(useAuth).toHaveBeenCalled();
-      });
-    });
-  });
-
   describe("Edge Cases", () => {
     it("should handle missing user gracefully", async () => {
-      vi.mocked(getUser).mockResolvedValue(null);
+      vi.mocked(getAllAgents).mockResolvedValue([]);
 
       renderWithProviders(<Growth />);
 
@@ -435,7 +405,7 @@ describe("Growth", () => {
     });
 
     it("should handle API errors gracefully", async () => {
-      vi.mocked(getUser).mockRejectedValue(new Error("API Error"));
+      vi.mocked(getAllAgents).mockRejectedValue(new Error("API Error"));
 
       renderWithProviders(<Growth />);
 

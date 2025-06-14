@@ -12,7 +12,7 @@ vi.mock("@/components/common/history/data-table-view-options", () => ({
 }));
 
 vi.mock("@/components/common/history/export-button", () => ({
-  ExportButton: ({ _table }: { _table: unknown }) => (
+  ExportButton: () => (
     <div data-testid="export-button">Export</div>
   ),
 }));
@@ -36,7 +36,7 @@ const mockColumn = {
   depth: 0,
   accessorFn: vi.fn(),
   columns: [],
-  parent: undefined,
+  parent: undefined as unknown as Column<unknown, unknown>,
   getFlatColumns: vi.fn(() => []),
   getLeafColumns: vi.fn(() => []),
 } as Partial<Column<unknown, unknown>> as Column<unknown, unknown>;
@@ -279,7 +279,7 @@ describe("DataTableToolbar", () => {
             { id: "userId", value: "user1" },
             { id: "classId", value: "class1" },
           ],
-        })),
+        }) as TableState),
       };
 
       render(
@@ -311,8 +311,10 @@ describe("DataTableToolbar", () => {
       const tableWithDateFilter: Partial<Table<unknown>> = {
         ...mockTable,
         getState: vi.fn(() => ({
-          columnFilters: [{ id: "createdAt", value: [new Date(), new Date()] }],
-        })),
+          columnFilters: [
+            { id: "createdAt", value: [new Date(), new Date()] },
+          ],
+        }) as TableState),
       };
 
       render(
@@ -333,7 +335,7 @@ describe("DataTableToolbar", () => {
         ...mockTable,
         getState: vi.fn(() => ({
           columnFilters: [{ id: "userId", value: "user1" }],
-        })),
+        }) as TableState),
       };
 
       render(
@@ -472,7 +474,7 @@ describe("DataTableToolbar", () => {
     it("should handle missing columns gracefully", () => {
       const tableWithMissingColumns: Partial<Table<unknown>> = {
         ...mockTable,
-        getColumn: vi.fn(() => null),
+        getColumn: vi.fn(() => undefined),
       };
 
       render(

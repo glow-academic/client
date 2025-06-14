@@ -3,20 +3,19 @@
  * Test suite for the Evals management component
  */
 
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { useRouter } from 'next/navigation';
-import Evals from '@/components/management/evals/Evals';
+import Evals from "@/components/management/evals/Evals";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { useRouter } from "next/navigation";
+import { beforeEach, describe, expect, it, Mock, vi } from "vitest";
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: vi.fn(),
 }));
 
 // Mock toast
-vi.mock('sonner', () => ({
+vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
     error: vi.fn(),
@@ -25,45 +24,67 @@ vi.mock('sonner', () => ({
 }));
 
 // Mock the queries
-vi.mock('@/utils/queries/evals/get-all-evals', () => ({
+vi.mock("@/utils/queries/evals/get-all-evals", () => ({
   getAllEvals: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/classes/get-all-classes', () => ({
+vi.mock("@/utils/queries/classes/get-all-classes", () => ({
   getAllClasses: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/eval_runs/get-eval-runs-by-evals', () => ({
+vi.mock("@/utils/queries/eval_runs/get-eval-runs-by-evals", () => ({
   getEvalRunsByEvals: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/rubrics/get-all-rubrics', () => ({
+vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
   getAllRubrics: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/standard_groups/get-standard-groups-by-rubrics', () => ({
-  getStandardGroupsByRubrics: vi.fn(),
-}));
+vi.mock(
+  "@/utils/queries/standard_groups/get-standard-groups-by-rubrics",
+  () => ({
+    getStandardGroupsByRubrics: vi.fn(),
+  })
+);
 
-vi.mock('@/utils/queries/standards/get-standards-by-standardgroups', () => ({
+vi.mock("@/utils/queries/standards/get-standards-by-standardgroups", () => ({
   getStandardsByStandardGroups: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/eval_chats/get-eval-chats-by-evalruns', () => ({
+vi.mock("@/utils/queries/eval_chats/get-eval-chats-by-evalruns", () => ({
   getEvalChatsByEvalRuns: vi.fn(),
 }));
 
-vi.mock('@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats', () => ({
-  getEvalChatGradesByEvalChats: vi.fn(),
-}));
+vi.mock(
+  "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats",
+  () => ({
+    getEvalChatGradesByEvalChats: vi.fn(),
+  })
+);
 
-vi.mock('@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades', () => ({
-  getEvalChatFeedbacksByEvalChatGrades: vi.fn(),
-}));
+vi.mock(
+  "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades",
+  () => ({
+    getEvalChatFeedbacksByEvalChatGrades: vi.fn(),
+  })
+);
 
-vi.mock('@/utils/mutations/evals/delete-eval', () => ({
+vi.mock("@/utils/mutations/evals/delete-eval", () => ({
   deleteEval: vi.fn(),
 }));
+
+// Import mocked functions
+import { deleteEval } from "@/utils/mutations/evals/delete-eval";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
+import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
+import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
+import { getEvalRunsByEvals } from "@/utils/queries/eval_runs/get-eval-runs-by-evals";
+import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { toast } from "sonner";
 
 // Mock fetch for eval running
 global.fetch = vi.fn();
@@ -71,71 +92,80 @@ global.fetch = vi.fn();
 // Mock data
 const mockEvals = [
   {
-    id: 'eval1',
-    name: 'Basic Evaluation',
-    description: 'A simple evaluation for testing',
-    evalType: 'student',
-    scenarioIds: ['scenario1', 'scenario2'],
-    agentIds: ['agent1', 'agent2'],
-    rubricIds: ['rubric1'],
+    id: "eval1",
+    name: "Basic Evaluation",
+    description: "A simple evaluation for testing",
+    evalType: "student" as const,
+    scenarioIds: ["scenario1", "scenario2"],
+    agentIds: ["agent1", "agent2"],
+    rubricIds: ["rubric1"],
     maxTurns: 10,
     maxParallelRuns: 1,
-    createdAt: '2024-01-01T00:00:00Z',
+    createdAt: "2024-01-01T00:00:00Z",
+    baseAgentId: "base-agent-1",
   },
   {
-    id: 'eval2',
-    name: 'Advanced TA Evaluation',
-    description: 'Complex evaluation for TAs',
-    evalType: 'ta',
-    scenarioIds: ['scenario1', 'scenario2', 'scenario3'],
-    agentIds: ['agent1', 'agent2', 'agent3'],
-    rubricIds: ['rubric1', 'rubric2'],
+    id: "eval2",
+    name: "Advanced TA Evaluation",
+    description: "Complex evaluation for TAs",
+    evalType: "ta" as const,
+    scenarioIds: ["scenario1", "scenario2", "scenario3"],
+    agentIds: ["agent1", "agent2", "agent3"],
+    rubricIds: ["rubric1", "rubric2"],
     maxTurns: 15,
     maxParallelRuns: 2,
-    createdAt: '2024-01-02T00:00:00Z',
+    createdAt: "2024-01-02T00:00:00Z",
+    baseAgentId: "base-agent-2",
   },
 ];
 
 const mockClasses = [
   {
-    id: 'class1',
-    name: 'Introduction to Computer Science',
-    classCode: 'CS101',
-    term: 'fall',
+    id: "class1",
+    name: "Introduction to Computer Science",
+    classCode: "CS101",
+    term: "fall" as const,
     year: 2024,
+    createdAt: "2024-01-01T00:00:00Z",
+    description: "Introduction to programming concepts",
   },
 ];
 
 const mockEvalRuns = [
   {
-    id: 'run1',
-    evalId: 'eval1',
-    agentId: 'agent1',
-    rubricId: 'rubric1',
-    createdAt: '2024-01-01T00:00:00Z',
+    id: "run1",
+    evalId: "eval1",
+    agentId: "agent1",
+    rubricId: "rubric1",
+    createdAt: "2024-01-01T00:00:00Z",
   },
 ];
 
 const mockChats = [
   {
-    id: 'chat1',
-    evalRunId: 'run1',
+    id: "chat1",
+    evalRunId: "run1",
     completed: true,
-    createdAt: '2024-01-01T00:00:00Z',
+    createdAt: "2024-01-01T00:00:00Z",
+    completedAt: "2024-01-01T01:00:00Z",
+    title: "Test Chat",
+    scenarioId: "scenario1",
   },
 ];
 
 const mockGrades = [
   {
-    id: 'grade1',
-    evalChatId: 'chat1',
+    id: "grade1",
+    evalChatId: "chat1",
     score: 85,
     passed: true,
-    createdAt: '2024-01-01T00:00:00Z',
+    createdAt: "2024-01-01T00:00:00Z",
+    timeTaken: 300,
+    rubricId: "rubric1",
   },
 ];
 
-describe('Evals Component', () => {
+describe("Evals Component", () => {
   let queryClient: QueryClient;
   const mockPush = vi.fn();
 
@@ -147,33 +177,23 @@ describe('Evals Component', () => {
       },
     });
 
-    (useRouter as any).mockReturnValue({
+    (useRouter as Mock).mockReturnValue({
       push: mockPush,
     });
 
     // Setup mock implementations
-    const { getAllEvals } = require('@/utils/queries/evals/get-all-evals');
-    const { getAllClasses } = require('@/utils/queries/classes/get-all-classes');
-    const { getEvalRunsByEvals } = require('@/utils/queries/eval_runs/get-eval-runs-by-evals');
-    const { getAllRubrics } = require('@/utils/queries/rubrics/get-all-rubrics');
-    const { getStandardGroupsByRubrics } = require('@/utils/queries/standard_groups/get-standard-groups-by-rubrics');
-    const { getStandardsByStandardGroups } = require('@/utils/queries/standards/get-standards-by-standardgroups');
-    const { getEvalChatsByEvalRuns } = require('@/utils/queries/eval_chats/get-eval-chats-by-evalruns');
-    const { getEvalChatGradesByEvalChats } = require('@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats');
-    const { getEvalChatFeedbacksByEvalChatGrades } = require('@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades');
-
-    getAllEvals.mockResolvedValue(mockEvals);
-    getAllClasses.mockResolvedValue(mockClasses);
-    getEvalRunsByEvals.mockResolvedValue(mockEvalRuns);
-    getAllRubrics.mockResolvedValue([]);
-    getStandardGroupsByRubrics.mockResolvedValue([]);
-    getStandardsByStandardGroups.mockResolvedValue([]);
-    getEvalChatsByEvalRuns.mockResolvedValue(mockChats);
-    getEvalChatGradesByEvalChats.mockResolvedValue(mockGrades);
-    getEvalChatFeedbacksByEvalChatGrades.mockResolvedValue([]);
+    vi.mocked(getAllEvals).mockResolvedValue(mockEvals);
+    vi.mocked(getAllClasses).mockResolvedValue(mockClasses);
+    vi.mocked(getEvalRunsByEvals).mockResolvedValue(mockEvalRuns);
+    vi.mocked(getAllRubrics).mockResolvedValue([]);
+    vi.mocked(getStandardGroupsByRubrics).mockResolvedValue([]);
+    vi.mocked(getStandardsByStandardGroups).mockResolvedValue([]);
+    vi.mocked(getEvalChatsByEvalRuns).mockResolvedValue(mockChats);
+    vi.mocked(getEvalChatGradesByEvalChats).mockResolvedValue(mockGrades);
+    vi.mocked(getEvalChatFeedbacksByEvalChatGrades).mockResolvedValue([]);
 
     // Reset fetch mock
-    (global.fetch as any).mockClear();
+    (global.fetch as Mock).mockClear();
   });
 
   const renderComponent = () => {
@@ -184,281 +204,288 @@ describe('Evals Component', () => {
     );
   };
 
-  it('renders evaluation cards when data is loaded', async () => {
+  it("renders evaluation cards when data is loaded", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Basic Evaluation')).toBeInTheDocument();
-      expect(screen.getByText('Advanced TA Evaluation')).toBeInTheDocument();
+      expect(screen.getByText("Basic Evaluation")).toBeInTheDocument();
+      expect(screen.getByText("Advanced TA Evaluation")).toBeInTheDocument();
     });
 
-    expect(screen.getByText('A simple evaluation for testing')).toBeInTheDocument();
-    expect(screen.getByText('Complex evaluation for TAs')).toBeInTheDocument();
+    expect(
+      screen.getByText("A simple evaluation for testing")
+    ).toBeInTheDocument();
+    expect(screen.getByText("Complex evaluation for TAs")).toBeInTheDocument();
   });
 
-  it('displays correct evaluation type badges', async () => {
+  it("displays correct evaluation type badges", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Student')).toBeInTheDocument();
-      expect(screen.getByText('TA')).toBeInTheDocument();
+      expect(screen.getByText("Student")).toBeInTheDocument();
+      expect(screen.getByText("TA")).toBeInTheDocument();
     });
   });
 
-  it('shows complexity badges based on evaluation content', async () => {
+  it("shows complexity badges based on evaluation content", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Simple')).toBeInTheDocument();
-      expect(screen.getByText('Moderate')).toBeInTheDocument();
+      expect(screen.getByText("Simple")).toBeInTheDocument();
+      expect(screen.getByText("Moderate")).toBeInTheDocument();
     });
   });
 
-  it('displays evaluation statistics correctly', async () => {
+  it("displays evaluation statistics correctly", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('2 scenarios')).toBeInTheDocument();
-      expect(screen.getByText('2 agents')).toBeInTheDocument();
-      expect(screen.getByText('1 rubrics')).toBeInTheDocument();
-      expect(screen.getByText('10 max turns')).toBeInTheDocument();
+      expect(screen.getByText("2 scenarios")).toBeInTheDocument();
+      expect(screen.getByText("2 agents")).toBeInTheDocument();
+      expect(screen.getByText("1 rubrics")).toBeInTheDocument();
+      expect(screen.getByText("10 max turns")).toBeInTheDocument();
     });
   });
 
-  it('handles run evaluation action', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+  it("handles run evaluation action", async () => {
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ eval_run_id: 'new-run-123' }),
+      json: () => Promise.resolve({ eval_run_id: "new-run-123" }),
     });
 
     renderComponent();
 
     await waitFor(() => {
-      const runButtons = screen.getAllByText('Run');
+      const runButtons = screen.getAllByText("Run");
       if (runButtons.length > 0) {
-        fireEvent.click(runButtons[0]);
+        fireEvent.click(runButtons[0]!);
       }
     });
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        `${process.env.NEXT_PUBLIC_API_URL}/evals/start`,
+        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/start`,
         expect.objectContaining({
-          method: 'POST',
+          method: "POST",
           body: expect.any(FormData),
         })
       );
     });
   });
 
-  it('handles edit evaluation action', async () => {
+  it("handles edit evaluation action", async () => {
     renderComponent();
 
     await waitFor(() => {
-      const editButtons = screen.getAllByLabelText('Edit evaluation');
+      const editButtons = screen.getAllByLabelText("Edit evaluation");
       if (editButtons.length > 0) {
-        fireEvent.click(editButtons[0]);
+        fireEvent.click(editButtons[0]!);
       }
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/management/evals/e/eval1/edit');
+    expect(mockPush).toHaveBeenCalledWith("/management/evals/e/eval1/edit");
   });
 
-  it('handles preview evaluation action', async () => {
+  it("handles preview evaluation action", async () => {
     renderComponent();
 
     await waitFor(() => {
-      const previewButtons = screen.getAllByText('Preview');
+      const previewButtons = screen.getAllByText("Preview");
       if (previewButtons.length > 0) {
-        fireEvent.click(previewButtons[0]);
+        fireEvent.click(previewButtons[0]!);
       }
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/management/evals/e/eval1');
+    expect(mockPush).toHaveBeenCalledWith("/management/evals/e/eval1");
   });
 
-  it('opens delete confirmation dialog', async () => {
+  it("opens delete confirmation dialog", async () => {
     renderComponent();
 
     await waitFor(() => {
-      const deleteButtons = screen.getAllByLabelText('Delete evaluation');
+      const deleteButtons = screen.getAllByLabelText("Delete evaluation");
       if (deleteButtons.length > 0) {
-        fireEvent.click(deleteButtons[0]);
+        fireEvent.click(deleteButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Are you sure?')).toBeInTheDocument();
-      expect(screen.getByText(/permanently delete the evaluation "Basic Evaluation"/)).toBeInTheDocument();
+      expect(screen.getByText("Are you sure?")).toBeInTheDocument();
+      expect(
+        screen.getByText(/permanently delete the evaluation "Basic Evaluation"/)
+      ).toBeInTheDocument();
     });
   });
 
-  it('handles delete evaluation', async () => {
-    const { deleteEval } = require('@/utils/mutations/evals/delete-eval');
-    deleteEval.mockResolvedValue({});
+  it("handles delete evaluation", async () => {
+    vi.mocked(deleteEval).mockResolvedValue(undefined);
 
     renderComponent();
 
     await waitFor(() => {
-      const deleteButtons = screen.getAllByLabelText('Delete evaluation');
+      const deleteButtons = screen.getAllByLabelText("Delete evaluation");
       if (deleteButtons.length > 0) {
-        fireEvent.click(deleteButtons[0]);
+        fireEvent.click(deleteButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      const confirmButton = screen.getByRole('button', { name: 'Delete' });
+      const confirmButton = screen.getByRole("button", { name: "Delete" });
       fireEvent.click(confirmButton);
     });
 
     await waitFor(() => {
-      expect(deleteEval).toHaveBeenCalledWith('eval1');
+      expect(vi.mocked(deleteEval)).toHaveBeenCalledWith("eval1");
     });
   });
 
-  it('shows empty state when no evaluations exist', async () => {
-    const { getAllEvals } = require('@/utils/queries/evals/get-all-evals');
-    getAllEvals.mockResolvedValue([]);
+  it("shows empty state when no evaluations exist", async () => {
+    vi.mocked(getAllEvals).mockResolvedValue([]);
 
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('No evaluations yet')).toBeInTheDocument();
-      expect(screen.getByText('Create your first evaluation to start assessing agent performance')).toBeInTheDocument();
-      expect(screen.getByText('Create Your First Evaluation')).toBeInTheDocument();
+      expect(screen.getByText("No evaluations yet")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          "Create your first evaluation to start assessing agent performance"
+        )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText("Create Your First Evaluation")
+      ).toBeInTheDocument();
     });
   });
 
-  it('handles create new evaluation action', async () => {
-    const { getAllEvals } = require('@/utils/queries/evals/get-all-evals');
-    getAllEvals.mockResolvedValue([]);
+  it("handles create new evaluation action", async () => {
+    vi.mocked(getAllEvals).mockResolvedValue([]);
 
     renderComponent();
 
     await waitFor(() => {
-      const createButton = screen.getByText('Create Your First Evaluation');
-      fireEvent.click(createButton);
+      const createButton = screen.getByText("Create Your First Evaluation");
+      fireEvent.click(createButton!);
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/management/evals/new');
+    expect(mockPush).toHaveBeenCalledWith("/management/evals/new");
   });
 
-  it('handles run evaluation error when no classes available', async () => {
-    const { getAllClasses } = require('@/utils/queries/classes/get-all-classes');
-    getAllClasses.mockResolvedValue([]);
-
-    const { toast } = require('sonner');
+  it("handles run evaluation error when no classes available", async () => {
+    vi.mocked(getAllClasses).mockResolvedValue([]);
 
     renderComponent();
 
     await waitFor(() => {
-      const runButtons = screen.getAllByText('Run');
+      const runButtons = screen.getAllByText("Run");
       if (runButtons.length > 0) {
-        fireEvent.click(runButtons[0]);
+        fireEvent.click(runButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('No classes found. Please contact an administrator.');
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        "No classes found. Please contact an administrator."
+      );
     });
   });
 
-  it('handles run evaluation API error', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+  it("handles run evaluation API error", async () => {
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: false,
-      statusText: 'Internal Server Error',
-      json: () => Promise.resolve({ detail: 'Server error' }),
+      statusText: "Internal Server Error",
+      json: () => Promise.resolve({ detail: "Server error" }),
     });
-
-    const { toast } = require('sonner');
 
     renderComponent();
 
     await waitFor(() => {
-      const runButtons = screen.getAllByText('Run');
+      const runButtons = screen.getAllByText("Run");
       if (runButtons.length > 0) {
-        fireEvent.click(runButtons[0]);
+        fireEvent.click(runButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      expect(toast.error).toHaveBeenCalledWith('Failed to start evaluation. Please try again.');
+      expect(vi.mocked(toast.error)).toHaveBeenCalledWith(
+        "Failed to start evaluation. Please try again."
+      );
     });
   });
 
-  it('shows running state when evaluation is being started', async () => {
-    (global.fetch as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+  it("shows running state when evaluation is being started", async () => {
+    (global.fetch as Mock).mockImplementation(() => new Promise(() => {})); // Never resolves
 
     renderComponent();
 
     await waitFor(() => {
-      const runButtons = screen.getAllByText('Run');
+      const runButtons = screen.getAllByText("Run");
       if (runButtons.length > 0) {
-        fireEvent.click(runButtons[0]);
+        fireEvent.click(runButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Starting...')).toBeInTheDocument();
+      expect(screen.getByText("Starting...")).toBeInTheDocument();
     });
   });
 
-  it('formats dates correctly', async () => {
+  it("formats dates correctly", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Created: Jan 1, 2024')).toBeInTheDocument();
-      expect(screen.getByText('Created: Jan 2, 2024')).toBeInTheDocument();
+      expect(screen.getByText("Created: Jan 1, 2024")).toBeInTheDocument();
+      expect(screen.getByText("Created: Jan 2, 2024")).toBeInTheDocument();
     });
   });
 
-  it('displays parallel runs information', async () => {
+  it("displays parallel runs information", async () => {
     renderComponent();
 
     await waitFor(() => {
-      expect(screen.getByText('Parallel runs: 1')).toBeInTheDocument();
-      expect(screen.getByText('Parallel runs: 2')).toBeInTheDocument();
+      expect(screen.getByText("Parallel runs: 1")).toBeInTheDocument();
+      expect(screen.getByText("Parallel runs: 2")).toBeInTheDocument();
     });
   });
 
-  it('handles evaluation with RAY filtered items', async () => {
+  it("handles evaluation with RAY filtered items", async () => {
     const evalWithRAY = {
-      ...mockEvals[0],
-      scenarioIds: ['scenario1', 'RAY'],
-      agentIds: ['agent1', 'RAY'],
-      rubricIds: ['rubric1', 'RAY'],
+      ...mockEvals[0]!,
+      scenarioIds: ["scenario1", "RAY"],
+      agentIds: ["agent1", "RAY"],
+      rubricIds: ["rubric1", "RAY"],
     };
 
-    const { getAllEvals } = require('@/utils/queries/evals/get-all-evals');
-    getAllEvals.mockResolvedValue([evalWithRAY]);
+    vi.mocked(getAllEvals).mockResolvedValue([evalWithRAY]);
 
     renderComponent();
 
     await waitFor(() => {
       // Should filter out RAY items in display
-      expect(screen.getByText('1 scenarios')).toBeInTheDocument();
-      expect(screen.getByText('1 agents')).toBeInTheDocument();
-      expect(screen.getByText('1 rubrics')).toBeInTheDocument();
+      expect(screen.getByText("1 scenarios")).toBeInTheDocument();
+      expect(screen.getByText("1 agents")).toBeInTheDocument();
+      expect(screen.getByText("1 rubrics")).toBeInTheDocument();
     });
   });
 
-  it('navigates to evaluation run page after successful start', async () => {
-    (global.fetch as any).mockResolvedValueOnce({
+  it("navigates to evaluation run page after successful start", async () => {
+    (global.fetch as Mock).mockResolvedValueOnce({
       ok: true,
-      json: () => Promise.resolve({ eval_run_id: 'new-run-123' }),
+      json: () => Promise.resolve({ eval_run_id: "new-run-123" }),
     });
 
     renderComponent();
 
     await waitFor(() => {
-      const runButtons = screen.getAllByText('Run');
+      const runButtons = screen.getAllByText("Run");
       if (runButtons.length > 0) {
-        fireEvent.click(runButtons[0]);
+        fireEvent.click(runButtons[0]!);
       }
     });
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/management/evals/e/eval1/r/new-run-123');
+      expect(mockPush).toHaveBeenCalledWith(
+        "/management/evals/e/eval1/r/new-run-123"
+      );
     });
   });
 });

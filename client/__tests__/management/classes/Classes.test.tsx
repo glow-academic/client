@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode } from "react";
 import ClassesGeneralPage from "@/components/management/classes/Classes";
+import userEvent from "@testing-library/user-event";
 
 // Mock the query functions
 vi.mock("@/utils/queries/classes/get-all-classes", () => ({
@@ -212,7 +213,7 @@ vi.mock(
 );
 
 vi.mock("@/utils/agents", () => ({
-  getAgentConfig: vi.fn((name: string) => ({
+  getAgentConfig: vi.fn(() => ({
     colors: { bgColor: "bg-blue-100" },
   })),
 }));
@@ -403,7 +404,7 @@ describe("Classes", () => {
 
   describe("User Interactions", () => {
     it("should handle delete class functionality", async () => {
-      const user = require("@testing-library/user-event").default.setup();
+      const user = userEvent.setup();
       renderWithProviders(<ClassesGeneralPage />);
 
       await waitFor(() => {
@@ -428,7 +429,6 @@ describe("Classes", () => {
     });
 
     it("should handle time range changes", async () => {
-      const user = require("@testing-library/user-event").default.setup();
       renderWithProviders(<ClassesGeneralPage />);
 
       await waitFor(() => {
