@@ -1,37 +1,27 @@
 # app/routes/users.py
-from fastapi import APIRouter, Depends, HTTPException, Response, Query
-from app.db import get_session
-from sqlmodel import Session, select
 import logging
 import os
-import tempfile
-from datetime import datetime
 import statistics
-from app.models import (
-    Profiles,
-    SimulationChats,
-    SimulationChatGrades,
-    SimulationChatFeedbacks,
-    Rubrics,
-    Agents,
-    StandardGroups,
-    Standards,
-    Scenarios,
-    SimulationAttempts,
-    Simulations,
-)
-from typing import Dict, List, Tuple
+import tempfile
 from collections import defaultdict
-
-# PyLaTeX imports
-from pylatex import Document, Section, Subsection, Tabular, Figure
-from pylatex import PageStyle, Head, Foot
-from pylatex.utils import bold, NoEscape, escape_latex
-import matplotlib.pyplot as plt
-import numpy as np
+from datetime import datetime
+from typing import Dict, List, Tuple
 
 # Set matplotlib to use non-interactive backend
 import matplotlib
+import matplotlib.pyplot as plt
+import numpy as np
+from app.db import get_session
+from app.models import (Agents, Profiles, Rubrics, Scenarios,
+                        SimulationAttempts, SimulationChatFeedbacks,
+                        SimulationChatGrades, SimulationChats, Simulations,
+                        StandardGroups, Standards)
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+# PyLaTeX imports
+from pylatex import (Document, Figure, Foot, Head, PageStyle, Section,
+                     Subsection, Tabular)
+from pylatex.utils import NoEscape, bold, escape_latex
+from sqlmodel import Session, select
 
 matplotlib.use("Agg")
 

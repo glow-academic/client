@@ -29,7 +29,7 @@ lint: venv
 # 6. Run MyPy for static type checking
 typecheck: venv
 	@echo "Type checking..."
-	@uv run mypy app/
+	@uv run mypy app --config-file mypy.ini
 
 # Generate SQLModel classes from database schema
 generate-models: venv

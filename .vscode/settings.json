@@ -6,6 +6,13 @@
   ],
   "python.testing.pytestEnabled": true,
   "python.analysis.typeCheckingMode": "off",
+  "python.analysis.autoSearchPaths": true,
+  "python.analysis.extraPaths": [
+    "${workspaceFolder}/server"
+  ],
+  "python.analysis.include": [
+    "${workspaceFolder}/server/app"
+  ],
   "[python]": {
     "editor.defaultFormatter": "ms-python.python",
     "editor.formatOnSave": true,
@@ -17,15 +24,10 @@
   "mypy.runUsingActiveInterpreter": true,
   "mypy.configFile": "server/mypy.ini",
   "mypy.targets": [
-    "server/app"
+    "app"
   ],
   "mypy.enabled": true,
-  "mypy.args": [
-    "--python-path=${workspaceFolder}/server"
-  ],
-  "python.analysis.extraPaths": [
-    "${workspaceFolder}/server"
-  ],
+  "mypy.cwd": "${workspaceFolder}/server",
   "eslint.workingDirectories": [
     "client"
   ],

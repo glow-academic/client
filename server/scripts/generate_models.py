@@ -45,11 +45,10 @@ def generate_sqlmodel_from_sql():
             "from datetime import datetime",
             "from typing import Any, Dict, List, Optional",
             "",
-            "from sqlalchemy import (ARRAY, UUID, BigInteger, Boolean, Column, DateTime,",
+            "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
             "                        Enum, ForeignKeyConstraint, Integer,",
             "                        PrimaryKeyConstraint, String, Text, Uuid, text)",
             "from sqlalchemy.dialects.postgresql import JSONB",
-            "from sqlalchemy.orm import Mapped",
             "from sqlmodel import Field, Relationship, SQLModel",
         ]
         
