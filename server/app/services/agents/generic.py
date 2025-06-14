@@ -1,3 +1,4 @@
+import uuid
 from typing import AsyncGenerator, Optional
 
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
@@ -20,7 +21,7 @@ from sqlmodel import Session, select
 
 
 async def run_generic_agent_bare(
-    agent_id: str,
+    agent_id: uuid.UUID,
     input_items: list[TResponseInputItem],
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
@@ -58,7 +59,7 @@ async def run_generic_agent_bare(
 
 
 async def run_generic_agent(
-    chat_id: str,
+    chat_id: uuid.UUID,
     input_text: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
@@ -82,7 +83,7 @@ async def run_generic_agent(
         select(SimulationChats).where(SimulationChats.id == chat_id)
     ).one_or_none()
 
-    if simulation_chat:
+    if simulation_chat and input_text:
         # Handle simulation chat
         async for token in _handle_simulation_chat(
             simulation_chat, input_text, session
@@ -139,15 +140,21 @@ async def _handle_simulation_chat(
     messages = session.exec(
         select(SimulationMessages)
         .where(SimulationMessages.chat_id == chat.id)
-        .order_by(SimulationMessages.created_at)
     ).all()
+
+    # sort messages by created_at
+    messages = list(messages)
+    messages = sorted(messages, key=lambda x: x.created_at)
 
     # Prepare conversation history from chat_id
     conversation_history = get_conversation_history(messages)
     chat_scenario = get_chat_scenario(chat, session)
     class_info = get_class_info(scenario.class_id, session)
 
-    input_items = [chat_scenario, class_info] + conversation_history
+    input_items: list[TResponseInputItem] = [chat_scenario]
+    if class_info:
+        input_items.append(class_info)
+    input_items.extend(conversation_history)
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
@@ -235,8 +242,10 @@ async def _handle_eval_chat(
     messages = session.exec(
         select(EvalMessages)
         .where(EvalMessages.chat_id == chat.id)
-        .order_by(EvalMessages.created_at)
     ).all()
+
+    messages = list(messages)
+    messages = sorted(messages, key=lambda x: x.created_at)
 
     # Prepare conversation history - need to adapt for eval messages
     conversation_history = get_eval_conversation_history(messages)
@@ -248,11 +257,11 @@ async def _handle_eval_chat(
     scenario_context = f"Scenario: {scenario.name} - {scenario.description}"
 
     # Get class info if available
-    class_info = ""
+    class_info: TResponseInputItem | None = None
     if scenario.class_id:
         class_info = get_class_info(scenario.class_id, session)
 
-    input_items = [scenario_context]
+    input_items: list[TResponseInputItem] = [{"role": "assistant", "content": scenario_context}]
     if class_info:
         input_items.append(class_info)
     input_items.extend(conversation_history)
@@ -312,6 +321,9 @@ class GenericAgent:
         self.temperature = temperature
 
     def agent(self) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not set")
+        
         return Agent(
             name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,

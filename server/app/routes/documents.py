@@ -30,7 +30,7 @@ router = APIRouter()
 
 @router.post("/classify")
 async def classify_documents(
-    class_id: str,
+    class_id: uuid.UUID,
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
@@ -74,7 +74,7 @@ async def classify_documents(
 
 @router.post("/course")
 async def course_processing(
-    class_id: str, session: Session = Depends(get_session)
+    class_id: uuid.UUID, session: Session = Depends(get_session)
 ) -> JSONResponse:
     """
     Process a course using the course agent to extract course information

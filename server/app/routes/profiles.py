@@ -3,9 +3,10 @@ import logging
 import os
 import statistics
 import tempfile
+import uuid
 from collections import defaultdict
 from datetime import datetime
-from typing import Dict, List, Tuple
+from typing import Dict, List, Set, Tuple
 
 # Set matplotlib to use non-interactive backend
 import matplotlib
@@ -18,9 +19,9 @@ from app.models import (Agents, Profiles, Rubrics, Scenarios,
                         StandardGroups, Standards)
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 # PyLaTeX imports
-from pylatex import (Document, Figure, Foot, Head, PageStyle, Section,
-                     Subsection, Tabular)
-from pylatex.utils import NoEscape, bold, escape_latex
+from pylatex import (Document, Figure, Foot, Head, PageStyle,  # type: ignore
+                     Section, Subsection, Tabular)
+from pylatex.utils import NoEscape, bold, escape_latex  # type: ignore
 from sqlmodel import Session, select
 
 matplotlib.use("Agg")
@@ -30,7 +31,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-def create_student_type_chart(chat_agents: Dict[str, int], filename: str):
+def create_student_type_chart(chat_agents: Dict[str, int], filename: str) -> str:
     """Create a pie chart showing distribution of student types the TA has interacted with"""
     labels = list(chat_agents.keys())
     sizes = list(chat_agents.values())
@@ -50,7 +51,7 @@ def create_student_type_chart(chat_agents: Dict[str, int], filename: str):
     return filename
 
 
-def create_score_radar_chart(scores: Dict[str, int], filename: str):
+def create_score_radar_chart(scores: Dict[str, int], filename: str) -> str:
     """Create a radar chart showing scores across different categories"""
     categories = list(scores.keys())
     values = list(scores.values())
@@ -76,7 +77,7 @@ def create_score_radar_chart(scores: Dict[str, int], filename: str):
     plt.xticks(angles[:-1], categories)
 
     # Draw radial axes
-    ax.set_rlabel_position(0)
+    ax.set_ylabel("0")
     plt.yticks(
         [20, 40, 60, 80, 100], ["20", "40", "60", "80", "100"], color="grey", size=8
     )
@@ -88,9 +89,9 @@ def create_score_radar_chart(scores: Dict[str, int], filename: str):
     return filename
 
 
-def create_time_series_chart(time_data: List[Tuple[datetime, int]], filename: str):
+def create_time_series_chart(time_data: List[Tuple[datetime, int]], filename: str) -> str:
     """Create a time series chart showing score progression over time"""
-    dates = [item[0] for item in time_data]
+    dates = [item[0].strftime("%Y-%m-%d") for item in time_data]
     scores = [item[1] for item in time_data]
 
     plt.figure(figsize=(10, 6))
@@ -112,7 +113,7 @@ def create_time_series_chart(time_data: List[Tuple[datetime, int]], filename: st
 
 def create_student_type_performance(
     performance_by_type: Dict[str, List[int]], filename: str
-):
+) -> str:
     """Create a bar chart showing performance across different student types"""
     student_types = list(performance_by_type.keys())
     avg_scores = [
@@ -156,8 +157,8 @@ def create_score_table(
     chats: List[SimulationChats],
     attempts: List[SimulationAttempts],
     simulations: List[Simulations],
-    doc,
-):
+    doc: Document,
+) -> None:
     """Create a detailed performance score table"""
     # Create a mapping for quick lookups
     chat_map = {chat.id: chat for chat in chats}
@@ -233,7 +234,7 @@ def create_score_table(
 
 @router.get("/{profile_id}")
 async def get_report(
-    profile_id: str,
+    profile_id: uuid.UUID,
     session: Session = Depends(get_session),
     includeStudentTypeChart: bool = Query(
         True, description="Include student type distribution chart"
@@ -251,7 +252,7 @@ async def get_report(
     includeFeedback: bool = Query(
         True, description="Include detailed feedback section"
     ),
-):
+) -> Response:
     """
     Generate and return a comprehensive PDF report for a user's performance.
     """
@@ -300,7 +301,7 @@ async def get_report(
 
     # Get all agents for dynamic descriptions
     agents = session.exec(select(Agents)).all()
-    agent_map = {agent.id: agent for agent in agents}
+    agent_map: Dict[uuid.UUID, Agents] = {agent.id: agent for agent in agents}
 
     # Get all simulations for the table
     simulation_ids = list(set(attempt.simulation_id for attempt in attempts))
@@ -313,7 +314,7 @@ async def get_report(
         # Prepare data for charts
 
         # 1. Student type distribution
-        chat_agents = defaultdict(int)
+        chat_agents: Dict[str, int] = defaultdict(int)
         for chat in chats:
             # Get the scenario first, then the agent
             scenario = session.exec(
@@ -528,12 +529,12 @@ async def get_report(
                     doc.append(NoEscape(r"\begin{description}"))
 
                     # Get unique agent IDs from the chats
-                    encountered_agent_ids = set()
+                    encountered_agent_ids: Set[uuid.UUID] = set()
                     for chat in chats:
                         scenario = session.exec(
                             select(Scenarios).where(Scenarios.id == chat.scenario_id)
                         ).one_or_none()
-                        if scenario:
+                        if scenario and scenario.agent_id:
                             encountered_agent_ids.add(scenario.agent_id)
 
                     # Add descriptions for encountered agents
@@ -581,7 +582,7 @@ async def get_report(
                 )
                 doc.append(NoEscape(r"\par\medskip"))
 
-                create_score_table(grades, chats, attempts, simulations, doc)
+                create_score_table(list(grades), list(chats), list(attempts), list(simulations), doc)
 
         # Feedback Section
         if includeFeedback and feedbacks:
@@ -592,30 +593,29 @@ async def get_report(
                 doc.append(NoEscape(r"\par\medskip"))
 
                 # Group feedbacks by standard groups
-                feedback_by_group = defaultdict(list)
+                feedback_by_group: Dict[str, List[str]] = defaultdict(list)
                 for feedback in feedbacks:
                     # Find the standard and its group
                     standard = next(
                         (s for s in standards if s.id == feedback.standard_id), None
                     )
                     if standard:
-                        group = next(
-                            (
-                                g
-                                for g in standard_groups
-                                if g.id == standard.standard_group_id
-                            ),
-                            None,
-                        )
-                        if group and feedback.feedback:
-                            feedback_by_group[group.name].append(feedback.feedback)
+                        # Find the group for this standard
+                        matching_groups = [
+                            g
+                            for g in standard_groups
+                            if g.id == standard.standard_group_id
+                        ]
+                        standard_group = matching_groups[0] if matching_groups else None
+                        if standard_group and feedback.feedback:
+                            feedback_by_group[standard_group.name].append(feedback.feedback)
 
-                for group_name, group_feedbacks in feedback_by_group.items():
-                    if group_feedbacks:
+                for group_name, feedback_texts in feedback_by_group.items():
+                    if feedback_texts:
                         with doc.create(Subsection(group_name)):
                             # Take the most recent feedback
                             doc.append(NoEscape(r"\begin{itemize}"))
-                            for feedback_text in group_feedbacks[
+                            for feedback_text in feedback_texts[
                                 -3:
                             ]:  # Show last 3 feedbacks
                                 doc.append(
@@ -640,7 +640,7 @@ async def get_report(
 
 @router.post("/{profile_id}")
 async def generate_report(
-    profile_id: str,
+    profile_id: uuid.UUID,
     session: Session = Depends(get_session),
     includeStudentTypeChart: bool = Query(
         True, description="Include student type distribution chart"
@@ -658,7 +658,7 @@ async def generate_report(
     includeFeedback: bool = Query(
         True, description="Include detailed feedback section"
     ),
-):
+) -> Response:
     """
     This endpoint is used to initiate report generation for a user.
     It will return the same response as the GET endpoint.

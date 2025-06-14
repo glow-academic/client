@@ -1,5 +1,6 @@
 import logging
 import re
+import uuid
 from datetime import datetime
 from typing import Any, List
 
@@ -75,7 +76,7 @@ def create_dynamic_rubric_model(
 
 
 async def run_evaluate_agent(
-    eval_chat_id: str, session: Session = Depends(get_session)
+    eval_chat_id: uuid.UUID, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the evaluate agent.

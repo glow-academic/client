@@ -141,12 +141,15 @@ async def start_eval(
 
         logger.info(f"Created {len(eval_runs_created)} eval runs for eval {eval_id}")
 
-        return {
+        return JSONResponse(
+            status_code=200,
+            content={
             "success": True,
             "message": f"Created {len(eval_runs_created)} eval runs",
             "eval_run_ids": [str(run.id) for run in eval_runs_created],
             "total_runs": len(eval_runs_created),
-        }
+            }
+        )
 
     except Exception as e:
         session.rollback()
@@ -198,7 +201,15 @@ async def run_eval(
         eval_chats_not_completed = [chat for chat in eval_chats if not chat.completed]
 
         if not eval_chats_not_completed:
-            return {"message": "All chats in this eval run are already completed"}
+            return StreamingResponse(
+                content="All chats in this eval run are already completed",
+                media_type="text/event-stream; charset=utf-8",
+                headers={
+                    "Cache-Control": "no-store",
+                    "Connection": "keep-alive",
+                    "X-Accel-Buffering": "no"  # Disable nginx buffering
+                },
+            )
 
         # Find increment
         max_parallel_runs = min(eval_obj.max_parallel_runs, len(eval_chats_not_completed))

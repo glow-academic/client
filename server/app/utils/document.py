@@ -1,11 +1,12 @@
 import uuid
 from typing import List
 
+from agents.items import TResponseInputItem
 from app.models import Documents
 from sqlmodel import Session, select
 
 
-def get_document_info(document_ids: List[uuid.UUID], session: Session) -> dict[str, str]:
+def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TResponseInputItem:
     """
     Get the document information for a given document ids.
     """

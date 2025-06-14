@@ -1,25 +1,21 @@
 # app/routes/simulation_attempts.py
-from fastapi import APIRouter, Form, HTTPException, Depends
-from app.models import (
-    SimulationAttempts,
-    Simulations,
-    SimulationChats,
-    Agents,
-    Scenarios,
-)
-from app.db import get_session
-from sqlmodel import Session, select
-import logging
-from typing import Optional
-import random
-from datetime import datetime, timezone
-from app.services.agents.grade import run_grade_agent
-from app.services.agents.generic import run_generic_agent
-from app.services.agents.scenario import run_scenario_agent
-from fastapi.responses import StreamingResponse
 import json
-from typing import AsyncIterator
+import logging
+import random
+import uuid
+from datetime import datetime, timezone
+from typing import AsyncIterator, Optional
+
+from app.db import get_session
+from app.models import (Agents, Scenarios, SimulationAttempts, SimulationChats,
+                        Simulations)
+from app.services.agents.generic import run_generic_agent
+from app.services.agents.grade import run_grade_agent
+from app.services.agents.scenario import run_scenario_agent
 from app.utils.scenario import randomly_fill_scenario_attributes
+from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -27,10 +23,10 @@ router = APIRouter()
 
 @router.post("/start")
 async def start_attempt(
-    simulation_id: str = Form(...),
-    profile_id: Optional[str] = Form(None),
+    simulation_id: uuid.UUID = Form(...),
+    profile_id: Optional[uuid.UUID] = Form(None),
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     This endpoint creates a new attempt and associated chats based on a simulation.
     For guest mode, profile_id can be None or empty string.
@@ -138,12 +134,15 @@ async def start_attempt(
         session.commit()
         session.refresh(chat)
 
-        return {
+        return JSONResponse(
+            status_code=200,
+            content={
             "success": True,
             "message": "Attempt started successfully",
             "attempt_id": str(new_attempt.id),
             "chat_id": str(chat.id),
-        }
+            }
+        )
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -159,10 +158,10 @@ async def start_attempt(
 
 @router.post("/message")
 async def message(
-    chat_id: str = Form(...),
+    chat_id: uuid.UUID = Form(...),
     message: str = Form(...),
     session: Session = Depends(get_session),
-):
+) -> StreamingResponse:
     """
     Streams assistant tokens back to the frontend via Server-Sent Events.
     """
@@ -216,10 +215,10 @@ async def message(
 
 @router.post("/continue")
 async def continue_attempt(
-    attempt_id: str = Form(...),
-    chat_id: str = Form(...),
+    attempt_id: uuid.UUID = Form(...),
+    chat_id: uuid.UUID = Form(...),
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     This endpoint is used to continue an attempt, which should be called when a chat is ended.
     """
@@ -252,11 +251,11 @@ async def continue_attempt(
 
         # If no scenarios are configured, this was a random scenario selection
         # In this case, we don't continue to another scenario
+        next_chat_id: uuid.UUID = chat_id
         if not scenario_ids:
             logger.info(
                 f"No scenarios configured for simulation {simulation.id}, ending attempt"
             )
-            next_chat_id = chat_id
         else:
             # Count existing chats for this attempt to determine the next scenario index
             existing_chats = session.exec(
@@ -267,7 +266,6 @@ async def continue_attempt(
             next_index = len(existing_chats)
 
             # do not continue if we do not have any scenarios left
-            next_chat_id = chat_id
             if next_index < len(scenario_ids):
                 next_scenario_id = scenario_ids[next_index]
                 old_next_scenario = session.exec(
@@ -331,13 +329,16 @@ async def continue_attempt(
         # Run logic to end the current chat
         simulation_grade_id = await run_grade_agent(chat_id, session)
 
-        return {
+        return JSONResponse(
+            status_code=200,
+            content={
             "success": True,
             "message": "Chat ended successfully",
             "chat_id": str(next_chat_id),
             "simulation_grade_id": simulation_grade_id,
             "completed": next_chat_id == chat_id,
-        }
+            }
+        )
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is

@@ -3,13 +3,14 @@
 import logging
 import random
 
+from agents.items import TResponseInputItem
 from app.models import Agents, Classes, Documents, Scenarios
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
 
-def get_seniority_info(seniority: str) -> dict[str, str]:
+def get_seniority_info(seniority: str) -> TResponseInputItem:
     """
     Get the seniority information for a given seniority.
     """
@@ -22,7 +23,7 @@ def get_seniority_info(seniority: str) -> dict[str, str]:
     }
 
 
-def get_crowdedness_info(crowdedness: int) -> dict[str, str]:
+def get_crowdedness_info(crowdedness: int) -> TResponseInputItem:
     """
     Get the crowdedness information for a given crowdedness.
     """
@@ -35,7 +36,7 @@ def get_crowdedness_info(crowdedness: int) -> dict[str, str]:
     }
 
 
-def get_intensity_info(intensity: int) -> dict[str, str]:
+def get_intensity_info(intensity: int) -> TResponseInputItem:
     """
     Get the intensity information for a given intensity.
     """

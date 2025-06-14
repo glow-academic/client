@@ -1,13 +1,16 @@
 # app/routes/scenarios.py
-from fastapi import APIRouter, Form, HTTPException, Depends
-from app.db import get_session
-from sqlmodel import Session
-import logging
-from app.services.agents.scenario import run_scenario_agent
-from app.services.agents.generic import run_generic_agent_bare
-from fastapi.responses import StreamingResponse
 import json
+import logging
+import uuid
 from typing import AsyncIterator, List
+
+from agents.items import TResponseInputItem
+from app.db import get_session
+from app.services.agents.generic import run_generic_agent_bare
+from app.services.agents.scenario import run_scenario_agent
+from fastapi import APIRouter, Depends, Form, HTTPException
+from fastapi.responses import JSONResponse, StreamingResponse
+from sqlmodel import Session
 
 logger = logging.getLogger(__name__)
 
@@ -16,27 +19,27 @@ router = APIRouter()
 
 @router.post("/new")
 async def new_scenario(
-    agent_id: str | None = Form(None),
-    class_id: str | None = Form(None),
-    document_ids: List[str] | None = Form(None),
+    agent_id: uuid.UUID | None = Form(None),
+    class_id: uuid.UUID | None = Form(None),
+    document_ids: List[uuid.UUID] | None = Form(None),
     seniority: str | None = Form(None),
     crowdedness: int | None = Form(None),
     intensity: int | None = Form(None),
     session: Session = Depends(get_session),
-):
+) -> JSONResponse:
     """
     This endpoint creates a new scenario using AI generation.
     """
     try:
         # Convert empty strings to None for better handling
-        agent_id = agent_id if agent_id and agent_id.strip() else None
-        class_id = class_id if class_id and class_id.strip() else None
-        seniority = seniority if seniority and seniority.strip() else None
+        agent_id = agent_id if agent_id else None
+        class_id = class_id if class_id else None
+        seniority = seniority if seniority else None
 
         # Filter out empty document IDs
         if document_ids:
             document_ids = [
-                doc_id for doc_id in document_ids if doc_id and doc_id.strip()
+                doc_id for doc_id in document_ids if doc_id
             ]
             if not document_ids:
                 document_ids = None
@@ -52,12 +55,14 @@ async def new_scenario(
             session=session,
         )
 
-        return {
+        return JSONResponse(
+            status_code=200,
+            content={
             "success": True,
             "message": "Scenario generated successfully",
             "title": title,
             "description": description,
-        }
+        })
 
     except HTTPException:
         # Re-raise HTTP exceptions as-is
@@ -71,20 +76,20 @@ async def new_scenario(
 
 @router.post("/test")
 async def test_scenario(
-    agent_id: str = Form(...),
+    agent_id: uuid.UUID = Form(...),
     description: str = Form(""),
     query: str = Form(...),
     session: Session = Depends(get_session),
-):
+) -> StreamingResponse:
     """
     Streams assistant tokens back to the frontend via Server-Sent Events for testing a scenario.
     """
     try:
         # Validate required fields
-        if not agent_id or not agent_id.strip():
+        if not agent_id:
             raise HTTPException(status_code=400, detail="Agent ID is required")
 
-        if not query or not query.strip():
+        if not query:
             raise HTTPException(status_code=400, detail="Query is required")
 
         async def event_stream() -> AsyncIterator[str]:
@@ -93,26 +98,26 @@ async def test_scenario(
 
             try:
                 # Create input items with scenario context and user query
-                input_items = []
+                input_items: list[TResponseInputItem] = []
 
                 # Only add scenario description if it's provided and not empty
-                if description and description.strip():
+                if description:
                     input_items.append(
                         {
                             "role": "assistant",
-                            "content": f"The following is the scenario description for the chat: {description.strip()}",
+                            "content": f"The following is the scenario description for the chat: {description}",
                         }
                     )
 
                 input_items.append(
                     {
                         "role": "user",
-                        "content": query.strip(),
+                        "content": query,
                     }
                 )
 
                 async for token in run_generic_agent_bare(
-                    agent_id=agent_id.strip(),
+                    agent_id=agent_id,
                     input_items=input_items,
                     session=session,
                 ):

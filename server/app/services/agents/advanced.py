@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from datetime import datetime
 from typing import Any, AsyncGenerator, List
 
@@ -28,7 +29,7 @@ class ParallelOutput(BaseModel):
 
 
 async def run_advanced_agent(
-    eval_chat_ids: List[str],
+    eval_chat_ids: List[uuid.UUID],
     session: Session,
 ) -> AsyncGenerator[dict[str, Any], None]:
     """
@@ -166,20 +167,24 @@ async def run_advanced_agent(
         session.commit()
 
         # Prepare the combined input for the agent
-        combined_input: list[str] = [
-            f"You are responding to {len(eval_chats)} different conversations simultaneously.",
-            f"This is turn {turn + 1} of {max_turns}.",
-            f"You are currently acting as: {current_agent.name}",
-            "Below are the conversation histories for each scenario:"
-        ]
+        combined_input: list[TResponseInputItem] = []
+
+        intial_prompt = (
+            f"You are responding to {len(eval_chats)} different conversations simultaneously."
+            f"This is turn {turn + 1} of {max_turns}."
+            f"You are currently acting as: {current_agent.name}"
+            f"Below are the conversation histories for each scenario:"
+        )
+        combined_input.append({"role": "assistant", "content": intial_prompt})
 
         for conv_input in conversation_inputs:
-            combined_input.append(f"\n--- Conversation {str(conv_input['chat_index']) + "1"} ---")
+            combined_input.append({"role": "user", "content": f"\n--- Conversation {str(conv_input['chat_index']) + "1"} ---"})
             combined_input.extend(conv_input['input'])
 
         combined_input.append(
-            f"\nPlease provide {len(eval_chats)} responses in JSON format with the 'outputs' key containing a list of responses, "
-            f"one for each conversation in the order they were presented."
+            {"role": "assistant", "content": "\n".join([
+                f"\nPlease provide {len(eval_chats)} responses in JSON format with the 'outputs' key containing a list of responses, one for each conversation in the order they were presented."
+            ])}
         )
 
         # Create agent instance with advanced=True for parallel processing

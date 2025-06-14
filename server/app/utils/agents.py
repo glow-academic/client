@@ -1,10 +1,12 @@
 # app/utils/agents.py
+import uuid
+
+from agents.items import TResponseInputItem
 from app.models import Agents
-from sqlalchemy import UUID
 from sqlmodel import Session, select
 
 
-def get_agent_info(agent_id: UUID[str], session: Session) -> dict[str, str]:
+def get_agent_info(agent_id: uuid.UUID, session: Session) -> TResponseInputItem:
     """
     Get the agent information for a given agent.
     """

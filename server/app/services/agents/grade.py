@@ -1,28 +1,22 @@
-from app.db import get_session
-from sqlmodel import Session
-from app.models import (
-    SimulationChats,
-    SimulationMessages,
-    Rubrics,
-    StandardGroups,
-    Standards,
-    SimulationChatGrades,
-    SimulationChatFeedbacks,
-    Simulations,
-    SimulationAttempts,
-)
-from fastapi import Depends
 import logging
-from agents import Agent, OpenAIChatCompletionsModel, ModelSettings, Runner
-from openai.types import Reasoning
+import re
+import uuid
+from datetime import datetime, timezone
+from typing import Any, List
+
+from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from app.db import get_session
 from app.extensions import get_gemini
+from app.models import (Rubrics, SimulationAttempts, SimulationChatFeedbacks,
+                        SimulationChatGrades, SimulationChats,
+                        SimulationMessages, Simulations, StandardGroups,
+                        Standards)
 from app.utils.chat import get_conversation_history
 from app.utils.rubric import get_dynamic_rubric
-from sqlmodel import select
+from fastapi import Depends
+from openai.types import Reasoning
 from pydantic import BaseModel, Field, create_model
-from datetime import datetime, timezone
-from typing import List
-import re
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -54,7 +48,7 @@ def create_dynamic_rubric_model(
     Returns:
         Dynamic Pydantic model class
     """
-    fields = {}
+    fields: dict[str, Any] = {}
 
     for group in standard_groups:
         # Create safe field names by removing special characters and spaces
@@ -79,11 +73,11 @@ def create_dynamic_rubric_model(
     fields["passed"] = (bool, Field(description="Whether the evaluation passed"))
     fields["summary"] = (str, Field(description="Overall evaluation summary"))
 
-    return create_model("DynamicRubricGrade", **fields)
+    return create_model("DynamicRubricGrade", **fields) # type: ignore
 
 
 async def run_grade_agent(
-    simulation_chat_id: str, session: Session = Depends(get_session)
+    simulation_chat_id: uuid.UUID, session: Session = Depends(get_session)
 ) -> str:
     """
     This function is used to run the grading agent for simulation chats.
@@ -105,8 +99,10 @@ async def run_grade_agent(
         messages = session.exec(
             select(SimulationMessages)
             .where(SimulationMessages.chat_id == simulation_chat_id)
-            .order_by(SimulationMessages.created_at)
         ).all()
+
+        messages = list(messages)
+        messages = sorted(messages, key=lambda x: x.created_at)
 
         # prepare conversation history from chat_id
         conversation_history = get_conversation_history(messages)
@@ -150,10 +146,10 @@ async def run_grade_agent(
         )
 
         # Build dynamic rubric using utility function
-        rubric_input = get_dynamic_rubric(rubric, standard_groups, standards)
+        rubric_input = get_dynamic_rubric(rubric, list(standard_groups), list(standards))
 
         # Create dynamic Pydantic model for the rubric
-        DynamicRubric = create_dynamic_rubric_model(standard_groups)
+        DynamicRubric = create_dynamic_rubric_model(list(standard_groups))
 
         # Log the expected field names for debugging
         expected_fields = []
@@ -193,8 +189,8 @@ async def run_grade_agent(
         )
 
         # Extract overall grading data
-        overall_score = grading_result.overall_score
-        passed = grading_result.passed
+        overall_score = getattr(grading_result, "overall_score", 0)
+        passed = getattr(grading_result, "passed", False)
 
         logger.info(f"Grading results: score={overall_score}, passed={passed}")
 
@@ -282,7 +278,7 @@ async def run_grade_agent(
 
 
 class GradingAgent:
-    def __init__(self):
+    def __init__(self) -> None:
         self.gemini_client = get_gemini()
         self.system_prompt = """You are an expert grader tasked with evaluating conversations between students and teaching assistants based on provided rubrics.
 
@@ -307,7 +303,10 @@ Focus on evaluating the TA's performance in:
 
 Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation."""
 
-    def agent(self, output_type: type[BaseModel]):
+    def agent(self, output_type: type[BaseModel]) -> Agent:
+        if self.gemini_client is None:
+            raise ValueError("Gemini client is not set")
+        
         return Agent(
             name="Grading Agent",
             instructions=self.system_prompt,

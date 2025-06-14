@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 
 
 def get_conversation_history(
-    messages: List[SimulationMessages | EvalMessages],
+    messages: List[SimulationMessages],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -56,7 +56,7 @@ def get_eval_conversation_history(
     return conversation_history
 
 
-def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> dict[str, str]:
+def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> TResponseInputItem:
     """
     Get the scenario for a given chat.
     """
