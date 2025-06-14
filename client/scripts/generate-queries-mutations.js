@@ -205,17 +205,43 @@ function extractTableInfo() {
       let primaryKeyType = "string";
       let isCompositePrimaryKey = false;
 
-      if (primaryKeyFields.length === 0) {
-        // No explicit primary key found, assume 'id'
-        primaryKey = "id";
-        primaryKeyType = "string";
+      // Check for composite primary keys first
+      const compositePKs = Object.values(tableData.compositePrimaryKeys || {});
+      if (compositePKs.length > 0) {
+        // Has composite primary key
+        isCompositePrimaryKey = true;
+        const compositePK = compositePKs[0]; // Take the first one
+        primaryKey = compositePK.columns;
+        primaryKeyType = "composite";
+
+        // Mark the composite primary key fields as primary keys
+        primaryKey.forEach((pkColumnName) => {
+          const field = fields.find((f) => f.name === pkColumnName);
+          if (field) {
+            field.isPrimaryKey = true;
+          }
+        });
+      } else if (primaryKeyFields.length === 0) {
+        // No explicit primary key found, check if there's an 'id' column
+        const idField = fields.find((f) => f.name === "id");
+        if (idField) {
+          primaryKey = "id";
+          primaryKeyType = getPrimaryKeyType(idField.dbType);
+        } else {
+          // No id column found, this table might not support standard CRUD operations
+          console.log(
+            `⚠️  Table ${tableName} has no primary key or id column, skipping standard CRUD operations`
+          );
+          primaryKey = null;
+          primaryKeyType = null;
+        }
       } else if (primaryKeyFields.length === 1) {
         // Single primary key
         const pkField = primaryKeyFields[0];
         primaryKey = pkField.name;
         primaryKeyType = getPrimaryKeyType(pkField.dbType);
       } else {
-        // Composite primary key
+        // Multiple primary key fields (shouldn't happen if composite keys are handled above)
         isCompositePrimaryKey = true;
         primaryKey = primaryKeyFields.map((f) => f.name);
         primaryKeyType = "composite";
@@ -402,8 +428,8 @@ function generateQueries(tables) {
     if (getAllResult.created) created++;
     else updated++;
 
-    // 2. Get single item by ID (skip for composite primary keys)
-    if (!isCompositePrimaryKey) {
+    // 2. Get single item by ID (skip for composite primary keys or tables without primary keys)
+    if (!isCompositePrimaryKey && primaryKey !== null) {
       const getByIdQuery = generateGetByIdQuery(
         exportName,
         tableName,
@@ -419,9 +445,9 @@ function generateQueries(tables) {
       if (getByIdResult.created) created++;
       else updated++;
     } else {
-      console.log(
-        `⏭️  Skipping get-by-id for ${tableName} (composite primary key)`
-      );
+      const reason =
+        primaryKey === null ? "no usable primary key" : "composite primary key";
+      console.log(`⏭️  Skipping get-by-id for ${tableName} (${reason})`);
     }
 
     // 3. Get items by foreign key relationships (singular)
@@ -537,8 +563,8 @@ function generateMutations(tables) {
     if (createMultipleResult.created) created++;
     else updated++;
 
-    // 3. Update single (skip for composite primary keys)
-    if (!isCompositePrimaryKey) {
+    // 3. Update single (skip for composite primary keys or tables without primary keys)
+    if (!isCompositePrimaryKey && primaryKey !== null) {
       const updateMutation = generateUpdateMutation(
         exportName,
         tableName,
@@ -555,13 +581,13 @@ function generateMutations(tables) {
       if (updateResult.created) created++;
       else updated++;
     } else {
-      console.log(
-        `⏭️  Skipping update mutations for ${tableName} (composite primary key)`
-      );
+      const reason =
+        primaryKey === null ? "no usable primary key" : "composite primary key";
+      console.log(`⏭️  Skipping update mutations for ${tableName} (${reason})`);
     }
 
-    // 4. Update multiple (skip for composite primary keys)
-    if (!isCompositePrimaryKey) {
+    // 4. Update multiple (skip for composite primary keys or tables without primary keys)
+    if (!isCompositePrimaryKey && primaryKey !== null) {
       const updateMultipleMutation = generateUpdateMultipleMutation(
         exportName,
         tableName,
@@ -579,8 +605,8 @@ function generateMutations(tables) {
       else updated++;
     }
 
-    // 5. Delete single (skip for composite primary keys)
-    if (!isCompositePrimaryKey) {
+    // 5. Delete single (skip for composite primary keys or tables without primary keys)
+    if (!isCompositePrimaryKey && primaryKey !== null) {
       const deleteMutation = generateDeleteMutation(
         exportName,
         tableName,
@@ -596,13 +622,13 @@ function generateMutations(tables) {
       if (deleteResult.created) created++;
       else updated++;
     } else {
-      console.log(
-        `⏭️  Skipping delete mutations for ${tableName} (composite primary key)`
-      );
+      const reason =
+        primaryKey === null ? "no usable primary key" : "composite primary key";
+      console.log(`⏭️  Skipping delete mutations for ${tableName} (${reason})`);
     }
 
-    // 6. Delete multiple (skip for composite primary keys)
-    if (!isCompositePrimaryKey) {
+    // 6. Delete multiple (skip for composite primary keys or tables without primary keys)
+    if (!isCompositePrimaryKey && primaryKey !== null) {
       const deleteMultipleMutation = generateDeleteMultipleMutation(
         exportName,
         tableName,

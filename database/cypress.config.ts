@@ -35,7 +35,7 @@ export default defineConfig({
               })
               .then((result: any) => resolve(result))
               .catch((error: unknown) => {
-                logError("Database query error:", error);
+                console.error("Database query error:", error);
                 client.end();
                 reject(error);
               });
@@ -75,7 +75,7 @@ export default defineConfig({
               })
               .then(() => resolve(null))
               .catch((error: unknown) => {
-                logError("Error assigning user to class:", error);
+                console.error("Error assigning user to class:", error);
                 client.end();
                 reject(error);
               });
@@ -106,7 +106,7 @@ export default defineConfig({
               })
               .then(() => resolve({ status: "healthy" }))
               .catch((error: unknown) => {
-                logError("Database health check failed:", error);
+                console.error("Database health check failed:", error);
                 client.end();
                 reject(error);
               });
