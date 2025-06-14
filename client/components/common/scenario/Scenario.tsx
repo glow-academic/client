@@ -34,13 +34,14 @@ import { ScenarioPicker, type Model } from "./ScenarioPicker";
 import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
-import { Agent, Class, Document } from "@/types";
+import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { logError } from "@/utils/logger";
 
 interface ScenarioProps {
   scenarioId?: string;
@@ -188,7 +189,7 @@ export default function Scenario({
   useEffect(() => {
     const targetScenarioId = scenarioId || editingScenarioId;
     if (targetScenarioId && scenario) {
-      const scenarioData = scenario as any;
+      const scenarioData = scenario as ScenarioType;
       setFormData({
         name: scenarioData.name || "",
         description: scenarioData.description || "",
@@ -454,6 +455,7 @@ export default function Scenario({
                 break;
               }
             } catch (parseError) {
+              logError("Error parsing JSON:", parseError);
               // Skip malformed JSON lines
               continue;
             }

@@ -56,9 +56,12 @@ import {
   Users,
   X,
 } from "lucide-react";
+import { logError } from "@/utils/logger";
+import { LucideIcon } from "lucide-react";
+import { Standard, StandardGroup, Rubric as RubricType } from "@/types";
 
 // Icon mapping for different criteria
-const iconMap: Record<string, any> = {
+const iconMap: Record<string, LucideIcon> = {
   "Facilitates student-driven learning": MessageSquare,
   "Demonstrates understanding of course objectives": Target,
   "Manages session time effectively": Clock,
@@ -101,6 +104,8 @@ interface RubricProps {
   showAdvancedFeatures?: boolean;
 }
 
+
+
 export default function Rubric({
   rubricId,
   mode = rubricId ? "edit" : "create",
@@ -126,9 +131,9 @@ export default function Rubric({
   });
 
   const [standardGroupForms, setStandardGroupForms] = useState<
-    Record<string, any>
+    Record<string, Partial<StandardGroup>>
   >({});
-  const [standardForms, setStandardForms] = useState<Record<string, any>>({});
+  const [standardForms, setStandardForms] = useState<Record<string, Partial<Standard>>>({});
   const [openCards, setOpenCards] = useState<Record<number, boolean>>({});
 
   // Queries
@@ -170,7 +175,7 @@ export default function Rubric({
 
   useEffect(() => {
     if (standardGroups) {
-      const forms: Record<string, any> = {};
+      const forms: Record<string, Partial<StandardGroup>> = {};
       standardGroups.forEach((group) => {
         forms[group.id] = {
           name: group.name,
@@ -185,7 +190,7 @@ export default function Rubric({
 
   useEffect(() => {
     if (standards) {
-      const forms: Record<string, any> = {};
+      const forms: Record<string, Partial<Standard>> = {};
       standards.forEach((standard) => {
         forms[standard.id] = {
           name: standard.name,
@@ -223,7 +228,7 @@ export default function Rubric({
   });
 
   const updateRubricMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<RubricType> }) =>
       updateRubric(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rubric", rubricId] });
@@ -243,7 +248,7 @@ export default function Rubric({
   });
 
   const updateStandardGroupMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<StandardGroup> }) =>
       updateStandardGroup(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["standardGroups", rubricId] });
@@ -255,7 +260,7 @@ export default function Rubric({
   });
 
   const updateStandardMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<Standard> }) =>
       updateStandard(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -275,7 +280,7 @@ export default function Rubric({
     const groupStandards = standards.filter(
       (s) => s.standardGroupId === groupId
     );
-    const ratingMap: Record<number, any> = {};
+    const ratingMap: Record<number, Standard> = {};
 
     groupStandards.forEach((standard) => {
       // Extract rating from name (e.g., "Excellent (5)" -> 5)
@@ -360,7 +365,7 @@ export default function Rubric({
   const handleSaveStandardGroup = (groupId: string) => {
     updateStandardGroupMutation.mutate({
       id: groupId,
-      data: standardGroupForms[groupId],
+      data: standardGroupForms[groupId] || {},
     });
     setEditing((prev) => ({
       ...prev,
@@ -371,7 +376,7 @@ export default function Rubric({
   const handleSaveStandard = (standardId: string) => {
     updateStandardMutation.mutate({
       id: standardId,
-      data: standardForms[standardId],
+      data: standardForms[standardId] || {},
     });
     setEditing((prev) => ({
       ...prev,

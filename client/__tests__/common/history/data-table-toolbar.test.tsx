@@ -164,7 +164,7 @@ describe("DataTableToolbar", () => {
   });
 
   describe("Filter Input", () => {
-    it("should handle search input for simulations", async () => {
+    it("should handle search input correctly", async () => {
       const user = userEvent.setup();
 
       render(
@@ -181,13 +181,8 @@ describe("DataTableToolbar", () => {
       await user.type(input, "test search");
 
       expect(mockTable.getColumn).toHaveBeenCalledWith("simulationTitle");
-      // Check that the final value was set correctly
-      const mockFn = mockColumn.setFilterValue as ReturnType<typeof vi.fn>;
-      const calls = mockFn.mock.calls;
-      if (calls.length > 0) {
-        const lastCall = calls[calls.length - 1];
-        expect(lastCall[0]).toBe("test search");
-      }
+      // Check that setFilterValue was called with the correct value
+      expect(mockColumn.setFilterValue).toHaveBeenCalledWith("test search");
     });
 
     it("should display current filter value", () => {
@@ -225,6 +220,7 @@ describe("DataTableToolbar", () => {
       );
 
       const input = screen.getByPlaceholderText("Filter simulations...");
+      await user.type(input, "test");
       await user.clear(input);
 
       expect(mockColumn.setFilterValue).toHaveBeenCalledWith("");
@@ -242,7 +238,7 @@ describe("DataTableToolbar", () => {
         />
       );
 
-      expect(screen.getByTestId("faceted-filter-name")).toBeInTheDocument();
+      expect(screen.getByText("Name")).toBeInTheDocument();
     });
 
     it("should render class filter", () => {
@@ -268,8 +264,9 @@ describe("DataTableToolbar", () => {
         />
       );
 
-      // Filters should still render but with empty options
-      expect(screen.getByTestId("faceted-filter-name")).toBeInTheDocument();
+      // Filters should not render when options are empty
+      expect(screen.queryByText("Name")).not.toBeInTheDocument();
+      expect(screen.queryByText("Class")).not.toBeInTheDocument();
     });
   });
 
@@ -369,7 +366,9 @@ describe("DataTableToolbar", () => {
         />
       );
 
-      expect(screen.getByTestId("date-picker")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /filter by date/i })
+      ).toBeInTheDocument();
     });
 
     it("should not render date picker when setDateRange is not provided", () => {
@@ -387,44 +386,52 @@ describe("DataTableToolbar", () => {
 
     it("should pass dateRange to date picker", () => {
       const mockSetDateRange = vi.fn();
-      const mockDateRange = { from: new Date(), to: new Date() };
+      const testDateRange = {
+        from: new Date("2025-06-13"),
+        to: new Date("2025-06-13"),
+      };
 
       render(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          dateRange={mockDateRange}
+          dateRange={testDateRange}
           setDateRange={mockSetDateRange}
           scoreRangeOptions={mockScoreRangeOptions}
         />
       );
 
-      expect(screen.getByTestId("date-picker")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /jun 13, 2025/i })
+      ).toBeInTheDocument();
     });
   });
 
   describe("Props Handling", () => {
     it("should pass correct props to child components", () => {
       const mockSetDateRange = vi.fn();
-      const mockDateRange = { from: new Date(), to: new Date() };
 
       render(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-          isAdmin={true}
-          dateRange={mockDateRange}
+          dateRange={{
+            from: new Date("2025-06-13"),
+            to: new Date("2025-06-13"),
+          }}
           setDateRange={mockSetDateRange}
-          showExport={true}
           scoreRangeOptions={mockScoreRangeOptions}
+          showExport={true}
         />
       );
 
-      expect(screen.getByTestId("export-button")).toBeInTheDocument();
-      expect(screen.getByTestId("view-options")).toBeInTheDocument();
-      expect(screen.getByTestId("date-picker")).toBeInTheDocument();
+      expect(screen.getByText("Export")).toBeInTheDocument();
+      expect(screen.getByText("View")).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: /jun 13, 2025/i })
+      ).toBeInTheDocument();
     });
 
     it("should handle missing optional props", () => {
@@ -434,12 +441,15 @@ describe("DataTableToolbar", () => {
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
+          showExport={false}
         />
       );
 
-      expect(screen.getByTestId("view-options")).toBeInTheDocument();
-      expect(screen.queryByTestId("export-button")).not.toBeInTheDocument();
-      expect(screen.queryByTestId("date-picker")).not.toBeInTheDocument();
+      expect(screen.getByText("View")).toBeInTheDocument();
+      expect(screen.queryByText("Export")).not.toBeInTheDocument();
+      expect(
+        screen.queryByRole("button", { name: /filter by date/i })
+      ).not.toBeInTheDocument();
     });
   });
 

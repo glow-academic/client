@@ -39,7 +39,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Rubric, Scenario } from "@/types";
+import { Rubric, Scenario, Simulation as SimulationType } from "@/types";
 import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
@@ -127,7 +127,7 @@ export default function Simulation({
     const targetSimulationId = simulationId || editingSimulationId;
     if (targetSimulationId) {
       const simulationToEdit = simulations.find(
-        (s: any) => s.id === targetSimulationId
+        (s: SimulationType) => s.id === targetSimulationId
       );
       if (simulationToEdit) {
         setFormData({
@@ -329,7 +329,7 @@ export default function Simulation({
               </CardContent>
             </Card>
           ) : (
-            simulations.map((simulation: any) => (
+            simulations.map((simulation: SimulationType) => (
               <Card
                 key={simulation.id}
                 className="hover:shadow-md transition-shadow"
@@ -361,7 +361,7 @@ export default function Simulation({
                         <span className="inline-flex items-center text-sm text-muted-foreground">
                           Rubric:{" "}
                           {rubrics.find(
-                            (rubric: any) => rubric.id === simulation.rubricId
+                            (rubric: Rubric) => rubric.id === simulation.rubricId
                           )?.name || "Unknown"}
                         </span>
                       </CardDescription>

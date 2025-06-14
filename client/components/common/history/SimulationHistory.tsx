@@ -17,15 +17,16 @@ export default function SimulationHistory({
   showAll,
   showExport = true,
 }: SimulationHistoryProps) {
-  const { columns, data, profileOptions, classOptions, scoreRangeOptions } = useColumns({
-    showAll,
-    showExport,
-  });
+  const { columns, data, profileOptions, classOptions, scoreRangeOptions } =
+    useColumns({
+      showAll,
+      showExport,
+    });
 
   return (
-    <DataTable<any, any>
+    <DataTable
       data={data || []}
-      columns={columns}
+      columns={columns as never}
       profileOptions={profileOptions}
       classOptions={classOptions}
       scoreRangeOptions={scoreRangeOptions}

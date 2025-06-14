@@ -10,8 +10,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { toast } from "sonner";
 import { logError } from "@/utils/logger";
+import { toast } from "sonner";
 
 // Define proper types for the data structures
 interface ChatData {
@@ -24,6 +24,11 @@ interface ChatData {
 interface AttemptData {
   interactionIds?: string[];
   chats?: ChatData[];
+}
+
+interface RowOriginalData {
+  classIds?: string[];
+  [key: string]: unknown;
 }
 
 type ExportableData = ChatData | AttemptData;
@@ -128,8 +133,8 @@ export function ExportButton<TData>({
 
             // Special handling for class and user IDs - map to human-readable names
             if (column.id === "classId" && cellValue) {
-              const original = row.original as any;
-              const classIds = original.classIds || [cellValue];
+              const original = row.original as RowOriginalData;
+              const classIds = (original.classIds || [cellValue]) as string[];
               const classLabels = classIds.map((classId: string) => {
                 const classOption = classOptions.find(
                   (cls) => cls.value === classId

@@ -51,7 +51,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
-import { Agent, Scenario, Simulation } from "@/types";
+import { Agent, Scenario, Simulation, Rubric, StandardGroup, Standard } from "@/types";
+import { logInfo } from "@/utils/logger";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
@@ -80,25 +81,24 @@ interface AttemptData {
 // Rubric Modal Component
 const RubricModal = React.memo(
   ({
+    simulations,
     simulationId,
-    rubrics,
     standardGroups,
     standards,
   }: {
+    simulations: Simulation[];
     simulationId: string;
-    rubrics: any[];
-    standardGroups: any[];
-    standards: any[];
+    standardGroups: StandardGroup[];
+    standards: Standard[];
   }) => {
     // Find the rubric associated with this simulation
-    const simulationRubric =
-      rubrics?.find(
-        (rubric) => rubric.simulationId === simulationId || rubrics.length === 1
-      ) || rubrics?.[0];
+    const simulationRubric = simulations.find(
+      (simulation) => simulation.id === simulationId
+    )?.rubricId;
 
     const rubricStandardGroups =
       standardGroups?.filter(
-        (group) => group.rubricId === simulationRubric?.id
+        (group) => group.rubricId === simulationRubric
       ) || [];
 
     // Create rubric data structure for table display
@@ -160,9 +160,9 @@ const RubricModal = React.memo(
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rubricData.map((group: any) =>
+                    {rubricData.map((group: { groupName: string; groupDescription: string; standards: Standard[] }) =>
                       group.standards.map(
-                        (standard: any, standardIndex: number) => (
+                        (standard: Standard, standardIndex: number) => (
                           <TableRow
                             key={`${group.groupName}-${standard.id}`}
                             className={
@@ -254,9 +254,9 @@ const SimulationCard = React.memo(
     rubricData: { attempts: AttemptData[]; highestScore: number };
     scenarios?: Scenario[];
     agents?: Agent[];
-    rubrics?: any[];
-    standardGroups?: any[];
-    standards?: any[];
+    rubrics?: Rubric[];
+    standardGroups?: StandardGroup[];
+    standards?: Standard[];
   }) => {
     const [isFlipped, setIsFlipped] = useState(false);
 
@@ -454,8 +454,8 @@ const SimulationCard = React.memo(
                   <div className="flex items-center space-x-2">
                     {rubrics && standardGroups && standards && (
                       <RubricModal
+                        simulations={simulations}
                         simulationId={simulation.id}
-                        rubrics={rubrics}
                         standardGroups={standardGroups}
                         standards={standards}
                       />
@@ -705,7 +705,7 @@ export default function Home() {
         // Handle profile_id for guest mode
         if (effectiveRole === "guest" || !profile) {
           // pass
-          console.log("Guest mode, no profile");
+          logInfo("Guest mode, no profile");
         } else {
           formData.append("profile_id", profile.id);
         }

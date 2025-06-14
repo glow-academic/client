@@ -26,7 +26,7 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useQuery } from "@tanstack/react-query";
-import { ColumnDef, Row, Table } from "@tanstack/react-table";
+import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
 import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { Badge } from "../../ui/badge";
@@ -400,10 +400,12 @@ export function useColumns({
         ? [
             {
               accessorKey: "profileId",
-              header: ({ column }: { column: any }) => (
-                <DataTableColumnHeader column={column} title="Name" />
-              ),
-              cell: ({ row }: { row: any }) => {
+              header: ({
+                column,
+              }: {
+                column: Column<EnhancedAttempt, unknown>;
+              }) => <DataTableColumnHeader column={column} title="Name" />,
+              cell: ({ row }: { row: Row<EnhancedAttempt> }) => {
                 const profileOption = profileOptions.find(
                   (profile) => profile.value === row.getValue("profileId")
                 );
@@ -420,7 +422,11 @@ export function useColumns({
                   </div>
                 );
               },
-              filterFn: (row: any, id: any, value: any) => {
+              filterFn: (
+                row: Row<EnhancedAttempt>,
+                id: string,
+                value: string[]
+              ) => {
                 return value.includes(row.getValue(id) as string);
               },
               enableSorting: true,
@@ -678,7 +684,7 @@ export function useColumns({
     ];
 
     return attemptColumns;
-  }, [profileOptions, classOptions, showAll, showExport, grades, profile]);
+  }, [profileOptions, classOptions, showAll, showExport, grades]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];

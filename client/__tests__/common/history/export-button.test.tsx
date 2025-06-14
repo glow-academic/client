@@ -1,7 +1,7 @@
-import { render, screen } from "@testing-library/react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import userEvent from "@testing-library/user-event";
 import { ExportButton } from "@/components/common/history/export-button";
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock sonner toast
 vi.mock("sonner", () => ({
@@ -35,6 +35,17 @@ const mockTable = {
           averageScore: 85,
           classId: "class1",
         },
+        getValue: vi.fn((key: string) => {
+          const data = {
+            id: "1",
+            createdAt: "2024-01-01T10:00:00Z",
+            userId: "user1",
+            simulationTitle: "Test Simulation",
+            averageScore: 85,
+            classId: "class1",
+          };
+          return data[key as keyof typeof data];
+        }),
       },
       {
         original: {
@@ -45,9 +56,25 @@ const mockTable = {
           averageScore: 78,
           classId: "class2",
         },
+        getValue: vi.fn((key: string) => {
+          const data = {
+            id: "2",
+            createdAt: "2024-01-02T11:00:00Z",
+            userId: "user2",
+            simulationTitle: "Another Simulation",
+            averageScore: 78,
+            classId: "class2",
+          };
+          return data[key as keyof typeof data];
+        }),
       },
     ],
   })),
+  getVisibleLeafColumns: vi.fn(() => [
+    { id: "createdAt", columnDef: { header: "Date" } },
+    { id: "simulationTitle", columnDef: { header: "Simulation" } },
+    { id: "averageScore", columnDef: { header: "Score" } },
+  ]),
 };
 
 // Mock DOM methods
@@ -55,7 +82,8 @@ const mockLink = {
   href: "",
   download: "",
   click: vi.fn(),
-  style: {},
+  style: { visibility: "" },
+  setAttribute: vi.fn(),
 };
 
 const mockURL = {
@@ -66,32 +94,26 @@ const mockURL = {
 // Setup DOM mocks
 beforeEach(() => {
   vi.clearAllMocks();
-  
-  // Store original createElement
-  const originalCreateElement = document.createElement;
-  
+
   // Mock document.createElement
   vi.spyOn(document, "createElement").mockImplementation((tagName: string) => {
     if (tagName === "a") {
       return mockLink as any;
     }
-    // For other elements, return a basic mock
-    return {
-      style: {},
-      setAttribute: vi.fn(),
-      getAttribute: vi.fn(),
-      appendChild: vi.fn(),
-      removeChild: vi.fn(),
-    } as any;
+    return document.createElement(tagName);
   });
-  
+
   // Mock document.body.appendChild and removeChild
-  vi.spyOn(document.body, "appendChild").mockImplementation(() => mockLink as any);
-  vi.spyOn(document.body, "removeChild").mockImplementation(() => mockLink as any);
-  
+  vi.spyOn(document.body, "appendChild").mockImplementation(
+    () => mockLink as any
+  );
+  vi.spyOn(document.body, "removeChild").mockImplementation(
+    () => mockLink as any
+  );
+
   // Mock URL methods
   global.URL = mockURL as any;
-  
+
   // Mock Blob constructor
   global.Blob = vi.fn().mockImplementation((content, options) => ({
     content,
@@ -99,6 +121,10 @@ beforeEach(() => {
     size: content ? content[0].length : 0,
     type: options?.type || "",
   })) as any;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 const mockUserOptions = [
@@ -119,7 +145,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByText("Export")).toBeInTheDocument();
@@ -131,7 +157,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -145,7 +171,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       // The icon should be rendered (mocked as div with data-testid)
@@ -168,7 +194,7 @@ describe("ExportButton", () => {
           table={tableWithSelection as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("Export (2)")).toBeInTheDocument();
@@ -180,7 +206,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
-        />,
+        />
       );
 
       expect(screen.getByText("Export")).toBeInTheDocument();
@@ -197,7 +223,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       const exportButton = screen.getByRole("button");
@@ -221,7 +247,7 @@ describe("ExportButton", () => {
           table={emptyTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
@@ -235,7 +261,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
@@ -254,7 +280,7 @@ describe("ExportButton", () => {
           table={differentTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
@@ -268,7 +294,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -284,7 +310,7 @@ describe("ExportButton", () => {
           table={mockTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       const button = screen.getByRole("button");
@@ -315,7 +341,7 @@ describe("ExportButton", () => {
           table={malformedTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
@@ -343,7 +369,7 @@ describe("ExportButton", () => {
           table={largeDataTable as any}
           profileOptions={[]}
           classOptions={[]}
-        />,
+        />
       );
 
       expect(screen.getByRole("button")).toBeInTheDocument();
