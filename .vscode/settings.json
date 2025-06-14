@@ -1,5 +1,5 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/server/venv/bin/python",
+  "python.defaultInterpreterPath": "${workspaceFolder}/server/.venv/bin/python",
   "python.terminal.activateEnvironment": true,
   "python.testing.pytestArgs": [
     "server/tests"

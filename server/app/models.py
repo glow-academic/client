@@ -2,12 +2,11 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, Enum,
-                        ForeignKeyConstraint, Integer, PrimaryKeyConstraint,
-                        String, Text, Uuid, text)
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
+                        Enum, ForeignKeyConstraint, Integer,
+                        PrimaryKeyConstraint, String, Text, Uuid, text)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
-
 
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
@@ -162,7 +161,7 @@ class Evals(_Base, table=True):
         PrimaryKeyConstraint('id', name='evals_pkey')
     )
 
-    id: uuid.UUID = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid(as_uuid=True), primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
