@@ -69,7 +69,38 @@ __backup() {
 migrate_with_data_preservation() {
   echo "🔄 Starting migration with data preservation..."
   
-  # First, create a backup if database exists and has data
+  # First, generate latest migrations from client schema
+  echo "🔧 Generating latest migrations from client schema..."
+  if command -v node &>/dev/null && [[ -f "../client/scripts/clean-schema.js" ]]; then
+    echo "📝 Running client schema cleanup and migration generation..."
+    cd ../client
+
+
+    # Generate new migrations
+    echo "🔄 Generating Drizzle migrations..."
+    if npx drizzle-kit generate; then
+      echo "✅ Migration generation completed"
+    else
+      echo "❌ Failed to generate migrations"
+      cd ../database
+      return 1
+    fi
+    
+    # Run the clean-schema script which handles schema cleanup and file copying
+    if node scripts/clean-schema.js; then
+      echo "✅ Schema cleanup completed"
+    else
+      echo "⚠️  Warning: Schema cleanup had issues, continuing anyway..."
+    fi
+    
+
+    
+    cd ../database
+  else
+    echo "⚠️  Client schema tools not available, skipping migration generation"
+  fi
+  
+  # Create a backup if database exists and has data
   if db_exists; then
     TABLES=$(psql "$USER_CONN" -qtA -c \
               "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';" 2>/dev/null || echo "0")
@@ -94,11 +125,18 @@ migrate_with_data_preservation() {
     echo "🗑️  Dropping existing database for clean migration..."
     # Terminate all connections to the database before dropping it
     as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1
-    as_admin -c "DROP DATABASE $DB_NAME;" > /dev/null
+    
+    if ! as_admin -c "DROP DATABASE $DB_NAME;" > /dev/null 2>&1; then
+      echo "❌ Failed to drop existing database"
+      return 1
+    fi
   fi
   
   echo "🗄️  Creating fresh database with new schema..."
-  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null
+  if ! as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1; then
+    echo "❌ Failed to create new database"
+    return 1
+  fi
   
   # Apply fresh schema from init files
   if [[ -f $INIT_SQL ]]; then
@@ -106,10 +144,22 @@ migrate_with_data_preservation() {
     if [[ -d $INIT_DIR ]]; then
       echo "📁 Using modular SQL files from $INIT_DIR directory"
       export PGPASSWORD="$DB_PASSWORD"
-      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" > /dev/null
+      
+      # Try to apply schema, but capture errors for better handling
+      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
+        echo "❌ Error applying init schema. This might be due to:"
+        echo "   - Syntax errors in SQL files"
+        echo "   - Duplicate column definitions"
+        echo "   - Missing dependencies"
+        echo "💡 Please check your init/ files for issues"
+        return 1
+      fi
     else
       echo "📄 Using single $INIT_SQL file"
-      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" > /dev/null
+      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
+        echo "❌ Error applying init.sql file"
+        return 1
+      fi
     fi
   else
     echo "❌ No init.sql file found for schema creation"
@@ -183,9 +233,19 @@ fi
 # --- DATABASE (clean / create / restore) ----------------------------
 if $MIGRATE_DB; then
   echo "🔄 Migration mode requested..."
-  migrate_with_data_preservation
-  # Skip the rest of the database setup since migration handles everything
-  MIGRATION_COMPLETED=true
+  if migrate_with_data_preservation; then
+    # Skip the rest of the database setup since migration handles everything
+    MIGRATION_COMPLETED=true
+  else
+    echo "❌ Migration failed!"
+    echo "💡 Recovery options:"
+    echo "   1. Fix issues in your init/ files and try again"
+    echo "   2. Use 'yarn start:clean' to start fresh"
+    echo "   3. Manually restore from backup in history/ folder"
+    echo "📁 Available backups:"
+    ls -la $__DATA_DIR/backup_*.sql 2>/dev/null | tail -5 || echo "   No backups found"
+    exit 1
+  fi
 elif $CLEAN_DB && db_exists; then
   echo "🧹 Clean requested - backing up then dropping $DB_NAME..."
   __backup

@@ -16,10 +16,11 @@ yarn connect:migrate
 
 ## How Migration Works
 
-1. **Backup Creation**: If your current database has data, it creates an automatic backup
-2. **Clean Schema**: Drops the existing database and creates a fresh one with the latest schema from `init/`
-3. **Apply Migrations**: Runs any pending Drizzle migrations from the `migrations/` folder
-4. **Data Restoration**: Attempts to restore your data from the backup, handling schema conflicts gracefully
+1. **Schema Generation**: Runs client-side schema cleanup and generates latest Drizzle migrations
+2. **Backup Creation**: If your current database has data, it creates an automatic backup
+3. **Clean Schema**: Drops the existing database and creates a fresh one with the latest schema from `init/`
+4. **Apply Migrations**: Runs any pending Drizzle migrations from the `migrations/` folder
+5. **Data Restoration**: Attempts to restore your data from the backup, handling schema conflicts gracefully
 
 ## When to Use Migration
 
@@ -56,6 +57,20 @@ Use clean start instead when:
 
 ## Troubleshooting
 
+### Common Errors
+
+#### "column specified more than once"
+This error occurs when there are duplicate column definitions in your SQL files:
+1. Check your `init/` files for duplicate column names
+2. Ensure each column is only defined once per table
+3. Look for conflicts between different init modules
+
+#### Schema Generation Fails
+If the client schema cleanup/generation fails:
+1. Check that your TypeScript schema compiles correctly
+2. Run `cd client && npx drizzle-kit generate` manually to see specific errors
+3. Fix any TypeScript compilation issues in your schema files
+
 ### Data Not Restored
 If some data isn't restored after migration:
 1. Check the migration output for warnings
@@ -64,9 +79,10 @@ If some data isn't restored after migration:
 
 ### Migration Fails
 If migration fails completely:
-1. Check PostgreSQL logs for errors
-2. Verify your `init/` files are valid SQL
-3. Use `yarn start:clean` to start fresh if needed
+1. **Schema Issues**: Check for duplicate column definitions, syntax errors in `init/` files
+2. **Client Schema**: Ensure your client-side schema compiles correctly
+3. **PostgreSQL Issues**: Check PostgreSQL logs for database-level errors
+4. **Recovery**: Use `yarn start:clean` to start fresh, then manually restore from `history/` backups
 
 ### Rollback
 To rollback a migration:
