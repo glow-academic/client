@@ -1,7 +1,7 @@
 // utils/mutations/simulation_chat_feedbacks/update-simulation-chat-feedback.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChatFeedbacks } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChatFeedbacks } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

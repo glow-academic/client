@@ -1,1 +1,0 @@
-ALTER TABLE "app_logs" ALTER COLUMN "id" SET DATA TYPE serial;

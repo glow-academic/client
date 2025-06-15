@@ -1,7 +1,7 @@
 // utils/queries/scenarios/get-scenarios-by-class.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { scenarios } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { scenarios } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

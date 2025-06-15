@@ -1,7 +1,7 @@
 // utils/mutations/documents/create-document.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { documents } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { documents } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createDocument(data: typeof documents.$inferInsert) {

@@ -16,8 +16,8 @@ DB_PASSWORD=${DB_PASSWORD:-mypassword}
 DB_NAME=${DB_NAME:-mydb}
 DB_HOST=${DB_HOST:-localhost}
 DB_PORT=${DB_PORT:-5432}
-__DATA_DIR=history
-mkdir -p "$__DATA_DIR"
+HISTORY_DIR="history"
+mkdir -p "$HISTORY_DIR"
 
 # Process command‐line arguments
 CLEAN_DB=false
@@ -34,7 +34,6 @@ done
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
 USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
 INIT_SQL=${INIT_SQL:-init.sql}
-INIT_DIR=${INIT_DIR:-init}
 
 # --- CHECK POSTGRESQL ------------------------------------------------
 if ! command -v psql &>/dev/null; then
@@ -59,290 +58,216 @@ fi
 as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
-__backup() {
-  ts=$(date +%Y%m%d_%H%M%S)
-  pg_dump "$USER_CONN" > "$__DATA_DIR/backup_${ts}.sql"
-  echo "📦 Backup saved → $__DATA_DIR/backup_${ts}.sql"
-}
 
-# --- MIGRATION LOGIC -------------------------------------------------
-migrate_with_data_preservation() {
-  echo "🔄 Starting migration with data preservation..."
-  
-  # Create a backup if database exists and has data
+create_backup() {
   if db_exists; then
     TABLES=$(psql "$USER_CONN" -qtA -c \
               "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';" 2>/dev/null || echo "0")
     
     if [[ $TABLES -gt 0 ]]; then
-      echo "📦 Creating backup before migration..."
-      __backup
-      
-      # Get the latest backup file we just created
-      LATEST_BACKUP=$(ls -t $__DATA_DIR/backup_*.sql 2>/dev/null | head -n1)
-    else
-      echo "📝 Database exists but is empty, no backup needed"
-      LATEST_BACKUP=""
+      ts=$(date +%Y%m%d_%H%M%S)
+      pg_dump "$USER_CONN" > "$HISTORY_DIR/backup_${ts}.sql"
+      echo "📦 Backup saved → $HISTORY_DIR/backup_${ts}.sql"
     fi
-  else
-    echo "📝 Database doesn't exist, no backup needed"
-    LATEST_BACKUP=""
+  fi
+}
+
+get_latest_backup() {
+  ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -n1 || echo ""
+}
+
+setup_database() {
+  echo "🔧 Setting up database and user..."
+  
+  if ! role_exists; then
+    echo "👤 Creating user '$DB_USER'..."
+    as_admin -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASSWORD';"
   fi
   
-  # Prompt user to generate migrations if needed
-  echo ""
-  echo "🤔 Do you need to generate new migrations from schema changes?"
-  echo "   If you've modified your schema files, you should generate migrations first."
-  echo ""
-  read -p "Generate migrations now? (y/N): " -n 1 -r
-  echo
-  
-  if [[ $REPLY =~ ^[Yy]$ ]]; then
-    echo "🔄 Generating migrations from client schema..."
-    if [[ -d "../client" ]]; then
-      cd ../client
-      echo "📝 Running: npx drizzle-kit generate"
-      if npx drizzle-kit generate; then
-        echo "✅ Migration generation completed"
-        cd ../database
-      else
-        echo "❌ Failed to generate migrations"
-        cd ../database
-        return 1
-      fi
-    else
-      echo "❌ Client directory not found"
-      return 1
-    fi
-  else
-    echo "⏭️  Skipping migration generation"
-  fi
-  
-  # Drop and recreate database with clean schema
   if db_exists; then
-    echo "🗑️  Dropping existing database for clean migration..."
-    # Terminate all connections to the database before dropping it
+    echo "🗑️  Dropping existing database..."
     as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1
-    
-    if ! as_admin -c "DROP DATABASE $DB_NAME;" > /dev/null 2>&1; then
-      echo "❌ Failed to drop existing database"
-      return 1
-    fi
+    as_admin -c "DROP DATABASE $DB_NAME;" > /dev/null 2>&1
   fi
   
-  echo "🗄️  Creating fresh database with new schema..."
-  if ! as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1; then
-    echo "❌ Failed to create new database"
+  echo "🗄️  Creating database '$DB_NAME'..."
+  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
+}
+
+restore_from_backup() {
+  local backup_file="$1"
+  echo "🔄 Restoring from backup: $(basename "$backup_file")"
+  
+  export PGPASSWORD="$DB_PASSWORD"
+  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$backup_file" > /dev/null 2>&1; then
+    echo "✅ Backup restored successfully"
+  else
+    echo "❌ Failed to restore backup"
+    return 1
+  fi
+}
+
+start_fresh_from_init() {
+  echo "🆕 Starting fresh database from init.sql"
+  
+  if [[ ! -f "$INIT_SQL" ]]; then
+    echo "❌ Init file '$INIT_SQL' not found!"
     return 1
   fi
   
-  # Use Drizzle Kit to apply migrations instead of manual SQL
-  echo "🚀 Applying schema and migrations using Drizzle Kit..."
-  if [[ -d "../client" ]]; then
-    cd ../client
-    echo "📝 Running: npx drizzle-kit migrate"
-    if npx drizzle-kit migrate; then
-      echo "✅ Drizzle migrations applied successfully"
-      cd ../database
-    else
-      echo "❌ Failed to apply Drizzle migrations"
-      echo "💡 This might be because:"
-      echo "   - No migrations to apply"
-      echo "   - Database connection issues"
-      echo "   - Schema compilation errors"
-      cd ../database
-      
-      # Fallback to init files if Drizzle migration fails
-      echo "🔄 Falling back to init files..."
-      if [[ -f $INIT_SQL ]]; then
-        echo "📁 Applying init files as fallback..."
-        export PGPASSWORD="$DB_PASSWORD"
-        if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
-          echo "❌ Fallback init files also failed"
-          return 1
-        fi
-      else
-        echo "❌ No fallback init files available"
-        return 1
-      fi
-    fi
+  export PGPASSWORD="$DB_PASSWORD"
+  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" > /dev/null 2>&1; then
+    echo "✅ Fresh database created from init.sql"
   else
-    echo "❌ Client directory not found, cannot run Drizzle migrations"
-    echo "🔄 Falling back to init files..."
-    if [[ -f $INIT_SQL ]]; then
-      echo "📁 Applying init files..."
-      export PGPASSWORD="$DB_PASSWORD"
-      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
-        echo "❌ Init files failed"
-        return 1
-      fi
-    else
-      echo "❌ No init files available"
-      return 1
-    fi
+    echo "❌ Failed to create database from init.sql"
+    return 1
   fi
-  
-  # Restore data from backup if available
-  if [[ -n "$LATEST_BACKUP" && -f "$LATEST_BACKUP" ]]; then
-    echo "🔄 Attempting to restore data from backup..."
-    echo "📁 Using backup: $(basename "$LATEST_BACKUP")"
-    
-    # Try to restore data, but don't fail if some data can't be restored
-    if psql "$USER_CONN" -f "$LATEST_BACKUP" > /dev/null 2>&1; then
-      echo "✅ Data restoration completed successfully"
-    else
-      echo "⚠️  Partial data restoration - some data may not be compatible with new schema"
-      echo "💡 This is normal when schema changes include:"
-      echo "   - New required columns without defaults"
-      echo "   - Changed column types"
-      echo "   - New constraints"
-      echo "   - Removed tables or columns"
-      
-      # Try a more selective restore approach
-      echo "🔄 Attempting selective data restoration..."
-      
-      # Create a temporary file with just the data inserts (no schema)
-      temp_data_file="$__DATA_DIR/temp_data_$(date +%s).sql"
-      
-      # Extract only INSERT statements from backup
-      grep "^INSERT INTO\|^COPY\|^\\\\\\." "$LATEST_BACKUP" > "$temp_data_file" 2>/dev/null || true
-      
-      if [[ -s "$temp_data_file" ]]; then
-        # Try to restore just the data
-        psql "$USER_CONN" -f "$temp_data_file" > /dev/null 2>&1 || true
-        echo "📊 Selective data restoration attempted"
-        rm -f "$temp_data_file"
-      fi
-    fi
-  else
-    echo "📝 No backup available for data restoration"
-  fi
-  
-  echo "✅ Migration completed!"
-  echo "💡 Check your data to ensure everything migrated correctly"
-  echo "📁 Backups are available in: $__DATA_DIR/"
 }
 
-# --- ROLE ------------------------------------------------------------
-if ! role_exists; then
-  echo "👤 Creating role $DB_USER with CREATEDB privilege…"
-  as_admin -c "CREATE ROLE $DB_USER WITH LOGIN PASSWORD '$DB_PASSWORD' CREATEDB;"
-fi
-
-# --- DATABASE (clean / create / restore) ----------------------------
-if $MIGRATE_DB; then
-  echo "🔄 Migration mode requested..."
-  if migrate_with_data_preservation; then
-    # Skip the rest of the database setup since migration handles everything
-    MIGRATION_COMPLETED=true
+run_migrations() {
+  echo "🚀 Running Drizzle migrations..."
+  if npx drizzle-kit migrate; then
+    echo "✅ Migrations applied successfully"
   else
-    echo "❌ Migration failed!"
-    echo "💡 Recovery options:"
-    echo "   1. Fix issues in your init/ files and try again"
-    echo "   2. Use 'yarn start:clean' to start fresh"
-    echo "   3. Manually restore from backup in history/ folder"
-    echo "📁 Available backups:"
-    ls -la $__DATA_DIR/backup_*.sql 2>/dev/null | tail -5 || echo "   No backups found"
+    echo "⚠️  No migrations to apply or migration failed"
+  fi
+}
+
+generate_and_copy_files() {
+  echo "📝 Generating and copying files to client..."
+  
+  # Clean schema and copy to client
+  if node scripts/clean-schema.js; then
+    echo "✅ Schema cleaned and copied"
+  else
+    echo "❌ Failed to clean schema"
+    return 1
+  fi
+  
+  # Generate types and copy to client
+  if node scripts/generate-types.js; then
+    echo "✅ Types generated and copied"
+  else
+    echo "❌ Failed to generate types"
+    return 1
+  fi
+  
+  # Generate queries and mutations
+  if node scripts/generate-queries-mutations.js; then
+    echo "✅ Queries and mutations generated"
+  else
+    echo "❌ Failed to generate queries and mutations"
+    return 1
+  fi
+}
+
+# --- MAIN LOGIC ------------------------------------------------------
+
+# Handle connection-only mode
+if [[ "$CONNECT_DB" == true ]]; then
+  if db_exists; then
+    echo "🔗 Connecting to existing database..."
+    export PGPASSWORD="$DB_PASSWORD"
+    psql "$USER_CONN"
+  else
+    echo "❌ Database '$DB_NAME' does not exist!"
+    echo "💡 Run without --connect to create it first"
     exit 1
   fi
-elif $CLEAN_DB && db_exists; then
-  echo "🧹 Clean requested - backing up then dropping $DB_NAME..."
-  __backup
-  
-  # Terminate all connections to the database before dropping it
-  as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();"
-  
-  as_admin -c "DROP DATABASE $DB_NAME;"
+  exit 0
 fi
 
-if ! db_exists && [[ "$MIGRATION_COMPLETED" != "true" ]]; then
-  echo "🗄️  Creating database $DB_NAME owned by $DB_USER..."
-  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
-fi
-
-# --- APPLY MIGRATIONS ------------------------------------------------
-if [[ "$MIGRATION_COMPLETED" != "true" ]]; then
-  echo "🔄 Checking for migrations to apply..."
-  if [[ -d "migrations" ]] && [[ -n "$(ls -A migrations/*.sql 2>/dev/null)" ]]; then
-    echo "📋 Found migration files, applying them..."
-    for migration_file in migrations/*.sql; do
-      if [[ -f "$migration_file" ]]; then
-        echo "  ⚡ Applying $(basename "$migration_file")..."
-        if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$migration_file" > /dev/null 2>&1; then
-          echo "  ✅ Applied $(basename "$migration_file")"
-        else
-          echo "  ⚠️  Warning: Could not apply $(basename "$migration_file") (may already be applied)"
-        fi
-      fi
-    done
+# Handle migrate mode
+if [[ "$MIGRATE_DB" == true ]]; then
+  echo "🔄 Migration mode: Starting clean then generating migrations..."
+  
+  # Create backup first
+  create_backup
+  
+  # Setup fresh database
+  setup_database
+  start_fresh_from_init
+  
+  # Generate migrations with interactive diff
+  echo "🔍 Generating migrations (interactive diff will show)..."
+  if npx drizzle-kit generate; then
+    echo "✅ Migration generation completed"
+    echo "💡 Migrations are ready. Run start.sh (without flags) to apply them."
   else
-    echo "📝 No migration files found in migrations/ directory"
+    echo "❌ Migration generation failed"
+    exit 1
   fi
-fi
-
-# If DB is empty, try to restore or initialize ----------------------
-if [[ "$MIGRATION_COMPLETED" != "true" ]]; then
-  TABLES=$(psql "$USER_CONN" -qtA -c \
-            "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='public';")
-
-  if [[ $TABLES -eq 0 ]]; then
-    LATEST=$(ls -t $__DATA_DIR/backup_*.sql 2>/dev/null | head -n1)
-    if [[ -n $LATEST && $CLEAN_DB = false ]]; then
-      echo "🔄 Restoring $LATEST …"
-      psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$LATEST"
-    elif [[ -f $INIT_SQL ]]; then
-      echo "🚀 Applying database schema using modular approach…"
-      
-      # Check if we have the modular structure
-      if [[ -d $INIT_DIR ]]; then
-        echo "📁 Found modular SQL files in $INIT_DIR directory"
-        echo "⚡ Executing master init.sql which will load all modules in correct order…"
-        
-        # Set the search path for \i commands to work properly
-        export PGPASSWORD="$DB_PASSWORD"
-        
-        # Execute the master init.sql file which orchestrates the modular loading
-        psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
-      else
-        echo "📄 No modular structure found, applying single $INIT_SQL file…"
-        psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"
-      fi
-    else
-      echo "📝 No schema or backup to apply (DB is empty)."
-      echo "Expected files: $INIT_SQL or backup files in $__DATA_DIR/"
-    fi
-  fi
-fi
-
-if [[ "$MIGRATION_COMPLETED" == "true" ]]; then
-  echo "✅ Database migration completed! $DB_NAME is ready with fresh schema and restored data."
-else
-  echo "✅ Database $DB_NAME is ready!"
-fi
-echo "🔗 Connection: $USER_CONN"
-
-# Handle different modes
-if $CONNECT_DB; then
-  echo ""
-  echo "🔌 Opening interactive database connection..."
-  echo "💡 You can now run SQL queries directly. Type \\q to exit."
-  echo "📊 Useful commands:"
-  echo "   \\dt                    - List all tables"
-  echo "   \\d table_name         - Describe table structure"
-  echo "   SELECT * FROM users;   - Query users table"
-  echo "   \\q                     - Quit"
-  echo ""
-  echo "⚠️  Important: Each SQL command must end with a semicolon (;)"
-  echo "⚠️  If you see 'mydb->' prompt, you forgot the semicolon - just type ';' and press Enter"
-  echo ""
   
-  # Start interactive psql session
-  psql "$USER_CONN"
-elif [[ -f /.dockerenv ]]; then
-  echo "🐳 Docker environment detected. Keeping PostgreSQL running..."
-  # This will keep the container running
-  tail -f /dev/null
+  exit 0
+fi
+
+# Handle clean mode
+if [[ "$CLEAN_DB" == true ]]; then
+  echo "🧹 Clean mode: Starting fresh database..."
+  
+  # Create backup first
+  create_backup
+  
+  # Setup fresh database
+  setup_database
+  start_fresh_from_init
+  
+  # Generate and copy files
+  generate_and_copy_files
+  
+  echo "✅ Clean database setup completed!"
+  exit 0
+fi
+
+# Default mode: Use latest backup then migrate
+echo "🔄 Default mode: Using latest backup then applying migrations..."
+
+# Create backup of current state
+create_backup
+
+# Get latest backup
+LATEST_BACKUP=$(get_latest_backup)
+
+if [[ -n "$LATEST_BACKUP" ]]; then
+  echo "📁 Found latest backup: $(basename "$LATEST_BACKUP")"
+  
+  # Setup fresh database
+  setup_database
+  
+  # Restore from backup
+  if restore_from_backup "$LATEST_BACKUP"; then
+    # Apply any pending migrations
+    run_migrations
+  else
+    echo "⚠️  Backup restoration failed, falling back to init.sql"
+    start_fresh_from_init
+  fi
 else
-  echo "💡 Database is ready for connections. Use 'psql \"$USER_CONN\"' to connect."
-  echo "💡 Or use 'yarn connect' for an interactive session."
+  echo "📝 No backups found, starting fresh from init.sql"
+  setup_database
+  start_fresh_from_init
+fi
+
+# Generate and copy files
+generate_and_copy_files
+
+echo "✅ Database setup completed!"
+
+# Set up cleanup trap
+cleanup() {
+  echo "🛑 Shutting down..."
+  create_backup
+}
+
+trap cleanup EXIT
+
+# Keep script running if not in CI
+if [[ -z "${CI:-}" ]]; then
+  echo "💡 Database is ready. Press Ctrl+C to stop and create backup."
+  echo "🔗 Connect with: psql '$USER_CONN'"
+  
+  # Keep running until interrupted
+  while true; do
+    sleep 1
+  done
 fi

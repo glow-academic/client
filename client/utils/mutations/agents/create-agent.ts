@@ -1,7 +1,7 @@
 // utils/mutations/agents/create-agent.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { agents } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { agents } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createAgent(data: typeof agents.$inferInsert) {

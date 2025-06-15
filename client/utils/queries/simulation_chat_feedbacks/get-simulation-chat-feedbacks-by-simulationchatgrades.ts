@@ -1,7 +1,7 @@
 // utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulation-chat-grades.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChatFeedbacks } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChatFeedbacks } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

@@ -1,7 +1,7 @@
 // utils/mutations/simulation_chats/delete-simulation-chat.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChats } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChats } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

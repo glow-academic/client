@@ -1,7 +1,7 @@
 // utils/queries/standard_groups/get-standard-groups-by-rubrics.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { standardGroups } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { standardGroups } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

@@ -1,7 +1,7 @@
 // utils/mutations/sessions/create-sessions.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { sessions } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { sessions } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createSessions(data: (typeof sessions.$inferInsert)[]) {

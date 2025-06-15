@@ -1,7 +1,7 @@
 // utils/mutations/topics/delete-topics.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { topics } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { topics } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

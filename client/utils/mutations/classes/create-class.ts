@@ -1,7 +1,7 @@
 // utils/mutations/classes/create-class.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { classes } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { classes } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createClass(data: typeof classes.$inferInsert) {

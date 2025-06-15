@@ -1,7 +1,7 @@
 // utils/queries/simulation_attempts/get-simulation-attempts-by-profile.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationAttempts } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationAttempts } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

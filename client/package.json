@@ -4,19 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node scripts/check-schema-changes.js && npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node scripts/generate-component-tests.js && next dev",
-    "dev:skip-check": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node scripts/generate-component-tests.js && next dev",
+    "dev": "next dev",
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "format": "prettier --write .",
-    "generate:types": "node scripts/generate-types.js",
-    "generate:queries": "node scripts/generate-queries-mutations.js --pull",
-    "generate:queries:fast": "node scripts/generate-queries-mutations.js --skip-snapshot",
-    "clean:schema": "node scripts/clean-schema.js",
-    "generate:all": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js",
-    "check:schema": "node scripts/check-schema-changes.js",
     "test": "vitest run"
   },
   "dependencies": {
@@ -47,7 +40,6 @@
     "clsx": "^2.0.0",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
-    "drizzle-kit": "^0.31.1",
     "drizzle-orm": "^0.44.2",
     "eslint-plugin-unused-imports": "^4.1.4",
     "framer-motion": "^12.12.1",

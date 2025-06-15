@@ -1,7 +1,7 @@
 // utils/mutations/topics/create-topics.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { topics } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { topics } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createTopics(data: (typeof topics.$inferInsert)[]) {

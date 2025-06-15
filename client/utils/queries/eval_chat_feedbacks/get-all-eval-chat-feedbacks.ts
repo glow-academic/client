@@ -1,7 +1,7 @@
 // utils/queries/eval_chat_feedbacks/get-all-eval-chat-feedbacks.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalChatFeedbacks } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalChatFeedbacks } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function getAllEvalChatFeedbacks() {

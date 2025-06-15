@@ -1,7 +1,7 @@
 // utils/mutations/simulations/create-simulation.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulations } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulations } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createSimulation(data: typeof simulations.$inferInsert) {

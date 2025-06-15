@@ -1,7 +1,7 @@
 // utils/mutations/simulations/delete-simulations.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulations } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulations } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

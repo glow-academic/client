@@ -1,7 +1,7 @@
 // utils/mutations/scenarios/create-scenarios.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { scenarios } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { scenarios } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createScenarios(data: (typeof scenarios.$inferInsert)[]) {

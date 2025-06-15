@@ -1,7 +1,7 @@
 // utils/queries/standards/get-standards-by-standard-groups.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { standards } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { standards } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

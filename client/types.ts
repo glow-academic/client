@@ -28,7 +28,7 @@ import {
   evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
   agentType, classTerm, documentType, evalMessageType, evalType, profileRole, rubricType, seniorityLevels
-} from "@/drizzle/schema";
+} from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;

@@ -1,6 +1,6 @@
 "use server";
 // This file should only be imported on the server side
-import { db_url } from "@/utils/drizzle/database";
+import { db_url } from "@/utils/drizzle/db";
 import postgres from "postgres";
 
 // Server-only PostgreSQL logger, log to console in non production

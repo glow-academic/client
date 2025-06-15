@@ -1,7 +1,7 @@
 // utils/queries/rubrics/get-rubric.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { rubrics } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { rubrics } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

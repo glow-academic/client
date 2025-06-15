@@ -1,7 +1,7 @@
 // utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulation-chats.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChatGrades } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChatGrades } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

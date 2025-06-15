@@ -1,7 +1,7 @@
 // utils/mutations/schedules/create-schedule.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { schedules } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { schedules } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createSchedule(data: typeof schedules.$inferInsert) {

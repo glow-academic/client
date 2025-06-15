@@ -1,7 +1,7 @@
 // utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-eval-chat-grades.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalChatFeedbacks } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalChatFeedbacks } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

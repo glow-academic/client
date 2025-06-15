@@ -1,7 +1,7 @@
 // utils/mutations/eval_runs/create-eval-run.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalRuns } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalRuns } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createEvalRun(data: typeof evalRuns.$inferInsert) {

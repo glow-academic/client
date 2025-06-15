@@ -1,7 +1,7 @@
 // utils/mutations/simulation_messages/update-simulation-messages.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationMessages } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationMessages } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

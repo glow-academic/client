@@ -3,14 +3,14 @@
   "version": "1.0.0",
   "description": "glow database management",
   "main": "index.js",
+  "type": "module",
   "license": "MIT",
   "scripts": {
     "start": "bash start.sh",
     "start:clean": "bash start.sh --clean",
-    "start:migrate": "bash start.sh --migrate",
+    "migrate": "bash start.sh --migrate",
     "connect": "bash start.sh --connect",
     "connect:clean": "bash start.sh --connect --clean",
-    "connect:migrate": "bash start.sh --connect --migrate",
     "query": "bash sql-helpers.sh",
     "tables": "bash sql-helpers.sh tables",
     "users": "bash sql-helpers.sh users",
@@ -18,9 +18,13 @@
     "test": "yarn test:cypress",
     "test:cypress": "cypress run --headless",
     "test:cypress:open": "cypress open",
-    "migrate": "cd ../client && npx drizzle-kit migrate",
-    "generate": "cd ../client && npx drizzle-kit generate",
-    "studio": "cd ../client && npx drizzle-kit studio"
+    "drizzle:migrate": "npx drizzle-kit migrate",
+    "drizzle:generate": "npx drizzle-kit generate",
+    "drizzle:studio": "npx drizzle-kit studio",
+    "generate:schema": "node scripts/clean-schema.js",
+    "generate:types": "node scripts/generate-types.js",
+    "generate:queries": "node scripts/generate-queries-mutations.js",
+    "generate:all": "npm run generate:schema && npm run generate:types && npm run generate:queries"
   },
   "dependencies": {
     "drizzle-kit": "^0.31.1",
@@ -28,7 +32,7 @@
     "pg": "^8.16.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.0",
     "@types/pg": "^8.15.4",
     "cypress": "^13.6.0"
   }

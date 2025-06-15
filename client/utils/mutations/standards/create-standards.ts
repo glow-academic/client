@@ -1,7 +1,7 @@
 // utils/mutations/standards/create-standards.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { standards } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { standards } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createStandards(data: (typeof standards.$inferInsert)[]) {

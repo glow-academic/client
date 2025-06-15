@@ -1,7 +1,7 @@
 // utils/mutations/simulation_chats/create-simulation-chat.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChats } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChats } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function createSimulationChat(data: typeof simulationChats.$inferInsert) {

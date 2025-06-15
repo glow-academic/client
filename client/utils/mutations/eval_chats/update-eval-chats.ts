@@ -1,7 +1,7 @@
 // utils/mutations/eval_chats/update-eval-chats.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalChats } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalChats } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

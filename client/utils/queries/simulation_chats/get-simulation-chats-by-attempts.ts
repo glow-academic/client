@@ -1,7 +1,7 @@
 // utils/queries/simulation_chats/get-simulation-chats-by-attempts.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { simulationChats } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { simulationChats } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

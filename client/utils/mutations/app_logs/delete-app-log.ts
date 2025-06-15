@@ -1,7 +1,7 @@
 // utils/mutations/app_logs/delete-app-log.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { appLogs } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { appLogs } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

@@ -1,7 +1,7 @@
 // utils/queries/eval_chat_grades/get-all-eval-chat-grades.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalChatGrades } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalChatGrades } from "@/utils/drizzle/schema";
 import { logError } from "@/utils/logger";
 
 export async function getAllEvalChatGrades() {

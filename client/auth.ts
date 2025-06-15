@@ -4,7 +4,7 @@ import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
 import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";
-import { db_url } from "./utils/drizzle/database";
+import { db_url } from "./utils/drizzle/db";
 import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";

@@ -1,9 +1,9 @@
 // utils/auth/get-profile-by-alias.ts
 "use server";
-import { profiles } from "@/drizzle/schema";
-import { db } from "@/utils/drizzle/database";
+import { db } from "@/utils/drizzle/db";
 import { logError } from "@/utils/logger";
 import { eq } from "drizzle-orm";
+import { profiles } from "@/utils/drizzle/schema";
 
 export async function getProfileByAlias(alias: string) {
   try {

@@ -1,7 +1,7 @@
 // utils/mutations/eval_chat_grades/delete-eval-chat-grades.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalChatGrades } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalChatGrades } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

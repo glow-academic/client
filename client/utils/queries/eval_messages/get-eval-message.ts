@@ -1,7 +1,7 @@
 // utils/queries/eval_messages/get-eval-message.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalMessages } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalMessages } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

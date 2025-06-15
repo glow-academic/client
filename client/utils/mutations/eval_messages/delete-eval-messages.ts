@@ -1,7 +1,7 @@
 // utils/mutations/eval_messages/delete-eval-messages.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { evalMessages } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { evalMessages } from "@/utils/drizzle/schema";
 import { inArray } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 

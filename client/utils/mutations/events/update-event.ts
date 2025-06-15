@@ -1,7 +1,7 @@
 // utils/mutations/events/update-event.ts
 "use server";
-import { db } from "@/utils/drizzle/database";
-import { events } from "@/drizzle/schema";
+import { db } from "@/utils/drizzle/db";
+import { events } from "@/utils/drizzle/schema";
 import { eq } from "drizzle-orm";
 import { logError } from "@/utils/logger";
 
