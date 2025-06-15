@@ -109,15 +109,7 @@ create_backup() {
 
 # Function to get latest backup
 get_latest_backup() {
-  # First, try to find a backup that contains actual user data
-  for backup_file in $(ls -t history/backup_*.sql 2>/dev/null); do
-    if grep -q "Ashok Muthusila Saravanan\|redacted@purdue.edu" "$backup_file" 2>/dev/null; then
-      echo "$backup_file"
-      return 0
-    fi
-  done
-  
-  # If no backup with user data found, get the most recent backup
+  # Simply get the most recent backup by modification time
   ls -t history/backup_*.sql 2>/dev/null | head -1
 }
 
