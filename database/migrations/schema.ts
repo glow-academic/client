@@ -105,7 +105,7 @@ export const users = pgTable("users", {
 
 export const profiles = pgTable("profiles", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
-	userId: integer("user_id").notNull(),
+	userId: integer("user_id"),
 	lastLogin: timestamp("last_login", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	firstName: text("first_name").notNull(),
 	lastName: text("last_name").notNull(),
