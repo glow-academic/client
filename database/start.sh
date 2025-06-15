@@ -40,9 +40,10 @@ for arg in "$@"; do
       ;;
     *)
       echo "Usage: $0 [--clean|--migrate|--connect]"
-      echo "  --clean   : Start fresh database from init.sql"
+      echo "  --clean   : Create backup, then start fresh database from init.sql"
       echo "  --migrate : Generate migration files (interactive)"
       echo "  --connect : Connect to existing database"
+      echo "  (default) : Start from latest backup and apply migrations"
       exit 1
       ;;
   esac
@@ -254,7 +255,7 @@ if [[ "$MIGRATE_DB" == true ]]; then
   echo "⚠️  Your data will be preserved - use 'yarn start' afterward to apply migrations with data"
   echo ""
   
-  # Create backup first
+  # Create backup first for migrate mode
   create_backup
   
   # Setup fresh database
@@ -297,7 +298,7 @@ fi
 if [[ "$CLEAN_DB" == true ]]; then
   echo "🧹 Clean mode: Starting fresh database..."
   
-  # Create backup first
+  # Create backup first (only in clean mode)
   create_backup
   
   # Setup fresh database
@@ -311,13 +312,10 @@ if [[ "$CLEAN_DB" == true ]]; then
   exit 0
 fi
 
-# Default mode: Use latest backup then migrate
+# Default mode: Use latest backup then migrate (NO backup creation)
 echo "🔄 Default mode: Using latest backup then applying migrations..."
 
-# Create backup of current state
-create_backup
-
-# Get latest backup
+# Get latest backup (don't create a new one)
 LATEST_BACKUP=$(get_latest_backup)
 
 if [[ -n "$LATEST_BACKUP" ]]; then
@@ -345,17 +343,20 @@ generate_and_copy_files
 
 echo "✅ Database setup completed!"
 
-# Set up cleanup trap
+# Set up cleanup trap - only create backup on exit for clean mode
 cleanup() {
   echo "🛑 Shutting down..."
-  create_backup
+  # Only create backup on exit if we're in clean mode
+  if [[ "$CLEAN_DB" == true ]]; then
+    create_backup
+  fi
 }
 
 trap cleanup EXIT
 
 # Keep script running if not in CI
 if [[ -z "${CI:-}" ]]; then
-  echo "💡 Database is ready. Press Ctrl+C to stop and create backup."
+  echo "💡 Database is ready. Press Ctrl+C to stop."
   echo "🔗 Connect with: psql '$USER_CONN'"
   
   # Keep running until interrupted
