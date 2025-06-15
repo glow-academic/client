@@ -19,15 +19,32 @@ DB_PORT=${DB_PORT:-5432}
 HISTORY_DIR="history"
 mkdir -p "$HISTORY_DIR"
 
-# Process command‐line arguments
+# Parse command line arguments
 CLEAN_DB=false
-CONNECT_DB=false
 MIGRATE_DB=false
+CONNECT_DB=false
+
 for arg in "$@"; do
-  case $arg in 
-    --clean) CLEAN_DB=true; shift ;;
-    --connect) CONNECT_DB=true; shift ;;
-    --migrate) MIGRATE_DB=true; shift ;;
+  case $arg in
+    --clean)
+      CLEAN_DB=true
+      shift
+      ;;
+    --migrate)
+      MIGRATE_DB=true
+      shift
+      ;;
+    --connect)
+      CONNECT_DB=true
+      shift
+      ;;
+    *)
+      echo "Usage: $0 [--clean|--migrate|--connect]"
+      echo "  --clean   : Start fresh database from init.sql"
+      echo "  --migrate : Generate migration files (interactive)"
+      echo "  --connect : Connect to existing database"
+      exit 1
+      ;;
   esac
 done
 
@@ -59,23 +76,49 @@ as_admin()    { psql "$ADMIN_CONN" -qtA "$@"; }
 role_exists() { as_admin -c "SELECT 1 FROM pg_roles    WHERE rolname='$DB_USER';" | grep -q 1; }
 db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';" | grep -q 1; }
 
+# Function to create backup
 create_backup() {
-  local timestamp=$(date +"%Y%m%d_%H%M%S")
-  local backup_file="history/backup_${timestamp}.sql"
-  
-  echo "📦 Backup saved → $(basename "$backup_file")"
-  
-  # Create backup excluding drizzle migration table
-  pg_dump -h localhost -p 5432 -U ashoksaravanan mydb \
-    --exclude-table=__drizzle_migrations \
-    > "$backup_file" 2>/dev/null || {
-    echo "⚠️  Backup creation had issues, but continuing..."
-    touch "$backup_file"  # Create empty file so script doesn't fail
-  }
+  # Only create backup if database exists and has data
+  if psql -h localhost -p 5432 -U ashoksaravanan -d mydb -c "SELECT 1" > /dev/null 2>&1; then
+    # Check if there are any tables with data
+    local table_count=$(psql -h localhost -p 5432 -U ashoksaravanan -d mydb -tAc "
+      SELECT COUNT(*) FROM information_schema.tables 
+      WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+    " 2>/dev/null || echo "0")
+    
+    if [[ "$table_count" -gt 0 ]]; then
+      local timestamp=$(date +"%Y%m%d_%H%M%S")
+      local backup_file="history/backup_${timestamp}.sql"
+      
+      echo "📦 Backup saved → $(basename "$backup_file")"
+      
+      # Create backup excluding drizzle migration table
+      pg_dump -h localhost -p 5432 -U ashoksaravanan mydb \
+        --exclude-table=__drizzle_migrations \
+        > "$backup_file" 2>/dev/null || {
+        echo "⚠️  Backup creation had issues, but continuing..."
+        touch "$backup_file"  # Create empty file so script doesn't fail
+      }
+    else
+      echo "📝 No data to backup - skipping backup creation"
+    fi
+  else
+    echo "📝 No database to backup - skipping backup creation"
+  fi
 }
 
+# Function to get latest backup
 get_latest_backup() {
-  ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -n1 || echo ""
+  # First, try to find a backup that contains actual user data
+  for backup_file in $(ls -t history/backup_*.sql 2>/dev/null); do
+    if grep -q "Ashok Muthusila Saravanan\|redacted@purdue.edu" "$backup_file" 2>/dev/null; then
+      echo "$backup_file"
+      return 0
+    fi
+  done
+  
+  # If no backup with user data found, get the most recent backup
+  ls -t history/backup_*.sql 2>/dev/null | head -1
 }
 
 setup_database() {
@@ -205,30 +248,10 @@ generate_and_copy_files() {
 
 # --- MAIN LOGIC ------------------------------------------------------
 
-# Handle connection-only mode
+# Handle connect mode
 if [[ "$CONNECT_DB" == true ]]; then
-  if [[ "$CLEAN_DB" == true ]]; then
-    echo "🧹 Clean connect mode: Creating fresh database then connecting..."
-    
-    # Create backup first
-    create_backup
-    
-    # Setup fresh database
-    setup_database
-    start_fresh_from_init
-    
-    echo "🔗 Connecting to fresh database..."
-    export PGPASSWORD="$DB_PASSWORD"
-    psql "$USER_CONN"
-  elif db_exists; then
-    echo "🔗 Connecting to existing database..."
-    export PGPASSWORD="$DB_PASSWORD"
-    psql "$USER_CONN"
-  else
-    echo "❌ Database '$DB_NAME' does not exist!"
-    echo "💡 Run without --connect to create it first"
-    exit 1
-  fi
+  echo "🔗 Connecting to existing database..."
+  psql -h localhost -p 5432 -U ashoksaravanan -d mydb
   exit 0
 fi
 

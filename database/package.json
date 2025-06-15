@@ -10,7 +10,6 @@
     "start:clean": "bash start.sh --clean",
     "migrate": "bash start.sh --migrate",
     "connect": "bash start.sh --connect",
-    "connect:clean": "bash start.sh --connect --clean",
     "query": "bash sql-helpers.sh",
     "tables": "bash sql-helpers.sh tables",
     "users": "bash sql-helpers.sh users",
