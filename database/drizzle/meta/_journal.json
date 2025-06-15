@@ -29,6 +29,34 @@
       "when": 1750001807027,
       "tag": "0003_bright_hellcat",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1750001866187,
+      "tag": "0004_swift_chamber",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1750002107582,
+      "tag": "0005_flimsy_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1750002182760,
+      "tag": "0006_bitter_supernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1750002258171,
+      "tag": "0007_milky_major_mapleleaf",
+      "breakpoints": true
     }
   ]
 }

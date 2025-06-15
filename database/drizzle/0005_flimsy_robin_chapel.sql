@@ -1,0 +1,1 @@
+ALTER TABLE "app_logs" RENAME COLUMN "message_test" TO "message";
