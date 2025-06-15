@@ -69,37 +69,6 @@ __backup() {
 migrate_with_data_preservation() {
   echo "🔄 Starting migration with data preservation..."
   
-  # First, generate latest migrations from client schema
-  echo "🔧 Generating latest migrations from client schema..."
-  if command -v node &>/dev/null && [[ -f "../client/scripts/clean-schema.js" ]]; then
-    echo "📝 Running client schema cleanup and migration generation..."
-    cd ../client
-
-
-    # Generate new migrations
-    echo "🔄 Generating Drizzle migrations..."
-    if npx drizzle-kit generate; then
-      echo "✅ Migration generation completed"
-    else
-      echo "❌ Failed to generate migrations"
-      cd ../database
-      return 1
-    fi
-    
-    # Run the clean-schema script which handles schema cleanup and file copying
-    if node scripts/clean-schema.js; then
-      echo "✅ Schema cleanup completed"
-    else
-      echo "⚠️  Warning: Schema cleanup had issues, continuing anyway..."
-    fi
-    
-
-    
-    cd ../database
-  else
-    echo "⚠️  Client schema tools not available, skipping migration generation"
-  fi
-  
   # Create a backup if database exists and has data
   if db_exists; then
     TABLES=$(psql "$USER_CONN" -qtA -c \
@@ -120,6 +89,35 @@ migrate_with_data_preservation() {
     LATEST_BACKUP=""
   fi
   
+  # Prompt user to generate migrations if needed
+  echo ""
+  echo "🤔 Do you need to generate new migrations from schema changes?"
+  echo "   If you've modified your schema files, you should generate migrations first."
+  echo ""
+  read -p "Generate migrations now? (y/N): " -n 1 -r
+  echo
+  
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "🔄 Generating migrations from client schema..."
+    if [[ -d "../client" ]]; then
+      cd ../client
+      echo "📝 Running: npx drizzle-kit generate"
+      if npx drizzle-kit generate; then
+        echo "✅ Migration generation completed"
+        cd ../database
+      else
+        echo "❌ Failed to generate migrations"
+        cd ../database
+        return 1
+      fi
+    else
+      echo "❌ Client directory not found"
+      return 1
+    fi
+  else
+    echo "⏭️  Skipping migration generation"
+  fi
+  
   # Drop and recreate database with clean schema
   if db_exists; then
     echo "🗑️  Dropping existing database for clean migration..."
@@ -138,49 +136,50 @@ migrate_with_data_preservation() {
     return 1
   fi
   
-  # Apply fresh schema from init files
-  if [[ -f $INIT_SQL ]]; then
-    echo "🚀 Applying fresh schema from init files..."
-    if [[ -d $INIT_DIR ]]; then
-      echo "📁 Using modular SQL files from $INIT_DIR directory"
-      export PGPASSWORD="$DB_PASSWORD"
-      
-      # Try to apply schema, but capture errors for better handling
-      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
-        echo "❌ Error applying init schema. This might be due to:"
-        echo "   - Syntax errors in SQL files"
-        echo "   - Duplicate column definitions"
-        echo "   - Missing dependencies"
-        echo "💡 Please check your init/ files for issues"
-        return 1
-      fi
+  # Use Drizzle Kit to apply migrations instead of manual SQL
+  echo "🚀 Applying schema and migrations using Drizzle Kit..."
+  if [[ -d "../client" ]]; then
+    cd ../client
+    echo "📝 Running: npx drizzle-kit migrate"
+    if npx drizzle-kit migrate; then
+      echo "✅ Drizzle migrations applied successfully"
+      cd ../database
     else
-      echo "📄 Using single $INIT_SQL file"
-      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
-        echo "❌ Error applying init.sql file"
+      echo "❌ Failed to apply Drizzle migrations"
+      echo "💡 This might be because:"
+      echo "   - No migrations to apply"
+      echo "   - Database connection issues"
+      echo "   - Schema compilation errors"
+      cd ../database
+      
+      # Fallback to init files if Drizzle migration fails
+      echo "🔄 Falling back to init files..."
+      if [[ -f $INIT_SQL ]]; then
+        echo "📁 Applying init files as fallback..."
+        export PGPASSWORD="$DB_PASSWORD"
+        if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
+          echo "❌ Fallback init files also failed"
+          return 1
+        fi
+      else
+        echo "❌ No fallback init files available"
         return 1
       fi
     fi
   else
-    echo "❌ No init.sql file found for schema creation"
-    return 1
-  fi
-  
-  # Apply any pending Drizzle migrations
-  echo "🔄 Applying Drizzle migrations..."
-  if [[ -d "migrations" ]] && [[ -n "$(ls -A migrations/*.sql 2>/dev/null)" ]]; then
-    for migration_file in migrations/*.sql; do
-      if [[ -f "$migration_file" ]]; then
-        echo "  ⚡ Applying $(basename "$migration_file")..."
-        if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$migration_file" > /dev/null 2>&1; then
-          echo "  ✅ Applied $(basename "$migration_file")"
-        else
-          echo "  ⚠️  Warning: Could not apply $(basename "$migration_file") (may already be applied)"
-        fi
+    echo "❌ Client directory not found, cannot run Drizzle migrations"
+    echo "🔄 Falling back to init files..."
+    if [[ -f $INIT_SQL ]]; then
+      echo "📁 Applying init files..."
+      export PGPASSWORD="$DB_PASSWORD"
+      if ! psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" 2>&1; then
+        echo "❌ Init files failed"
+        return 1
       fi
-    done
-  else
-    echo "📝 No migration files found to apply"
+    else
+      echo "❌ No init files available"
+      return 1
+    fi
   fi
   
   # Restore data from backup if available

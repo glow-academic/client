@@ -16,11 +16,13 @@ yarn connect:migrate
 
 ## How Migration Works
 
-1. **Schema Generation**: Runs client-side schema cleanup and generates latest Drizzle migrations
-2. **Backup Creation**: If your current database has data, it creates an automatic backup
-3. **Clean Schema**: Drops the existing database and creates a fresh one with the latest schema from `init/`
-4. **Apply Migrations**: Runs any pending Drizzle migrations from the `migrations/` folder
-5. **Data Restoration**: Attempts to restore your data from the backup, handling schema conflicts gracefully
+1. **Backup Creation**: If your current database has data, it creates an automatic backup
+2. **Interactive Prompt**: Asks if you want to generate new migrations from schema changes
+3. **Schema Generation**: Optionally runs `npx drizzle-kit generate` to create new migrations
+4. **Clean Database**: Drops the existing database and creates a fresh one
+5. **Apply Migrations**: Uses `npx drizzle-kit migrate` to apply all migrations properly
+6. **Fallback Support**: Falls back to `init/` files if Drizzle migrations fail
+7. **Data Restoration**: Attempts to restore your data from the backup, handling schema conflicts gracefully
 
 ## When to Use Migration
 
@@ -93,14 +95,24 @@ To rollback a migration:
 ## Example Workflow
 
 ```bash
-# 1. Make changes to init/ folder
+# 1. Make changes to your schema files in client/
 # 2. Run migration
 yarn start:migrate
 
-# 3. Check your data
+# 3. When prompted, choose 'y' to generate new migrations if you have schema changes
+# 4. The system will use drizzle-kit migrate to apply changes properly
+# 5. Check your data
 yarn connect
 
-# 4. If something went wrong, rollback
+# 6. If something went wrong, rollback
 yarn start:clean
 # Then manually restore from history/backup_TIMESTAMP.sql
-``` 
+```
+
+## Key Benefits
+
+- **Uses Drizzle's Migration System**: Leverages `drizzle-kit migrate` for proper migration tracking
+- **Interactive Control**: You decide when to generate new migrations
+- **Proper Migration Tracking**: Drizzle maintains a `__drizzle_migrations` table to track applied migrations
+- **Fallback Safety**: Falls back to `init/` files if Drizzle migrations fail
+- **No Client Dependencies**: Runs independently from the database directory 
