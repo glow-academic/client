@@ -11,6 +11,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE TABLE rubrics (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,

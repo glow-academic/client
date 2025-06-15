@@ -58,6 +58,8 @@ CREATE TYPE profile_role AS ENUM ('admin', 'instructional', 'instructor', 'ta');
 
 CREATE TABLE profiles (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   user_id    INTEGER     NULL REFERENCES users(id) ON DELETE CASCADE,
   last_login TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   first_name TEXT        NOT NULL,

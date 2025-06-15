@@ -10,6 +10,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
   CREATE TABLE agents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     subtitle   TEXT        NOT NULL,
     description TEXT        NOT NULL,

@@ -8,6 +8,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE simulations (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   title      TEXT        NOT NULL,
   time_limit INTEGER     NULL,          -- in minutes, or no time limit
   active      BOOLEAN     NOT NULL           DEFAULT TRUE,
@@ -25,6 +26,7 @@ CREATE TABLE simulation_attempts (
 CREATE TABLE simulation_chats (
   id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
   completed_at TIMESTAMPTZ  NULL,
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,

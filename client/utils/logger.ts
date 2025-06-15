@@ -72,7 +72,7 @@ export async function logError(
       : error;
 
   if (!isProduction) {
-    logError(message, errorInfo);
+    console.error(message, errorInfo);
   }
 
   return logToDatabase("error", message, {

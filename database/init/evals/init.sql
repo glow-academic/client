@@ -11,6 +11,7 @@ CREATE TYPE eval_message_type AS ENUM ('query', 'response'); -- query or respons
 CREATE TABLE evals (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,
     base_agent_id UUID        NOT NULL REFERENCES agents(id)  ON DELETE CASCADE, -- the agent that will be used as the base for the eval
@@ -41,6 +42,7 @@ CREATE TABLE eval_runs (
   CREATE TABLE eval_chats (
     id         UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ  NOT NULL           DEFAULT NOW(),
     completed_at TIMESTAMPTZ  NULL,
     title      TEXT         NOT NULL,
     scenario_id UUID        NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE, -- the scenario that will be used for the eval

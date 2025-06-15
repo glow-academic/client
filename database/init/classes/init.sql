@@ -11,6 +11,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
   CREATE TABLE classes (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,  
     class_code TEXT        NOT NULL,
     year       INTEGER     NOT NULL,
@@ -19,9 +20,10 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
   );
 
 
-    CREATE TABLE topics (
+  CREATE TABLE topics (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,
     prerequisite  BOOLEAN     NOT NULL           DEFAULT FALSE,
@@ -31,6 +33,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     CREATE TABLE schedules (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     description TEXT        NOT NULL,
     class_id UUID        NOT NULL REFERENCES classes(id) ON DELETE CASCADE
@@ -40,6 +43,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
   CREATE TABLE events (
     id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at  TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name        TEXT        NOT NULL,
     description TEXT        NOT NULL,
     document_type document_type NULL,
@@ -51,6 +55,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
   CREATE TABLE documents (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
     name       TEXT        NOT NULL,
     file_path  TEXT        NOT NULL,
     mime_type  TEXT        NOT NULL,
