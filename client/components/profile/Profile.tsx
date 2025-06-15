@@ -5,12 +5,11 @@
  * 06/07/2025
  */
 "use client";
-import * as React from "react";
-import { Mail, GraduationCap } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { GraduationCap, Mail } from "lucide-react";
 
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -18,12 +17,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Class, ProfileRole } from "@/types";
-import { useSession } from "next-auth/react";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
+import { useSession } from "next-auth/react";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -66,18 +64,13 @@ interface ProfileProps {
 
 export function Profile({ className }: ProfileProps) {
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   // Fetch classes for assigned courses
@@ -118,7 +111,7 @@ export function Profile({ className }: ProfileProps) {
 
   // Filter classes user is assigned to
   const assignedClasses = classes.filter((cls: Class) =>
-    profile.classIds?.includes(cls.id),
+    profile.classIds?.includes(cls.id)
   );
 
   const formatClassTerm = (term: string) => {
@@ -132,7 +125,7 @@ export function Profile({ className }: ProfileProps) {
       default:
         return term;
     }
-  }
+  };
 
   return (
     <div className={className}>
@@ -145,7 +138,9 @@ export function Profile({ className }: ProfileProps) {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <CardTitle className="text-2xl">{profile.firstName + " " + profile.lastName}</CardTitle>
+              <CardTitle className="text-2xl">
+                {profile.firstName + " " + profile.lastName}
+              </CardTitle>
               <CardDescription className="flex items-center gap-2 mt-1">
                 <Mail className="h-4 w-4" />
                 {profile.alias}@purdue.edu
@@ -159,11 +154,15 @@ export function Profile({ className }: ProfileProps) {
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-muted-foreground">Last Login</p>
-              <p className="font-medium">{new Date(profile.lastLogin).toLocaleDateString()}</p>
+              <p className="font-medium">
+                {new Date(profile.lastLogin).toLocaleDateString()}
+              </p>
             </div>
             <div>
               <p className="text-muted-foreground">Account Created</p>
-              <p className="font-medium">{new Date(profile.createdAt).toLocaleDateString()}</p>
+              <p className="font-medium">
+                {new Date(profile.createdAt).toLocaleDateString()}
+              </p>
             </div>
           </div>
 
@@ -178,11 +177,15 @@ export function Profile({ className }: ProfileProps) {
                 </h3>
                 <div className="space-y-2">
                   {assignedClasses.map((cls: Class) => (
-                    <div key={cls.id} className="flex items-center justify-between p-2 rounded-md bg-muted/50">
+                    <div
+                      key={cls.id}
+                      className="flex items-center justify-between p-2 rounded-md bg-muted/50"
+                    >
                       <div>
                         <p className="font-medium">{cls.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          {cls.classCode} • {formatClassTerm(cls.term)} {cls.year}
+                          {cls.classCode} • {formatClassTerm(cls.term)}{" "}
+                          {cls.year}
                         </p>
                       </div>
                       <Badge variant="outline">{cls.classCode}</Badge>

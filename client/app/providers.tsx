@@ -1,15 +1,17 @@
 // app/providers.tsx
 "use client";
 
+import { RoleProvider } from "@/contexts/role-context";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { createQueryClient } from "@/utils/react-query/queryClient";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+} from "@tanstack/react-query";
+import { SessionProvider, useSession } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
-import { RoleProvider } from "@/contexts/role-context";
-import { useQuery } from "@tanstack/react-query";
-import { useSession, SessionProvider } from 'next-auth/react';
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 const ReactQueryClientProvider = ({
   children,
@@ -25,18 +27,13 @@ const ReactQueryClientProvider = ({
 // Wrapper component to provide role context with user data
 const RoleProviderWrapper = ({ children }: { children: React.ReactNode }) => {
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   return <RoleProvider ProfileRole={profile?.role}>{children}</RoleProvider>;

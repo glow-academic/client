@@ -3,6 +3,7 @@ import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { Pool } from "pg";
+import { getProfileByAlias } from "./utils/auth/get-profile-by-alias";
 import { db_url } from "./utils/drizzle/database";
 import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
@@ -36,33 +37,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return;
         }
 
-        // Get user info from Microsoft profile (available in the session)
-        const nameParts = user.name?.split(" ") || [];
-        const firstName = nameParts[0] || "Unknown";
-        const lastName = nameParts[nameParts.length - 1] || "User";
+        // Extract alias from email
         const alias = user.email.split("@")[0];
 
-        logInfo("Creating profile for new user:", {
-          userId: user.id,
-          email: user.email,
-        });
+        // Check if a profile already exists with this alias (pre-seeded profile)
+        const existingProfile = await getProfileByAlias(alias || "");
 
-        await createProfile({
-          userId: parseInt(user.id!),
-          firstName: firstName,
-          lastName: lastName,
-          alias: alias || "",
-          viewedIntro: false,
-          role: "ta",
-          classIds: [],
-        });
+        if (existingProfile && !existingProfile.userId) {
+          // Link the existing profile to this new user
+          await updateProfile(existingProfile.id, {
+            userId: parseInt(user.id!),
+            lastLogin: new Date().toISOString(),
+          });
 
-        logInfo("Profile created successfully for user:", {
-          userId: user.id,
-          email: user.email,
-        });
+          logInfo("Linked existing profile to new user:", {
+            profileId: existingProfile.id,
+            userId: user.id,
+            email: user.email,
+            alias: alias,
+          });
+        } else {
+          // Create a new profile for this user
+          const nameParts = user.name?.split(" ") || [];
+          const firstName = nameParts[0] || "Unknown";
+          const lastName = nameParts[nameParts.length - 1] || "User";
+
+          await createProfile({
+            userId: parseInt(user.id!),
+            firstName: firstName,
+            lastName: lastName,
+            alias: alias || "",
+            viewedIntro: false,
+            role: "ta",
+            classIds: [],
+          });
+
+          logInfo("Created new profile for user:", {
+            userId: user.id,
+            email: user.email,
+            alias: alias,
+          });
+        }
       } catch (error) {
-        logError("Error creating profile for new user:", error);
+        logError("Error handling new user:", error);
       }
     },
     async signIn({ user, profile, isNewUser }) {
@@ -78,7 +95,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             profile?.name?.split(" ") || user.name?.split(" ") || [];
           const firstName = nameParts[0] || "Unknown";
           const lastName = nameParts[nameParts.length - 1] || "User";
-          const alias = user.email.split("@")[0];
 
           logInfo("Updating existing user profile:", {
             userId: user.id,
@@ -93,7 +109,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             await updateProfile(userProfile.id, {
               firstName: firstName,
               lastName: lastName,
-              alias: alias || "",
               lastLogin: new Date().toISOString(),
             });
 
@@ -101,21 +116,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               profileId: userProfile.id,
               userId: user.id,
               email: user.email,
-            });
-          } else {
-            // Profile doesn't exist, create one
-            logInfo("Creating profile for existing user without profile:", {
-              userId: user.id,
-              email: user.email,
-            });
-            await createProfile({
-              userId: parseInt(user.id!),
-              firstName: firstName,
-              lastName: lastName,
-              alias: alias || "",
-              viewedIntro: false,
-              role: "ta",
-              classIds: [],
             });
           }
         }

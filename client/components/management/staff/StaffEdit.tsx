@@ -37,12 +37,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Class as ClassData, Profile, ProfileRole } from "@/types";
+import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
 import { updateProfile } from "@/utils/mutations/profiles/update-profile";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -56,7 +56,6 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 export default function StaffEdit({ profileId }: { profileId: string }) {
   const queryClient = useQueryClient();
@@ -73,20 +72,14 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
 
   // Get current user's profile to check if they're admin
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user, isLoading: isUserLoading } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-    enabled: !!userEmail,
-  });
+  const userId = session.data?.user?.id;
 
   const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } =
     useQuery({
-      queryKey: ["profile", userEmail],
-      queryFn: () => getProfilesByUser(user!.id!),
+      queryKey: ["profile", userId],
+      queryFn: () => getProfilesByUser(parseInt(userId!)),
       select: (data) => data[0],
-      enabled: !!user,
+      enabled: !!userId,
     });
 
   // Fetch all users to find the target user
@@ -110,7 +103,6 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
   const isLoading =
     isProfilesLoading ||
     isClassesLoading ||
-    isUserLoading ||
     isCurrentUserProfileLoading;
   const isDataReady = !isLoading && targetUser;
 
@@ -143,7 +135,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userEmail] });
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User updated successfully");
       router.push("/management/staff");
     } catch (error) {
@@ -159,7 +151,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
       await deleteProfile(profileId);
       queryClient.invalidateQueries({ queryKey: ["profiles"] });
       queryClient.invalidateQueries({ queryKey: ["classes"] });
-      queryClient.invalidateQueries({ queryKey: ["profile", userEmail] });
+      queryClient.invalidateQueries({ queryKey: ["profile", userId] });
       toast.success("User deleted successfully");
       router.push("/management/staff");
     } catch (error) {

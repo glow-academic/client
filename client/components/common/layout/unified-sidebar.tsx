@@ -34,10 +34,10 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import { useRole } from "@/contexts/role-context";
+import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
@@ -59,7 +59,6 @@ import { signOut, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import * as React from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -138,18 +137,13 @@ export function UnifiedSidebar({
   // Use the role context instead of local state
   const { effectiveRole, setRole } = useRole();
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   // Fetch classes for dynamic menu

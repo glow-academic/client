@@ -24,7 +24,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
 import { useSession } from "next-auth/react";
@@ -49,18 +48,13 @@ export function useColumns({
   showExport?: boolean;
 }) {
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -690,13 +684,13 @@ export function useColumns({
   let data: unknown[] = enhancedAttempts || [];
 
   // Apply filtering based on showAll parameter
-  if (!showAll && user) {
+  if (!showAll && profile) {
     // If showAll is false, filter to show only current user's data
     data = data.filter(
       (attempt: unknown) =>
         (attempt as Record<string, unknown>)["profileId"] === profile?.id
     );
-  } else if (!user) {
+  } else if (!profile) {
     // If there's no user, show empty data
     data = [];
   }

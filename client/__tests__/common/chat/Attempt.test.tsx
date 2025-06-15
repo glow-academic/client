@@ -28,11 +28,6 @@ vi.mock("sonner", () => ({
   },
 }));
 
-// Mock all the query functions
-vi.mock("@/utils/user/get-user-by-email", () => ({
-  getUserByEmail: vi.fn(),
-}));
-
 vi.mock("@/utils/queries/profiles/get-profiles-by-user", () => ({
   getProfilesByUser: vi.fn(),
 }));
@@ -141,7 +136,6 @@ import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 // Mock data
 const mockAttempt = {
@@ -238,15 +232,6 @@ describe("Attempt Component", () => {
       },
       status: "authenticated",
       update: vi.fn(),
-    });
-
-    // Mock all query functions with properly typed data
-    vi.mocked(getUserByEmail).mockResolvedValue({
-      id: 1,
-      name: "John Doe",
-      email: "redacted@purdue.edu",
-      emailVerified: null,
-      image: null,
     });
 
     vi.mocked(getProfilesByUser).mockResolvedValue([

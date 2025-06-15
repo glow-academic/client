@@ -20,17 +20,6 @@ vi.mock("next-auth/react", () => ({
   SessionProvider: ({ children }: { children: ReactNode }) => children,
 }));
 
-// Mock getUserByEmail
-vi.mock("@/utils/user/get-user-by-email", () => ({
-  getUserByEmail: vi.fn(() =>
-    Promise.resolve({
-      id: "test-user-id",
-      name: "Test User",
-      email: "test@example.com",
-    })
-  ),
-}));
-
 // Mock the query functions
 vi.mock("@/utils/queries/profiles/get-all-profiles", () => ({
   getAllProfiles: vi.fn(() =>

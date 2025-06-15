@@ -5,11 +5,12 @@
  * 06/07/2025
  */
 "use client";
-import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { TrendingUp, Brain, Target, Clock, MessageSquare } from "lucide-react";
+import { Brain, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -25,17 +26,15 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationAttemptsByProfile } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useSession } from "next-auth/react";
-import { getSimulationAttemptsByProfile } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profile";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 
 const chartConfig = {
   score: {
@@ -62,18 +61,13 @@ const chartConfig = {
 
 export default function Growth() {
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -87,7 +81,7 @@ export default function Growth() {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -121,7 +115,7 @@ export default function Growth() {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -137,17 +131,17 @@ export default function Growth() {
 
     // Calculate overall score from grades
     const avgScore = Math.round(
-      grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length,
+      grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length
     );
 
     // Calculate skill-based scores from feedbacks and standards
     const skillScores = standardGroups.reduce(
       (acc, group) => {
         const groupStandards = standards.filter(
-          (s) => s.standardGroupId === group.id,
+          (s) => s.standardGroupId === group.id
         );
         const groupFeedbacks = feedbacks.filter((f) =>
-          groupStandards.some((s) => s.id === f.standardId),
+          groupStandards.some((s) => s.id === f.standardId)
         );
 
         if (groupFeedbacks.length > 0) {
@@ -155,14 +149,14 @@ export default function Growth() {
             (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length /
               Math.max(...groupStandards.map((s) => s.points))) *
-            100,
+              100
           );
           acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
         }
 
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number>
     );
 
     // Calculate time management score from grades (inverse of time taken, normalized)
@@ -170,7 +164,7 @@ export default function Growth() {
       grades.reduce((sum, grade) => sum + grade.timeTaken, 0) / grades.length;
     const timeManagementScore = Math.max(
       0,
-      Math.min(100, 100 - avgTimeTaken / 3600),
+      Math.min(100, 100 - avgTimeTaken / 3600)
     ); // Normalize based on hours
 
     // Calculate engagement score based on interaction frequency and completion
@@ -187,12 +181,12 @@ export default function Growth() {
       },
       {
         metric: "Adaptability",
-        value: skillScores['adaptability'] || skillScores['flexibility'] || 50,
+        value: skillScores["adaptability"] || skillScores["flexibility"] || 50,
         fullMark: 100,
       },
       {
         metric: "Listening Skills",
-        value: skillScores['listening'] || skillScores['communication'] || 50,
+        value: skillScores["listening"] || skillScores["communication"] || 50,
         fullMark: 100,
       },
       {
@@ -215,7 +209,7 @@ export default function Growth() {
     // Sort grades by creation date
     const sortedGrades = [...grades].sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
 
     const recentCount = Math.min(5, Math.floor(sortedGrades.length / 2));
@@ -288,14 +282,15 @@ export default function Growth() {
           <CardContent>
             <div className="flex items-center">
               <div
-                className={`text-2xl font-bold ${(growthData.find((d) => d.metric === "Overall Score")
-                  ?.value ?? 0) >= 80
-                  ? "text-green-600"
-                  : (growthData.find((d) => d.metric === "Overall Score")
-                    ?.value ?? 0) >= 60
-                    ? "text-amber-600"
-                    : "text-red-600"
-                  }`}
+                className={`text-2xl font-bold ${
+                  (growthData.find((d) => d.metric === "Overall Score")
+                    ?.value ?? 0) >= 80
+                    ? "text-green-600"
+                    : (growthData.find((d) => d.metric === "Overall Score")
+                          ?.value ?? 0) >= 60
+                      ? "text-amber-600"
+                      : "text-red-600"
+                }`}
               >
                 {growthData.find((d) => d.metric === "Overall Score")?.value ??
                   0}
@@ -408,18 +403,20 @@ export default function Growth() {
             </RadarChart>
           </ChartContainer>
         </CardContent>
-        {growthData.length > 0 && <CardFooter className="flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none font-medium">
-            {growthTrend.isPositive ? "Trending up" : "Needs attention"}
-            {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
-            <TrendingUp
-              className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
-            />
-          </div>
-          <div className="text-muted-foreground flex items-center gap-2 leading-none">
-            Based on recent teaching sessions
-          </div>
-        </CardFooter>}
+        {growthData.length > 0 && (
+          <CardFooter className="flex-col gap-2 text-sm">
+            <div className="flex items-center gap-2 leading-none font-medium">
+              {growthTrend.isPositive ? "Trending up" : "Needs attention"}
+              {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
+              <TrendingUp
+                className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
+              />
+            </div>
+            <div className="text-muted-foreground flex items-center gap-2 leading-none">
+              Based on recent teaching sessions
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

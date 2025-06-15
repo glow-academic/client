@@ -5,6 +5,7 @@
  * 05/14/2025
  */
 "use client";
+import { logError } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -20,7 +21,6 @@ import {
 import { useRouter } from "next/navigation";
 import React, { useCallback, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 import {
   Card,
@@ -51,9 +51,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
-import { Agent, Scenario, Simulation, StandardGroup, Standard } from "@/types";
-import { logInfo } from "@/utils/logger";
+import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
+import { logInfo } from "@/utils/logger";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
@@ -66,7 +66,6 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useSession } from "next-auth/react";
 import SimulationHistory from "../common/history/SimulationHistory";
 
@@ -97,9 +96,8 @@ const RubricModal = React.memo(
     )?.rubricId;
 
     const rubricStandardGroups =
-      standardGroups?.filter(
-        (group) => group.rubricId === simulationRubric
-      ) || [];
+      standardGroups?.filter((group) => group.rubricId === simulationRubric) ||
+      [];
 
     // Create rubric data structure for table display
     const rubricData = rubricStandardGroups.map((group) => {
@@ -160,38 +158,45 @@ const RubricModal = React.memo(
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {rubricData.map((group: { groupName: string; groupDescription: string; standards: Standard[] }) =>
-                      group.standards.map(
-                        (standard: Standard, standardIndex: number) => (
-                          <TableRow
-                            key={`${group.groupName}-${standard.id}`}
-                            className={
-                              standardIndex % 2 === 0 ? "" : "bg-secondary/20"
-                            }
-                          >
-                            <TableCell className="font-medium">
-                              {standard.name || group.groupName}
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                              {standard.description ||
-                                "Excellent performance in this criteria"}
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                              Good performance with minor areas for improvement
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                              Acceptable performance meeting basic requirements
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                              Marginal performance with significant areas
-                              needing improvement
-                            </TableCell>
-                            <TableCell className="whitespace-normal text-xs">
-                              Poor performance not meeting minimum standards
-                            </TableCell>
-                          </TableRow>
+                    {rubricData.map(
+                      (group: {
+                        groupName: string;
+                        groupDescription: string;
+                        standards: Standard[];
+                      }) =>
+                        group.standards.map(
+                          (standard: Standard, standardIndex: number) => (
+                            <TableRow
+                              key={`${group.groupName}-${standard.id}`}
+                              className={
+                                standardIndex % 2 === 0 ? "" : "bg-secondary/20"
+                              }
+                            >
+                              <TableCell className="font-medium">
+                                {standard.name || group.groupName}
+                              </TableCell>
+                              <TableCell className="whitespace-normal text-xs">
+                                {standard.description ||
+                                  "Excellent performance in this criteria"}
+                              </TableCell>
+                              <TableCell className="whitespace-normal text-xs">
+                                Good performance with minor areas for
+                                improvement
+                              </TableCell>
+                              <TableCell className="whitespace-normal text-xs">
+                                Acceptable performance meeting basic
+                                requirements
+                              </TableCell>
+                              <TableCell className="whitespace-normal text-xs">
+                                Marginal performance with significant areas
+                                needing improvement
+                              </TableCell>
+                              <TableCell className="whitespace-normal text-xs">
+                                Poor performance not meeting minimum standards
+                              </TableCell>
+                            </TableRow>
+                          )
                         )
-                      )
                     )}
                   </TableBody>
                 </Table>
@@ -604,18 +609,13 @@ export default function Home() {
   const { effectiveRole } = useRole();
 
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   // Fetch classes and simulations

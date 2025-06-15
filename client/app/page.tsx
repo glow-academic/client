@@ -8,7 +8,6 @@
 import { Button } from "@/components/ui/button";
 import { logError, logInfo } from "@/utils/logger";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useQuery } from "@tanstack/react-query";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -131,18 +130,13 @@ export default function Home() {
   const router = useRouter();
 
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: profile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   const handleMicrosoftLogin = async () => {

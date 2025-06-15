@@ -32,12 +32,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Class as ClassData } from "@/types";
+import { logError, logInfo } from "@/utils/logger";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "@/utils/user/get-user-by-email";
 import { useSession } from "next-auth/react";
-import { logError, logInfo } from "@/utils/logger";
-import { Class as ClassData } from "@/types";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -109,18 +108,13 @@ export default function NewStaff() {
 
   // Get current user's profile to check if they're admin
   const session = useSession();
-  const userEmail = session.data?.user?.email;
-
-  const { data: user } = useQuery({
-    queryKey: ["user", userEmail],
-    queryFn: () => getUserByEmail(userEmail!),
-  });
+  const userId = session.data?.user?.id;
 
   const { data: currentUserProfile } = useQuery({
-    queryKey: ["profile", userEmail],
-    queryFn: () => getProfilesByUser(user!.id!),
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
     select: (data) => data[0],
-    enabled: !!user,
+    enabled: !!userId,
   });
 
   // Fetch all classes for multi-select
@@ -364,7 +358,7 @@ export default function NewStaff() {
                   <p className="text-sm text-muted-foreground text-center py-4">
                     No classes available
                   </p>
-                ) : ( 
+                ) : (
                   <div className="space-y-3">
                     {allClasses.map((classItem: ClassData) => (
                       <div
