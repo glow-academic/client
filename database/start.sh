@@ -207,6 +207,14 @@ if [[ "$MIGRATE_DB" == true ]]; then
   setup_database
   start_fresh_from_init
   
+  # Pull latest schema from database first
+  echo "📥 Pulling latest schema from database..."
+  if npx drizzle-kit pull; then
+    echo "✅ Latest schema pulled successfully"
+  else
+    echo "⚠️  Pull failed, continuing with existing schema"
+  fi
+  
   # Generate migrations with interactive diff
   echo "🔍 Generating migrations (interactive diff will show)..."
   if npx drizzle-kit generate; then
