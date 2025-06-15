@@ -1,3 +1,4 @@
+import { logError, logInfo } from "@/utils/logger";
 import PostgresAdapter from "@auth/pg-adapter";
 import NextAuth from "next-auth";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
@@ -5,10 +6,7 @@ import { Pool } from "pg";
 import { db_url } from "./utils/drizzle/database";
 import { createProfile } from "./utils/mutations/profiles/create-profile";
 import { updateProfile } from "./utils/mutations/profiles/update-profile";
-import { createUser } from "./utils/mutations/users/create-user";
 import { getProfilesByUser } from "./utils/queries/profiles/get-profiles-by-user";
-import { getUserByEmail } from "./utils/user/get-user-by-email";
-import { logError, logInfo } from "@/utils/logger";
 
 const clientId = process.env["AUTH_MICROSOFT_ENTRA_ID_ID"] || "";
 const clientSecret = process.env["AUTH_MICROSOFT_ENTRA_ID_SECRET"] || "";
@@ -30,58 +28,68 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   secret: secret,
-  callbacks: {
-    async signIn({ user, profile }) {
+  events: {
+    async createUser({ user }) {
       try {
-        if (!user.id || !user.email) {
-          logError("Missing required user data:", {
-            id: user.id,
-            email: user.email,
-          });
-          return false;
+        if (!user.email) {
+          logError("Missing email for new user:", { userId: user.id });
+          return;
         }
 
-        // split the name into first, middle and last, and just take the first and last
-        const nameParts = profile?.name?.split(" ");
-        const firstName = nameParts?.[0] || "Unknown";
-        const lastName = nameParts?.[nameParts.length - 1] || "User";
-
-        // remove @onwards from the email
+        // Get user info from Microsoft profile (available in the session)
+        const nameParts = user.name?.split(" ") || [];
+        const firstName = nameParts[0] || "Unknown";
+        const lastName = nameParts[nameParts.length - 1] || "User";
         const alias = user.email.split("@")[0];
 
-        const userId = parseInt(user.id);
+        logInfo("Creating profile for new user:", {
+          userId: user.id,
+          email: user.email,
+        });
 
-        const databaseUser = await getUserByEmail(user.email);
+        await createProfile({
+          userId: parseInt(user.id!),
+          firstName: firstName,
+          lastName: lastName,
+          alias: alias || "",
+          viewedIntro: false,
+          role: "ta",
+          classIds: [],
+        });
 
-        if (!databaseUser) {
-          logInfo("Creating user:", { id: userId, email: user.email });
-          await createUser({
-            id: userId,
-            email: user.email,
-          });
+        logInfo("Profile created successfully for user:", {
+          userId: user.id,
+          email: user.email,
+        });
+      } catch (error) {
+        logError("Error creating profile for new user:", error);
+      }
+    },
+    async signIn({ user, profile, isNewUser }) {
+      try {
+        if (!user.email) {
+          logError("Missing email during sign in:", { userId: user.id });
+          return;
+        }
 
-          await createProfile({
-            userId: userId,
-            firstName: firstName,
-            lastName: lastName,
-            alias: alias || "",
-            viewedIntro: false,
-            role: "ta",
-            classIds: [],
-          });
-        } else {
-          logInfo("User exists, updating profile:", {
-            existingUserId: databaseUser.id,
-            microsoftId: userId,
+        // If this is not a new user, update their profile with latest info
+        if (!isNewUser) {
+          const nameParts =
+            profile?.name?.split(" ") || user.name?.split(" ") || [];
+          const firstName = nameParts[0] || "Unknown";
+          const lastName = nameParts[nameParts.length - 1] || "User";
+          const alias = user.email.split("@")[0];
+
+          logInfo("Updating existing user profile:", {
+            userId: user.id,
             email: user.email,
           });
 
           // Get the user's profile to update it
-          const userProfiles = await getProfilesByUser(databaseUser.id);
+          const userProfiles = await getProfilesByUser(parseInt(user.id!));
           const userProfile = userProfiles[0];
 
           if (userProfile) {
-            // Update the profile with the latest information from Microsoft
             await updateProfile(userProfile.id, {
               firstName: firstName,
               lastName: lastName,
@@ -91,17 +99,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             logInfo("Updated existing user profile:", {
               profileId: userProfile.id,
-              userId: databaseUser.id,
+              userId: user.id,
               email: user.email,
             });
           } else {
             // Profile doesn't exist, create one
-            logInfo("Creating profile for existing user:", {
-              userId: databaseUser.id,
+            logInfo("Creating profile for existing user without profile:", {
+              userId: user.id,
               email: user.email,
             });
             await createProfile({
-              userId: databaseUser.id,
+              userId: parseInt(user.id!),
               firstName: firstName,
               lastName: lastName,
               alias: alias || "",
@@ -111,12 +119,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
           }
         }
-
-        return true;
       } catch (error) {
-        logError("Error in signIn callback:", error);
-        return false;
+        logError("Error in signIn event:", error);
       }
+    },
+  },
+  callbacks: {
+    async session({ session, user }) {
+      // Add user ID to session for easier access
+      if (session.user && user?.id) {
+        session.user.id = user.id;
+      }
+      return session;
     },
   },
 });

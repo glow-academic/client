@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/check-schema-changes.js && npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node scripts/generate-component-tests.js && next dev",
     "dev:skip-check": "npx drizzle-kit pull && node scripts/generate-types.js && node scripts/generate-queries-mutations.js --pull && node scripts/clean-schema.js && node scripts/generate-component-tests.js && next dev",
-    "build": "next lint --fix && NODE_ENV=production next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
