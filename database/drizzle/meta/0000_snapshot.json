@@ -944,8 +944,8 @@
           "primaryKey": false,
           "notNull": true
         },
-        "message": {
-          "name": "message",
+        "message_test": {
+          "name": "message_test",
           "type": "text",
           "primaryKey": false,
           "notNull": false

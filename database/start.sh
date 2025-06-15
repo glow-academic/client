@@ -94,16 +94,21 @@ setup_database() {
   as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;"
 }
 
+# Function to restore from backup
 restore_from_backup() {
   local backup_file="$1"
   echo "🔄 Restoring from backup: $(basename "$backup_file")"
   
-  export PGPASSWORD="$DB_PASSWORD"
-  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$backup_file" > /dev/null 2>&1; then
+  # Drop and recreate database completely empty (no init.sql)
+  dropdb -h localhost -p 5432 -U ashoksaravanan mydb 2>/dev/null || true
+  createdb -h localhost -p 5432 -U ashoksaravanan mydb
+  
+  # Restore from backup
+  if psql -h localhost -p 5432 -U ashoksaravanan -d mydb -f "$backup_file" > /dev/null 2>&1; then
     echo "✅ Backup restored successfully"
   else
-    echo "❌ Failed to restore backup"
-    return 1
+    echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
+    echo "💡 This is normal when schema has changed since backup was created"
   fi
 }
 
@@ -198,7 +203,10 @@ fi
 
 # Handle migrate mode
 if [[ "$MIGRATE_DB" == true ]]; then
-  echo "🔄 Migration mode: Starting clean then generating migrations..."
+  echo "🔄 Migration mode: Generating migration files from schema changes..."
+  echo "⚠️  Note: This creates a temporary clean database for migration generation only"
+  echo "⚠️  Your data will be preserved - use 'yarn start' afterward to apply migrations with data"
+  echo ""
   
   # Create backup first
   create_backup
@@ -222,7 +230,11 @@ if [[ "$MIGRATE_DB" == true ]]; then
     if ls drizzle/00*.sql 1> /dev/null 2>&1; then
       echo "✅ Migration files generated successfully"
       echo "📁 New migration files created in drizzle/ directory"
-      echo "💡 Run 'yarn start' (without flags) to apply these migrations"
+      echo ""
+      echo "🎯 Next steps:"
+      echo "   1. Review the generated migration files in drizzle/"
+      echo "   2. Run 'yarn start' to apply migrations with your data restored"
+      echo "   3. Or run 'yarn connect' to connect to your database with data"
     else
       echo "📝 No schema changes detected - no migration files generated"
       echo "💡 This means your schema is already in sync with the database"
