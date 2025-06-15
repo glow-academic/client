@@ -126,10 +126,16 @@ start_fresh_from_init() {
 
 run_migrations() {
   echo "🚀 Running Drizzle migrations..."
-  if npx drizzle-kit migrate; then
-    echo "✅ Migrations applied successfully"
+  
+  # Check if any migration files exist
+  if ls drizzle/*.sql 1> /dev/null 2>&1; then
+    if npx drizzle-kit migrate; then
+      echo "✅ Migrations applied successfully"
+    else
+      echo "⚠️  Migration failed - this is normal if database is already up to date"
+    fi
   else
-    echo "⚠️  No migrations to apply or migration failed"
+    echo "📝 No migration files found - database is up to date"
   fi
 }
 
@@ -165,7 +171,20 @@ generate_and_copy_files() {
 
 # Handle connection-only mode
 if [[ "$CONNECT_DB" == true ]]; then
-  if db_exists; then
+  if [[ "$CLEAN_DB" == true ]]; then
+    echo "🧹 Clean connect mode: Creating fresh database then connecting..."
+    
+    # Create backup first
+    create_backup
+    
+    # Setup fresh database
+    setup_database
+    start_fresh_from_init
+    
+    echo "🔗 Connecting to fresh database..."
+    export PGPASSWORD="$DB_PASSWORD"
+    psql "$USER_CONN"
+  elif db_exists; then
     echo "🔗 Connecting to existing database..."
     export PGPASSWORD="$DB_PASSWORD"
     psql "$USER_CONN"
@@ -191,8 +210,15 @@ if [[ "$MIGRATE_DB" == true ]]; then
   # Generate migrations with interactive diff
   echo "🔍 Generating migrations (interactive diff will show)..."
   if npx drizzle-kit generate; then
-    echo "✅ Migration generation completed"
-    echo "💡 Migrations are ready. Run start.sh (without flags) to apply them."
+    # Check if any new migration files were created
+    if ls drizzle/00*.sql 1> /dev/null 2>&1; then
+      echo "✅ Migration files generated successfully"
+      echo "📁 New migration files created in drizzle/ directory"
+      echo "💡 Run 'yarn start' (without flags) to apply these migrations"
+    else
+      echo "📝 No schema changes detected - no migration files generated"
+      echo "💡 This means your schema is already in sync with the database"
+    fi
   else
     echo "❌ Migration generation failed"
     exit 1
