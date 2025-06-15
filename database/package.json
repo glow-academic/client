@@ -7,8 +7,10 @@
   "scripts": {
     "start": "bash start.sh",
     "start:clean": "bash start.sh --clean",
+    "start:migrate": "bash start.sh --migrate",
     "connect": "bash start.sh --connect",
     "connect:clean": "bash start.sh --connect --clean",
+    "connect:migrate": "bash start.sh --connect --migrate",
     "query": "bash sql-helpers.sh",
     "tables": "bash sql-helpers.sh tables",
     "users": "bash sql-helpers.sh users",
