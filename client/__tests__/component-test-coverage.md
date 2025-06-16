@@ -1,6 +1,6 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-15T01:21:15.684Z
+Generated on: 2025-06-16T10:02:42.221Z
 
 ## Summary
 - **Total Components**: 59
@@ -12,7 +12,7 @@ Generated on: 2025-06-15T01:21:15.684Z
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
-| Logs | analytics/Logs.tsx | Logs.test.tsx | ✅ Implemented |
+| History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
 | Performance | analytics/Performance.tsx | Performance.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
@@ -77,7 +77,7 @@ Generated on: 2025-06-15T01:21:15.684Z
 ```
 __tests__/
 ├── analytics/
-│   ├── Logs.test.tsx
+│   ├── History.test.tsx
 │   ├── Overview.test.tsx
 │   ├── Performance.test.tsx
 │   ├── Reports.test.tsx

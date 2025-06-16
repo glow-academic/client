@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"next dev\" \"node scripts/generate-component-tests.js\"",
+    "dev:next": "next dev",
+    "generate-tests": "node scripts/generate-component-tests.js",
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint",
