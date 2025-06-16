@@ -35,13 +35,13 @@ import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
 import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
+import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { logError } from "@/utils/logger";
 
 interface ScenarioProps {
   scenarioId?: string;
@@ -159,28 +159,28 @@ export default function Scenario({
       id: "freshman",
       name: "Freshman",
       description: "First-year student level",
-      type: "Scenarios" as const,
+      type: "Seniority" as const,
       strengths: "Basic understanding, eager to learn",
     },
     {
       id: "sophomore",
       name: "Sophomore",
       description: "Second-year student level",
-      type: "Scenarios" as const,
+      type: "Seniority" as const,
       strengths: "Some foundation knowledge, building confidence",
     },
     {
       id: "junior",
       name: "Junior",
       description: "Third-year student level",
-      type: "Scenarios" as const,
+      type: "Seniority" as const,
       strengths: "Solid foundation, more independent learning",
     },
     {
       id: "senior",
       name: "Senior",
       description: "Fourth-year student level",
-      type: "Scenarios" as const,
+      type: "Seniority" as const,
       strengths: "Advanced knowledge, preparing for career",
     },
   ];
@@ -224,11 +224,11 @@ export default function Scenario({
     handleInputChange("classId", model.id === "" ? "" : model.id);
   };
 
-  const handleDocumentSelect = (model: Model) => {
-    if (model.id === "") return; // Don't add empty selections for documents
-    if (!formData.documents.includes(model.id)) {
-      handleInputChange("documents", [...formData.documents, model.id]);
-    }
+  const handleDocumentSelect = (models: Model[]) => {
+    const documentIds = models
+      .map((model) => model.id)
+      .filter((id) => id !== "");
+    handleInputChange("documents", documentIds);
   };
 
   const handleSenioritySelect = (model: Model) => {
@@ -243,13 +243,6 @@ export default function Scenario({
       );
       setSeniorityExplicitlySet(true);
     }
-  };
-
-  const removeDocument = (documentId: string) => {
-    handleInputChange(
-      "documents",
-      formData.documents.filter((id) => id !== documentId)
-    );
   };
 
   const validateForm = (): boolean => {
@@ -578,19 +571,122 @@ export default function Scenario({
               />
 
               {/* Document Selection */}
-              <ScenarioPicker
-                models={documentModels}
-                types={["Documents"]}
-                label="Documents"
-                placeholder="Select documents..."
-                description="Choose documents that will be available during this scenario."
-                onSelect={handleDocumentSelect}
-              />
+              <div className="space-y-2">
+                <ScenarioPicker
+                  models={documentModels}
+                  types={["Documents"]}
+                  label="Documents"
+                  placeholder="Select documents..."
+                  description="Choose documents that will be available during this scenario."
+                  multiSelect={true}
+                  hideSelectedChips={true}
+                  selectedModels={selectedDocuments.map((doc) => ({
+                    id: doc.id,
+                    name: doc.name,
+                    description: `${doc.type} document`,
+                    type: "Documents" as const,
+                    strengths: doc.mimeType,
+                  }))}
+                  onMultiSelect={handleDocumentSelect}
+                />
+
+                {/* Document Selection Preview */}
+                {selectedDocuments.length > 0 && (
+                  <HoverCard openDelay={200}>
+                    <HoverCardTrigger asChild>
+                      <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-md border border-dashed cursor-pointer hover:bg-secondary/70 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="text-sm font-medium">
+                            {selectedDocuments[0]?.name} +{" "}
+                            {selectedDocuments.length - 1} more
+                          </span>
+                        </div>
+                      </div>
+                    </HoverCardTrigger>
+                    <HoverCardContent
+                      align="start"
+                      className="w-80 max-h-60 overflow-y-auto"
+                      side="right"
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">
+                            Selected Documents
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">
+                              {selectedDocuments.length} item
+                              {selectedDocuments.length !== 1 ? "s" : ""}
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleInputChange("documents", [])}
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
+                              title="Remove all documents"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          {selectedDocuments.map((doc, index) => (
+                            <div
+                              key={doc.id}
+                              className="flex items-start gap-3 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors group"
+                            >
+                              <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded flex items-center justify-center mt-0.5">
+                                <span className="text-xs font-medium text-blue-700">
+                                  {index + 1}
+                                </span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div
+                                  className="font-medium text-sm truncate"
+                                  title={doc.name}
+                                >
+                                  {doc.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-0.5">
+                                  {doc.type} • {doc.mimeType}
+                                </div>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  const newDocuments = selectedDocuments.filter(
+                                    (d) => d.id !== doc.id
+                                  );
+                                  handleInputChange(
+                                    "documents",
+                                    newDocuments.map((d) => d.id)
+                                  );
+                                }}
+                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                                title={`Remove ${doc.name}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                        {selectedDocuments.length > 5 && (
+                          <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                            Showing all {selectedDocuments.length} documents
+                          </div>
+                        )}
+                      </div>
+                    </HoverCardContent>
+                  </HoverCard>
+                )}
+              </div>
 
               {/* Seniority Selection */}
               <ScenarioPicker
                 models={seniorityModels}
-                types={["Scenarios"]}
+                types={["Seniority"]}
                 label="Seniority"
                 placeholder="Select student seniority"
                 description="Choose the academic level of the student"
@@ -787,32 +883,6 @@ export default function Scenario({
                   </div>
 
                   {/* Action Buttons - Aligned horizontally */}
-
-                  {/* Selected Documents Display */}
-                  {selectedDocuments.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>
-                        Selected Documents ({selectedDocuments.length})
-                      </Label>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedDocuments.map((doc) => (
-                          <div
-                            key={doc.id}
-                            className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-md text-sm"
-                          >
-                            <span>{doc.name}</span>
-                            <button
-                              type="button"
-                              onClick={() => removeDocument(doc.id)}
-                              className="text-muted-foreground hover:text-destructive"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

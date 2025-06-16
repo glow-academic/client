@@ -18,7 +18,7 @@ class DrizzleMigrations(_Base, table=True):
         PrimaryKeyConstraint('id', name='__drizzle_migrations_pkey'),
     )
 
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, Sequence('__drizzle_migrations_id_seq4'), primary_key=True))
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, Sequence('__drizzle_migrations_id_seq5'), primary_key=True))
     hash: str = Field(sa_column=Column('hash', Text))
     created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
 
@@ -167,6 +167,7 @@ class Documents(_Base, table=True):
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
     type: str = Field(sa_column=Column('type', Enum('homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus', name='document_type'), server_default=text("'homework'::document_type")))
     classified: bool = Field(sa_column=Column('classified', Boolean, server_default=text('false')))
+    file_id: Optional[str] = Field(default=None, sa_column=Column('file_id', Text))
 
     class_: Optional['Classes'] = Relationship(back_populates='documents')
 
@@ -428,6 +429,7 @@ class SimulationChats(_Base, table=True):
     attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
+    trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
 
     attempt: Optional['SimulationAttempts'] = Relationship(back_populates='simulation_chats')
     scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_chats')
