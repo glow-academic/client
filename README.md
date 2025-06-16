@@ -2,108 +2,72 @@
 
 AI student profiles to help graduate teaching assistants learn.
 
-## Overview
+## 🚀 Quick Start
 
-GLOW provides AI student profiles to assist graduate teaching assistants in their learning journey.
-
-## Getting Started
-
-
-### Quick Start (Recommended)
-
-The easiest way to start the entire development environment:
+**Just run one command and everything works:**
 
 ```bash
 bash run.sh
 ```
 
-This automatically:
-- Starts the database
-- Starts client and server in parallel
-- Handles database migrations
-- Shows when everything is ready
+That's it! This automatically:
+- ✅ **Installs all dependencies** (PostgreSQL, Node.js packages, Python packages)
+- ✅ **Starts the database** (from your latest backup)
+- ✅ **Starts the web app** (client + server)
+- ✅ **Shows you when ready** (with URLs to visit)
 
-**Options:**
+### Options
+
 ```bash
-bash run.sh --clean    # Clean database first
+bash run.sh --clean    # Start fresh (creates backup first)
 bash run.sh --test     # Run all tests after startup
-bash run.sh --help     # Show help
+bash run.sh --detach   # Run in background (for automation)
+bash run.sh --help     # Show all options
 ```
 
-### Prerequisites
+## 🔧 What Gets Installed Automatically
 
-Before running, ensure you have:
-- **PostgreSQL** installed and running
-- **Node.js & Yarn** for the client
-- **Python & uv** for the server
+The `run.sh` script will automatically install:
 
-**Install PostgreSQL:**
-```bash
-# macOS
-brew install postgresql@15
-brew services start postgresql@15
+- **PostgreSQL** (via brew on macOS, apt on Ubuntu, yum on CentOS)
+- **Client dependencies** (Node.js packages via yarn)
+- **Server dependencies** (Python packages via uv/pip)
+- **Database tools** (Drizzle, Cypress, etc.)
 
-# Ubuntu
-sudo apt-get install postgresql postgresql-contrib
-sudo systemctl start postgresql
+**No manual setup required!** Just run `bash run.sh` and start coding.
 
-# CentOS
-sudo yum install postgresql-server postgresql-contrib
-sudo systemctl start postgresql
-```
+## 🧪 Testing
 
-### Docker Deployment
-All components are deployable via Docker containers:
-```bash
-docker compose --profile dev up --build -d
-docker compose --profile prod up --build -d
-```
-
-### Manual Development (Advanced)
-
-If you need to run services individually:
-
-**Database:**
-```bash
-cd database && yarn start        # normal start
-cd database && yarn start:clean  # clean start
-```
-
-**Frontend:**
-```bash
-cd client && yarn dev
-```
-
-**Backend:**
-```bash
-cd server && make run
-```
-
-## Database Migrations
-
-Migrations are handled automatically when using `bash run.sh`. When you modify the schema in `client/drizzle/schema.ts`, the system will:
-- Generate migration files in `database/migrations/`
-- Apply them to the database
-- Continue gracefully if there are issues
-
-## Testing
-
-**All Tests:**
+**Run all tests:**
 ```bash
 bash run.sh --test
 ```
 
-**Individual Tests:**
+**Individual tests:**
 ```bash
-cd client && yarn test          # Unit tests (vitest)
-cd server && make test          # Unit tests (pytest)  
-cd database && yarn test        # Database E2E tests (cypress)
+cd client && yarn test          # Frontend unit tests
+cd server && make test          # Backend unit tests  
+cd database && yarn test        # Database E2E tests
 ```
 
-## Notes
-- Each component should have corresponding test cases
-- Each database table should have Cypress test coverage
-- See `AGENTS.md` for detailed development guidelines
+## 🐳 Docker (Optional)
+
+If you prefer Docker over local development:
+```bash
+docker compose --profile dev up --build -d    # Development
+docker compose --profile prod up --build -d   # Production
+```
+
+## 📚 Advanced Usage
+
+For detailed development guidelines, database migrations, and advanced configuration, see [`AGENTS.md`](./AGENTS.md).
+
+**Manual service control** (if needed):
+```bash
+cd database && yarn start        # Database only
+cd client && yarn dev            # Frontend only  
+cd server && make run            # Backend only
+```
 
 ## Tech Stack
 

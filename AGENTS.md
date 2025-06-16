@@ -9,9 +9,12 @@ bash run.sh
 ```
 
 This will automatically:
-1. Start the database (from latest backup)
-2. Start the client and server in parallel  
-3. Show you when everything is ready
+1. **Check and install dependencies** (PostgreSQL, Node.js packages, Python packages)
+2. **Start the database** (from latest backup)
+3. **Start the client and server** in parallel  
+4. **Show you when everything is ready**
+
+**Zero-setup experience**: Just run `bash run.sh` and everything will be installed and configured automatically.
 
 ### Quick Start Options
 
@@ -31,27 +34,37 @@ bash run.sh --detach       # Services run in background, terminal is freed
 
 ## Manual Setup (Advanced)
 
-If you need to start services individually:
+If you need to start services individually or install dependencies manually:
 
-### Prerequisites
-- PostgreSQL must be installed and running
-- Node.js and Yarn for the client
-- Python and uv for the server
+### Prerequisites (Auto-installed by `run.sh`)
+- **PostgreSQL** (auto-installed via brew/apt/yum)
+- **Node.js and Yarn** for the client (dependencies auto-installed)
+- **Python and uv** for the server (dependencies auto-installed)
 
-### Database
+### Manual Dependency Installation
 ```bash
-cd database && yarn start
-# or for clean start:
-cd database && yarn start:clean
+# Client dependencies
+cd client && yarn install
+
+# Server dependencies  
+cd server && make install
+# or: uv sync
+# or: pip install -r requirements.txt
+
+# Database dependencies
+cd database && yarn install
 ```
 
-### Client
+### Manual Service Startup
 ```bash
+# Database
+cd database && yarn start          # Start with latest backup
+cd database && yarn start --clean  # Clean start (backup first)
+
+# Client
 cd client && yarn dev
-```
 
-### Server
-```bash
+# Server
 cd server && make run
 ```
 

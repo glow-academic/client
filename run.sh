@@ -108,12 +108,112 @@ wait_for_service() {
   return 1
 }
 
+# --- DEPENDENCY CHECKS -----------------------------------------------
+check_and_install_deps() {
+  log_step "Checking and installing dependencies..."
+  
+  # Check PostgreSQL
+  if ! command -v psql &>/dev/null; then
+    log_warning "PostgreSQL not found. Attempting to install..."
+    if command -v brew &>/dev/null; then
+      log_info "Installing PostgreSQL via Homebrew..."
+      brew install postgresql@15
+      brew services start postgresql@15
+    elif command -v apt-get &>/dev/null; then
+      log_info "Installing PostgreSQL via apt..."
+      sudo apt-get update
+      sudo apt-get install -y postgresql postgresql-contrib
+      sudo systemctl start postgresql
+      sudo systemctl enable postgresql
+    elif command -v yum &>/dev/null; then
+      log_info "Installing PostgreSQL via yum..."
+      sudo yum install -y postgresql-server postgresql-contrib
+      sudo postgresql-setup initdb
+      sudo systemctl start postgresql
+      sudo systemctl enable postgresql
+    else
+      log_error "Could not install PostgreSQL automatically. Please install manually."
+      log_info "See README.md for installation instructions."
+      exit 1
+    fi
+    log_success "PostgreSQL installed successfully"
+  else
+    log_success "PostgreSQL found"
+  fi
+  
+  # Check if PostgreSQL is running
+  if ! pg_isready -q 2>/dev/null; then
+    log_warning "PostgreSQL is not running. Attempting to start..."
+    if command -v brew &>/dev/null; then
+      brew services start postgresql@15
+    elif command -v systemctl &>/dev/null; then
+      sudo systemctl start postgresql
+    else
+      log_error "Could not start PostgreSQL automatically. Please start manually."
+      exit 1
+    fi
+    
+    # Wait a moment and check again
+    sleep 3
+    if pg_isready -q 2>/dev/null; then
+      log_success "PostgreSQL started successfully"
+    else
+      log_error "PostgreSQL failed to start. Please check your installation."
+      exit 1
+    fi
+  else
+    log_success "PostgreSQL is running"
+  fi
+  
+  # Install client dependencies
+  log_info "Installing client dependencies..."
+  cd client
+  if ! yarn install --frozen-lockfile 2>/dev/null; then
+    log_warning "Frozen lockfile failed, trying regular install..."
+    yarn install
+  fi
+  log_success "Client dependencies installed"
+  cd ..
+  
+  # Install server dependencies
+  log_info "Installing server dependencies..."
+  cd server
+  if ! make install 2>/dev/null; then
+    log_warning "Make install failed, trying alternative..."
+    if command -v uv &>/dev/null; then
+      uv sync
+    elif command -v pip &>/dev/null; then
+      pip install -r requirements.txt
+    else
+      log_error "Could not install server dependencies. Please install uv or pip."
+      exit 1
+    fi
+  fi
+  log_success "Server dependencies installed"
+  cd ..
+  
+  # Install database dependencies
+  log_info "Installing database dependencies..."
+  cd database
+  if ! yarn install --frozen-lockfile 2>/dev/null; then
+    log_warning "Frozen lockfile failed, trying regular install..."
+    yarn install
+  fi
+  log_success "Database dependencies installed"
+  cd ..
+  
+  log_success "All dependencies checked and installed!"
+}
+
 # --- MAIN EXECUTION --------------------------------------------------
 echo -e "${PURPLE}🌟 Starting Glow Development Environment${NC}"
 echo ""
 
+# Step 0: Check and install dependencies
+check_and_install_deps
+
 # Step 1: Start Database
-log_step "Starting database..."
+log_step "Step 1: Starting database..."
 cd database
 
 if $CLEAN_DB; then
@@ -139,7 +239,7 @@ fi
 log_success "Database started (PID: $DB_PID)"
 
 # Step 2: Start Client and Server in parallel
-log_step "Starting client and server in parallel..."
+log_step "Step 2: Starting client and server in parallel..."
 
 # Start Client
 log_info "Starting client..."
@@ -159,7 +259,7 @@ log_info "Client PID: $CLIENT_PID"
 log_info "Server PID: $SERVER_PID"
 
 # Step 3: Wait for services to be ready
-log_step "Waiting for services to be ready..."
+log_step "Step 3: Waiting for services to be ready..."
 
 # Wait for client (Next.js typically runs on 3000)
 if wait_for_service "Client" 3000 30; then
@@ -178,7 +278,7 @@ else
 fi
 
 # Step 4: Database is ready
-log_step "Database setup completed"
+log_step "Step 4: Database setup completed"
 log_info "Database started using the same logic as 'yarn start' in database/"
 if $CLEAN_DB; then
   log_info "Fresh database created from init.sql (backup was created first)"
@@ -188,7 +288,7 @@ fi
 
 # Step 5: Final status
 echo ""
-log_step "Environment Status:"
+log_step "Step 5: Environment Status:"
 echo -e "  ${GREEN}✅ Database:${NC} Running (PID: $DB_PID)"
 echo -e "  ${GREEN}✅ Client:${NC}   Running (PID: $CLIENT_PID) - http://localhost:3000"
 echo -e "  ${GREEN}✅ Server:${NC}   Running (PID: $SERVER_PID) - http://localhost:8000"
@@ -196,7 +296,7 @@ echo ""
 
 # Step 6: Run tests if requested
 if $RUN_TESTS; then
-  log_step "Running test suites..."
+  log_step "Step 6: Running test suites..."
   
   # Client tests
   log_info "Running client tests..."
