@@ -19,7 +19,7 @@ describe("Chat End-to-End Tests", () => {
         system_prompt:
           "You are a helpful student assistant. Keep responses brief and educational.",
         agent_type: "student",
-        temperature: 0.7,
+        temperature: 70, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -190,7 +190,7 @@ describe("Chat End-to-End Tests", () => {
         system_prompt:
           'You are a helpful assistant. Always respond with "Message received successfully".',
         agent_type: "student",
-        temperature: 0.1,
+        temperature: 10, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -351,7 +351,7 @@ describe("Chat End-to-End Tests", () => {
         description: "Agent for end chat testing",
         system_prompt: "You are a helpful assistant.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -486,7 +486,7 @@ describe("Chat End-to-End Tests", () => {
         description: "Agent for read chat testing",
         system_prompt: "You are a helpful assistant.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -634,7 +634,7 @@ describe("Chat End-to-End Tests", () => {
         description: "First agent for multi-user testing",
         system_prompt: "You are a helpful student.",
         agent_type: "student",
-        temperature: 0.7,
+        temperature: 70, // 0-100 integer scale
       };
 
       const testAgent2 = {
@@ -642,7 +642,7 @@ describe("Chat End-to-End Tests", () => {
         description: "Second agent for multi-user testing",
         system_prompt: "You are a teaching assistant.",
         agent_type: "ta",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       // Create first agent

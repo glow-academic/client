@@ -37,10 +37,11 @@ describe("Agents End-to-End Tests", () => {
       // Fill out agent creation form
       const testAgent = {
         name: `Test Agent ${Date.now()}`,
+        subtitle: "Test Assistant",
         description: "A test agent for Cypress testing",
         systemPrompt: "You are a helpful test assistant.",
         agentType: "student",
-        temperature: 0.7,
+        temperature: 70, // 0-100 integer scale
       };
 
       // Try different possible field names/selectors
@@ -109,17 +110,19 @@ describe("Agents End-to-End Tests", () => {
       // First, ensure we have test data by creating an agent via database
       const testAgent = {
         name: `Read Test Agent ${Date.now()}`,
+        subtitle: "Read Test Assistant",
         description: "Agent for read testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -156,17 +159,19 @@ describe("Agents End-to-End Tests", () => {
       // Create test agent first
       const originalAgent = {
         name: `Update Test Agent ${Date.now()}`,
+        subtitle: "Update Test Assistant",
         description: "Original description",
         system_prompt: "Original prompt",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           originalAgent.name,
+          originalAgent.subtitle,
           originalAgent.description,
           originalAgent.system_prompt,
           originalAgent.agent_type,
@@ -247,17 +252,19 @@ describe("Agents End-to-End Tests", () => {
       // Create test agent first
       const testAgent = {
         name: `Delete Test Agent ${Date.now()}`,
+        subtitle: "Delete Test Assistant",
         description: "Agent to be deleted",
         system_prompt: "Test prompt",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -349,17 +356,19 @@ describe("Agents End-to-End Tests", () => {
       // Create an agent first
       const testAgent = {
         name: `Constraint Test Agent ${Date.now()}`,
+        subtitle: "Constraint Test Assistant",
         description: "Test agent",
         system_prompt: "Test prompt",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5)`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6)`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -400,18 +409,20 @@ describe("Agents End-to-End Tests", () => {
       // Create a test agent first
       const testAgent = {
         name: `Query Test Agent ${Date.now()}`,
+        subtitle: "Query Test Assistant",
         description: "Agent for query testing",
         system_prompt:
           'You are a helpful assistant. Always respond with "Test response successful".',
         agent_type: "student",
-        temperature: 0.1,
+        temperature: 10, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,

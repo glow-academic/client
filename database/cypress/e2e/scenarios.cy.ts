@@ -15,10 +15,11 @@ describe("Scenarios End-to-End Tests", () => {
       // First create a test agent to associate with the scenario
       const testAgent = {
         name: `Scenario Test Agent ${Date.now()}`,
+        subtitle: "Scenario Test Assistant",
         description: "Agent for scenario testing",
         system_prompt: "You are a helpful assistant.",
         agent_type: "student",
-        temperature: 0.7,
+        temperature: 70, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -150,7 +151,7 @@ describe("Scenarios End-to-End Tests", () => {
         description: "Agent for read testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -224,7 +225,7 @@ describe("Scenarios End-to-End Tests", () => {
         description: "Agent for update testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -330,7 +331,7 @@ describe("Scenarios End-to-End Tests", () => {
         description: "Agent for delete testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -420,7 +421,7 @@ describe("Scenarios End-to-End Tests", () => {
         system_prompt:
           "You are a helpful assistant for creating educational scenarios.",
         agent_type: "student",
-        temperature: 0.7,
+        temperature: 70, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -522,7 +523,7 @@ describe("Scenarios End-to-End Tests", () => {
         system_prompt:
           'You are a helpful assistant. Always respond with "Query test successful".',
         agent_type: "student",
-        temperature: 0.1,
+        temperature: 10, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
@@ -663,7 +664,7 @@ describe("Scenarios End-to-End Tests", () => {
         description: "Agent for constraint testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
-        temperature: 0.5,
+        temperature: 50, // 0-100 integer scale
       };
 
       cy.task("dbQuery", {
