@@ -8,7 +8,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -461,7 +460,7 @@ export default function Reports() {
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search TAs by name or username..."
+            placeholder="Search TAs by name or alias..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -516,23 +515,37 @@ export default function Reports() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[50px]">#</TableHead>
-              <TableHead className="w-[60px]">TA</TableHead>
-              <TableHead className="min-w-[150px]">Name</TableHead>
-              <TableHead className="w-[120px]">Username</TableHead>
-              <TableHead className="w-[80px] text-center">Score</TableHead>
-              <TableHead className="w-[90px] text-center">Sessions</TableHead>
-              <TableHead className="w-[80px] text-center">Pass Rate</TableHead>
-              <TableHead className="w-[80px] text-center">Avg Time</TableHead>
-              <TableHead className="w-[100px] text-center">
-                Completion
+              <TableHead className="w-[40px] border-r">#</TableHead>
+              <TableHead className="min-w-[120px] border-r">Name</TableHead>
+              <TableHead className="w-[80px] border-r">Alias</TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Score
               </TableHead>
-              <TableHead className="w-[80px] text-center">Trend</TableHead>
-              <TableHead className="min-w-[200px]">Skills</TableHead>
-              <TableHead className="w-[120px] text-center">Weakest</TableHead>
-              <TableHead className="w-[120px] text-center">Strongest</TableHead>
-              <TableHead className="w-[80px] text-center">Status</TableHead>
-              <TableHead className="w-[60px]">Actions</TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Sessions
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Pass
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Time
+              </TableHead>
+              <TableHead className="w-[70px] text-center border-r">
+                Complete
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Trend
+              </TableHead>
+              <TableHead className="w-[80px] text-center border-r">
+                Weakest
+              </TableHead>
+              <TableHead className="w-[80px] text-center border-r">
+                Strongest
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r">
+                Status
+              </TableHead>
+              <TableHead className="w-[50px]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -547,49 +560,31 @@ export default function Reports() {
                   } transition-colors`}
                 >
                   {/* Rank */}
-                  <TableCell className="font-medium text-center">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                  <TableCell className="font-medium text-center border-r">
+                    <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs">
                       {index + 1}
                     </div>
                   </TableCell>
 
-                  {/* Avatar */}
-                  <TableCell>
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback
-                        className={
-                          ta.isStruggling ? "bg-orange-100 text-orange-800" : ""
-                        }
-                      >
-                        {ta.initials}
-                      </AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-
                   {/* Name */}
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <div>
-                        <div className="font-medium">
-                          {ta.firstName} {ta.lastName}
-                        </div>
-                        {ta.isStruggling && (
-                          <div className="flex items-center gap-1 text-orange-600 text-xs">
-                            <AlertTriangle className="h-3 w-3" />
-                            Needs Attention
-                          </div>
-                        )}
+                  <TableCell className="border-r">
+                    <div className="flex items-center gap-1">
+                      <div className="font-medium text-sm">
+                        {ta.firstName} {ta.lastName}
                       </div>
+                      {ta.isStruggling && (
+                        <AlertTriangle className="h-3 w-3 text-orange-600 flex-shrink-0" />
+                      )}
                     </div>
                   </TableCell>
 
-                  {/* Username */}
-                  <TableCell className="text-sm text-muted-foreground">
-                    {ta.username}@purdue.edu
+                  {/* Alias */}
+                  <TableCell className="text-sm text-muted-foreground border-r">
+                    {ta.username}
                   </TableCell>
 
                   {/* Score */}
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     <Badge
                       variant={
                         ta.avgScore >= 80
@@ -598,95 +593,62 @@ export default function Reports() {
                             ? "secondary"
                             : "destructive"
                       }
-                      className="text-sm font-medium"
+                      className="text-xs font-medium px-1 py-0"
                     >
-                      {ta.hasNoSessions ? "No Data" : `${ta.avgScore}%`}
+                      {ta.hasNoSessions ? "N/A" : `${ta.avgScore}%`}
                     </Badge>
                   </TableCell>
 
                   {/* Sessions */}
-                  <TableCell className="text-center">
-                    <div className="text-sm font-medium">
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
                       {ta.completedSessions}/{ta.totalSessions}
                     </div>
                   </TableCell>
 
                   {/* Pass Rate */}
-                  <TableCell className="text-center">
-                    <div className="text-sm font-medium">
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
                       {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
                     </div>
                   </TableCell>
 
                   {/* Avg Time */}
-                  <TableCell className="text-center">
-                    <div className="text-sm font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}min`}
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}m`}
                     </div>
                   </TableCell>
 
                   {/* Completion Rate */}
-                  <TableCell className="text-center">
-                    <div className="text-sm font-medium">
+                  <TableCell className="text-center border-r">
+                    <div className="text-xs font-medium">
                       {ta.completionRate}%
                     </div>
                   </TableCell>
 
                   {/* Trend */}
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {ta.trend === "improving" ? (
-                      <div className="flex items-center justify-center gap-1 text-green-600">
-                        <TrendingUp className="h-4 w-4" />
-                        <span className="text-xs">Up</span>
+                      <div className="flex items-center justify-center text-green-600">
+                        <TrendingUp className="h-3 w-3" />
                       </div>
                     ) : ta.trend === "declining" ? (
-                      <div className="flex items-center justify-center gap-1 text-red-600">
-                        <TrendingDown className="h-4 w-4" />
-                        <span className="text-xs">Down</span>
+                      <div className="flex items-center justify-center text-red-600">
+                        <TrendingDown className="h-3 w-3" />
                       </div>
                     ) : (
-                      <div className="flex items-center justify-center gap-1 text-gray-600">
-                        <ArrowUp className="h-4 w-4 rotate-90" />
-                        <span className="text-xs">Stable</span>
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Skills */}
-                  <TableCell>
-                    {!ta.hasNoSessions && (
-                      <div className="flex flex-wrap gap-1">
-                        {ta.skillBreakdown
-                          .slice(0, 3)
-                          .map((skill, skillIndex) => (
-                            <Badge
-                              key={skillIndex}
-                              variant="outline"
-                              className={`text-xs ${
-                                skill.score < 70
-                                  ? "border-red-200 text-red-700 bg-red-50"
-                                  : skill.score >= 85
-                                    ? "border-green-200 text-green-700 bg-green-50"
-                                    : ""
-                              }`}
-                            >
-                              {skill.skill}: {skill.score}%
-                            </Badge>
-                          ))}
-                        {ta.skillBreakdown.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{ta.skillBreakdown.length - 3} more
-                          </Badge>
-                        )}
+                      <div className="flex items-center justify-center text-gray-600">
+                        <ArrowUp className="h-3 w-3 rotate-90" />
                       </div>
                     )}
                   </TableCell>
 
                   {/* Weakest Skill */}
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {!ta.hasNoSessions && (
                       <div className="text-xs">
-                        <div className="font-medium text-red-600">
+                        <div className="font-medium text-red-600 truncate">
                           {ta.weakestSkill.skill}
                         </div>
                         <div className="text-red-500">
@@ -697,10 +659,10 @@ export default function Reports() {
                   </TableCell>
 
                   {/* Strongest Skill */}
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {!ta.hasNoSessions && (
                       <div className="text-xs">
-                        <div className="font-medium text-green-600">
+                        <div className="font-medium text-green-600 truncate">
                           {ta.strongestSkill.skill}
                         </div>
                         <div className="text-green-500">
@@ -711,22 +673,25 @@ export default function Reports() {
                   </TableCell>
 
                   {/* Status */}
-                  <TableCell className="text-center">
+                  <TableCell className="text-center border-r">
                     {ta.hasNoSessions ? (
-                      <Badge variant="destructive" className="text-xs">
-                        No Sessions
+                      <Badge
+                        variant="destructive"
+                        className="text-xs px-1 py-0"
+                      >
+                        None
                       </Badge>
                     ) : ta.isStruggling ? (
                       <Badge
                         variant="secondary"
-                        className="text-xs bg-orange-100 text-orange-800"
+                        className="text-xs bg-orange-100 text-orange-800 px-1 py-0"
                       >
-                        Struggling
+                        Risk
                       </Badge>
                     ) : (
                       <Badge
                         variant="default"
-                        className="text-xs bg-green-100 text-green-800"
+                        className="text-xs bg-green-100 text-green-800 px-1 py-0"
                       >
                         Good
                       </Badge>
@@ -747,7 +712,7 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={15} className="text-center py-12">
+                <TableCell colSpan={13} className="text-center py-12">
                   <div className="flex flex-col items-center gap-4">
                     <Award className="h-16 w-16 text-muted-foreground" />
                     <div>
@@ -811,11 +776,16 @@ function ReportDownloadDialog({
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" disabled={isDownloading}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={isDownloading}
+          className="h-6 w-6 p-0"
+        >
           {isDownloading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
+            <Loader2 className="h-3 w-3 animate-spin" />
           ) : (
-            <Download className="h-4 w-4" />
+            <Download className="h-3 w-3" />
           )}
         </Button>
       </DialogTrigger>

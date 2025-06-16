@@ -309,7 +309,7 @@ describe("Reports", () => {
       });
 
       expect(
-        screen.getByPlaceholderText("Search TAs by name or username...")
+        screen.getByPlaceholderText("Search TAs by name or alias...")
       ).toBeInTheDocument();
       expect(screen.getByText("Sort:")).toBeInTheDocument();
 
@@ -345,20 +345,63 @@ describe("Reports", () => {
       });
 
       // Should show struggling status badge
-      expect(screen.getByText("Struggling")).toBeInTheDocument();
-      expect(screen.getByText("Needs Attention")).toBeInTheDocument();
+      expect(screen.getByText("Risk")).toBeInTheDocument();
     });
 
-    it("should display skill performance badges", async () => {
+    it("should display skill performance in weakest/strongest columns", async () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
         expect(screen.getByText("Test TA 1")).toBeInTheDocument();
       });
 
-      // Should show skill badges for TAs with sessions - use getAllByText since there are multiple
-      expect(screen.getAllByText(/Comm:/).length).toBeGreaterThan(0);
-      expect(screen.getAllByText(/Problem:/).length).toBeGreaterThan(0);
+      // Should show skill performance in weakest/strongest columns
+      expect(
+        screen.getAllByText(/Communication Skills/).length
+      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Problem Solving/).length).toBeGreaterThan(0);
+    });
+
+    it("should display TA information in table format", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+      });
+
+      // Should show compact table headers
+      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByText("Alias")).toBeInTheDocument();
+      expect(screen.getByText("Score")).toBeInTheDocument();
+      expect(screen.getByText("Sessions")).toBeInTheDocument();
+      expect(screen.getByText("Pass")).toBeInTheDocument();
+      expect(screen.getByText("Time")).toBeInTheDocument();
+      expect(screen.getByText("Complete")).toBeInTheDocument();
+      expect(screen.getByText("Trend")).toBeInTheDocument();
+      expect(screen.getByText("Weakest")).toBeInTheDocument();
+      expect(screen.getByText("Strongest")).toBeInTheDocument();
+      expect(screen.getByText("Status")).toBeInTheDocument();
+      expect(screen.getByText("Action")).toBeInTheDocument();
+
+      // Should show TA data
+      expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+      expect(screen.getByText("Test TA 2")).toBeInTheDocument();
+      expect(screen.getByText("testuser1")).toBeInTheDocument();
+      expect(screen.getByText("testuser2")).toBeInTheDocument();
+    });
+
+    it("should display weakest and strongest skills", async () => {
+      renderWithProviders(<Reports />);
+
+      await waitFor(() => {
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
+      });
+
+      // Should show skill performance in weakest/strongest columns
+      expect(
+        screen.getAllByText(/Communication Skills/).length
+      ).toBeGreaterThan(0);
+      expect(screen.getAllByText(/Problem Solving/).length).toBeGreaterThan(0);
     });
   });
 
@@ -378,12 +421,12 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search TAs by name or username...")
+          screen.getByPlaceholderText("Search TAs by name or alias...")
         ).toBeInTheDocument();
       });
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or username..."
+        "Search TAs by name or alias..."
       );
       await user.type(searchInput, "Test");
 
@@ -395,18 +438,18 @@ describe("Reports", () => {
       });
     });
 
-    it("should search TAs by username", async () => {
+    it("should search TAs by alias", async () => {
       const user = userEvent.setup();
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search TAs by name or username...")
+          screen.getByPlaceholderText("Search TAs by name or alias...")
         ).toBeInTheDocument();
       });
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or username..."
+        "Search TAs by name or alias..."
       );
       await user.type(searchInput, "struggling");
 
@@ -423,12 +466,12 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search TAs by name or username...")
+          screen.getByPlaceholderText("Search TAs by name or alias...")
         ).toBeInTheDocument();
       });
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or username..."
+        "Search TAs by name or alias..."
       );
       await user.type(searchInput, "nonexistent");
 
@@ -446,12 +489,12 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search TAs by name or username...")
+          screen.getByPlaceholderText("Search TAs by name or alias...")
         ).toBeInTheDocument();
       });
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or username..."
+        "Search TAs by name or alias..."
       );
       await user.type(searchInput, "nonexistent");
 
@@ -630,19 +673,18 @@ describe("Reports", () => {
 
       // Check all table headers
       expect(screen.getByText("#")).toBeInTheDocument();
-      expect(screen.getByText("TA")).toBeInTheDocument();
-      expect(screen.getByText("Username")).toBeInTheDocument();
+      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByText("Alias")).toBeInTheDocument();
       expect(screen.getByText("Score")).toBeInTheDocument();
       expect(screen.getByText("Sessions")).toBeInTheDocument();
-      expect(screen.getByText("Pass Rate")).toBeInTheDocument();
-      expect(screen.getByText("Avg Time")).toBeInTheDocument();
-      expect(screen.getByText("Completion")).toBeInTheDocument();
+      expect(screen.getByText("Pass")).toBeInTheDocument();
+      expect(screen.getByText("Time")).toBeInTheDocument();
+      expect(screen.getByText("Complete")).toBeInTheDocument();
       expect(screen.getByText("Trend")).toBeInTheDocument();
-      expect(screen.getByText("Skills")).toBeInTheDocument();
       expect(screen.getByText("Weakest")).toBeInTheDocument();
       expect(screen.getByText("Strongest")).toBeInTheDocument();
       expect(screen.getByText("Status")).toBeInTheDocument();
-      expect(screen.getByText("Actions")).toBeInTheDocument();
+      expect(screen.getByText("Action")).toBeInTheDocument();
     });
 
     it("should show ranking numbers", async () => {
@@ -660,11 +702,10 @@ describe("Reports", () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
-        // Use getAllByText since there are multiple "Good" badges
-        expect(screen.getAllByText("Good").length).toBeGreaterThan(0);
+        expect(screen.getByText("Test TA 1")).toBeInTheDocument();
       });
 
-      expect(screen.getByText("Struggling")).toBeInTheDocument();
+      expect(screen.getByText("Risk")).toBeInTheDocument();
     });
   });
 
@@ -697,11 +738,14 @@ describe("Reports", () => {
       renderWithProviders(<Reports />);
 
       await waitFor(() => {
-        expect(screen.getByText("Pass Rate")).toBeInTheDocument();
+        expect(screen.getByText("Pass")).toBeInTheDocument();
       });
 
-      // Should show pass rates and average times
-      expect(screen.getAllByText(/\d+min/).length).toBeGreaterThan(0); // Time metrics
+      // Should show pass rate percentages
+      expect(screen.getAllByText(/\d+%/).length).toBeGreaterThan(0);
+
+      // Should show time metrics in minutes
+      expect(screen.getAllByText(/\d+m/).length).toBeGreaterThan(0);
     });
 
     it("should show trend indicators", async () => {
@@ -711,9 +755,9 @@ describe("Reports", () => {
         expect(screen.getByText("Test TA 1")).toBeInTheDocument();
       });
 
-      // Note: With only one session per TA in mock data, trends will be "stable"
-      // In real scenarios with more data, we'd see "Up" or "Down" indicators
-      expect(screen.getAllByText("Stable").length).toBeGreaterThan(0);
+      // Should show trend icons (no text labels in compact version)
+      // The trend icons are present but don't have text labels
+      expect(screen.getByText("Trend")).toBeInTheDocument();
     });
   });
 
@@ -738,23 +782,26 @@ describe("Reports", () => {
 
       await waitFor(() => {
         expect(
-          screen.getByPlaceholderText("Search TAs by name or username...")
+          screen.getByPlaceholderText("Search TAs by name or alias...")
         ).toBeInTheDocument();
       });
 
       const searchInput = screen.getByPlaceholderText(
-        "Search TAs by name or username..."
+        "Search TAs by name or alias..."
       );
-      await user.type(searchInput, "nonexistent");
+
+      await user.type(searchInput, "NonExistentTA");
 
       await waitFor(() => {
         expect(
-          screen.getByText('No TAs found matching "nonexistent"')
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText("Try adjusting your search or filter criteria")
+          screen.getByText('No TAs found matching "NonExistentTA"')
         ).toBeInTheDocument();
       });
+
+      expect(
+        screen.getByText("Try adjusting your search or filter criteria")
+      ).toBeInTheDocument();
+      expect(screen.getByText("Clear search")).toBeInTheDocument();
     });
   });
 });

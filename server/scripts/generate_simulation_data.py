@@ -3,7 +3,7 @@
 Bulk generator – 300 chats across six simulations
  * 50 chats per simulation (300 total)
  * Scores show gradual improvement over past 90 days
- * First 2 standards: scores up to 90, Last 2 standards: scores up to 60
+ * First 2 standards: scores up to 18, Last 2 standards: scores up to 12
  * Diverse data with realistic progression
 Dates span past 90 days to today (UTC)
 """
@@ -46,13 +46,13 @@ SIM_QUOTA = [50, 50, 50, 50, 50, 50]  # 50 chats per simulation (300 total)
 # ---- Rubric & Standards ---------------------------------------------------#
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
 
-# First 2 standards (max score 90)
+# First 2 standards (max score 4.5 each, total 9)
 STD_FIRST_TWO = [
     "11111111-1111-aaaa-bbbb-333333333333",  # Standard 1
     "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
 ]
 
-# Last 2 standards (max score 60)
+# Last 2 standards (max score 3 each, total 6)
 STD_LAST_TWO = [
     "22222222-2222-aaaa-bbbb-333333333333",  # Standard 3
     "33333333-2222-aaaa-bbbb-333333333333",  # Standard 4
@@ -134,18 +134,18 @@ def rand_ts_with_trend(progress: float) -> str:
 
 def get_score_with_improvement(progress: float) -> int:
     """
-    Generate scores that improve over time
-    Early: 20-60 range, Later: 50-95 range
+    Generate scores that improve over time (out of 20)
+    Early: 4-12 range, Later: 10-19 range
     """
-    base_min = 20 + int(progress * 30)  # 20 -> 50
-    base_max = 60 + int(progress * 35)  # 60 -> 95
+    base_min = 4 + int(progress * 6)  # 4 -> 10
+    base_max = 12 + int(progress * 7)  # 12 -> 19
 
     # Still allow some outliers
     roll = random.random()
     if roll < 0.03:  # 3% chance of very low score
-        return random.randint(0, 25)
+        return random.randint(0, 5)
     elif roll < 0.06:  # 3% chance of perfect score
-        return 100
+        return 20
     else:
         return random.randint(base_min, base_max)
 
@@ -153,18 +153,18 @@ def get_score_with_improvement(progress: float) -> int:
 def get_diverse_standard_score(standard_id: str, progress: float) -> int:
     """
     Generate scores based on standard type with improvement over time
-    First 2 standards: max 90, Last 2 standards: max 60
+    First 2 standards: max 4.5 (rounded to 5), Last 2 standards: max 3
     """
     if standard_id in STD_FIRST_TWO:
-        # First 2 standards: range 10-90, improving over time
-        base_min = 10 + int(progress * 30)  # 10 -> 40
-        base_max = 50 + int(progress * 40)  # 50 -> 90
-        return random.randint(base_min, min(90, base_max))
+        # First 2 standards: range 0-5, improving over time
+        base_min = 0 + int(progress * 2)  # 0 -> 2
+        base_max = 2 + int(progress * 3)  # 2 -> 5
+        return random.randint(base_min, min(5, base_max))
     else:
-        # Last 2 standards: range 5-60, improving over time
-        base_min = 5 + int(progress * 20)  # 5 -> 25
-        base_max = 30 + int(progress * 30)  # 30 -> 60
-        return random.randint(base_min, min(60, base_max))
+        # Last 2 standards: range 0-3, improving over time
+        base_min = 0 + int(progress * 1)  # 0 -> 1
+        base_max = 1 + int(progress * 2)  # 1 -> 3
+        return random.randint(base_min, min(3, base_max))
 
 
 def q(val: str) -> str:
@@ -227,7 +227,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
 
         # ----- simulation_chat_grades ------------------------------------#
         score = get_score_with_improvement(progress)
-        passed = score >= 70
+        passed = score >= 14  # 70% of 20 = 14
         # Time taken improves slightly over time (people get faster)
         base_time = random.randint(600, 2400)
         time_taken = max(
@@ -297,5 +297,5 @@ output_path.write_text(sql)
 
 print(f"✅  Generated {len(chat_rows)} chats ({len(message_rows)} messages)")
 print("📊  Data spans past 90 days with gradual improvement trend")
-print("🎯  First 2 standards: max score 90, Last 2 standards: max score 60")
+print("🎯  First 2 standards: max score 5, Last 2 standards: max score 3 (total out of 20)")
 print(f"📁  Output: {output_path}")

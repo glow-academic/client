@@ -31,7 +31,8 @@ CREATE TABLE simulation_chats (
   title      TEXT         NOT NULL,
   scenario_id UUID         NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE,
   attempt_id UUID         NOT NULL REFERENCES simulation_attempts(id)  ON DELETE CASCADE,
-  completed  BOOLEAN      NOT NULL           DEFAULT FALSE
+  completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
+  trace_id   TEXT         NULL -- openai trace id
 );
 
 CREATE TABLE simulation_messages (
