@@ -130,6 +130,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // Fetch attempt data
   const {
@@ -142,15 +143,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     enabled: !!attemptId,
   });
 
+  const { data: chats, isLoading: isLoadingChats } = useQuery({
+    queryKey: ["simulationChats", attemptId],
+    queryFn: () => getSimulationChatsByAttempt(attemptId),
+    enabled: !!attemptId,
+  });
+
   const { data: simulation, isLoading: simulationLoading } = useQuery({
     queryKey: ["simulation", attempt?.simulationId],
     queryFn: () => getSimulation(attempt!.simulationId),
-    enabled: !!attempt?.simulationId,
-  });
-
-  const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["simulationChats", attempt?.id],
-    queryFn: () => getSimulationChatsByAttempt(attempt!.id),
     enabled: !!attempt,
   });
 
@@ -164,7 +165,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-      enabled: !!rubrics && rubrics.length > 0,
+      enabled: !!rubrics,
     }
   );
 
@@ -172,14 +173,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     queryKey: ["standards", standardGroups?.map((group) => group.id)],
     queryFn: () =>
       getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
+    enabled: !!standardGroups,
   });
 
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
     queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
     queryFn: () =>
       getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
+    enabled: !!chats,
   });
 
   const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
@@ -188,7 +189,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       getSimulationChatFeedbacksBySimulationChatGrades(
         grades!.map((grade) => grade.id)
       ),
-    enabled: !!grades && grades.length > 0,
+    enabled: !!grades,
   });
 
   // Determine current chat based on chat simulation ID position in simulation
@@ -207,20 +208,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["messages", currentChat?.id],
     queryFn: () => getSimulationMessagesByChat(currentChat!.id),
-    enabled: !!currentChat?.id,
+    enabled: !!currentChat,
   });
 
   // Fetch scenario for current chat
   const { data: scenario, isLoading: scenarioLoading } = useQuery({
     queryKey: ["interaction", currentChat?.scenarioId],
     queryFn: () => getScenario(currentChat!.scenarioId),
-    enabled: !!currentChat?.scenarioId,
+    enabled: !!currentChat,
   });
 
   const { data: classData } = useQuery({
     queryKey: ["class", scenario?.classId],
     queryFn: () => getClass(scenario!.classId!),
-    enabled: !!scenario?.classId,
+    enabled: !!scenario,
   });
 
   // Helper function to calculate actual time taken from database timestamps
@@ -971,17 +972,61 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [showResults, currentChat?.completed, simulation?.timeLimit, isActive]);
 
+  // ResizeObserver for input panel height detection
   useEffect(() => {
-    if (!inputPanelRef.current) return;
+    if (!inputPanelRef.current) {
+      console.log("Input panel ref not found, will retry on next effect run");
+      return;
+    }
+
+    if (resizeObserverRef.current) {
+      console.log("ResizeObserver already set up, skipping");
+      return;
+    }
+
+    console.log("Setting up ResizeObserver for input panel");
+
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
-        setIsTall(entry.contentRect.height > 160);
+        const newIsTall = entry.contentRect.height > 160;
+        console.log(
+          "ResizeObserver triggered - height:",
+          entry.contentRect.height,
+          "isTall:",
+          newIsTall
+        );
+        setIsTall(newIsTall);
       }
     });
+
     ro.observe(inputPanelRef.current);
-    return () => ro.disconnect();
-  }, []);
+    resizeObserverRef.current = ro;
+
+    // Initial measurement with a small delay to ensure layout is complete
+    const measureTimer = setTimeout(() => {
+      if (inputPanelRef.current) {
+        const rect = inputPanelRef.current.getBoundingClientRect();
+        const initialIsTall = rect.height > 160;
+        console.log(
+          "Initial measurement - height:",
+          rect.height,
+          "isTall:",
+          initialIsTall
+        );
+        setIsTall(initialIsTall);
+      }
+    }, 50);
+
+    return () => {
+      console.log("Cleaning up ResizeObserver");
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+        resizeObserverRef.current = null;
+      }
+      clearTimeout(measureTimer);
+    };
+  }); // No dependencies - run on every render until it succeeds
 
   if (
     attemptLoading ||

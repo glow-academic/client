@@ -49,6 +49,7 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
+import { logError } from "@/utils/logger";
 
 interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -409,6 +410,7 @@ export default function Reports() {
       toast.error(
         `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
       );
+      logError(`Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`);
     } finally {
       setDownloadingReports((prev) => {
         const newSet = new Set(prev);

@@ -2,17 +2,27 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, Enum,
-                        ForeignKeyConstraint, Integer, PrimaryKeyConstraint,
-                        String, Text, Uuid, text)
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
+                        Enum, ForeignKeyConstraint, Integer,
+                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped
 from sqlmodel import Field, Relationship, SQLModel
-
+from sqlalchemy.orm import Mapped
 
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
+class DrizzleMigrations(_Base, table=True):
+    __tablename__ = '__drizzle_migrations'
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='__drizzle_migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, Sequence('__drizzle_migrations_id_seq4'), primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
+
+
 class Accounts(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='accounts_pkey'),
@@ -39,6 +49,7 @@ class Agents(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     subtitle: str = Field(sa_column=Column('subtitle', Text))
     description: str = Field(sa_column=Column('description', Text))
@@ -71,6 +82,7 @@ class Classes(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     class_code: str = Field(sa_column=Column('class_code', Text))
     year: int = Field(sa_column=Column('year', Integer))
@@ -90,6 +102,7 @@ class Rubrics(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
@@ -147,6 +160,7 @@ class Documents(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     file_path: str = Field(sa_column=Column('file_path', Text))
     mime_type: str = Field(sa_column=Column('mime_type', Text))
@@ -165,6 +179,7 @@ class Evals(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     base_agent_id: Mapped[uuid.UUID] = Field(sa_column=Column('base_agent_id', Uuid(as_uuid=True)))
@@ -186,7 +201,7 @@ class Profiles(_Base, table=True):
     )
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    user_id: int = Field(sa_column=Column('user_id', Integer))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     last_login: datetime = Field(sa_column=Column('last_login', DateTime(True), server_default=text('now()')))
     first_name: str = Field(sa_column=Column('first_name', Text))
     last_name: str = Field(sa_column=Column('last_name', Text))
@@ -195,6 +210,7 @@ class Profiles(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), server_default=text("'ta'::profile_role")))
     class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
@@ -233,6 +249,7 @@ class Schedules(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
@@ -249,6 +266,7 @@ class Simulations(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
@@ -287,6 +305,7 @@ class Topics(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     prerequisite: bool = Field(sa_column=Column('prerequisite', Boolean, server_default=text('false')))
@@ -324,6 +343,7 @@ class Events(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     time: datetime = Field(sa_column=Column('time', DateTime(True)))
@@ -379,6 +399,7 @@ class EvalChats(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
     eval_run_id: Mapped[uuid.UUID] = Field(sa_column=Column('eval_run_id', Uuid(as_uuid=True)))
@@ -401,6 +422,7 @@ class SimulationChats(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     scenario_id: Mapped[uuid.UUID] = Field(sa_column=Column('scenario_id', Uuid(as_uuid=True)))
     attempt_id: Mapped[uuid.UUID] = Field(sa_column=Column('attempt_id', Uuid(as_uuid=True)))
