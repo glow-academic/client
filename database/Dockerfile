@@ -1,7 +1,36 @@
 # database/Dockerfile
 FROM postgres:15-alpine AS base
 
-# Install bash for custom entrypoint script
+# Install bash and Node.js for custom entrypoint and testing
+RUN apk add --no-cache bash nodejs npm && \
+    npm install -g yarn
+
+# Set working directory
+WORKDIR /database
+
+# Create directories
+RUN mkdir -p /database/history
+
+# Copy package files and install dependencies
+COPY package.json yarn.lock* ./
+RUN yarn install --frozen-lockfile
+
+# Copy Cypress configuration and tests
+COPY cypress.config.ts ./
+COPY cypress/ ./cypress/
+
+# Copy custom entrypoint
+COPY custom-entrypoint.sh /custom-entrypoint.sh
+RUN chmod +x /custom-entrypoint.sh
+
+# Run Cypress E2E tests as part of the build
+RUN echo "🧪 Running database E2E tests..." && \
+    CI=1 CYPRESS_CACHE_FOLDER=/root/.cache/Cypress yarn test:cypress
+
+# ——— Production Stage ———
+FROM postgres:15-alpine AS production
+
+# Install only bash for custom entrypoint script
 RUN apk add --no-cache bash
 
 # Set working directory
@@ -10,36 +39,9 @@ WORKDIR /database
 # Create directories
 RUN mkdir -p /database/history
 
-# Copy custom entrypoint
-COPY custom-entrypoint.sh /custom-entrypoint.sh
-
+# Copy custom entrypoint from base stage
+COPY --from=base /custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
-
-# ——— Cypress Testing Stage ———
-FROM cypress/included:13.6.0 AS cypress-test
-
-WORKDIR /database
-
-# Copy package files
-COPY package.json yarn.lock* ./
-
-# Install dependencies
-RUN yarn install --frozen-lockfile
-
-# Copy Cypress configuration and tests
-COPY cypress.config.ts ./
-COPY cypress/ ./cypress/
-
-# Set up environment for Cypress
-ENV CI=1
-ENV CYPRESS_CACHE_FOLDER=/root/.cache/Cypress
-
-# Run Cypress tests
-RUN echo "🧪 Running database E2E tests..." && \
-    yarn test:cypress
-
-# ——— Production Stage ———
-FROM base AS production
 
 # Set default environment variables
 ENV POSTGRES_USER=myuser

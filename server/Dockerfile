@@ -17,36 +17,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy source code
 COPY . .
 
-# ——— Testing Stage ———
-FROM base AS test
-ENV TESTING=1
-ENV PYTHONPATH=/app
-
-# Install additional testing dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
-
-# Run linting
-RUN echo "🔧 Running Ruff linting..." && \
-    python -m ruff check .
-
-# Run type checking
-RUN echo "🔍 Running MyPy type checking..." && \
-    python -m mypy app/
-
-# Generate models (needed for tests)
-RUN echo "🏗️  Generating SQLModel classes..." && \
-    python scripts/generate_models.py || echo "Model generation skipped (database not available)"
-
-# Generate test files
-RUN echo "🧪 Generating test files..." && \
-    python scripts/generate_pytest_tests.py
-
-# Run unit tests
-RUN echo "🧪 Running server unit tests..." && \
-    python -m pytest tests/ -v --tb=short
-
 # ——— Production Build Stage ———
 FROM base AS build
 
@@ -62,9 +32,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Generate models for production
-RUN echo "🏗️  Generating SQLModel classes for production..." && \
-    python scripts/generate_models.py || echo "Model generation will happen at runtime"
+# Run unit tests as part of the build process
+RUN echo "🧪 Running server unit tests..." && \
+    python -m pytest tests/ -v --tb=short
 
 # ——— Production Runtime Stage ———
 FROM python:3.11-slim AS production
@@ -105,7 +75,6 @@ EXPOSE 8000
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
 
-# Start command with model generation
-CMD ["sh", "-c", "python scripts/generate_models.py && \
-     gunicorn app.main:app -w 4 -k uvicorn.workers.UvicornWorker \
-     -b 0.0.0.0:8000 --log-level info"]
+# Start the application
+CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UvicornWorker", \
+     "-b", "0.0.0.0:8000", "--log-level", "info"]

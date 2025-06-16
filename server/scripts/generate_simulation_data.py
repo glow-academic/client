@@ -82,7 +82,7 @@ ANSWER_BANK = [
     "Initialize the array before use.",
     "Your base case is missing; it never terminates.",
     "Pre-allocate the vector to avoid re-allocation.",
-    "Remove state Q3 – it's unreachable.",
+    "Remove state Q3 - it's unreachable.",
     "Check your pointer arithmetic carefully.",
     "Consider what happens when the input is empty.",
     "This is O(n²) - can we do better?",
