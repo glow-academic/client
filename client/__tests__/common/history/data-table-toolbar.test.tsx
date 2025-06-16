@@ -269,13 +269,14 @@ describe("DataTableToolbar", () => {
   });
 
   describe("Faceted Filters", () => {
-    it("should render user filter", () => {
+    it("should render user filter when showAll is true", () => {
       renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
+          showAll={true}
         />
       );
 
@@ -513,6 +514,7 @@ describe("DataTableToolbar", () => {
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           scoreRangeOptions={mockScoreRangeOptions}
+          showAll={true}
         />
       );
 

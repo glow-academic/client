@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Logs from "@/components/analytics/Logs";
+import Logs from "@/components/analytics/History";
 
 export default function LogsPage() {
   return (

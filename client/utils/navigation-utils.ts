@@ -38,21 +38,21 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       break;
     case "instructor":
       sections.push(
-        "overview", "performance", "reports", "logs", // Analytics
+        "overview", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes" // Classes (filtered by assignment)
       );
       break;
     case "instructional":
       sections.push(
-        "overview", "performance", "reports", "logs", // Analytics
+        "overview", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes" // Classes (all)
       );
       break;
     case "admin":
       sections.push(
-        "overview", "performance", "reports", "logs", // Analytics
+        "overview", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes", // Classes (all)
         "staff", "agents", "evals" // Management
@@ -99,8 +99,8 @@ export const getSectionRoute = (section: string): string => {
       return "/analytics/performance";
     case "reports":
       return "/analytics/reports";
-    case "logs":
-      return "/analytics/logs";
+    case "history":
+      return "/analytics/history";
 
     // Create routes
     case "create":

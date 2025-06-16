@@ -21,6 +21,7 @@ interface DataTableToolbarProps<TData> {
   dateRange?: DateRange | undefined;
   setDateRange?: (range: DateRange | undefined) => void;
   showExport?: boolean;
+  showAll?: boolean;
 }
 
 export function DataTableToolbar<TData>({
@@ -32,13 +33,14 @@ export function DataTableToolbar<TData>({
   dateRange,
   setDateRange,
   showExport = true,
+  showAll = false,
 }: DataTableToolbarProps<TData>) {
   // Check if any filters other than the date range are active
   const isFiltered =
     table.getState().columnFilters.filter((filter) => filter.id !== "createdAt")
       .length > 0;
 
-  const profileIdColumn = table.getColumn("profileId");
+  const profileIdColumn = showAll ? table.getColumn("profileId") : null;
   const classIdsColumn = table.getColumn("classIds");
   const averageScoreColumn = table.getColumn("averageScore");
 

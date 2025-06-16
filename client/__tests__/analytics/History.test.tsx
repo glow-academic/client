@@ -1,12 +1,12 @@
 /**
  * @jest-environment jsdom
  */
-import React from 'react';
-import { render, screen } from '@testing-library/react';
+import History from '@/components/analytics/History';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
-import Logs from '@/components/analytics/Logs';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the SimulationHistory component
 vi.mock('@/components/common/history/SimulationHistory', () => {
@@ -47,35 +47,35 @@ describe('Logs Component', () => {
   });
 
   it('renders without crashing', () => {
-    renderWithQueryClient(<Logs />);
+    renderWithQueryClient(<History />);
     expect(screen.getByTestId('simulation-history')).toBeInTheDocument();
   });
 
   it('passes showAll prop as true to SimulationHistory', () => {
-    renderWithQueryClient(<Logs />);
+    renderWithQueryClient(<History />);
     expect(screen.getByTestId('show-all')).toHaveTextContent('true');
   });
 
   it('renders SimulationHistory component', () => {
-    renderWithQueryClient(<Logs />);
+    renderWithQueryClient(<History />);
     expect(screen.getByText('Simulation History Component')).toBeInTheDocument();
   });
 
   it('has correct container structure', () => {
-    const { container } = renderWithQueryClient(<Logs />);
+    const { container } = renderWithQueryClient(<History />);
     const mainDiv = container.firstChild as HTMLElement;
     expect(mainDiv).toHaveClass('space-y-6');
   });
 
   it('matches snapshot', () => {
-    const { container } = renderWithQueryClient(<Logs />);
+    const { container } = renderWithQueryClient(<History />);
     expect(container.firstChild).toMatchSnapshot();
   });
 });
 
 /*
  * Component Analysis for Logs:
- * Path: analytics/Logs.tsx
+ * Path: analytics/History.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -96,12 +96,12 @@ describe('Logs Component', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Logs />);
+ * render(<History />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Logs {...props} />);
+ * render(<History {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

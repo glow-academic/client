@@ -31,6 +31,7 @@ export default function SimulationHistory({
       classOptions={classOptions}
       scoreRangeOptions={scoreRangeOptions}
       showExport={showExport}
+      showAll={showAll}
     />
   );
 }

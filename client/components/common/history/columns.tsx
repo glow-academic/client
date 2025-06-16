@@ -614,7 +614,21 @@ export function useColumns({
             0
           );
           const averageScore = totalScore / chatGrades.length;
-          const scorePercent = Math.round(averageScore);
+
+          // Calculate percentage based on rubric total points
+          // Find the rubric for this simulation
+          const simulation = simulations?.find(
+            (s) => s.id === row.original.simulationId
+          );
+          const rubric = validRubrics.find(
+            (r) => r.id === simulation?.rubricId
+          );
+
+          // Calculate percentage using rubric total points, fallback to 100 if not found
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (averageScore / rubricTotalPoints) * 100
+          );
 
           return (
             <div className="text-center">
@@ -655,7 +669,18 @@ export function useColumns({
             0
           );
           const averageScore = totalScore / chatGrades.length;
-          const scorePercent = Math.round(averageScore);
+
+          // Calculate percentage based on rubric total points
+          const simulation = simulations?.find(
+            (s) => s.id === row.original.simulationId
+          );
+          const rubric = validRubrics.find(
+            (r) => r.id === simulation?.rubricId
+          );
+          const rubricTotalPoints = rubric?.points || 100;
+          const scorePercent = Math.round(
+            (averageScore / rubricTotalPoints) * 100
+          );
 
           if (scorePercent >= 80) {
             return value.includes("excellent");
@@ -678,7 +703,15 @@ export function useColumns({
     ];
 
     return attemptColumns;
-  }, [profileOptions, classOptions, showAll, showExport, grades]);
+  }, [
+    profileOptions,
+    classOptions,
+    showAll,
+    showExport,
+    grades,
+    simulations,
+    validRubrics,
+  ]);
 
   // Use enhanced attempts data
   let data: unknown[] = enhancedAttempts || [];

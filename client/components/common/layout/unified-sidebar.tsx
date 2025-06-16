@@ -231,9 +231,9 @@ export function UnifiedSidebar({
             section: "reports",
           },
           {
-            title: "Logs",
+            title: "History",
             url: "#",
-            section: "logs",
+            section: "history",
           },
         ],
       });
@@ -265,8 +265,8 @@ export function UnifiedSidebar({
       });
     }
 
-    // Classes - Available from instructor level and up
-    if (["instructor", "instructional", "admin"].includes(effectiveRole)) {
+    // Classes - Available for only instructor level
+    if (["instructor"].includes(effectiveRole)) {
       const classItems: MenuItem[] = [];
 
       // Add specific classes based on role

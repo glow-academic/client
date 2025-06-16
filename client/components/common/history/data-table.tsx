@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -15,6 +14,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import * as React from "react";
 import { DateRange } from "react-day-picker";
 
 import {
@@ -35,7 +35,8 @@ interface DataTableProps<TData, TValue> {
   profileOptions: { value: string; label: string }[];
   classOptions: { value: string; label: string }[];
   scoreRangeOptions: { value: string; label: string }[];
-    showExport?: boolean;
+  showExport?: boolean;
+  showAll?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -45,12 +46,13 @@ export function DataTable<TData, TValue>({
   classOptions,
   scoreRangeOptions,
   showExport = true,
+  showAll = false,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({});
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
+    []
   );
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [dateRange, setDateRange] = React.useState<DateRange | undefined>();
@@ -109,6 +111,7 @@ export function DataTable<TData, TValue>({
         dateRange={dateRange}
         setDateRange={setDateRange}
         showExport={showExport}
+        showAll={showAll}
       />
       <div className="rounded-md border">
         <Table>
@@ -122,7 +125,7 @@ export function DataTable<TData, TValue>({
                         ? null
                         : flexRender(
                             header.column.columnDef.header,
-                            header.getContext(),
+                            header.getContext()
                           )}
                     </TableHead>
                   );
@@ -138,13 +141,10 @@ export function DataTable<TData, TValue>({
                   data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className="px-6"
-                    >
+                    <TableCell key={cell.id} className="px-6">
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext(),
+                        cell.getContext()
                       )}
                     </TableCell>
                   ))}

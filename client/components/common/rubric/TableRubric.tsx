@@ -31,7 +31,7 @@ interface TableRubricProps {
 }
 
 export default function TableRubric({ rubricId, simulationChatId, evaluationChatId }: TableRubricProps) {
-    const { data: rubric, isLoading: loadingRubric } = useQuery({
+    const { isLoading: loadingRubric } = useQuery({
         queryKey: ["rubric", rubricId],
         queryFn: () => getRubric(rubricId),
         enabled: !!rubricId,
@@ -134,24 +134,16 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         );
     }
 
-    if (!rubric || !standardGroups || !standards || !simulationGrades || !simulationFeedbacks || !evaluationGrades || !evaluationFeedbacks) {
-        return (
-            <div className="text-center p-8">
-                <p className="text-muted-foreground">Unable to load rubric data</p>
-            </div>
-        );
-    }
-
     // Group standards by standard group
-    const groupedStandards = standardGroups.map((group: StandardGroup) => ({
+    const groupedStandards = standardGroups?.map((group: StandardGroup) => ({
         group,
-        standards: standards
+        standards: standards!
             .filter((standard: Standard) => standard.standardGroupId === group.id)
             .sort((a, b) => b.points - a.points), // Sort by points descending (Level 5 to Level 1)
     }));
 
     // Determine the maximum number of standards across all groups for consistent column count
-    const maxStandards = Math.max(...groupedStandards.map(g => g.standards.length));
+    const maxStandards = Math.max(...groupedStandards!.map(g => g.standards.length));
 
     return (
         <div className="space-y-4 w-full">
@@ -164,13 +156,13 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
                             </TableHead>
                             {Array.from({ length: maxStandards }, (_, i) => (
                                 <TableHead key={i} className="bg-primary text-primary-foreground font-semibold text-xs px-2" style={{ width: `${(100 - 20) / maxStandards}%` }}>
-                                    {groupedStandards[0]?.standards[i]?.name}
+                                    {groupedStandards![0]?.standards[i]?.name}
                                 </TableHead>
                             ))}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {groupedStandards.map(({ group, standards: groupStandards }, groupIndex) => (
+                        {groupedStandards!.map(({ group, standards: groupStandards }, groupIndex) => (
                             <TableRow key={group.id} className={groupIndex % 2 === 1 ? "bg-secondary/20" : ""}>
                                 <TableCell className="font-medium align-top p-2 text-xs" style={{ width: '20%' }}>
                                     <div className="break-words whitespace-normal overflow-hidden">{group.name}</div>

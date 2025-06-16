@@ -193,8 +193,8 @@ export const generateEnhancedBreadcrumbs = async (
         case "reports":
           title = "Reports";
           break;
-        case "logs":
-          title = "Logs";
+        case "history":
+          title = "History";
           break;
 
         // Create subsections
@@ -413,8 +413,8 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
       case "reports":
         title = "Reports";
         break;
-      case "logs":
-        title = "Logs";
+      case "history":
+        title = "History";
         break;
       case "agents":
         title = "Agents";

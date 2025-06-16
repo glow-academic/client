@@ -91,10 +91,10 @@ describe("breadcrumb-utils", () => {
           ],
         },
         {
-          path: "/analytics/logs",
+          path: "/analytics/history",
           expected: [
             { title: "Analytics", section: "analytics" },
-            { title: "Logs", section: "logs" },
+            { title: "History", section: "history" },
           ],
         },
       ];
