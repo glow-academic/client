@@ -1,0 +1,20 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Logs Component > matches snapshot 1`] = `
+<div
+  class="space-y-6"
+>
+  <div
+    data-testid="simulation-history"
+  >
+    <div
+      data-testid="show-all"
+    >
+      true
+    </div>
+    <div>
+      Simulation History Component
+    </div>
+  </div>
+</div>
+`;

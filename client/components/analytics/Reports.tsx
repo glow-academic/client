@@ -1,6 +1,6 @@
 /**
  * Reports.tsx
- * Used to display the reports for the analytics page.
+ * Used to display the reports for the analytics page in a dense table format.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
@@ -11,7 +11,6 @@ import { useMemo, useState } from "react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
@@ -29,6 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { logError } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -41,13 +48,13 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import {
   AlertTriangle,
+  ArrowUp,
   Award,
-  Clock,
   Download,
   Loader2,
   Search,
-  Target,
-  Users,
+  TrendingDown,
+  TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -449,6 +456,7 @@ export default function Reports() {
 
   return (
     <div className="space-y-6">
+      {/* Header with search and filters */}
       <div className="flex items-center justify-between gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -503,24 +511,51 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {sortedFilteredAndSearchedTAs.length > 0 ? (
-          sortedFilteredAndSearchedTAs.map((ta, index) => (
-            <Card
-              key={ta.id}
-              className={`transition-colors ${
-                ta.isStruggling
-                  ? "border-orange-200 bg-orange-50/30"
-                  : "hover:bg-muted/30"
-              }`}
-            >
-              <CardContent className="px-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary font-bold text-sm">
-                      #{index + 1}
+      {/* Dense Table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[50px]">#</TableHead>
+              <TableHead className="w-[60px]">TA</TableHead>
+              <TableHead className="min-w-[150px]">Name</TableHead>
+              <TableHead className="w-[120px]">Username</TableHead>
+              <TableHead className="w-[80px] text-center">Score</TableHead>
+              <TableHead className="w-[90px] text-center">Sessions</TableHead>
+              <TableHead className="w-[80px] text-center">Pass Rate</TableHead>
+              <TableHead className="w-[80px] text-center">Avg Time</TableHead>
+              <TableHead className="w-[100px] text-center">
+                Completion
+              </TableHead>
+              <TableHead className="w-[80px] text-center">Trend</TableHead>
+              <TableHead className="min-w-[200px]">Skills</TableHead>
+              <TableHead className="w-[120px] text-center">Weakest</TableHead>
+              <TableHead className="w-[120px] text-center">Strongest</TableHead>
+              <TableHead className="w-[80px] text-center">Status</TableHead>
+              <TableHead className="w-[60px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sortedFilteredAndSearchedTAs.length > 0 ? (
+              sortedFilteredAndSearchedTAs.map((ta, index) => (
+                <TableRow
+                  key={ta.id}
+                  className={`${
+                    ta.isStruggling
+                      ? "bg-orange-50/50 border-orange-200"
+                      : "hover:bg-muted/30"
+                  } transition-colors`}
+                >
+                  {/* Rank */}
+                  <TableCell className="font-medium text-center">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm">
+                      {index + 1}
                     </div>
-                    <Avatar className="h-12 w-12">
+                  </TableCell>
+
+                  {/* Avatar */}
+                  <TableCell>
+                    <Avatar className="h-10 w-10">
                       <AvatarFallback
                         className={
                           ta.isStruggling ? "bg-orange-100 text-orange-800" : ""
@@ -529,285 +564,177 @@ export default function Reports() {
                         {ta.initials}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="font-semibold text-lg">
+                  </TableCell>
+
+                  {/* Name */}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div>
+                        <div className="font-medium">
                           {ta.firstName} {ta.lastName}
-                        </h3>
+                        </div>
                         {ta.isStruggling && (
-                          <AlertTriangle className="h-5 w-5 text-orange-500" />
-                        )}
-                        {ta.trend === "improving" && (
-                          <Badge
-                            variant="secondary"
-                            className="text-green-700 bg-green-100"
-                          >
-                            Improving
-                          </Badge>
-                        )}
-                        {ta.trend === "declining" && (
-                          <Badge
-                            variant="secondary"
-                            className="text-red-700 bg-red-100"
-                          >
-                            Declining
-                          </Badge>
+                          <div className="flex items-center gap-1 text-orange-600 text-xs">
+                            <AlertTriangle className="h-3 w-3" />
+                            Needs Attention
+                          </div>
                         )}
                       </div>
-                      <p className="text-muted-foreground mb-3">
-                        {ta.username}@purdue.edu
-                      </p>
-
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Average Score
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <Badge
-                              variant={
-                                ta.avgScore >= 80
-                                  ? "default"
-                                  : ta.avgScore >= 70
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                              className="text-sm"
-                            >
-                              {ta.hasNoSessions ? "No Data" : `${ta.avgScore}%`}
-                            </Badge>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Sessions
-                          </p>
-                          <p className="font-medium">
-                            {ta.completedSessions}/{ta.totalSessions}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {ta.completionRate}% completion
-                          </p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Pass Rate
-                          </p>
-                          <p className="font-medium">
-                            {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
-                          </p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <p className="text-sm text-muted-foreground">
-                            Avg Time
-                          </p>
-                          <p className="font-medium">
-                            {ta.hasNoSessions
-                              ? "N/A"
-                              : `${ta.avgTimeMinutes}min`}
-                          </p>
-                        </div>
-                      </div>
-
-                      {!ta.hasNoSessions && (
-                        <div className="mt-4">
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Skill Performance
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {ta.skillBreakdown.map((skill, skillIndex) => (
-                              <Badge
-                                key={skillIndex}
-                                variant="outline"
-                                className={`text-xs ${
-                                  skill.score < 70
-                                    ? "border-red-200 text-red-700 bg-red-50"
-                                    : skill.score >= 85
-                                      ? "border-green-200 text-green-700 bg-green-50"
-                                      : ""
-                                }`}
-                              >
-                                {skill.skill}: {skill.score}%
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
-                  </div>
+                  </TableCell>
 
-                  <div className="flex items-center gap-2">
-                    {ta.isStruggling && (
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <AlertTriangle className="h-4 w-4 mr-2" />
-                            Support
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl">
-                          <DialogHeader>
-                            <DialogTitle>
-                              Support Recommendations for {ta.firstName}{" "}
-                              {ta.lastName}
-                            </DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-6">
-                            {ta.hasNoSessions ? (
-                              <Card className="border-red-200 bg-red-50">
-                                <CardHeader>
-                                  <CardTitle className="text-red-800 flex items-center gap-2">
-                                    <Users className="h-5 w-5" />
-                                    No Training Sessions Completed
-                                  </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                  <div className="space-y-4">
-                                    <p className="text-red-700">
-                                      This TA has not completed any training
-                                      simulations yet.
-                                    </p>
+                  {/* Username */}
+                  <TableCell className="text-sm text-muted-foreground">
+                    {ta.username}@purdue.edu
+                  </TableCell>
 
-                                    <div className="space-y-3">
-                                      <h4 className="font-medium text-red-800">
-                                        Immediate Actions Required:
-                                      </h4>
-                                      <ul className="space-y-2 text-sm text-red-700">
-                                        <li className="flex items-start gap-2">
-                                          <Target className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>
-                                            Schedule mandatory training session
-                                            within 48 hours
-                                          </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                          <Users className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>
-                                            Assign experienced TA mentor for
-                                            guidance
-                                          </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                          <Clock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>
-                                            Provide training timeline and
-                                            expectations document
-                                          </span>
-                                        </li>
-                                        <li className="flex items-start gap-2">
-                                          <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                          <span>
-                                            Follow up daily until first
-                                            simulation is completed
-                                          </span>
-                                        </li>
-                                      </ul>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                            ) : (
-                              <>
-                                <div className="grid grid-cols-2 gap-4">
-                                  <Card className="border-orange-200 bg-orange-50">
-                                    <CardHeader className="pb-3">
-                                      <CardTitle className="text-orange-800 text-sm">
-                                        Performance Overview
-                                      </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          Average Score:
-                                        </span>
-                                        <span className="font-medium text-orange-800">
-                                          {ta.avgScore}%
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          Pass Rate:
-                                        </span>
-                                        <span className="font-medium text-orange-800">
-                                          {ta.passRate}%
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          Completion Rate:
-                                        </span>
-                                        <span className="font-medium text-orange-800">
-                                          {ta.completionRate}%
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">
-                                          Avg Time:
-                                        </span>
-                                        <span className="font-medium text-orange-800">
-                                          {ta.avgTimeMinutes}min
-                                        </span>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
+                  {/* Score */}
+                  <TableCell className="text-center">
+                    <Badge
+                      variant={
+                        ta.avgScore >= 80
+                          ? "default"
+                          : ta.avgScore >= 70
+                            ? "secondary"
+                            : "destructive"
+                      }
+                      className="text-sm font-medium"
+                    >
+                      {ta.hasNoSessions ? "No Data" : `${ta.avgScore}%`}
+                    </Badge>
+                  </TableCell>
 
-                                  <Card className="border-blue-200 bg-blue-50">
-                                    <CardHeader className="pb-3">
-                                      <CardTitle className="text-blue-800 text-sm">
-                                        Skill Analysis
-                                      </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                      <div className="text-sm">
-                                        <span className="text-muted-foreground">
-                                          Weakest Skill:
-                                        </span>
-                                        <div className="font-medium text-red-600 mt-1">
-                                          {ta.weakestSkill.skill} (
-                                          {ta.weakestSkill.score}%)
-                                        </div>
-                                      </div>
-                                      <div className="text-sm">
-                                        <span className="text-muted-foreground">
-                                          Strongest Skill:
-                                        </span>
-                                        <div className="font-medium text-green-600 mt-1">
-                                          {ta.strongestSkill.skill} (
-                                          {ta.strongestSkill.score}%)
-                                        </div>
-                                      </div>
-                                      <div className="text-sm">
-                                        <span className="text-muted-foreground">
-                                          Trend:
-                                        </span>
-                                        <div
-                                          className={`font-medium mt-1 ${
-                                            ta.trend === "improving"
-                                              ? "text-green-600"
-                                              : ta.trend === "declining"
-                                                ? "text-red-600"
-                                                : "text-gray-600"
-                                          }`}
-                                        >
-                                          {ta.trend === "improving"
-                                            ? "📈 Improving"
-                                            : ta.trend === "declining"
-                                              ? "📉 Declining"
-                                              : "➡️ Stable"}
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                  {/* Sessions */}
+                  <TableCell className="text-center">
+                    <div className="text-sm font-medium">
+                      {ta.completedSessions}/{ta.totalSessions}
+                    </div>
+                  </TableCell>
+
+                  {/* Pass Rate */}
+                  <TableCell className="text-center">
+                    <div className="text-sm font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
+                    </div>
+                  </TableCell>
+
+                  {/* Avg Time */}
+                  <TableCell className="text-center">
+                    <div className="text-sm font-medium">
+                      {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}min`}
+                    </div>
+                  </TableCell>
+
+                  {/* Completion Rate */}
+                  <TableCell className="text-center">
+                    <div className="text-sm font-medium">
+                      {ta.completionRate}%
+                    </div>
+                  </TableCell>
+
+                  {/* Trend */}
+                  <TableCell className="text-center">
+                    {ta.trend === "improving" ? (
+                      <div className="flex items-center justify-center gap-1 text-green-600">
+                        <TrendingUp className="h-4 w-4" />
+                        <span className="text-xs">Up</span>
+                      </div>
+                    ) : ta.trend === "declining" ? (
+                      <div className="flex items-center justify-center gap-1 text-red-600">
+                        <TrendingDown className="h-4 w-4" />
+                        <span className="text-xs">Down</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-1 text-gray-600">
+                        <ArrowUp className="h-4 w-4 rotate-90" />
+                        <span className="text-xs">Stable</span>
+                      </div>
                     )}
+                  </TableCell>
+
+                  {/* Skills */}
+                  <TableCell>
+                    {!ta.hasNoSessions && (
+                      <div className="flex flex-wrap gap-1">
+                        {ta.skillBreakdown
+                          .slice(0, 3)
+                          .map((skill, skillIndex) => (
+                            <Badge
+                              key={skillIndex}
+                              variant="outline"
+                              className={`text-xs ${
+                                skill.score < 70
+                                  ? "border-red-200 text-red-700 bg-red-50"
+                                  : skill.score >= 85
+                                    ? "border-green-200 text-green-700 bg-green-50"
+                                    : ""
+                              }`}
+                            >
+                              {skill.skill}: {skill.score}%
+                            </Badge>
+                          ))}
+                        {ta.skillBreakdown.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{ta.skillBreakdown.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </TableCell>
+
+                  {/* Weakest Skill */}
+                  <TableCell className="text-center">
+                    {!ta.hasNoSessions && (
+                      <div className="text-xs">
+                        <div className="font-medium text-red-600">
+                          {ta.weakestSkill.skill}
+                        </div>
+                        <div className="text-red-500">
+                          {ta.weakestSkill.score}%
+                        </div>
+                      </div>
+                    )}
+                  </TableCell>
+
+                  {/* Strongest Skill */}
+                  <TableCell className="text-center">
+                    {!ta.hasNoSessions && (
+                      <div className="text-xs">
+                        <div className="font-medium text-green-600">
+                          {ta.strongestSkill.skill}
+                        </div>
+                        <div className="text-green-500">
+                          {ta.strongestSkill.score}%
+                        </div>
+                      </div>
+                    )}
+                  </TableCell>
+
+                  {/* Status */}
+                  <TableCell className="text-center">
+                    {ta.hasNoSessions ? (
+                      <Badge variant="destructive" className="text-xs">
+                        No Sessions
+                      </Badge>
+                    ) : ta.isStruggling ? (
+                      <Badge
+                        variant="secondary"
+                        className="text-xs bg-orange-100 text-orange-800"
+                      >
+                        Struggling
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="default"
+                        className="text-xs bg-green-100 text-green-800"
+                      >
+                        Good
+                      </Badge>
+                    )}
+                  </TableCell>
+
+                  {/* Actions */}
+                  <TableCell>
                     <ReportDownloadDialog
                       ta={ta}
                       onDownload={(options) =>
@@ -815,29 +742,38 @@ export default function Reports() {
                       }
                       isDownloading={downloadingReports.has(ta.id)}
                     />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={15} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-4">
+                    <Award className="h-16 w-16 text-muted-foreground" />
+                    <div>
+                      <h3 className="text-lg font-medium mb-2">
+                        {searchQuery.trim()
+                          ? `No TAs found matching "${searchQuery}"`
+                          : "No TAs match the current filter"}
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Try adjusting your search or filter criteria
+                      </p>
+                      {searchQuery.trim() && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setSearchQuery("")}
+                        >
+                          Clear search
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        ) : (
-          <div className="text-center py-12">
-            <Award className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-medium mb-2">
-              {searchQuery.trim()
-                ? `No TAs found matching "${searchQuery}"`
-                : "No TAs match the current filter"}
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Try adjusting your search or filter criteria
-            </p>
-            {searchQuery.trim() && (
-              <Button variant="outline" onClick={() => setSearchQuery("")}>
-                Clear search
-              </Button>
+                </TableCell>
+              </TableRow>
             )}
-          </div>
-        )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
