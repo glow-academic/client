@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { logError } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -49,7 +50,6 @@ import {
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -202,7 +202,8 @@ export default function Reports() {
             ? Math.round(
                 (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
                   groupFeedbacks.length /
-                  (groupStandards[0]?.points || 1)) *
+                  (rubrics?.find((r) => r.id === group.rubricId)?.points ||
+                    100)) *
                   100
               )
             : 0;
@@ -410,7 +411,9 @@ export default function Reports() {
       toast.error(
         `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-      logError(`Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`);
+      logError(
+        `Failed to download report: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     } finally {
       setDownloadingReports((prev) => {
         const newSet = new Set(prev);

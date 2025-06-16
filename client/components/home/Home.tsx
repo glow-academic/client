@@ -831,13 +831,14 @@ export default function Home() {
             );
 
             if (groupFeedbacks.length > 0) {
-              const maxPoints = Math.max(
-                ...groupStandards.map((s) => s.points)
-              );
+              // Use the rubric's total points for this group instead of max standard points
+              const rubric = rubrics?.find((r) => r.id === group.rubricId);
+              const rubricTotalPoints = rubric?.points || 100;
+
               const avgScore = Math.round(
                 (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
                   groupFeedbacks.length /
-                  maxPoints) *
+                  rubricTotalPoints) *
                   100
               );
               acc[group.shortName] = avgScore;
@@ -874,7 +875,7 @@ export default function Home() {
     });
 
     return cache;
-  }, [attempts, chats, grades, feedbacks, standards, standardGroups]);
+  }, [attempts, chats, grades, feedbacks, standards, standardGroups, rubrics]);
 
   // Get real rubric data for a simulation
   const getRealRubricData = useCallback(

@@ -6,23 +6,14 @@
  */
 
 "use client";
-import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -31,37 +22,46 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  TrendingUp,
-  Target,
-  Clock,
-  Award,
-  MessageSquare,
-  Users,
-} from "lucide-react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-} from "recharts";
-import { format, subDays, isAfter, startOfDay } from "date-fns";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { getAgentConfig } from "@/utils/agents";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
+import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
+import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
+import { useQuery } from "@tanstack/react-query";
+import { format, isAfter, startOfDay, subDays } from "date-fns";
+import {
+  Award,
+  Clock,
+  MessageSquare,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 // Color palette for charts
 const COLORS = {
@@ -77,8 +77,12 @@ const COLORS = {
 
 export default function Performance() {
   const [selectedRubricId, setSelectedRubricId] = useState<string>("all");
-  const [personalityTimeRange, setPersonalityTimeRange] = useState<"7d" | "30d" | "90d">("30d");
-  const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [personalityTimeRange, setPersonalityTimeRange] = useState<
+    "7d" | "30d" | "90d"
+  >("30d");
+  const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">(
+    "30d"
+  );
 
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -110,7 +114,7 @@ export default function Performance() {
   const rubrics = useMemo(() => {
     if (!allRubrics || !simulations) return [];
     const simulationRubricIds = new Set(
-      simulations.map((sim) => sim.rubricId).filter(Boolean), // Remove null/undefined values
+      simulations.map((sim) => sim.rubricId).filter(Boolean) // Remove null/undefined values
     );
     return allRubrics.filter((rubric) => simulationRubricIds.has(rubric.id));
   }, [allRubrics, simulations]);
@@ -121,7 +125,7 @@ export default function Performance() {
       queryFn: () =>
         getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics && rubrics.length > 0,
-    },
+    }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
@@ -133,7 +137,8 @@ export default function Performance() {
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
     queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () => getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
+    queryFn: () =>
+      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
     enabled: !!profiles && profiles.length > 0,
   });
 
@@ -155,7 +160,7 @@ export default function Performance() {
     queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id),
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades && grades.length > 0,
   });
@@ -183,7 +188,7 @@ export default function Performance() {
         : standardGroups.filter((group) => group.rubricId === selectedRubricId);
 
     const filteredStandards = standards.filter((s) =>
-      filteredStandardGroups.some((group) => group.id === s.standardGroupId),
+      filteredStandardGroups.some((group) => group.id === s.standardGroupId)
     );
 
     const filteredGrades =
@@ -192,8 +197,14 @@ export default function Performance() {
         : grades.filter((grade) => grade.rubricId === selectedRubricId);
 
     // Filter data by time ranges
-    const personalityDays = personalityTimeRange === "7d" ? 7 : personalityTimeRange === "30d" ? 30 : 90;
-    const skillDays = skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
+    const personalityDays =
+      personalityTimeRange === "7d"
+        ? 7
+        : personalityTimeRange === "30d"
+          ? 30
+          : 90;
+    const skillDays =
+      skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
     const personalityCutoff = startOfDay(subDays(new Date(), personalityDays));
 
     const personalityFilteredGrades = filteredGrades.filter((grade) =>
@@ -201,27 +212,28 @@ export default function Performance() {
     );
 
     const skillFilteredFeedbacks = feedbacks.filter((f) =>
-      filteredStandards.some((s) => s.id === f.standardId),
+      filteredStandards.some((s) => s.id === f.standardId)
     );
 
     // Calculate average scores by standard group (skill category) using shortName with proper formatting
     const skillCategories = filteredStandardGroups.reduce(
       (acc, group) => {
         const groupStandards = filteredStandards.filter(
-          (s) => s.standardGroupId === group.id,
+          (s) => s.standardGroupId === group.id
         );
         const groupFeedbacks = skillFilteredFeedbacks.filter((f) =>
-          groupStandards.some((s) => s.id === f.standardId),
+          groupStandards.some((s) => s.id === f.standardId)
         );
 
         const avgScore =
           groupFeedbacks.length > 0
             ? Math.round(
-              (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-                groupFeedbacks.length /
-                (groupStandards[0]?.points || 1)) *
-              100,
-            )
+                (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+                  groupFeedbacks.length /
+                  (rubrics?.find((r) => r.id === group.rubricId)?.points ||
+                    100)) *
+                  100
+              )
             : 0;
 
         // Use shortName with proper title case formatting
@@ -229,16 +241,16 @@ export default function Performance() {
         acc[displayName] = avgScore;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number>
     );
 
     // Calculate overall average
     const overallScore =
       filteredGrades.length > 0
         ? Math.round(
-          filteredGrades.reduce((sum, g) => sum + g.score, 0) /
-          filteredGrades.length,
-        )
+            filteredGrades.reduce((sum, g) => sum + g.score, 0) /
+              filteredGrades.length
+          )
         : 0;
 
     // Performance by student type (scenario-based) - use personality filtered data
@@ -247,18 +259,18 @@ export default function Performance() {
       .map((agent) => {
         const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
         const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId),
+          agentScenarios.some((scenario) => scenario.id === chat.scenarioId)
         );
         const agentGrades = personalityFilteredGrades.filter((grade) =>
-          agentChats.some((chat) => chat.id === grade.simulationChatId),
+          agentChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
         const avgScore =
           agentGrades.length > 0
             ? Math.round(
-              agentGrades.reduce((sum, g) => sum + g.score, 0) /
-              agentGrades.length,
-            )
+                agentGrades.reduce((sum, g) => sum + g.score, 0) /
+                  agentGrades.length
+              )
             : 0;
 
         return {
@@ -275,7 +287,10 @@ export default function Performance() {
 
       // Get feedbacks for this date range (simulate progression based on actual data)
       const dayData: Record<string, string | number> = {
-        date: format(date, skillDays === 7 ? "MMM dd" : skillDays === 30 ? "MM/dd" : "M/d"),
+        date: format(
+          date,
+          skillDays === 7 ? "MMM dd" : skillDays === 30 ? "MM/dd" : "M/d"
+        ),
       };
 
       // Add skill categories with realistic progression based on current scores
@@ -286,10 +301,10 @@ export default function Performance() {
           const progressionTrend = (i / (skillDays - 1)) * 5; // Gradual improvement over time
           const targetScore = Math.max(
             60,
-            Math.min(95, currentScore - 8 + progressionTrend + baseVariation),
+            Math.min(95, currentScore - 8 + progressionTrend + baseVariation)
           );
           dayData[skill] = Math.round(targetScore);
-        },
+        }
       );
 
       return dayData;
@@ -301,21 +316,21 @@ export default function Performance() {
         const taAttempts =
           attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
         const taChats = chats.filter((chat) =>
-          taAttempts.some((attempt) => attempt.id === chat.attemptId),
+          taAttempts.some((attempt) => attempt.id === chat.attemptId)
         );
         const taGrades = filteredGrades.filter((grade) =>
-          taChats.some((chat) => chat.id === grade.simulationChatId),
+          taChats.some((chat) => chat.id === grade.simulationChatId)
         );
 
         const avgScore =
           taGrades.length > 0
             ? Math.round(
-              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length,
-            )
+                taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
+              )
             : 0;
 
         const completedSessions = taChats.filter(
-          (chat) => chat.completed,
+          (chat) => chat.completed
         ).length;
         const totalSessions = taChats.length;
 
@@ -330,11 +345,14 @@ export default function Performance() {
             totalSessions > 0
               ? Math.round((completedSessions / totalSessions) * 100)
               : 0,
-          initials: ta.firstName.charAt(0) + ta.lastName.charAt(0)
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .toUpperCase(),
+          initials:
+            ta.firstName.charAt(0) +
+            ta.lastName
+              .charAt(0)
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase(),
         };
       })
       .sort((a, b) => b.avgScore - a.avgScore);
@@ -361,34 +379,41 @@ export default function Performance() {
     const currentWeekAvg =
       currentWeekGrades.length > 0
         ? Math.round(
-          currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-          currentWeekGrades.length,
-        )
+            currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+              currentWeekGrades.length
+          )
         : 0;
 
     const lastWeekAvg =
       lastWeekGrades.length > 0
         ? Math.round(
-          lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-          lastWeekGrades.length,
-        )
+            lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+              lastWeekGrades.length
+          )
         : 0;
 
     // Calculate additional dynamic metrics
-    const avgSessionTime = filteredGrades.length > 0
-      ? Math.round(
-          filteredGrades
-            .filter(g => g.timeTaken)
-            .reduce((sum, g) => sum + (g.timeTaken || 0), 0) / 
-          filteredGrades.filter(g => g.timeTaken).length / 60
-        )
-      : 0;
+    const avgSessionTime =
+      filteredGrades.length > 0
+        ? Math.round(
+            filteredGrades
+              .filter((g) => g.timeTaken)
+              .reduce((sum, g) => sum + (g.timeTaken || 0), 0) /
+              filteredGrades.filter((g) => g.timeTaken).length /
+              60
+          )
+        : 0;
 
-    const passRate = filteredGrades.length > 0
-      ? Math.round((filteredGrades.filter(g => g.passed).length / filteredGrades.length) * 100)
-      : 0;
+    const passRate =
+      filteredGrades.length > 0
+        ? Math.round(
+            (filteredGrades.filter((g) => g.passed).length /
+              filteredGrades.length) *
+              100
+          )
+        : 0;
 
-    const activeTAs = taPerformance.filter(ta => ta.totalSessions > 0).length;
+    const activeTAs = taPerformance.filter((ta) => ta.totalSessions > 0).length;
 
     const weeklyTrend = currentWeekAvg - lastWeekAvg;
 
@@ -416,6 +441,7 @@ export default function Performance() {
     agents,
     scenarios,
     attempts,
+    rubrics,
     selectedRubricId,
     personalityTimeRange,
     skillTimeRange,
@@ -471,7 +497,9 @@ export default function Performance() {
     {
       label: "Good",
       range: "80-89%",
-      tas: analytics.taPerformance.filter((ta) => ta.avgScore >= 80 && ta.avgScore < 90),
+      tas: analytics.taPerformance.filter(
+        (ta) => ta.avgScore >= 80 && ta.avgScore < 90
+      ),
       color: COLORS.primary,
       bgColor: "bg-blue-50",
       borderColor: "border-blue-200",
@@ -479,7 +507,9 @@ export default function Performance() {
     {
       label: "Average",
       range: "70-79%",
-      tas: analytics.taPerformance.filter((ta) => ta.avgScore >= 70 && ta.avgScore < 80),
+      tas: analytics.taPerformance.filter(
+        (ta) => ta.avgScore >= 70 && ta.avgScore < 80
+      ),
       color: COLORS.warning,
       bgColor: "bg-yellow-50",
       borderColor: "border-yellow-200",
@@ -517,7 +547,11 @@ export default function Performance() {
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
                 >
-                  {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+                  {range === "7d"
+                    ? "7 days"
+                    : range === "30d"
+                      ? "30 days"
+                      : "90 days"}
                 </button>
               ))}
             </div>
@@ -613,7 +647,11 @@ export default function Performance() {
                         : "bg-muted text-muted-foreground hover:bg-muted/80"
                     }`}
                   >
-                    {range === "7d" ? "7 days" : range === "30d" ? "30 days" : "90 days"}
+                    {range === "7d"
+                      ? "7 days"
+                      : range === "30d"
+                        ? "30 days"
+                        : "90 days"}
                   </button>
                 ))}
               </div>
@@ -704,7 +742,9 @@ export default function Performance() {
                         className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-shadow ${tier.bgColor} ${tier.borderColor}`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{tier.label}</span>
+                          <span className="text-sm font-medium">
+                            {tier.label}
+                          </span>
                           <span
                             className="text-lg font-bold"
                             style={{ color: tier.color }}
@@ -752,9 +792,12 @@ export default function Performance() {
                                 </div>
                               </div>
                               <div className="text-right">
-                                <p className="text-lg font-bold">{ta.avgScore}%</p>
+                                <p className="text-lg font-bold">
+                                  {ta.avgScore}%
+                                </p>
                                 <p className="text-xs text-muted-foreground">
-                                  {ta.completedSessions}/{ta.totalSessions} sessions
+                                  {ta.completedSessions}/{ta.totalSessions}{" "}
+                                  sessions
                                 </p>
                               </div>
                             </div>
@@ -826,12 +869,11 @@ export default function Performance() {
                         Weekly Trend
                       </div>
                       <div className="text-xs text-blue-700 mt-1">
-                        {analytics.weeklyTrend > 0 
+                        {analytics.weeklyTrend > 0
                           ? `Scores improved by ${analytics.weeklyTrend}% this week`
                           : analytics.weeklyTrend < 0
-                          ? `Scores decreased by ${Math.abs(analytics.weeklyTrend)}% this week`
-                          : "Scores remained stable this week"
-                        }
+                            ? `Scores decreased by ${Math.abs(analytics.weeklyTrend)}% this week`
+                            : "Scores remained stable this week"}
                       </div>
                     </div>
                   </div>
@@ -845,7 +887,8 @@ export default function Performance() {
                         Active TAs
                       </div>
                       <div className="text-xs text-green-700 mt-1">
-                        {analytics.activeTAs} TAs have completed training sessions
+                        {analytics.activeTAs} TAs have completed training
+                        sessions
                       </div>
                     </div>
                   </div>
@@ -887,14 +930,19 @@ export default function Performance() {
                         Best Performing Agent
                       </div>
                       <div className="text-xs text-orange-700 mt-1">
-                        {analytics.performanceByType.length > 0 
-                          ? `${analytics.performanceByType.reduce((best, current) => 
-                              current.score > best.score ? current : best
-                            ).name} students (${analytics.performanceByType.reduce((best, current) => 
-                              current.score > best.score ? current : best
-                            ).score}% avg)`
-                          : "No data available"
-                        }
+                        {analytics.performanceByType.length > 0
+                          ? `${
+                              analytics.performanceByType.reduce(
+                                (best, current) =>
+                                  current.score > best.score ? current : best
+                              ).name
+                            } students (${
+                              analytics.performanceByType.reduce(
+                                (best, current) =>
+                                  current.score > best.score ? current : best
+                              ).score
+                            }% avg)`
+                          : "No data available"}
                       </div>
                     </div>
                   </div>
