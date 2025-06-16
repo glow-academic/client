@@ -21,19 +21,10 @@ services:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
       - CLEAN_DB=${CLEAN_DB:-false}
-      - DB_HOST=localhost
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - INIT_SQL=init.sql
-      - INIT_DIR=init
       - HISTORY_DIR=/database/history
-      - MIGRATIONS_DIR=/database/migrations
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/history:/database/history
-      - ./database/migrations:/database/migrations
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -141,75 +132,6 @@ services:
     ports:
       - "${CLIENT_PORT:-3000}:3000"
 
-  # --------------------
-  # Testing Services (for CI/CD)
-  # --------------------
-  
-  # Database E2E Testing
-  database-test:
-    build:
-      context: ./database
-      dockerfile: Dockerfile
-      target: cypress-test
-    env_file: .env
-    environment:
-      - DB_HOST=database
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - CYPRESS_baseUrl=http://client:3000
-      - CYPRESS_apiUrl=http://server:8000
-    depends_on:
-      database:
-        condition: service_healthy
-      client:
-        condition: service_started
-      server:
-        condition: service_started
-    networks:
-      - internal
-    profiles:
-      - test
-    command: ["yarn", "test"]
-
-  # Client Testing
-  client-test:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      target: test
-      args:
-        DB_USER: ${DB_USER}
-        DB_PASSWORD: ${DB_PASSWORD}
-        DB_NAME: ${DB_NAME}
-        DB_PORT: ${DB_PORT}
-        DB_HOST: database
-    env_file: .env
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - internal
-    profiles:
-      - test
-
-  # Server Testing
-  server-test:
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-      target: test
-    env_file: .env
-    environment:
-      - DB_HOST=database
-    depends_on:
-      database:
-        condition: service_healthy
-    networks:
-      - internal
-    profiles:
-      - test
 
 volumes:
   pgdata:
