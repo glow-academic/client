@@ -15,6 +15,7 @@ describe("Chat End-to-End Tests", () => {
       // First create the necessary test data
       const testAgent = {
         name: `Chat Test Agent ${Date.now()}`,
+        subtitle: "Chat Test Assistant",
         description: "Agent for chat testing",
         system_prompt:
           "You are a helpful student assistant. Keep responses brief and educational.",
@@ -23,10 +24,11 @@ describe("Chat End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -63,11 +65,18 @@ describe("Chat End-to-End Tests", () => {
           const testRubric = {
             name: `Chat Test Rubric ${Date.now()}`,
             description: "Test rubric for chat testing",
+            points: 100,
+            pass_points: 70,
           };
 
           cy.task("dbQuery", {
-            query: `INSERT INTO rubrics (name, description) VALUES ($1, $2) RETURNING id`,
-            params: [testRubric.name, testRubric.description],
+            query: `INSERT INTO rubrics (name, description, points, pass_points) VALUES ($1, $2, $3, $4) RETURNING id`,
+            params: [
+              testRubric.name,
+              testRubric.description,
+              testRubric.points,
+              testRubric.pass_points,
+            ],
           }).then((rubricResult: any) => {
             const rubricId = rubricResult.rows[0].id;
 
@@ -82,7 +91,7 @@ describe("Chat End-to-End Tests", () => {
 
             cy.task("dbQuery", {
               query: `INSERT INTO simulations (title, time_limit, active, scenario_ids, rubric_id) 
-                      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
               params: [
                 testSimulation.title,
                 testSimulation.time_limit,
@@ -186,6 +195,7 @@ describe("Chat End-to-End Tests", () => {
       // Create test data and start a chat first
       const testAgent = {
         name: `Message Test Agent ${Date.now()}`,
+        subtitle: "Message Test Assistant",
         description: "Agent for message testing",
         system_prompt:
           'You are a helpful assistant. Always respond with "Message received successfully".',
@@ -194,10 +204,11 @@ describe("Chat End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -231,14 +242,19 @@ describe("Chat End-to-End Tests", () => {
 
           // Create rubric and simulation
           cy.task("dbQuery", {
-            query: `INSERT INTO rubrics (name, description) VALUES ($1, $2) RETURNING id`,
-            params: [`Message Test Rubric ${Date.now()}`, "Test rubric"],
+            query: `INSERT INTO rubrics (name, description, points, pass_points) VALUES ($1, $2, $3, $4) RETURNING id`,
+            params: [
+              `Message Test Rubric ${Date.now()}`,
+              "Test rubric",
+              100,
+              70,
+            ],
           }).then((rubricResult: any) => {
             const rubricId = rubricResult.rows[0].id;
 
             cy.task("dbQuery", {
               query: `INSERT INTO simulations (title, time_limit, active, scenario_ids, rubric_id) 
-                      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
               params: [
                 `Message Test Simulation ${Date.now()}`,
                 30,
@@ -348,6 +364,7 @@ describe("Chat End-to-End Tests", () => {
       // Create test data and active chat
       const testAgent = {
         name: `End Chat Test Agent ${Date.now()}`,
+        subtitle: "End Chat Test Assistant",
         description: "Agent for end chat testing",
         system_prompt: "You are a helpful assistant.",
         agent_type: "student",
@@ -355,10 +372,11 @@ describe("Chat End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -392,14 +410,19 @@ describe("Chat End-to-End Tests", () => {
 
           // Create rubric and simulation
           cy.task("dbQuery", {
-            query: `INSERT INTO rubrics (name, description) VALUES ($1, $2) RETURNING id`,
-            params: [`End Chat Test Rubric ${Date.now()}`, "Test rubric"],
+            query: `INSERT INTO rubrics (name, description, points, pass_points) VALUES ($1, $2, $3, $4) RETURNING id`,
+            params: [
+              `End Chat Test Rubric ${Date.now()}`,
+              "Test rubric",
+              100,
+              70,
+            ],
           }).then((rubricResult: any) => {
             const rubricId = rubricResult.rows[0].id;
 
             cy.task("dbQuery", {
               query: `INSERT INTO simulations (title, time_limit, active, scenario_ids, rubric_id) 
-                      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
               params: [
                 `End Chat Test Simulation ${Date.now()}`,
                 30,
@@ -483,6 +506,7 @@ describe("Chat End-to-End Tests", () => {
       // Create test data with existing messages
       const testAgent = {
         name: `Read Chat Test Agent ${Date.now()}`,
+        subtitle: "Read Chat Test Assistant",
         description: "Agent for read chat testing",
         system_prompt: "You are a helpful assistant.",
         agent_type: "student",
@@ -490,10 +514,11 @@ describe("Chat End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -527,14 +552,19 @@ describe("Chat End-to-End Tests", () => {
 
           // Create rubric and simulation
           cy.task("dbQuery", {
-            query: `INSERT INTO rubrics (name, description) VALUES ($1, $2) RETURNING id`,
-            params: [`Read Chat Test Rubric ${Date.now()}`, "Test rubric"],
+            query: `INSERT INTO rubrics (name, description, points, pass_points) VALUES ($1, $2, $3, $4) RETURNING id`,
+            params: [
+              `Read Chat Test Rubric ${Date.now()}`,
+              "Test rubric",
+              100,
+              70,
+            ],
           }).then((rubricResult: any) => {
             const rubricId = rubricResult.rows[0].id;
 
             cy.task("dbQuery", {
               query: `INSERT INTO simulations (title, time_limit, active, scenario_ids, rubric_id) 
-                      VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                      VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
               params: [
                 `Read Chat Test Simulation ${Date.now()}`,
                 30,
@@ -631,6 +661,7 @@ describe("Chat End-to-End Tests", () => {
       // Create multiple agents and scenarios for multi-user simulation
       const testAgent1 = {
         name: `Multi Chat Agent 1 ${Date.now()}`,
+        subtitle: "Multi Chat Assistant 1",
         description: "First agent for multi-user testing",
         system_prompt: "You are a helpful student.",
         agent_type: "student",
@@ -639,6 +670,7 @@ describe("Chat End-to-End Tests", () => {
 
       const testAgent2 = {
         name: `Multi Chat Agent 2 ${Date.now()}`,
+        subtitle: "Multi Chat Assistant 2",
         description: "Second agent for multi-user testing",
         system_prompt: "You are a teaching assistant.",
         agent_type: "ta",
@@ -647,10 +679,11 @@ describe("Chat End-to-End Tests", () => {
 
       // Create first agent
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent1.name,
+          testAgent1.subtitle,
           testAgent1.description,
           testAgent1.system_prompt,
           testAgent1.agent_type,
@@ -661,10 +694,11 @@ describe("Chat End-to-End Tests", () => {
 
         // Create second agent
         cy.task("dbQuery", {
-          query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                  VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+          query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                  VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
           params: [
             testAgent2.name,
+            testAgent2.subtitle,
             testAgent2.description,
             testAgent2.system_prompt,
             testAgent2.agent_type,
@@ -722,17 +756,19 @@ describe("Chat End-to-End Tests", () => {
 
               // Create rubric and multi-scenario simulation
               cy.task("dbQuery", {
-                query: `INSERT INTO rubrics (name, description) VALUES ($1, $2) RETURNING id`,
+                query: `INSERT INTO rubrics (name, description, points, pass_points) VALUES ($1, $2, $3, $4) RETURNING id`,
                 params: [
                   `Multi Chat Test Rubric ${Date.now()}`,
                   "Test rubric for multi-user",
+                  100,
+                  70,
                 ],
               }).then((rubricResult: any) => {
                 const rubricId = rubricResult.rows[0].id;
 
                 cy.task("dbQuery", {
                   query: `INSERT INTO simulations (title, time_limit, active, scenario_ids, rubric_id) 
-                          VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+                          VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
                   params: [
                     `Multi Chat Test Simulation ${Date.now()}`,
                     45,

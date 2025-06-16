@@ -23,10 +23,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -148,6 +149,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create test data first
       const testAgent = {
         name: `Read Test Agent ${Date.now()}`,
+        subtitle: "Read Test Assistant",
         description: "Agent for read testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
@@ -155,10 +157,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -222,6 +225,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create test data first
       const testAgent = {
         name: `Update Test Agent ${Date.now()}`,
+        subtitle: "Update Test Assistant",
         description: "Agent for update testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
@@ -229,10 +233,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -328,6 +333,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create test data first
       const testAgent = {
         name: `Delete Test Agent ${Date.now()}`,
+        subtitle: "Delete Test Assistant",
         description: "Agent for delete testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
@@ -335,10 +341,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -417,6 +424,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create a test agent first
       const testAgent = {
         name: `AI Scenario Agent ${Date.now()}`,
+        subtitle: "AI Scenario Assistant",
         description: "Agent for AI scenario generation",
         system_prompt:
           "You are a helpful assistant for creating educational scenarios.",
@@ -425,10 +433,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -519,6 +528,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create test agent and scenario
       const testAgent = {
         name: `Query Test Agent ${Date.now()}`,
+        subtitle: "Query Test Assistant",
         description: "Agent for query testing",
         system_prompt:
           'You are a helpful assistant. Always respond with "Query test successful".',
@@ -527,10 +537,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
@@ -661,6 +672,7 @@ describe("Scenarios End-to-End Tests", () => {
       // Create a scenario first
       const testAgent = {
         name: `Constraint Test Agent ${Date.now()}`,
+        subtitle: "Constraint Test Assistant",
         description: "Agent for constraint testing",
         system_prompt: "You are a test agent.",
         agent_type: "student",
@@ -668,10 +680,11 @@ describe("Scenarios End-to-End Tests", () => {
       };
 
       cy.task("dbQuery", {
-        query: `INSERT INTO agents (name, description, system_prompt, agent_type, temperature) 
-                VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+        query: `INSERT INTO agents (name, subtitle, description, system_prompt, agent_type, temperature) 
+                VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
         params: [
           testAgent.name,
+          testAgent.subtitle,
           testAgent.description,
           testAgent.system_prompt,
           testAgent.agent_type,
