@@ -41,7 +41,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 
 const chartConfig = {
   score: {
@@ -67,8 +67,8 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export default function Growth() {
-  const session = useSession();
-  const userId = session.data?.user?.id;
+  const auth = useAuth();
+  const userId = auth.session.data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],

@@ -66,8 +66,8 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { useSession } from "next-auth/react";
 import SimulationHistory from "../common/history/SimulationHistory";
+import { useAuth } from "@/hooks/use-auth";
 
 // Type for attempt data
 interface AttemptData {
@@ -608,8 +608,8 @@ export default function Home() {
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
 
-  const session = useSession();
-  const userId = session.data?.user?.id;
+  const auth = useAuth();
+  const userId = auth.session.data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],

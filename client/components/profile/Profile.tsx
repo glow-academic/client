@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import { Class, ProfileRole } from "@/types";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/use-auth";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -63,8 +63,8 @@ interface ProfileProps {
 }
 
 export function Profile({ className }: ProfileProps) {
-  const session = useSession();
-  const userId = session.data?.user?.id;
+  const auth = useAuth();
+  const userId = auth.session.data?.user?.id;
 
   const { data: profile, isLoading: profileLoading } = useQuery({
     queryKey: ["profile", userId],

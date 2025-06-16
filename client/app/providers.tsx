@@ -1,6 +1,7 @@
 // app/providers.tsx
 "use client";
 
+import { useAuth } from "@/hooks/use-auth";
 import { RoleProvider } from "@/contexts/role-context";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { createQueryClient } from "@/utils/react-query/queryClient";
@@ -9,7 +10,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from "@tanstack/react-query";
-import { SessionProvider, useSession } from "next-auth/react";
+import { SessionProvider } from "next-auth/react";
 import { useState } from "react";
 import { Toaster } from "sonner";
 
@@ -26,8 +27,8 @@ const ReactQueryClientProvider = ({
 
 // Wrapper component to provide role context with user data
 const RoleProviderWrapper = ({ children }: { children: React.ReactNode }) => {
-  const session = useSession();
-  const userId = session.data?.user?.id;
+  const auth = useAuth();
+  const userId = auth.session.data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],

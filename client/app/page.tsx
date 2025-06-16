@@ -6,10 +6,11 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/use-auth";
 import { logError, logInfo } from "@/utils/logger";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery } from "@tanstack/react-query";
-import { signIn, useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -129,8 +130,8 @@ export default function Home() {
   const [loadingMicrosoft, setLoadingMicrosoft] = useState(false);
   const router = useRouter();
 
-  const session = useSession();
-  const userId = session.data?.user?.id;
+  const auth = useAuth();
+  const userId = auth.session.data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],
@@ -150,30 +151,60 @@ export default function Home() {
       localStorage.removeItem("guestMode");
       localStorage.removeItem("simulatedRole");
 
-      // If the user is not a TA, redirect to analytics
-      let redirectTo = "/home";
-      if (profile?.role !== "ta") {
-        redirectTo = "/analytics";
+      // For testing/development: Create a mock admin session
+      // In production, this would use real Microsoft OAuth
+      const isDevelopment = process.env["NEXT_PUBLIC_MOCK_AUTH"] === "true";
+
+      if (isDevelopment) {
+        // Create mock admin session data
+        const mockAdminSession = {
+          user: {
+            id: "1", // Admin user ID
+            name: "Admin User",
+            email: "redacted@purdue.edu",
+            image: null,
+          },
+          expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours from now
+        };
+
+        // Store mock session in localStorage for the app to use
+        localStorage.setItem("mockSession", JSON.stringify(mockAdminSession));
+        localStorage.setItem("mockAuth", "true");
+        localStorage.setItem("userRole", "admin");
+
+        // Log successful mock login
+        await logInfo("Mock Microsoft login successful", {
+          userId: "1",
+          role: "admin",
+          redirectTo: "/analytics",
+        });
+
+        toast.success("Successfully signed in with Microsoft (Mock)!");
+
+        // Redirect to analytics for admin users
+        router.push("/analytics");
+      } else {
+        // Production: Use real Microsoft OAuth
+        let redirectTo = "/home";
+        if (profile?.role !== "ta") {
+          redirectTo = "/analytics";
+        }
+
+        await signIn("microsoft-entra-id", { redirectTo: redirectTo });
+
+        // Log successful login attempt
+        await logInfo("Microsoft login attempt successful", {
+          redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
+        });
+
+        toast.success("Successfully signed in with Microsoft!");
       }
-
-      await signIn("microsoft-entra-id", { redirectTo: redirectTo });
-
-      // Log successful login attempt
-      await logInfo("Microsoft login attempt successful", {
-        redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
-      });
-
-      toast.success("Successfully signed in with Microsoft!");
     } catch (error) {
       const errorMessage = (error as Error).message;
 
       // Log the error to database
       await logError("Microsoft login attempt failed", error as Error);
 
-      // Log failed login attempt
-      await logError("Microsoft login attempt failed", error as Error, {
-        redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
-      });
       toast.error("An error occurred during login: " + errorMessage);
     } finally {
       setLoadingMicrosoft(false);
@@ -259,6 +290,7 @@ export default function Home() {
               type="button"
               onClick={handleMicrosoftLogin}
               disabled={loadingMicrosoft}
+              data-testid="microsoft-login-button"
               className="w-full h-12 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-blue-500/30"
             >
               <div className="flex items-center justify-center space-x-3">
@@ -292,6 +324,7 @@ export default function Home() {
               type="button"
               onClick={handleGuestAccess}
               disabled={loadingGuest}
+              data-testid="guest-login-button"
               className="w-full h-12 bg-white/10 hover:bg-white/20 text-white font-medium rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none border border-white/30 backdrop-blur-sm"
             >
               <div className="flex items-center justify-center space-x-3">
