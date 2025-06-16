@@ -1,4 +1,5 @@
 /// <reference types="cypress" />
+// make these commands that can be used in the support folder.
 
 describe("Authentication End-to-End Tests", () => {
   // Handle uncaught exceptions to prevent test failures from application errors
@@ -367,10 +368,10 @@ describe("Authentication End-to-End Tests", () => {
       cy.visit("/");
 
       // Tab through the form elements
-      cy.get("body").tab();
+      cy.get("body").type("{tab}");
       cy.focused().should("contain", "Continue with Microsoft");
 
-      cy.focused().tab();
+      cy.focused().type("{tab}");
       cy.focused().should("contain", "Continue as Guest");
 
       // Test Enter key activation
