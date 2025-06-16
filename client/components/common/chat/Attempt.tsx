@@ -975,27 +975,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // ResizeObserver for input panel height detection
   useEffect(() => {
     if (!inputPanelRef.current) {
-      console.log("Input panel ref not found, will retry on next effect run");
       return;
     }
 
     if (resizeObserverRef.current) {
-      console.log("ResizeObserver already set up, skipping");
       return;
     }
-
-    console.log("Setting up ResizeObserver for input panel");
 
     const ro = new ResizeObserver((entries) => {
       const entry = entries[0];
       if (entry) {
         const newIsTall = entry.contentRect.height > 160;
-        console.log(
-          "ResizeObserver triggered - height:",
-          entry.contentRect.height,
-          "isTall:",
-          newIsTall
-        );
         setIsTall(newIsTall);
       }
     });
@@ -1008,18 +998,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       if (inputPanelRef.current) {
         const rect = inputPanelRef.current.getBoundingClientRect();
         const initialIsTall = rect.height > 160;
-        console.log(
-          "Initial measurement - height:",
-          rect.height,
-          "isTall:",
-          initialIsTall
-        );
         setIsTall(initialIsTall);
       }
     }, 50);
 
     return () => {
-      console.log("Cleaning up ResizeObserver");
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
         resizeObserverRef.current = null;
@@ -1079,7 +1062,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
-            defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}
+            defaultSize={showDocuments && classDocuments.length > 0 ? 70 : 100}
           >
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
@@ -1342,7 +1325,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           {showDocuments && classDocuments.length > 0 && (
             <>
               <ResizableHandle />
-              <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+              <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                 <Card className="h-full flex flex-col ml-4 p-0">
                   <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                     {/* Select dropdown directly above document */}
@@ -1427,11 +1410,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel
-          defaultSize={showDocuments && classDocuments.length > 0 ? 75 : 100}
+          defaultSize={showDocuments && classDocuments.length > 0 ? 70 : 100}
         >
           <Card className="h-full flex flex-col py-4">
             <ResizablePanelGroup direction="vertical" className="h-full">
-              <ResizablePanel defaultSize={85} minSize={60}>
+              <ResizablePanel defaultSize={88} minSize={60}>
                 <div className="h-full flex flex-col">
                   {/* Timer and Controls Header - consistent with results layout */}
                   <div className="p-4 pt-0 border-b flex flex-col gap-2">
@@ -1816,7 +1799,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         {showDocuments && classDocuments.length > 0 && (
           <>
             <ResizableHandle />
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
+            <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
               <Card className="h-full flex flex-col ml-4 p-0">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                   {/* Select dropdown directly above document */}
