@@ -486,9 +486,9 @@ export function useColumns({
           );
         },
         filterFn: (row, id, value) => {
-          const classId = row.getValue(id) as string | null;
-          if (!classId) return false; // Exclude rows without classId from filters
-          return value.includes(classId);
+          const classIds = row.getValue(id) as string[];
+          if (!classIds || classIds.length === 0) return false; // Exclude rows without classIds from filters
+          return classIds.some((classId) => value.includes(classId));
         },
         enableSorting: true,
       },

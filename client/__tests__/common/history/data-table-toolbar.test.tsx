@@ -1,29 +1,65 @@
 import { DataTableToolbar } from "@/components/common/history/data-table-toolbar";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Column, Table, TableState } from "@tanstack/react-table";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { SessionProvider } from "next-auth/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+// Test wrapper with providers
+const TestWrapper = ({ children }: { children: React.ReactNode }) => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false },
+      mutations: { retry: false },
+    },
+  });
+
+  return (
+    <SessionProvider session={null}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    </SessionProvider>
+  );
+};
+
+// Helper function to render with providers
+const renderWithProviders = (ui: React.ReactElement) => {
+  return render(ui, { wrapper: TestWrapper });
+};
 
 // Mock the child components
 vi.mock("@/components/common/history/data-table-view-options", () => ({
-  DataTableViewOptions: () => (
-    <div data-testid="view-options">View Options</div>
-  ),
+  DataTableViewOptions: () => <div data-testid="view-options">View</div>,
 }));
 
 vi.mock("@/components/common/history/export-button", () => ({
-  ExportButton: () => (
-    <div data-testid="export-button">Export</div>
+  ExportButton: () => <div data-testid="export-button">Export</div>,
+}));
+
+vi.mock("@/components/ui/date-picker-range", () => ({
+  DatePickerWithRange: ({
+    dateRange,
+  }: {
+    dateRange?: { from?: Date; to?: Date };
+  }) => (
+    <button
+      role="button"
+      aria-label={
+        dateRange
+          ? `${dateRange.from?.toLocaleDateString()} - ${dateRange.to?.toLocaleDateString()}`
+          : "filter by date"
+      }
+    >
+      {dateRange
+        ? `${dateRange.from?.toLocaleDateString()} - ${dateRange.to?.toLocaleDateString()}`
+        : "Pick a date"}
+    </button>
   ),
 }));
 
-vi.mock("@/components/ui/date-picker", () => ({
-  DatePickerWithRange: () => <div data-testid="date-picker">Date Picker</div>,
-}));
-
 vi.mock("@/components/common/history/data-table-faceted-filter", () => ({
-  DataTableFacetedFilter: () => (
-    <div data-testid="faceted-filter-name">Faceted Filter</div>
+  DataTableFacetedFilter: ({ title }: { title: string }) => (
+    <div data-testid="faceted-filter-name">{title}</div>
   ),
 }));
 
@@ -92,7 +128,7 @@ describe("DataTableToolbar", () => {
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -107,7 +143,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should render filter input for simulations", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -122,7 +158,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should render export button when showExport is true", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -136,7 +172,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should not render export button when showExport is false", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -150,7 +186,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should render view options", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -167,7 +203,7 @@ describe("DataTableToolbar", () => {
     it("should handle search input correctly", async () => {
       const user = userEvent.setup();
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -181,8 +217,12 @@ describe("DataTableToolbar", () => {
       await user.type(input, "test search");
 
       expect(mockTable.getColumn).toHaveBeenCalledWith("simulationTitle");
-      // Check that setFilterValue was called with the correct value
-      expect(mockColumn.setFilterValue).toHaveBeenCalledWith("test search");
+      // Check that setFilterValue was called with the search text (it gets called for each character)
+      // We need to check that the final complete string was called
+      expect(mockColumn.setFilterValue).toHaveBeenNthCalledWith(
+        11,
+        "test search"
+      );
     });
 
     it("should display current filter value", () => {
@@ -194,7 +234,7 @@ describe("DataTableToolbar", () => {
         })),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={tableWithFilter as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -210,7 +250,7 @@ describe("DataTableToolbar", () => {
     it("should clear filter when input is cleared", async () => {
       const user = userEvent.setup();
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -223,13 +263,14 @@ describe("DataTableToolbar", () => {
       await user.type(input, "test");
       await user.clear(input);
 
-      expect(mockColumn.setFilterValue).toHaveBeenCalledWith("");
+      // user.clear() triggers individual character deletions, so we check the final call
+      expect(mockColumn.setFilterValue).toHaveBeenNthCalledWith(8, "");
     });
   });
 
   describe("Faceted Filters", () => {
     it("should render user filter", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -242,7 +283,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should render class filter", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -251,11 +292,11 @@ describe("DataTableToolbar", () => {
         />
       );
 
-      expect(mockTable.getColumn).toHaveBeenCalledWith("classId");
+      expect(mockTable.getColumn).toHaveBeenCalledWith("classIds");
     });
 
     it("should not render filters when options are empty", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={[]}
@@ -274,15 +315,18 @@ describe("DataTableToolbar", () => {
     it("should show reset button when filters are active", () => {
       const tableWithFilters: Partial<Table<unknown>> = {
         ...mockTable,
-        getState: vi.fn(() => ({
-          columnFilters: [
-            { id: "userId", value: "user1" },
-            { id: "classId", value: "class1" },
-          ],
-        }) as TableState),
+        getState: vi.fn(
+          () =>
+            ({
+              columnFilters: [
+                { id: "userId", value: "user1" },
+                { id: "classIds", value: "class1" },
+              ],
+            }) as TableState
+        ),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={tableWithFilters as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -295,7 +339,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should not show reset button when no filters are active", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -310,14 +354,17 @@ describe("DataTableToolbar", () => {
     it("should ignore date filter when determining if filters are active", () => {
       const tableWithDateFilter: Partial<Table<unknown>> = {
         ...mockTable,
-        getState: vi.fn(() => ({
-          columnFilters: [
-            { id: "createdAt", value: [new Date(), new Date()] },
-          ],
-        }) as TableState),
+        getState: vi.fn(
+          () =>
+            ({
+              columnFilters: [
+                { id: "createdAt", value: [new Date(), new Date()] },
+              ],
+            }) as TableState
+        ),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={tableWithDateFilter as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -333,12 +380,15 @@ describe("DataTableToolbar", () => {
       const user = userEvent.setup();
       const tableWithFilters: Partial<Table<unknown>> = {
         ...mockTable,
-        getState: vi.fn(() => ({
-          columnFilters: [{ id: "userId", value: "user1" }],
-        }) as TableState),
+        getState: vi.fn(
+          () =>
+            ({
+              columnFilters: [{ id: "userId", value: "user1" }],
+            }) as TableState
+        ),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={tableWithFilters as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -358,7 +408,7 @@ describe("DataTableToolbar", () => {
     it("should render date picker when setDateRange is provided", () => {
       const mockSetDateRange = vi.fn();
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -374,7 +424,7 @@ describe("DataTableToolbar", () => {
     });
 
     it("should not render date picker when setDateRange is not provided", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -389,11 +439,11 @@ describe("DataTableToolbar", () => {
     it("should pass dateRange to date picker", () => {
       const mockSetDateRange = vi.fn();
       const testDateRange = {
-        from: new Date("2025-06-13"),
-        to: new Date("2025-06-13"),
+        from: new Date("2025-06-08"),
+        to: new Date("2025-06-08"),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -405,7 +455,7 @@ describe("DataTableToolbar", () => {
       );
 
       expect(
-        screen.getByRole("button", { name: /jun 13, 2025/i })
+        screen.getByRole("button", { name: /6\/8\/2025/i })
       ).toBeInTheDocument();
     });
   });
@@ -414,14 +464,14 @@ describe("DataTableToolbar", () => {
     it("should pass correct props to child components", () => {
       const mockSetDateRange = vi.fn();
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
           classOptions={mockClassOptions}
           dateRange={{
-            from: new Date("2025-06-13"),
-            to: new Date("2025-06-13"),
+            from: new Date("2025-06-08"),
+            to: new Date("2025-06-08"),
           }}
           setDateRange={mockSetDateRange}
           scoreRangeOptions={mockScoreRangeOptions}
@@ -432,12 +482,12 @@ describe("DataTableToolbar", () => {
       expect(screen.getByText("Export")).toBeInTheDocument();
       expect(screen.getByText("View")).toBeInTheDocument();
       expect(
-        screen.getByRole("button", { name: /jun 13, 2025/i })
+        screen.getByRole("button", { name: /6\/8\/2025/i })
       ).toBeInTheDocument();
     });
 
     it("should handle missing optional props", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -457,7 +507,7 @@ describe("DataTableToolbar", () => {
 
   describe("Column Access", () => {
     it("should access correct columns for filtering", () => {
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={mockTable as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -468,7 +518,7 @@ describe("DataTableToolbar", () => {
 
       expect(mockTable.getColumn).toHaveBeenCalledWith("simulationTitle");
       expect(mockTable.getColumn).toHaveBeenCalledWith("profileId");
-      expect(mockTable.getColumn).toHaveBeenCalledWith("classId");
+      expect(mockTable.getColumn).toHaveBeenCalledWith("classIds");
     });
 
     it("should handle missing columns gracefully", () => {
@@ -477,7 +527,7 @@ describe("DataTableToolbar", () => {
         getColumn: vi.fn(() => undefined),
       };
 
-      render(
+      renderWithProviders(
         <DataTableToolbar
           table={tableWithMissingColumns as Table<unknown>}
           profileOptions={mockUserOptions}
@@ -516,12 +566,12 @@ describe("DataTableToolbar", () => {
  * Example implementations:
  *
  * Basic rendering:
- * render(<data-table-toolbar />);
+ * renderWithProviders(<data-table-toolbar />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  *
  * Props testing:
  * const props = { ... };
- * render(<data-table-toolbar {...props} />);
+ * renderWithProviders(<data-table-toolbar {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  *
  * User interaction:

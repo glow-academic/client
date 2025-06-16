@@ -4,11 +4,11 @@ import { Table } from "@tanstack/react-table";
 import { X } from "lucide-react";
 import { DateRange } from "react-day-picker";
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { DataTableViewOptions } from "@/components/common/history/data-table-view-options";
 import { ExportButton } from "@/components/common/history/export-button";
+import { Button } from "@/components/ui/button";
 import { DatePickerWithRange } from "@/components/ui/date-picker-range";
+import { Input } from "@/components/ui/input";
 
 import { DataTableFacetedFilter } from "@/components/common/history/data-table-faceted-filter";
 
@@ -39,7 +39,7 @@ export function DataTableToolbar<TData>({
       .length > 0;
 
   const profileIdColumn = table.getColumn("profileId");
-  const classIdColumn = table.getColumn("classId");
+  const classIdsColumn = table.getColumn("classIds");
   const averageScoreColumn = table.getColumn("averageScore");
 
   return (
@@ -60,8 +60,8 @@ export function DataTableToolbar<TData>({
             }
             className="h-8 w-[150px] lg:w-[250px]"
           />
-          {/* Name filter - only show if profileId column exists */}
-          {profileIdColumn && (
+          {/* Name filter - only show if profileId column exists and has options */}
+          {profileIdColumn && profileOptions.length > 0 && (
             <DataTableFacetedFilter
               column={profileIdColumn}
               title="Name"
@@ -69,15 +69,15 @@ export function DataTableToolbar<TData>({
             />
           )}
           {/* Class filter */}
-          {classIdColumn && (
+          {classIdsColumn && classOptions.length > 0 && (
             <DataTableFacetedFilter
-              column={classIdColumn}
+              column={classIdsColumn}
               title="Class"
               options={classOptions}
             />
           )}
           {/* Score filter */}
-          {averageScoreColumn && (
+          {averageScoreColumn && scoreRangeOptions.length > 0 && (
             <DataTableFacetedFilter
               column={averageScoreColumn}
               title="Score"
