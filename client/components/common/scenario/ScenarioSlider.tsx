@@ -5,31 +5,35 @@
  * 06/10/2025
  */
 
-"use client"
-import * as React from "react"
-import { SliderProps } from "@radix-ui/react-slider"
+"use client";
+import * as React from "react";
+import { SliderProps } from "@radix-ui/react-slider";
 
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
-} from "@/components/ui/hover-card"
-import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
+} from "@/components/ui/hover-card";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
 
 interface ScenarioSliderProps {
-  defaultValue: SliderProps["defaultValue"]
-  label?: string
-  description?: string
-  min?: number
-  max?: number
-  step?: number
-  onValueChange?: (value: number[]) => void
-  value?: number[]
-  disabled?: boolean
+  leftContent?: React.ReactNode;
+  rightContent?: React.ReactNode;
+  defaultValue: SliderProps["defaultValue"];
+  label?: string;
+  description?: string;
+  min?: number;
+  max?: number;
+  step?: number;
+  onValueChange?: (value: number[]) => void;
+  value?: number[];
+  disabled?: boolean;
 }
 
 export function ScenarioSlider({
+  leftContent,
+  rightContent,
   defaultValue,
   label = "Temperature",
   description = "Controls randomness: lowering results in less random completions. As the temperature approaches zero, the model will become deterministic and repetitive.",
@@ -40,18 +44,18 @@ export function ScenarioSlider({
   value: externalValue,
   disabled = false,
 }: ScenarioSliderProps) {
-  const [internalValue, setInternalValue] = React.useState(defaultValue)
+  const [internalValue, setInternalValue] = React.useState(defaultValue);
 
   // Use external value if provided, otherwise use internal state
-  const value = externalValue || internalValue
+  const value = externalValue || internalValue;
 
   const handleValueChange = (newValue: number[]) => {
     if (disabled) return;
     if (!externalValue) {
-      setInternalValue(newValue)
+      setInternalValue(newValue);
     }
-    externalOnValueChange?.(newValue)
-  }
+    externalOnValueChange?.(newValue);
+  };
 
   return (
     <div className="grid gap-2 pt-2">
@@ -59,10 +63,21 @@ export function ScenarioSlider({
         <HoverCardTrigger asChild>
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
-              <Label htmlFor="slider" className={disabled ? "text-muted-foreground" : ""}>{label}</Label>
-              <span className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}>
-                {disabled ? "N/A" : value}
-              </span>
+              {leftContent}
+              <div className="flex items-center w-full justify-end">
+                <Label
+                  htmlFor="slider"
+                  className={disabled ? "text-muted-foreground" : ""}
+                >
+                  {label}
+                </Label>
+                <span
+                  className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}
+                >
+                  {disabled ? "N/A" : value}
+                </span>
+                {rightContent}
+              </div>
             </div>
             <Slider
               id="slider"
@@ -86,5 +101,5 @@ export function ScenarioSlider({
         </HoverCardContent>
       </HoverCard>
     </div>
-  )
+  );
 }

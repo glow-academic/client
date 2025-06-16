@@ -61,7 +61,8 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     mime_type  TEXT        NOT NULL,
     class_id   UUID        NOT NULL REFERENCES classes(id)  ON DELETE CASCADE,
     type       document_type   NOT NULL           DEFAULT 'homework',
-    classified BOOLEAN     NOT NULL           DEFAULT FALSE
+    classified BOOLEAN     NOT NULL           DEFAULT FALSE,
+    file_id    TEXT        NULL
   );
   
 

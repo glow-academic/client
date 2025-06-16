@@ -3,15 +3,15 @@
 Bulk generator – 300 chats across six simulations
  * 50 chats per simulation (300 total)
  * Scores show gradual improvement over past 90 days
- * First 2 standards: scores up to 18, Last 2 standards: scores up to 12
+ * 4 standard groups with 5 standards each (20 total standards, 1 point each)
  * Diverse data with realistic progression
 Dates span past 90 days to today (UTC)
 """
 
-import random
-import uuid
 import datetime
 import pathlib
+import random
+import uuid
 
 # ---------------------------------------------------------------------------#
 # 1.  CONFIGURATION                                                          #
@@ -46,17 +46,40 @@ SIM_QUOTA = [50, 50, 50, 50, 50, 50]  # 50 chats per simulation (300 total)
 # ---- Rubric & Standards ---------------------------------------------------#
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
 
-# First 2 standards (max score 4.5 each, total 9)
-STD_FIRST_TWO = [
-    "11111111-1111-aaaa-bbbb-333333333333",  # Standard 1
-    "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
-]
+# 4 standard groups with 5 standards each (20 total standards, 1 point each)
+STANDARD_GROUPS = {
+    "Problem Understanding": [
+        "11111111-1111-aaaa-bbbb-333333333333",  # Standard 1
+        "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
+        "11111111-3333-aaaa-bbbb-333333333333",  # Standard 3
+        "11111111-4444-aaaa-bbbb-333333333333",  # Standard 4
+        "11111111-5555-aaaa-bbbb-333333333333",  # Standard 5
+    ],
+    "Algorithm Design": [
+        "22222222-1111-aaaa-bbbb-333333333333",  # Standard 6
+        "22222222-2222-aaaa-bbbb-333333333333",  # Standard 7
+        "22222222-3333-aaaa-bbbb-333333333333",  # Standard 8
+        "22222222-4444-aaaa-bbbb-333333333333",  # Standard 9
+        "22222222-5555-aaaa-bbbb-333333333333",  # Standard 10
+    ],
+    "Code Implementation": [
+        "33333333-1111-aaaa-bbbb-333333333333",  # Standard 11
+        "33333333-2222-aaaa-bbbb-333333333333",  # Standard 12
+        "33333333-3333-aaaa-bbbb-333333333333",  # Standard 13
+        "33333333-4444-aaaa-bbbb-333333333333",  # Standard 14
+        "33333333-5555-aaaa-bbbb-333333333333",  # Standard 15
+    ],
+    "Testing & Debugging": [
+        "44444444-1111-aaaa-bbbb-333333333333",  # Standard 16
+        "44444444-2222-aaaa-bbbb-333333333333",  # Standard 17
+        "44444444-3333-aaaa-bbbb-333333333333",  # Standard 18
+        "44444444-4444-aaaa-bbbb-333333333333",  # Standard 19
+        "44444444-5555-aaaa-bbbb-333333333333",  # Standard 20
+    ],
+}
 
-# Last 2 standards (max score 3 each, total 6)
-STD_LAST_TWO = [
-    "22222222-2222-aaaa-bbbb-333333333333",  # Standard 3
-    "33333333-2222-aaaa-bbbb-333333333333",  # Standard 4
-]
+# Flatten all standards for easy iteration
+ALL_STANDARDS = [std for group in STANDARD_GROUPS.values() for std in group]
 
 # Diverse question and answer banks for more realistic data
 QUESTION_BANK = [
@@ -150,21 +173,80 @@ def get_score_with_improvement(progress: float) -> int:
         return random.randint(base_min, base_max)
 
 
-def get_diverse_standard_score(standard_id: str, progress: float) -> int:
+def get_standard_score(progress: float) -> int:
     """
-    Generate scores based on standard type with improvement over time
-    First 2 standards: max 4.5 (rounded to 5), Last 2 standards: max 3
+    Generate individual standard scores (0 or 1) with improvement over time
+    Each standard is worth 1 point maximum
     """
-    if standard_id in STD_FIRST_TWO:
-        # First 2 standards: range 0-5, improving over time
-        base_min = 0 + int(progress * 2)  # 0 -> 2
-        base_max = 2 + int(progress * 3)  # 2 -> 5
-        return random.randint(base_min, min(5, base_max))
-    else:
-        # Last 2 standards: range 0-3, improving over time
-        base_min = 0 + int(progress * 1)  # 0 -> 1
-        base_max = 1 + int(progress * 2)  # 1 -> 3
-        return random.randint(base_min, min(3, base_max))
+    # Probability of getting 1 point improves over time
+    success_rate = 0.3 + (progress * 0.5)  # 30% -> 80% success rate
+    
+    # Add some randomness
+    jitter = random.uniform(-0.1, 0.1)
+    adjusted_rate = max(0.1, min(0.9, success_rate + jitter))
+    
+    return 1 if random.random() < adjusted_rate else 0
+
+
+def generate_consistent_scores(progress: float) -> tuple[int, list[int]]:
+    """
+    Generate a total score and individual standard scores that are consistent
+    Returns (total_score, individual_scores_list)
+    """
+    # First generate the target total score
+    total_score = get_score_with_improvement(progress)
+    
+    # Generate individual scores that add up close to the total
+    individual_scores = []
+    current_sum = 0
+    
+    # Generate scores for first 19 standards
+    for i in range(19):
+        # Calculate how many points we still need
+        remaining_standards = 20 - i
+        remaining_points = total_score - current_sum
+        
+        # Decide probability based on remaining needs
+        if remaining_points <= 0:
+            score = 0
+        elif remaining_points >= remaining_standards:
+            score = 1  # We need all remaining to be 1
+        else:
+            # Calculate probability to hit target
+            target_rate = remaining_points / remaining_standards
+            # Add progress-based improvement
+            base_rate = 0.3 + (progress * 0.5)
+            final_rate = (target_rate + base_rate) / 2
+            score = 1 if random.random() < final_rate else 0
+        
+        individual_scores.append(score)
+        current_sum += score
+    
+    # For the last standard, adjust to match total exactly
+    last_score = max(0, min(1, total_score - current_sum))
+    individual_scores.append(last_score)
+    
+    # Verify and adjust if needed
+    actual_sum = sum(individual_scores)
+    if actual_sum != total_score:
+        # If we're off, randomly adjust some scores
+        diff = total_score - actual_sum
+        if diff > 0:  # Need to add points
+            zeros = [i for i, score in enumerate(individual_scores) if score == 0]
+            for _ in range(min(diff, len(zeros))):
+                if zeros:
+                    idx = random.choice(zeros)
+                    individual_scores[idx] = 1
+                    zeros.remove(idx)
+        elif diff < 0:  # Need to remove points
+            ones = [i for i, score in enumerate(individual_scores) if score == 1]
+            for _ in range(min(-diff, len(ones))):
+                if ones:
+                    idx = random.choice(ones)
+                    individual_scores[idx] = 0
+                    ones.remove(idx)
+    
+    return total_score, individual_scores
 
 
 def q(val: str) -> str:
@@ -226,7 +308,7 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
             )
 
         # ----- simulation_chat_grades ------------------------------------#
-        score = get_score_with_improvement(progress)
+        score, individual_scores = generate_consistent_scores(progress)
         passed = score >= 14  # 70% of 20 = 14
         # Time taken improves slightly over time (people get faster)
         base_time = random.randint(600, 2400)
@@ -241,10 +323,8 @@ for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
 
         # ----- simulation_chat_feedbacks (4 per chat) ---------------------#
         # Generate diverse scores for all 4 standards
-        all_standards = STD_FIRST_TWO + STD_LAST_TWO
-
-        for standard_id in all_standards:
-            standard_score = get_diverse_standard_score(standard_id, progress)
+        for standard_id in ALL_STANDARDS:
+            standard_score = individual_scores[ALL_STANDARDS.index(standard_id)]
             feedback_text = f"Feedback for standard {standard_id[-4:]}"
 
             fb_rows.append(
@@ -297,5 +377,5 @@ output_path.write_text(sql)
 
 print(f"✅  Generated {len(chat_rows)} chats ({len(message_rows)} messages)")
 print("📊  Data spans past 90 days with gradual improvement trend")
-print("🎯  First 2 standards: max score 5, Last 2 standards: max score 3 (total out of 20)")
+print("🎯  20 standards (4 groups × 5 standards), 1 point each (total out of 20)")
 print(f"📁  Output: {output_path}")

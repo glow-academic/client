@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RotateCcw, Sparkles } from "lucide-react";
+import { Loader2, RotateCcw, Sparkles, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -606,23 +606,25 @@ export default function Scenario({
 
               {/* Scenario Parameters */}
               <div className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Crowdedness</Label>
-                    {formData.crowdedness !== null && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleInputChange("crowdedness", null)}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
+                <div className="space-y-2 items-start">
+                  {formData.crowdedness === null && <Label>Crowdedness</Label>}
                   {formData.crowdedness !== null ? (
                     <ScenarioSlider
+                      leftContent={<Label>Crowdedness</Label>}
+                      rightContent={
+                        formData.crowdedness !== null && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              handleInputChange("crowdedness", null)
+                            }
+                            className={`p-2`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )
+                      }
                       label=""
                       description="How busy or crowded the scenario environment should be"
                       min={1}
@@ -645,24 +647,23 @@ export default function Scenario({
                     </Button>
                   )}
                 </div>
-
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Intensity</Label>
-                    {formData.intensity !== null && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleInputChange("intensity", null)}
-                        className="h-6 px-2 text-xs"
-                      >
-                        Clear
-                      </Button>
-                    )}
-                  </div>
+                  {formData.intensity === null && <Label>Intensity</Label>}
                   {formData.intensity !== null ? (
                     <ScenarioSlider
+                      leftContent={<Label>Intensity</Label>}
+                      rightContent={
+                        formData.intensity !== null && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleInputChange("intensity", null)}
+                            className={`p-2`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )
+                      }
                       label=""
                       description="How intense or challenging the scenario should be"
                       min={1}

@@ -57,6 +57,13 @@
       "when": 1750002258171,
       "tag": "0007_milky_major_mapleleaf",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1750078829050,
+      "tag": "0008_solid_cyclops",
+      "breakpoints": true
     }
   ]
 }

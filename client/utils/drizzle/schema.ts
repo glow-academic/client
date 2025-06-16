@@ -93,7 +93,8 @@ export const documents = pgTable("documents", {
 	mimeType: text("mime_type").notNull(),
 	classId: uuid("class_id").notNull(),
 	type: documentType().default('homework').notNull(),
-	classified: boolean().default(false).notNull()}, (table) => [
+	classified: boolean().default(false).notNull(),
+	fileId: text("file_id")}, (table) => [
 	foreignKey({
 			columns: [table.classId],
 			foreignColumns: [classes.id],
@@ -250,7 +251,8 @@ export const simulationChats = pgTable("simulation_chats", {
 	title: text().notNull(),
 	scenarioId: uuid("scenario_id").notNull(),
 	attemptId: uuid("attempt_id").notNull(),
-	completed: boolean().default(false).notNull()}, (table) => [
+	completed: boolean().default(false).notNull(),
+	traceId: text("trace_id")}, (table) => [
 	foreignKey({
 			columns: [table.scenarioId],
 			foreignColumns: [scenarios.id],
