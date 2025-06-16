@@ -1,40 +1,9 @@
-describe('scenarios Table Tests', () => {
-  // Note: These tests are placeholders and will fail until implemented
-  // Remove cy.visit('/') to make tests fail faster during development
-
-  describe('Database Schema Validation', () => {
-    it('should generate UUID primary keys automatically', () => {
-      // TODO: Test UUID generation for scenarios
-      throw new Error('IMPLEMENT: UUID primary key test for scenarios');
-    });
-    it('should automatically set timestamps', () => {
-      // TODO: Test timestamp fields (created_at, updated_at) for scenarios
-      throw new Error('IMPLEMENT: Timestamp validation test for scenarios');
-    });
-    it('should enforce required fields', () => {
-      // TODO: Test required fields: id
-      // Required fields that should be validated:
-            // - id (uuid)
-      
-      throw new Error('IMPLEMENT: Required fields validation for scenarios');
-    });
-  });
-
-  describe('Foreign Key Relationships', () => {
-    it('should handle relationships correctly', () => {
-      // TODO: Test table relationships for scenarios
-      throw new Error('IMPLEMENT: Relationship test for scenarios');
-    });
-  });
+describe('scenarios tests', () => {
 
   describe('CRUD Operations', () => {
     it('should create scenarios records', () => {
       // TODO: Test record creation
-      // Sample data structure:
-            // id: // Auto-generated UUID
-      // createdAt: // Auto-generated timestamp
-      // withTimezone: "withTimezone_value"
-      // mode: "mode_value"
+      // Can be done with single or csv
       
       throw new Error('IMPLEMENT: scenarios creation test');
     });
@@ -55,23 +24,19 @@ describe('scenarios Table Tests', () => {
     });
   });
 
-  describe('API Endpoints', () => {
-    it('should test scenarios API endpoints', () => {
-      // TODO: Test API endpoints for scenarios
-      // Example API tests:
-      // cy.request('GET', '/api/scenarios').then((response) => {
-      //   expect(response.status).to.eq(200);
-      //   expect(response.body).to.be.an('array');
-      // });
-      
-      // cy.request('POST', '/api/scenarios', sampleData).then((response) => {
-      //   expect(response.status).to.eq(201);
-      //   expect(response.body).to.have.property('id');
-      // });
-      
-      throw new Error('IMPLEMENT: scenarios API endpoint tests');
+  describe('AI-Operations', () => {
+    it('Should create a scenario from input prompts', () => {
+      // TODO: Test scenario creation from input prompts
+      throw new Error('IMPLEMENT: scenarios AI-Operations test');
+    });
+
+    it('Should allow for a test query to be run on a scenario', () => {
+      // TODO: Test scenario test query
+      throw new Error('IMPLEMENT: scenarios test query test');
     });
   });
+
+
 
   describe('Error Handling', () => {
     it('should handle validation errors', () => {
@@ -85,20 +50,3 @@ describe('scenarios Table Tests', () => {
     });
   });
 });
-
-/*
- * Table Schema Reference for scenarios:
- * Export name: scenarios
- * 
- * Fields:
- * - id: uuid (required) (primary key)
- * - createdAt: timestamp
- * - withTimezone: unknown
- * - mode: unknown
- * 
- * Constraints:
-
- * 
- * Foreign Key Relationships:
-
- */

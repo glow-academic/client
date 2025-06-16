@@ -127,7 +127,7 @@ export default defineConfig({
     pageLoadTimeout: 30000,
     experimentalStudio: true,
     retries: {
-      runMode: 2, // Retry failed tests in CI
+      runMode: 0, // Retry failed tests in CI
       openMode: 0,
     },
     chromeWebSecurity: false,

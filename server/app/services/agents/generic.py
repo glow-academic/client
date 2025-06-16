@@ -1,7 +1,8 @@
+import os
 import uuid
 from typing import AsyncGenerator, Optional
 
-import fitz  # type: ignore
+import PyPDF2
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
                     RunConfig, Runner)
 from agents.items import TResponseInputItem
@@ -142,10 +143,11 @@ async def _handle_simulation_chat(
         for document in documents:
             file_path = document.file_path
             # use pdf reader to get txt content
-            with fitz.open(UPLOAD_FOLDER / file_path) as doc:
+            with open(os.path.join(UPLOAD_FOLDER, file_path), "rb") as file:
+                pdf_reader = PyPDF2.PdfReader(file)
                 content = ""
-                for page in doc:
-                    content += page.get_text()
+                for page in pdf_reader.pages:
+                    content += page.extract_text() + "\n"
                 input_items.append({"role": "user", "content": content})
 
     
