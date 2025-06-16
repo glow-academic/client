@@ -132,6 +132,48 @@ services:
     ports:
       - "${CLIENT_PORT:-3000}:3000"
 
+  # --------------------
+  # E2E Testing Service
+  # --------------------
+  testing:
+    build:
+      context: ./database
+      dockerfile: Dockerfile.cypress
+    environment:
+      # Cypress configuration
+      - CYPRESS_baseUrl=http://client:3000
+      - CYPRESS_apiUrl=http://server:8000
+      # Database connection for Cypress tasks
+      - DB_HOST=database
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      # CI environment for headless mode
+      - CI=1
+    depends_on:
+      database:
+        condition: service_healthy
+      client:
+        condition: service_started
+      server:
+        condition: service_started
+    networks:
+      - internal
+    volumes:
+      # Mount test results and screenshots
+      - ./database/cypress/screenshots:/e2e/cypress/screenshots
+      - ./database/cypress/videos:/e2e/cypress/videos
+    profiles:
+      - test
+    # Use healthcheck to ensure services are ready before running tests
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://client:3000 && curl -f http://server:8000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
 
 volumes:
   pgdata:

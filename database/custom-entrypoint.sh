@@ -15,6 +15,7 @@ DB_USER=${POSTGRES_USER:-myuser}
 DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
 DB_NAME=${POSTGRES_DB:-mydb}
 HISTORY_DIR=${HISTORY_DIR:-/database/history}
+CLEAN_DB=${CLEAN_DB:-false}
 
 # --- LOGGING FUNCTIONS -----------------------------------------------
 log_info() {
@@ -85,7 +86,7 @@ trap cleanup SIGTERM SIGINT SIGQUIT
 log_info "🐳 Starting Glow Database (Docker)"
 log_info "DB_USER: $DB_USER"
 log_info "DB_NAME: $DB_NAME"
-log_info "CLEAN_DB: ${CLEAN_DB:-false}"
+log_info "CLEAN_DB: $CLEAN_DB"
 
 # If CLEAN_DB is true, remove the data directory to force reinitialization
 if [ "$CLEAN_DB" = "true" ]; then
@@ -148,7 +149,7 @@ log_success "Database initialization scripts prepared"
 log_info "🚀 Starting PostgreSQL server..."
 
 # Start PostgreSQL in the background so we can handle signals
-docker-entrypoint.sh postgres "$@" &
+docker-entrypoint.sh "$@" &
 PG_PID=$!
 
 log_success "PostgreSQL started with PID: $PG_PID"

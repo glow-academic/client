@@ -1,0 +1,45 @@
+# Cypress E2E Testing Container
+FROM cypress/browsers:node-22.14.0-chrome-133.0.6943.126-1-ff-135.0.1-edge-133.0.3065.82-1
+
+# Install curl and postgresql-client for healthchecks and service readiness checks
+RUN apt-get update && apt-get install -y curl postgresql-client && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for better security and set up cache directories
+RUN addgroup --system cypress && adduser --system --ingroup cypress cypress && \
+    mkdir -p /home/cypress/.cache && \
+    mkdir -p /home/cypress/.config && \
+    chown -R cypress:cypress /home/cypress
+
+# Set environment variables for Cypress
+ENV CYPRESS_CACHE_FOLDER=/home/cypress/.cache/Cypress
+ENV HOME=/home/cypress
+
+USER cypress
+
+# Set working directory
+WORKDIR /e2e
+
+# Copy package files first for better caching
+COPY package.json yarn.lock* ./
+
+# Install dependencies + Cypress
+RUN if [ -f yarn.lock ]; then \
+        yarn install --frozen-lockfile && npx cypress install; \
+    else \
+        npm ci && npx cypress install; \
+    fi
+
+# Copy Cypress configuration and tests
+COPY cypress.config.ts ./
+COPY cypress/ ./cypress/
+COPY tsconfig.json ./
+
+# Copy the wait-for-services script
+COPY wait-for-services.sh ./
+RUN chmod +x wait-for-services.sh
+
+# Verify Cypress is installed properly
+RUN npx cypress verify
+
+# Default command to wait for services and run tests
+CMD ["./wait-for-services.sh"] 

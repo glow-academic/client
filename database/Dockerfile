@@ -1,9 +1,8 @@
-# database/Dockerfile
+# ——— PostgreSQL Base Stage ———
 FROM postgres:15-alpine AS base
 
-# Install bash and Node.js for custom entrypoint and testing
-RUN apk add --no-cache bash nodejs npm && \
-    npm install -g yarn
+# Install bash for custom entrypoint script
+RUN apk add --no-cache bash
 
 # Set working directory
 WORKDIR /database
@@ -11,21 +10,12 @@ WORKDIR /database
 # Create directories
 RUN mkdir -p /database/history
 
-# Copy package files and install dependencies
-COPY package.json yarn.lock* ./
-RUN yarn install --frozen-lockfile
-
-# Copy Cypress configuration and tests
-COPY cypress.config.ts ./
-COPY cypress/ ./cypress/
-
 # Copy custom entrypoint
 COPY custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
 
-# Run Cypress E2E tests as part of the build
-RUN echo "🧪 Running database E2E tests..." && \
-    CI=1 CYPRESS_CACHE_FOLDER=/root/.cache/Cypress yarn test:cypress
+# Note: Cypress E2E tests should be run separately against the running database
+# This follows best practices of separating build-time and runtime concerns
 
 # ——— Production Stage ———
 FROM postgres:15-alpine AS production
