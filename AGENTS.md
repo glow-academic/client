@@ -47,8 +47,8 @@ If you need to start services individually or install dependencies manually:
 cd client && yarn install
 
 # Server dependencies  
-cd server && make install
-# or: uv sync
+cd server && make sync
+# or: uv pip install -r requirements.txt
 # or: pip install -r requirements.txt
 
 # Database dependencies

@@ -178,10 +178,21 @@ check_and_install_deps() {
   # Install server dependencies
   log_info "Installing server dependencies..."
   cd server
-  if ! make install 2>/dev/null; then
-    log_warning "Make install failed, trying alternative..."
+  if ! make sync 2>/dev/null; then
+    log_warning "Make sync failed, trying alternative..."
     if command -v uv &>/dev/null; then
-      uv sync
+      if ! uv venv 2>/dev/null; then
+        log_warning "uv venv failed, continuing..."
+      fi
+      if ! uv pip install -r requirements.txt 2>/dev/null; then
+        log_warning "uv pip install failed, trying regular pip..."
+        if command -v pip &>/dev/null; then
+          pip install -r requirements.txt
+        else
+          log_error "Could not install server dependencies. Please install uv or pip."
+          exit 1
+        fi
+      fi
     elif command -v pip &>/dev/null; then
       pip install -r requirements.txt
     else
