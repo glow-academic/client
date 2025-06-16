@@ -6,7 +6,14 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
+import {
+  Brain,
+  Clock,
+  MessageSquare,
+  Target,
+  TrendingUp,
+  User,
+} from "lucide-react";
 import { useMemo } from "react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
@@ -122,19 +129,34 @@ export default function Growth() {
 
   // Calculate growth metrics for the current user
   const growthData = useMemo(() => {
-    if (!grades || !feedbacks || !standards || !standardGroups || !profile)
+    if (
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups ||
+      !profile ||
+      !rubrics
+    )
       return [];
 
     // For TAs, show only their own performance
     // For admins/instructors, this could show aggregated data, but for now we'll focus on user-specific data
     if (grades.length === 0) return [];
 
-    // Calculate overall score from grades
+    // Calculate overall score from grades - normalize to percentage based on rubric total points
+    const rubric = rubrics?.find((r) =>
+      standardGroups?.some((sg) => sg.rubricId === r.id)
+    );
+    const rubricTotalPoints = rubric?.points || 20;
+
     const avgScore = Math.round(
-      grades.reduce((sum, grade) => sum + grade.score, 0) / grades.length
+      (grades.reduce((sum, grade) => sum + grade.score, 0) /
+        grades.length /
+        rubricTotalPoints) *
+        100
     );
 
-    // Calculate skill-based scores from feedbacks and standards
+    // Calculate skill-based scores from feedbacks and standards using rubric total points
     const skillScores = standardGroups.reduce(
       (acc, group) => {
         const groupStandards = standards.filter(
@@ -145,10 +167,14 @@ export default function Growth() {
         );
 
         if (groupFeedbacks.length > 0) {
+          // Use the rubric's total points instead of max standard points
+          const rubric = rubrics?.find((r) => r.id === group.rubricId);
+          const rubricTotalPoints = rubric?.points || 20;
+
           const avgScore = Math.round(
             (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length /
-              Math.max(...groupStandards.map((s) => s.points))) *
+              rubricTotalPoints) *
               100
           );
           acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
@@ -173,22 +199,28 @@ export default function Growth() {
     const engagementScore =
       totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
 
-    return [
+    // Create dynamic metrics based on actual standard groups
+    const dynamicMetrics = [
       {
         metric: "Overall Score",
         value: avgScore,
         fullMark: 100,
       },
-      {
-        metric: "Adaptability",
-        value: skillScores["adaptability"] || skillScores["flexibility"] || 50,
+    ];
+
+    // Add skill scores based on actual standard groups
+    standardGroups.forEach((group) => {
+      const skillKey = group.name.toLowerCase().replace(/\s+/g, "");
+      const skillValue = skillScores[skillKey] || 0;
+      dynamicMetrics.push({
+        metric: group.shortName || group.name,
+        value: skillValue,
         fullMark: 100,
-      },
-      {
-        metric: "Listening Skills",
-        value: skillScores["listening"] || skillScores["communication"] || 50,
-        fullMark: 100,
-      },
+      });
+    });
+
+    // Add calculated metrics
+    dynamicMetrics.push(
       {
         metric: "Time Management",
         value: Math.round(timeManagementScore),
@@ -198,13 +230,22 @@ export default function Growth() {
         metric: "Engagement",
         value: engagementScore,
         fullMark: 100,
-      },
-    ];
-  }, [grades, feedbacks, standards, standardGroups, profile, chats]);
+      }
+    );
+
+    return dynamicMetrics;
+  }, [grades, feedbacks, standards, standardGroups, profile, chats, rubrics]);
 
   // Calculate growth trend based on grades over time
   const growthTrend = useMemo(() => {
-    if (!grades || grades.length < 2) return { value: 0, isPositive: true };
+    if (!grades || grades.length < 2 || !rubrics || !standardGroups)
+      return { value: 0, isPositive: true };
+
+    // Get the rubric total points dynamically
+    const rubric = rubrics?.find((r) =>
+      standardGroups?.some((sg) => sg.rubricId === r.id)
+    );
+    const rubricTotalPoints = rubric?.points || 20;
 
     // Sort grades by creation date
     const sortedGrades = [...grades].sort(
@@ -218,14 +259,21 @@ export default function Growth() {
 
     if (previous.length === 0) return { value: 0, isPositive: true };
 
+    // Normalize scores to percentage based on rubric total points
     const recentAvg =
-      recent.reduce((sum, g) => sum + g.score, 0) / recent.length;
+      (recent.reduce((sum, g) => sum + g.score, 0) /
+        recent.length /
+        rubricTotalPoints) *
+      100;
     const previousAvg =
-      previous.reduce((sum, g) => sum + g.score, 0) / previous.length;
+      (previous.reduce((sum, g) => sum + g.score, 0) /
+        previous.length /
+        rubricTotalPoints) *
+      100;
 
     const change = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
     return { value: Math.abs(change), isPositive: change >= 0 };
-  }, [grades]);
+  }, [grades, rubrics, standardGroups]);
 
   const isLoading =
     isLoadingAttempts ||
@@ -274,104 +322,86 @@ export default function Growth() {
     <div className="space-y-6">
       {/* Key Metrics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Score</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center">
-              <div
-                className={`text-2xl font-bold ${
-                  (growthData.find((d) => d.metric === "Overall Score")
-                    ?.value ?? 0) >= 80
-                    ? "text-green-600"
-                    : (growthData.find((d) => d.metric === "Overall Score")
-                          ?.value ?? 0) >= 60
-                      ? "text-amber-600"
-                      : "text-red-600"
-                }`}
-              >
-                {growthData.find((d) => d.metric === "Overall Score")?.value ??
-                  0}
-                %
-              </div>
-              {growthTrend.value > 0 && (
-                <Badge
-                  variant="outline"
-                  className={
-                    growthTrend.isPositive
-                      ? "ml-2 bg-green-50 text-green-700 border-green-200"
-                      : "ml-2 bg-red-50 text-red-700 border-red-200"
-                  }
-                >
-                  {growthTrend.isPositive ? (
-                    <TrendingUp className="h-3 w-3 mr-1" />
-                  ) : (
-                    <TrendingUp className="h-3 w-3 mr-1 rotate-180" />
+        {growthData.slice(0, 4).map((metric) => {
+          // Get appropriate icon for each metric
+          const getIcon = (metricName: string) => {
+            const name = metricName.toLowerCase();
+            if (name.includes("overall") || name.includes("score"))
+              return Target;
+            if (name.includes("adapt") || name.includes("flexibility"))
+              return Brain;
+            if (name.includes("listen") || name.includes("communication"))
+              return MessageSquare;
+            if (name.includes("time") || name.includes("management"))
+              return Clock;
+            return User; // Default icon
+          };
+
+          // Get appropriate description for each metric
+          const getDescription = (metricName: string) => {
+            const name = metricName.toLowerCase();
+            if (name.includes("overall") || name.includes("score"))
+              return "Average performance score";
+            if (name.includes("adapt") || name.includes("flexibility"))
+              return "Adapting to student needs";
+            if (name.includes("listen") || name.includes("communication"))
+              return "Active listening ability";
+            if (name.includes("time") || name.includes("management"))
+              return "Session time efficiency";
+            return "Performance metric";
+          };
+
+          const IconComponent = getIcon(metric.metric);
+          const isOverallScore = metric.metric === "Overall Score";
+
+          return (
+            <Card key={metric.metric}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {metric.metric}
+                </CardTitle>
+                <IconComponent className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center">
+                  <div
+                    className={`text-2xl font-bold ${
+                      isOverallScore
+                        ? metric.value >= 80
+                          ? "text-green-600"
+                          : metric.value >= 60
+                            ? "text-amber-600"
+                            : "text-red-600"
+                        : "text-gray-900 dark:text-white"
+                    }`}
+                  >
+                    {metric.value}%
+                  </div>
+                  {isOverallScore && growthTrend.value > 0 && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        growthTrend.isPositive
+                          ? "ml-2 bg-green-50 text-green-700 border-green-200"
+                          : "ml-2 bg-red-50 text-red-700 border-red-200"
+                      }
+                    >
+                      {growthTrend.isPositive ? (
+                        <TrendingUp className="h-3 w-3 mr-1" />
+                      ) : (
+                        <TrendingUp className="h-3 w-3 mr-1 rotate-180" />
+                      )}
+                      {growthTrend.value}%
+                    </Badge>
                   )}
-                  {growthTrend.value}%
-                </Badge>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Average performance score
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Adaptability</CardTitle>
-            <Brain className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {growthData.find((d) => d.metric === "Adaptability")?.value || 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Adapting to student needs
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Listening Skills
-            </CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {growthData.find((d) => d.metric === "Listening Skills")?.value ||
-                0}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Active listening ability
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Time Management
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {growthData.find((d) => d.metric === "Time Management")?.value ||
-                0}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Session time efficiency
-            </p>
-          </CardContent>
-        </Card>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {getDescription(metric.metric)}
+                </p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Radar Chart */}

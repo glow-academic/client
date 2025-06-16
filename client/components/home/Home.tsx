@@ -849,12 +849,19 @@ export default function Home() {
           {} as Record<string, number>
         );
 
-        // Calculate overall score
+        // Calculate overall score - normalize to percentage based on rubric total points
+        const rubric = rubrics?.find((r) =>
+          standardGroups?.some((sg) => sg.rubricId === r.id)
+        );
+        const rubricTotalPoints = rubric?.points || 20;
+
         const overallScore =
           attemptGrades.length > 0
             ? Math.round(
-                attemptGrades.reduce((sum, g) => sum + g.score, 0) /
-                  attemptGrades.length
+                (attemptGrades.reduce((sum, g) => sum + g.score, 0) /
+                  attemptGrades.length /
+                  rubricTotalPoints) *
+                  100 // Convert to percentage
               )
             : 0;
 
