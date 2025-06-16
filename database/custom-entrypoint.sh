@@ -14,10 +14,7 @@ NC='\033[0m' # No Color
 DB_USER=${POSTGRES_USER:-myuser}
 DB_PASSWORD=${POSTGRES_PASSWORD:-mypassword}
 DB_NAME=${POSTGRES_DB:-mydb}
-INIT_SQL=${INIT_SQL:-init.sql}
-INIT_DIR=${INIT_DIR:-init}
 HISTORY_DIR=${HISTORY_DIR:-/database/history}
-MIGRATIONS_DIR=${MIGRATIONS_DIR:-/database/migrations}
 
 # --- LOGGING FUNCTIONS -----------------------------------------------
 log_info() {
@@ -66,6 +63,8 @@ backup_database() {
   log_success "Database backup completed"
 }
 
+
+
 # --- SIGNAL HANDLERS -------------------------------------------------
 cleanup() {
   log_info "Received shutdown signal..."
@@ -95,16 +94,16 @@ if [ "$CLEAN_DB" = "true" ]; then
   log_success "Database data directory cleaned."
 fi
 
-# --- SETUP INITIALIZATION SCRIPTS ------------------------------------
+# --- SETUP BASIC INITIALIZATION --------------------------------------
 log_info "Setting up database initialization..."
 
 # Create the initialization directory
 mkdir -p /docker-entrypoint-initdb.d
 
-# Create the main initialization script
+# Create the main initialization script with extensions
 cat > /docker-entrypoint-initdb.d/00-glow-init.sql << 'EOF'
 -- Glow Database Initialization Script
--- This script sets up the database with proper extensions and logging
+-- This script sets up the database with proper extensions
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
@@ -117,101 +116,19 @@ BEGIN
 END $$;
 EOF
 
-# --- HANDLE MIGRATIONS -----------------------------------------------
-if [ -d "$MIGRATIONS_DIR" ] && [ -n "$(ls -A $MIGRATIONS_DIR/*.sql 2>/dev/null)" ]; then
-  log_info "📋 Found migration files, setting up migration application..."
-  
-  # Create migration application script
-  cat > /docker-entrypoint-initdb.d/01-apply-migrations.sql << EOF
--- Apply Drizzle Migrations
-DO \$\$
-BEGIN
-    RAISE NOTICE '📋 Applying Drizzle migrations...';
-END \$\$;
-EOF
-
-  # Add each migration file to the initialization
-  migration_counter=2
-  for migration_file in "$MIGRATIONS_DIR"/*.sql; do
-    if [ -f "$migration_file" ]; then
-      migration_name=$(basename "$migration_file")
-      log_info "  📄 Adding migration: $migration_name"
-      
-      # Copy migration to init directory with proper ordering
-      cp "$migration_file" "/docker-entrypoint-initdb.d/$(printf "%02d" $migration_counter)-$migration_name"
-      chmod 755 "/docker-entrypoint-initdb.d/$(printf "%02d" $migration_counter)-$migration_name"
-      
-      migration_counter=$((migration_counter + 1))
-    fi
-  done
-  
-  log_success "Migration files prepared for application"
-else
-  log_info "📝 No migration files found in $MIGRATIONS_DIR"
-fi
-
-# --- HANDLE LEGACY INIT SYSTEM (FALLBACK) ---------------------------
-# Only use legacy init if no migrations are present
-if [ ! -d "$MIGRATIONS_DIR" ] || [ -z "$(ls -A $MIGRATIONS_DIR/*.sql 2>/dev/null)" ]; then
-  log_info "🔄 No migrations found, checking for legacy initialization..."
-  
-  if [ -f "/$INIT_SQL" ]; then
-    log_info "📄 Found legacy init.sql, setting up modular initialization..."
+# Create a SQL script to restore from backup if available
+if ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
+  latest_backup=$(ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -1)
+  if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
+    log_info "📁 Found latest backup: $(basename "$latest_backup")"
+    log_info "🔄 Setting up backup restoration..."
     
-    # Create wrapper for legacy init
-    cat > /docker-entrypoint-initdb.d/50-legacy-init.sql << EOF
--- Legacy Database Initialization
-DO \$\$
-BEGIN
-    RAISE NOTICE '🔄 Applying legacy database schema...';
-END \$\$;
-
--- Execute the legacy init.sql file
-\i /$INIT_SQL
-EOF
-    
-    # Copy the init directory if it exists
-    if [ -d "/$INIT_DIR" ]; then
-      log_info "📁 Copying modular SQL files from /$INIT_DIR..."
-      cp -r "/$INIT_DIR" "/docker-entrypoint-initdb.d/"
-      chmod -R 755 "/docker-entrypoint-initdb.d/$INIT_DIR"
-      log_success "Copied modular SQL files"
-    fi
-  else
-    log_warning "No initialization files found (neither migrations nor legacy init.sql)"
+    # Copy the backup file to be restored during initialization
+    cp "$latest_backup" /docker-entrypoint-initdb.d/50-restore-backup.sql
+    log_success "Backup prepared for restoration"
   fi
-fi
-
-# --- RUN DATABASE TESTS (if in test mode) ---------------------------
-if [ "${TESTING:-false}" = "true" ]; then
-  log_info "🧪 Test mode detected - will run database tests after startup"
-  
-  # Create test script that will run after database is ready
-  cat > /docker-entrypoint-initdb.d/98-run-tests.sql << 'EOF'
--- Database Test Script
-DO $$
-BEGIN
-    RAISE NOTICE '🧪 Running database tests...';
-    
-    -- Test basic functionality
-    RAISE NOTICE 'Testing basic database operations...';
-    
-    -- Test extensions
-    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pgcrypto') THEN
-        RAISE EXCEPTION 'pgcrypto extension not found';
-    END IF;
-    
-    IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'uuid-ossp') THEN
-        RAISE EXCEPTION 'uuid-ossp extension not found';
-    END IF;
-    
-    -- Test UUID generation
-    PERFORM gen_random_uuid();
-    PERFORM uuid_generate_v4();
-    
-    RAISE NOTICE '✅ Database tests passed!';
-END $$;
-EOF
+else
+  log_info "📝 No backup files found - starting with fresh database"
 fi
 
 # --- FINALIZATION SCRIPT ---------------------------------------------
@@ -221,6 +138,7 @@ DO $$
 BEGIN
     RAISE NOTICE '✅ Glow database initialization completed successfully!';
     RAISE NOTICE '🔗 Database is ready for connections';
+    RAISE NOTICE '💡 Use "yarn migrate" to generate migrations, then restart to apply them';
 END $$;
 EOF
 
@@ -234,7 +152,7 @@ docker-entrypoint.sh postgres "$@" &
 PG_PID=$!
 
 log_success "PostgreSQL started with PID: $PG_PID"
-log_success "🎉 Database is ready! Backup will be created automatically on shutdown."
+log_success "🎉 Database is ready! Use 'yarn migrate' for schema changes."
 
 # Wait for PostgreSQL process
 wait "$PG_PID"
