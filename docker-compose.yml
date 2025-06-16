@@ -20,7 +20,7 @@ services:
       - POSTGRES_USER=${DB_USER}
       - POSTGRES_PASSWORD=${DB_PASSWORD}
       - POSTGRES_DB=${DB_NAME}
-      - CLEAN_DB=${CLEAN_DB:-false}
+      - CLEAN_DB=${CLEAN_DB:-true}
       - HISTORY_DIR=/database/history
     volumes:
       - pgdata:/var/lib/postgresql/data

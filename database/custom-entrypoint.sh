@@ -117,8 +117,8 @@ BEGIN
 END $$;
 EOF
 
-# Create a SQL script to restore from backup if available
-if ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
+# Create a SQL script to restore from backup if available (only if not cleaning)
+if [ "$CLEAN_DB" != "true" ] && ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
   latest_backup=$(ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -1)
   if [[ -n "$latest_backup" && -f "$latest_backup" ]]; then
     log_info "📁 Found latest backup: $(basename "$latest_backup")"
@@ -129,7 +129,11 @@ if ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
     log_success "Backup prepared for restoration"
   fi
 else
-  log_info "📝 No backup files found - starting with fresh database"
+  if [ "$CLEAN_DB" = "true" ]; then
+    log_info "🧹 CLEAN_DB enabled - starting with fresh database (skipping backup restoration)"
+  else
+    log_info "📝 No backup files found - starting with fresh database"
+  fi
 fi
 
 # --- FINALIZATION SCRIPT ---------------------------------------------

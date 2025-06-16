@@ -34,9 +34,13 @@ COPY cypress.config.ts ./
 COPY cypress/ ./cypress/
 COPY tsconfig.json ./
 
-# Copy the wait-for-services script
+# Copy the wait-for-services script and set permissions as root
+USER root
 COPY wait-for-services.sh ./
-RUN chmod +x wait-for-services.sh
+RUN chmod +x wait-for-services.sh && chown cypress:cypress wait-for-services.sh
+
+# Switch back to cypress user
+USER cypress
 
 # Verify Cypress is installed properly
 RUN npx cypress verify
