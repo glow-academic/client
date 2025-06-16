@@ -1,56 +1,75 @@
-describe('evals tests', () => {
+/// <reference types="cypress" />
 
-  describe('CRUD Operations', () => {
-    it('should create evals records', () => {
-      // TODO: Test record creation
-      // Can be done with single or csv
-      
-      throw new Error('IMPLEMENT: evals creation test');
+describe("Evaluations End-to-End Tests", () => {
+  beforeEach(() => {
+    // Clear storage and setup for each test
+    cy.clearAllStorage();
+    cy.setupApiMocks();
+
+    // Login as guest for testing
+    cy.loginAsGuest();
+  });
+
+  describe("CRUD Operations", () => {
+    it("should create evaluations records", () => {
+      // TODO: Test evaluation creation
+      // Navigate to management/evaluations page
+      // Test creating evaluations with rubrics and criteria
+
+      throw new Error("IMPLEMENT: evaluations creation test");
     });
 
-    it('should read evals records', () => {
-      // TODO: Test record retrieval
-      throw new Error('IMPLEMENT: evals read test');
+    it("should read evaluations records", () => {
+      // TODO: Test reading evaluations from management views
+      // Verify evaluation data and results
+
+      throw new Error("IMPLEMENT: evaluations read test");
     });
 
-    it('should update evals records', () => {
-      // TODO: Test record updates
-      throw new Error('IMPLEMENT: evals update test');
+    it("should update evaluations records", () => {
+      // TODO: Test updating evaluation settings
+      // Verify changes are reflected in database
+
+      throw new Error("IMPLEMENT: evaluations update test");
     });
 
-      it('should delete evals records', () => {
-      // TODO: Test record deletion
-      throw new Error('IMPLEMENT: evals delete test');
+    it("should delete evaluations records", () => {
+      // TODO: Test evaluation deletion
+      // Verify removal from database
+
+      throw new Error("IMPLEMENT: evaluations delete test");
     });
   });
 
+  describe("Evaluation Operations", () => {
+    it("should run evaluations and verify results", () => {
+      // TODO: Test running evaluations
+      // Verify evaluation process and results storage
 
-  describe('Eval Runs', () => {
-    it('Should allow for the reading of a run', () => {
-      // TODO: Test eval run reading
-      throw new Error('IMPLEMENT: evals run reading test');
+      throw new Error("IMPLEMENT: evaluations run test");
     });
 
-    it('Should allow for the stopping of a run', () => {
-      // TODO: Test eval run stopping
-      throw new Error('IMPLEMENT: evals run stopping test');
-    });
+    it("should stop running evaluations", () => {
+      // TODO: Test stopping evaluations in progress
+      // Verify proper cleanup and state management
 
-    it('Should allow for the deletion of a run', () => {
-      // TODO: Test eval run deletion
-      throw new Error('IMPLEMENT: evals run deletion test');
+      throw new Error("IMPLEMENT: evaluations stop test");
     });
   });
 
-  describe('Error Handling', () => {
-    it('should handle validation errors', () => {
+  describe("Error Handling", () => {
+    it("should handle validation errors when creating evaluations", () => {
       // TODO: Test validation error scenarios
-      throw new Error('IMPLEMENT: evals validation error test');
+      // Missing required fields, invalid configurations, etc.
+
+      throw new Error("IMPLEMENT: evaluations validation error test");
     });
 
-    it('should handle constraint violations', () => {
+    it("should handle constraint violations gracefully", () => {
       // TODO: Test constraint violation scenarios
-      throw new Error('IMPLEMENT: evals constraint violation test');
+      // Invalid rubric associations, etc.
+
+      throw new Error("IMPLEMENT: evaluations constraint violation test");
     });
   });
 });

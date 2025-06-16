@@ -335,10 +335,14 @@ describe("Agents End-to-End Tests", () => {
         .click();
 
       // Should show validation errors
-      cy.get("body")
-        .should("contain.text", "required")
-        .or("contain.text", "error")
-        .or("contain.text", "invalid");
+      cy.get("body").then(($body) => {
+        const bodyText = $body.text();
+        expect(
+          bodyText.includes("required") ||
+            bodyText.includes("error") ||
+            bodyText.includes("invalid")
+        ).to.be.true;
+      });
     });
 
     it("should handle constraint violations gracefully", () => {
@@ -442,9 +446,13 @@ describe("Agents End-to-End Tests", () => {
             cy.wait(5000);
 
             // Should show some response
-            cy.get("body")
-              .should("contain.text", "response")
-              .or("contain.text", "Test response");
+            cy.get("body").then(($body) => {
+              const bodyText = $body.text();
+              expect(
+                bodyText.includes("response") ||
+                  bodyText.includes("Test response")
+              ).to.be.true;
+            });
           }
         });
       });

@@ -128,7 +128,10 @@ describe("Chat End-to-End Tests", () => {
               cy.wait(5000);
 
               // Should be in a chat interface now
-              cy.url().should("include", "/chat").or("include", "/simulation");
+              cy.url().then((url) => {
+                expect(url.includes("/chat") || url.includes("/simulation")).to
+                  .be.true;
+              });
 
               // Verify chat interface elements
               cy.get("body").should("be.visible");
@@ -756,9 +759,10 @@ describe("Chat End-to-End Tests", () => {
                   cy.wait(5000);
 
                   // Verify we're in a chat
-                  cy.url()
-                    .should("include", "/chat")
-                    .or("include", "/simulation");
+                  cy.url().then((url) => {
+                    expect(url.includes("/chat") || url.includes("/simulation"))
+                      .to.be.true;
+                  });
 
                   // Verify multiple chats were created for the attempt
                   cy.task("dbQuery", {
