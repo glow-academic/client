@@ -2,7 +2,7 @@
   "name": "database",
   "version": "1.0.0",
   "description": "glow database management",
-  "main": "index.js",
+  "main": "init.sql",
   "type": "module",
   "license": "MIT",
   "scripts": {

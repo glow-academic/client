@@ -21,27 +21,33 @@ fi
 # --- CONFIG ----------------------------------------------------------
 CLEAN_DB=false
 RUN_TESTS=false
+DETACHED=false
 
 # Process command-line arguments
 for arg in "$@"; do
   case $arg in 
     --clean) CLEAN_DB=true; shift ;;
     --test) RUN_TESTS=true; shift ;;
+    --detach) DETACHED=true; shift ;;
     --help|-h) 
       echo "🚀 Glow Development Environment"
       echo ""
       echo "Usage: bash run.sh [options]"
       echo ""
       echo "Options:"
-      echo "  --clean    Clean database before starting"
+      echo "  --clean    Start with fresh database from init.sql (creates backup first)"
       echo "  --test     Run all test suites after startup"
+      echo "  --detach   Run in detached mode (services run in background, script exits)"
       echo "  --help     Show this help message"
       echo ""
       echo "This script will:"
-      echo "  1. Start the database"
+      echo "  1. Start the database (from latest backup or fresh if --clean)"
       echo "  2. Start client and server in parallel"
-      echo "  3. Handle database migrations automatically"
-      echo "  4. Optionally run test suites"
+      echo "  3. Optionally run test suites"
+      echo ""
+      echo "Database behavior:"
+      echo "  Default: Restore from latest backup (like 'yarn start')"
+      echo "  --clean: Create backup, then start fresh (like 'yarn start --clean')"
       exit 0
       ;;
   esac
@@ -111,9 +117,10 @@ log_step "Starting database..."
 cd database
 
 if $CLEAN_DB; then
-  log_info "Clean flag detected - will clean database"
+  log_info "Clean flag detected - starting fresh database (will create backup first)"
   bash start.sh --clean &
 else
+  log_info "Starting database from latest backup"
   bash start.sh &
 fi
 
@@ -170,37 +177,14 @@ else
   tail -20 server.log
 fi
 
-# Step 4: Handle migrations
-log_step "Handling database migrations..."
-cd client
-
-# Generate migrations if schema has changed
-log_info "Generating migrations from current schema..."
-if npx drizzle-kit generate > ../migration.log 2>&1; then
-  log_success "Migrations generated successfully"
-  
-  # Check if any new migration files were created
-  if ls ../database/migrations/*.sql >/dev/null 2>&1; then
-    log_info "Applying new migrations to database..."
-    cd ../database
-    
-    # Apply migrations
-    if yarn migrate > ../migrate.log 2>&1; then
-      log_success "Migrations applied successfully"
-    else
-      log_warning "Migration application had issues - continuing with current database state"
-      log_info "Check migrate.log for details"
-    fi
-    cd ../client
-  else
-    log_info "No new migrations to apply"
-  fi
+# Step 4: Database is ready
+log_step "Database setup completed"
+log_info "Database started using the same logic as 'yarn start' in database/"
+if $CLEAN_DB; then
+  log_info "Fresh database created from init.sql (backup was created first)"
 else
-  log_warning "Migration generation had issues - continuing with current state"
-  log_info "Check migration.log for details"
+  log_info "Database restored from latest backup"
 fi
-
-cd ..
 
 # Step 5: Final status
 echo ""
@@ -245,43 +229,64 @@ if $RUN_TESTS; then
   cd ..
 fi
 
-# Step 7: Keep running and handle cleanup
+# Step 7: Handle detached vs interactive mode
 echo ""
 log_success "🎉 All services are running!"
 echo ""
-echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
-echo ""
 
-# Function to cleanup on exit
-cleanup() {
+if $DETACHED; then
+  # Detached mode: show info and exit
+  echo -e "${GREEN}✅ Services started in detached mode:${NC}"
+  echo -e "  ${CYAN}Database PID:${NC} $DB_PID"
+  echo -e "  ${CYAN}Client PID:${NC}   $CLIENT_PID - http://localhost:3000"
+  echo -e "  ${CYAN}Server PID:${NC}   $SERVER_PID - http://localhost:8000"
   echo ""
-  log_info "Shutting down services..."
-  
-  # Kill all child processes
-  if kill -0 $DB_PID 2>/dev/null; then
-    log_info "Stopping database..."
-    kill $DB_PID
-  fi
-  
-  if kill -0 $CLIENT_PID 2>/dev/null; then
-    log_info "Stopping client..."
-    kill $CLIENT_PID
-  fi
-  
-  if kill -0 $SERVER_PID 2>/dev/null; then
-    log_info "Stopping server..."
-    kill $SERVER_PID
-  fi
-  
-  # Clean up log files
-  rm -f client.log server.log migration.log migrate.log
-  
-  log_success "All services stopped. Goodbye! 👋"
+  echo -e "${YELLOW}💡 To stop services later, run:${NC}"
+  echo -e "  kill $DB_PID $CLIENT_PID $SERVER_PID"
+  echo ""
+  echo -e "${YELLOW}💡 Or use process names:${NC}"
+  echo -e "  pkill -f 'yarn dev'     # Stop client"
+  echo -e "  pkill -f 'make run'     # Stop server"
+  echo -e "  pkill -f 'start.sh'     # Stop database"
+  echo ""
+  log_success "Services running in background. Script exiting."
   exit 0
-}
+else
+  # Interactive mode: keep running and handle cleanup
+  echo -e "${YELLOW}Press Ctrl+C to stop all services${NC}"
+  echo ""
 
-# Set up signal handlers
-trap cleanup SIGINT SIGTERM
+  # Function to cleanup on exit
+  cleanup() {
+    echo ""
+    log_info "Shutting down services..."
+    
+    # Kill all child processes
+    if kill -0 $DB_PID 2>/dev/null; then
+      log_info "Stopping database..."
+      kill $DB_PID
+    fi
+    
+    if kill -0 $CLIENT_PID 2>/dev/null; then
+      log_info "Stopping client..."
+      kill $CLIENT_PID
+    fi
+    
+    if kill -0 $SERVER_PID 2>/dev/null; then
+      log_info "Stopping server..."
+      kill $SERVER_PID
+    fi
+    
+    # Clean up log files
+    rm -f client.log server.log
+    
+    log_success "All services stopped. Goodbye! 👋"
+    exit 0
+  }
 
-# Wait for any of the processes to exit
-wait
+  # Set up signal handlers
+  trap cleanup SIGINT SIGTERM
+
+  # Wait for any of the processes to exit
+  wait
+fi
