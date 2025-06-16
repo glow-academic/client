@@ -373,16 +373,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Fetch documents for the attempt class
   const { data: documents = [] } = useQuery({
-    queryKey: ["documents", classData?.id],
+    queryKey: ["documents", scenario?.id],
     queryFn: () => getAllDocuments(),
-    enabled: !!classData?.id,
+    enabled: !!scenario?.id,
   });
 
   // Filter documents for the current attempt's class
-  const classDocuments = useMemo(() => {
-    if (!classData?.id || !documents) return [];
-    return documents.filter((doc: Document) => doc.classId === classData.id);
-  }, [documents, classData?.id]);
+  const scenarioDocuments = useMemo(() => {
+    if (!scenario || !documents) return [];
+    return documents.filter((doc: Document) =>
+      scenario.documents?.includes(doc.id)
+    );
+  }, [documents, scenario]);
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
   const isSingleChatAttempt = simulation?.scenarioIds?.length === 1;
@@ -851,15 +853,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Set default selected document
   useEffect(() => {
-    if (classDocuments.length > 0 && !selectedDocumentId && classDocuments[0]) {
-      setSelectedDocumentId(classDocuments[0].id);
+    if (scenarioDocuments.length > 0 && !selectedDocumentId && scenarioDocuments[0]) {
+      setSelectedDocumentId(scenarioDocuments[0].id);
     }
-  }, [classDocuments, selectedDocumentId]);
+  }, [scenarioDocuments, selectedDocumentId]);
 
   // Get the currently selected document
   const selectedDocument = useMemo(() => {
-    return classDocuments.find((doc) => doc.id === selectedDocumentId) || null;
-  }, [classDocuments, selectedDocumentId]);
+    return scenarioDocuments.find((doc) => doc.id === selectedDocumentId) || null;
+  }, [scenarioDocuments, selectedDocumentId]);
 
   // Calculate aggregated results for final display
   const aggregatedResults = useMemo(() => {
@@ -1062,7 +1064,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
-            defaultSize={showDocuments && classDocuments.length > 0 ? 70 : 100}
+            defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
           >
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
@@ -1112,7 +1114,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       </div>
                       <div className="flex items-center gap-2">
                         {/* Documents Toggle */}
-                        {classDocuments.length > 0 && (
+                        {scenarioDocuments.length > 0 && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -1322,14 +1324,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           </ResizablePanel>
 
           {/* Right Panel - Documents */}
-          {showDocuments && classDocuments.length > 0 && (
+          {showDocuments && scenarioDocuments.length > 0 && (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                 <Card className="h-full flex flex-col ml-4 p-0">
                   <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                     {/* Select dropdown directly above document */}
-                    {classDocuments.length > 1 && (
+                    {scenarioDocuments.length > 1 && (
                       <div className="p-3 pb-2 border-b">
                         <Popover
                           open={documentSearchOpen}
@@ -1343,7 +1345,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               className="w-full justify-between"
                             >
                               {selectedDocumentId
-                                ? classDocuments.find(
+                                ? scenarioDocuments.find(
                                     (doc) => doc.id === selectedDocumentId
                                   )?.name
                                 : "Select document..."}
@@ -1356,7 +1358,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               <CommandList>
                                 <CommandEmpty>No document found.</CommandEmpty>
                                 <CommandGroup>
-                                  {classDocuments.map((doc: Document) => (
+                                  {scenarioDocuments.map((doc: Document) => (
                                     <CommandItem
                                       key={doc.id}
                                       value={doc.name}
@@ -1410,7 +1412,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel
-          defaultSize={showDocuments && classDocuments.length > 0 ? 70 : 100}
+          defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
         >
           <Card className="h-full flex flex-col py-4">
             <ResizablePanelGroup direction="vertical" className="h-full">
@@ -1444,7 +1446,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         </div>
                         <div className="flex items-center gap-2">
                           {/* Documents Toggle */}
-                          {classDocuments.length > 0 && (
+                          {scenarioDocuments.length > 0 && (
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
@@ -1796,14 +1798,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         </ResizablePanel>
 
         {/* Right Panel - Documents */}
-        {showDocuments && classDocuments.length > 0 && (
+        {showDocuments && scenarioDocuments.length > 0 && (
           <>
             <ResizableHandle />
             <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
               <Card className="h-full flex flex-col ml-4 p-0">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                   {/* Select dropdown directly above document */}
-                  {classDocuments.length > 1 && (
+                  {scenarioDocuments.length > 1 && (
                     <div className="p-3 pb-2 border-b">
                       <Popover
                         open={documentSearchOpen}
@@ -1817,7 +1819,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             className="w-full justify-between"
                           >
                             {selectedDocumentId
-                              ? classDocuments.find(
+                              ? scenarioDocuments.find(
                                   (doc) => doc.id === selectedDocumentId
                                 )?.name
                               : "Select document..."}
@@ -1830,7 +1832,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             <CommandList>
                               <CommandEmpty>No document found.</CommandEmpty>
                               <CommandGroup>
-                                {classDocuments.map((doc: Document) => (
+                                {scenarioDocuments.map((doc: Document) => (
                                   <CommandItem
                                     key={doc.id}
                                     value={doc.name}

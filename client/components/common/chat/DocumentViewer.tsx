@@ -1,23 +1,23 @@
 "use client";
-import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import Markdown from "@/components/common/chat/Markdown";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
-  SelectTrigger,
   SelectContent,
   SelectItem,
+  SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import Markdown from "@/components/common/chat/Markdown";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import Image from "next/image";
-import { FileText, Download } from "lucide-react";
 import { Document } from "@/types";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { useQuery } from "@tanstack/react-query";
+import { Download, FileText } from "lucide-react";
+import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 
 interface DocumentViewerProps {
   document?: Document;
@@ -84,7 +84,7 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
         const res = await fetch(
-          `${process.env['NEXT_PUBLIC_API_URL']}/documents/id/${docId}`,
+          `${process.env["NEXT_PUBLIC_API_URL"]}/documents/id/${docId}`
         );
         if (!res.ok) throw new Error("Failed to load document");
 

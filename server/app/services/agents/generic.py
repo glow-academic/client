@@ -1,13 +1,14 @@
 import uuid
 from typing import AsyncGenerator, Optional
 
+import fitz  # type: ignore
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
                     RunConfig, Runner)
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.extensions import get_gemini
-from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
-                        Scenarios, SimulationAttempts, SimulationChats,
+from app.extensions import UPLOAD_FOLDER, get_gemini
+from app.models import (Agents, Documents, EvalChats, EvalMessages, EvalRuns,
+                        Evals, Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages)
 from app.utils.agents import gta_prompt, student_prompt
 from app.utils.chat import (generate_natural_opening, get_chat_scenario,
@@ -131,7 +132,23 @@ async def _handle_simulation_chat(
     agent = session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
     if not agent:
         raise ValueError(f"Agent not found for scenario {scenario.id}")
+    
+    input_items: list[TResponseInputItem] = []
+    if scenario.documents:
+        # get the documents for the scenario
+        documents = session.exec(select(Documents).where(Documents.id.in_(scenario.documents))).all()
+        if not documents:
+            raise ValueError(f"Documents not found for scenario {scenario.id}")
+        for document in documents:
+            file_path = document.file_path
+            # use pdf reader to get txt content
+            with fitz.open(UPLOAD_FOLDER / file_path) as doc:
+                content = ""
+                for page in doc:
+                    content += page.get_text()
+                input_items.append({"role": "user", "content": content})
 
+    
     # Add a new message with an empty response
     message = SimulationMessages(chat_id=chat.id, query=input_text, response="")
     session.add(message)
@@ -151,7 +168,7 @@ async def _handle_simulation_chat(
     chat_scenario = get_chat_scenario(chat, session)
     class_info = get_class_info(scenario.class_id, session)
 
-    input_items: list[TResponseInputItem] = [chat_scenario]
+    input_items.insert(0, chat_scenario)
     if class_info:
         input_items.append(class_info)
     input_items.extend(conversation_history)
