@@ -9,8 +9,14 @@ export default defineConfig({
       // Database-focused node event listeners
       on("task", {
         // Generic database query task for testing database operations
-        dbQuery({ query, params = [] }: { query: string; params?: any[] }) {
-          const { Client } = require("pg");
+        async dbQuery({
+          query,
+          params = [],
+        }: {
+          query: string;
+          params?: any[];
+        }) {
+          const { Client } = await import("pg");
 
           return new Promise((resolve, reject) => {
             const client = new Client({
@@ -43,14 +49,14 @@ export default defineConfig({
         },
 
         // Specific task for user-class assignment (backward compatibility)
-        assignUserToClass({
+        async assignUserToClass({
           username,
           classId,
         }: {
           username: string;
           classId: string;
         }) {
-          const { Client } = require("pg");
+          const { Client } = await import("pg");
 
           return new Promise((resolve, reject) => {
             const client = new Client({
@@ -83,8 +89,8 @@ export default defineConfig({
         },
 
         // Database health check task
-        dbHealthCheck() {
-          const { Client } = require("pg");
+        async dbHealthCheck() {
+          const { Client } = await import("pg");
 
           return new Promise((resolve, reject) => {
             const client = new Client({
