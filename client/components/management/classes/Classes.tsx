@@ -59,13 +59,15 @@ import {
   Activity,
   Award,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Target,
   Trash2,
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -98,7 +100,7 @@ const COLORS = {
 export default function ClassesGeneralPage() {
   const queryClient = useQueryClient();
 
-  // State for time range filters and delete dialog
+  // State for time range filters, delete dialog, and carousel
   const [scoreTrendTimeRange, setScoreTrendTimeRange] = useState<
     "7d" | "30d" | "90d"
   >("7d");
@@ -108,6 +110,7 @@ export default function ClassesGeneralPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const [classCarouselIndex, setClassCarouselIndex] = useState(0);
 
   // Delete class mutation
   const deleteClassMutation = useMutation({
@@ -661,6 +664,138 @@ export default function ClassesGeneralPage() {
     }
   };
 
+  // Carousel implementation for class cards
+  const renderClassCarousel = useCallback(() => {
+    const maxVisible = 3;
+    const totalPages = Math.ceil(classes.length / maxVisible);
+    const canScrollLeft = classCarouselIndex > 0;
+    const canScrollRight = classCarouselIndex < totalPages - 1;
+
+    if (classes.length === 0) {
+      return (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-semibold mb-2">No classes found</h3>
+          <p className="text-muted-foreground">
+            Create a new class to get started.
+          </p>
+        </div>
+      );
+    }
+
+    const handlePrevious = () => {
+      if (canScrollLeft) {
+        setClassCarouselIndex(classCarouselIndex - 1);
+      }
+    };
+
+    const handleNext = () => {
+      if (canScrollRight) {
+        setClassCarouselIndex(classCarouselIndex + 1);
+      }
+    };
+
+    // Get classes for current page
+    const startIndex = classCarouselIndex * maxVisible;
+    const endIndex = startIndex + maxVisible;
+    const visibleClasses = classes.slice(startIndex, endIndex);
+
+    return (
+      <div className="space-y-4">
+        {/* Header with navigation */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            Classes ({classes.length})
+          </h2>
+          {totalPages > 1 && (
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handlePrevious}
+                disabled={!canScrollLeft}
+                className={`p-2 rounded-lg transition-colors ${
+                  canScrollLeft
+                    ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                    : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                }`}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {classCarouselIndex + 1} of {totalPages}
+              </span>
+              <button
+                onClick={handleNext}
+                disabled={!canScrollRight}
+                className={`p-2 rounded-lg transition-colors ${
+                  canScrollRight
+                    ? "bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400"
+                    : "bg-gray-50 text-gray-300 dark:bg-gray-900 dark:text-gray-600 cursor-not-allowed"
+                }`}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Carousel container */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {visibleClasses.map((classItem) => (
+            <Card key={classItem.id} className="relative">
+              <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <CardTitle className="text-lg">{classItem.name}</CardTitle>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline">{classItem.classCode}</Badge>
+                      <Badge variant="secondary">
+                        {formatClassTerm(classItem.term)} {classItem.year}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDeleteClass(classItem.id)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {classItem.description}
+                </p>
+                <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                  <Calendar className="h-3 w-3" />
+                  Created{" "}
+                  {format(new Date(classItem.createdAt), "MMM dd, yyyy")}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Dots indicator */}
+        {totalPages > 1 && (
+          <div className="flex justify-center space-x-2 mt-4">
+            {Array.from({ length: totalPages }, (_, index) => (
+              <button
+                key={index}
+                onClick={() => setClassCarouselIndex(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === classCarouselIndex
+                    ? "bg-blue-500"
+                    : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                }`}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }, [classes, classCarouselIndex]);
+
   // Loading state
   if (
     isLoadingClasses ||
@@ -690,42 +825,8 @@ export default function ClassesGeneralPage() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {classes.map((classItem) => (
-          <Card key={classItem.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <CardTitle className="text-lg">{classItem.name}</CardTitle>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline">{classItem.classCode}</Badge>
-                    <Badge variant="secondary">
-                      {formatClassTerm(classItem.term)} {classItem.year}
-                    </Badge>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteClass(classItem.id)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <p className="text-sm text-muted-foreground line-clamp-2">
-                {classItem.description}
-              </p>
-              <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                Created {format(new Date(classItem.createdAt), "MMM dd, yyyy")}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      {/* Class Cards Carousel */}
+      {renderClassCarousel()}
 
       {/* Performance Trend Charts */}
       <Card>

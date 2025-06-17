@@ -348,20 +348,26 @@ export default function Staff() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {profile.classIds.length > 0 ? profile.classIds.map((classId, index) => {
-                          const classOption = allClasses.find(
-                            (cls) => cls.id === classId
-                          );
-                          return (
-                            <Badge
-                              key={index}
-                              variant="outline"
-                              className="text-xs bg-blue-100 text-blue-800 border-blue-300"
-                            >
-                              {classOption?.classCode}
-                            </Badge>
-                          );
-                        }) : <span className="text-muted-foreground">No classes</span>}
+                        {profile.classIds.length > 0 ? (
+                          profile.classIds.map((classId, index) => {
+                            const classOption = allClasses.find(
+                              (cls) => cls.id === classId
+                            );
+                            return (
+                              <Badge
+                                key={index}
+                                variant="outline"
+                                className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                              >
+                                {classOption?.classCode}
+                              </Badge>
+                            );
+                          })
+                        ) : (
+                          <span className="text-muted-foreground">
+                            No classes
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
