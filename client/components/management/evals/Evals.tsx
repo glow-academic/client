@@ -7,17 +7,16 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
   Bot,
   Clock,
-  Edit,
-  Eye,
+  Info,
   FileCheck,
   MessageSquare,
-  Play,
   Plus,
+  RefreshCcw,
   Settings,
   Trash2,
-  Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -38,17 +37,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Eval } from "@/types";
+import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
 
 export default function Evals() {
   const router = useRouter();
@@ -58,12 +56,17 @@ export default function Evals() {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [runningEvalId, setRunningEvalId] = useState<string | null>(null);
+  const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
 
   // Fetch evaluations data
   const { data: evals, refetch: refetchEvals } = useQuery({
     queryKey: ["evals"],
     queryFn: () => getAllEvals(),
+  });
+
+  const { data: evalRuns } = useQuery({
+    queryKey: ["evalRuns"],
+    queryFn: () => getAllEvalRuns(),
   });
 
   const { data: classes } = useQuery({
@@ -95,10 +98,6 @@ export default function Evals() {
     setShowDeleteDialog(true);
   };
 
-  const handleEdit = (id: string) => {
-    router.push(`/management/evals/e/${id}/edit`);
-  };
-
   const handlePreview = (id: string) => {
     router.push(`/management/evals/e/${id}`);
   };
@@ -109,7 +108,7 @@ export default function Evals() {
       return;
     }
 
-    setRunningEvalId(id);
+    setStartingEvalId(id);
     try {
       toast.loading("Starting evaluation...");
 
@@ -133,11 +132,10 @@ export default function Evals() {
       );
 
       if (response.ok) {
-        const data = await response.json();
         toast.success("Evaluation started successfully");
 
         // Navigate to the evaluation page
-        router.push(`/management/evals/e/${id}/r/${data.eval_run_id}`);
+        router.push(`/management/evals/e/${id}`);
       } else {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
@@ -150,31 +148,12 @@ export default function Evals() {
       logError("Error starting evaluation:", error);
       toast.error("Failed to start evaluation. Please try again.");
     } finally {
-      setRunningEvalId(null);
+      setStartingEvalId(null);
     }
   };
 
   const handleCreateNew = () => {
     router.push("/management/evals/new");
-  };
-
-  const getEvalTypeBadge = (evalType: "student" | "ta") => {
-    return evalType === "student"
-      ? { variant: "default" as const, text: "Student", icon: Users }
-      : { variant: "secondary" as const, text: "TA", icon: Bot };
-  };
-
-  const getComplexityBadge = (evaluation: Eval) => {
-    const totalItems =
-      evaluation.scenarioIds.filter((id) => id !== "RAY").length +
-      evaluation.agentIds.filter((id) => id !== "RAY").length +
-      evaluation.rubricIds.filter((id) => id !== "RAY").length;
-
-    if (totalItems >= 10)
-      return { variant: "destructive" as const, text: "Complex" };
-    if (totalItems >= 5)
-      return { variant: "default" as const, text: "Moderate" };
-    return { variant: "outline" as const, text: "Simple" };
   };
 
   const formatDate = (dateString: string) => {
@@ -192,10 +171,9 @@ export default function Evals() {
         {evals && evals.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
             {evals.map((evaluation: Eval) => {
-              const typeBadge = getEvalTypeBadge(evaluation.evalType);
-              const complexityBadge = getComplexityBadge(evaluation);
-              const TypeIcon = typeBadge.icon;
-
+              const hasStarted = evalRuns?.some(
+                (run) => run.evalId === evaluation.id
+              );
               return (
                 <Card
                   key={evaluation.id}
@@ -207,18 +185,6 @@ export default function Evals() {
                         <CardTitle className="text-base">
                           {evaluation.name}
                         </CardTitle>
-                        <CardDescription className="flex items-center gap-2">
-                          <TypeIcon className="h-3 w-3" />
-                          {typeBadge.text} Evaluation
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-1">
-                        <Badge variant={typeBadge.variant}>
-                          {typeBadge.text}
-                        </Badge>
-                        <Badge variant={complexityBadge.variant}>
-                          {complexityBadge.text}
-                        </Badge>
                       </div>
                     </div>
                   </CardHeader>
@@ -272,44 +238,42 @@ export default function Evals() {
                   </CardContent>
                   <CardFooter className="flex justify-between">
                     <div className="flex gap-2">
+                      {hasStarted && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePreview(evaluation.id)}
+                          className="text-blue-600 hover:text-blue-700"
+                        >
+                          <Info className="h-4 w-4 mr-1" />
+                          Details
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleRun(evaluation.id)}
-                        disabled={runningEvalId === evaluation.id}
+                        disabled={startingEvalId === evaluation.id}
                         className="text-green-600 hover:text-green-700"
                       >
-                        {runningEvalId === evaluation.id ? (
+                        {startingEvalId === evaluation.id ? (
                           <>
                             <div className="animate-spin h-3 w-3 border-2 border-green-600 border-t-transparent rounded-full mr-1" />
-                            Starting...
+                            {hasStarted ? "Restarting..." : "Starting..."}
                           </>
                         ) : (
                           <>
-                            <Play className="h-4 w-4 mr-1" />
-                            Run
+                            {hasStarted ? (
+                              <RefreshCcw className="h-4 w-4 mr-1" />
+                            ) : (
+                              <ArrowRight className="h-4 w-4 mr-1" />
+                            )}
+                            {hasStarted ? "Restart" : "Start"}
                           </>
                         )}
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePreview(evaluation.id)}
-                        className="text-blue-600 hover:text-blue-700"
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        Preview
-                      </Button>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEdit(evaluation.id)}
-                        aria-label="Edit evaluation"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

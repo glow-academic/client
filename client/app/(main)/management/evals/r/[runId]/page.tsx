@@ -5,7 +5,7 @@
  * 06/08/2025
  */
 
-import Evaluation from "@/components/common/chat/EvaluationRun";
+import EvaluationRun from "@/components/common/chat/EvaluationRun";
 import { use } from "react";
 
 export default function EvaluationPage({
@@ -16,7 +16,7 @@ export default function EvaluationPage({
   const { runId } = use(params);
   return (
     <div className="space-y-6">
-      <Evaluation runId={runId} />
+      <EvaluationRun runId={runId} />
     </div>
   );
 }

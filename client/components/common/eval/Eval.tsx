@@ -323,10 +323,6 @@ export default function Eval({
     }
   };
 
-  const handleCancel = () => {
-    router.push("/management/evals");
-  };
-
   if (isEditMode && isLoadingEval) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -360,24 +356,6 @@ export default function Eval({
                 {errors.name && (
                   <p className="text-sm text-destructive">{errors.name}</p>
                 )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="evalType">Evaluation Type</Label>
-                <Select
-                  value={formData.evalType || ""}
-                  onValueChange={(value: "student" | "ta") =>
-                    handleInputChange("evalType", value)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="student">Student</SelectItem>
-                    <SelectItem value="ta">Teaching Assistant</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
             </div>
 
@@ -783,14 +761,6 @@ export default function Eval({
 
         {/* Submit Buttons */}
         <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
           <Button
             type="submit"
             disabled={isSubmitting}

@@ -52,6 +52,7 @@ async def new_scenario(
             seniority=seniority,
             crowdedness=crowdedness,
             intensity=intensity,
+            group_id=None, # no group id for scenarios
             session=session,
         )
 

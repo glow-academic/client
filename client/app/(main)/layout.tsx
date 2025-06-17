@@ -157,6 +157,15 @@ export default function MainLayout({
       );
     }
 
+    if (pathname.startsWith("/management/evals/e/") && !pathname.includes("/r/")) {
+      return (
+        <Button onClick={() => router.push(`${pathname}/edit`)} size="sm">
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Evaluation
+        </Button>
+      );
+    }
+
     return null;
   };
 

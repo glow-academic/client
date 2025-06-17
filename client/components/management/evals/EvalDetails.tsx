@@ -5,7 +5,7 @@
  * 06/09/2025
  */
 "use client";
-import { CheckCircle, Clock, Eye, Play, Trash2 } from "lucide-react";
+import { CheckCircle, Clock, Eye, Loader2, Trash2 } from "lucide-react";
 
 import {
   AlertDialog,
@@ -27,7 +27,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Agent, EvalChat, EvalChatGrade, EvalRun, Rubric } from "@/types";
-import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
 import { getEvalChatsByEvalRuns } from "@/utils/queries/eval_chats/get-eval-chats-by-evalruns";
@@ -36,18 +35,27 @@ import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { toast } from "sonner";
+import { deleteEvalRun } from "@/utils/mutations/eval_runs/delete-eval-run";
+import { logError } from "@/utils/logger";
+import { getEval } from "@/utils/queries/evals/get-eval";
 
 export default function EvalDetails({ evalId }: { evalId: string }) {
+  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
     agentName: string;
     rubricName: string;
   } | null>(null);
-  const [runningEvals, setRunningEvals] = useState<Set<string>>(new Set());
   const router = useRouter();
-  const queryClient = useQueryClient();
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const { data: evalData } = useQuery({
+    queryKey: ["eval", evalId],
+    queryFn: () => getEval(evalId),
+    enabled: !!evalId,
+  });
+
 
   const { data: runs, isLoading: isLoadingRuns } = useQuery({
     queryKey: ["evalRuns", evalId],
@@ -90,94 +98,6 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
     enabled: !!runs && runs.length > 0,
   });
 
-  const handleRun = async (runId: string) => {
-    if (runningEvals.has(runId)) {
-      toast.error("This eval run is already running");
-      return;
-    }
-
-    setRunningEvals((prev) => new Set(prev).add(runId));
-
-    try {
-      const formData = new FormData();
-      formData.append("eval_run_id", runId);
-
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No response body reader available");
-      }
-
-      toast.success("Eval run started successfully");
-
-      // Process the streaming response
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-
-              if (data.done) {
-                toast.success("Eval run completed successfully");
-                // Invalidate queries to refresh data
-                queryClient.invalidateQueries({ queryKey: ["evalChats"] });
-                queryClient.invalidateQueries({ queryKey: ["evalRuns"] });
-                queryClient.invalidateQueries({ queryKey: ["evalGrades"] });
-                break;
-              }
-
-              if (data.type === "error") {
-                toast.error(`Error: ${data.error}`);
-                break;
-              }
-
-              if (data.type === "chat_start") {
-                toast.info(`Starting chat: ${data.message}`);
-              }
-
-              if (data.type === "chat_complete") {
-                toast.success(`Completed: ${data.message}`);
-              }
-
-              if (data.type === "evaluation_complete") {
-                toast.success(`Evaluation completed for chat`);
-              }
-            } catch (parseError) {
-              logError("Error parsing SSE data:", parseError);
-            }
-          }
-        }
-      }
-    } catch (error) {
-      logError("Error running eval:", error);
-      toast.error(
-        `Failed to run eval: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setRunningEvals((prev) => {
-        const newSet = new Set(prev);
-        newSet.delete(runId);
-        return newSet;
-      });
-    }
-  };
 
   const handleView = (runId: string) => {
     router.push(`/management/evals/e/${evalId}/r/${runId}`);
@@ -192,8 +112,19 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
     setShowDeleteDialog(true);
   };
 
-  const handleDelete = () => {
-    // call mutation function to delete the eval run
+  const handleDelete = async () => {
+    try {
+      if (!deleteItem?.id) return;
+      setIsDeleting(true);
+      await deleteEvalRun(deleteItem.id);
+      setShowDeleteDialog(false);
+      setDeleteItem(null);
+      queryClient.invalidateQueries({ queryKey: ["evalRuns"] });
+    } catch (error) {
+      logError("Error deleting eval run", error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const getRunStatus = (run: EvalRun) => {
@@ -248,8 +179,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
             ) / runGrades.length
           )
         : 0;
-
-    const agent =
+    const responseAgent =
       agents?.find((agent: Agent | null) => agent?.id === run.agentId) || null;
     const rubric =
       rubrics?.find((rubric: Rubric | null) => rubric?.id === run.rubricId) ||
@@ -259,7 +189,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
       runChats,
       completedChats,
       avgScore,
-      agent,
+      responseAgent,
       rubric,
     };
   };
@@ -283,8 +213,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {runs?.map((run: EvalRun) => {
           const status = getRunStatus(run);
-          const isRunning = runningEvals.has(run.id);
-          const { runChats, completedChats, avgScore, agent, rubric } =
+          const { runChats, completedChats, avgScore, responseAgent, rubric } =
             getRunData(run);
 
           return (
@@ -293,7 +222,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                 <div className="flex items-start justify-between">
                   <div className="space-y-1">
                     <CardTitle className="text-sm font-medium">
-                      {agent?.name || "Unknown Agent"}
+                      {agents?.find((a: Agent | null) => a?.id === evalData?.baseAgentId)?.name || "Unknown Agent"} vs {responseAgent?.name || "Unknown Agent"}
                     </CardTitle>
                     <CardDescription className="text-xs">
                       {rubric?.name || "No rubric"} •{" "}
@@ -351,8 +280,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                         return (
                           <div
                             key={chat.id}
-                            className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs hover:bg-muted/50 transition-colors cursor-pointer"
-                            onClick={() => handleView(run.id)}
+                            className="flex items-center justify-between p-2 bg-muted/30 rounded text-xs hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
@@ -397,21 +325,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                     className="flex-1"
                   >
                     <Eye className="h-4 w-4 mr-1" />
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleRun(run.id)}
-                    disabled={isRunning || status === "Completed"}
-                    className="flex-1"
-                  >
-                    {isRunning ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent mr-1" />
-                    ) : (
-                      <Play className="h-4 w-4 mr-1" />
-                    )}
-                    {isRunning ? "Running" : "Run"}
+                    View Chats
                   </Button>
                   <Button
                     variant="outline"
@@ -419,7 +333,7 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
                     onClick={() =>
                       handleDeleteClick(
                         run.id,
-                        agent?.name || "Unknown Agent",
+                        agents?.find((a: Agent | null) => a?.id === run.agentId)?.name || "Unknown Agent",
                         rubric?.name || "No rubric"
                       )
                     }
@@ -458,7 +372,11 @@ export default function EvalDetails({ evalId }: { evalId: string }) {
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

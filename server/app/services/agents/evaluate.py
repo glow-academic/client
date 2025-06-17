@@ -158,7 +158,7 @@ async def run_evaluate_agent(
 
         # Run the evaluation
         logger.info("Running evaluation agent...")
-        with trace(chat.title, trace_id=chat.trace_id):
+        with trace(chat.title, trace_id=chat.trace_id, group_id=str(eval_run_id)):
             result = await Runner.run(agent, input=input_items)
         evaluation_result = result.final_output_as(DynamicRubric)
         logger.info("Evaluation agent completed successfully")
@@ -291,7 +291,7 @@ Your evaluation should be fair, consistent, and based solely on observable evide
             name="Evaluate Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
+                model="gemini-2.5-flash-preview-05-20",
                 openai_client=self.gemini_client,
             ),
             model_settings=ModelSettings(

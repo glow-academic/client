@@ -15,7 +15,7 @@ import {
 
 const columnMap = {
   createdAt: "Date",
-  classId: "Classes",
+  classIds: "Classes",
   userId: "Name",
   simulationTitle: "Simulation",
   classCode: "Classes",

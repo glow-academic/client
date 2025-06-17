@@ -12,13 +12,7 @@ import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -346,41 +340,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     }
   }, [chats, evaluation?.scenarioIds, currentChatIndex]);
 
-  // Check if current chat is completed and move to next
-  useEffect(() => {
-    if (currentChat?.completed && !isRunningEval) {
-      // Only auto-advance if this chat was freshly completed in this session
-      const isFreshlyCompleted = true;
-
-      if (isFreshlyCompleted) {
-        if (currentChatIndex < (evaluation?.scenarioIds?.length || 0) - 1) {
-          // Move to next chat after a short delay
-          const timer = setTimeout(() => {
-            setCurrentChatIndex((prev) => {
-              const nextIndex = prev + 1;
-              toast.success(
-                `Moving to chat ${nextIndex + 1} of ${evaluation?.scenarioIds?.length || 0}`
-              );
-              return nextIndex;
-            });
-          }, 2000);
-          return () => clearTimeout(timer);
-        }
-      }
-    }
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [
-    currentChat?.completed,
-    currentChat?.id,
-    currentChatIndex,
-    evaluation?.scenarioIds?.length,
-    isRunningEval,
-  ]);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -572,16 +531,47 @@ export default function EvaluationRun({ runId }: { runId: string }) {
               <div className="flex items-end justify-end flex-col gap-2">
                 <div className="flex items-center gap-4">
                   {/* Show Rubric Toggle */}
-                  <div className="flex items-center gap-2">
-                    <Label htmlFor="show-grades" className="text-sm">
-                      Show Rubric
-                    </Label>
-                    <Switch
-                      id="show-grades"
-                      checked={showGrades}
-                      onCheckedChange={setShowGrades}
-                    />
+
+                  <div className="flex items-center gap-4">
+                    {/* Run Evaluation Button */}
+                    {!isRunningEval && !selectedChat?.completed && (
+                      <Button
+                        onClick={startEvaluationRun}
+                        variant="default"
+                        size="sm"
+                        className="flex items-center gap-2"
+                      >
+                        <Play className="h-4 w-4" />
+                        Run Evaluation
+                      </Button>
+                    )}
+
+                    {/* Running Status */}
+                    {isRunningEval && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        Running evaluation...
+                        {runStatus && (
+                          <span>
+                            ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
+                            chats completed)
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
+                  {selectedChat?.completed && (
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="show-grades" className="text-sm">
+                        Show Rubric
+                      </Label>
+                      <Switch
+                        id="show-grades"
+                        checked={showGrades}
+                        onCheckedChange={setShowGrades}
+                      />
+                    </div>
+                  )}
 
                   {/* Timer with Pass/Fail Status */}
                   <TooltipProvider>
@@ -899,39 +889,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
               </div>
             )}
           </CardContent>
-
-          <CardFooter className="flex-shrink-0 p-4 border-t">
-            <div className="w-full flex justify-between items-center">
-              <div className="flex items-center gap-4">
-                {/* Run Evaluation Button */}
-                {!isRunningEval && (
-                  <Button
-                    onClick={startEvaluationRun}
-                    variant="default"
-                    size="sm"
-                    className="flex items-center gap-2"
-                  >
-                    <Play className="h-4 w-4" />
-                    Run Evaluation
-                  </Button>
-                )}
-
-                {/* Running Status */}
-                {isRunningEval && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    Running evaluation...
-                    {runStatus && (
-                      <span>
-                        ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
-                        chats completed)
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-          </CardFooter>
         </Card>
       </div>
 

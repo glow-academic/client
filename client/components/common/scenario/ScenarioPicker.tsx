@@ -175,13 +175,9 @@ export function ScenarioPicker({
   };
 
   const getSearchNotFoundMessage = () => {
-    if (multiSelect) {
-      if (selectedModels.length === 0) {
-        return "No models found.";
-      }
-    }
     return `No ${label} found.`;
   };
+  
   return (
     <div className="grid gap-2">
       <HoverCard openDelay={200}>

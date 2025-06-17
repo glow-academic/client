@@ -15,17 +15,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
-import { type Agent, type AgentType } from "@/types";
+import { type Agent } from "@/types";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import { getAgent } from "@/utils/queries/agents/get-agent";
@@ -46,10 +39,8 @@ export default function Agent({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<Agent>>({
     name: "",
-    subtitle: "",
     description: "",
     systemPrompt: "",
-    agentType: "student" as AgentType,
     temperature: 0,
   });
 
@@ -63,10 +54,8 @@ export default function Agent({
     if (agent && isEditMode) {
       setFormData({
         name: agent.name || "",
-        subtitle: agent.subtitle || "",
         description: agent.description || "",
         systemPrompt: agent.systemPrompt || "",
-        agentType: (agent.agentType as AgentType) || "student",
         temperature: agent.temperature || 0,
       });
     }
@@ -80,11 +69,6 @@ export default function Agent({
       return;
     }
 
-    if (!formData.subtitle?.trim()) {
-      toast.error("Agent subtitle is required");
-      return;
-    }
-
     if (!formData.description?.trim()) {
       toast.error("Agent description is required");
       return;
@@ -95,19 +79,11 @@ export default function Agent({
       return;
     }
 
-    // Ensure agentType is always set to a valid value
-    const agentType = formData.agentType || "student";
-    if (!["student", "ta"].includes(agentType)) {
-      toast.error("Invalid agent type");
-      return;
-    }
-
     setIsSubmitting(true);
 
     try {
       const submitData = {
         ...formData,
-        agentType,
       };
 
       if (isEditMode) {
@@ -196,19 +172,6 @@ export default function Agent({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="subtitle">Subtitle *</Label>
-            <Input
-              id="subtitle"
-              value={formData.subtitle}
-              onChange={(e) =>
-                setFormData((prev) => ({ ...prev, subtitle: e.target.value }))
-              }
-              placeholder="Brief description of the agent"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
@@ -244,24 +207,6 @@ export default function Agent({
               This prompt defines the agent's behavior and personality in
               conversations.
             </p>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="agentType">Agent Type</Label>
-            <Select
-              value={formData.agentType || "student"}
-              onValueChange={(value: AgentType) =>
-                setFormData((prev) => ({ ...prev, agentType: value }))
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select agent type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="ta">Teaching Assistant</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
 
           <div className="space-y-2">

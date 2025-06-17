@@ -91,15 +91,6 @@ async def start_attempt(
         # First, randomly fill any null attributes in the scenario
         scenario = await randomly_fill_scenario_attributes(old_scenario, session)
 
-        # Use agent-specific default titles for simulations
-        agent = session.exec(
-            select(Agents).where(Agents.id == scenario.agent_id)
-        ).one_or_none()
-        if agent:
-            chat_title = f"{agent.name} Student Session"
-        else:
-            chat_title = "Practice Session"
-
         # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
         if not scenario.description or scenario.description == "":
             name, description, trace_id = await run_scenario_agent(
@@ -109,6 +100,7 @@ async def start_attempt(
                 seniority=scenario.seniority,
                 crowdedness=scenario.crowdedness,
                 intensity=scenario.intensity,
+                group_id=new_attempt.id,
                 session=session,
             )
 
@@ -120,6 +112,10 @@ async def start_attempt(
             session.refresh(scenario)
 
             scenario_id = scenario.id
+            chat_title = scenario.name
+        else:
+            chat_title = scenario.name
+            trace_id = None
 
         # Create the chat with the scenario and link it to this attempt
         chat = SimulationChats(
@@ -282,15 +278,6 @@ async def continue_attempt(
                     old_next_scenario, session
                 )
 
-                # Use agent name for title if available
-                agent = session.exec(
-                    select(Agents).where(Agents.id == next_scenario.agent_id)
-                ).one_or_none()
-                if agent:
-                    chat_title = f"{agent.name} Student Session"
-                else:
-                    chat_title = "Practice Session"
-
                 # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
                 if not next_scenario.description or next_scenario.description == "":
                     name, description, trace_id = await run_scenario_agent(
@@ -300,6 +287,7 @@ async def continue_attempt(
                         seniority=next_scenario.seniority,
                         crowdedness=next_scenario.crowdedness,
                         intensity=next_scenario.intensity,
+                        group_id=attempt_id,
                         session=session,
                     )
 
@@ -311,6 +299,10 @@ async def continue_attempt(
                     session.refresh(next_scenario)
 
                     next_scenario_id = next_scenario.id
+                    chat_title = next_scenario.name
+                else:
+                    chat_title = next_scenario.name
+                    trace_id = None
 
                 # Create the chat with the scenario and link it to this attempt
                 next_chat = SimulationChats(

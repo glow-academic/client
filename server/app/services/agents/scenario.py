@@ -27,6 +27,7 @@ async def run_scenario_agent(
     seniority: str | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,
+    group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str, str]:
     """
@@ -39,6 +40,7 @@ async def run_scenario_agent(
         seniority: The seniority of the student
         crowdedness: The crowdedness of the class
         intensity: The intensity of the class
+        group_id: The ID of the group
         session: The database session
     Returns:
         A tuple of (scenario_id, chat_title, trace_id).
@@ -96,7 +98,7 @@ async def run_scenario_agent(
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")
 
-    with trace("Scenario Agent") as scenario_trace:
+    with trace("Scenario Agent", group_id=str(group_id)) as scenario_trace:
         result = await Runner.run(scenario_agent.agent(), input=clean_input_items)
         trace_id = scenario_trace.trace_id
 
@@ -134,7 +136,7 @@ class ScenarioAgent:
             name="Scenario Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
+                model="gemini-2.5-flash-preview-05-20",
                 openai_client=self.gemini_client,
             ),
             model_settings=ModelSettings(

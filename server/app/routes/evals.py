@@ -97,14 +97,6 @@ async def start_eval(
 
                 scenario = await randomly_fill_scenario_attributes(old_scenario, session)
 
-                agent = session.exec(
-                    select(Agents).where(Agents.id == scenario.agent_id)
-                ).one_or_none()
-                if agent:
-                    chat_title = f"{agent.name} - {scenario.name}"
-                else:
-                    chat_title = f"Eval Run {i+1} - Scenario {j+1}"
-
                 if not scenario.description or scenario.description == "":
                     name, description, trace_id = await run_scenario_agent(
                         agent_id=scenario.agent_id,
@@ -113,6 +105,7 @@ async def start_eval(
                         seniority=scenario.seniority,
                         crowdedness=scenario.crowdedness,
                         intensity=scenario.intensity,
+                        group_id=eval_run.id,
                         session=session,
                     )
 
@@ -124,6 +117,10 @@ async def start_eval(
                     session.refresh(scenario)
 
                     scenario_id = scenario.id
+                    chat_title = scenario.name
+                else:
+                    chat_title = scenario.name
+                    trace_id = None
 
                 eval_chat = EvalChats(
                     title=chat_title,

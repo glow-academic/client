@@ -5,13 +5,10 @@
  * 06/07/2025
  */
 "use client";
-import React from "react";
-import { Shield, GraduationCap, User as UserIcon, Search } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,9 +25,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Profile } from "@/types";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { useQuery } from "@tanstack/react-query";
+import {
+  GraduationCap,
+  Pencil,
+  Search,
+  Shield,
+  User as UserIcon,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import React from "react";
 
 // Helper function to get initials from name
 const getInitials = (name?: string): string => {
@@ -101,10 +108,15 @@ export default function Staff() {
     queryFn: () => getAllProfiles(),
   });
 
+  const { data: allClasses = [] } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
   // Filter staff users (include admin, instructional, instructor, ta)
   const staffUsers = React.useMemo(() => {
     return allProfiles.filter((profile: Profile) =>
-      ["admin", "instructional", "instructor", "ta"].includes(profile.role),
+      ["admin", "instructional", "instructor", "ta"].includes(profile.role)
     );
   }, [allProfiles]);
 
@@ -114,7 +126,9 @@ export default function Staff() {
 
     // Role filter
     if (roleFilter !== "all") {
-      filtered = filtered.filter((profile: Profile) => profile.role === roleFilter);
+      filtered = filtered.filter(
+        (profile: Profile) => profile.role === roleFilter
+      );
     }
 
     // Search filter
@@ -124,7 +138,7 @@ export default function Staff() {
           profile.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           profile.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           profile.alias.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          profile.role.toLowerCase().includes(searchTerm.toLowerCase()),
+          profile.role.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -151,11 +165,14 @@ export default function Staff() {
   const roleCounts = React.useMemo(() => {
     return {
       total: staffUsers.length,
-      admin: staffUsers.filter((profile: Profile) => profile.role === "admin").length,
-      instructional: staffUsers.filter((profile: Profile) => profile.role === "instructional")
+      admin: staffUsers.filter((profile: Profile) => profile.role === "admin")
         .length,
-      instructor: staffUsers.filter((profile: Profile) => profile.role === "instructor")
-        .length,
+      instructional: staffUsers.filter(
+        (profile: Profile) => profile.role === "instructional"
+      ).length,
+      instructor: staffUsers.filter(
+        (profile: Profile) => profile.role === "instructor"
+      ).length,
       ta: staffUsers.filter((profile: Profile) => profile.role === "ta").length,
     };
   }, [staffUsers]);
@@ -242,7 +259,7 @@ export default function Staff() {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search staff by name, username, or role..."
+            placeholder="Search staff by name, email, or role..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
@@ -267,7 +284,7 @@ export default function Staff() {
           <SelectContent>
             <SelectItem value="name">Name</SelectItem>
             <SelectItem value="role">Role</SelectItem>
-            <SelectItem value="username">Username</SelectItem>
+            <SelectItem value="email">Email</SelectItem>
             <SelectItem value="classes">Classes</SelectItem>
           </SelectContent>
         </Select>
@@ -280,9 +297,9 @@ export default function Staff() {
             <TableRow>
               <TableHead>Staff Member</TableHead>
               <TableHead>Role</TableHead>
-              <TableHead>Username</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead>Classes</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -306,11 +323,15 @@ export default function Staff() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="text-xs">
-                            {getInitials(profile.firstName + " " + profile.lastName)}
+                            {getInitials(
+                              profile.firstName + " " + profile.lastName
+                            )}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="font-medium">{profile.firstName + " " + profile.lastName}</p>
+                          <p className="font-medium">
+                            {profile.firstName + " " + profile.lastName}
+                          </p>
                         </div>
                       </div>
                     </TableCell>
@@ -322,9 +343,26 @@ export default function Staff() {
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{profile.alias}@purdue.edu</TableCell>
+                    <TableCell className="text-sm">
+                      {profile.alias}@purdue.edu
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {profile.classIds?.length || 0} classes
+                      <div className="flex flex-wrap gap-1 max-w-[200px]">
+                        {profile.classIds.length > 0 ? profile.classIds.map((classId, index) => {
+                          const classOption = allClasses.find(
+                            (cls) => cls.id === classId
+                          );
+                          return (
+                            <Badge
+                              key={index}
+                              variant="outline"
+                              className="text-xs bg-blue-100 text-blue-800 border-blue-300"
+                            >
+                              {classOption?.classCode}
+                            </Badge>
+                          );
+                        }) : <span className="text-muted-foreground">No classes</span>}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -332,6 +370,7 @@ export default function Staff() {
                         size="sm"
                         onClick={() => handleEditUser(profile.id)}
                       >
+                        <Pencil className="h-4 w-4" />
                         Edit
                       </Button>
                     </TableCell>

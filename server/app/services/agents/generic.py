@@ -4,7 +4,7 @@ from typing import AsyncGenerator, Optional
 
 import PyPDF2
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
-                    RunConfig, Runner)
+                    RunConfig, Runner, trace)
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER, get_gemini
@@ -47,11 +47,11 @@ async def run_generic_agent_bare(
         temperature=agent.temperature,
     )
 
-    result = Runner.run_streamed(
-        agent_instance.agent(),
-        input=input_items,
-        run_config=RunConfig(workflow_name=f"{agent.name} Agent"),
-    )
+    with trace(f"Testing {agent.name} Agent"):
+        result = Runner.run_streamed(
+            agent_instance.agent(),
+            input=input_items,
+        )
 
     async for event in result.stream_events():
         if event.type == "raw_response_event":
@@ -183,11 +183,18 @@ async def _handle_simulation_chat(
         temperature=agent.temperature,
     )
 
-    result = Runner.run_streamed(
-        agent_instance.agent(),
-        input=input_items,
-        run_config=RunConfig(workflow_name=chat.title),
-    )
+    with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)) as chat_trace:
+        result = Runner.run_streamed(
+            agent_instance.agent(),
+            input=input_items,
+        )
+        trace_id = chat_trace.trace_id
+
+    # update the trace id to the chat for future reference, if it was orginally None
+    if chat.trace_id is None:
+        chat.trace_id = trace_id
+        session.add(chat)
+        session.commit()
 
     # Process streaming events
     full_response = ""
@@ -299,11 +306,19 @@ async def _handle_eval_chat(
         temperature=agent.temperature,
     )
 
-    result = Runner.run_streamed(
-        agent_instance.agent(),
-        input=input_items,
-        run_config=RunConfig(workflow_name=chat.title),
-    )
+    with trace(chat.title, trace_id=chat.trace_id, group_id=str(eval_run.id)) as chat_trace:
+        result = Runner.run_streamed(
+            agent_instance.agent(),
+                input=input_items,
+            )
+        trace_id = chat_trace.trace_id
+    
+    # update the trace id to the chat for future reference, if it was orginally None
+    if chat.trace_id is None:
+        chat.trace_id = trace_id
+        session.add(chat)
+        session.commit()
+
 
     # Process streaming events
     full_response = ""
@@ -347,7 +362,7 @@ class GenericAgent:
             name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
+                model="gemini-2.5-flash-preview-05-20",
                 openai_client=self.gemini_client,
             ),
             model_settings=ModelSettings(

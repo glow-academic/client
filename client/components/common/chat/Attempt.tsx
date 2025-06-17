@@ -59,6 +59,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Send,
+  Table,
   Users,
 } from "lucide-react";
 
@@ -853,14 +854,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Set default selected document
   useEffect(() => {
-    if (scenarioDocuments.length > 0 && !selectedDocumentId && scenarioDocuments[0]) {
+    if (
+      scenarioDocuments.length > 0 &&
+      !selectedDocumentId &&
+      scenarioDocuments[0]
+    ) {
       setSelectedDocumentId(scenarioDocuments[0].id);
     }
   }, [scenarioDocuments, selectedDocumentId]);
 
   // Get the currently selected document
   const selectedDocument = useMemo(() => {
-    return scenarioDocuments.find((doc) => doc.id === selectedDocumentId) || null;
+    return (
+      scenarioDocuments.find((doc) => doc.id === selectedDocumentId) || null
+    );
   }, [scenarioDocuments, selectedDocumentId]);
 
   // Calculate aggregated results for final display
@@ -1064,7 +1071,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
-            defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
+            defaultSize={
+              showDocuments && scenarioDocuments.length > 0 ? 70 : 100
+            }
           >
             <Card className="h-full flex flex-col py-4">
               <div className="h-full flex flex-col">
@@ -1077,12 +1086,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         <span className="font-medium">
                           {resultsScenario?.description || "Session Results"}
                         </span>
-                        {!isSingleChatAttempt && (
-                          <div className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            <span>Results</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                     <div className="flex items-start justify-end gap-2">
@@ -1097,15 +1100,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   onClick={() => setShowGrades(!showGrades)}
                                   className={`p-2 ${showGrades ? "bg-primary text-primary-foreground" : ""}`}
                                 >
-                                  <FileText className="h-4 w-4" />
+                                  <Table className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
                                 <p>
                                   {showGrades ? "Hide Rubric" : "Show Rubric"}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  View detailed scoring and feedback
                                 </p>
                               </TooltipContent>
                             </Tooltip>
@@ -1119,18 +1119,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button
-                                  variant="outline"
+                                  variant={
+                                    showDocuments ? "default" : "outline"
+                                  }
                                   size="sm"
                                   onClick={() =>
                                     setShowDocuments(!showDocuments)
                                   }
-                                  className="p-2"
+                                  className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
                                 >
-                                  {showDocuments ? (
-                                    <PanelRightClose className="h-4 w-4" />
-                                  ) : (
-                                    <PanelRightOpen className="h-4 w-4" />
-                                  )}
+                                  <FileText className="h-4 w-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>
@@ -1640,33 +1638,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               </ResizablePanel>
 
               <ResizableHandle />
-              <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                <CardFooter
-                  ref={inputPanelRef}
-                  className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0"
-                >
-                  {currentChat?.completed ? (
-                    <div className="w-full text-center py-4">
-                      <p className="text-muted-foreground mb-2">
-                        This chat has been completed.
-                      </p>
-                      {currentDynamicRubric && (
-                        <div className="text-sm">
-                          <Badge
-                            variant={
-                              currentDynamicRubric.passed
-                                ? "default"
-                                : "destructive"
-                            }
-                          >
-                            Score: {currentDynamicRubric.score}/
-                            {currentDynamicRubric.totalPossiblePoints} -{" "}
-                            {currentDynamicRubric.passed ? "Passed" : "Failed"}
-                          </Badge>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
+              {currentChat?.completed ? (
+                <></>
+              ) : (
+                <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
+                  <CardFooter
+                    ref={inputPanelRef}
+                    className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0"
+                  >
                     <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2 p-1">
                       <form
                         onSubmit={handleSendMessage}
@@ -1790,9 +1769,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                         </p>
                       )}
                     </div>
-                  )}
-                </CardFooter>
-              </ResizablePanel>
+                  </CardFooter>
+                </ResizablePanel>
+              )}
             </ResizablePanelGroup>
           </Card>
         </ResizablePanel>

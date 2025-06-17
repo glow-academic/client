@@ -166,7 +166,7 @@ Only include document numbers that actually exist in the input. Leave arrays emp
             name="Classify Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
+                model="gemini-2.5-flash-preview-05-20",
                 openai_client=self.gemini_client,
             ),
             model_settings=ModelSettings(

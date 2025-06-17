@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, List
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
+                    trace)
 from app.db import get_session
 from app.extensions import get_gemini
 from app.models import (Rubrics, SimulationAttempts, SimulationChatFeedbacks,
@@ -167,7 +168,9 @@ async def run_grade_agent(
 
         # Run the grading
         logger.info("Running grading agent...")
-        result = await Runner.run(agent, input=input_items)
+        with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
+            result = await Runner.run(agent, input=input_items)
+
         grading_result = result.final_output_as(DynamicRubric)
         logger.info("Grading agent completed successfully")
 
@@ -311,7 +314,7 @@ Your evaluation should be fair, consistent, and based solely on observable evide
             name="Grading Agent",
             instructions=self.system_prompt,
             model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-04-17",
+                model="gemini-2.5-flash-preview-05-20",
                 openai_client=self.gemini_client,
             ),
             model_settings=ModelSettings(
