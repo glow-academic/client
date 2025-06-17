@@ -36,7 +36,7 @@ COPY tsconfig.json ./
 
 # Copy the wait-for-services script and set permissions as root
 USER root
-COPY wait-for-services.sh ./
+COPY scripts/wait-for-services.sh ./
 RUN chmod +x wait-for-services.sh && chown cypress:cypress wait-for-services.sh
 
 # Switch back to cypress user

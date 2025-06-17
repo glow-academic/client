@@ -1,1 +1,0 @@
-This is the system prompt for the gta agent. 

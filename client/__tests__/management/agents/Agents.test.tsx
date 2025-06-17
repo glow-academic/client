@@ -42,7 +42,6 @@ const mockAgents = [
   {
     id: "agent1",
     name: "Helpful Assistant",
-    subtitle: "A friendly and helpful AI assistant",
     description: "A helpful AI assistant for students",
     agentType: "student" as const,
     systemPrompt: "You are a helpful assistant.",
@@ -52,7 +51,6 @@ const mockAgents = [
   {
     id: "agent2",
     name: "Strict Teacher",
-    subtitle: "A demanding but fair educator",
     description: "A strict but fair teaching assistant",
     agentType: "ta" as const,
     systemPrompt: "You are a strict teacher.",
@@ -62,7 +60,6 @@ const mockAgents = [
   {
     id: "agent3",
     name: "Curious Student",
-    subtitle: "An eager learner with many questions",
     description: "An eager and curious student agent",
     agentType: "student" as const,
     systemPrompt: "You are a curious student.",
@@ -347,8 +344,7 @@ describe("Agents Component", () => {
   it("truncates long system prompts", async () => {
     const longPromptAgent = {
       id: mockAgents[0]!.id,
-      name: mockAgents[0]!.name,
-      subtitle: mockAgents[0]!.subtitle,
+      name: mockAgents[0]!.name,  
       description: mockAgents[0]!.description,
       agentType: mockAgents[0]!.agentType,
       temperature: mockAgents[0]!.temperature,
@@ -366,17 +362,6 @@ describe("Agents Component", () => {
       expect(
         screen.getByText(/This is a very long system prompt/)
       ).toBeInTheDocument();
-    });
-  });
-
-  it("handles agent type filtering", async () => {
-    renderComponent();
-
-    await waitFor(() => {
-      // All agents should be visible initially
-      expect(screen.getByText("Helpful Assistant")).toBeInTheDocument();
-      expect(screen.getByText("Strict Teacher")).toBeInTheDocument();
-      expect(screen.getByText("Curious Student")).toBeInTheDocument();
     });
   });
 

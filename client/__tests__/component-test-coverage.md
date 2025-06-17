@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-17T15:13:10.449Z
+Generated on: 2025-06-17T18:35:10.584Z
 
 ## Summary
-- **Total Components**: 59
+- **Total Components**: 58
 - **Tests Created**: 0
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 59
+- **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
 
@@ -22,7 +22,6 @@ Generated on: 2025-06-17T15:13:10.449Z
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
-| Evaluation | common/chat/Evaluation.tsx | Evaluation.test.tsx | ✅ Implemented |
 | EvaluationRun | common/chat/EvaluationRun.tsx | EvaluationRun.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
@@ -91,7 +90,6 @@ __tests__/
 │   │   ├── Attempt.test.tsx
 │   │   ├── Chat.test.tsx
 │   │   ├── DocumentViewer.test.tsx
-│   │   ├── Evaluation.test.tsx
 │   │   ├── EvaluationRun.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx

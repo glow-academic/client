@@ -72,7 +72,7 @@ database/
 ├── scripts/              # Generation scripts
 ├── history/              # Database backups (auto-created)
 ├── init.sql              # Initial database schema
-├── start.sh              # Main database management script
+├── scripts/start.sh      # Main database management script
 ├── drizzle.config.ts     # Drizzle configuration
 └── package.json          # Database-specific dependencies
 ```

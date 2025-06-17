@@ -7,7 +7,7 @@ GTA_PROMPT=$(cat "$(dirname "$0")/prompts/gta.md" | sed "s/'/''/g")
 HAPPY_PROMPT=$(cat "$(dirname "$0")/prompts/happy.md" | sed "s/'/''/g")
 
 # Generate the SQL file
-cat > "$(dirname "$0")/init.sql" << EOF
+cat >> "$(dirname "$0")/init.sql" << EOF
 -- Insert Core Agents (Essential for testing)
 INSERT INTO agents (id, name, description, system_prompt, temperature) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0),

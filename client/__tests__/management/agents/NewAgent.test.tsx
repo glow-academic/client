@@ -90,14 +90,12 @@ describe("NewAgent", () => {
       renderWithProviders(<NewAgent />);
 
       const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
 
       expect(nameInput).toHaveAttribute("required");
       expect(nameInput).toHaveAttribute(
         "placeholder",
         "e.g., Enthusiastic Student Agent"
       );
-      expect(subtitleInput).toHaveAttribute("required");
     });
   });
 
@@ -121,7 +119,6 @@ describe("NewAgent", () => {
         createdAt: "2024-01-01T00:00:00Z",
         name: "Test Agent",
         description: "Test Description",
-        subtitle: "Test Subtitle",
         systemPrompt: "Test System Prompt",
         agentType: "student" as const,
         temperature: 0.8,
@@ -131,7 +128,6 @@ describe("NewAgent", () => {
       renderWithProviders(<NewAgent />);
 
       const nameInput = screen.getByLabelText(/agent name/i);
-      const subtitleInput = screen.getByLabelText(/subtitle/i);
       const descriptionTextarea = screen.getByLabelText(/description/i);
       const systemPromptTextarea = screen.getByLabelText(/system prompt/i);
       const temperatureSlider = screen.getByLabelText(/temperature/i);
@@ -140,7 +136,6 @@ describe("NewAgent", () => {
       });
 
       await user.type(nameInput, "Test Agent");
-      await user.type(subtitleInput, "Test Subtitle");
       await user.type(descriptionTextarea, "Test Description");
       await user.type(systemPromptTextarea, "Test System Prompt");
       await user.clear(temperatureSlider);
@@ -150,7 +145,6 @@ describe("NewAgent", () => {
       await waitFor(() => {
         expect(createAgent).toHaveBeenCalledWith({
           name: "Test Agent",
-          subtitle: "Test Subtitle",
           description: "Test Description",
           systemPrompt: "Test System Prompt",
           agentType: "student",

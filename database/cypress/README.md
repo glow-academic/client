@@ -101,17 +101,17 @@ We provide a convenient test runner script that makes it easy to run specific te
 cd database
 
 # Show available tests and options
-./test-runner.sh --help
+./scripts/test-runner.sh --help
 
 # Show test implementation status
-./test-runner.sh --status
+./scripts/test-runner.sh --status
 
 # Run specific tests
-./test-runner.sh auth                    # Run auth tests headless
-./test-runner.sh agents --headed         # Run agents tests with browser visible
-./test-runner.sh scenarios --open        # Open scenarios tests in interactive mode
-./test-runner.sh chat                    # Run chat tests headless
-./test-runner.sh all                     # Run all tests
+./scripts/test-runner.sh auth                    # Run auth tests headless
+./scripts/test-runner.sh agents --headed         # Run agents tests with browser visible
+./scripts/test-runner.sh scenarios --open        # Open scenarios tests in interactive mode
+./scripts/test-runner.sh chat                    # Run chat tests headless
+./scripts/test-runner.sh all                     # Run all tests
 ```
 
 ### Direct Yarn Commands

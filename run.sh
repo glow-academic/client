@@ -229,10 +229,10 @@ cd database
 
 if $CLEAN_DB; then
   log_info "Clean flag detected - starting fresh database (will create backup first)"
-  bash start.sh --clean &
+  bash scripts/start.sh --clean &
 else
   log_info "Starting database from latest backup"
-  bash start.sh &
+  bash scripts/start.sh &
 fi
 
 DB_PID=$!

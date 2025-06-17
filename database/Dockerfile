@@ -11,7 +11,7 @@ WORKDIR /database
 RUN mkdir -p /database/history
 
 # Copy custom entrypoint
-COPY custom-entrypoint.sh /custom-entrypoint.sh
+COPY scripts/custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
 
 # Note: Cypress E2E tests should be run separately against the running database
@@ -30,7 +30,7 @@ WORKDIR /database
 RUN mkdir -p /database/history
 
 # Copy custom entrypoint from base stage
-COPY --from=base /custom-entrypoint.sh /custom-entrypoint.sh
+COPY --from=base /scripts/custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
 
 # Copy database initialization files
