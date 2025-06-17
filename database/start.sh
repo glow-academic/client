@@ -169,6 +169,13 @@ restore_from_backup() {
 start_fresh_from_init() {
   echo "🆕 Starting fresh database from init.sql"
   
+  # Generate agent SQL from markdown files
+  if [[ -f "init/agents/generate-agents-sql.sh" ]]; then
+    echo "🔧 Generating agent SQL from markdown files..."
+    cd init/agents && ./generate-agents-sql.sh && cd - > /dev/null
+    echo "✅ Agent SQL generated from markdown files"
+  fi
+  
   if [[ ! -f "$INIT_SQL" ]]; then
     echo "❌ Init file '$INIT_SQL' not found!"
     return 1

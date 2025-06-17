@@ -33,6 +33,11 @@ RUN mkdir -p /database/history
 COPY --from=base /custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
 
+# Copy database initialization files
+COPY init/ /database/init/
+COPY init.sql /database/init.sql
+RUN chmod +x /database/init/agents/generate-agents-sql.sh
+
 # Set default environment variables
 ENV POSTGRES_USER=myuser
 ENV POSTGRES_PASSWORD=mypassword

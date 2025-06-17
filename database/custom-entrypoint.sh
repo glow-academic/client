@@ -101,6 +101,16 @@ log_info "Setting up database initialization..."
 # Create the initialization directory
 mkdir -p /docker-entrypoint-initdb.d
 
+# --- GENERATE DYNAMIC SQL FROM MARKDOWN ------------------------------
+log_info "🔧 Generating agent SQL from markdown files..."
+if [ -f "/database/init/agents/generate-agents-sql.sh" ]; then
+  cd /database/init/agents
+  ./generate-agents-sql.sh
+  log_success "✅ Agent SQL generated from markdown files"
+else
+  log_warning "⚠️  Agent generation script not found, using existing SQL"
+fi
+
 # Create the main initialization script with extensions
 cat > /docker-entrypoint-initdb.d/00-glow-init.sql << 'EOF'
 -- Glow Database Initialization Script
@@ -133,6 +143,15 @@ else
     log_info "🧹 CLEAN_DB enabled - starting with fresh database (skipping backup restoration)"
   else
     log_info "📝 No backup files found - starting with fresh database"
+  fi
+  
+  # Copy the main initialization script for fresh database
+  log_info "📋 Setting up main database schema..."
+  if [ -f "/database/init.sql" ]; then
+    cp /database/init.sql /docker-entrypoint-initdb.d/10-main-init.sql
+    log_success "✅ Main initialization script prepared"
+  else
+    log_warning "⚠️  Main init.sql not found"
   fi
 fi
 
