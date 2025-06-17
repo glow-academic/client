@@ -2,7 +2,8 @@ import logging
 import uuid
 from typing import Any
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
+                    trace)
 from app.db import get_session
 from app.extensions import get_gemini
 from app.models import Classes, Documents
@@ -62,8 +63,9 @@ async def run_classify_agent(
     classify_agent = ClassifyAgent()
 
     try:
-        result = await Runner.run(classify_agent.agent(), input=formatted_documents)
-        classification = result.final_output_as(Classify)
+        with trace(f"{class_data.name} Document Classification"):
+            result = await Runner.run(classify_agent.agent(), input=formatted_documents)
+            classification = result.final_output_as(Classify)
 
         # Update the type of all the mapped documents
         classified_count = 0

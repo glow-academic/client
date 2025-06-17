@@ -20,14 +20,13 @@ CREATE TABLE evals (
     rubric_ids   UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[], -- permutations of rubrics to use for the eval
     eval_type eval_type NOT NULL           DEFAULT 'student',
     max_turns INTEGER     NOT NULL, -- how many turns each chat can have
-    max_parallel_runs INTEGER     NOT NULL -- how many chats each eval run can have 
   );
 
   -- Depending on the base_agent_id's agent_type, we will only allow agent_ids to come from a seperate agent type
   -- If the eval_type is 'student', then the rubrics will be applied to either the base_agent_id or the agent_ids that are student agents. If the eval_type is 'ta', then the rubrics will be applied to the agent_ids that are ta agents. This means a total of 4 combinations of evaluations (student-ta|eval-student, student-ta|eval-ta, ta-student|eval-student, ta-student|eval-ta)
 
   -- For a given eval, there will be len(agent_ids) * len(rubric_ids) eval runs created
-  -- For a given eval run, there will be len(scenario_ids) / min(max_parallel_runs, len(scenario_ids)) eval chats created
+  -- For a given eval run, there will be len(scenario_ids) eval chats created
   -- For a given eval chat, there will be max_turns eval messages created 
 
 
@@ -86,12 +85,12 @@ CREATE TABLE eval_runs (
 -- ============================================================================
 
 -- Insert 3 Runnable Evaluations
-INSERT INTO evals (id, name, description, base_agent_id, scenario_ids, agent_ids, eval_type, max_turns, max_parallel_runs, rubric_ids) VALUES
-  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 10, 3, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
+INSERT INTO evals (id, name, description, base_agent_id, scenario_ids, agent_ids, eval_type, max_turns, rubric_ids) VALUES
+  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 10, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 15, 5, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
+  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 15, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 20, 3, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]);
+  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 20, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]);
 
 -- Insert Sample Eval Runs (showing how evaluations would be executed)
 INSERT INTO eval_runs (id, eval_id, agent_id, rubric_id) VALUES

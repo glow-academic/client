@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, AsyncGenerator, List
 
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel,
-                    RunConfig, Runner)
+                    RunConfig, Runner, trace)
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import get_gemini
@@ -201,6 +201,10 @@ async def run_advanced_agent(
             input=combined_input,
             run_config=RunConfig(workflow_name=f"Advanced Agent Turn {turn + 1}"),
         )
+
+        for chat in eval_chats:
+            with trace(chat.title, trace_id=chat.trace_id):
+                pass
 
         # Process streaming events
         full_response = ""

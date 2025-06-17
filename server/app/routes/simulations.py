@@ -128,6 +128,7 @@ async def start_attempt(
             scenario_id=scenario_id,  # Use the scenario's primary key
             attempt_id=new_attempt.id,
             completed=False,
+            trace_id=trace_id,
         )
 
         session.add(chat)
@@ -318,6 +319,7 @@ async def continue_attempt(
                     scenario_id=next_scenario_id,  # Use the scenario's primary key
                     attempt_id=attempt_id,
                     completed=False,
+                    trace_id=trace_id,
                 )
 
                 # Add and commit the new chat to the database

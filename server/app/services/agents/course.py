@@ -6,7 +6,8 @@ from typing import Any
 
 import docx
 import PyPDF2
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
+                    trace)
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER, get_gemini
 from app.models import Classes, Documents, Events, Schedules, Topics
@@ -169,8 +170,9 @@ async def run_course_agent(
     course_agent = CourseAgent()
 
     try:
-        result = await Runner.run(course_agent.agent(), input=formatted_documents)
-        course = result.final_output_as(Course)
+        with trace(f"{class_data.name} ZIP File Analysis"):
+            result = await Runner.run(course_agent.agent(), input=formatted_documents)
+            course = result.final_output_as(Course)
 
         # Log debug info if available
         if course.debug_info:

@@ -27,7 +27,6 @@ async def run_scenario_agent(
     seniority: str | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,
-    original_trace_id: str | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str, str]:
     """
@@ -40,7 +39,6 @@ async def run_scenario_agent(
         seniority: The seniority of the student
         crowdedness: The crowdedness of the class
         intensity: The intensity of the class
-        original_trace_id: The trace ID of the original trace
         session: The database session
     Returns:
         A tuple of (scenario_id, chat_title, trace_id).
@@ -98,12 +96,16 @@ async def run_scenario_agent(
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")
 
-    with trace("Scenario Agent", trace_id=original_trace_id) as scenario_trace:
+    with trace("Scenario Agent") as scenario_trace:
         result = await Runner.run(scenario_agent.agent(), input=clean_input_items)
         trace_id = scenario_trace.trace_id
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
+
+    # Create a new trace, but with updated workflow name
+    with trace(scenario_result.title, trace_id=trace_id):
+        pass
 
     return scenario_result.title, scenario_result.scenario, trace_id
 

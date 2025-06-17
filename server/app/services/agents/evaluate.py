@@ -4,7 +4,8 @@ import uuid
 from datetime import datetime
 from typing import Any, List
 
-from agents import Agent, ModelSettings, OpenAIChatCompletionsModel, Runner
+from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
+                    trace)
 from app.db import get_session
 from app.extensions import get_gemini
 from app.models import (EvalChatFeedbacks, EvalChatGrades, EvalChats,
@@ -157,7 +158,8 @@ async def run_evaluate_agent(
 
         # Run the evaluation
         logger.info("Running evaluation agent...")
-        result = await Runner.run(agent, input=input_items)
+        with trace(chat.title, trace_id=chat.trace_id):
+            result = await Runner.run(agent, input=input_items)
         evaluation_result = result.final_output_as(DynamicRubric)
         logger.info("Evaluation agent completed successfully")
 

@@ -12,17 +12,6 @@ from sqlalchemy.orm import Mapped
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""
     model_config = {"arbitrary_types_allowed": True}
-class DrizzleMigrations(_Base, table=True):
-    __tablename__ = '__drizzle_migrations'
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='__drizzle_migrations_pkey'),
-    )
-
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, Sequence('__drizzle_migrations_id_seq5'), primary_key=True))
-    hash: str = Field(sa_column=Column('hash', Text))
-    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
-
-
 class Accounts(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='accounts_pkey'),
@@ -406,6 +395,7 @@ class EvalChats(_Base, table=True):
     eval_run_id: Mapped[uuid.UUID] = Field(sa_column=Column('eval_run_id', Uuid(as_uuid=True)))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
+    trace_id: Optional[str] = Field(default=None, sa_column=Column('trace_id', Text))
 
     eval_run: Optional['EvalRuns'] = Relationship(back_populates='eval_chats')
     scenario: Optional['Scenarios'] = Relationship(back_populates='eval_chats')

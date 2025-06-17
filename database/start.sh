@@ -143,11 +143,13 @@ restore_from_backup() {
   local backup_file="$1"
   echo "🔄 Restoring from backup: $(basename "$backup_file")"
   
-  # Drop and recreate database completely empty (no init.sql)
-  dropdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" 2>/dev/null || true
-  createdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME"
+  # Drop and recreate database using admin connection (no init.sql)
+  as_admin -c "SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '$DB_NAME' AND pid <> pg_backend_pid();" > /dev/null 2>&1 || true
+  as_admin -c "DROP DATABASE IF EXISTS $DB_NAME;" > /dev/null 2>&1 || true
+  as_admin -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" > /dev/null 2>&1
   
   # Restore from backup
+  export PGPASSWORD="$DB_PASSWORD"
   if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$backup_file" > /dev/null 2>&1; then
     echo "✅ Backup restored successfully"
   else
@@ -185,35 +187,35 @@ start_fresh_from_init() {
 run_migrations() {
   echo "🚀 Running Drizzle migrations..."
   
-  # Check if migration files exist
-  if ls drizzle/00*.sql 1> /dev/null 2>&1; then
-    echo "📁 Found migration files, applying them..."
-    
-    # Apply each migration file manually
-    for migration_file in drizzle/00*.sql; do
-      echo "🔄 Applying migration: $(basename "$migration_file")"
-      if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
-        echo "✅ Migration applied: $(basename "$migration_file")"
-      else
-        echo "⚠️  Migration had issues: $(basename "$migration_file") - this may be normal"
-      fi
-    done
-    
-    # Update drizzle migration table to mark migrations as applied
-    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "
-      CREATE TABLE IF NOT EXISTS __drizzle_migrations (
-        id SERIAL PRIMARY KEY,
-        hash text NOT NULL,
-        created_at bigint
-      );
-      INSERT INTO __drizzle_migrations (hash, created_at) 
-      VALUES ('0000_busy_gwen_stacy', extract(epoch from now()) * 1000)
-      ON CONFLICT DO NOTHING;
-    " > /dev/null 2>&1 || true
-    
+  # Set environment variables for drizzle-kit
+  export DB_USER DB_PASSWORD DB_NAME DB_HOST DB_PORT
+  export PGPASSWORD="$DB_PASSWORD"
+  
+  # Use drizzle-kit migrate instead of manual SQL application
+  if npx drizzle-kit migrate > /dev/null 2>&1; then
     echo "✅ All migrations applied successfully"
   else
-    echo "📝 No migration files found - database is up to date"
+    echo "⚠️  Some migrations had issues - this may be normal for existing databases"
+    echo "💡 Attempting to continue with manual migration application..."
+    
+    # Fallback: Check if migration files exist and apply them manually
+    if ls drizzle/00*.sql 1> /dev/null 2>&1; then
+      echo "📁 Found migration files, applying them manually..."
+      
+      # Apply each migration file manually
+      for migration_file in drizzle/00*.sql; do
+        echo "🔄 Applying migration: $(basename "$migration_file")"
+        if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
+          echo "✅ Migration applied: $(basename "$migration_file")"
+        else
+          echo "⚠️  Migration had issues: $(basename "$migration_file") - this may be normal"
+        fi
+      done
+      
+      echo "✅ Manual migration application completed"
+    else
+      echo "📝 No migration files found - database is up to date"
+    fi
   fi
 }
 

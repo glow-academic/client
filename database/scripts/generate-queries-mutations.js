@@ -114,7 +114,7 @@ function detectSchemaMismatches(snapshot) {
   }
 
   // Check for mismatches
-  Object.entries(snapshot.tables || {}).forEach(([tableData]) => {
+  Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
     const dbTableName = tableData.name;
     const schemaExportName = schemaTables.get(dbTableName);
 
@@ -173,7 +173,7 @@ function extractTableInfo() {
     const tables = [];
 
     // Extract tables from snapshot
-    Object.entries(snapshot.tables || {}).forEach(([, tableData]) => {
+    Object.entries(snapshot.tables || {}).forEach(([tableKey, tableData]) => {
       const tableName = tableData.name;
       const exportName = getExportNameFromSchema(tableName);
 
