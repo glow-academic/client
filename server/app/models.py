@@ -178,7 +178,6 @@ class Evals(_Base, table=True):
     rubric_ids: List[uuid.UUID] = Field(sa_column=Column('rubric_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     eval_type: str = Field(sa_column=Column('eval_type', Enum('student', 'ta', name='eval_type'), server_default=text("'student'::eval_type")))
     max_turns: int = Field(sa_column=Column('max_turns', Integer))
-    max_parallel_runs: int = Field(sa_column=Column('max_parallel_runs', Integer))
 
     base_agent: Optional['Agents'] = Relationship(back_populates='evals')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='eval')

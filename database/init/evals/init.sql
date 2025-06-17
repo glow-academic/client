@@ -19,7 +19,7 @@ CREATE TABLE evals (
     agent_ids UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[], -- permutations of agents to run over
     rubric_ids   UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[], -- permutations of rubrics to use for the eval
     eval_type eval_type NOT NULL           DEFAULT 'student',
-    max_turns INTEGER     NOT NULL, -- how many turns each chat can have
+    max_turns INTEGER     NOT NULL -- how many turns each chat can have
   );
 
   -- Depending on the base_agent_id's agent_type, we will only allow agent_ids to come from a seperate agent type

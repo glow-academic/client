@@ -1,0 +1,1 @@
+ALTER TABLE "evals" DROP COLUMN "max_parallel_runs";

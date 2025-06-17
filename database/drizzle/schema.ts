@@ -401,7 +401,6 @@ export const evals = pgTable("evals", {
 	rubricIds: uuid("rubric_ids").array().default(["RAY"]).notNull(),
 	evalType: evalType("eval_type").default('student').notNull(),
 	maxTurns: integer("max_turns").notNull(),
-	maxParallelRuns: integer("max_parallel_runs").notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.baseAgentId],
