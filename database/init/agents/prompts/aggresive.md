@@ -1,0 +1,1 @@
+This is the system prompt for the agressive agent. 
