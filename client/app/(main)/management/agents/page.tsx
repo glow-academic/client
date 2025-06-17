@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-import React from "react";
+"use client";
 import Agents from "@/components/management/agents/Agents";
 
 export default function AgentsPage() {

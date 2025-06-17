@@ -99,7 +99,8 @@ run_test() {
     
     if [[ $options == *"--open"* ]]; then
         echo -e "${GREEN}Opening Cypress interactive mode...${NC}"
-        yarn test:cypress:open --spec "$spec"
+        echo -e "${BLUE}Note: You'll need to select the test file manually in the Cypress UI${NC}"
+        yarn test:cypress:open
     elif [[ $options == *"--headed"* ]]; then
         echo -e "${GREEN}Running tests with browser visible...${NC}"
         yarn cypress run --spec "$spec" --headed

@@ -63,14 +63,6 @@ interface SimulationProps {
   simulationId?: string;
 }
 
-interface SimulationFormData {
-  title: string;
-  timeLimit: number | null;
-  scenarioIds: string[];
-  active: boolean;
-  rubricId: string;
-}
-
 interface FormErrors {
   title?: string;
   timeLimit?: string;
@@ -95,15 +87,15 @@ export default function Simulation({
   const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
   const router = useRouter();
 
-  const initialFormData: SimulationFormData = {
+  const initialFormData: Partial<SimulationType> = {
     title: "",
-    timeLimit: 15,
+    timeLimit: null,
     scenarioIds: [],
     active: true,
     rubricId: "",
   };
 
-  const [formData, setFormData] = useState<SimulationFormData>(initialFormData);
+  const [formData, setFormData] = useState<Partial<SimulationType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch simulations for the list mode
@@ -142,7 +134,7 @@ export default function Simulation({
   }, [simulationId, editingSimulationId, simulations]);
 
   const handleInputChange = (
-    field: keyof SimulationFormData,
+    field: keyof Partial<SimulationType>,
     value: string | number | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -152,10 +144,10 @@ export default function Simulation({
   };
 
   const addScenario = (scenarioId: string) => {
-    if (!formData.scenarioIds.includes(scenarioId)) {
+    if (!formData.scenarioIds?.includes(scenarioId)) {
       setFormData((prev) => ({
         ...prev,
-        scenarioIds: [...prev.scenarioIds, scenarioId],
+        scenarioIds: [...prev.scenarioIds || [], scenarioId],
       }));
     }
   };
@@ -163,12 +155,12 @@ export default function Simulation({
   const removeScenario = (scenarioId: string) => {
     setFormData((prev) => ({
       ...prev,
-      scenarioIds: prev.scenarioIds.filter((id) => id !== scenarioId),
+      scenarioIds: prev.scenarioIds?.filter((id) => id !== scenarioId) || [],
     }));
   };
 
   const randomizeScenarios = () => {
-    const shuffled = [...formData.scenarioIds].sort(() => Math.random() - 0.5);
+    const shuffled = [...formData.scenarioIds || []].sort(() => Math.random() - 0.5);
     setFormData((prev) => ({ ...prev, scenarioIds: shuffled }));
     toast.success("Scenarios randomized!");
   };
@@ -188,7 +180,7 @@ export default function Simulation({
 
     if (!draggedScenario) return;
 
-    const newOrder = [...formData.scenarioIds];
+    const newOrder = [...formData.scenarioIds || []];
     const draggedIndex = newOrder.findIndex((id) => id === draggedScenario);
     const targetIndex = newOrder.findIndex((id) => id === targetScenarioId);
 
@@ -205,7 +197,7 @@ export default function Simulation({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.title.trim()) {
+    if (!formData.title?.trim()) {
       newErrors.title = "Title is required";
     }
 
@@ -245,20 +237,24 @@ export default function Simulation({
     setIsSubmitting(true);
 
     try {
-      const payload = {
-        title: formData.title,
-        timeLimit: formData.timeLimit,
-        scenarioIds: formData.scenarioIds,
-        active: formData.active,
-        rubricId: formData.rubricId,
-      };
 
       let result;
       const targetSimulationId = simulationId || editingSimulationId;
       if (targetSimulationId) {
-        result = await updateSimulation(targetSimulationId, payload);
+        result = await updateSimulation(targetSimulationId, {
+          ...formData,
+          updatedAt: new Date().toISOString(),
+        });
       } else {
-        result = await createSimulation(payload);
+        result = await createSimulation({
+          title: formData.title || "",
+          rubricId: formData.rubricId || "",
+          scenarioIds: formData.scenarioIds || [],
+          timeLimit: formData.timeLimit || null,
+          active: formData.active || true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
       }
 
       if (!result) {
@@ -273,7 +269,7 @@ export default function Simulation({
           ? "Simulation updated successfully!"
           : "Simulation created successfully!"
       );
-      router.push(`/create/simulations/s/${result.id}`);
+      router.push(`/create/simulations`);
     } catch (error) {
       const targetSimulationId = simulationId || editingSimulationId;
       toast.error(
@@ -465,7 +461,7 @@ export default function Simulation({
         <div className="space-y-2">
           <Label htmlFor="rubricId">Rubric</Label>
           <Select
-            value={formData.rubricId}
+            value={formData.rubricId || ""}
             onValueChange={(value) => handleInputChange("rubricId", value)}
           >
             <SelectTrigger
@@ -511,7 +507,7 @@ export default function Simulation({
                   {scenarios
                     .filter(
                       (scenario: Scenario) =>
-                        !formData.scenarioIds.includes(scenario.id)
+                        !formData.scenarioIds?.includes(scenario.id)
                     )
                     .map((scenario: Scenario) => (
                       <SelectItem key={scenario.id} value={scenario.id}>
@@ -520,7 +516,7 @@ export default function Simulation({
                     ))}
                 </SelectContent>
               </Select>
-              {formData.scenarioIds.length > 1 && (
+              {formData.scenarioIds && formData.scenarioIds?.length > 1 && (
                 <Button
                   type="button"
                   variant="outline"
@@ -535,7 +531,7 @@ export default function Simulation({
             </div>
           </div>
 
-          {formData.scenarioIds.length === 0 ? (
+          {formData.scenarioIds?.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
                 <p className="font-medium mb-1">No scenarios selected</p>
@@ -543,7 +539,7 @@ export default function Simulation({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.scenarioIds.map((scenarioId, index) => {
+              {formData.scenarioIds?.map((scenarioId, index) => {
                 const scenario = scenarios.find(
                   (s: Scenario) => s.id === scenarioId
                 );

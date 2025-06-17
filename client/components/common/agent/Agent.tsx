@@ -6,21 +6,15 @@
  */
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
-import { getAgent } from "@/utils/queries/agents/get-agent";
-import { createAgent } from "@/utils/mutations/agents/create-agent";
-import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -28,20 +22,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AgentType } from "@/types";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { type Agent, type AgentType } from "@/types";
+import { createAgent } from "@/utils/mutations/agents/create-agent";
+import { updateAgent } from "@/utils/mutations/agents/update-agent";
+import { getAgent } from "@/utils/queries/agents/get-agent";
 
 interface AgentProps {
   agentId?: string;
   mode?: "create" | "edit";
-}
-
-interface AgentFormData {
-  name: string;
-  subtitle: string;
-  description: string;
-  systemPrompt: string;
-  agentType: AgentType;
-  temperature: number;
 }
 
 export default function Agent({
@@ -53,12 +44,12 @@ export default function Agent({
   const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<AgentFormData>({
+  const [formData, setFormData] = useState<Partial<Agent>>({
     name: "",
     subtitle: "",
     description: "",
     systemPrompt: "",
-    agentType: "student",
+    agentType: "student" as AgentType,
     temperature: 0,
   });
 
@@ -75,7 +66,7 @@ export default function Agent({
         subtitle: agent.subtitle || "",
         description: agent.description || "",
         systemPrompt: agent.systemPrompt || "",
-        agentType: agent.agentType || "student",
+        agentType: (agent.agentType as AgentType) || "student",
         temperature: agent.temperature || 0,
       });
     }
@@ -84,36 +75,51 @@ export default function Agent({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       toast.error("Agent name is required");
       return;
     }
 
-    if (!formData.subtitle.trim()) {
+    if (!formData.subtitle?.trim()) {
       toast.error("Agent subtitle is required");
       return;
     }
 
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       toast.error("Agent description is required");
       return;
     }
 
-    if (!formData.systemPrompt.trim()) {
+    if (!formData.systemPrompt?.trim()) {
       toast.error("System prompt is required");
+      return;
+    }
+
+    // Ensure agentType is always set to a valid value
+    const agentType = formData.agentType || "student";
+    if (!["student", "ta"].includes(agentType)) {
+      toast.error("Invalid agent type");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
+      const submitData = {
+        ...formData,
+        agentType,
+      };
+
       if (isEditMode) {
-        await updateAgent(agentId!, formData);
+        await updateAgent(agentId!, {
+          ...submitData,
+          updatedAt: new Date().toISOString(),
+        });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
         toast.success("Agent updated successfully!");
       } else {
-        const newAgent = await createAgent(formData);
+        const newAgent = await createAgent(submitData as Agent);
         queryClient.invalidateQueries({ queryKey: ["agents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", newAgent?.id] });
         toast.success("Agent created successfully!");
@@ -121,7 +127,9 @@ export default function Agent({
 
       router.push("/management/agents");
     } catch (error) {
-      toast.error(`Failed to ${isEditMode ? "update" : "create"} agent: ${error}`);
+      toast.error(
+        `Failed to ${isEditMode ? "update" : "create"} agent: ${error}`
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -204,7 +212,7 @@ export default function Agent({
             <Label htmlFor="description">Description *</Label>
             <Textarea
               id="description"
-              value={formData.description}
+              value={formData.description || ""}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -221,7 +229,7 @@ export default function Agent({
             <Label htmlFor="systemPrompt">System Prompt *</Label>
             <Textarea
               id="systemPrompt"
-              value={formData.systemPrompt}
+              value={formData.systemPrompt || ""}
               onChange={(e) =>
                 setFormData((prev) => ({
                   ...prev,
@@ -241,31 +249,32 @@ export default function Agent({
           <div className="space-y-2">
             <Label htmlFor="agentType">Agent Type</Label>
             <Select
-              value={formData.agentType}
+              value={formData.agentType || "student"}
               onValueChange={(value: AgentType) =>
                 setFormData((prev) => ({ ...prev, agentType: value }))
               }
             >
-              <SelectTrigger>
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select agent type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="student">Student</SelectItem>
                 <SelectItem value="ta">Teaching Assistant</SelectItem>
-                <SelectItem value="default">Default</SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="temperature">Temperature: {formData.temperature}</Label>
+            <Label htmlFor="temperature">
+              Temperature: {formData.temperature}
+            </Label>
             <Slider
               id="temperature"
               data-testid="temperature-slider"
               min={0}
               max={100}
               step={1}
-              value={[formData.temperature]}
+              value={[formData.temperature || 0]}
               onValueChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,

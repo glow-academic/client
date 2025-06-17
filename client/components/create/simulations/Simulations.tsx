@@ -5,12 +5,12 @@
  * 06/07/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
+import { logError } from "@/utils/logger";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus, Sparkles, Timer, Trash2, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 import { deleteSimulation } from "@/utils/mutations/simulations/delete-simulation";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
@@ -39,6 +39,7 @@ import { Simulation } from "@/types";
 
 export function Simulations() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deleteItem, setDeleteItem] = useState<{
     id: string;
@@ -60,9 +61,12 @@ export function Simulations() {
       await deleteSimulation(deleteItem.id);
 
       toast.success("Simulation deleted successfully");
+      // Invalidate queries to ensure all components refresh
+      queryClient.invalidateQueries({ queryKey: ["simulations"] });
       refetchSimulations();
     } catch (error) {
       logError("Error deleting simulation:", error);
+      toast.error("Failed to delete simulation");
     } finally {
       setIsDeleting(false);
       setShowDeleteDialog(false);
@@ -86,54 +90,56 @@ export function Simulations() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {simulations.map((simulation: Simulation) => (
-          <Card
-            key={simulation.id}
-            className="hover:shadow-md transition-shadow"
-          >
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <CardTitle className="text-base">
-                    {simulation.title}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2">
-                    <Timer className="h-3 w-3" />
-                    {simulation.timeLimit
-                      ? `${simulation.timeLimit} minutes`
-                      : "No time limit"}
+        {simulations
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .map((simulation: Simulation) => (
+            <Card
+              key={simulation.id}
+              className="hover:shadow-md transition-shadow"
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">
+                      {simulation.title}
+                    </CardTitle>
+                    <CardDescription className="flex items-center gap-2">
+                      <Timer className="h-3 w-3" />
+                      {simulation.timeLimit
+                        ? `${simulation.timeLimit} minutes`
+                        : "No time limit"}
 
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="h-3 w-3" />
-                      {simulation.scenarioIds?.length || 0} scenarios
-                    </div>
-                  </CardDescription>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Users className="h-3 w-3" />
+                        {simulation.scenarioIds?.length || 0} scenarios
+                      </div>
+                    </CardDescription>
+                  </div>
+                  <Badge variant={simulation.active ? "default" : "secondary"}>
+                    {simulation.active ? "Active" : "Inactive"}
+                  </Badge>
                 </div>
-                <Badge variant={simulation.active ? "default" : "secondary"}>
-                  {simulation.active ? "Active" : "Inactive"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardFooter className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleEdit(simulation.id)}
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  handleDeleteClick(simulation.id, simulation.title)
-                }
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardFooter className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEdit(simulation.id)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    handleDeleteClick(simulation.id, simulation.title)
+                  }
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
 
         {simulations.length === 0 && (
           <div className="col-span-full">

@@ -5,12 +5,12 @@
  * 06/07/2025
  */
 "use client";
+import { logError } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { logError } from "@/utils/logger";
 
 import { deleteAgent } from "@/utils/mutations/agents/delete-agent";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -81,46 +81,51 @@ export default function Agents() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4">
-        {agents.map((agent: Agent) => (
-          <Card key={agent.id} className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <CardTitle className="text-base">
-                    {agent.name || "Unnamed Agent"}
-                  </CardTitle>
-                  <CardDescription>
-                    {agent.subtitle || "No subtitle"}
-                  </CardDescription>
-                  <p className="text-sm text-muted-foreground">
-                    {agent.description || "No description available"}
-                  </p>
+        {agents
+          .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+          .map((agent: Agent) => (
+            <Card key={agent.id} className="hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <CardTitle className="text-base">
+                      {agent.name || "Unnamed Agent"}
+                    </CardTitle>
+                    <CardDescription>
+                      {agent.subtitle || "No subtitle"}
+                    </CardDescription>
+                    <p className="text-sm text-muted-foreground">
+                      {agent.description || "No description available"}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 items-center">
+                    <Badge variant="outline">
+                      Temperature: {agent.temperature ?? 0}
+                    </Badge>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEdit(agent.id)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDeleteClick(
+                          agent.id,
+                          agent.name || "Unnamed Agent"
+                        )
+                      }
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex gap-2 items-center">
-                  <Badge variant="outline">
-                    Temperature: {agent.temperature ?? 0}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEdit(agent.id)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleDeleteClick(agent.id, agent.name || "Unnamed Agent")
-                    }
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-          </Card>
-        ))}
+              </CardHeader>
+            </Card>
+          ))}
 
         {agents.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
