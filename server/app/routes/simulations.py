@@ -102,7 +102,7 @@ async def start_attempt(
 
         # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
         if not scenario.description or scenario.description == "":
-            name, description = await run_scenario_agent(
+            name, description, trace_id = await run_scenario_agent(
                 agent_id=scenario.agent_id,
                 class_id=scenario.class_id,
                 document_ids=scenario.documents,
@@ -292,7 +292,7 @@ async def continue_attempt(
 
                 # if the scenario description is empty, we need to run the scenario agent to create a new scenario, and then link it to this chat
                 if not next_scenario.description or next_scenario.description == "":
-                    name, description = await run_scenario_agent(
+                    name, description, trace_id = await run_scenario_agent(
                         agent_id=next_scenario.agent_id,
                         class_id=next_scenario.class_id,
                         document_ids=next_scenario.documents,

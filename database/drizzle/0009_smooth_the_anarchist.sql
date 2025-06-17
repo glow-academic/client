@@ -1,0 +1,1 @@
+ALTER TABLE "eval_chats" ADD COLUMN "trace_id" text;

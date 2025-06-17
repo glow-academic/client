@@ -45,7 +45,7 @@ async def new_scenario(
                 document_ids = None
 
         # Run the scenario agent to generate title and description
-        title, description = await run_scenario_agent(
+        title, description, trace_id = await run_scenario_agent(
             agent_id=agent_id,
             class_id=class_id,
             document_ids=document_ids,

@@ -3,7 +3,7 @@ import uuid
 from typing import List, Tuple
 
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    TResponseInputItem)
+                    TResponseInputItem, trace)
 from app.db import get_session
 from app.extensions import get_gemini
 from app.models import Agents, Classes
@@ -27,8 +27,9 @@ async def run_scenario_agent(
     seniority: str | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,
+    original_trace_id: str | None = None,
     session: Session = Depends(get_session),
-) -> Tuple[str, str]:
+) -> Tuple[str, str, str]:
     """
     This function is used to run the scenario agent.
 
@@ -39,9 +40,10 @@ async def run_scenario_agent(
         seniority: The seniority of the student
         crowdedness: The crowdedness of the class
         intensity: The intensity of the class
+        original_trace_id: The trace ID of the original trace
         session: The database session
     Returns:
-        A tuple of (scenario_id, chat_title).
+        A tuple of (scenario_id, chat_title, trace_id).
     """
 
     # Get the agent to get its name for the agent
@@ -96,12 +98,14 @@ async def run_scenario_agent(
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")
 
-    result = await Runner.run(scenario_agent.agent(), input=clean_input_items)
+    with trace("Scenario Agent", trace_id=original_trace_id) as scenario_trace:
+        result = await Runner.run(scenario_agent.agent(), input=clean_input_items)
+        trace_id = scenario_trace.trace_id
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
 
-    return scenario_result.title, scenario_result.scenario
+    return scenario_result.title, scenario_result.scenario, trace_id
 
 
 class Scenario(BaseModel):

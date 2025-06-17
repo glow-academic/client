@@ -47,7 +47,8 @@ CREATE TABLE eval_runs (
     title      TEXT         NOT NULL,
     scenario_id UUID        NOT NULL REFERENCES scenarios(id)  ON DELETE CASCADE, -- the scenario that will be used for the eval
     eval_run_id UUID         NOT NULL REFERENCES eval_runs(id)  ON DELETE CASCADE,
-    completed  BOOLEAN      NOT NULL           DEFAULT FALSE
+    completed  BOOLEAN      NOT NULL           DEFAULT FALSE,
+    trace_id   TEXT         NULL -- openai trace id
   );
 
   CREATE TABLE eval_messages (

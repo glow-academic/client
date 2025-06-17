@@ -107,7 +107,7 @@ async def start_eval(
                     chat_title = f"Eval Run {i+1} - Scenario {j+1}"
 
                 if not scenario.description or scenario.description == "":
-                    name, description = await run_scenario_agent(
+                    name, description, trace_id = await run_scenario_agent(
                         agent_id=scenario.agent_id,
                         class_id=scenario.class_id,
                         document_ids=scenario.documents,
@@ -131,6 +131,7 @@ async def start_eval(
                     eval_run_id=eval_run.id,
                     scenario_id=scenario_id,
                     completed=False,
+                    trace_id=trace_id,
                 )
 
                 session.add(eval_chat)

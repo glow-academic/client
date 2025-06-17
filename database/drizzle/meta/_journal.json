@@ -64,6 +64,13 @@
       "when": 1750078829050,
       "tag": "0008_solid_cyclops",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1750164705567,
+      "tag": "0009_smooth_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

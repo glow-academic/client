@@ -80,21 +80,21 @@ db_exists()   { as_admin -c "SELECT 1 FROM pg_database WHERE datname='$DB_NAME';
 # Function to create backup
 create_backup() {
   # Only create backup if database exists and has data
-  if psql -h localhost -p 5432 -U ashoksaravanan -d mydb -c "SELECT 1" > /dev/null 2>&1; then
+  if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" > /dev/null 2>&1; then
     # Check if there are any tables with data
-    local table_count=$(psql -h localhost -p 5432 -U ashoksaravanan -d mydb -tAc "
+    local table_count=$(psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -tAc "
       SELECT COUNT(*) FROM information_schema.tables 
       WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
     " 2>/dev/null || echo "0")
     
     if [[ "$table_count" -gt 0 ]]; then
       local timestamp=$(date +"%Y%m%d_%H%M%S")
-      local backup_file="history/backup_${timestamp}.sql"
+      local backup_file="$HISTORY_DIR/backup_${timestamp}.sql"
       
       echo "📦 Backup saved → $(basename "$backup_file")"
       
       # Create backup excluding drizzle migration table
-      pg_dump -h localhost -p 5432 -U ashoksaravanan mydb \
+      pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" \
         --exclude-table=__drizzle_migrations \
         > "$backup_file" 2>/dev/null || {
         echo "⚠️  Backup creation had issues, but continuing..."
@@ -110,8 +110,14 @@ create_backup() {
 
 # Function to get latest backup
 get_latest_backup() {
-  # Simply get the most recent backup by modification time
-  ls -t history/backup_*.sql 2>/dev/null | head -1
+  # Check if history directory exists and has backup files
+  if [[ -d "$HISTORY_DIR" ]] && ls "$HISTORY_DIR"/backup_*.sql 1> /dev/null 2>&1; then
+    # Simply get the most recent backup by modification time
+    ls -t "$HISTORY_DIR"/backup_*.sql 2>/dev/null | head -1
+  else
+    # Return empty string if no backups found
+    echo ""
+  fi
 }
 
 setup_database() {
@@ -138,11 +144,11 @@ restore_from_backup() {
   echo "🔄 Restoring from backup: $(basename "$backup_file")"
   
   # Drop and recreate database completely empty (no init.sql)
-  dropdb -h localhost -p 5432 -U ashoksaravanan mydb 2>/dev/null || true
-  createdb -h localhost -p 5432 -U ashoksaravanan mydb
+  dropdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME" 2>/dev/null || true
+  createdb -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" "$DB_NAME"
   
   # Restore from backup
-  if psql -h localhost -p 5432 -U ashoksaravanan -d mydb -f "$backup_file" > /dev/null 2>&1; then
+  if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$backup_file" > /dev/null 2>&1; then
     echo "✅ Backup restored successfully"
   else
     echo "⚠️  Backup restoration had some conflicts, but data may still be restored"
@@ -150,11 +156,11 @@ restore_from_backup() {
   fi
   
   # Grant necessary permissions for migrations
-  psql -h localhost -p 5432 -U ashoksaravanan -d mydb -c "
-    GRANT ALL PRIVILEGES ON DATABASE mydb TO ashoksaravanan;
-    GRANT ALL PRIVILEGES ON SCHEMA public TO ashoksaravanan;
-    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO ashoksaravanan;
-    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO ashoksaravanan;
+  psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "
+    GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;
+    GRANT ALL PRIVILEGES ON SCHEMA public TO $DB_USER;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO $DB_USER;
+    GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO $DB_USER;
   " > /dev/null 2>&1 || true
 }
 
@@ -186,7 +192,7 @@ run_migrations() {
     # Apply each migration file manually
     for migration_file in drizzle/00*.sql; do
       echo "🔄 Applying migration: $(basename "$migration_file")"
-      if psql -h localhost -p 5432 -U ashoksaravanan -d mydb -f "$migration_file" > /dev/null 2>&1; then
+      if psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$migration_file" > /dev/null 2>&1; then
         echo "✅ Migration applied: $(basename "$migration_file")"
       else
         echo "⚠️  Migration had issues: $(basename "$migration_file") - this may be normal"
@@ -194,7 +200,7 @@ run_migrations() {
     done
     
     # Update drizzle migration table to mark migrations as applied
-    psql -h localhost -p 5432 -U ashoksaravanan -d mydb -c "
+    psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "
       CREATE TABLE IF NOT EXISTS __drizzle_migrations (
         id SERIAL PRIMARY KEY,
         hash text NOT NULL,
@@ -244,7 +250,7 @@ generate_and_copy_files() {
 # Handle connect mode
 if [[ "$CONNECT_DB" == true ]]; then
   echo "🔗 Connecting to existing database..."
-  psql -h localhost -p 5432 -U ashoksaravanan -d mydb
+  psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"
   exit 0
 fi
 
