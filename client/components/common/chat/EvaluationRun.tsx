@@ -715,7 +715,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                     {/* Show live AI conversation if running */}
                     {isRunningEval &&
                       aiConversationData.map((item, index) => {
-                        if (item.type === "parallel_info") {
+                        if (item.type === "chat_start") {
                           return (
                             <div
                               key={index}
@@ -728,7 +728,20 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           );
                         }
 
-                        if (item.type === "chat_info") {
+                        if (item.type === "turn_start") {
+                          return (
+                            <div
+                              key={index}
+                              className="bg-gray-50 dark:bg-gray-900/20 p-2 rounded border border-gray-200 dark:border-gray-800"
+                            >
+                              <div className="text-xs text-gray-600 dark:text-gray-400">
+                                ⏳ {item.message}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (item.type === "turn_complete") {
                           return (
                             <div
                               key={index}
@@ -741,7 +754,20 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           );
                         }
 
-                        if (item.type === "all_complete") {
+                        if (item.type === "chat_complete") {
+                          return (
+                            <div
+                              key={index}
+                              className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800"
+                            >
+                              <div className="text-green-800 dark:text-green-200 font-medium">
+                                ✅ {item.message}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (item.type === "run_complete") {
                           return (
                             <div
                               key={index}
@@ -759,7 +785,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                           );
                         }
 
-                        if (item.type === "evaluation") {
+                        if (item.type === "evaluation_complete") {
                           return (
                             <div
                               key={index}
@@ -771,10 +797,12 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                               <div className="bg-white dark:bg-yellow-950/30 p-4 rounded border border-yellow-300 dark:border-yellow-700">
                                 <div className="text-sm text-yellow-700 dark:text-yellow-300">
                                   Evaluation completed successfully. Grade ID:{" "}
-                                  {item.evalGradeId}
-                                  {item.chatId && (
+                                  {item["eval_grade_id"] as string}
+                                  {item["chat_id"] && (
                                     <span className="block mt-1">
-                                      Chat: {item.chatId.slice(0, 8)}...
+                                      Chat:{" "}
+                                      {(item["chat_id"] as string).slice(0, 8)}
+                                      ...
                                     </span>
                                   )}
                                 </div>
@@ -784,40 +812,44 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                         }
 
                         if (
-                          item.type === "message" ||
-                          item.type === "streaming"
+                          item.type === "chat_error" ||
+                          item.type === "evaluation_error"
                         ) {
-                          const isBaseAgent = item.speaker === baseAgent?.name;
+                          return (
+                            <div
+                              key={index}
+                              className="bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-200 dark:border-red-800"
+                            >
+                              <div className="text-red-800 dark:text-red-200 font-medium">
+                                ❌ Error: {item["error"] as string}
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        if (item.type === "token") {
                           return (
                             <div key={index} className="space-y-2">
-                              <div
-                                className={`flex ${isBaseAgent ? "justify-end" : "justify-start"}`}
-                              >
-                                <div
-                                  className={`max-w-[80%] p-3 rounded-lg ${
-                                    isBaseAgent
-                                      ? "bg-blue-100 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100"
-                                      : "bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100"
-                                  }`}
-                                >
+                              <div className="flex justify-start">
+                                <div className="max-w-[80%] p-3 rounded-lg bg-green-100 dark:bg-green-900/20 text-green-900 dark:text-green-100">
                                   <div className="text-xs font-medium mb-1">
-                                    {item.speaker}{" "}
-                                    {item.turn && `(Turn ${item.turn})`}
-                                    {item.chatIndex !== undefined && (
+                                    {responseAgent?.name || "AI Agent"}
+                                    {item["chat_id"] && (
                                       <span className="text-muted-foreground">
                                         {" "}
-                                        - Chat {item.chatIndex + 1}
+                                        - Chat{" "}
+                                        {(item["chat_id"] as string).slice(
+                                          0,
+                                          8
+                                        )}
+                                        ...
                                       </span>
                                     )}
                                   </div>
-                                  {item.type === "streaming" ? (
-                                    <div className="flex items-center">
-                                      <span>{item.response}</span>
-                                      <LoadingDots />
-                                    </div>
-                                  ) : (
-                                    <Markdown>{item.message || ""}</Markdown>
-                                  )}
+                                  <div className="flex items-center">
+                                    <span>{item["token"] as string}</span>
+                                    <LoadingDots />
+                                  </div>
                                 </div>
                               </div>
                             </div>
@@ -868,40 +900,38 @@ export default function EvaluationRun({ runId }: { runId: string }) {
             )}
           </CardContent>
 
-          {isRunningEval && (
-            <CardFooter className="flex-shrink-0 p-4 border-t">
-              <div className="w-full flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  {/* Run Evaluation Button */}
-                  {!isRunningEval && !currentChat?.completed && (
-                    <Button
-                      onClick={startEvaluationRun}
-                      variant="default"
-                      size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Play className="h-4 w-4" />
-                      Run Evaluation
-                    </Button>
-                  )}
+          <CardFooter className="flex-shrink-0 p-4 border-t">
+            <div className="w-full flex justify-between items-center">
+              <div className="flex items-center gap-4">
+                {/* Run Evaluation Button */}
+                {!isRunningEval && (
+                  <Button
+                    onClick={startEvaluationRun}
+                    variant="default"
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Play className="h-4 w-4" />
+                    Run Evaluation
+                  </Button>
+                )}
 
-                  {/* Running Status */}
-                  {isRunningEval && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                      Running evaluation...
-                      {runStatus && (
-                        <span>
-                          ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
-                          chats completed)
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
+                {/* Running Status */}
+                {isRunningEval && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    Running evaluation...
+                    {runStatus && (
+                      <span>
+                        ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
+                        chats completed)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
-            </CardFooter>
-          )}
+            </div>
+          </CardFooter>
         </Card>
       </div>
 

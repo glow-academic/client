@@ -9,7 +9,6 @@ from agents import RunConfig, Runner
 from app.db import get_session
 from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
                         Rubrics, Scenarios)
-from app.services.agents.advanced import run_advanced_agent
 from app.services.agents.evaluate import run_evaluate_agent
 from app.services.agents.generic import GenericAgent, run_generic_agent
 from app.services.agents.scenario import run_scenario_agent
@@ -212,74 +211,54 @@ async def run_eval(
                 },
             )
 
-        # Find increment
-        max_parallel_runs = min(eval_obj.max_parallel_runs, len(eval_chats_not_completed))
-
         async def eval_stream() -> AsyncIterator[str]:
             """Stream the evaluation process"""
             # initial heartbeat so proxies flush headers
             yield ":\n\n"
             
             try:
-                # Process chats in batches
-                for i in range(0, len(eval_chats_not_completed), max_parallel_runs):
-                    eval_chats_to_run = eval_chats_not_completed[i:i+max_parallel_runs]
-                    chat_ids = [chat.id for chat in eval_chats_to_run]
+                # Process chats sequentially
+                for i, chat in enumerate(eval_chats_not_completed):
+                    yield f"data: {json.dumps({'type': 'chat_start', 'chat_id': chat.id, 'chat_index': i + 1, 'total_chats': len(eval_chats_not_completed), 'message': f'Starting chat {i + 1} of {len(eval_chats_not_completed)}: {chat.title}'})}\n\n"
                     
-                    yield f"data: {json.dumps({'type': 'batch_start', 'batch_size': len(eval_chats_to_run), 'batch_index': i // max_parallel_runs + 1})}\n\n"
-                    
-                    # Use different approaches based on number of chats
-                    if len(eval_chats_to_run) == 1:
-                        # Single chat - use generic agent approach
-                        chat = eval_chats_to_run[0]
-                        yield f"data: {json.dumps({'type': 'chat_start', 'chat_id': chat.id, 'message': f'Starting single chat: {chat.title}'})}\n\n"
+                    try:
+                        # Process multiple turns until max_turns is reached
+                        for turn in range(eval_obj.max_turns):
+                            yield f"data: {json.dumps({'type': 'turn_start', 'turn': turn + 1, 'max_turns': eval_obj.max_turns, 'chat_id': chat.id, 'message': f'Starting turn {turn + 1} of {eval_obj.max_turns}'})}\n\n"
+                            
+                            # Check if we have reached max turns by checking existing messages
+                            existing_messages = session.exec(
+                                select(EvalMessages).where(EvalMessages.chat_id == chat.id)
+                            ).all()
+                            
+                            if len(existing_messages) >= eval_obj.max_turns:
+                                break
+                            
+                            # Run the generic agent for this turn
+                            async for token in run_generic_agent(chat.id, session=session):
+                                yield f"data: {json.dumps({'type': 'token', 'chat_id': chat.id, 'token': token})}\n\n"
+                            
+                            yield f"data: {json.dumps({'type': 'turn_complete', 'turn': turn + 1, 'chat_id': chat.id, 'message': f'Turn {turn + 1} completed'})}\n\n"
                         
-                        try:
-                            # Process multiple turns until max_turns is reached
-                            for turn in range(eval_obj.max_turns):
-                                yield f"data: {json.dumps({'type': 'turn_start', 'turn': turn + 1, 'max_turns': eval_obj.max_turns, 'chat_id': chat.id, 'message': f'Starting turn {turn + 1} of {eval_obj.max_turns}'})}\n\n"
-                                
-                                # Check if we have reached max turns by checking existing messages
-                                existing_messages = session.exec(
-                                    select(EvalMessages).where(EvalMessages.chat_id == chat.id)
-                                ).all()
-                                
-                                if len(existing_messages) >= eval_obj.max_turns:
-                                    break
-                                
-                                # Run the generic agent for this turn
-                                async for token in run_generic_agent(chat.id, session=session):
-                                    yield f"data: {json.dumps({'type': 'token', 'chat_id': chat.id, 'token': token})}\n\n"
-                                
-                                yield f"data: {json.dumps({'type': 'turn_complete', 'turn': turn + 1, 'chat_id': chat.id, 'message': f'Turn {turn + 1} completed'})}\n\n"
-                            
-                            yield f"data: {json.dumps({'type': 'chat_complete', 'chat_id': chat.id, 'message': f'Completed chat: {chat.title}'})}\n\n"
-                            
-                            # Mark chat as completed
-                            chat.completed = True
-                            chat.completed_at = datetime.now()
-                            session.add(chat)
-                            session.commit()
-                            
-                        except Exception as chat_error:
-                            logger.error(f"Error processing single chat {chat.id}: {str(chat_error)}")
-                            yield f"data: {json.dumps({'type': 'chat_error', 'chat_id': chat.id, 'error': str(chat_error)})}\n\n"
-                    else:
-                        # Multiple chats - use advanced agent for parallel processing
-                        async for event in run_advanced_agent(
-                            eval_chat_ids=chat_ids,
-                            session=session,
-                        ):
-                            yield f"data: {json.dumps(event)}\n\n"
+                        yield f"data: {json.dumps({'type': 'chat_complete', 'chat_id': chat.id, 'message': f'Completed chat: {chat.title}'})}\n\n"
+                        
+                        # Mark chat as completed
+                        chat.completed = True
+                        chat.completed_at = datetime.now()
+                        session.add(chat)
+                        session.commit()
+                        
+                    except Exception as chat_error:
+                        logger.error(f"Error processing chat {chat.id}: {str(chat_error)}")
+                        yield f"data: {json.dumps({'type': 'chat_error', 'chat_id': chat.id, 'error': str(chat_error)})}\n\n"
                     
-                    # Run evaluation for each completed chat
-                    for chat in eval_chats_to_run:
-                        try:
-                            eval_grade_id = await run_evaluate_agent(chat.id, session)
-                            yield f"data: {json.dumps({'type': 'evaluation_complete', 'chat_id': chat.id, 'eval_grade_id': eval_grade_id})}\n\n"
-                        except Exception as eval_error:
-                            logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")
-                            yield f"data: {json.dumps({'type': 'evaluation_error', 'chat_id': chat.id, 'error': str(eval_error)})}\n\n"
+                    # Run evaluation for this completed chat
+                    try:
+                        eval_grade_id = await run_evaluate_agent(chat.id, session)
+                        yield f"data: {json.dumps({'type': 'evaluation_complete', 'chat_id': chat.id, 'eval_grade_id': eval_grade_id})}\n\n"
+                    except Exception as eval_error:
+                        logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")
+                        yield f"data: {json.dumps({'type': 'evaluation_error', 'chat_id': chat.id, 'error': str(eval_error)})}\n\n"
                 
                 yield f"data: {json.dumps({'type': 'run_complete', 'message': 'Eval run completed successfully'})}\n\n"
                 yield 'data: {"done": true}\n\n'

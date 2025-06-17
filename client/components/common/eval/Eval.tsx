@@ -5,16 +5,14 @@
  * 05/20/2025
  */
 
-import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -22,6 +20,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,44 +29,32 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 
 import {
-  Trash2,
   Bot,
-  MessageSquare,
   FileCheck,
   GripVertical,
+  MessageSquare,
   Shuffle,
+  Trash2,
 } from "lucide-react";
 
 // API imports
-import { getEval } from "@/utils/queries/evals/get-eval";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { createEval } from "@/utils/mutations/evals/create-eval";
 import { updateEval } from "@/utils/mutations/evals/update-eval";
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getEval } from "@/utils/queries/evals/get-eval";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 
 // Types
-import { Agent, Scenario, Rubric } from "@/types";
+import { Agent, Eval as EvalType, Rubric, Scenario } from "@/types";
 import { logError } from "@/utils/logger";
 
 interface EvalProps {
   evalId?: string;
   mode?: "create" | "edit";
-}
-
-interface EvalFormData {
-  name: string;
-  description: string;
-  baseAgentId: string;
-  scenarioIds: string[];
-  agentIds: string[];
-  evalType: "student" | "ta";
-  maxTurns: number;
-  maxParallelRuns: number;
-  rubricIds: string[];
 }
 
 interface FormErrors {
@@ -76,7 +64,6 @@ interface FormErrors {
   scenarioIds?: string;
   agentIds?: string;
   maxTurns?: string;
-  maxParallelRuns?: string;
   rubricIds?: string;
 }
 
@@ -91,7 +78,7 @@ export default function Eval({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
 
-  const initialFormData: EvalFormData = {
+  const initialFormData: Partial<EvalType> = {
     name: "",
     description: "",
     baseAgentId: "",
@@ -99,11 +86,10 @@ export default function Eval({
     agentIds: [],
     evalType: "student",
     maxTurns: 10,
-    maxParallelRuns: 1,
     rubricIds: [],
   };
 
-  const [formData, setFormData] = useState<EvalFormData>(initialFormData);
+  const [formData, setFormData] = useState<Partial<EvalType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch eval data if editing
@@ -143,7 +129,7 @@ export default function Eval({
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: EvalFormData }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<EvalType> }) =>
       updateEval(id, data),
     onSuccess: () => {
       toast.success("Evaluation updated successfully!");
@@ -167,7 +153,6 @@ export default function Eval({
         agentIds: evalData.agentIds?.filter((id: string) => id !== "RAY") || [],
         evalType: evalData.evalType || "student",
         maxTurns: evalData.maxTurns || 10,
-        maxParallelRuns: evalData.maxParallelRuns || 1,
         rubricIds:
           evalData.rubricIds?.filter((id: string) => id !== "RAY") || [],
       });
@@ -175,8 +160,8 @@ export default function Eval({
   }, [isEditMode, evalData]);
 
   const handleInputChange = (
-    field: keyof EvalFormData,
-    value: string | number | string[] | null,
+    field: keyof Partial<EvalType>,
+    value: string | number | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -186,31 +171,33 @@ export default function Eval({
 
   const addItem = (
     field: "scenarioIds" | "agentIds" | "rubricIds",
-    itemId: string,
+    itemId: string
   ) => {
-    if (!formData[field].includes(itemId)) {
+    if (!formData[field]?.includes(itemId)) {
       setFormData((prev) => ({
         ...prev,
-        [field]: [...prev[field], itemId],
+        [field]: [...(prev[field] || []), itemId],
       }));
     }
   };
 
   const removeItem = (
     field: "scenarioIds" | "agentIds" | "rubricIds",
-    itemId: string,
+    itemId: string
   ) => {
     setFormData((prev) => ({
       ...prev,
-      [field]: prev[field].filter((id) => id !== itemId),
+      [field]: prev[field]?.filter((id) => id !== itemId),
     }));
   };
 
   const randomizeOrder = (field: "scenarioIds" | "agentIds" | "rubricIds") => {
-    const shuffled = [...formData[field]].sort(() => Math.random() - 0.5);
+    const shuffled = [...(formData[field] || [])].sort(
+      () => Math.random() - 0.5
+    );
     setFormData((prev) => ({ ...prev, [field]: shuffled }));
     toast.success(
-      `${field === "scenarioIds" ? "Scenarios" : field === "agentIds" ? "Agents" : "Rubrics"} randomized!`,
+      `${field === "scenarioIds" ? "Scenarios" : field === "agentIds" ? "Agents" : "Rubrics"} randomized!`
     );
   };
 
@@ -227,13 +214,13 @@ export default function Eval({
   const handleDrop = (
     e: React.DragEvent,
     targetItemId: string,
-    field: "scenarioIds" | "agentIds" | "rubricIds",
+    field: "scenarioIds" | "agentIds" | "rubricIds"
   ) => {
     e.preventDefault();
 
     if (!draggedItem) return;
 
-    const newOrder = [...formData[field]];
+    const newOrder = [...(formData[field] || [])];
     const draggedIndex = newOrder.findIndex((id) => id === draggedItem);
     const targetIndex = newOrder.findIndex((id) => id === targetItemId);
 
@@ -250,11 +237,11 @@ export default function Eval({
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       newErrors.name = "Name is required";
     }
 
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       newErrors.description = "Description is required";
     }
 
@@ -262,23 +249,22 @@ export default function Eval({
       newErrors.baseAgentId = "Base agent is required";
     }
 
-    if (formData.scenarioIds.length === 0) {
+    if (formData.scenarioIds?.length === 0) {
       newErrors.scenarioIds = "At least one scenario must be selected";
     }
 
-    if (formData.agentIds.length === 0) {
+    if (formData.agentIds?.length === 0) {
       newErrors.agentIds = "At least one agent must be selected";
     }
 
-    if (formData.maxTurns < 1 || formData.maxTurns > 100) {
+    if (
+      formData.maxTurns &&
+      (formData.maxTurns < 1 || formData.maxTurns > 100)
+    ) {
       newErrors.maxTurns = "Max turns must be between 1 and 100";
     }
 
-    if (formData.maxParallelRuns < 1 || formData.maxParallelRuns > 10) {
-      newErrors.maxParallelRuns = "Parallel runs must be between 1 and 10";
-    }
-
-    if (formData.rubricIds.length === 0) {
+    if (formData.rubricIds?.length === 0) {
       newErrors.rubricIds = "At least one rubric must be selected";
     }
 
@@ -298,16 +284,23 @@ export default function Eval({
 
     try {
       const payload = {
-        name: formData.name,
-        description: formData.description,
-        baseAgentId: formData.baseAgentId,
+        name: formData.name || "",
+        description: formData.description || "",
+        baseAgentId: formData.baseAgentId || "",
         scenarioIds:
-          formData.scenarioIds.length > 0 ? formData.scenarioIds : ["RAY"],
-        agentIds: formData.agentIds.length > 0 ? formData.agentIds : ["RAY"],
-        evalType: formData.evalType,
-        maxTurns: formData.maxTurns,
-        maxParallelRuns: formData.maxParallelRuns,
-        rubricIds: formData.rubricIds.length > 0 ? formData.rubricIds : ["RAY"],
+          formData.scenarioIds && formData.scenarioIds.length > 0
+            ? formData.scenarioIds
+            : ["RAY"],
+        agentIds:
+          formData.agentIds && formData.agentIds.length > 0
+            ? formData.agentIds
+            : ["RAY"],
+        evalType: formData.evalType || "student",
+        maxTurns: formData.maxTurns || 10,
+        rubricIds:
+          formData.rubricIds && formData.rubricIds.length > 0
+            ? formData.rubricIds
+            : ["RAY"],
       };
 
       if (isEditMode) {
@@ -318,12 +311,12 @@ export default function Eval({
     } catch (error) {
       logError(
         `Failed to ${isEditMode ? "update" : "create"} evaluation`,
-        error,
+        error
       );
       toast.error(
         `Failed to ${isEditMode ? "update" : "create"} evaluation: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsSubmitting(false);
@@ -359,7 +352,7 @@ export default function Eval({
                 <Label htmlFor="name">Evaluation Name *</Label>
                 <Input
                   id="name"
-                  value={formData.name}
+                  value={formData.name || ""}
                   onChange={(e) => handleInputChange("name", e.target.value)}
                   placeholder="Enter evaluation name"
                   className={errors.name ? "border-destructive" : ""}
@@ -372,7 +365,7 @@ export default function Eval({
               <div className="space-y-2">
                 <Label htmlFor="evalType">Evaluation Type</Label>
                 <Select
-                  value={formData.evalType}
+                  value={formData.evalType || ""}
                   onValueChange={(value: "student" | "ta") =>
                     handleInputChange("evalType", value)
                   }
@@ -392,7 +385,7 @@ export default function Eval({
               <Label htmlFor="description">Description *</Label>
               <Textarea
                 id="description"
-                value={formData.description}
+                value={formData.description || ""}
                 onChange={(e) =>
                   handleInputChange("description", e.target.value)
                 }
@@ -436,32 +429,9 @@ export default function Eval({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="numParallelRuns">Parallel Runs *</Label>
-                <Input
-                  id="numParallelRuns"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={formData.maxParallelRuns}
-                  onChange={(e) =>
-                    handleInputChange(
-                      "maxParallelRuns",
-                      parseInt(e.target.value) || 1,
-                    )
-                  }
-                  className={errors.maxParallelRuns ? "border-destructive" : ""}
-                />
-                {errors.maxParallelRuns && (
-                  <p className="text-sm text-destructive">
-                    {errors.maxParallelRuns}
-                  </p>
-                )}
-              </div>
-
-              <div className="space-y-2">
                 <Label htmlFor="baseAgentId">Base Agent *</Label>
                 <Select
-                  value={formData.baseAgentId}
+                  value={formData.baseAgentId || ""}
                   onValueChange={(value: string) =>
                     handleInputChange("baseAgentId", value)
                   }
@@ -513,7 +483,7 @@ export default function Eval({
                     {scenarios
                       .filter(
                         (scenario: Scenario) =>
-                          !formData.scenarioIds.includes(scenario.id),
+                          !formData.scenarioIds?.includes(scenario.id)
                       )
                       .map((scenario: Scenario) => (
                         <SelectItem key={scenario.id} value={scenario.id}>
@@ -522,7 +492,7 @@ export default function Eval({
                       ))}
                   </SelectContent>
                 </Select>
-                {formData.scenarioIds.length > 1 && (
+                {formData.scenarioIds && formData.scenarioIds.length > 1 && (
                   <Button
                     type="button"
                     variant="outline"
@@ -542,7 +512,7 @@ export default function Eval({
               </p>
             )}
 
-            {formData.scenarioIds.length === 0 ? (
+            {formData.scenarioIds && formData.scenarioIds.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-center text-muted-foreground border border-dashed rounded-md">
                 <div>
                   <MessageSquare className="h-8 w-8 mx-auto mb-2" />
@@ -554,9 +524,9 @@ export default function Eval({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {formData.scenarioIds.map((scenarioId, index) => {
+                {formData.scenarioIds?.map((scenarioId, index) => {
                   const scenario = scenarios.find(
-                    (s: Scenario) => s.id === scenarioId,
+                    (s: Scenario) => s.id === scenarioId
                   );
                   if (!scenario) return null;
 
@@ -624,8 +594,8 @@ export default function Eval({
                     {agents
                       .filter(
                         (agent: Agent) =>
-                          !formData.agentIds.includes(agent.id) &&
-                          agent.id !== formData.baseAgentId,
+                          !formData.agentIds?.includes(agent.id) &&
+                          agent.id !== formData.baseAgentId
                       )
                       .map((agent: Agent) => (
                         <SelectItem key={agent.id} value={agent.id}>
@@ -634,7 +604,7 @@ export default function Eval({
                       ))}
                   </SelectContent>
                 </Select>
-                {formData.agentIds.length > 1 && (
+                {formData.agentIds && formData.agentIds.length > 1 && (
                   <Button
                     type="button"
                     variant="outline"
@@ -652,7 +622,7 @@ export default function Eval({
               <p className="text-sm text-destructive mb-4">{errors.agentIds}</p>
             )}
 
-            {formData.agentIds.length === 0 ? (
+            {formData.agentIds && formData.agentIds.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-center text-muted-foreground border border-dashed rounded-md">
                 <div>
                   <Bot className="h-8 w-8 mx-auto mb-2" />
@@ -662,7 +632,7 @@ export default function Eval({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {formData.agentIds.map((agentId, index) => {
+                {formData.agentIds?.map((agentId, index) => {
                   const agent = agents.find((a: Agent) => a.id === agentId);
                   if (!agent) return null;
 
@@ -726,7 +696,7 @@ export default function Eval({
                     {rubrics
                       .filter(
                         (rubric: Rubric) =>
-                          !formData.rubricIds.includes(rubric.id),
+                          !formData.rubricIds?.includes(rubric.id)
                       )
                       .map((rubric: Rubric) => (
                         <SelectItem key={rubric.id} value={rubric.id}>
@@ -735,7 +705,7 @@ export default function Eval({
                       ))}
                   </SelectContent>
                 </Select>
-                {formData.rubricIds.length > 1 && (
+                {formData.rubricIds && formData.rubricIds.length > 1 && (
                   <Button
                     type="button"
                     variant="outline"
@@ -755,7 +725,7 @@ export default function Eval({
               </p>
             )}
 
-            {formData.rubricIds.length === 0 ? (
+            {formData.rubricIds && formData.rubricIds.length === 0 ? (
               <div className="flex items-center justify-center h-32 text-center text-muted-foreground border border-dashed rounded-md">
                 <div>
                   <FileCheck className="h-8 w-8 mx-auto mb-2" />
@@ -767,7 +737,7 @@ export default function Eval({
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {formData.rubricIds.map((rubricId, index) => {
+                {formData.rubricIds?.map((rubricId, index) => {
                   const rubric = rubrics.find((r: Rubric) => r.id === rubricId);
                   if (!rubric) return null;
 
