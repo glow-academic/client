@@ -1,5 +1,5 @@
 /**
- * Dashboard.tsx (renamed from Overview.tsx)
+ * Dashboard.tsx
  * Used to display the main dashboard for the analytics page.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
@@ -690,7 +690,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[240px]">
+              <div className="h-[320px]">
                 {sideCarouselIndex === 0 && <SkillBreakdown />}
                 {sideCarouselIndex === 1 && <TrainingInsights />}
               </div>

@@ -150,7 +150,7 @@ describe("NewAgent", () => {
           agentType: "student",
           temperature: 0.8,
         });
-        expect(mockPush).toHaveBeenCalledWith("/management/agents");
+        expect(mockPush).toHaveBeenCalledWith("/create/agents");
       });
     });
   });
@@ -158,7 +158,7 @@ describe("NewAgent", () => {
 
 /*
  * Component Analysis for NewAgent:
- * Path: management/agents/NewAgent.tsx
+ * Path: create/agents/NewAgent.tsx
  *
  * Features detected:
  * - Default export: true

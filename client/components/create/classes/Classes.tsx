@@ -32,14 +32,17 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
   Calendar,
+  Edit,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function ClassesGeneralPage() {
   const queryClient = useQueryClient();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
+  const router = useRouter();
 
   // Delete class mutation
   const deleteClassMutation = useMutation({
@@ -59,6 +62,10 @@ export default function ClassesGeneralPage() {
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
   });
+
+  const handleEditClass = (classId: string) => {
+    router.push(`/create/classes/c/${classId}`);
+  };
 
 
   // Helper functions
@@ -117,6 +124,9 @@ export default function ClassesGeneralPage() {
                     </Badge>
                   </div>
                 </div>
+                <Button variant="ghost" size="sm" onClick={() => handleEditClass(classItem.id)}>
+                  <Edit className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"

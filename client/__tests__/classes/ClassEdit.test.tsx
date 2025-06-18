@@ -1,4 +1,4 @@
-import ClassEdit from "@/components/classes/ClassEdit";
+import ClassEdit from "@/components/create/classes/ClassEdit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { ReactNode } from "react";
