@@ -5,9 +5,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-
-  CREATE TYPE rubric_type AS ENUM ('simulation', 'eval');
-
   CREATE TABLE rubrics (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -16,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
-    rubric_type rubric_type NOT NULL           DEFAULT 'simulation'
+    default BOOLEAN     NOT NULL DEFAULT FALSE
   );
 
 
@@ -45,9 +42,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 -- Insert Teaching Assistant Evaluation Rubric (matching the static data in RubricEdit component)
-INSERT INTO rubrics (id, name, description, points, pass_points, rubric_type) VALUES
-  ('33333333-3333-3333-3333-333333333333', 'Teaching Assistant Evaluation Rubric', 'Evaluates teaching assistants on their pedagogical effectiveness, student interaction quality, and session management', 20, 17, 'simulation'),
-  ('44444444-4444-4444-4444-444444444444', 'AI Student Performance Evaluation Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 20, 17, 'eval');
+INSERT INTO rubrics (id, name, description, points, pass_points, default) VALUES
+  ('33333333-3333-3333-3333-333333333333', 'Teaching Assistant Evaluation Rubric', 'Evaluates teaching assistants on their pedagogical effectiveness, student interaction quality, and session management', 20, 17, true),
+  ('44444444-4444-4444-4444-444444444444', 'AI Student Performance Evaluation Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 20, 17, true);
 
 -- Insert Standard Groups for Teaching Assistant Rubric
 INSERT INTO standard_groups (id, name, short_name, description, points, pass_points, rubric_id) VALUES

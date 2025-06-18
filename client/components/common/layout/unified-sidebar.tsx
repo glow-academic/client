@@ -51,7 +51,6 @@ import {
   Search,
   Settings,
   Sparkles,
-  TrendingUp,
   User,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -171,16 +170,6 @@ export function UnifiedSidebar({
       });
     }
 
-    // Growth - Only for TAs
-    if (effectiveRole === "ta") {
-      menu.push({
-        title: "Growth",
-        url: "#",
-        icon: TrendingUp,
-        section: "growth",
-      });
-    }
-
     // Analytics - Available from instructor level and up
     if (["instructor", "instructional", "admin"].includes(effectiveRole)) {
       menu.push({
@@ -254,11 +243,25 @@ export function UnifiedSidebar({
         section: "staff",
       });
 
+      // Cohorts - available for admin
+      managementItems.push({
+        title: "Cohorts",
+        url: "#",
+        section: "cohorts",
+      });
+
       // Evaluations - available for admin
       managementItems.push({
         title: "Evaluations",
         url: "#",
         section: "evals",
+      });
+
+      // Evaluations - available for admin
+      managementItems.push({
+        title: "Models",
+        url: "#",
+        section: "models",
       });
 
       // Logs - available for admin

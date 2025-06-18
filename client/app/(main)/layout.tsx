@@ -7,7 +7,7 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, TrendingUp } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -118,14 +118,23 @@ export default function MainLayout({
       );
     }
 
-    if (pathname === "/management/classes") {
+    if (pathname === "/create/classes") {
       return (
         <Button
-          onClick={() => router.push("/management/classes/new")}
+          onClick={() => router.push("/create/classes/new")}
           size="sm"
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Class
+        </Button>
+      );
+    }
+
+    if (pathname === "/create/agents") {
+      return (
+        <Button onClick={() => router.push("/create/agents/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Agent
         </Button>
       );
     }
@@ -135,15 +144,6 @@ export default function MainLayout({
         <Button onClick={() => router.push("/management/staff/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Add Staff Member
-        </Button>
-      );
-    }
-
-    if (pathname === "/management/agents") {
-      return (
-        <Button onClick={() => router.push("/management/agents/new")} size="sm">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Agent
         </Button>
       );
     }
@@ -162,6 +162,26 @@ export default function MainLayout({
         <Button onClick={() => router.push(`${pathname}/edit`)} size="sm">
           <Pencil className="h-4 w-4 mr-2" />
           Edit Evaluation
+        </Button>
+      );
+    }
+
+    if (pathname === "/management/models") {
+      return (
+        <Button onClick={() => router.push("/management/models/new")} size="sm">
+          <Plus className="h-4 w-4 mr-2" />
+          Create Model
+        </Button>
+      );
+    }
+
+    if (pathname === "/home") {
+      return (
+        <Button onClick={() => {
+          // should show the growth page in a dialog, just that radar chart
+        }} size="sm">
+          <TrendingUp className="h-4 w-4 mr-2" />
+          Growth
         </Button>
       );
     }

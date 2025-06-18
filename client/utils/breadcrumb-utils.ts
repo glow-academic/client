@@ -1,3 +1,9 @@
+/**
+ * breadcrumb-utils.ts
+ * Used to generate breadcrumbs for the app.
+ * @AshokSaravanan222 & @siladiea
+ * 06/18/2025
+ */
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -173,6 +179,15 @@ export const generateEnhancedBreadcrumbs = async (
         case "classes":
           title = "Classes";
           break;
+        case "cohorts":
+          title = "Cohorts";
+          break;
+        case "models":
+          title = "Models";
+          break;
+        case "logs":
+          title = "Logs";
+          break;
         case "management":
           title = "Management";
           break;
@@ -323,6 +338,18 @@ const getSectionFromSegments = (segments: string[]): string => {
           return `eval-${fourth}`;
         }
         return "evals";
+      }
+      if (second === "cohorts") {
+        if (third === "c" && fourth) {
+          return `cohort-${fourth}`;
+        }
+        return "cohorts";
+      }
+      if (second === "models") {
+        if (third === "m" && fourth) {
+          return `model-${fourth}`;
+        }
+        return "models";
       }
       if (second) {
         return second; // staff, classes, agents, evals

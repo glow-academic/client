@@ -83,6 +83,13 @@ const COLORS = {
   orange: "#f97316",
 };
 
+// Type for chart data entries with fill property
+interface ChartDataEntry {
+  fill: string;
+  count?: number;
+  range?: string;
+}
+
 export default function Dashboard() {
   // Carousel states
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -762,11 +769,12 @@ export default function Dashboard() {
                         fill="#8884d8"
                         dataKey="count"
                       >
-                        {(getMetricDetails(selectedMetric)?.data as any[])?.map(
-                          (entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          )
-                        )}
+                        {(
+                          getMetricDetails(selectedMetric)
+                            ?.data as ChartDataEntry[]
+                        )?.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
                       </Pie>
                       <Tooltip
                         formatter={(value: number) => [value, "Sessions"]}
@@ -864,11 +872,12 @@ export default function Dashboard() {
                         fill="#8884d8"
                         dataKey="count"
                       >
-                        {(getMetricDetails(selectedMetric)?.data as any[])?.map(
-                          (entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.fill} />
-                          )
-                        )}
+                        {(
+                          getMetricDetails(selectedMetric)
+                            ?.data as ChartDataEntry[]
+                        )?.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.fill} />
+                        ))}
                       </Pie>
                       <Tooltip
                         formatter={(value: number) => [value, "Sessions"]}

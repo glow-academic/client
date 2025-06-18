@@ -1,24 +1,40 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-18T18:29:12.547Z
+Generated on: 2025-06-18T20:47:02.868Z
 
 ## Summary
-- **Total Components**: 58
-- **Tests Created**: 0
+- **Total Components**: 77
+- **Tests Created**: 20
 - **Tests Updated**: 0
-- **Tests Skipped** (already implemented): 58
+- **Tests Skipped** (already implemented): 57
 
 ## Component Coverage
 
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
+| Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
-| Performance | analytics/Performance.tsx | Performance.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
 | ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ❌ Needs Implementation |
+| SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ❌ Needs Implementation |
+| ActiveTAs | common/analytics/header/ActiveTAs.tsx | ActiveTAs.test.tsx | ❌ Needs Implementation |
+| AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ❌ Needs Implementation |
+| CompletionRate | common/analytics/header/CompletionRate.tsx | CompletionRate.test.tsx | ❌ Needs Implementation |
+| NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ❌ Needs Implementation |
+| PassRate | common/analytics/header/PassRate.tsx | PassRate.test.tsx | ❌ Needs Implementation |
+| TotalSessions | common/analytics/header/TotalSessions.tsx | TotalSessions.test.tsx | ❌ Needs Implementation |
+| TotalTAs | common/analytics/header/TotalTAs.tsx | TotalTAs.test.tsx | ❌ Needs Implementation |
+| TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ❌ Needs Implementation |
+| TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ❌ Needs Implementation |
+| PerformanceByPersonality | common/analytics/main/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ❌ Needs Implementation |
+| PerformanceTrends | common/analytics/main/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ❌ Needs Implementation |
+| SessionActivity | common/analytics/main/primary/SessionActivity.tsx | SessionActivity.test.tsx | ❌ Needs Implementation |
+| SkillBreakdown | common/analytics/main/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
+| TrainingInsights | common/analytics/main/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
@@ -45,6 +61,12 @@ Generated on: 2025-06-18T18:29:12.547Z
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
+| AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
+| Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
+| NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
+| Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
+| NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
@@ -56,16 +78,13 @@ Generated on: 2025-06-18T18:29:12.547Z
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
-| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
-| Agents | management/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
-| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
-| ClassStatus | management/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
-| Classes | management/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
-| NewClass | management/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
+| Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
 | EvalDetails | management/evals/EvalDetails.tsx | EvalDetails.test.tsx | ✅ Implemented |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ✅ Implemented |
+| Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
+| Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
@@ -76,9 +95,9 @@ Generated on: 2025-06-18T18:29:12.547Z
 ```
 __tests__/
 ├── analytics/
+│   ├── Dashboard.test.tsx
 │   ├── History.test.tsx
 │   ├── Overview.test.tsx
-│   ├── Performance.test.tsx
 │   ├── Reports.test.tsx
 ├── classes/
 │   ├── ClassDetails.test.tsx
@@ -86,6 +105,28 @@ __tests__/
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
+│   ├── analytics/
+│   │   ├── footer/
+│   │   │   ├── CohortCompletion.test.tsx
+│   │   │   ├── SkillGrowth.test.tsx
+│   │   ├── header/
+│   │   │   ├── ActiveTAs.test.tsx
+│   │   │   ├── AverageScore.test.tsx
+│   │   │   ├── CompletionRate.test.tsx
+│   │   │   ├── NeedSupport.test.tsx
+│   │   │   ├── PassRate.test.tsx
+│   │   │   ├── TotalSessions.test.tsx
+│   │   │   ├── TotalTAs.test.tsx
+│   │   │   ├── TrainingHours.test.tsx
+│   │   │   ├── TrainingSessions.test.tsx
+│   │   ├── main/
+│   │   │   ├── primary/
+│   │   │   │   ├── PerformanceByPersonality.test.tsx
+│   │   │   │   ├── PerformanceTrends.test.tsx
+│   │   │   │   ├── SessionActivity.test.tsx
+│   │   │   ├── secondary/
+│   │   │   │   ├── SkillBreakdown.test.tsx
+│   │   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
 │   │   ├── Attempt.test.tsx
 │   │   ├── Chat.test.tsx
@@ -121,6 +162,14 @@ __tests__/
 │   ├── simulation/
 │   │   ├── Simulation.test.tsx
 ├── create/
+│   ├── agents/
+│   │   ├── AgentEdit.test.tsx
+│   │   ├── Agents.test.tsx
+│   │   ├── NewAgent.test.tsx
+│   ├── classes/
+│   │   ├── ClassStatus.test.tsx
+│   │   ├── Classes.test.tsx
+│   │   ├── NewClass.test.tsx
 │   ├── rubrics/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx
@@ -138,19 +187,17 @@ __tests__/
 ├── home/
 │   ├── Home.test.tsx
 ├── management/
-│   ├── agents/
-│   │   ├── AgentEdit.test.tsx
-│   │   ├── Agents.test.tsx
-│   │   ├── NewAgent.test.tsx
-│   ├── classes/
-│   │   ├── ClassStatus.test.tsx
-│   │   ├── Classes.test.tsx
-│   │   ├── NewClass.test.tsx
+│   ├── cohorts/
+│   │   ├── Cohorts.test.tsx
 │   ├── evals/
 │   │   ├── EvalDetails.test.tsx
 │   │   ├── EvalEdit.test.tsx
 │   │   ├── Evals.test.tsx
 │   │   ├── NewEval.test.tsx
+│   ├── logs/
+│   │   ├── Logs.test.tsx
+│   ├── models/
+│   │   ├── Models.test.tsx
 │   ├── staff/
 │   │   ├── NewStaff.test.tsx
 │   │   ├── Staff.test.tsx

@@ -22,15 +22,16 @@ CREATE TABLE agents (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
-  temperature  INTEGER     NOT NULL -- 0-100
+  temperature  INTEGER     NOT NULL, -- 0-100
+  default      BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 -- Insert Core Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature) VALUES
-  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0),
-  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0),
-  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0),
-  ('44444444-dddd-dddd-dddd-444444444444', 'Graduate Level Teaching Assistant', 'A Graduate Level Teaching Assistant that is able to help a student with their questions and concerns.', '$GTA_PROMPT', 0);
+INSERT INTO agents (id, name, description, system_prompt, temperature, default) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true),
+  ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true),
+  ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true),
+  ('44444444-dddd-dddd-dddd-444444444444', 'Graduate Level Teaching Assistant', 'A Graduate Level Teaching Assistant that is able to help a student with their questions and concerns.', '$GTA_PROMPT', 0, true);
 EOF
 
 echo "Generated init.sql with prompts from markdown files" 

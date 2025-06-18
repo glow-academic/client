@@ -109,21 +109,19 @@ export const getSectionRoute = (section: string): string => {
       return "/create/simulations";
     case "rubrics":
       return "/create/rubrics";
-
-    case "class":
-      return "/classes";
+    case "classes":
+      return "/create/classes";
+    case "agents":
+      return "/create/agents";
 
     // Management routes
     case "management":
       return "/management";
     case "staff":
       return "/management/staff";
-    case "agents":
-      return "/management/agents";
     case "evals":
       return "/management/evals";
-    case "classes":
-      return "/management/classes";
+
 
     // Profile route
     case "profile":
@@ -141,7 +139,7 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("agent-")) {
         const agentId = section.replace("agent-", "");
-        return `/management/agents/a/${agentId}`;
+        return `/create/agents/a/${agentId}`;
       }
       if (section.startsWith("scenario-")) {
         const scenarioId = section.replace("scenario-", "");

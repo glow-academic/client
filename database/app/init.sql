@@ -11,18 +11,21 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 1. Independent tables (no foreign key dependencies)
 \i app/classes/init.sql
+\i app/models/init.sql
 \i app/users/init.sql
-\i app/agents/init.sql
 \i app/rubrics/init.sql
 \i app/logs/init.sql
 
--- 2. Tables that depend on agents (scenarios references agents)
+-- 2. Agents
+\i app/agents/init.sql
+
+-- 3. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
 
--- 3. Tables that depend on multiple previous tables
+-- 4. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
 
--- 4. Evaluation system (depends on rubrics)
+-- 5. Evaluation system (depends on rubrics)
 \i app/evals/init.sql
 
 -- ============================================================================

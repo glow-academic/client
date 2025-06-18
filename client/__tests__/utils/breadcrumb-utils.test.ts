@@ -139,13 +139,6 @@ describe("breadcrumb-utils", () => {
           ],
         },
         {
-          path: "/management/classes",
-          expected: [
-            { title: "Management", section: "management" },
-            { title: "Classes", section: "classes" },
-          ],
-        },
-        {
           path: "/management/agents",
           expected: [
             { title: "Management", section: "management" },
@@ -285,10 +278,10 @@ describe("breadcrumb-utils", () => {
 
     it("should resolve agent IDs to agent names", async () => {
       const result = await generateEnhancedBreadcrumbs(
-        "/management/agents/a/agent-123456789012",
+        "/create/agents/a/agent-123456789012",
       );
       expect(result).toEqual([
-        { title: "Management", section: "management" },
+        { title: "Create", section: "create" },
         { title: "Agents", section: "agents" },
         { title: "Test Agent", section: "agent-agent-123456789012" },
       ]);
