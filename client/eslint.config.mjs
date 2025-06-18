@@ -35,7 +35,7 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ["scripts/**", ".next/**", "utils/logger.ts"],
+    ignores: [".next/**", "utils/logger.ts"],
   },
 ];
 
