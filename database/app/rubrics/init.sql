@@ -13,7 +13,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
     description TEXT        NOT NULL,
     points INTEGER     NOT NULL,
     pass_points INTEGER     NOT NULL,
-    default BOOLEAN     NOT NULL DEFAULT FALSE
+    default_rubric BOOLEAN     NOT NULL DEFAULT FALSE
   );
 
 
@@ -42,7 +42,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 -- Insert Teaching Assistant Evaluation Rubric (matching the static data in RubricEdit component)
-INSERT INTO rubrics (id, name, description, points, pass_points, default) VALUES
+INSERT INTO rubrics (id, name, description, points, pass_points, default_rubric) VALUES
   ('33333333-3333-3333-3333-333333333333', 'Teaching Assistant Evaluation Rubric', 'Evaluates teaching assistants on their pedagogical effectiveness, student interaction quality, and session management', 20, 17, true),
   ('44444444-4444-4444-4444-444444444444', 'AI Student Performance Evaluation Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 20, 17, true);
 

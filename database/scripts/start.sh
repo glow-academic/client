@@ -182,10 +182,12 @@ start_fresh_from_init() {
   fi
   
   export PGPASSWORD="$DB_PASSWORD"
-  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL" > /dev/null 2>&1; then
+  echo "🔍 Running: psql $USER_CONN -v ON_ERROR_STOP=1 -f $INIT_SQL"
+  if psql "$USER_CONN" -v ON_ERROR_STOP=1 -f "$INIT_SQL"; then
     echo "✅ Fresh database created from init.sql"
   else
     echo "❌ Failed to create database from init.sql"
+    echo "💡 Check the error output above for details"
     return 1
   fi
 }

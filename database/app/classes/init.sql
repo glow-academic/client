@@ -17,7 +17,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     year       INTEGER     NOT NULL,
     term       class_term  NOT NULL           DEFAULT 'fall',
     description TEXT        NOT NULL,
-    default      BOOLEAN     NOT NULL DEFAULT FALSE
+    default_class      BOOLEAN     NOT NULL DEFAULT FALSE
   );
 
 
@@ -68,7 +68,7 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
   
 
   -- Insert Test Class (CS 180 - Essential for quiz testing)
-  INSERT INTO classes (id, name, class_code, year, term, description, default) VALUES
+  INSERT INTO classes (id, name, class_code, year, term, description, default_class) VALUES
     ('44444444-1111-1111-1111-111111111111', 'Problem Solving And Object-Oriented Programming', 'CS 180', 2024, 'fall', 'Problem solving and algorithms, implementation of algorithms in a high level programming language, conditionals, the iterative approach and debugging, collections of data, searching and sorting, solving problems by decomposition, the object-oriented approach, subclasses of existing classes, handling exceptions that occur when the program is running, graphical user interfaces (GUIs), data stored in files, abstract data types, a glimpse at topics from other CS courses.', true),
     ('55555555-2222-2222-2222-222222222222', 'Foundations Of Computer Science', 'CS 182', 2024, 'fall', 'Logic and proofs; sets, functions, relations, sequences and summations; number representations; counting; fundamentals of the analysis of algorithms; graphs and trees; proof techniques; recursion; Boolean logic; finite state machines; pushdown automata; computability and undecidability.', true),
     ('66666666-3333-3333-3333-333333333333', 'Data Structures And Algorithms', 'CS 251', 2024, 'fall', 'Running time analysis of algorithms and their implementations, one-dimensional data structures, trees, heaps, additional sorting algorithms, binary search trees, hash tables, graphs, directed graphs, weighted graph algorithms, additional topics.', true),

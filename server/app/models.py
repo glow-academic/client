@@ -43,6 +43,7 @@ class Agents(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
+    default_agent: bool = Field(sa_column=Column('default_agent', Boolean, server_default=text('false')))
 
     evals: List['Evals'] = Relationship(back_populates='base_agent')
     scenarios: List['Scenarios'] = Relationship(back_populates='agent')
@@ -75,6 +76,7 @@ class Classes(_Base, table=True):
     year: int = Field(sa_column=Column('year', Integer))
     term: str = Field(sa_column=Column('term', Enum('fall', 'spring', 'summer', name='class_term'), server_default=text("'fall'::class_term")))
     description: str = Field(sa_column=Column('description', Text))
+    default_class: bool = Field(sa_column=Column('default_class', Boolean, server_default=text('false')))
 
     documents: List['Documents'] = Relationship(back_populates='class_')
     scenarios: List['Scenarios'] = Relationship(back_populates='class_')
@@ -92,7 +94,6 @@ class Cohorts(_Base, table=True):
     updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
-    simulation_ids: List[uuid.UUID] = Field(sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     profile_ids: List[uuid.UUID] = Field(sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
@@ -107,6 +108,33 @@ class Migrations(_Base, table=True):
     created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
 
 
+class Models(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='models_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
+    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
+
+
+class Providers(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='providers_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    api_key: str = Field(sa_column=Column('api_key', Text))
+
+
 class Rubrics(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='rubrics_pkey'),
@@ -119,7 +147,7 @@ class Rubrics(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     points: int = Field(sa_column=Column('points', Integer))
     pass_points: int = Field(sa_column=Column('pass_points', Integer))
-    rubric_type: str = Field(sa_column=Column('rubric_type', Enum('simulation', 'eval', name='rubric_type'), server_default=text("'simulation'::rubric_type")))
+    default_rubric: bool = Field(sa_column=Column('default_rubric', Boolean, server_default=text('false')))
 
     simulations: List['Simulations'] = Relationship(back_populates='rubric')
     standard_groups: List['StandardGroups'] = Relationship(back_populates='rubric')
@@ -240,6 +268,7 @@ class Scenarios(_Base, table=True):
     updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
+    default_scenario: bool = Field(sa_column=Column('default_scenario', Boolean, server_default=text('false')))
     agent_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('agent_id', Uuid(as_uuid=True)))
     class_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('class_id', Uuid(as_uuid=True)))
     crowdedness: Optional[int] = Field(default=None, sa_column=Column('crowdedness', Integer))
@@ -282,7 +311,9 @@ class Simulations(_Base, table=True):
     title: str = Field(sa_column=Column('title', Text))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    cohort_ids: List[uuid.UUID] = Field(sa_column=Column('cohort_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     rubric_id: Mapped[uuid.UUID] = Field(sa_column=Column('rubric_id', Uuid(as_uuid=True)))
+    default_simulation: bool = Field(sa_column=Column('default_simulation', Boolean, server_default=text('false')))
     time_limit: Optional[int] = Field(default=None, sa_column=Column('time_limit', Integer))
 
     rubric: Optional['Rubrics'] = Relationship(back_populates='simulations')

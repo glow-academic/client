@@ -85,6 +85,13 @@
       "when": 1750271335482,
       "tag": "0011_lying_scalphunter",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1750280191310,
+      "tag": "0012_robust_wilson_fisk",
+      "breakpoints": true
     }
   ]
 }

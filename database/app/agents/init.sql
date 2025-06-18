@@ -13,11 +13,11 @@ CREATE TABLE agents (
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
-  default      BOOLEAN     NOT NULL DEFAULT FALSE
+  default_agent      BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 -- Insert Core Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default) VALUES
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', 'Your only purpose is to prepare a Graduate Level Teaching Assistant on how to interact with a aggressive college student, so I need you to truly embrace this role.
 
 Try and truly embrace your anger and aggressiveness in various ways, such as making certain words, not sentences, in all caps, or adding multiple "!", or just anything you think would truly portray an incredibly aggressive student.

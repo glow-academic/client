@@ -23,11 +23,11 @@ CREATE TABLE agents (
   description TEXT        NOT NULL,
   system_prompt     TEXT        NOT NULL,
   temperature  INTEGER     NOT NULL, -- 0-100
-  default      BOOLEAN     NOT NULL DEFAULT FALSE
+  default_agent      BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 -- Insert Core Agents (Essential for testing)
-INSERT INTO agents (id, name, description, system_prompt, temperature, default) VALUES
+INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0, true),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'Happy', 'Provides uplifting feedback and cheerful responses.', '$HAPPY_PROMPT', 0, true),
   ('33333333-cccc-cccc-cccc-333333333333', 'Confused', 'Seeks to understand by asking questions and exploring ideas', '$CONFUSED_PROMPT', 0, true),

@@ -19,7 +19,7 @@ CREATE TABLE scenarios (
   intensity INTEGER     NULL,
   seniority seniority_levels NULL,
   documents UUID[]       NULL,
-  default BOOLEAN     NOT NULL DEFAULT FALSE
+  default_scenario BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
 -- ============================================================================
@@ -27,7 +27,7 @@ CREATE TABLE scenarios (
 -- ============================================================================
 
 -- Insert Essential Scenarios (around 10 diverse scenarios)
-INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, intensity, seniority, documents, default) VALUES
+INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, intensity, seniority, documents, default_scenario) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'NullPointer Exception', 'A student storms in holding their Java console output, annoyed by a runtime error they can''t trace in their GUI project.', '11111111-aaaa-aaaa-aaaa-111111111111', '44444444-1111-1111-1111-111111111111', 3, 4, 'sophomore', ARRAY[]::UUID[], false),
   ('22222222-bbbb-bbbb-bbbb-222222222222', 'File I/O Issues', 'A student timidly approaches, worried they''ve overwritten their data file while implementing file read/write methods.', '22222222-bbbb-bbbb-bbbb-222222222222', '44444444-1111-1111-1111-111111111111', 2, 2, 'freshman', ARRAY[]::UUID[], false),
   ('33333333-cccc-cccc-cccc-333333333333', 'Subclass Constructors', 'A student beams in excitedly, eager to understand how to call superclass constructors in their subclass design.', '33333333-cccc-cccc-cccc-333333333333', '44444444-1111-1111-1111-111111111111', 1, 5, 'freshman', ARRAY[]::UUID[], false),
@@ -42,7 +42,7 @@ INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, i
   ('cccccccc-ffff-aaaa-bbbb-cccccccccccc', 'Dynamic Programming', 'A student smiles warmly, proud of their bottom-up DP table for the knapsack problem, seeking edge-case checks.', '22222222-bbbb-bbbb-bbbb-222222222222', '77777777-4444-4444-4444-444444444444', 2, 2, 'junior', ARRAY[]::UUID[], false);
 
 -- Insert Practice Scenarios (for individual practice without specific scenarios)
-INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, intensity, seniority, documents, default) VALUES
+INSERT INTO scenarios (id, name, description, agent_id, class_id, crowdedness, intensity, seniority, documents, default_scenario) VALUES
   ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Scenario', '', '11111111-aaaa-aaaa-aaaa-111111111111', NULL, NULL, NULL, NULL, NULL, true),
   ('bbbbbbbb-1111-2222-3333-444444444444', 'Happy Scenario', '', '22222222-bbbb-bbbb-bbbb-222222222222', NULL, NULL, NULL, NULL, NULL, true),
   ('cccccccc-1111-2222-3333-444444444444', 'Confused Scenario', '', '33333333-cccc-cccc-cccc-333333333333', NULL, NULL, NULL, NULL, NULL, true)
