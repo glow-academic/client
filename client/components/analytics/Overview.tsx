@@ -31,6 +31,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, subDays, subHours } from "date-fns";
 import {
   AlertTriangle,
+  Award,
   Brain,
   Calendar,
   ChevronLeft,
@@ -87,7 +88,12 @@ export default function Overview() {
   // Carousel state
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const totalSlides = 3;
+  const totalSlides = 4;
+
+  // Training insights carousel state
+  const [currentInsightSlide, setCurrentInsightSlide] = useState(0);
+  const [isInsightHovered, setIsInsightHovered] = useState(false);
+  const totalInsightSlides = 3;
 
   // Auto-scroll carousel
   useEffect(() => {
@@ -98,7 +104,20 @@ export default function Overview() {
 
       return () => clearInterval(interval);
     }
+    return () => {}; // Return empty cleanup function when hovered
   }, [isHovered, totalSlides]);
+
+  // Auto-scroll training insights carousel
+  useEffect(() => {
+    if (!isInsightHovered) {
+      const interval = setInterval(() => {
+        setCurrentInsightSlide((prev) => (prev + 1) % totalInsightSlides);
+      }, 4000); // Change slide every 4 seconds
+
+      return () => clearInterval(interval);
+    }
+    return () => {}; // Return empty cleanup function when hovered
+  }, [isInsightHovered, totalInsightSlides]);
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -107,6 +126,16 @@ export default function Overview() {
   const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   }, [totalSlides]);
+
+  const nextInsightSlide = useCallback(() => {
+    setCurrentInsightSlide((prev) => (prev + 1) % totalInsightSlides);
+  }, [totalInsightSlides]);
+
+  const prevInsightSlide = useCallback(() => {
+    setCurrentInsightSlide(
+      (prev) => (prev - 1 + totalInsightSlides) % totalInsightSlides
+    );
+  }, [totalInsightSlides]);
 
   const { data: scenarios, isLoading: _isLoadingScenarios } = useQuery({
     queryKey: ["scenarios"],
@@ -442,6 +471,46 @@ export default function Overview() {
           )
         : 45;
 
+    // Calculate dynamic metrics for training insights
+    const currentWeekGrades = grades.filter((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      const weekAgo = subDays(new Date(), 7);
+      return gradeDate >= weekAgo;
+    });
+
+    const lastWeekGrades = grades.filter((grade) => {
+      const gradeDate = new Date(grade.createdAt);
+      const twoWeeksAgo = subDays(new Date(), 14);
+      const weekAgo = subDays(new Date(), 7);
+      return gradeDate >= twoWeeksAgo && gradeDate < weekAgo;
+    });
+
+    const currentWeekAvg =
+      currentWeekGrades.length > 0
+        ? Math.round(
+            currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+              currentWeekGrades.length
+          )
+        : 0;
+
+    const lastWeekAvg =
+      lastWeekGrades.length > 0
+        ? Math.round(
+            lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
+              lastWeekGrades.length
+          )
+        : 0;
+
+    const weeklyTrend = currentWeekAvg - lastWeekAvg;
+    const passRate =
+      grades.length > 0
+        ? Math.round(
+            (grades.filter((g) => g.passed).length / grades.length) * 100
+          )
+        : 0;
+
+    const activeTAs = taPerformance.filter((ta) => ta.avgScore > 0).length;
+
     return {
       totalTAs: tas.length,
       totalSessions,
@@ -454,6 +523,9 @@ export default function Overview() {
       avgTrainingTime,
       performanceByType,
       skillProgressionData,
+      weeklyTrend,
+      passRate,
+      activeTAs,
     };
   }, [
     profiles,
@@ -550,14 +622,15 @@ export default function Overview() {
     COLORS.purple,
   ];
 
-  // Carousel slides data
+  // Carousel slides data with proper typing
   const slides = [
     {
       id: "personality",
       title: "Performance by Student Personality",
       description: "How TAs handle different student types during training",
       timeRange: personalityTimeRange,
-      setTimeRange: setPersonalityTimeRange,
+      setTimeRange: (range: "12h" | "1d" | "1w") =>
+        setPersonalityTimeRange(range),
       timeOptions: ["12h", "1d", "1w"] as const,
       timeLabels: { "12h": "12 hours", "1d": "1 day", "1w": "1 week" },
     },
@@ -566,7 +639,8 @@ export default function Overview() {
       title: "Performance Trends",
       description: "Training scores and session completion over time",
       timeRange: performanceTrendTimeRange,
-      setTimeRange: setPerformanceTrendTimeRange,
+      setTimeRange: (range: "7d" | "30d" | "90d") =>
+        setPerformanceTrendTimeRange(range),
       timeOptions: ["7d", "30d", "90d"] as const,
       timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
     },
@@ -575,9 +649,19 @@ export default function Overview() {
       title: "Skill Development Over Time",
       description: "Track improvement in key competencies across all TAs",
       timeRange: skillTimeRange,
-      setTimeRange: setSkillTimeRange,
+      setTimeRange: (range: "7d" | "30d" | "90d") => setSkillTimeRange(range),
       timeOptions: ["7d", "30d", "90d"] as const,
       timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
+    },
+    {
+      id: "activity",
+      title: "Session Activity",
+      description: "Training session volume and completion rates",
+      timeRange: sessionActivityTimeRange,
+      setTimeRange: (range: "1h" | "12h" | "24h") =>
+        setSessionActivityTimeRange(range),
+      timeOptions: ["1h", "12h", "24h"] as const,
+      timeLabels: { "1h": "1 hour", "12h": "12 hours", "24h": "24 hours" },
     },
   ];
 
@@ -663,25 +747,65 @@ export default function Overview() {
                     {currentSlide === 0 && <Users className="h-5 w-5" />}
                     {currentSlide === 1 && <TrendingUp className="h-5 w-5" />}
                     {currentSlide === 2 && <TrendingUp className="h-5 w-5" />}
-                    {slides[currentSlide].title}
+                    {currentSlide === 3 && <Calendar className="h-5 w-5" />}
+                    {slides[currentSlide]?.title}
                   </CardTitle>
                   <CardDescription>
-                    {slides[currentSlide].description}
+                    {slides[currentSlide]?.description}
                   </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="flex gap-1">
-                    {slides[currentSlide].timeOptions.map((range) => (
+                    {slides[currentSlide]?.timeOptions.map((range) => (
                       <button
                         key={range}
-                        onClick={() => slides[currentSlide].setTimeRange(range)}
+                        onClick={() => {
+                          switch (currentSlide) {
+                            case 0:
+                              if (
+                                range === "12h" ||
+                                range === "1d" ||
+                                range === "1w"
+                              ) {
+                                setPersonalityTimeRange(range);
+                              }
+                              break;
+                            case 1:
+                              if (
+                                range === "7d" ||
+                                range === "30d" ||
+                                range === "90d"
+                              ) {
+                                setPerformanceTrendTimeRange(range);
+                              }
+                              break;
+                            case 2:
+                              if (
+                                range === "7d" ||
+                                range === "30d" ||
+                                range === "90d"
+                              ) {
+                                setSkillTimeRange(range);
+                              }
+                              break;
+                            case 3:
+                              if (
+                                range === "1h" ||
+                                range === "12h" ||
+                                range === "24h"
+                              ) {
+                                setSessionActivityTimeRange(range);
+                              }
+                              break;
+                          }
+                        }}
                         className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                          slides[currentSlide].timeRange === range
+                          slides[currentSlide]?.timeRange === range
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted text-muted-foreground hover:bg-muted/80"
                         }`}
                       >
-                        {slides[currentSlide].timeLabels[range]}
+                        {slides[currentSlide]?.timeLabels[range]}
                       </button>
                     ))}
                   </div>
@@ -883,111 +1007,210 @@ export default function Overview() {
                     </div>
                   </div>
                 )}
+
+                {/* Session Activity */}
+                {currentSlide === 3 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={analytics.sessionActivityData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-muted"
+                      />
+                      <XAxis dataKey="date" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip
+                        content={
+                          <CustomBarTooltip
+                            active={false}
+                            payload={[]}
+                            label={""}
+                          />
+                        }
+                        position={{ x: 0, y: 0 }}
+                        allowEscapeViewBox={{ x: false, y: true }}
+                        offset={20}
+                      />
+                      <Bar
+                        dataKey="sessions"
+                        fill={COLORS.primary}
+                        name="Total Sessions"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="completed"
+                        fill={COLORS.success}
+                        name="Completed Sessions"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Skill Breakdown */}
-        <Card>
+        {/* Training Insights Carousel */}
+        <Card
+          className="relative overflow-hidden"
+          onMouseEnter={() => setIsInsightHovered(true)}
+          onMouseLeave={() => setIsInsightHovered(false)}
+        >
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Brain className="h-5 w-5" />
-              Skill Breakdown
-            </CardTitle>
-            <CardDescription>Average scores by competency area</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="h-5 w-5" />
+                  Training Insights
+                </CardTitle>
+                <CardDescription>
+                  Dynamic patterns and recommendations from training data
+                </CardDescription>
+              </div>
+              <div className="flex gap-1">
+                <button
+                  onClick={prevInsightSlide}
+                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={nextInsightSlide}
+                  className="p-1 rounded-md hover:bg-muted transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+            {/* Carousel indicators */}
+            <div className="flex gap-2 mt-2">
+              {Array.from({ length: totalInsightSlides }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentInsightSlide(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === currentInsightSlide ? "bg-primary" : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {topSkills.length > 0 ? (
-                topSkills.map((skill) => (
-                  <div key={skill.shortName} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <skill.icon className="h-4 w-4 text-muted-foreground" />
-                        <span>{skill.shortName}</span>
+            <div className="h-[300px] relative">
+              {/* Weekly Trend & Active TAs */}
+              {currentInsightSlide === 0 && (
+                <div className="space-y-3 h-full overflow-y-auto">
+                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-blue-800">
+                          Weekly Trend
+                        </div>
+                        <div className="text-xs text-blue-700 mt-1">
+                          {analytics.weeklyTrend > 0
+                            ? `Scores improved by ${analytics.weeklyTrend}% this week`
+                            : analytics.weeklyTrend < 0
+                              ? `Scores decreased by ${Math.abs(analytics.weeklyTrend)}% this week`
+                              : "Scores remained stable this week"}
+                        </div>
                       </div>
-                      <span className="font-medium">{skill.score}%</span>
                     </div>
-                    <Progress value={skill.score} className="h-2" />
                   </div>
-                ))
-              ) : (
-                <div className="text-center text-muted-foreground py-4">
-                  No skill data available
+
+                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Users className="h-4 w-4 text-green-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-green-800">
+                          Active TAs
+                        </div>
+                        <div className="text-xs text-green-700 mt-1">
+                          {analytics.activeTAs} TAs have completed training
+                          sessions
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Session Efficiency & Success Rate */}
+              {currentInsightSlide === 1 && (
+                <div className="space-y-3 h-full overflow-y-auto">
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-yellow-800">
+                          Session Efficiency
+                        </div>
+                        <div className="text-xs text-yellow-700 mt-1">
+                          Average session time: {analytics.avgTrainingTime}{" "}
+                          minutes
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <Award className="h-4 w-4 text-purple-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-purple-800">
+                          Success Rate
+                        </div>
+                        <div className="text-xs text-purple-700 mt-1">
+                          {analytics.passRate}% of sessions meet passing
+                          criteria
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Overall Performance & Skill Breakdown */}
+              {currentInsightSlide === 2 && (
+                <div className="space-y-3 h-full overflow-y-auto">
+                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
+                      <div>
+                        <div className="text-sm font-medium text-orange-800">
+                          Overall Performance
+                        </div>
+                        <div className="text-xs text-orange-700 mt-1">
+                          Average score across all sessions:{" "}
+                          {analytics.avgOverallScore}%
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium text-gray-800">
+                      Top Skills
+                    </div>
+                    {topSkills.slice(0, 2).map((skill) => (
+                      <div key={skill.shortName} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <skill.icon className="h-3 w-3 text-muted-foreground" />
+                            <span>{skill.shortName}</span>
+                          </div>
+                          <span className="font-medium">{skill.score}%</span>
+                        </div>
+                        <Progress value={skill.score} className="h-1" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
       </div>
-
-      {/* Session Activity */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Session Activity
-              </CardTitle>
-              <CardDescription>
-                Training session volume and completion rates
-              </CardDescription>
-            </div>
-            <div className="flex gap-1">
-              {(["1h", "12h", "24h"] as const).map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setSessionActivityTimeRange(range)}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    sessionActivityTimeRange === range
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {range === "1h"
-                    ? "1 hour"
-                    : range === "12h"
-                      ? "12 hours"
-                      : "24 hours"}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={analytics.sessionActivityData}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="date" className="text-xs" />
-                <YAxis className="text-xs" />
-                <Tooltip
-                  content={
-                    <CustomBarTooltip active={false} payload={[]} label={""} />
-                  }
-                  position={{ x: 0, y: 0 }}
-                  allowEscapeViewBox={{ x: false, y: true }}
-                  offset={20}
-                />
-                <Bar
-                  dataKey="sessions"
-                  fill={COLORS.primary}
-                  name="Total Sessions"
-                  radius={[4, 4, 0, 0]}
-                />
-                <Bar
-                  dataKey="completed"
-                  fill={COLORS.success}
-                  name="Completed Sessions"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
