@@ -15,6 +15,8 @@ import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
 import { logError } from "@/utils/logger";
+import { getCohort } from "./queries/cohorts/get-cohort";
+import { getModel } from "./queries/models/get-model";
 
 interface BreadcrumbItem {
   title: string;
@@ -72,6 +74,14 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
       case "rubric":
         const rubricData = await getRubric(id);
         return rubricData?.name || `Rubric ${id.substring(0, 8)}...`;
+
+      case "cohort":
+        const cohortData = await getCohort(id);
+        return cohortData?.title || `Cohort ${id.substring(0, 8)}...`;
+
+      case "model":
+        const modelData = await getModel(id);
+        return modelData?.name || `Model ${id.substring(0, 8)}...`;
 
       case "eval":
         const evalData = await getEval(id);
@@ -133,6 +143,10 @@ export const generateEnhancedBreadcrumbs = async (
         context = "class";
       } else if (prevSegment === "c" && segments[0] === "c") {
         context = "chat";
+      } else if (prevSegment === "c" && segments.includes("cohorts")) {
+        context = "cohort";
+      } else if (prevSegment === "m" && segments.includes("models")) {
+        context = "model";
       } else if (prevSegment === "a" && segments.includes("home")) {
         context = "attempt";
       } else if (prevSegment === "s" && segments.includes("simulations")) {
@@ -179,15 +193,6 @@ export const generateEnhancedBreadcrumbs = async (
         case "classes":
           title = "Classes";
           break;
-        case "cohorts":
-          title = "Cohorts";
-          break;
-        case "models":
-          title = "Models";
-          break;
-        case "logs":
-          title = "Logs";
-          break;
         case "management":
           title = "Management";
           break;
@@ -230,7 +235,15 @@ export const generateEnhancedBreadcrumbs = async (
         case "evals":
           title = "Evaluations";
           break;
-
+        case "cohorts":
+          title = "Cohorts";
+          break;
+        case "logs":
+          title = "Logs";
+          break;
+        case "models":
+          title = "Models";
+          break;
         // Common actions
         case "new":
           title = "New";

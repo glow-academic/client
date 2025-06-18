@@ -121,6 +121,12 @@ export const getSectionRoute = (section: string): string => {
       return "/management/staff";
     case "evals":
       return "/management/evals";
+    case "cohorts":
+      return "/management/cohorts";
+    case "models":
+      return "/management/models";
+    case "logs":
+      return "/management/logs";
 
 
     // Profile route

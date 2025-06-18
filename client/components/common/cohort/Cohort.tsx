@@ -1,8 +1,8 @@
 /**
- * Simulation.tsx
- * Used to create and manage simulations for the admin dashboard
+ * Cohort.tsx
+ * Used to create and manage cohorts for the admin dashboard
  * @AshokSaravanan222 & @siladiea
- * 05/20/2025
+ * 06/18/2025
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,9 +12,7 @@ import { toast } from "sonner";
 // UI Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,92 +22,75 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
-import { Rubric, Scenario, Simulation as SimulationType } from "@/types";
-import { createSimulation } from "@/utils/mutations/simulations/create-simulation";
-import { updateSimulation } from "@/utils/mutations/simulations/update-simulation";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
-import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import {
-  GripVertical,
-  MessageSquare,
-  Shuffle,
-  Trash2,
-} from "lucide-react";
+import { Cohort as CohortType, Profile } from "@/types";
+import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
+import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { GripVertical, Shuffle, Trash2, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-interface SimulationProps {
-  simulationId?: string;
+interface CohortProps {
+  cohortId?: string;
 }
 
 interface FormErrors {
   title?: string;
-  timeLimit?: string;
-  rubricId?: string;
 }
 
-export default function Simulation({
-  simulationId,
-}: SimulationProps) {
+export default function Cohort({ cohortId }: CohortProps) {
   const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [editingSimulationId, setEditingSimulationId] = useState<string | null>(
-    null
-  );
-  const [draggedScenario, setDraggedScenario] = useState<string | null>(null);
+  const [editingCohortId, setEditingCohortId] = useState<string | null>(null);
+  const [draggedProfile, setDraggedProfile] = useState<string | null>(null);
   const router = useRouter();
 
-  const initialFormData: Partial<SimulationType> = {
+  const initialFormData: Partial<CohortType> = {
     title: "",
-    timeLimit: null,
-    scenarioIds: [],
+    description: "",
+    profileIds: [],
     active: true,
-    rubricId: "",
   };
 
-  const [formData, setFormData] = useState<Partial<SimulationType>>(initialFormData);
+  const [formData, setFormData] =
+    useState<Partial<CohortType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Fetch simulations for the list mode
-  const { data: simulations = [] } = useQuery({
-    queryKey: ["simulations"],
-    queryFn: () => getAllSimulations(),
+  // Fetch cohorts for the list mode
+  const { data: cohorts = [] } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
-  const { data: rubrics = [] } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
   });
 
-  const { data: scenarios = [] } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
-  // Load simulation data if editing
+  // Load cohort data if editing
   useEffect(() => {
-    const targetSimulationId = simulationId || editingSimulationId;
-    if (targetSimulationId) {
-      const simulationToEdit = simulations.find(
-        (s: SimulationType) => s.id === targetSimulationId
+    const targetCohortId = cohortId || editingCohortId;
+    if (targetCohortId) {
+      const cohortToEdit = cohorts.find(
+        (c: CohortType) => c.id === targetCohortId
       );
-      if (simulationToEdit) {
+      if (cohortToEdit) {
         setFormData({
-          title: simulationToEdit.title || "",
-          timeLimit: simulationToEdit.timeLimit || 15,
-          scenarioIds: simulationToEdit.scenarioIds || [],
-          active: simulationToEdit.active ?? true,
-          rubricId: simulationToEdit.rubricId || "",
+          title: cohortToEdit.title || "",
+          description: cohortToEdit.description || "",
+          profileIds: cohortToEdit.profileIds || [],
+          active: cohortToEdit.active ?? true,
         });
       }
     }
-  }, [simulationId, editingSimulationId, simulations]);
+  }, [cohortId, editingCohortId, cohorts]);
 
   const handleInputChange = (
-    field: keyof Partial<SimulationType>,
-    value: string | number | boolean | string[] | null
+    field: keyof Partial<CohortType>,
+    value: string | boolean | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field as keyof FormErrors]) {
@@ -117,30 +98,32 @@ export default function Simulation({
     }
   };
 
-  const addScenario = (scenarioId: string) => {
-    if (!formData.scenarioIds?.includes(scenarioId)) {
+  const addProfile = (profileId: string) => {
+    if (!formData.profileIds?.includes(profileId)) {
       setFormData((prev) => ({
         ...prev,
-        scenarioIds: [...prev.scenarioIds || [], scenarioId],
+        profileIds: [...(prev.profileIds || []), profileId],
       }));
     }
   };
 
-  const removeScenario = (scenarioId: string) => {
+  const removeProfile = (profileId: string) => {
     setFormData((prev) => ({
       ...prev,
-      scenarioIds: prev.scenarioIds?.filter((id) => id !== scenarioId) || [],
+      profileIds: prev.profileIds?.filter((id) => id !== profileId) || [],
     }));
   };
 
-  const randomizeScenarios = () => {
-    const shuffled = [...formData.scenarioIds || []].sort(() => Math.random() - 0.5);
-    setFormData((prev) => ({ ...prev, scenarioIds: shuffled }));
-    toast.success("Scenarios randomized!");
+  const randomizeProfiles = () => {
+    const shuffled = [...(formData.profileIds || [])].sort(
+      () => Math.random() - 0.5
+    );
+    setFormData((prev) => ({ ...prev, profileIds: shuffled }));
+    toast.success("Profiles randomized!");
   };
 
-  const handleDragStart = (e: React.DragEvent, scenarioId: string) => {
-    setDraggedScenario(scenarioId);
+  const handleDragStart = (e: React.DragEvent, profileId: string) => {
+    setDraggedProfile(profileId);
     e.dataTransfer.effectAllowed = "move";
   };
 
@@ -149,23 +132,23 @@ export default function Simulation({
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleDrop = (e: React.DragEvent, targetScenarioId: string) => {
+  const handleDrop = (e: React.DragEvent, targetProfileId: string) => {
     e.preventDefault();
 
-    if (!draggedScenario) return;
+    if (!draggedProfile) return;
 
-    const newOrder = [...formData.scenarioIds || []];
-    const draggedIndex = newOrder.findIndex((id) => id === draggedScenario);
-    const targetIndex = newOrder.findIndex((id) => id === targetScenarioId);
+    const newOrder = [...(formData.profileIds || [])];
+    const draggedIndex = newOrder.findIndex((id) => id === draggedProfile);
+    const targetIndex = newOrder.findIndex((id) => id === targetProfileId);
 
     if (draggedIndex !== -1 && targetIndex !== -1) {
       const [removed] = newOrder.splice(draggedIndex, 1);
       newOrder.splice(targetIndex, 0, removed!);
 
-      setFormData((prev) => ({ ...prev, scenarioIds: newOrder }));
+      setFormData((prev) => ({ ...prev, profileIds: newOrder }));
     }
 
-    setDraggedScenario(null);
+    setDraggedProfile(null);
   };
 
   const validateForm = (): boolean => {
@@ -175,24 +158,13 @@ export default function Simulation({
       newErrors.title = "Title is required";
     }
 
-    if (
-      formData.timeLimit &&
-      (formData.timeLimit < 1 || formData.timeLimit > 120)
-    ) {
-      newErrors.timeLimit = "Time limit must be between 1 and 120 minutes";
-    }
-
-    if (!formData.rubricId) {
-      newErrors.rubricId = "Rubric is required";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const resetFormAndState = () => {
     setFormData(initialFormData);
-    setEditingSimulationId(null);
+    setEditingCohortId(null);
     setErrors({});
   };
 
@@ -207,20 +179,18 @@ export default function Simulation({
     setIsSubmitting(true);
 
     try {
-
       let result;
-      const targetSimulationId = simulationId || editingSimulationId;
-      if (targetSimulationId) {
-        result = await updateSimulation(targetSimulationId, {
+      const targetCohortId = cohortId || editingCohortId;
+      if (targetCohortId) {
+        result = await updateCohort(targetCohortId, {
           ...formData,
           updatedAt: new Date().toISOString(),
         });
       } else {
-        result = await createSimulation({
+        result = await createCohort({
           title: formData.title || "",
-          rubricId: formData.rubricId || "",
-          scenarioIds: formData.scenarioIds || [],
-          timeLimit: formData.timeLimit || null,
+          description: formData.description || "",
+          profileIds: formData.profileIds || [],
           active: formData.active || true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -228,22 +198,22 @@ export default function Simulation({
       }
 
       if (!result) {
-        toast.error("Failed to create simulation");
+        toast.error("Failed to create cohort");
         return;
       }
 
       resetFormAndState();
-      queryClient.invalidateQueries({ queryKey: ["simulations"] });
+      queryClient.invalidateQueries({ queryKey: ["cohorts"] });
       toast.success(
-        targetSimulationId
-          ? "Simulation updated successfully!"
-          : "Simulation created successfully!"
+        targetCohortId
+          ? "Cohort updated successfully!"
+          : "Cohort created successfully!"
       );
-      router.push(`/create/simulations`);
+      router.push(`/management/cohorts`);
     } catch (error) {
-      const targetSimulationId = simulationId || editingSimulationId;
+      const targetCohortId = cohortId || editingCohortId;
       toast.error(
-        `Failed to ${targetSimulationId ? "update" : "create"} simulation: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${targetCohortId ? "update" : "create"} cohort: ${error instanceof Error ? error.message : "Unknown error"}`
       );
     } finally {
       setIsSubmitting(false);
@@ -253,7 +223,7 @@ export default function Simulation({
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Simulation Information */}
+        {/* Basic Cohort Information */}
 
         <div className="space-y-2">
           <Label htmlFor="title">Title</Label>
@@ -261,7 +231,7 @@ export default function Simulation({
             id="title"
             value={formData.title}
             onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Enter simulation title"
+            placeholder="Enter cohort title"
             className={errors.title ? "border-destructive" : ""}
           />
           {errors.title && (
@@ -270,87 +240,53 @@ export default function Simulation({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
-          <Input
-            id="timeLimit"
-            type="number"
-            min="1"
-            max="120"
-            value={formData.timeLimit || ""}
-            onChange={(e) =>
-              handleInputChange("timeLimit", parseInt(e.target.value) || null)
-            }
-            className={errors.timeLimit ? "border-destructive" : ""}
-            placeholder="Leave empty for no time limit"
+          <Label htmlFor="description">Description</Label>
+          <Textarea
+            id="description"
+            value={formData.description || ""}
+            onChange={(e) => handleInputChange("description", e.target.value)}
+            placeholder="Enter cohort description (optional)"
+            rows={3}
           />
-          {errors.timeLimit && (
-            <p className="text-sm text-destructive">{errors.timeLimit}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="rubricId">Rubric</Label>
-          <Select
-            value={formData.rubricId || ""}
-            onValueChange={(value) => handleInputChange("rubricId", value)}
-          >
-            <SelectTrigger
-              className={errors.rubricId ? "border-destructive" : ""}
-            >
-              <SelectValue placeholder="Select a rubric..." />
-            </SelectTrigger>
-            <SelectContent>
-              {rubrics
-                .map((rubric: Rubric) => (
-                  <SelectItem key={rubric.id} value={rubric.id}>
-                    {rubric.name} ({rubric.points} points)
-                  </SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
-          {errors.rubricId && (
-            <p className="text-sm text-destructive">{errors.rubricId}</p>
-          )}
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <div>
-              <Label htmlFor="scenarios">Scenarios</Label>
+              <Label htmlFor="profiles">Members</Label>
               <p className="text-sm text-muted-foreground mt-1">
-                If no scenarios are selected, a random scenario will be chosen
-                automatically
+                Add profiles to this cohort
               </p>
             </div>
             <div className="flex gap-2">
               <Select
                 value=""
                 onValueChange={(value: string) => {
-                  if (value) addScenario(value);
+                  if (value) addProfile(value);
                 }}
               >
                 <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Add scenario" />
+                  <SelectValue placeholder="Add profile" />
                 </SelectTrigger>
                 <SelectContent>
-                  {scenarios
+                  {profiles
                     .filter(
-                      (scenario: Scenario) =>
-                        !formData.scenarioIds?.includes(scenario.id)
+                      (profile: Profile) =>
+                        !formData.profileIds?.includes(profile.id)
                     )
-                    .map((scenario: Scenario) => (
-                      <SelectItem key={scenario.id} value={scenario.id}>
-                        {scenario.name}
+                    .map((profile: Profile) => (
+                      <SelectItem key={profile.id} value={profile.id}>
+                        {profile.firstName} {profile.lastName} ({profile.alias})
                       </SelectItem>
                     ))}
                 </SelectContent>
               </Select>
-              {formData.scenarioIds && formData.scenarioIds?.length > 1 && (
+              {formData.profileIds && formData.profileIds?.length > 1 && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={randomizeScenarios}
+                  onClick={randomizeProfiles}
                   className="flex items-center gap-2"
                 >
                   <Shuffle className="h-4 w-4" />
@@ -360,35 +296,35 @@ export default function Simulation({
             </div>
           </div>
 
-          {formData.scenarioIds?.length === 0 ? (
+          {formData.profileIds?.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>
-                <p className="font-medium mb-1">No scenarios selected</p>
+                <p className="font-medium mb-1">No members selected</p>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.scenarioIds?.map((scenarioId, index) => {
-                const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId
+              {formData.profileIds?.map((profileId, index) => {
+                const profile = profiles.find(
+                  (p: Profile) => p.id === profileId
                 );
-                if (!scenario) return null;
+                if (!profile) return null;
 
                 return (
                   <Card
-                    key={scenarioId}
+                    key={profileId}
                     className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedScenario === scenarioId ? "opacity-50" : ""
+                      draggedProfile === profileId ? "opacity-50" : ""
                     }`}
                     draggable
-                    onDragStart={(e) => handleDragStart(e, scenarioId)}
+                    onDragStart={(e) => handleDragStart(e, profileId)}
                     onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, scenarioId)}
+                    onDrop={(e) => handleDrop(e, profileId)}
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-blue-500" />
+                          <User className="h-4 w-4 text-blue-500" />
                           <span className="text-sm font-medium">
                             #{index + 1}
                           </span>
@@ -398,7 +334,7 @@ export default function Simulation({
                             type="button"
                             variant="outline"
                             size="sm"
-                            onClick={() => removeScenario(scenarioId)}
+                            onClick={() => removeProfile(profileId)}
                             className="h-6 w-6 p-0"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -409,38 +345,27 @@ export default function Simulation({
 
                       <div className="space-y-2">
                         <h4 className="font-medium text-sm">
-                          {scenario.name || "Unnamed Scenario"}
+                          {profile.firstName} {profile.lastName}
                         </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-3">
-                          {scenario.description || "No description provided"}
+                        <p className="text-xs text-muted-foreground">
+                          {profile.alias}
                         </p>
-
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className="text-xs">
-                            Crowdedness: {scenario.crowdedness ?? "N/A"}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            Intensity: {scenario.intensity ?? "N/A"}
-                          </Badge>
-                        </div>
 
                         <Badge
                           className={`text-xs ${
-                            scenario.seniority === "freshman"
-                              ? "bg-blue-100 text-blue-800"
-                              : scenario.seniority === "sophomore"
-                                ? "bg-green-100 text-green-800"
-                                : scenario.seniority === "junior"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : scenario.seniority === "senior"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-gray-100 text-gray-800"
+                            profile.role === "admin"
+                              ? "bg-red-100 text-red-800"
+                              : profile.role === "instructor"
+                                ? "bg-blue-100 text-blue-800"
+                                : profile.role === "ta"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          {scenario.seniority
-                            ? scenario.seniority.charAt(0).toUpperCase() +
-                              scenario.seniority.slice(1)
-                            : "No Level"}
+                          {profile.role
+                            ? profile.role.charAt(0).toUpperCase() +
+                              profile.role.slice(1)
+                            : "No Role"}
                         </Badge>
                       </div>
                     </div>
@@ -461,14 +386,12 @@ export default function Simulation({
             {isSubmitting ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                {simulationId || editingSimulationId
-                  ? "Updating..."
-                  : "Creating..."}
+                {cohortId || editingCohortId ? "Updating..." : "Creating..."}
               </>
-            ) : simulationId || editingSimulationId ? (
-              "Update Simulation"
+            ) : cohortId || editingCohortId ? (
+              "Update Cohort"
             ) : (
-              "Create Simulation"
+              "Create Cohort"
             )}
           </Button>
         </div>
