@@ -6,7 +6,6 @@
  */
 
 "use client";
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -28,11 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { getAgentConfig } from "@/utils/agents";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -41,7 +37,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, startOfDay, subDays } from "date-fns";
+import { format, subDays } from "date-fns";
 import {
   Award,
   Clock,
@@ -52,8 +48,6 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
   Line,
   LineChart,
@@ -77,9 +71,6 @@ const COLORS = {
 
 export default function Performance() {
   const [selectedRubricId, setSelectedRubricId] = useState<string>("all");
-  const [personalityTimeRange, setPersonalityTimeRange] = useState<
-    "7d" | "30d" | "90d"
-  >("30d");
   const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">(
     "30d"
   );
@@ -88,16 +79,6 @@ export default function Performance() {
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
-  });
-
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
-  });
-
-  const { data: scenarios, isLoading: isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
   });
 
   const { data: simulations, isLoading: isLoadingSimulations } = useQuery({
@@ -173,9 +154,7 @@ export default function Performance() {
       !grades ||
       !feedbacks ||
       !standards ||
-      !standardGroups ||
-      !agents ||
-      !scenarios
+      !standardGroups
     )
       return null;
 
@@ -197,19 +176,8 @@ export default function Performance() {
         : grades.filter((grade) => grade.rubricId === selectedRubricId);
 
     // Filter data by time ranges
-    const personalityDays =
-      personalityTimeRange === "7d"
-        ? 7
-        : personalityTimeRange === "30d"
-          ? 30
-          : 90;
     const skillDays =
       skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
-    const personalityCutoff = startOfDay(subDays(new Date(), personalityDays));
-
-    const personalityFilteredGrades = filteredGrades.filter((grade) =>
-      isAfter(new Date(grade.createdAt), personalityCutoff)
-    );
 
     const skillFilteredFeedbacks = feedbacks.filter((f) =>
       filteredStandards.some((s) => s.id === f.standardId)
@@ -252,34 +220,6 @@ export default function Performance() {
               filteredGrades.length
           )
         : 0;
-
-    // Performance by student type (scenario-based) - use personality filtered data
-    const performanceByType = agents
-      .filter((agent) => agent.agentType === "student")
-      .map((agent) => {
-        const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
-        const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId)
-        );
-        const agentGrades = personalityFilteredGrades.filter((grade) =>
-          agentChats.some((chat) => chat.id === grade.simulationChatId)
-        );
-
-        const avgScore =
-          agentGrades.length > 0
-            ? Math.round(
-                agentGrades.reduce((sum, g) => sum + g.score, 0) /
-                  agentGrades.length
-              )
-            : 0;
-
-        return {
-          name: agent.name,
-          score: avgScore,
-          sessions: agentChats.length,
-          color: getAgentConfig(agent.name).colors.bgColor,
-        };
-      });
 
     // Skill progression data (based on actual feedback over time) - use skill time range
     const skillProgressionData = Array.from({ length: skillDays }, (_, i) => {
@@ -420,7 +360,6 @@ export default function Performance() {
     return {
       skillCategories,
       overallScore,
-      performanceByType,
       skillProgressionData,
       taPerformance,
       completionRate,
@@ -438,12 +377,9 @@ export default function Performance() {
     feedbacks,
     standards,
     standardGroups,
-    agents,
-    scenarios,
     attempts,
     rubrics,
     selectedRubricId,
-    personalityTimeRange,
     skillTimeRange,
   ]);
 
@@ -457,8 +393,6 @@ export default function Performance() {
     isLoadingStandards ||
     isLoadingStandardGroups ||
     isLoadingAllRubrics ||
-    isLoadingAgents ||
-    isLoadingScenarios ||
     isLoadingSimulations
   ) {
     return (
@@ -526,102 +460,6 @@ export default function Performance() {
 
   return (
     <div className="space-y-6">
-      {/* Performance by Student Type */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Performance by Student Personality</CardTitle>
-              <CardDescription>
-                How TAs handle different student types during training
-              </CardDescription>
-            </div>
-            <div className="flex gap-1">
-              {(["7d", "30d", "90d"] as const).map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setPersonalityTimeRange(range)}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    personalityTimeRange === range
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {range === "7d"
-                    ? "7 days"
-                    : range === "30d"
-                      ? "30 days"
-                      : "90 days"}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.performanceByType} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" width={80} />
-                  <Tooltip
-                    formatter={(value: number) => [
-                      `${value}%`,
-                      "Average Score",
-                    ]}
-                    labelFormatter={(label) => `${label} Students`}
-                  />
-                  <Bar
-                    dataKey="score"
-                    fill={COLORS.primary}
-                    radius={[0, 4, 4, 0]}
-                    name="Average Score"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="space-y-4">
-              {analytics.performanceByType.map((type) => (
-                <div
-                  key={type.name}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
-                    <div>
-                      <p className="font-medium">{type.name} Student</p>
-                      <p className="text-sm text-muted-foreground">
-                        {type.sessions} sessions
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">{type.score}%</p>
-                    <Badge
-                      variant={
-                        type.score >= 80
-                          ? "default"
-                          : type.score >= 70
-                            ? "secondary"
-                            : "destructive"
-                      }
-                    >
-                      {type.score >= 80
-                        ? "Excellent"
-                        : type.score >= 70
-                          ? "Good"
-                          : "Needs Work"}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Skill Development Over Time */}
       <Card>
         <CardHeader>
@@ -927,22 +765,11 @@ export default function Performance() {
                     <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
                     <div>
                       <div className="text-sm font-medium text-orange-800">
-                        Best Performing Agent
+                        Overall Performance
                       </div>
                       <div className="text-xs text-orange-700 mt-1">
-                        {analytics.performanceByType.length > 0
-                          ? `${
-                              analytics.performanceByType.reduce(
-                                (best, current) =>
-                                  current.score > best.score ? current : best
-                              ).name
-                            } students (${
-                              analytics.performanceByType.reduce(
-                                (best, current) =>
-                                  current.score > best.score ? current : best
-                              ).score
-                            }% avg)`
-                          : "No data available"}
+                        Average score across all sessions:{" "}
+                        {analytics.overallScore}%
                       </div>
                     </div>
                   </div>

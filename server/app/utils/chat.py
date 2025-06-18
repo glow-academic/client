@@ -77,24 +77,11 @@ def generate_natural_opening(agent: Agents) -> str:
     """
     Generate a natural conversation opening based on the scenario and agent type.
     """
-    if agent.agent_type == "student":
-        # Student agents start with a problem or question related to the scenario
-        openings = [
-            f"I'm having trouble. Can you help me understand it?",
-            f"I'm stuck on this problem. Where should I start?",
-            f"Can you explain to me? I'm really confused.",
-            f"I've been working on this but I'm not getting the right answer.",
-            f"I need help with this. I don't know what I'm doing wrong.",
-        ]
-    else:
-        # TA agents start by offering help or asking what the student needs
-        openings = [
-            f"I see you're working on this. What specific part are you struggling with?",
-            f"How can I help you with this today?",
-            f"What questions do you have about this?",
-            f"Let's work through this together. What have you tried so far?",
-            f"I'm here to help with this. What's your main concern?",
-        ]
+    openings = [
+        f"Hi, how are you doing today?",
+        f"Hey, how's it going?",
+        f"Hello, how are you?",
+    ]
 
     return random.choice(openings)
 

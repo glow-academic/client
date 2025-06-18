@@ -11,7 +11,6 @@ from app.extensions import UPLOAD_FOLDER, get_gemini
 from app.models import (Agents, Documents, EvalChats, EvalMessages, EvalRuns,
                         Evals, Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages)
-from app.utils.agents import gta_prompt, student_prompt
 from app.utils.chat import (generate_natural_opening, get_chat_scenario,
                             get_conversation_history,
                             get_eval_conversation_history)
@@ -43,7 +42,6 @@ async def run_generic_agent_bare(
     agent_instance = GenericAgent(
         agent_name=agent.name,
         agent_prompt=agent.system_prompt,
-        agent_type=agent.agent_type,
         temperature=agent.temperature,
     )
 
@@ -179,7 +177,6 @@ async def _handle_simulation_chat(
     agent_instance = GenericAgent(
         agent_name=agent.name,
         agent_prompt=agent.system_prompt,
-        agent_type=agent.agent_type,
         temperature=agent.temperature,
     )
 
@@ -302,7 +299,6 @@ async def _handle_eval_chat(
     agent_instance = GenericAgent(
         agent_name=agent.name,
         agent_prompt=agent.system_prompt,
-        agent_type=agent.agent_type,
         temperature=agent.temperature,
     )
 
@@ -340,18 +336,12 @@ class GenericAgent:
         self,
         agent_name: str,
         agent_prompt: str,
-        agent_type: str,
         temperature: float = 0.0,
     ):
         self.gemini_client = get_gemini()
         self.agent_name = agent_name
         self.agent_prompt = agent_prompt
-        if agent_type == "ta":
-            self.system_prompt = gta_prompt(agent_name, agent_prompt)
-        elif agent_type == "student":
-            self.system_prompt = student_prompt(agent_name, agent_prompt)
-        else:
-            self.system_prompt = agent_prompt
+        self.system_prompt = agent_prompt
         self.temperature = temperature
 
     def agent(self) -> Agent:
