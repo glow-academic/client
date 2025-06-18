@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
-import { Cohorts } from "@/components/create/cohorts/Cohorts";
+import Cohorts from "@/components/management/cohorts/Cohorts";
 
 export default function CohortsPage() {
   return (
