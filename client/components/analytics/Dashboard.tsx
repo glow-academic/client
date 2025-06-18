@@ -9,7 +9,12 @@
 import CohortCompletion from "@/components/common/analytics/footer/CohortCompletion";
 import SkillGrowth from "@/components/common/analytics/footer/SkillGrowth";
 import ActiveTAs from "@/components/common/analytics/header/ActiveTAs";
+import AverageScore from "@/components/common/analytics/header/AverageScore";
+import CompletionRate from "@/components/common/analytics/header/CompletionRate";
 import NeedSupport from "@/components/common/analytics/header/NeedSupport";
+import PassRate from "@/components/common/analytics/header/PassRate";
+import TotalSessions from "@/components/common/analytics/header/TotalSessions";
+import TotalTAs from "@/components/common/analytics/header/TotalTAs";
 import TrainingHours from "@/components/common/analytics/header/TrainingHours";
 import TrainingSessions from "@/components/common/analytics/header/TrainingSessions";
 import PerformanceByPersonality from "@/components/common/analytics/main/primary/PerformanceByPersonality";
@@ -24,6 +29,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -34,6 +45,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
+import { format, subDays } from "date-fns";
 import {
   Calendar,
   ChevronLeft,
@@ -42,12 +54,44 @@ import {
   Users,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
+// Color palette for charts
+const COLORS = {
+  primary: "#3b82f6",
+  success: "#10b981",
+  warning: "#f59e0b",
+  danger: "#ef4444",
+  purple: "#8b5cf6",
+  pink: "#ec4899",
+  teal: "#14b8a6",
+  orange: "#f97316",
+};
 
 export default function Dashboard() {
-  // Carousel state for main charts
+  // Carousel states
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const totalSlides = 3; // Changed to 3 slides
+  const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
+  const [sideCarouselIndex, setSideCarouselIndex] = useState(0);
+  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+  const totalSlides = 3; // Main carousel slides
+  const totalSideSlides = 2; // Side carousel slides
 
   // Time range states
   const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
@@ -60,7 +104,7 @@ export default function Dashboard() {
     "12h" | "1d" | "1w"
   >("1d");
 
-  // Auto-scroll carousel
+  // Auto-scroll carousels
   useEffect(() => {
     if (!isHovered) {
       const interval = setInterval(() => {
@@ -71,6 +115,24 @@ export default function Dashboard() {
     }
     return () => {}; // Return empty cleanup function when hovered
   }, [isHovered, totalSlides]);
+
+  // Header carousel auto-scroll
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHeaderCarouselIndex((prev) => (prev + 1) % 8); // 8 total header metrics
+    }, 3000); // Change header every 3 seconds
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Side carousel auto-scroll
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSideCarouselIndex((prev) => (prev + 1) % totalSideSlides);
+    }, 4000); // Change side every 4 seconds
+
+    return () => clearInterval(interval);
+  }, [totalSideSlides]);
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -186,6 +248,218 @@ export default function Dashboard() {
     return profiles.filter((profile) => profile.role === "ta").length;
   }, [profiles]);
 
+  // Generate detailed metric data for dialogs
+  const getMetricDetails = (metricType: string) => {
+    if (!profiles || !grades || !chats || !attempts) return null;
+
+    switch (metricType) {
+      case "averageScore":
+        const scoreDistribution = [
+          {
+            range: "90-100%",
+            count: grades.filter((g) => g.score >= 90).length,
+            fill: COLORS.success,
+          },
+          {
+            range: "80-89%",
+            count: grades.filter((g) => g.score >= 80 && g.score < 90).length,
+            fill: COLORS.primary,
+          },
+          {
+            range: "70-79%",
+            count: grades.filter((g) => g.score >= 70 && g.score < 80).length,
+            fill: COLORS.warning,
+          },
+          {
+            range: "60-69%",
+            count: grades.filter((g) => g.score >= 60 && g.score < 70).length,
+            fill: COLORS.orange,
+          },
+          {
+            range: "<60%",
+            count: grades.filter((g) => g.score < 60).length,
+            fill: COLORS.danger,
+          },
+        ].filter((item) => item.count > 0);
+
+        return { type: "score-distribution", data: scoreDistribution };
+
+      case "completionRate":
+        const completionTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+
+          const dayChats = chats.filter((chat) => {
+            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
+            return chatDate === dateStr;
+          });
+
+          const completionRate =
+            dayChats.length > 0
+              ? Math.round(
+                  (dayChats.filter((chat) => chat.completed).length /
+                    dayChats.length) *
+                    100
+                )
+              : 0;
+
+          return {
+            date: format(date, "MM/dd"),
+            rate: completionRate,
+            total: dayChats.length,
+          };
+        });
+
+        return { type: "completion-trend", data: completionTrend };
+
+      case "passRate":
+        const passFailTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+
+          const dayGrades = grades.filter((grade) => {
+            const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
+            return gradeDate === dateStr;
+          });
+
+          const passRate =
+            dayGrades.length > 0
+              ? Math.round(
+                  (dayGrades.filter((g) => g.passed).length /
+                    dayGrades.length) *
+                    100
+                )
+              : 0;
+
+          return {
+            date: format(date, "MM/dd"),
+            passRate,
+            passed: dayGrades.filter((g) => g.passed).length,
+            failed: dayGrades.filter((g) => !g.passed).length,
+          };
+        });
+
+        return { type: "pass-trend", data: passFailTrend };
+
+      case "totalSessions":
+        const sessionTrend = Array.from({ length: 7 }, (_, i) => {
+          const date = subDays(new Date(), 6 - i);
+          const dateStr = format(date, "yyyy-MM-dd");
+
+          const dayChats = chats.filter((chat) => {
+            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
+            return chatDate === dateStr;
+          });
+
+          return {
+            date: format(date, "MM/dd"),
+            sessions: dayChats.length,
+            completed: dayChats.filter((chat) => chat.completed).length,
+          };
+        });
+
+        return { type: "session-trend", data: sessionTrend };
+
+      case "trainingHours":
+        const timeDistribution = [
+          {
+            range: "<15 min",
+            count: grades.filter((g) => g.timeTaken < 900).length,
+            fill: COLORS.success,
+          },
+          {
+            range: "15-30 min",
+            count: grades.filter(
+              (g) => g.timeTaken >= 900 && g.timeTaken < 1800
+            ).length,
+            fill: COLORS.primary,
+          },
+          {
+            range: "30-45 min",
+            count: grades.filter(
+              (g) => g.timeTaken >= 1800 && g.timeTaken < 2700
+            ).length,
+            fill: COLORS.warning,
+          },
+          {
+            range: "45+ min",
+            count: grades.filter((g) => g.timeTaken >= 2700).length,
+            fill: COLORS.danger,
+          },
+        ].filter((item) => item.count > 0);
+
+        return { type: "time-distribution", data: timeDistribution };
+
+      default:
+        return null;
+    }
+  };
+
+  // Header metric components array
+  const headerMetrics = [
+    {
+      component: (
+        <ActiveTAs
+          totalTAs={totalTAs}
+          onClick={() => setSelectedMetric("activeTAs")}
+        />
+      ),
+      key: "activeTAs",
+    },
+    {
+      component: (
+        <TrainingSessions
+          onClick={() => setSelectedMetric("trainingSessions")}
+        />
+      ),
+      key: "trainingSessions",
+    },
+    {
+      component: (
+        <TrainingHours
+          avgTrainingTime={avgTrainingTime}
+          onClick={() => setSelectedMetric("trainingHours")}
+        />
+      ),
+      key: "trainingHours",
+    },
+    {
+      component: (
+        <NeedSupport
+          strugglingTAs={strugglingTAs}
+          onClick={() => setSelectedMetric("needSupport")}
+        />
+      ),
+      key: "needSupport",
+    },
+    {
+      component: (
+        <AverageScore onClick={() => setSelectedMetric("averageScore")} />
+      ),
+      key: "averageScore",
+    },
+    {
+      component: (
+        <CompletionRate onClick={() => setSelectedMetric("completionRate")} />
+      ),
+      key: "completionRate",
+    },
+    {
+      component: <PassRate onClick={() => setSelectedMetric("passRate")} />,
+      key: "passRate",
+    },
+    {
+      component: (
+        <TotalSessions onClick={() => setSelectedMetric("totalSessions")} />
+      ),
+      key: "totalSessions",
+    },
+    {
+      component: <TotalTAs onClick={() => setSelectedMetric("totalTAs")} />,
+      key: "totalTAs",
+    },
+  ];
+
   // Carousel slides data
   const slides = [
     {
@@ -244,12 +518,18 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
+      {/* Rotating Header Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <ActiveTAs totalTAs={totalTAs} />
-        <TrainingSessions />
-        <TrainingHours avgTrainingTime={avgTrainingTime} />
-        <NeedSupport strugglingTAs={strugglingTAs} />
+        {headerMetrics
+          .slice(headerCarouselIndex, headerCarouselIndex + 4)
+          .map((metric) => (
+            <div
+              key={metric.key}
+              className="transition-all duration-500 ease-in-out"
+            >
+              {metric.component}
+            </div>
+          ))}
       </div>
 
       {/* Carousel Section */}
@@ -369,28 +649,43 @@ export default function Dashboard() {
           </Card>
         </div>
 
-        {/* Side Components */}
+        {/* Side Components Carousel */}
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Skill Breakdown</CardTitle>
-              <CardDescription>Top performing competencies</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[120px]">
-                <SkillBreakdown />
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>
+                    {sideCarouselIndex === 0
+                      ? "Skill Breakdown"
+                      : "Training Insights"}
+                  </CardTitle>
+                  <CardDescription>
+                    {sideCarouselIndex === 0
+                      ? "Top performing competencies"
+                      : "AI-powered recommendations"}
+                  </CardDescription>
+                </div>
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setSideCarouselIndex(0)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      sideCarouselIndex === 0 ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                  <button
+                    onClick={() => setSideCarouselIndex(1)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      sideCarouselIndex === 1 ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                </div>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Training Insights</CardTitle>
-              <CardDescription>AI-powered recommendations</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-[120px]">
-                <TrainingInsights />
+              <div className="h-[240px]">
+                {sideCarouselIndex === 0 && <SkillBreakdown />}
+                {sideCarouselIndex === 1 && <TrainingInsights />}
               </div>
             </CardContent>
           </Card>
@@ -426,6 +721,166 @@ export default function Dashboard() {
           />
         )}
       </div>
+
+      {/* Metric Detail Dialogs */}
+      <Dialog
+        open={!!selectedMetric}
+        onOpenChange={(open) => !open && setSelectedMetric(null)}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              {selectedMetric === "averageScore"
+                ? "Score Distribution"
+                : selectedMetric === "completionRate"
+                  ? "Completion Rate Trend"
+                  : selectedMetric === "passRate"
+                    ? "Pass/Fail Trend"
+                    : selectedMetric === "totalSessions"
+                      ? "Session Activity"
+                      : selectedMetric === "trainingHours"
+                        ? "Training Time Distribution"
+                        : ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="h-64">
+            {selectedMetric && (
+              <ResponsiveContainer width="100%" height="100%">
+                <>
+                  {getMetricDetails(selectedMetric)?.type ===
+                    "score-distribution" && (
+                    <PieChart>
+                      <Pie
+                        data={getMetricDetails(selectedMetric)?.data || []}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ range, percent }) =>
+                          `${range}: ${(percent * 100).toFixed(0)}%`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {(getMetricDetails(selectedMetric)?.data as any[])?.map(
+                          (entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          )
+                        )}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => [value, "Sessions"]}
+                      />
+                    </PieChart>
+                  )}
+
+                  {getMetricDetails(selectedMetric)?.type ===
+                    "completion-trend" && (
+                    <LineChart
+                      data={getMetricDetails(selectedMetric)?.data || []}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis domain={[0, 100]} />
+                      <Tooltip
+                        formatter={(value: number) => [
+                          `${value}%`,
+                          "Completion Rate",
+                        ]}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="rate"
+                        stroke={COLORS.success}
+                        strokeWidth={2}
+                        dot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  )}
+
+                  {getMetricDetails(selectedMetric)?.type === "pass-trend" && (
+                    <BarChart
+                      data={getMetricDetails(selectedMetric)?.data || []}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar
+                        dataKey="passed"
+                        fill={COLORS.success}
+                        name="Passed"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="failed"
+                        fill={COLORS.danger}
+                        name="Failed"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  )}
+
+                  {getMetricDetails(selectedMetric)?.type ===
+                    "session-trend" && (
+                    <AreaChart
+                      data={getMetricDetails(selectedMetric)?.data || []}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="date" />
+                      <YAxis />
+                      <Tooltip />
+                      <Area
+                        type="monotone"
+                        dataKey="sessions"
+                        stroke={COLORS.primary}
+                        fill={COLORS.primary}
+                        fillOpacity={0.6}
+                        name="Total Sessions"
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="completed"
+                        stroke={COLORS.success}
+                        fill={COLORS.success}
+                        fillOpacity={0.6}
+                        name="Completed"
+                      />
+                    </AreaChart>
+                  )}
+
+                  {getMetricDetails(selectedMetric)?.type ===
+                    "time-distribution" && (
+                    <PieChart>
+                      <Pie
+                        data={getMetricDetails(selectedMetric)?.data || []}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ range, percent }) =>
+                          `${range}: ${(percent * 100).toFixed(0)}%`
+                        }
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="count"
+                      >
+                        {(getMetricDetails(selectedMetric)?.data as any[])?.map(
+                          (entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                          )
+                        )}
+                      </Pie>
+                      <Tooltip
+                        formatter={(value: number) => [value, "Sessions"]}
+                      />
+                    </PieChart>
+                  )}
+                </>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -378,7 +378,6 @@ export default function ClassesGeneralPage() {
 
     // Count sessions by agent personality within time range
     const personalityCounts = agents
-      .filter((agent) => agent.agentType === "student")
       .map((agent) => {
         const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
         const agentChats = chats.filter(

@@ -25,14 +25,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Agent } from "@/types";
 
 export default function Agents() {
@@ -91,17 +85,11 @@ export default function Agents() {
                     <CardTitle className="text-base">
                       {agent.name || "Unnamed Agent"}
                     </CardTitle>
-                    <CardDescription>
-                      {agent.subtitle || "No subtitle"}
-                    </CardDescription>
                     <p className="text-sm text-muted-foreground">
                       {agent.description || "No description available"}
                     </p>
                   </div>
                   <div className="flex gap-2 items-center">
-                    <Badge variant="outline">
-                      Temperature: {agent.temperature ?? 0}
-                    </Badge>
                     <Button
                       variant="outline"
                       size="sm"

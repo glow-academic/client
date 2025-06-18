@@ -15,7 +15,11 @@ import { subDays } from "date-fns";
 import { MessageSquare } from "lucide-react";
 import { useMemo } from "react";
 
-export default function TrainingSessions() {
+interface TrainingSessionsProps {
+  onClick?: () => void;
+}
+
+export default function TrainingSessions({ onClick }: TrainingSessionsProps) {
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -50,7 +54,12 @@ export default function TrainingSessions() {
   }, [chats]);
 
   return (
-    <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200">
+    <Card
+      className={`bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 ${
+        onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""
+      }`}
+      onClick={onClick}
+    >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Training Sessions</CardTitle>
         <MessageSquare className="h-4 w-4 text-green-600" />

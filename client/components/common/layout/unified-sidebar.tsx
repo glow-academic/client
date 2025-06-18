@@ -262,6 +262,11 @@ export function UnifiedSidebar({
       });
 
       // Logs - available for admin
+      managementItems.push({
+        title: "Logs",
+        url: "#",
+        section: "logs",
+      });
 
       menu.push({
         title: "Management",
