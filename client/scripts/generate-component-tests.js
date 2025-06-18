@@ -122,7 +122,10 @@ function analyzeComponent(componentPath) {
 
     return analysis;
   } catch (error) {
-    console.error(`❌ Error analyzing component ${componentPath}:`, error.message);
+    console.error(
+      `❌ Error analyzing component ${componentPath}:`,
+      error.message
+    );
     return {
       hasDefaultExport: true,
       namedExports: [],
@@ -150,15 +153,17 @@ function generateTestTemplate(component, analysis) {
   const importPath =
     `@/components/${componentPath.replace(/\\/g, "/")}`.replace(".tsx", "");
 
-  let template = `import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';`;
+  let template = `import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';`;
 
   // Add conditional imports based on component analysis
-  if (analysis.usesRouter) {
+  const needsUserEvent =
+    analysis.usesState || analysis.hasFormHandling || analysis.usesRouter;
+  if (needsUserEvent) {
     template += `
-import { useRouter } from 'next/navigation';`;
+import userEvent from '@testing-library/user-event';`;
   }
+  // Note: We don't import useRouter here since we're mocking it, not using it directly
 
   if (analysis.hasApiCalls) {
     template += `
@@ -264,13 +269,13 @@ describe('${componentName}', () => {
   });
 
   ${
-    analysis.usesState || analysis.hasFormHandling
+    needsUserEvent
       ? `describe('User Interactions', () => {
     ${
       analysis.hasFormHandling
         ? `it('should handle form submissions', async () => {
       // TODO: Test form handling
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Form handling test for ${componentName}
@@ -282,7 +287,7 @@ describe('${componentName}', () => {
       analysis.usesState
         ? `it('should handle state changes', async () => {
       // TODO: Test state management
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for ${componentName}
@@ -292,7 +297,7 @@ describe('${componentName}', () => {
 
     it('should handle user events', async () => {
       // TODO: Test click, hover, focus events
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for ${componentName}

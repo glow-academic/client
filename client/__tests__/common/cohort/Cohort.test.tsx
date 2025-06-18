@@ -73,7 +73,7 @@ describe('Cohort', () => {
   describe('User Interactions', () => {
     it('should handle form submissions', async () => {
       // TODO: Test form handling
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Form handling test for Cohort
@@ -81,7 +81,7 @@ describe('Cohort', () => {
 
     it('should handle state changes', async () => {
       // TODO: Test state management
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for Cohort
@@ -89,7 +89,7 @@ describe('Cohort', () => {
 
     it('should handle user events', async () => {
       // TODO: Test click, hover, focus events
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for Cohort

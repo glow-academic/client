@@ -4,14 +4,13 @@ Tests for app.routes.evals
 Auto-generated on: 2025-06-09T21:53:40.616021
 """
 
-import pytest
-from fastapi.testclient import TestClient
+import asyncio
 from unittest.mock import MagicMock, patch
 from uuid import uuid4
-import asyncio
 
-# Import the router being tested
-from app.routes.evals import _generate_natural_opening
+import pytest
+from app.utils.chat import generate_natural_opening
+from fastapi.testclient import TestClient
 
 
 @pytest.fixture
@@ -240,8 +239,8 @@ class TestRunMultipleEvals:
         # Setup mocks
         mock_session = MagicMock()
 
-        from app.main import app
         from app.db import get_session
+        from app.main import app
 
         # Override the dependency
         def override_get_session():
@@ -364,8 +363,8 @@ class TestRunMultipleEvals:
         mock_session = MagicMock()
         mock_session.exec.return_value.one_or_none.return_value = None
 
-        from app.main import app
         from app.db import get_session
+        from app.main import app
 
         # Override the dependency
         def override_get_session():
@@ -399,8 +398,8 @@ class TestRunMultipleEvals:
             MagicMock(all=MagicMock(return_value=[])),  # no eval runs
         ]
 
-        from app.main import app
         from app.db import get_session
+        from app.main import app
 
         # Override the dependency
         def override_get_session():
@@ -552,7 +551,7 @@ class TestGenerateNaturalOpening:
         for key, value in sample_agents_data[0].items():
             setattr(student_agent_mock, key, value)
 
-        opening = _generate_natural_opening(scenario_mock, student_agent_mock)
+        opening = generate_natural_opening(student_agent_mock)
 
         assert isinstance(opening, str)
         assert len(opening) > 0
@@ -573,7 +572,7 @@ class TestGenerateNaturalOpening:
         for key, value in sample_agents_data[1].items():
             setattr(ta_agent_mock, key, value)
 
-        opening = _generate_natural_opening(scenario_mock, ta_agent_mock)
+        opening = generate_natural_opening(ta_agent_mock)
 
         assert isinstance(opening, str)
         assert len(opening) > 0

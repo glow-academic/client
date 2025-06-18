@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-18T21:58:24.055Z
+Generated on: 2025-06-18T22:22:52.816Z
 
 ## Summary
-- **Total Components**: 82
+- **Total Components**: 81
 - **Tests Created**: 0
-- **Tests Updated**: 26
-- **Tests Skipped** (already implemented): 56
+- **Tests Updated**: 27
+- **Tests Skipped** (already implemented): 54
 
 ## Component Coverage
 
@@ -15,8 +15,6 @@ Generated on: 2025-06-18T21:58:24.055Z
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
-| ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
-| ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ❌ Needs Implementation |
 | SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ❌ Needs Implementation |
@@ -65,6 +63,7 @@ Generated on: 2025-06-18T21:58:24.055Z
 | AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
 | NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
+| ClassEdit | create/classes/ClassEdit.tsx | ClassEdit.test.tsx | ❌ Needs Implementation |
 | ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
@@ -103,9 +102,6 @@ __tests__/
 │   ├── Dashboard.test.tsx
 │   ├── History.test.tsx
 │   ├── Reports.test.tsx
-├── classes/
-│   ├── ClassDetails.test.tsx
-│   ├── ClassEdit.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
@@ -175,6 +171,7 @@ __tests__/
 │   │   ├── Agents.test.tsx
 │   │   ├── NewAgent.test.tsx
 │   ├── classes/
+│   │   ├── ClassEdit.test.tsx
 │   │   ├── ClassStatus.test.tsx
 │   │   ├── Classes.test.tsx
 │   │   ├── NewClass.test.tsx

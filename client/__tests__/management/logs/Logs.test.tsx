@@ -59,7 +59,7 @@ describe('Logs', () => {
 
     it('should handle state changes', async () => {
       // TODO: Test state management
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: State management test for Logs
@@ -67,7 +67,7 @@ describe('Logs', () => {
 
     it('should handle user events', async () => {
       // TODO: Test click, hover, focus events
-      const user = userEvent.setup();
+      const _user = userEvent.setup();
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: User events test for Logs
