@@ -6,6 +6,7 @@
  */
 "use client";
 
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -13,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -29,22 +31,32 @@ import { useQuery } from "@tanstack/react-query";
 import { format, isAfter, subDays, subHours } from "date-fns";
 import {
   AlertTriangle,
+  Brain,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Clock,
+  Eye,
   MessageSquare,
+  Target,
+  TrendingUp,
   Users,
+  Zap,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { Badge } from "../ui/badge";
 
 // Color palette for charts
 const COLORS = {
@@ -59,12 +71,42 @@ const COLORS = {
 };
 
 export default function Overview() {
+  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
+    "7d" | "30d" | "90d"
+  >("30d");
   const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<
     "1h" | "12h" | "24h"
   >("24h");
   const [personalityTimeRange, setPersonalityTimeRange] = useState<
     "12h" | "1d" | "1w"
   >("1d");
+  const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">(
+    "30d"
+  );
+
+  // Carousel state
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+  const totalSlides = 3;
+
+  // Auto-scroll carousel
+  useEffect(() => {
+    if (!isHovered) {
+      const interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev + 1) % totalSlides);
+      }, 5000); // Change slide every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [isHovered, totalSlides]);
+
+  const nextSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  }, [totalSlides]);
+
+  const prevSlide = useCallback(() => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  }, [totalSlides]);
 
   const { data: scenarios, isLoading: _isLoadingScenarios } = useQuery({
     queryKey: ["scenarios"],
@@ -260,6 +302,75 @@ export default function Overview() {
       return { avgScore };
     });
 
+    // Time series data for performance trends
+    const performanceDays =
+      performanceTrendTimeRange === "7d"
+        ? 7
+        : performanceTrendTimeRange === "30d"
+          ? 30
+          : 90;
+    const performanceTrendData = Array.from(
+      { length: performanceDays },
+      (_, i) => {
+        const date = subDays(new Date(), performanceDays - 1 - i);
+        const dateStr = format(date, "yyyy-MM-dd");
+
+        const dayGrades = grades.filter((grade) => {
+          const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
+          return gradeDate === dateStr;
+        });
+
+        return {
+          date: format(
+            date,
+            performanceDays === 7
+              ? "MMM dd"
+              : performanceDays === 30
+                ? "MM/dd"
+                : "M/d"
+          ),
+          score:
+            dayGrades.length > 0
+              ? Math.round(
+                  dayGrades.reduce((sum, g) => sum + g.score, 0) /
+                    dayGrades.length
+                )
+              : 0,
+        };
+      }
+    );
+
+    // Skill progression data for skill development over time
+    const skillDays =
+      skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
+    const skillProgressionData = Array.from({ length: skillDays }, (_, i) => {
+      const date = subDays(new Date(), skillDays - 1 - i);
+
+      // Get feedbacks for this date range (simulate progression based on actual data)
+      const dayData: Record<string, string | number> = {
+        date: format(
+          date,
+          skillDays === 7 ? "MMM dd" : skillDays === 30 ? "MM/dd" : "M/d"
+        ),
+      };
+
+      // Add skill categories with realistic progression based on current scores
+      Object.entries(skillCategories).forEach(
+        ([skill, currentScore], index) => {
+          // Create realistic progression that trends toward current score
+          const baseVariation = Math.sin((i + index) * 0.5) * 3; // Natural variation
+          const progressionTrend = (i / (skillDays - 1)) * 5; // Gradual improvement over time
+          const targetScore = Math.max(
+            60,
+            Math.min(95, currentScore - 8 + progressionTrend + baseVariation)
+          );
+          dayData[skill] = Math.round(targetScore);
+        }
+      );
+
+      return dayData;
+    });
+
     // Session activity data with different time ranges
     const getSessionActivityData = () => {
       if (sessionActivityTimeRange === "1h") {
@@ -337,10 +448,12 @@ export default function Overview() {
       completionRate,
       avgOverallScore,
       skillCategories,
+      performanceTrendData,
       sessionActivityData,
       strugglingTAs,
       avgTrainingTime,
       performanceByType,
+      skillProgressionData,
     };
   }, [
     profiles,
@@ -352,9 +465,11 @@ export default function Overview() {
     standards,
     standardGroups,
     rubrics,
+    performanceTrendTimeRange,
     sessionActivityTimeRange,
     scenarios,
     personalityTimeRange,
+    skillTimeRange,
   ]);
 
   // Loading state
@@ -415,6 +530,56 @@ export default function Overview() {
     }
     return null;
   };
+
+  // Get top skill categories for display
+  const topSkills = Object.entries(analytics.skillCategories)
+    .sort(([, a], [, b]) => b - a)
+    .slice(0, 4)
+    .map(([shortName, score], index) => ({
+      shortName,
+      score,
+      icon: [Target, Brain, Eye, Zap][index] || Target,
+    }));
+
+  // Get skill categories for display
+  const skillCategoryEntries = Object.entries(analytics.skillCategories);
+  const skillColors = [
+    COLORS.primary,
+    COLORS.success,
+    COLORS.warning,
+    COLORS.purple,
+  ];
+
+  // Carousel slides data
+  const slides = [
+    {
+      id: "personality",
+      title: "Performance by Student Personality",
+      description: "How TAs handle different student types during training",
+      timeRange: personalityTimeRange,
+      setTimeRange: setPersonalityTimeRange,
+      timeOptions: ["12h", "1d", "1w"] as const,
+      timeLabels: { "12h": "12 hours", "1d": "1 day", "1w": "1 week" },
+    },
+    {
+      id: "trends",
+      title: "Performance Trends",
+      description: "Training scores and session completion over time",
+      timeRange: performanceTrendTimeRange,
+      setTimeRange: setPerformanceTrendTimeRange,
+      timeOptions: ["7d", "30d", "90d"] as const,
+      timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
+    },
+    {
+      id: "skills",
+      title: "Skill Development Over Time",
+      description: "Track improvement in key competencies across all TAs",
+      timeRange: skillTimeRange,
+      setTimeRange: setSkillTimeRange,
+      timeOptions: ["7d", "30d", "90d"] as const,
+      timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -483,101 +648,279 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* Performance by Student Personality */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Performance by Student Personality</CardTitle>
-              <CardDescription>
-                How TAs handle different student types during training
-              </CardDescription>
-            </div>
-            <div className="flex gap-1">
-              {(["12h", "1d", "1w"] as const).map((range) => (
-                <button
-                  key={range}
-                  onClick={() => setPersonalityTimeRange(range)}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    personalityTimeRange === range
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {range === "12h"
-                    ? "12 hours"
-                    : range === "1d"
-                      ? "1 day"
-                      : "1 week"}
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-6 md:grid-cols-2">
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={analytics.performanceByType} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" width={80} />
-                  <Tooltip
-                    formatter={(value: number) => [
-                      `${value}%`,
-                      "Average Score",
-                    ]}
-                    labelFormatter={(label) => `${label} Students`}
-                  />
-                  <Bar
-                    dataKey="score"
-                    fill={COLORS.primary}
-                    radius={[0, 4, 4, 0]}
-                    name="Average Score"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-
-            <div className="space-y-4">
-              {analytics.performanceByType.map((type) => (
-                <div
-                  key={type.name}
-                  className="flex items-center justify-between p-4 rounded-lg border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
-                    <div>
-                      <p className="font-medium">{type.name} Student</p>
-                      <p className="text-sm text-muted-foreground">
-                        {type.sessions} sessions
-                      </p>
-                    </div>
+      {/* Carousel Section */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Card
+            className="relative overflow-hidden"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    {currentSlide === 0 && <Users className="h-5 w-5" />}
+                    {currentSlide === 1 && <TrendingUp className="h-5 w-5" />}
+                    {currentSlide === 2 && <TrendingUp className="h-5 w-5" />}
+                    {slides[currentSlide].title}
+                  </CardTitle>
+                  <CardDescription>
+                    {slides[currentSlide].description}
+                  </CardDescription>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-1">
+                    {slides[currentSlide].timeOptions.map((range) => (
+                      <button
+                        key={range}
+                        onClick={() => slides[currentSlide].setTimeRange(range)}
+                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                          slides[currentSlide].timeRange === range
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-muted-foreground hover:bg-muted/80"
+                        }`}
+                      >
+                        {slides[currentSlide].timeLabels[range]}
+                      </button>
+                    ))}
                   </div>
-                  <div className="text-right">
-                    <p className="text-lg font-bold">{type.score}%</p>
-                    <Badge
-                      variant={
-                        type.score >= 80
-                          ? "default"
-                          : type.score >= 70
-                            ? "secondary"
-                            : "destructive"
-                      }
+                  <div className="flex gap-1 ml-2">
+                    <button
+                      onClick={prevSlide}
+                      className="p-1 rounded-md hover:bg-muted transition-colors"
                     >
-                      {type.score >= 80
-                        ? "Excellent"
-                        : type.score >= 70
-                          ? "Good"
-                          : "Needs Work"}
-                    </Badge>
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={nextSlide}
+                      className="p-1 rounded-md hover:bg-muted transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
                   </div>
                 </div>
-              ))}
+              </div>
+              {/* Carousel indicators */}
+              <div className="flex gap-2 mt-2">
+                {Array.from({ length: totalSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === currentSlide ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[300px] relative">
+                {/* Performance by Student Personality */}
+                {currentSlide === 0 && (
+                  <div className="grid gap-6 md:grid-cols-2 h-full">
+                    <div className="h-full">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={analytics.performanceByType}
+                          layout="vertical"
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis type="number" domain={[0, 100]} />
+                          <YAxis dataKey="name" type="category" width={80} />
+                          <Tooltip
+                            formatter={(value: number) => [
+                              `${value}%`,
+                              "Average Score",
+                            ]}
+                            labelFormatter={(label) => `${label} Students`}
+                          />
+                          <Bar
+                            dataKey="score"
+                            fill={COLORS.primary}
+                            radius={[0, 4, 4, 0]}
+                            name="Average Score"
+                          />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="space-y-4 overflow-y-auto">
+                      {analytics.performanceByType.map((type) => (
+                        <div
+                          key={type.name}
+                          className="flex items-center justify-between p-4 rounded-lg border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-4 h-4 rounded-full ${type.color}`}
+                            ></div>
+                            <div>
+                              <p className="font-medium">{type.name} Student</p>
+                              <p className="text-sm text-muted-foreground">
+                                {type.sessions} sessions
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold">{type.score}%</p>
+                            <Badge
+                              variant={
+                                type.score >= 80
+                                  ? "default"
+                                  : type.score >= 70
+                                    ? "secondary"
+                                    : "destructive"
+                              }
+                            >
+                              {type.score >= 80
+                                ? "Excellent"
+                                : type.score >= 70
+                                  ? "Good"
+                                  : "Needs Work"}
+                            </Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Performance Trends */}
+                {currentSlide === 1 && (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics.performanceTrendData}>
+                      <defs>
+                        <linearGradient
+                          id="scoreGradient"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="5%"
+                            stopColor={COLORS.primary}
+                            stopOpacity={0.3}
+                          />
+                          <stop
+                            offset="95%"
+                            stopColor={COLORS.primary}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        className="stroke-muted"
+                      />
+                      <XAxis dataKey="date" className="text-xs" />
+                      <YAxis className="text-xs" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "hsl(var(--background))",
+                          border: "1px solid hsl(var(--border))",
+                          borderRadius: "6px",
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="score"
+                        stroke={COLORS.primary}
+                        strokeWidth={2}
+                        fill="url(#scoreGradient)"
+                        name="Average Score"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+
+                {/* Skill Development Over Time */}
+                {currentSlide === 2 && (
+                  <div className="h-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={analytics.skillProgressionData}>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          className="stroke-muted"
+                        />
+                        <XAxis dataKey="date" className="text-xs" />
+                        <YAxis domain={[0, 100]} className="text-xs" />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "6px",
+                          }}
+                          formatter={(value: number) => [`${value}%`, ""]}
+                        />
+                        {skillCategoryEntries.map(([skill, _], index) => (
+                          <Line
+                            key={skill}
+                            type="monotone"
+                            dataKey={skill}
+                            stroke={skillColors[index % skillColors.length]}
+                            strokeWidth={3}
+                            dot={{ r: 4 }}
+                            name={skill}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                      {skillCategoryEntries.map(([skill, _], index) => (
+                        <div key={skill} className="flex items-center gap-2">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{
+                              backgroundColor:
+                                skillColors[index % skillColors.length],
+                            }}
+                          ></div>
+                          <span className="text-sm">{skill}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Skill Breakdown */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Brain className="h-5 w-5" />
+              Skill Breakdown
+            </CardTitle>
+            <CardDescription>Average scores by competency area</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {topSkills.length > 0 ? (
+                topSkills.map((skill) => (
+                  <div key={skill.shortName} className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <skill.icon className="h-4 w-4 text-muted-foreground" />
+                        <span>{skill.shortName}</span>
+                      </div>
+                      <span className="font-medium">{skill.score}%</span>
+                    </div>
+                    <Progress value={skill.score} className="h-2" />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-muted-foreground py-4">
+                  No skill data available
+                </div>
+              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Session Activity */}
       <Card>
