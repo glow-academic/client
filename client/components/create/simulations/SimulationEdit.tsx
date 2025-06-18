@@ -12,5 +12,5 @@ export default function SimulationEdit({
 }: {
   simulationId: string;
 }) {
-  return <Simulation mode="create" simulationId={simulationId} />;
+  return <Simulation simulationId={simulationId} />;
 }

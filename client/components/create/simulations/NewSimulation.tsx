@@ -8,5 +8,5 @@
 import Simulation from "@/components/common/simulation/Simulation";
 
 export default function NewSimulation() {
-  return <Simulation mode="create" />;
+  return <Simulation />;
 }
