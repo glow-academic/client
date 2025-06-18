@@ -8,16 +8,16 @@
 import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    Cpu,
-    Edit,
-    Eye,
-    EyeOff,
-    Plus,
-    Save,
-    Settings,
-    Sparkles,
-    Trash2,
-    X,
+  Cpu,
+  Edit,
+  Eye,
+  EyeOff,
+  Plus,
+  Save,
+  Settings,
+  Sparkles,
+  Trash2,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -31,31 +31,31 @@ import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -83,14 +83,16 @@ export default function Models() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // New state for editing
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
+  // Form state for provider editing
   const [editForm, setEditForm] = useState({
     name: "",
     description: "",
     apiKey: "",
   });
+
+  // API key editing state
+  const [isEditingApiKey, setIsEditingApiKey] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch models and providers data
   const { data: models = [], refetch: refetchModels } = useQuery({
@@ -110,6 +112,13 @@ export default function Models() {
       models: models.filter((model: Model) => model.providerId === provider.id),
     }))
     .filter((group: ProviderGroup) => group.models.length > 0);
+
+  // Check if there are any changes to save
+  const hasChanges =
+    selectedProvider &&
+    (editForm.name !== selectedProvider.name ||
+      editForm.description !== selectedProvider.description ||
+      (isEditingApiKey && editForm.apiKey.trim() !== ""));
 
   const handleDelete = async () => {
     if (!deleteItem) return;
@@ -150,32 +159,26 @@ export default function Models() {
     setEditForm({
       name: provider.name,
       description: provider.description,
-      apiKey: "", // Never pre-fill API key for security
+      apiKey: "",
     });
     setShowProviderDialog(true);
     setShowApiKey(false);
     setDecryptedApiKey("");
-    setIsEditing(false);
+    setIsEditingApiKey(false);
   };
 
-  const handleStartEdit = () => {
-    setIsEditing(true);
+  const handleStartEditApiKey = () => {
+    setIsEditingApiKey(true);
+    setEditForm((prev) => ({ ...prev, apiKey: "" }));
   };
 
-  const handleCancelEdit = () => {
-    if (!selectedProvider) return;
-
-    // Reset form to original values
-    setEditForm({
-      name: selectedProvider.name,
-      description: selectedProvider.description,
-      apiKey: "",
-    });
-    setIsEditing(false);
+  const handleCancelEditApiKey = () => {
+    setIsEditingApiKey(false);
+    setEditForm((prev) => ({ ...prev, apiKey: "" }));
   };
 
   const handleSave = async () => {
-    if (!selectedProvider) return;
+    if (!selectedProvider || !hasChanges) return;
 
     setIsSaving(true);
     try {
@@ -194,8 +197,8 @@ export default function Models() {
         updateData.description = editForm.description;
       }
 
-      // Only include API key if user entered a new one
-      if (editForm.apiKey.trim() !== "") {
+      // Only include API key if user is editing it and entered a new one
+      if (isEditingApiKey && editForm.apiKey.trim() !== "") {
         updateData.apiKey = editForm.apiKey;
       }
 
@@ -208,8 +211,9 @@ export default function Models() {
       queryClient.invalidateQueries({ queryKey: ["providers"] });
       queryClient.invalidateQueries({ queryKey: ["models"] });
 
-      setIsEditing(false);
-      setShowProviderDialog(false);
+      // Reset API key editing state
+      setIsEditingApiKey(false);
+      setEditForm((prev) => ({ ...prev, apiKey: "" }));
     } catch (error) {
       logError("Error updating provider:", error);
       toast.error("Failed to update provider");
@@ -244,7 +248,7 @@ export default function Models() {
     setSelectedProvider(null);
     setShowApiKey(false);
     setDecryptedApiKey("");
-    setIsEditing(false);
+    setIsEditingApiKey(false);
     setEditForm({ name: "", description: "", apiKey: "" });
   };
 
@@ -277,10 +281,6 @@ export default function Models() {
               </Badge>
               <span className="text-sm text-muted-foreground">
                 {group.provider.description}
-              </span>
-              <span className="text-xs text-muted-foreground">
-                ({group.models.length} model
-                {group.models.length !== 1 ? "s" : ""})
               </span>
             </div>
             <Button
@@ -317,18 +317,6 @@ export default function Models() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="text-xs text-muted-foreground">
-                        Created:{" "}
-                        {new Date(model.createdAt).toLocaleDateString()}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Updated:{" "}
-                        {new Date(model.updatedAt).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </CardContent>
                   <CardFooter className="flex justify-end gap-2">
                     <Button
                       variant="outline"
@@ -358,140 +346,139 @@ export default function Models() {
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between">
-              Provider Settings
-              {!isEditing ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleStartEdit}
-                  className="h-8 w-8 p-0"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              ) : (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                    className="h-8 w-8 p-0"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="h-8 w-8 p-0"
-                  >
-                    {isSaving ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              )}
-            </DialogTitle>
+            <DialogTitle>Provider Settings</DialogTitle>
             <DialogDescription>
-              {isEditing ? "Edit settings for" : "Manage settings for"}{" "}
-              {selectedProvider?.name}
+              Manage settings for {selectedProvider?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
+            {/* Name Field - Always Editable */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="provider-name" className="text-right">
                 Name
               </Label>
               <Input
                 id="provider-name"
-                value={isEditing ? editForm.name : selectedProvider?.name || ""}
+                value={editForm.name}
                 onChange={(e) =>
-                  isEditing &&
                   setEditForm((prev) => ({ ...prev, name: e.target.value }))
                 }
                 className="col-span-3"
-                readOnly={!isEditing}
+                placeholder="Provider name"
               />
             </div>
+
+            {/* Description Field - Always Editable */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="provider-description" className="text-right">
                 Description
               </Label>
               <Input
                 id="provider-description"
-                value={
-                  isEditing
-                    ? editForm.description
-                    : selectedProvider?.description || ""
-                }
+                value={editForm.description}
                 onChange={(e) =>
-                  isEditing &&
                   setEditForm((prev) => ({
                     ...prev,
                     description: e.target.value,
                   }))
                 }
                 className="col-span-3"
-                readOnly={!isEditing}
+                placeholder="Provider description"
               />
             </div>
+
+            {/* API Key Field - With Edit Mode */}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="api-key" className="text-right">
                 API Key
               </Label>
-              <div className="col-span-3 flex gap-2">
-                <Input
-                  id="api-key"
-                  type={showApiKey ? "text" : "password"}
-                  value={
-                    isEditing
-                      ? editForm.apiKey
-                      : showApiKey
-                        ? decryptedApiKey
-                        : maskApiKey(selectedProvider?.apiKey || "")
-                  }
-                  onChange={(e) =>
-                    isEditing &&
-                    setEditForm((prev) => ({ ...prev, apiKey: e.target.value }))
-                  }
-                  placeholder={
-                    isEditing
-                      ? "Enter new API key (leave blank to keep current)"
-                      : ""
-                  }
-                  className="flex-1"
-                  readOnly={!isEditing}
-                />
-                {!isEditing && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleToggleApiKey}
-                    disabled={isDecrypting}
-                    className="px-3"
-                  >
-                    {isDecrypting ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                    ) : showApiKey ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </Button>
+              <div className="col-span-3 space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    id="api-key"
+                    type={showApiKey ? "text" : "password"}
+                    value={
+                      isEditingApiKey
+                        ? editForm.apiKey
+                        : showApiKey
+                          ? decryptedApiKey
+                          : maskApiKey(selectedProvider?.apiKey || "")
+                    }
+                    onChange={(e) =>
+                      isEditingApiKey &&
+                      setEditForm((prev) => ({
+                        ...prev,
+                        apiKey: e.target.value,
+                      }))
+                    }
+                    placeholder={isEditingApiKey ? "Enter new API key" : ""}
+                    className="flex-1"
+                    readOnly={!isEditingApiKey}
+                  />
+
+                  {!isEditingApiKey ? (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleToggleApiKey}
+                        disabled={isDecrypting}
+                        className="px-3"
+                      >
+                        {isDecrypting ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                        ) : showApiKey ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleStartEditApiKey}
+                        className="px-3"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCancelEditApiKey}
+                      className="px-3"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {isEditingApiKey && (
+                  <div className="text-sm text-muted-foreground bg-blue-50 p-3 rounded-md">
+                    <strong>Security Note:</strong> API keys are encrypted
+                    before storage. This will replace your current API key.
+                  </div>
                 )}
               </div>
             </div>
-            {isEditing && (
-              <div className="col-span-4 text-sm text-muted-foreground bg-blue-50 p-3 rounded-md">
-                <strong>Security Note:</strong> API keys are encrypted before
-                storage. Leave the API key field blank to keep the current key
-                unchanged.
-              </div>
-            )}
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end gap-2 pt-4 border-t">
+            <Button onClick={handleSave} disabled={!hasChanges || isSaving}>
+              {isSaving ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
