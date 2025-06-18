@@ -8,12 +8,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -78,9 +73,8 @@ export default function Logs() {
       : text;
   };
 
-  const openDialog = (log: AppLog, type: "message" | "context") => {
+  const openDialog = (log: AppLog) => {
     setSelectedLog(log);
-    setDialogType(type);
   };
 
   if (loadingAppLogs) {
@@ -130,7 +124,7 @@ export default function Logs() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => openDialog(log, "message")}
+                        onClick={() => openDialog(log)}
                         className="h-6 w-6 p-0"
                       >
                         <Eye className="h-3 w-3" />
@@ -143,7 +137,7 @@ export default function Logs() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => openDialog(log, "context")}
+                      onClick={() => openDialog(log)}
                       className="h-8 px-2"
                     >
                       <FileText className="h-3 w-3 mr-1" />
@@ -162,74 +156,15 @@ export default function Logs() {
         </Table>
       </div>
 
-      {/* Message Dialog */}
-      <Dialog
-        open={dialogType === "message" && selectedLog !== null}
-        onOpenChange={(open) => !open && setDialogType(null)}
-      >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Log Details - ID: {selectedLog?.id}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <h4 className="font-semibold mb-2">Level:</h4>
-              <Badge
-                variant={
-                  selectedLog
-                    ? getLogLevelVariant(selectedLog.level)
-                    : "default"
-                }
-              >
-                {selectedLog?.level.toUpperCase()}
-              </Badge>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Message:</h4>
-              <div className="bg-muted p-3 rounded-lg">
-                <pre className="whitespace-pre-wrap text-sm">
-                  {selectedLog?.message || "No message"}
-                </pre>
-              </div>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-2">Created At:</h4>
-              <p className="text-sm">
-                {selectedLog && formatTimestamp(selectedLog.createdAt)}
-              </p>
-            </div>
-            {selectedLog && selectedLog.context && (
-              <div>
-                <h4 className="font-semibold mb-2">Context:</h4>
-                <div className="bg-muted p-3 rounded-lg">
-                  <div className="whitespace-pre-wrap text-sm">
-                    {selectedLog.context
-                      ? JSON.stringify(
-                          selectedLog.context as Record<string, unknown>,
-                          null,
-                          2
-                        )
-                      : "No context data"}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
       {/* Context Dialog */}
       <Dialog
         open={selectedLog !== null}
         onOpenChange={(open) => !open && setSelectedLog(null)}
       >
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Context Data - Log ID: {selectedLog?.id}</DialogTitle>
-          </DialogHeader>
           <div className="space-y-4">
             <div>
-              <h4 className="font-semibold mb-2">JSON Context:</h4>
+              <h4 className="font-semibold mb-2">JSON</h4>
               <div className="bg-muted p-4 rounded-lg">
                 <pre className="whitespace-pre-wrap text-sm font-mono">
                   {selectedLog?.context
