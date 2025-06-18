@@ -8,14 +8,16 @@
 import { logError } from "@/utils/logger";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  Cpu,
-  Edit,
-  Eye,
-  EyeOff,
-  Plus,
-  Settings,
-  Sparkles,
-  Trash2,
+    Cpu,
+    Edit,
+    Eye,
+    EyeOff,
+    Plus,
+    Save,
+    Settings,
+    Sparkles,
+    Trash2,
+    X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -23,36 +25,37 @@ import { toast } from "sonner";
 
 import { maskApiKey } from "@/utils/model/client-model";
 import { decryptProviderKey } from "@/utils/model/server-model";
+import { updateProviderWithEncryption } from "@/utils/model/update-provider-with-encryption";
 import { deleteModel } from "@/utils/mutations/models/delete-model";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
 
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -79,6 +82,15 @@ export default function Models() {
     name: string;
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // New state for editing
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    apiKey: "",
+  });
 
   // Fetch models and providers data
   const { data: models = [], refetch: refetchModels } = useQuery({
@@ -135,9 +147,75 @@ export default function Models() {
 
   const handleProviderSettings = (provider: Provider) => {
     setSelectedProvider(provider);
+    setEditForm({
+      name: provider.name,
+      description: provider.description,
+      apiKey: "", // Never pre-fill API key for security
+    });
     setShowProviderDialog(true);
     setShowApiKey(false);
     setDecryptedApiKey("");
+    setIsEditing(false);
+  };
+
+  const handleStartEdit = () => {
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (!selectedProvider) return;
+
+    // Reset form to original values
+    setEditForm({
+      name: selectedProvider.name,
+      description: selectedProvider.description,
+      apiKey: "",
+    });
+    setIsEditing(false);
+  };
+
+  const handleSave = async () => {
+    if (!selectedProvider) return;
+
+    setIsSaving(true);
+    try {
+      // Prepare update data - only include changed fields
+      const updateData: {
+        name?: string;
+        description?: string;
+        apiKey?: string;
+      } = {};
+
+      if (editForm.name !== selectedProvider.name) {
+        updateData.name = editForm.name;
+      }
+
+      if (editForm.description !== selectedProvider.description) {
+        updateData.description = editForm.description;
+      }
+
+      // Only include API key if user entered a new one
+      if (editForm.apiKey.trim() !== "") {
+        updateData.apiKey = editForm.apiKey;
+      }
+
+      // Call secure server action that handles encryption
+      await updateProviderWithEncryption(selectedProvider.id, updateData);
+
+      toast.success("Provider updated successfully");
+
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["providers"] });
+      queryClient.invalidateQueries({ queryKey: ["models"] });
+
+      setIsEditing(false);
+      setShowProviderDialog(false);
+    } catch (error) {
+      logError("Error updating provider:", error);
+      toast.error("Failed to update provider");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleToggleApiKey = async () => {
@@ -166,6 +244,8 @@ export default function Models() {
     setSelectedProvider(null);
     setShowApiKey(false);
     setDecryptedApiKey("");
+    setIsEditing(false);
+    setEditForm({ name: "", description: "", apiKey: "" });
   };
 
   return (
@@ -278,9 +358,47 @@ export default function Models() {
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Provider Settings</DialogTitle>
+            <DialogTitle className="flex items-center justify-between">
+              Provider Settings
+              {!isEditing ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleStartEdit}
+                  className="h-8 w-8 p-0"
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+              ) : (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="h-8 w-8 p-0"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="h-8 w-8 p-0"
+                  >
+                    {isSaving ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                    ) : (
+                      <Save className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
+            </DialogTitle>
             <DialogDescription>
-              Manage settings for {selectedProvider?.name}
+              {isEditing ? "Edit settings for" : "Manage settings for"}{" "}
+              {selectedProvider?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -290,9 +408,13 @@ export default function Models() {
               </Label>
               <Input
                 id="provider-name"
-                value={selectedProvider?.name || ""}
+                value={isEditing ? editForm.name : selectedProvider?.name || ""}
+                onChange={(e) =>
+                  isEditing &&
+                  setEditForm((prev) => ({ ...prev, name: e.target.value }))
+                }
                 className="col-span-3"
-                readOnly
+                readOnly={!isEditing}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -301,9 +423,20 @@ export default function Models() {
               </Label>
               <Input
                 id="provider-description"
-                value={selectedProvider?.description || ""}
+                value={
+                  isEditing
+                    ? editForm.description
+                    : selectedProvider?.description || ""
+                }
+                onChange={(e) =>
+                  isEditing &&
+                  setEditForm((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
+                }
                 className="col-span-3"
-                readOnly
+                readOnly={!isEditing}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -315,30 +448,50 @@ export default function Models() {
                   id="api-key"
                   type={showApiKey ? "text" : "password"}
                   value={
-                    showApiKey
-                      ? decryptedApiKey
-                      : maskApiKey(selectedProvider?.apiKey || "")
+                    isEditing
+                      ? editForm.apiKey
+                      : showApiKey
+                        ? decryptedApiKey
+                        : maskApiKey(selectedProvider?.apiKey || "")
+                  }
+                  onChange={(e) =>
+                    isEditing &&
+                    setEditForm((prev) => ({ ...prev, apiKey: e.target.value }))
+                  }
+                  placeholder={
+                    isEditing
+                      ? "Enter new API key (leave blank to keep current)"
+                      : ""
                   }
                   className="flex-1"
-                  readOnly
+                  readOnly={!isEditing}
                 />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleApiKey}
-                  disabled={isDecrypting}
-                  className="px-3"
-                >
-                  {isDecrypting ? (
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
-                  ) : showApiKey ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
+                {!isEditing && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleToggleApiKey}
+                    disabled={isDecrypting}
+                    className="px-3"
+                  >
+                    {isDecrypting ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current" />
+                    ) : showApiKey ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
+                )}
               </div>
             </div>
+            {isEditing && (
+              <div className="col-span-4 text-sm text-muted-foreground bg-blue-50 p-3 rounded-md">
+                <strong>Security Note:</strong> API keys are encrypted before
+                storage. Leave the API key field blank to keep the current key
+                unchanged.
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

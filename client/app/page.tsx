@@ -160,7 +160,7 @@ export default function Home() {
         redirectTo: profile?.role !== "ta" ? "/analytics" : "/home",
       });
 
-      toast.success("Successfully signed in with Microsoft!");
+      toast.success("Signing in with Microsoft...");
     } catch (error) {
       const errorMessage = (error as Error).message;
 
