@@ -37,7 +37,6 @@ import { useRole } from "@/contexts/role-context";
 import { useAuth } from "@/hooks/use-auth";
 import { logError } from "@/utils/logger";
 import { createFlexibleSectionChangeHandler } from "@/utils/navigation-utils";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -47,7 +46,6 @@ import {
   ChevronRight,
   ChevronsUpDown,
   FileText,
-  GraduationCap,
   Home,
   LogOut,
   Search,
@@ -147,12 +145,6 @@ export function UnifiedSidebar({
     enabled: !!userId,
   });
 
-  // Fetch classes for dynamic menu
-  const { data: classes = [] } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
-  });
-
   // Get available modes based on user role
   const availableModes = React.useMemo(() => {
     if (!profile?.role) return [{ key: "guest", label: "Guest Mode" }];
@@ -164,26 +156,6 @@ export function UnifiedSidebar({
     const mode = availableModes.find((m) => m.key === effectiveRole);
     return mode?.label || "Guest Mode";
   }, [availableModes, effectiveRole]);
-
-  // Filter classes based on user role
-  const availableClasses = React.useMemo(() => {
-    if (!profile || !classes || effectiveRole === "guest") return [];
-
-    switch (effectiveRole) {
-      case "admin":
-      case "instructional":
-        return classes; // Full access
-      case "instructor":
-        // Only classes the user is assigned to
-        return classes.filter((cls: ClassData) =>
-          profile.classIds?.includes(cls.id)
-        );
-      case "ta":
-        return []; // No class access for TAs
-      default:
-        return [];
-    }
-  }, [classes, profile, effectiveRole]);
 
   // Build navigation menu based on role with search filtering
   const navMain = React.useMemo(() => {
@@ -222,11 +194,6 @@ export function UnifiedSidebar({
             section: "dashboard",
           },
           {
-            title: "Performance",
-            url: "#",
-            section: "performance",
-          },
-          {
             title: "Reports",
             url: "#",
             section: "reports",
@@ -248,6 +215,16 @@ export function UnifiedSidebar({
         icon: Sparkles,
         items: [
           {
+            title: "Classes",
+            url: "#",
+            section: "classes",
+          },
+          {
+            title: "Agents",
+            url: "#",
+            section: "agents",
+          },
+          {
             title: "Scenarios",
             url: "#",
             section: "scenarios",
@@ -266,30 +243,6 @@ export function UnifiedSidebar({
       });
     }
 
-    // Classes - Available for only instructor level
-    if (["instructor"].includes(effectiveRole)) {
-      const classItems: MenuItem[] = [];
-
-      // Add specific classes based on role
-      if (availableClasses.length > 0) {
-        availableClasses.forEach((cls: ClassData) => {
-          classItems.push({
-            title: cls.classCode,
-            url: "#",
-            section: `class-${cls.id}`,
-            classData: cls,
-          });
-        });
-      }
-
-      menu.push({
-        title: "Classes",
-        url: "#",
-        icon: GraduationCap,
-        items: classItems,
-      });
-    }
-
     // Management - Available from admin level only
     if (["admin"].includes(effectiveRole)) {
       const managementItems: MenuItem[] = [];
@@ -301,26 +254,14 @@ export function UnifiedSidebar({
         section: "staff",
       });
 
-      // Classes - available for admin
-      managementItems.push({
-        title: "Classes",
-        url: "#",
-        section: "classes",
-      });
-
-      // Agents - available for admin
-      managementItems.push({
-        title: "Agents",
-        url: "#",
-        section: "agents",
-      });
-
       // Evaluations - available for admin
       managementItems.push({
         title: "Evaluations",
         url: "#",
         section: "evals",
       });
+
+      // Logs - available for admin
 
       menu.push({
         title: "Management",
@@ -348,7 +289,7 @@ export function UnifiedSidebar({
     }
 
     return menu;
-  }, [effectiveRole, availableClasses, searchTerm]);
+  }, [effectiveRole, searchTerm]);
 
   // Note: Removed automatic navigation when section is not available
   // This was causing unwanted redirects. Let the parent component handle navigation logic.
