@@ -103,12 +103,26 @@ mkdir -p /docker-entrypoint-initdb.d
 
 # --- GENERATE DYNAMIC SQL FROM MARKDOWN ------------------------------
 log_info "🔧 Generating agent SQL from markdown files..."
-if [ -f "/database/init/agents/generate-agents-sql.sh" ]; then
-  cd /database/init/agents
+if [ -f "/database/app/agents/generate-agents-sql.sh" ]; then
+  cd /database/app/agents
   ./generate-agents-sql.sh
   log_success "✅ Agent SQL generated from markdown files"
 else
   log_warning "⚠️  Agent generation script not found, using existing SQL"
+fi
+
+# --- GENERATE MODEL SQL WITH ENCRYPTED KEYS -------------------------
+log_info "🔐 Generating model SQL with encrypted API keys..."
+if [ -f "/database/app/models/generate-models.sh" ]; then
+  cd /database/app/models
+  if ./generate-models.sh; then
+    log_success "✅ Model SQL generated with encrypted API keys"
+  else
+    log_warning "⚠️  Model generation failed, using existing SQL"
+  fi
+  cd - > /dev/null
+else
+  log_warning "⚠️  Model generation script not found, using existing SQL"
 fi
 
 # Create the main initialization script with extensions

@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-18T21:37:59.997Z
+Generated on: 2025-06-18T21:50:20.714Z
 
 ## Summary
-- **Total Components**: 83
+- **Total Components**: 82
 - **Tests Created**: 0
 - **Tests Updated**: 26
-- **Tests Skipped** (already implemented): 57
+- **Tests Skipped** (already implemented): 56
 
 ## Component Coverage
 
@@ -14,7 +14,6 @@ Generated on: 2025-06-18T21:37:59.997Z
 |-----------|------|-----------|--------|
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
-| Overview | analytics/Overview.tsx | Overview.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | ClassDetails | classes/ClassDetails.tsx | ClassDetails.test.tsx | ✅ Implemented |
 | ClassEdit | classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
@@ -103,7 +102,6 @@ __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
 │   ├── History.test.tsx
-│   ├── Overview.test.tsx
 │   ├── Reports.test.tsx
 ├── classes/
 │   ├── ClassDetails.test.tsx

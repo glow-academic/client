@@ -176,6 +176,18 @@ start_fresh_from_init() {
     echo "✅ Agent SQL generated from markdown files"
   fi
   
+  # Generate model SQL with encrypted API keys
+  if [[ -f "app/models/generate-models.sh" ]]; then
+    echo "🔐 Generating model SQL with encrypted API keys..."
+    cd app/models
+    if ./generate-models.sh; then
+      echo "✅ Model SQL generated with encrypted API keys"
+    else
+      echo "⚠️  Model generation failed, using existing SQL"
+    fi
+    cd - > /dev/null
+  fi
+  
   if [[ ! -f "$INIT_SQL" ]]; then
     echo "❌ Init file '$INIT_SQL' not found!"
     return 1
