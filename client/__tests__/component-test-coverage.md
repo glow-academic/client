@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-18T20:56:55.139Z
+Generated on: 2025-06-18T21:25:55.931Z
 
 ## Summary
-- **Total Components**: 77
-- **Tests Created**: 0
+- **Total Components**: 83
+- **Tests Created**: 6
 - **Tests Updated**: 20
 - **Tests Skipped** (already implemented): 57
 
@@ -42,6 +42,7 @@ Generated on: 2025-06-18T20:56:55.139Z
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
+| Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ❌ Needs Implementation |
 | Eval | common/eval/Eval.tsx | Eval.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
@@ -55,6 +56,7 @@ Generated on: 2025-06-18T20:56:55.139Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
+| Model | common/model/Model.tsx | Model.test.tsx | ❌ Needs Implementation |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -78,13 +80,17 @@ Generated on: 2025-06-18T20:56:55.139Z
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
+| CohortEdit | management/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ❌ Needs Implementation |
 | Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
+| NewCohort | management/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
 | EvalDetails | management/evals/EvalDetails.tsx | EvalDetails.test.tsx | ✅ Implemented |
 | EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
 | Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
 | NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ✅ Implemented |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
+| ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
 | Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
+| NewModel | management/models/NewModel.tsx | NewModel.test.tsx | ❌ Needs Implementation |
 | NewStaff | management/staff/NewStaff.tsx | NewStaff.test.tsx | ✅ Implemented |
 | Staff | management/staff/Staff.tsx | Staff.test.tsx | ✅ Implemented |
 | StaffEdit | management/staff/StaffEdit.tsx | StaffEdit.test.tsx | ✅ Implemented |
@@ -136,6 +142,8 @@ __tests__/
 │   │   ├── MarkdownImage.test.tsx
 │   ├── class/
 │   │   ├── ClassForm.test.tsx
+│   ├── cohort/
+│   │   ├── Cohort.test.tsx
 │   ├── eval/
 │   │   ├── Eval.test.tsx
 │   ├── history/
@@ -152,6 +160,8 @@ __tests__/
 │   ├── layout/
 │   │   ├── navigation-breadcrumbs.test.tsx
 │   │   ├── unified-sidebar.test.tsx
+│   ├── model/
+│   │   ├── Model.test.tsx
 │   ├── rubric/
 │   │   ├── Rubric.test.tsx
 │   │   ├── TableRubric.test.tsx
@@ -188,7 +198,9 @@ __tests__/
 │   ├── Home.test.tsx
 ├── management/
 │   ├── cohorts/
+│   │   ├── CohortEdit.test.tsx
 │   │   ├── Cohorts.test.tsx
+│   │   ├── NewCohort.test.tsx
 │   ├── evals/
 │   │   ├── EvalDetails.test.tsx
 │   │   ├── EvalEdit.test.tsx
@@ -197,7 +209,9 @@ __tests__/
 │   ├── logs/
 │   │   ├── Logs.test.tsx
 │   ├── models/
+│   │   ├── ModelEdit.test.tsx
 │   │   ├── Models.test.tsx
+│   │   ├── NewModel.test.tsx
 │   ├── staff/
 │   │   ├── NewStaff.test.tsx
 │   │   ├── Staff.test.tsx
