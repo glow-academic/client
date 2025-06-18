@@ -41,7 +41,6 @@ interface CohortCompletionProps {
     title: string;
     description: string | null;
     profileIds: string[];
-    simulationIds: string[];
   }>;
   profiles: Array<{
     id: string;

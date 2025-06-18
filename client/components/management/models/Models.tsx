@@ -21,8 +21,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { maskApiKey } from "@/utils/client-model";
-import { decryptProviderKey } from "@/utils/model";
+import { maskApiKey } from "@/utils/model/client-model";
+import { decryptProviderKey } from "@/utils/model/server-model";
 import { deleteModel } from "@/utils/mutations/models/delete-model";
 import { getAllModels } from "@/utils/queries/models/get-all-models";
 import { getAllProviders } from "@/utils/queries/providers/get-all-providers";
