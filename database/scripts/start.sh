@@ -51,7 +51,7 @@ done
 
 ADMIN_CONN="postgresql://postgres@${DB_HOST}:${DB_PORT}/postgres"
 USER_CONN="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-INIT_SQL=${INIT_SQL:-init.sql}
+INIT_SQL=${INIT_SQL:-app/init.sql}
 
 # --- CHECK POSTGRESQL ------------------------------------------------
 if ! command -v psql &>/dev/null; then
@@ -170,9 +170,9 @@ start_fresh_from_init() {
   echo "🆕 Starting fresh database from init.sql"
   
   # Generate agent SQL from markdown files
-  if [[ -f "init/agents/generate-agents-sql.sh" ]]; then
+  if [[ -f "app/agents/generate-agents-sql.sh" ]]; then
     echo "🔧 Generating agent SQL from markdown files..."
-    cd init/agents && ./generate-agents-sql.sh && cd - > /dev/null
+    cd app/agents && ./generate-agents-sql.sh && cd - > /dev/null
     echo "✅ Agent SQL generated from markdown files"
   fi
   

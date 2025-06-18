@@ -40,10 +40,8 @@ class Agents(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     name: str = Field(sa_column=Column('name', Text))
-    subtitle: str = Field(sa_column=Column('subtitle', Text))
     description: str = Field(sa_column=Column('description', Text))
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
-    agent_type: str = Field(sa_column=Column('agent_type', Enum('student', 'ta', name='agent_type'), server_default=text("'student'::agent_type")))
     temperature: int = Field(sa_column=Column('temperature', Integer))
 
     evals: List['Evals'] = Relationship(back_populates='base_agent')
@@ -82,6 +80,31 @@ class Classes(_Base, table=True):
     scenarios: List['Scenarios'] = Relationship(back_populates='class_')
     schedules: List['Schedules'] = Relationship(back_populates='class_')
     topics: List['Topics'] = Relationship(back_populates='class_')
+
+
+class Cohorts(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='cohorts_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    title: str = Field(sa_column=Column('title', Text))
+    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
+    simulation_ids: List[uuid.UUID] = Field(sa_column=Column('simulation_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    profile_ids: List[uuid.UUID] = Field(sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
+
+
+class Migrations(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
 
 
 class Rubrics(_Base, table=True):
@@ -176,8 +199,8 @@ class Evals(_Base, table=True):
     scenario_ids: List[uuid.UUID] = Field(sa_column=Column('scenario_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     agent_ids: List[uuid.UUID] = Field(sa_column=Column('agent_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     rubric_ids: List[uuid.UUID] = Field(sa_column=Column('rubric_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
-    eval_type: str = Field(sa_column=Column('eval_type', Enum('student', 'ta', name='eval_type'), server_default=text("'student'::eval_type")))
     max_turns: int = Field(sa_column=Column('max_turns', Integer))
+    start_on_creation: bool = Field(sa_column=Column('start_on_creation', Boolean, server_default=text('true')))
 
     base_agent: Optional['Agents'] = Relationship(back_populates='evals')
     eval_runs: List['EvalRuns'] = Relationship(back_populates='eval')

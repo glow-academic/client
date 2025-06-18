@@ -5,6 +5,17 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
+CREATE TABLE cohorts (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  title      TEXT        NOT NULL,
+  description TEXT        NULL,
+  active      BOOLEAN     NOT NULL           DEFAULT TRUE,
+  simulation_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- references simulations
+  profile_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[] -- references profiles
+);
+
 CREATE TABLE simulations (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),

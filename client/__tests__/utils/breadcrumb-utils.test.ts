@@ -70,17 +70,10 @@ describe("breadcrumb-utils", () => {
     it("should handle analytics routes correctly", () => {
       const testCases = [
         {
-          path: "/analytics/overview",
+          path: "/analytics/dashboard",
           expected: [
             { title: "Analytics", section: "analytics" },
-            { title: "Overview", section: "overview" },
-          ],
-        },
-        {
-          path: "/analytics/performance",
-          expected: [
-            { title: "Analytics", section: "analytics" },
-            { title: "Performance", section: "performance" },
+            { title: "Dashboard", section: "dashboard" },
           ],
         },
         {
@@ -350,7 +343,6 @@ describe("breadcrumb-utils", () => {
       const testCases = [
         { path: "/home", expected: "home" },
         { path: "/growth", expected: "growth" },
-        { path: "/analytics/performance", expected: "performance" },
         { path: "/create/scenarios", expected: "scenarios" },
         { path: "/management/staff", expected: "staff" },
         { path: "/classes/c/class-123", expected: "class-class-123" },

@@ -5,7 +5,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
-CREATE TYPE eval_type AS ENUM ('student', 'ta'); -- this means we run the eval on this agent throughout the conversation
 CREATE TYPE eval_message_type AS ENUM ('query', 'response'); -- query or response
 
 CREATE TABLE evals (
@@ -18,7 +17,6 @@ CREATE TABLE evals (
     scenario_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- what tests will be run over
     agent_ids UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[], -- permutations of agents to run over
     rubric_ids   UUID[]        NOT NULL DEFAULT ARRAY[]::UUID[], -- permutations of rubrics to use for the eval
-    eval_type eval_type NOT NULL           DEFAULT 'student',
     max_turns INTEGER     NOT NULL, -- how many turns each chat can have
     start_on_creation BOOLEAN NOT NULL DEFAULT TRUE -- whether to start the eval on creation
   );
@@ -86,12 +84,12 @@ CREATE TABLE eval_runs (
 -- ============================================================================
 
 -- Insert 3 Runnable Evaluations
-INSERT INTO evals (id, name, description, base_agent_id, scenario_ids, agent_ids, eval_type, max_turns, rubric_ids) VALUES
-  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 10, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
+INSERT INTO evals (id, name, description, base_agent_id, scenario_ids, agent_ids, max_turns, rubric_ids) VALUES
+  ('eaa10001-1111-2222-3333-444444444444', 'CS 180 Student Behavior Evaluation', 'Evaluates how different student personalities handle programming problems and TA interactions', '11111111-aaaa-aaaa-aaaa-111111111111', ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 10, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 15, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
+  ('eaa10002-2222-3333-4444-555555555555', 'Multi-Class Algorithm Understanding', 'Tests student comprehension across different CS courses with various difficulty levels', '22222222-bbbb-bbbb-bbbb-222222222222', ARRAY['44444444-dddd-dddd-dddd-444444444444', '55555555-eeee-eeee-eeee-555555555555', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 15, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]),
   
-  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 'student', 20, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]);
+  ('eaa10003-3333-4444-5555-666666666666', 'Advanced Problem Solving Assessment', 'Comprehensive evaluation of student problem-solving skills in complex scenarios', '33333333-cccc-cccc-cccc-333333333333', ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], 20, ARRAY['44444444-4444-4444-4444-444444444444']::UUID[]);
 
 -- Insert Sample Eval Runs (showing how evaluations would be executed)
 INSERT INTO eval_runs (id, eval_id, agent_id, rubric_id) VALUES

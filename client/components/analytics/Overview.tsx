@@ -1,6 +1,6 @@
 /**
- * Overview.tsx
- * Used to display the overview for the analytics page.
+ * Dashboard.tsx (renamed from Overview.tsx)
+ * Used to display the main dashboard for the analytics page.
  * @AshokSaravanan222 & @siladiea
  * 06/07/2025
  */
@@ -14,13 +14,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
-import { StandardGroup } from "@/types";
-import { getAgentConfig } from "@/utils/agents";
-import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -28,129 +31,52 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { format, isAfter, subDays, subHours } from "date-fns";
 import {
   AlertTriangle,
-  Award,
-  Brain,
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
   Clock,
-  Eye,
   MessageSquare,
-  Target,
   TrendingUp,
   Users,
-  Zap,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  Radar,
+  RadarChart,
+  RadialBar,
+  RadialBarChart,
 } from "recharts";
 
-// Color palette for charts
-const COLORS = {
-  primary: "#3b82f6",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  purple: "#8b5cf6",
-  pink: "#ec4899",
-  teal: "#14b8a6",
-  orange: "#f97316",
-};
+const radarChartConfig = {
+  score: {
+    label: "Performance Score",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig;
 
-export default function Overview() {
-  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
-    "7d" | "30d" | "90d"
-  >("30d");
-  const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<
-    "1h" | "12h" | "24h"
-  >("24h");
-  const [personalityTimeRange, setPersonalityTimeRange] = useState<
-    "12h" | "1d" | "1w"
-  >("1d");
-  const [skillTimeRange, setSkillTimeRange] = useState<"7d" | "30d" | "90d">(
-    "30d"
-  );
+const radialChartConfig = {
+  progress: {
+    label: "Progress",
+    color: "var(--chart-2)",
+  },
+  completed: {
+    label: "Completed",
+    color: "var(--chart-3)",
+  },
+} satisfies ChartConfig;
 
-  // Carousel state
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
-  const totalSlides = 4;
-
-  // Training insights carousel state
-  const [currentInsightSlide, setCurrentInsightSlide] = useState(0);
-  const [isInsightHovered, setIsInsightHovered] = useState(false);
-  const totalInsightSlides = 3;
-
-  // Auto-scroll carousel
-  useEffect(() => {
-    if (!isHovered) {
-      const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % totalSlides);
-      }, 5000); // Change slide every 5 seconds
-
-      return () => clearInterval(interval);
-    }
-    return () => {}; // Return empty cleanup function when hovered
-  }, [isHovered, totalSlides]);
-
-  // Auto-scroll training insights carousel
-  useEffect(() => {
-    if (!isInsightHovered) {
-      const interval = setInterval(() => {
-        setCurrentInsightSlide((prev) => (prev + 1) % totalInsightSlides);
-      }, 4000); // Change slide every 4 seconds
-
-      return () => clearInterval(interval);
-    }
-    return () => {}; // Return empty cleanup function when hovered
-  }, [isInsightHovered, totalInsightSlides]);
-
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  }, [totalSlides]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  }, [totalSlides]);
-
-  const nextInsightSlide = useCallback(() => {
-    setCurrentInsightSlide((prev) => (prev + 1) % totalInsightSlides);
-  }, [totalInsightSlides]);
-
-  const prevInsightSlide = useCallback(() => {
-    setCurrentInsightSlide(
-      (prev) => (prev - 1 + totalInsightSlides) % totalInsightSlides
-    );
-  }, [totalInsightSlides]);
-
-  const { data: scenarios, isLoading: _isLoadingScenarios } = useQuery({
-    queryKey: ["scenarios"],
-    queryFn: () => getAllScenarios(),
-  });
-
+export default function Dashboard() {
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
   });
 
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
-    queryKey: ["agents"],
-    queryFn: () => getAllAgents(),
+  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -204,37 +130,29 @@ export default function Overview() {
     enabled: !!grades && grades.length > 0,
   });
 
-  const isWithinLastWeek = (date: string) => {
-    const oneWeekAgo = subDays(new Date(), 7);
-    const chatDate = new Date(date);
-    return chatDate >= oneWeekAgo;
-  };
+  // Calculate radar chart data (skill development)
+  const radarData = useMemo(() => {
+    if (!grades || !feedbacks || !standards || !standardGroups || !rubrics)
+      return [];
 
-  // Calculate key metrics
-  const analytics = useMemo(() => {
-    if (
-      !profiles ||
-      !chats ||
-      !grades ||
-      !agents ||
-      !feedbacks ||
-      !standards ||
-      !standardGroups ||
-      !scenarios
-    )
-      return null;
+    if (grades.length === 0) return [];
 
-    const tas = profiles.filter((profile) => profile.role === "ta");
-    const completedChats = chats.filter((chat) => chat.completed);
-    const totalSessions = chats.filter((chat) =>
-      isWithinLastWeek(chat.createdAt)
-    ).length;
-    const completionRate =
-      totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
+    // Calculate overall score from grades - normalize to percentage based on rubric total points
+    const rubric = rubrics?.find((r) =>
+      standardGroups?.some((sg) => sg.rubricId === r.id)
+    );
+    const rubricTotalPoints = rubric?.points || 20;
 
-    // Group standards by their names to create skill categories
-    const skillCategories = standardGroups.reduce(
-      (acc, group: StandardGroup) => {
+    const avgScore = Math.round(
+      (grades.reduce((sum, grade) => sum + grade.score, 0) /
+        grades.length /
+        rubricTotalPoints) *
+        100
+    );
+
+    // Calculate skill-based scores from feedbacks and standards using rubric total points
+    const skillScores = standardGroups.reduce(
+      (acc, group) => {
         const groupStandards = standards.filter(
           (s) => s.standardGroupId === group.id
         );
@@ -243,9 +161,8 @@ export default function Overview() {
         );
 
         if (groupFeedbacks.length > 0) {
-          // Use the rubric's total points instead of max standard points
           const rubric = rubrics?.find((r) => r.id === group.rubricId);
-          const rubricTotalPoints = rubric?.points || 100;
+          const rubricTotalPoints = rubric?.points || 20;
 
           const avgScore = Math.round(
             (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
@@ -253,7 +170,7 @@ export default function Overview() {
               rubricTotalPoints) *
               100
           );
-          acc[group.shortName] = avgScore;
+          acc[group.name.toLowerCase().replace(/\s+/g, "")] = avgScore;
         }
 
         return acc;
@@ -261,54 +178,111 @@ export default function Overview() {
       {} as Record<string, number>
     );
 
-    // Calculate overall average score from grades
-    const avgOverallScore =
-      grades.length > 0
-        ? Math.round(
-            grades.reduce((sum, g) => sum + g.score, 0) / grades.length
-          )
-        : 0;
+    // Calculate time management score from grades (inverse of time taken, normalized)
+    const avgTimeTaken =
+      grades.reduce((sum, grade) => sum + grade.timeTaken, 0) / grades.length;
+    const timeManagementScore = Math.max(
+      0,
+      Math.min(100, 100 - avgTimeTaken / 3600)
+    ); // Normalize based on hours
 
-    // Filter data by personality time range
-    const personalityHours =
-      personalityTimeRange === "12h"
-        ? 12
-        : personalityTimeRange === "1d"
-          ? 24
-          : 168; // 1 week = 7 * 24 hours
-    const personalityCutoff = subHours(new Date(), personalityHours);
+    // Calculate engagement score based on interaction frequency and completion
+    const completedChats = chats?.filter((chat) => chat.completed).length || 0;
+    const totalChats = chats?.length || 0;
+    const engagementScore =
+      totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
 
-    const personalityFilteredGrades = grades.filter((grade) =>
-      isAfter(new Date(grade.createdAt), personalityCutoff)
+    // Create dynamic metrics based on actual standard groups
+    const dynamicMetrics = [
+      {
+        metric: "Overall Score",
+        value: avgScore,
+        fullMark: 100,
+      },
+    ];
+
+    // Add skill scores based on actual standard groups
+    standardGroups.forEach((group) => {
+      const skillKey = group.name.toLowerCase().replace(/\s+/g, "");
+      const skillValue = skillScores[skillKey] || 0;
+      dynamicMetrics.push({
+        metric: group.shortName || group.name,
+        value: skillValue,
+        fullMark: 100,
+      });
+    });
+
+    // Add calculated metrics
+    dynamicMetrics.push(
+      {
+        metric: "Time Management",
+        value: Math.round(timeManagementScore),
+        fullMark: 100,
+      },
+      {
+        metric: "Engagement",
+        value: engagementScore,
+        fullMark: 100,
+      }
     );
 
-    // Performance by student type (scenario-based) - use personality filtered data
-    const performanceByType = agents
-      .filter((agent) => agent.agentType === "student")
-      .map((agent) => {
-        const agentScenarios = scenarios.filter((s) => s.agentId === agent.id);
-        const agentChats = chats.filter((chat) =>
-          agentScenarios.some((scenario) => scenario.id === chat.scenarioId)
-        );
-        const agentGrades = personalityFilteredGrades.filter((grade) =>
-          agentChats.some((chat) => chat.id === grade.simulationChatId)
-        );
+    return dynamicMetrics;
+  }, [grades, feedbacks, standards, standardGroups, chats, rubrics]);
 
-        const avgScore =
-          agentGrades.length > 0
-            ? Math.round(
-                agentGrades.reduce((sum, g) => sum + g.score, 0) /
-                  agentGrades.length
-              )
-            : 0;
+  // Calculate radial chart data (cohort progress)
+  const radialData = useMemo(() => {
+    if (!cohorts || !profiles || !attempts) return [];
 
-        return {
-          name: agent.name,
-          score: avgScore,
-          sessions: agentChats.length,
-          color: getAgentConfig(agent.name).colors.bgColor,
-        };
+    return cohorts.map((cohort) => {
+      // Filter profiles that belong to this cohort
+      const cohortProfiles = profiles.filter((profile) =>
+        cohort.profileIds.includes(profile.id)
+      );
+
+      // Calculate completion rate for this cohort
+      const cohortAttempts = attempts.filter((attempt) =>
+        cohortProfiles.some((profile) => profile.id === attempt.profileId)
+      );
+
+      const completedAttempts = cohortAttempts.filter((attempt) => {
+        const attemptChats = chats?.filter(
+          (chat) => chat.attemptId === attempt.id
+        );
+        return attemptChats?.some((chat) => chat.completed);
       });
+
+      const progressPercentage =
+        cohortAttempts.length > 0
+          ? Math.round((completedAttempts.length / cohortAttempts.length) * 100)
+          : 0;
+
+      return {
+        name: cohort.title,
+        progress: progressPercentage,
+        completed: completedAttempts.length,
+        total: cohortAttempts.length,
+        fill: `var(--chart-${(cohorts.indexOf(cohort) % 5) + 1})`,
+      };
+    });
+  }, [cohorts, profiles, attempts, chats]);
+
+  // Calculate key metrics
+  const analytics = useMemo(() => {
+    if (!profiles || !chats || !grades) return null;
+
+    const tas = profiles.filter((profile) => profile.role === "ta");
+    const completedChats = chats.filter((chat) => chat.completed);
+    const totalSessions = chats.length;
+    const completionRate =
+      totalSessions > 0 ? (completedChats.length / totalSessions) * 100 : 0;
+
+    // Calculate average training time from grades (convert seconds to minutes)
+    const avgTrainingTime =
+      grades.length > 0
+        ? Math.round(
+            grades.reduce((sum, g) => sum + g.timeTaken, 0) / grades.length / 60
+          )
+        : 45;
 
     // TA performance for struggling count
     const taPerformance = tas.map((ta) => {
@@ -331,226 +305,64 @@ export default function Overview() {
       return { avgScore };
     });
 
-    // Time series data for performance trends
-    const performanceDays =
-      performanceTrendTimeRange === "7d"
-        ? 7
-        : performanceTrendTimeRange === "30d"
-          ? 30
-          : 90;
-    const performanceTrendData = Array.from(
-      { length: performanceDays },
-      (_, i) => {
-        const date = subDays(new Date(), performanceDays - 1 - i);
-        const dateStr = format(date, "yyyy-MM-dd");
-
-        const dayGrades = grades.filter((grade) => {
-          const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-          return gradeDate === dateStr;
-        });
-
-        return {
-          date: format(
-            date,
-            performanceDays === 7
-              ? "MMM dd"
-              : performanceDays === 30
-                ? "MM/dd"
-                : "M/d"
-          ),
-          score:
-            dayGrades.length > 0
-              ? Math.round(
-                  dayGrades.reduce((sum, g) => sum + g.score, 0) /
-                    dayGrades.length
-                )
-              : 0,
-        };
-      }
-    );
-
-    // Skill progression data for skill development over time
-    const skillDays =
-      skillTimeRange === "7d" ? 7 : skillTimeRange === "30d" ? 30 : 90;
-    const skillProgressionData = Array.from({ length: skillDays }, (_, i) => {
-      const date = subDays(new Date(), skillDays - 1 - i);
-
-      // Get feedbacks for this date range (simulate progression based on actual data)
-      const dayData: Record<string, string | number> = {
-        date: format(
-          date,
-          skillDays === 7 ? "MMM dd" : skillDays === 30 ? "MM/dd" : "M/d"
-        ),
-      };
-
-      // Add skill categories with realistic progression based on current scores
-      Object.entries(skillCategories).forEach(
-        ([skill, currentScore], index) => {
-          // Create realistic progression that trends toward current score
-          const baseVariation = Math.sin((i + index) * 0.5) * 3; // Natural variation
-          const progressionTrend = (i / (skillDays - 1)) * 5; // Gradual improvement over time
-          const targetScore = Math.max(
-            60,
-            Math.min(95, currentScore - 8 + progressionTrend + baseVariation)
-          );
-          dayData[skill] = Math.round(targetScore);
-        }
-      );
-
-      return dayData;
-    });
-
-    // Session activity data with different time ranges
-    const getSessionActivityData = () => {
-      if (sessionActivityTimeRange === "1h") {
-        // Last hour in 10-minute intervals
-        return Array.from({ length: 6 }, (_, i) => {
-          const time = subHours(new Date(), (5 - i) * (1 / 6)); // 10-minute intervals
-
-          const intervalChats = chats.filter((chat) => {
-            const chatTime = new Date(chat.createdAt);
-            const intervalStart = subHours(new Date(), (6 - i) * (1 / 6));
-            const intervalEnd = subHours(new Date(), (5 - i) * (1 / 6));
-            return chatTime >= intervalStart && chatTime < intervalEnd;
-          });
-
-          return {
-            date: format(time, "HH:mm"),
-            sessions: intervalChats.length,
-            completed: intervalChats.filter((chat) => chat.completed).length,
-          };
-        });
-      } else if (sessionActivityTimeRange === "12h") {
-        // Last 12 hours in hourly intervals
-        return Array.from({ length: 12 }, (_, i) => {
-          const time = subHours(new Date(), 11 - i);
-          const timeStr = format(time, "yyyy-MM-dd HH");
-
-          const hourChats = chats.filter((chat) => {
-            const chatTime = format(new Date(chat.createdAt), "yyyy-MM-dd HH");
-            return chatTime === timeStr;
-          });
-
-          return {
-            date: format(time, "HH:mm"),
-            sessions: hourChats.length,
-            completed: hourChats.filter((chat) => chat.completed).length,
-          };
-        });
-      } else {
-        // Last 24 hours in 2-hour intervals
-        return Array.from({ length: 12 }, (_, i) => {
-          const time = subHours(new Date(), (11 - i) * 2);
-          const startTime = subHours(new Date(), (12 - i) * 2);
-          const endTime = subHours(new Date(), (11 - i) * 2);
-
-          const intervalChats = chats.filter((chat) => {
-            const chatTime = new Date(chat.createdAt);
-            return chatTime >= startTime && chatTime < endTime;
-          });
-
-          return {
-            date: format(time, "HH:mm"),
-            sessions: intervalChats.length,
-            completed: intervalChats.filter((chat) => chat.completed).length,
-          };
-        });
-      }
-    };
-
-    const sessionActivityData = getSessionActivityData();
-
     // Struggling TAs (score < 70)
     const strugglingTAs = taPerformance.filter((ta) => ta.avgScore < 70);
-
-    // Calculate average training time from grades (convert seconds to minutes)
-    const avgTrainingTime =
-      grades.length > 0
-        ? Math.round(
-            grades.reduce((sum, g) => sum + g.timeTaken, 0) / grades.length / 60
-          )
-        : 45;
-
-    // Calculate dynamic metrics for training insights
-    const currentWeekGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const weekAgo = subDays(new Date(), 7);
-      return gradeDate >= weekAgo;
-    });
-
-    const lastWeekGrades = grades.filter((grade) => {
-      const gradeDate = new Date(grade.createdAt);
-      const twoWeeksAgo = subDays(new Date(), 14);
-      const weekAgo = subDays(new Date(), 7);
-      return gradeDate >= twoWeeksAgo && gradeDate < weekAgo;
-    });
-
-    const currentWeekAvg =
-      currentWeekGrades.length > 0
-        ? Math.round(
-            currentWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              currentWeekGrades.length
-          )
-        : 0;
-
-    const lastWeekAvg =
-      lastWeekGrades.length > 0
-        ? Math.round(
-            lastWeekGrades.reduce((sum, g) => sum + g.score, 0) /
-              lastWeekGrades.length
-          )
-        : 0;
-
-    const weeklyTrend = currentWeekAvg - lastWeekAvg;
-    const passRate =
-      grades.length > 0
-        ? Math.round(
-            (grades.filter((g) => g.passed).length / grades.length) * 100
-          )
-        : 0;
-
-    const activeTAs = taPerformance.filter((ta) => ta.avgScore > 0).length;
 
     return {
       totalTAs: tas.length,
       totalSessions,
       completionRate,
-      avgOverallScore,
-      skillCategories,
-      performanceTrendData,
-      sessionActivityData,
-      strugglingTAs,
       avgTrainingTime,
-      performanceByType,
-      skillProgressionData,
-      weeklyTrend,
-      passRate,
-      activeTAs,
+      strugglingTAs,
     };
-  }, [
-    profiles,
-    chats,
-    grades,
-    agents,
-    attempts,
-    feedbacks,
-    standards,
-    standardGroups,
-    rubrics,
-    performanceTrendTimeRange,
-    sessionActivityTimeRange,
-    scenarios,
-    personalityTimeRange,
-    skillTimeRange,
-  ]);
+  }, [profiles, chats, grades, attempts]);
+
+  // Calculate growth trend
+  const growthTrend = useMemo(() => {
+    if (!grades || grades.length < 2 || !rubrics || !standardGroups)
+      return { value: 0, isPositive: true };
+
+    // Get the rubric total points dynamically
+    const rubric = rubrics?.find((r) =>
+      standardGroups?.some((sg) => sg.rubricId === r.id)
+    );
+    const rubricTotalPoints = rubric?.points || 20;
+
+    // Sort grades by creation date
+    const sortedGrades = [...grades].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+
+    const recentCount = Math.min(5, Math.floor(sortedGrades.length / 2));
+    const recent = sortedGrades.slice(-recentCount);
+    const previous = sortedGrades.slice(0, recentCount);
+
+    if (previous.length === 0) return { value: 0, isPositive: true };
+
+    // Normalize scores to percentage based on rubric total points
+    const recentAvg =
+      (recent.reduce((sum, g) => sum + g.score, 0) /
+        recent.length /
+        rubricTotalPoints) *
+      100;
+    const previousAvg =
+      (previous.reduce((sum, g) => sum + g.score, 0) /
+        previous.length /
+        rubricTotalPoints) *
+      100;
+
+    const change = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
+    return { value: Math.abs(change), isPositive: change >= 0 };
+  }, [grades, rubrics, standardGroups]);
 
   // Loading state
   if (
     isLoadingProfiles ||
+    isLoadingCohorts ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades ||
-    isLoadingAgents ||
     isLoadingFeedbacks ||
     isLoadingStandards ||
     isLoadingStandardGroups ||
@@ -560,110 +372,13 @@ export default function Overview() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground">Loading training analytics...</p>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   if (!analytics) return null;
-
-  // Custom tooltip component for better positioning
-  const CustomBarTooltip = ({
-    active,
-    payload,
-    label,
-  }: {
-    active: boolean;
-    payload: { name: string; value: number; color: string }[];
-    label: string;
-  }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white dark:bg-gray-800 p-3 border rounded-lg shadow-lg text-sm relative z-50">
-          <p className="font-medium mb-2">{label}</p>
-          {payload.map(
-            (
-              entry: { name: string; value: number; color: string },
-              index: number
-            ) => (
-              <div key={index} className="flex items-center gap-2">
-                <div
-                  className="w-3 h-3 rounded"
-                  style={{ backgroundColor: entry.color }}
-                />
-                <span className="text-muted-foreground">{entry.name}:</span>
-                <span className="font-medium">{entry.value}</span>
-              </div>
-            )
-          )}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  // Get top skill categories for display
-  const topSkills = Object.entries(analytics.skillCategories)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 4)
-    .map(([shortName, score], index) => ({
-      shortName,
-      score,
-      icon: [Target, Brain, Eye, Zap][index] || Target,
-    }));
-
-  // Get skill categories for display
-  const skillCategoryEntries = Object.entries(analytics.skillCategories);
-  const skillColors = [
-    COLORS.primary,
-    COLORS.success,
-    COLORS.warning,
-    COLORS.purple,
-  ];
-
-  // Carousel slides data with proper typing
-  const slides = [
-    {
-      id: "personality",
-      title: "Performance by Student Personality",
-      description: "How TAs handle different student types during training",
-      timeRange: personalityTimeRange,
-      setTimeRange: (range: "12h" | "1d" | "1w") =>
-        setPersonalityTimeRange(range),
-      timeOptions: ["12h", "1d", "1w"] as const,
-      timeLabels: { "12h": "12 hours", "1d": "1 day", "1w": "1 week" },
-    },
-    {
-      id: "trends",
-      title: "Performance Trends",
-      description: "Training scores and session completion over time",
-      timeRange: performanceTrendTimeRange,
-      setTimeRange: (range: "7d" | "30d" | "90d") =>
-        setPerformanceTrendTimeRange(range),
-      timeOptions: ["7d", "30d", "90d"] as const,
-      timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
-    },
-    {
-      id: "skills",
-      title: "Skill Development Over Time",
-      description: "Track improvement in key competencies across all TAs",
-      timeRange: skillTimeRange,
-      setTimeRange: (range: "7d" | "30d" | "90d") => setSkillTimeRange(range),
-      timeOptions: ["7d", "30d", "90d"] as const,
-      timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
-    },
-    {
-      id: "activity",
-      title: "Session Activity",
-      description: "Training session volume and completion rates",
-      timeRange: sessionActivityTimeRange,
-      setTimeRange: (range: "1h" | "12h" | "24h") =>
-        setSessionActivityTimeRange(range),
-      timeOptions: ["1h", "12h", "24h"] as const,
-      timeLabels: { "1h": "1 hour", "12h": "12 hours", "24h": "24 hours" },
-    },
-  ];
 
   return (
     <div className="space-y-6">
@@ -695,7 +410,7 @@ export default function Overview() {
             <div className="text-2xl font-bold text-green-700">
               {analytics.totalSessions}
             </div>
-            <p className="text-xs text-green-600 mt-1">This week</p>
+            <p className="text-xs text-green-600 mt-1">Total completed</p>
           </CardContent>
         </Card>
 
@@ -711,7 +426,7 @@ export default function Overview() {
               {analytics.avgTrainingTime}min
             </div>
             <p className="text-xs text-purple-600 mt-1">
-              Avg time per session this week
+              Average session duration
             </p>
           </CardContent>
         </Card>
@@ -732,483 +447,147 @@ export default function Overview() {
         </Card>
       </div>
 
-      {/* Carousel Section */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Card
-            className="relative overflow-hidden"
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-          >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {currentSlide === 0 && <Users className="h-5 w-5" />}
-                    {currentSlide === 1 && <TrendingUp className="h-5 w-5" />}
-                    {currentSlide === 2 && <TrendingUp className="h-5 w-5" />}
-                    {currentSlide === 3 && <Calendar className="h-5 w-5" />}
-                    {slides[currentSlide]?.title}
-                  </CardTitle>
-                  <CardDescription>
-                    {slides[currentSlide]?.description}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {slides[currentSlide]?.timeOptions.map((range) => (
-                      <button
-                        key={range}
-                        onClick={() => {
-                          switch (currentSlide) {
-                            case 0:
-                              if (
-                                range === "12h" ||
-                                range === "1d" ||
-                                range === "1w"
-                              ) {
-                                setPersonalityTimeRange(range);
-                              }
-                              break;
-                            case 1:
-                              if (
-                                range === "7d" ||
-                                range === "30d" ||
-                                range === "90d"
-                              ) {
-                                setPerformanceTrendTimeRange(range);
-                              }
-                              break;
-                            case 2:
-                              if (
-                                range === "7d" ||
-                                range === "30d" ||
-                                range === "90d"
-                              ) {
-                                setSkillTimeRange(range);
-                              }
-                              break;
-                            case 3:
-                              if (
-                                range === "1h" ||
-                                range === "12h" ||
-                                range === "24h"
-                              ) {
-                                setSessionActivityTimeRange(range);
-                              }
-                              break;
-                          }
-                        }}
-                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                          slides[currentSlide]?.timeRange === range
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {slides[currentSlide]?.timeLabels[range]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1 ml-2">
-                    <button
-                      onClick={prevSlide}
-                      className="p-1 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={nextSlide}
-                      className="p-1 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
+      {/* Main Charts */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Radar Chart - Skill Development */}
+        <Card>
+          <CardHeader className="items-center">
+            <CardTitle>Skill Development</CardTitle>
+            <CardDescription>
+              Performance across key teaching competencies
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pb-0">
+            <ChartContainer
+              config={radarChartConfig}
+              className="mx-auto aspect-square max-h-[400px]"
+            >
+              <RadarChart data={radarData}>
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent />}
+                />
+                <PolarAngleAxis dataKey="metric" />
+                <PolarGrid />
+                <Radar
+                  dataKey="value"
+                  fill="var(--color-score)"
+                  fillOpacity={0.6}
+                  dot={{
+                    r: 4,
+                    fillOpacity: 1,
+                  }}
+                />
+              </RadarChart>
+            </ChartContainer>
+          </CardContent>
+          {radarData.length > 0 && (
+            <CardContent className="flex-col gap-2 text-sm">
+              <div className="flex items-center gap-2 leading-none font-medium">
+                {growthTrend.isPositive ? "Trending up" : "Needs attention"}
+                {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
+                <TrendingUp
+                  className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
+                />
               </div>
-              {/* Carousel indicators */}
-              <div className="flex gap-2 mt-2">
-                {Array.from({ length: totalSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentSlide ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] relative">
-                {/* Performance by Student Personality */}
-                {currentSlide === 0 && (
-                  <div className="grid gap-6 md:grid-cols-2 h-full">
-                    <div className="h-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={analytics.performanceByType}
-                          layout="vertical"
-                        >
-                          <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis type="number" domain={[0, 100]} />
-                          <YAxis dataKey="name" type="category" width={80} />
-                          <Tooltip
-                            formatter={(value: number) => [
-                              `${value}%`,
-                              "Average Score",
-                            ]}
-                            labelFormatter={(label) => `${label} Students`}
-                          />
-                          <Bar
-                            dataKey="score"
-                            fill={COLORS.primary}
-                            radius={[0, 4, 4, 0]}
-                            name="Average Score"
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    <div className="space-y-4 overflow-y-auto">
-                      {analytics.performanceByType.map((type) => (
-                        <div
-                          key={type.name}
-                          className="flex items-center justify-between p-4 rounded-lg border"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-4 h-4 rounded-full ${type.color}`}
-                            ></div>
-                            <div>
-                              <p className="font-medium">{type.name} Student</p>
-                              <p className="text-sm text-muted-foreground">
-                                {type.sessions} sessions
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold">{type.score}%</p>
-                            <Badge
-                              variant={
-                                type.score >= 80
-                                  ? "default"
-                                  : type.score >= 70
-                                    ? "secondary"
-                                    : "destructive"
-                              }
-                            >
-                              {type.score >= 80
-                                ? "Excellent"
-                                : type.score >= 70
-                                  ? "Good"
-                                  : "Needs Work"}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Performance Trends */}
-                {currentSlide === 1 && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={analytics.performanceTrendData}>
-                      <defs>
-                        <linearGradient
-                          id="scoreGradient"
-                          x1="0"
-                          y1="0"
-                          x2="0"
-                          y2="1"
-                        >
-                          <stop
-                            offset="5%"
-                            stopColor={COLORS.primary}
-                            stopOpacity={0.3}
-                          />
-                          <stop
-                            offset="95%"
-                            stopColor={COLORS.primary}
-                            stopOpacity={0}
-                          />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-muted"
-                      />
-                      <XAxis dataKey="date" className="text-xs" />
-                      <YAxis className="text-xs" />
-                      <Tooltip
-                        contentStyle={{
-                          backgroundColor: "hsl(var(--background))",
-                          border: "1px solid hsl(var(--border))",
-                          borderRadius: "6px",
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="score"
-                        stroke={COLORS.primary}
-                        strokeWidth={2}
-                        fill="url(#scoreGradient)"
-                        name="Average Score"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                )}
-
-                {/* Skill Development Over Time */}
-                {currentSlide === 2 && (
-                  <div className="h-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={analytics.skillProgressionData}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          className="stroke-muted"
-                        />
-                        <XAxis dataKey="date" className="text-xs" />
-                        <YAxis domain={[0, 100]} className="text-xs" />
-                        <Tooltip
-                          contentStyle={{
-                            backgroundColor: "hsl(var(--background))",
-                            border: "1px solid hsl(var(--border))",
-                            borderRadius: "6px",
-                          }}
-                          formatter={(value: number) => [`${value}%`, ""]}
-                        />
-                        {skillCategoryEntries.map(([skill, _], index) => (
-                          <Line
-                            key={skill}
-                            type="monotone"
-                            dataKey={skill}
-                            stroke={skillColors[index % skillColors.length]}
-                            strokeWidth={3}
-                            dot={{ r: 4 }}
-                            name={skill}
-                          />
-                        ))}
-                      </LineChart>
-                    </ResponsiveContainer>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                      {skillCategoryEntries.map(([skill, _], index) => (
-                        <div key={skill} className="flex items-center gap-2">
-                          <div
-                            className="w-3 h-3 rounded-full"
-                            style={{
-                              backgroundColor:
-                                skillColors[index % skillColors.length],
-                            }}
-                          ></div>
-                          <span className="text-sm">{skill}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Session Activity */}
-                {currentSlide === 3 && (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={analytics.sessionActivityData}>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        className="stroke-muted"
-                      />
-                      <XAxis dataKey="date" className="text-xs" />
-                      <YAxis className="text-xs" />
-                      <Tooltip
-                        content={
-                          <CustomBarTooltip
-                            active={false}
-                            payload={[]}
-                            label={""}
-                          />
-                        }
-                        position={{ x: 0, y: 0 }}
-                        allowEscapeViewBox={{ x: false, y: true }}
-                        offset={20}
-                      />
-                      <Bar
-                        dataKey="sessions"
-                        fill={COLORS.primary}
-                        name="Total Sessions"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="completed"
-                        fill={COLORS.success}
-                        name="Completed Sessions"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
+              <div className="text-muted-foreground flex items-center gap-2 leading-none">
+                Based on recent training sessions
               </div>
             </CardContent>
-          </Card>
-        </div>
+          )}
+        </Card>
 
-        {/* Training Insights Carousel */}
-        <Card
-          className="relative overflow-hidden"
-          onMouseEnter={() => setIsInsightHovered(true)}
-          onMouseLeave={() => setIsInsightHovered(false)}
-        >
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Training Insights
-                </CardTitle>
-                <CardDescription>
-                  Dynamic patterns and recommendations from training data
-                </CardDescription>
-              </div>
-              <div className="flex gap-1">
-                <button
-                  onClick={prevInsightSlide}
-                  className="p-1 rounded-md hover:bg-muted transition-colors"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={nextInsightSlide}
-                  className="p-1 rounded-md hover:bg-muted transition-colors"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            {/* Carousel indicators */}
-            <div className="flex gap-2 mt-2">
-              {Array.from({ length: totalInsightSlides }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setCurrentInsightSlide(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === currentInsightSlide ? "bg-primary" : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
+        {/* Radial Chart - Cohort Progress */}
+        <Card>
+          <CardHeader className="items-center">
+            <CardTitle>Cohort Progress</CardTitle>
+            <CardDescription>
+              Training completion rates across different cohorts
+            </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="h-[300px] relative">
-              {/* Weekly Trend & Active TAs */}
-              {currentInsightSlide === 0 && (
-                <div className="space-y-3 h-full overflow-y-auto">
-                  <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-blue-800">
-                          Weekly Trend
-                        </div>
-                        <div className="text-xs text-blue-700 mt-1">
-                          {analytics.weeklyTrend > 0
-                            ? `Scores improved by ${analytics.weeklyTrend}% this week`
-                            : analytics.weeklyTrend < 0
-                              ? `Scores decreased by ${Math.abs(analytics.weeklyTrend)}% this week`
-                              : "Scores remained stable this week"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Users className="h-4 w-4 text-green-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-green-800">
-                          Active TAs
-                        </div>
-                        <div className="text-xs text-green-700 mt-1">
-                          {analytics.activeTAs} TAs have completed training
-                          sessions
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Session Efficiency & Success Rate */}
-              {currentInsightSlide === 1 && (
-                <div className="space-y-3 h-full overflow-y-auto">
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-yellow-800">
-                          Session Efficiency
-                        </div>
-                        <div className="text-xs text-yellow-700 mt-1">
-                          Average session time: {analytics.avgTrainingTime}{" "}
-                          minutes
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <Award className="h-4 w-4 text-purple-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-purple-800">
-                          Success Rate
-                        </div>
-                        <div className="text-xs text-purple-700 mt-1">
-                          {analytics.passRate}% of sessions meet passing
-                          criteria
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Overall Performance & Skill Breakdown */}
-              {currentInsightSlide === 2 && (
-                <div className="space-y-3 h-full overflow-y-auto">
-                  <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
-                      <div>
-                        <div className="text-sm font-medium text-orange-800">
-                          Overall Performance
-                        </div>
-                        <div className="text-xs text-orange-700 mt-1">
-                          Average score across all sessions:{" "}
-                          {analytics.avgOverallScore}%
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="text-sm font-medium text-gray-800">
-                      Top Skills
-                    </div>
-                    {topSkills.slice(0, 2).map((skill) => (
-                      <div key={skill.shortName} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <skill.icon className="h-3 w-3 text-muted-foreground" />
-                            <span>{skill.shortName}</span>
-                          </div>
-                          <span className="font-medium">{skill.score}%</span>
-                        </div>
-                        <Progress value={skill.score} className="h-1" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+          <CardContent className="pb-0">
+            <ChartContainer
+              config={radialChartConfig}
+              className="mx-auto aspect-square max-h-[400px]"
+            >
+              <RadialBarChart
+                data={radialData}
+                startAngle={-90}
+                endAngle={270}
+                innerRadius={30}
+                outerRadius={110}
+              >
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent hideLabel nameKey="name" />}
+                />
+                <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
+                  {/* <Label
+                    content={({ viewBox }) => {
+                      if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                        return (
+                          <text
+                            x={viewBox.cx}
+                            y={viewBox.cy}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                          >
+                            <tspan
+                              x={viewBox.cx}
+                              y={viewBox.cy}
+                              className="fill-foreground text-4xl font-bold"
+                            >
+                              {radialData.reduce((acc, curr) => acc + curr.completed, 0)}
+                            </tspan>
+                            <tspan
+                              x={viewBox.cx}
+                              y={(viewBox.cy || 0) + 24}
+                              className="fill-muted-foreground"
+                            >
+                              Completed
+                            </tspan>
+                          </text>
+                        );
+                      }
+                    }}
+                  /> */}
+                </PolarRadiusAxis>
+                <RadialBar
+                  dataKey="progress"
+                  background
+                  cornerRadius={10}
+                  fill="var(--color-progress)"
+                />
+              </RadialBarChart>
+            </ChartContainer>
           </CardContent>
+          {radialData.length > 0 && (
+            <CardContent className="space-y-3">
+              {radialData.map((cohort) => (
+                <div
+                  key={cohort.name}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: cohort.fill }}
+                    />
+                    <span className="text-sm font-medium">{cohort.name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Progress value={cohort.progress} className="w-16 h-2" />
+                    <span className="text-sm text-muted-foreground w-12">
+                      {cohort.progress}%
+                    </span>
+                    <Badge variant="outline" className="text-xs">
+                      {cohort.completed}/{cohort.total}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          )}
         </Card>
       </div>
     </div>

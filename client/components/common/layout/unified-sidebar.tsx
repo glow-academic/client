@@ -217,9 +217,9 @@ export function UnifiedSidebar({
         icon: ChartBar,
         items: [
           {
-            title: "Overview",
+            title: "Dashboard",
             url: "#",
-            section: "overview",
+            section: "dashboard",
           },
           {
             title: "Performance",

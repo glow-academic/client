@@ -7,7 +7,24 @@ GTA_PROMPT=$(cat "$(dirname "$0")/prompts/gta.md" | sed "s/'/''/g")
 HAPPY_PROMPT=$(cat "$(dirname "$0")/prompts/happy.md" | sed "s/'/''/g")
 
 # Generate the SQL file
-cat >> "$(dirname "$0")/init.sql" << EOF
+cat > "$(dirname "$0")/init.sql" << EOF
+-- Enable the gen_random_uuid() function
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- ============================================================================
+-- TABLE DEFINITIONS
+-- ============================================================================
+
+CREATE TABLE agents (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  name       TEXT        NOT NULL,
+  description TEXT        NOT NULL,
+  system_prompt     TEXT        NOT NULL,
+  temperature  INTEGER     NOT NULL -- 0-100
+);
+
 -- Insert Core Agents (Essential for testing)
 INSERT INTO agents (id, name, description, system_prompt, temperature) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'Aggressive','Pushes back on your ideas and challenges assumptions.', '$AGGRESSIVE_PROMPT', 0),

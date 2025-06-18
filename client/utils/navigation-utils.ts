@@ -12,11 +12,11 @@ export const getFirstAvailableSectionForRole = (role: ProfileRole): string => {
     case "ta":
       return "home";
     case "instructor":
-      return "overview"; // Analytics overview
+      return "dashboard"; // Analytics overview
     case "instructional":
-      return "overview"; // Analytics overview
+      return "dashboard"; // Analytics overview
     case "admin":
-      return "overview"; // Analytics overview
+      return "dashboard"; // Analytics overview
     default:
       return "home";
   }
@@ -38,21 +38,21 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       break;
     case "instructor":
       sections.push(
-        "overview", "performance", "reports", "history", // Analytics
+        "dashboard", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes" // Classes (filtered by assignment)
       );
       break;
     case "instructional":
       sections.push(
-        "overview", "performance", "reports", "history", // Analytics
+        "dashboard", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes" // Classes (all)
       );
       break;
     case "admin":
       sections.push(
-        "overview", "performance", "reports", "history", // Analytics
+        "dashboard", "performance", "reports", "history", // Analytics
         "scenarios", "simulations", "rubrics", // Create
         "classes", // Classes (all)
         "staff", "agents", "evals" // Management
@@ -93,10 +93,8 @@ export const getSectionRoute = (section: string): string => {
 
     // Analytics routes
     case "analytics":
-    case "overview":
-      return "/analytics/overview";
-    case "performance":
-      return "/analytics/performance";
+    case "dashboard":
+      return "/analytics/dashboard";
     case "reports":
       return "/analytics/reports";
     case "history":

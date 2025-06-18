@@ -14,20 +14,21 @@ import {
   standards as Standards,
   appLogs as AppLogs,
   scenarios as Scenarios,
+  cohorts as Cohorts,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
-  evalRuns as EvalRuns,
   simulationChatFeedbacks as SimulationChatFeedbacks,
-  evalChats as EvalChats,
   evals as Evals,
+  evalRuns as EvalRuns,
+  evalChats as EvalChats,
   evalMessages as EvalMessages,
   evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
-  agentType, classTerm, documentType, evalMessageType, evalType, profileRole, rubricType, seniorityLevels
+  classTerm, documentType, evalMessageType, profileRole, rubricType, seniorityLevels
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -46,25 +47,24 @@ type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
+type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
-type EvalRun = typeof EvalRuns.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
-type EvalChat = typeof EvalChats.$inferSelect;
 type Eval = typeof Evals.$inferSelect;
+type EvalRun = typeof EvalRuns.$inferSelect;
+type EvalChat = typeof EvalChats.$inferSelect;
 type EvalMessage = typeof EvalMessages.$inferSelect;
 type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
 type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
-type AgentType = (typeof agentType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type EvalMessageType = (typeof evalMessageType.enumValues)[number];
-type EvalType = (typeof evalType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
 type RubricType = (typeof rubricType.enumValues)[number];
 type SeniorityLevels = (typeof seniorityLevels.enumValues)[number];
@@ -85,24 +85,23 @@ export type {
   Standard,
   AppLog,
   Scenario,
+  Cohort,
   Simulation,
   SimulationAttempt,
   SimulationChat,
   SimulationMessage,
   SimulationChatGrade,
-  EvalRun,
   SimulationChatFeedback,
-  EvalChat,
   Eval,
+  EvalRun,
+  EvalChat,
   EvalMessage,
   EvalChatGrade,
   EvalChatFeedback,
   VerificationToken,
-  AgentType,
   ClassTerm,
   DocumentType,
   EvalMessageType,
-  EvalType,
   ProfileRole,
   RubricType,
   SeniorityLevels
