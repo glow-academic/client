@@ -130,9 +130,6 @@ export default function SkillBreakdown() {
 
   return (
     <div className="space-y-6 h-full overflow-y-auto">
-      <div className="text-sm font-medium text-gray-800 dark:text-gray-200">
-        Top Skills Performance
-      </div>
       {skillCategories.map((skill) => (
         <div key={skill.shortName} className="space-y-2">
           <div className="flex items-center justify-between text-sm">
@@ -143,15 +140,6 @@ export default function SkillBreakdown() {
             <span className="font-bold text-lg">{skill.score}%</span>
           </div>
           <Progress value={skill.score} className="h-2" />
-          <div className="text-xs text-muted-foreground">
-            {skill.score >= 80
-              ? "Excellent performance"
-              : skill.score >= 70
-                ? "Good performance"
-                : skill.score >= 60
-                  ? "Needs improvement"
-                  : "Requires attention"}
-          </div>
         </div>
       ))}
     </div>

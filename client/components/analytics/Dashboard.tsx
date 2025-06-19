@@ -622,18 +622,6 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-              {/* Carousel indicators */}
-              <div className="flex gap-2 mt-2">
-                {Array.from({ length: totalSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentSlide ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
             </CardHeader>
             <CardContent>
               <div className="h-[300px] relative">
@@ -651,6 +639,18 @@ export default function Dashboard() {
                 {currentSlide === 2 && (
                   <SessionActivity timeRange={sessionActivityTimeRange} />
                 )}
+              </div>
+              {/* Carousel indicators - moved to bottom center */}
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: totalSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentSlide(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === currentSlide ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -675,24 +675,44 @@ export default function Dashboard() {
                 </div>
                 <div className="flex gap-1">
                   <button
-                    onClick={() => setSideCarouselIndex(0)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      sideCarouselIndex === 0 ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
+                    onClick={() =>
+                      setSideCarouselIndex(
+                        (prev) => (prev - 1 + totalSideSlides) % totalSideSlides
+                      )
+                    }
+                    className="p-1 rounded-md hover:bg-muted transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
                   <button
-                    onClick={() => setSideCarouselIndex(1)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      sideCarouselIndex === 1 ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
+                    onClick={() =>
+                      setSideCarouselIndex(
+                        (prev) => (prev + 1) % totalSideSlides
+                      )
+                    }
+                    className="p-1 rounded-md hover:bg-muted transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[320px]">
+              <div className="h-[305px]">
                 {sideCarouselIndex === 0 && <SkillBreakdown />}
                 {sideCarouselIndex === 1 && <TrainingInsights />}
+              </div>
+              {/* Side carousel indicators - moved to bottom center */}
+              <div className="flex justify-center gap-2 mt-4">
+                {Array.from({ length: totalSideSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSideCarouselIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === sideCarouselIndex ? "bg-primary" : "bg-muted"
+                    }`}
+                  />
+                ))}
               </div>
             </CardContent>
           </Card>

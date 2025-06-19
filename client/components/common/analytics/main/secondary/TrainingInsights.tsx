@@ -12,7 +12,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
-import { Award, Clock, MessageSquare, TrendingUp, Users } from "lucide-react";
+import { Award, Clock, MessageSquare, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 
 export default function TrainingInsights() {
@@ -46,8 +46,6 @@ export default function TrainingInsights() {
   // Calculate insights
   const insights = useMemo(() => {
     if (!grades || !profiles || !chats) return null;
-
-    const tas = profiles.filter((profile) => profile.role === "ta");
 
     // Calculate dynamic metrics for training insights
     const currentWeekGrades = grades.filter((grade) => {
@@ -87,18 +85,6 @@ export default function TrainingInsights() {
           )
         : 0;
 
-    const activeTAs = tas.filter((ta) => {
-      const taAttempts =
-        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
-      const taChats = chats.filter((chat) =>
-        taAttempts.some((attempt) => attempt.id === chat.attemptId)
-      );
-      const taGrades = grades.filter((grade) =>
-        taChats.some((chat) => chat.id === grade.simulationChatId)
-      );
-      return taGrades.length > 0;
-    }).length;
-
     // Calculate average training time from grades (convert seconds to minutes)
     const avgTrainingTime =
       grades.length > 0
@@ -117,12 +103,11 @@ export default function TrainingInsights() {
 
     return {
       weeklyTrend,
-      activeTAs,
       avgTrainingTime,
       passRate,
       avgOverallScore,
     };
-  }, [grades, profiles, chats, attempts]);
+  }, [grades, profiles, chats]);
 
   if (!insights) {
     return (
@@ -148,21 +133,6 @@ export default function TrainingInsights() {
                 : insights.weeklyTrend < 0
                   ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
                   : "Scores remained stable this week"}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Active TAs */}
-      <div className="p-3 bg-green-50 border border-green-200 rounded-lg dark:bg-green-950 dark:border-green-800">
-        <div className="flex items-start gap-2">
-          <Users className="h-4 w-4 text-green-600 mt-0.5" />
-          <div>
-            <div className="text-sm font-medium text-green-800 dark:text-green-200">
-              Active TAs
-            </div>
-            <div className="text-xs text-green-700 dark:text-green-300 mt-1">
-              {insights.activeTAs} TAs have completed training sessions
             </div>
           </div>
         </div>
