@@ -1,7 +1,7 @@
 /**
- * Class Context for managing class simulation across the application
- * This provides a centralized way to manage class switching and ensures
- * all components stay in sync when the effective class changes.
+ * Classes Context for managing classes simulation across the application
+ * This provides a centralized way to manage classes switching and ensures
+ * all components stay in sync when the effective classes changes. Should be very similar to RoleContext, but would be able to manage selecting multiple classes in the application.
  */
 "use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
@@ -40,7 +40,7 @@ interface RoleContextType {
 
 const RoleContext = createContext<RoleContextType | null>(null);
 
-export const useRole = () => {
+export const useClasses = () => {
   const context = useContext(RoleContext);
   if (!context) {
     throw new Error("useRole must be used within RoleProvider");

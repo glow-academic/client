@@ -8,7 +8,7 @@
 
 import CohortCompletion from "@/components/common/analytics/footer/CohortCompletion";
 import SkillGrowth from "@/components/common/analytics/footer/SkillGrowth";
-import ActiveTAs from "@/components/common/analytics/header/ActiveTAs";
+import ActiveCohorts from "@/components/common/analytics/header/ActiveCohorts";
 import AverageScore from "@/components/common/analytics/header/AverageScore";
 import CompletionRate from "@/components/common/analytics/header/CompletionRate";
 import NeedSupport from "@/components/common/analytics/header/NeedSupport";
@@ -210,12 +210,6 @@ export default function Dashboard() {
         )
       : 45;
   }, [grades]);
-
-  // Calculate total TAs
-  const totalTAs = useMemo(() => {
-    if (!profiles) return 0;
-    return profiles.filter((profile) => profile.role === "ta").length;
-  }, [profiles]);
 
   // Generate detailed metric data for dialogs
   const getMetricDetails = (metricType: string) => {
@@ -492,12 +486,9 @@ export default function Dashboard() {
   const headerMetrics = [
     {
       component: (
-        <ActiveTAs
-          totalTAs={totalTAs}
-          onClick={() => setSelectedMetric("activeTAs")}
-        />
+        <ActiveCohorts onClick={() => setSelectedMetric("activeCohorts")} />
       ),
-      key: "activeTAs",
+      key: "activeCohorts",
     },
     {
       component: (
@@ -834,7 +825,15 @@ export default function Dashboard() {
                       ? "Session Activity"
                       : selectedMetric === "trainingHours"
                         ? "Training Time Distribution"
-                        : ""}
+                        : selectedMetric === "activeCohorts"
+                          ? "Active Cohorts"
+                          : selectedMetric === "trainingSessions"
+                            ? "Training Sessions"
+                            : selectedMetric === "needSupport"
+                              ? "Need Support"
+                              : selectedMetric === "totalTAs"
+                                ? "Total TAs"
+                                : ""}
             </DialogTitle>
           </DialogHeader>
           <div className="h-64">
