@@ -29,14 +29,14 @@ describe("Classes", () => {
       renderWithProviders(<ClassesGeneralPage />);
 
       await waitFor(() => {
-        // Use getByText with a function to handle text spread across elements
-        const fallText = screen.getByText((content, element) => {
+        // Use getAllByText to handle multiple elements with "Fall 2024"
+        const fallTextElements = screen.getAllByText((_, element) => {
           return !!(
             element?.textContent?.includes("Fall") &&
             element?.textContent?.includes("2024")
           );
         });
-        expect(fallText).toBeInTheDocument();
+        expect(fallTextElements.length).toBeGreaterThan(0);
       });
     });
   });
@@ -76,6 +76,46 @@ describe("Classes", () => {
     });
   });
 
+  describe("Data Display", () => {
+    it("should show class names", async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        // Look for any class title
+        const classTitles = document.querySelectorAll(
+          '[data-slot="card-title"]'
+        );
+        expect(classTitles.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should show class codes", async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        // Look for badge elements that contain class codes
+        const badges = document.querySelectorAll('[data-slot="badge"]');
+        expect(badges.length).toBeGreaterThan(0);
+      });
+    });
+
+    it("should show term and year information", async () => {
+      renderWithProviders(<ClassesGeneralPage />);
+
+      await waitFor(() => {
+        // Check for term information in badges
+        const termBadges = Array.from(
+          document.querySelectorAll('[data-slot="badge"]')
+        ).filter(
+          (badge) =>
+            badge.textContent?.includes("Fall") ||
+            badge.textContent?.includes("Spring")
+        );
+        expect(termBadges.length).toBeGreaterThan(0);
+      });
+    });
+  });
+
   describe("Empty State", () => {
     it("should show message when no classes exist", async () => {
       // Mock empty response
@@ -111,28 +151,10 @@ describe("Classes", () => {
  * - Uses effects: false
  * - Uses context: false
  *
- * Updated features:
- * - Connected to real data using proper query integration
- * - Uses grades for score calculations instead of non-existent rubric scores
- * - Displays dynamic personality distribution based on actual agent usage
- * - Shows class performance breakdown when data is available
- * - Proper loading states and error handling
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<ClassesGeneralPage />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<ClassesGeneralPage {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
+ * Fixed tests to:
+ * - Use proper mock utilities
+ * - Handle multiple elements with getAllByText
+ * - Test actual component behavior
+ * - Use query selectors for consistent elements
+ * - Focus on structural testing rather than specific text
  */

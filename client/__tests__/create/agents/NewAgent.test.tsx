@@ -1,5 +1,5 @@
 import NewAgent from "@/components/create/agents/NewAgent";
-import { renderWithProviders, routerMock } from "@/mocks/utils";
+import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, describe, it, expect, beforeEach } from "vitest";
@@ -22,7 +22,7 @@ describe("NewAgent", () => {
 
   it("submits form", async () => {
     const user = userEvent.setup();
-    vi.mocked(createAgent).mockResolvedValue({ id: "1" });
+    vi.mocked(createAgent).mockResolvedValue({ id: "1", name: "Test", createdAt: "2024-01-01T00:00:00Z", updatedAt: "2024-01-01T00:00:00Z", description: "Desc", systemPrompt: "Prompt", temperature: 0.5, defaultAgent: false });
     renderWithProviders(<NewAgent />);
 
     await user.type(screen.getByLabelText(/agent name/i), "Test");

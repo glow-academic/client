@@ -1,6 +1,6 @@
 import Agents from "@/components/create/agents/Agents";
-import { renderWithProviders, routerMock } from "@/mocks/utils";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -24,6 +24,7 @@ const mockAgents = [
     temperature: 0.7,
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
+    defaultAgent: false,
   },
   {
     id: "agent2",
@@ -34,6 +35,7 @@ const mockAgents = [
     temperature: 0.5,
     createdAt: "2024-01-02T00:00:00Z",
     updatedAt: "2024-01-02T00:00:00Z",
+    defaultAgent: false,
   },
 ];
 

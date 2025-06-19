@@ -2,26 +2,7 @@ import AgentEdit from "@/components/create/agents/AgentEdit";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
-// Mock external dependencies
-
-// Mock API calls
-vi.mock("@/utils/queries/agents/get-agent", () => ({
-  getAgent: vi.fn(),
-}));
 import { getAgent } from "@/utils/queries/agents/get-agent";
-
-vi.mock("@/utils/mutations/agents/update-agent", () => ({
-  updateAgent: vi.fn(),
-}));
-
-// Mock toast
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
 
 describe("AgentEdit", () => {
   beforeEach(() => {
@@ -35,8 +16,9 @@ describe("AgentEdit", () => {
       temperature: 0,
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
+      defaultAgent: false,
     };
-    vi.mocked(getAgent).mockResolvedValue(agent);
+    vi.mocked(getAgent).mockResolvedValue(agent); 
   });
 
   const renderComponent = () => renderWithProviders(<AgentEdit agentId="test-agent-id" />);
