@@ -35,7 +35,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -151,11 +150,6 @@ export default function Dashboard() {
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
-  });
-
-  const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
-    queryKey: ["cohorts"],
-    queryFn: () => getAllCohorts(),
   });
 
   const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
@@ -472,7 +466,6 @@ export default function Dashboard() {
   // Loading state
   if (
     isLoadingProfiles ||
-    isLoadingCohorts ||
     isLoadingAttempts ||
     isLoadingChats ||
     isLoadingGrades
@@ -696,14 +689,7 @@ export default function Dashboard() {
         <SkillGrowth />
 
         {/* Cohort Radial Chart */}
-        {cohorts && profiles && attempts && chats && (
-          <CohortCompletion
-            cohorts={cohorts}
-            profiles={profiles}
-            attempts={attempts}
-            chats={chats}
-          />
-        )}
+        <CohortCompletion />
       </div>
 
       {/* Metric Detail Dialogs */}

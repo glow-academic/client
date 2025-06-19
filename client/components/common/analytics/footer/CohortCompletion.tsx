@@ -1,6 +1,6 @@
 /**
  * CohortCompletion.tsx
- * This is used to show a radial chart of the completion of a cohort. There will be a select in the top right corner to select all the cohorts. 
+ * This is used to show a radial chart of the completion of a cohort. There will be a select in the top right corner to select all the cohorts.
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
@@ -21,7 +21,20 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Progress } from "@/components/ui/progress";
-import { useMemo } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
+import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
+import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
+import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
+import { useQuery } from "@tanstack/react-query";
+import { Loader2, Users } from "lucide-react";
+import { useMemo, useState } from "react";
 import { PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 
 const radialChartConfig = {
@@ -36,39 +49,59 @@ const radialChartConfig = {
 } satisfies ChartConfig;
 
 interface CohortCompletionProps {
-  cohorts: Array<{
-    id: string;
-    title: string;
-    description: string | null;
-    profileIds: string[];
-  }>;
-  profiles: Array<{
-    id: string;
-    role: string;
-  }>;
-  attempts: Array<{
-    id: string;
-    profileId: string | null;
-    simulationId: string;
-  }>;
-  chats: Array<{
-    id: string;
-    attemptId: string;
-    completed: boolean;
-  }>;
+  className?: string;
 }
 
-export default function CohortCompletion({
-  cohorts,
-  profiles,
-  attempts,
-  chats,
-}: CohortCompletionProps) {
-  // Calculate radial chart data (cohort progress)
+export default function CohortCompletion({ className }: CohortCompletionProps) {
+  const { data: cohorts, isLoading: cohortsLoading } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
+  const { data: profiles, isLoading: profilesLoading } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { data: attempts, isLoading: attemptsLoading } = useQuery({
+    queryKey: ["attempts"],
+    queryFn: () => getAllSimulationAttempts(),
+  });
+
+  const { data: chats, isLoading: chatsLoading } = useQuery({
+    queryKey: ["chats"],
+    queryFn: () => getAllSimulationChats(),
+  });
+
+  // State for selected cohort
+  const [selectedCohortId, setSelectedCohortId] = useState<string>(() => {
+    return cohorts?.[0]?.id || "all";
+  });
+
+  // Update selected cohort if it becomes unavailable or set initial value
+  useMemo(() => {
+    if (!selectedCohortId && cohorts && cohorts.length > 0) {
+      setSelectedCohortId("all");
+    } else if (
+      selectedCohortId !== "all" &&
+      cohorts &&
+      !cohorts.some((c) => c.id === selectedCohortId)
+    ) {
+      setSelectedCohortId("all");
+    }
+  }, [selectedCohortId, cohorts]);
+
+  // Calculate radial chart data (cohort progress) - filtered by selected cohort
   const radialData = useMemo(() => {
     if (!cohorts || !profiles || !attempts) return [];
 
-    return cohorts.map((cohort) => {
+    // Filter cohorts based on selection
+    const filteredCohorts =
+      selectedCohortId === "all"
+        ? cohorts
+        : cohorts.filter((cohort) => cohort.id === selectedCohortId);
+
+    return filteredCohorts.map((cohort) => {
       // Filter profiles that belong to this cohort
       const cohortProfiles = profiles.filter((profile) =>
         cohort.profileIds.includes(profile.id)
@@ -99,15 +132,90 @@ export default function CohortCompletion({
         fill: `var(--chart-${(cohorts.indexOf(cohort) % 5) + 1})`,
       };
     });
-  }, [cohorts, profiles, attempts, chats]);
+  }, [cohorts, profiles, attempts, chats, selectedCohortId]);
+
+  // Check if any critical data is still loading
+  const isLoading =
+    cohortsLoading || profilesLoading || attemptsLoading || chatsLoading;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Cohort Progress
+          </CardTitle>
+          <CardDescription>
+            Completion rates across different cohorts
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading cohort data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show empty state if no data
+  if (!cohorts?.length || !radialData.length) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Cohort Progress
+          </CardTitle>
+          <CardDescription>
+            Completion rates across different cohorts
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-center text-muted-foreground">
+            <p>No cohort data available</p>
+            <p className="text-sm">Create cohorts to track training progress</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader className="items-center">
-        <CardTitle>Cohort Progress</CardTitle>
-        <CardDescription>
-          Training completion rates across different cohorts
-        </CardDescription>
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Cohort Progress
+            </CardTitle>
+            <CardDescription>
+              Completion rates across different cohorts
+            </CardDescription>
+          </div>
+          {cohorts && cohorts.length > 1 && (
+            <Select
+              value={selectedCohortId}
+              onValueChange={setSelectedCohortId}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a cohort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cohorts</SelectItem>
+                {cohorts.map((cohort) => (
+                  <SelectItem key={cohort.id} value={cohort.id}>
+                    {cohort.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer
