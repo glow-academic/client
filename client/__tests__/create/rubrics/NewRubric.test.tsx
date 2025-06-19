@@ -1,8 +1,7 @@
 import NewRubric from "@/components/create/rubrics/NewRubric";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReactNode } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the Rubric component
@@ -31,25 +30,9 @@ vi.mock("@/components/common/rubric/Rubric", () => ({
 }));
 
 describe("NewRubric", () => {
-  let queryClient: QueryClient;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
   });
-
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
 
   describe("Rendering", () => {
     it("should render without crashing", () => {
@@ -268,18 +251,9 @@ describe("NewRubric", () => {
       const { rerender } = renderWithProviders(<NewRubric />);
 
       // Create a new QueryClient
-      const newQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
+      renderWithProviders(<NewRubric />);
 
-      rerender(
-        <QueryClientProvider client={newQueryClient}>
-          <NewRubric />
-        </QueryClientProvider>
-      );
+      rerender(<NewRubric />);
 
       expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
     });
@@ -287,18 +261,7 @@ describe("NewRubric", () => {
 
   describe("Query Client Isolation", () => {
     it("should use isolated query client", () => {
-      const newQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: { retry: false },
-          mutations: { retry: false },
-        },
-      });
-
-      render(
-        <QueryClientProvider client={newQueryClient}>
-          <NewRubric />
-        </QueryClientProvider>
-      );
+      renderWithProviders(<NewRubric />);
 
       expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
     });
