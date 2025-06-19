@@ -1,12 +1,12 @@
-import { render } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
-import Cohort from '@/components/common/cohort/Cohort';
+import Cohort from "@/components/common/cohort/Cohort";
+import { createCohortMock, updateCohortMock } from "@/mocks/mutations";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -14,133 +14,253 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn(),
     replace: vi.fn(),
   })),
-  usePathname: vi.fn(() => '/'),
+  usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-// Mock API calls
-global.fetch = vi.fn();
-
-describe('Cohort', () => {
-  let queryClient: QueryClient;
-  
-  beforeEach(() => {
-    vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
+// Mock the queries
+vi.mock("@/utils/queries/cohorts/get-all-cohorts", () => ({
+  getAllCohorts: vi.fn(() =>
+    Promise.resolve([
+      {
+        id: "test-cohort-id",
+        title: "Test Cohort",
+        description: "Test Description",
+        profileIds: ["profile-1", "profile-2"],
+        active: true,
       },
+    ])
+  ),
+}));
+
+vi.mock("@/utils/queries/profiles/get-all-profiles", () => ({
+  getAllProfiles: vi.fn(() =>
+    Promise.resolve([
+      {
+        id: "profile-1",
+        firstName: "John",
+        lastName: "Doe",
+        alias: "johndoe",
+        role: "instructor",
+      },
+      {
+        id: "profile-2",
+        firstName: "Jane",
+        lastName: "Smith",
+        alias: "janesmith",
+        role: "ta",
+      },
+      {
+        id: "profile-3",
+        firstName: "Bob",
+        lastName: "Wilson",
+        alias: "bobwilson",
+        role: "instructor",
+      },
+    ])
+  ),
+}));
+
+describe("Cohort Component", () => {
+  beforeEach(() => {
+    // Reset all mocks before each test
+    createCohortMock.mockReset();
+    updateCohortMock.mockReset();
+    vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("Role-based Access Control", () => {
+    it("should render for admin users", () => {
+      renderWithProviders(<Cohort />, "admin");
+      expect(screen.getByLabelText(/title/i)).toBeVisible();
+    });
+
+    it("should show access denied for instructional users", () => {
+      renderWithProviders(<Cohort />, "instructional");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for instructor users", () => {
+      renderWithProviders(<Cohort />, "instructor");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for TA users", () => {
+      renderWithProviders(<Cohort />, "ta");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for guest users", () => {
+      renderWithProviders(<Cohort />, "guest");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should handle unauthenticated users", () => {
+      renderWithProviders(<Cohort />, "guest");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
     });
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
+  describe("Create Mode (Admin Only)", () => {
+    it("renders create form with correct initial state", () => {
+      renderWithProviders(<Cohort />, "admin");
 
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-  
+      // Check form elements are present
+      expect(screen.getByLabelText(/title/i)).toBeVisible();
+      expect(screen.getByLabelText(/description/i)).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /create cohort/i })
+      ).toBeVisible();
 
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for Cohort
-      renderWithProviders(<Cohort />);
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Cohort
+      // Check empty state message
+      expect(screen.getByText(/no members selected/i)).toBeVisible();
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: CohortProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for Cohort
+    it("shows validation errors when required fields are missing", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Cohort />, "admin");
+
+      await user.click(screen.getByRole("button", { name: /create cohort/i }));
+
+      // Check validation messages appear
+      expect(await screen.findByText(/title is required/i)).toBeVisible();
+
+      // Ensure mutation was not called
+      expect(createCohortMock).not.toHaveBeenCalled();
     });
 
-    it('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Cohort
-    });
-  });
+    it("handles basic form input", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Cohort />, "admin");
 
-  describe('User Interactions', () => {
-    it('should handle form submissions', async () => {
-      // TODO: Test form handling
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for Cohort
-    });
+      // Fill out basic form fields
+      await user.type(screen.getByLabelText(/title/i), "Test Cohort");
+      await user.type(
+        screen.getByLabelText(/description/i),
+        "Test Description"
+      );
 
-    it('should handle state changes', async () => {
-      // TODO: Test state management
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for Cohort
-    });
-
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Cohort
+      // Check that values were set
+      expect(screen.getByDisplayValue("Test Cohort")).toBeVisible();
+      expect(screen.getByDisplayValue("Test Description")).toBeVisible();
     });
   });
 
-  describe('API Integration', () => {
-    it('should handle API calls', async () => {
-      // TODO: Test API integration
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for Cohort
-    });
+  describe("Edit Mode (Admin Only)", () => {
+    it("renders edit form with prefilled data", async () => {
+      renderWithProviders(<Cohort cohortId="test-cohort-id" />, "admin");
 
-    it('should handle loading states', () => {
-      // TODO: Test loading states
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for Cohort
-    });
-
-    it('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for Cohort
+      // Wait for data to load and form to be populated
+      expect(await screen.findByDisplayValue("Test Cohort")).toBeVisible();
+      expect(screen.getByDisplayValue("Test Description")).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /update cohort/i })
+      ).toBeVisible();
     });
   });
 
-  describe('Navigation', () => {
-    it('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for Cohort
+  describe("Error Handling (Admin Only)", () => {
+    it("handles create mutation errors gracefully", async () => {
+      const user = userEvent.setup();
+      const mockError = new Error("Failed to create cohort");
+      createCohortMock.mockRejectedValue(mockError);
+
+      renderWithProviders(<Cohort />, "admin");
+
+      // Fill out form with valid data
+      await user.type(screen.getByLabelText(/title/i), "Test");
+
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /create cohort/i }));
+
+      // Form should still be available for retry
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /create cohort/i })
+        ).not.toBeDisabled();
+      });
+    });
+
+    it("handles update mutation errors gracefully", async () => {
+      const user = userEvent.setup();
+      const mockError = new Error("Failed to update cohort");
+      updateCohortMock.mockRejectedValue(mockError);
+
+      renderWithProviders(<Cohort cohortId="test-cohort-id" />, "admin");
+
+      // Wait for form to be populated and modify it
+      const titleInput = await screen.findByDisplayValue("Test Cohort");
+      await user.clear(titleInput);
+      await user.type(titleInput, "Updated Title");
+
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /update cohort/i }));
+
+      // Form should still be available for retry
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /update cohort/i })
+        ).not.toBeDisabled();
+      });
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Cohort
+  describe("Accessibility (Admin Only)", () => {
+    it("has proper form labels and structure", () => {
+      renderWithProviders(<Cohort />, "admin");
+
+      // Check that form fields have proper labels
+      expect(screen.getByLabelText(/title/i)).toBeVisible();
+      expect(screen.getByLabelText(/description/i)).toBeVisible();
+
+      // Check that required fields are marked
+      expect(screen.getByText(/title \*/i)).toBeVisible();
     });
 
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for Cohort
+    it("provides clear error messages", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Cohort />, "admin");
+
+      await user.click(screen.getByRole("button", { name: /create cohort/i }));
+
+      // Error messages should be descriptive and helpful
+      expect(await screen.findByText(/title is required/i)).toBeVisible();
+    });
+  });
+
+  describe("UI Elements (Admin Only)", () => {
+    it("shows empty state when no members are selected", () => {
+      renderWithProviders(<Cohort />, "admin");
+      expect(screen.getByText(/no members selected/i)).toBeVisible();
+    });
+
+    it("shows member select dropdown", () => {
+      renderWithProviders(<Cohort />, "admin");
+      expect(screen.getByRole("combobox")).toBeVisible();
+      expect(screen.getByText("Add profile")).toBeVisible();
+    });
+  });
+
+  describe("Form Validation (Admin Only)", () => {
+    it("validates title field", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Cohort />, "admin");
+
+      // Try to submit without title
+      await user.click(screen.getByRole("button", { name: /create cohort/i }));
+      expect(await screen.findByText(/title is required/i)).toBeVisible();
+
+      // Fill title and error should disappear
+      await user.type(screen.getByLabelText(/title/i), "Valid Title");
+      expect(screen.queryByText(/title is required/i)).not.toBeInTheDocument();
     });
   });
 });
@@ -148,34 +268,34 @@ describe('Cohort', () => {
 /*
  * Component Analysis for Cohort:
  * Path: common/cohort/Cohort.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: None
  * - Has props: true
  * - Props interface: CohortProps
  * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useEffect, useState, useRouter
+ * - Uses hooks: useQuery, useQueryClient, useEffect, useState, useRole, useRouter
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: true
  * - Uses state: true
  * - Uses effects: true
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<Cohort {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<Cohort {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);
