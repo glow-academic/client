@@ -45,13 +45,9 @@ const radarChartConfig = {
 
 interface SkillGrowthProps {
   className?: string;
-  carouselIndicator?: React.ReactNode;
 }
 
-export default function SkillGrowth({
-  className,
-  carouselIndicator,
-}: SkillGrowthProps) {
+export default function SkillGrowth({ className }: SkillGrowthProps) {
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -256,13 +252,34 @@ export default function SkillGrowth({
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <GraduationCap className="h-5 w-5" />
-            Skill Development
-          </CardTitle>
-          <CardDescription>
-            Performance across key teaching competencies
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <GraduationCap className="h-5 w-5" />
+                Skill Development
+              </CardTitle>
+              <CardDescription>
+                Performance across key teaching competencies
+              </CardDescription>
+            </div>
+            {availableRubrics.length > 0 && (
+              <Select
+                value={selectedRubricId}
+                onValueChange={setSelectedRubricId}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a rubric" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableRubrics.map((rubric) => (
+                    <SelectItem key={rubric.id} value={rubric.id}>
+                      {rubric.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[400px]">
           <div className="text-center text-muted-foreground">
@@ -344,8 +361,6 @@ export default function SkillGrowth({
             </div>
           </CardContent>
         )}
-        {/* Carousel Indicator */}
-        {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
       </div>
     </Card>
   );

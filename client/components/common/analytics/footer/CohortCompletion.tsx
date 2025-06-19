@@ -50,13 +50,9 @@ const radialChartConfig = {
 
 interface CohortCompletionProps {
   className?: string;
-  carouselIndicator?: React.ReactNode;
 }
 
-export default function CohortCompletion({
-  className,
-  carouselIndicator,
-}: CohortCompletionProps) {
+export default function CohortCompletion({ className }: CohortCompletionProps) {
   const { data: cohorts, isLoading: cohortsLoading } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
@@ -170,13 +166,35 @@ export default function CohortCompletion({
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Cohort Progress
-          </CardTitle>
-          <CardDescription>
-            Completion rates across different cohorts
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Cohort Progress
+              </CardTitle>
+              <CardDescription>
+                Completion rates across different cohorts
+              </CardDescription>
+            </div>
+            {cohorts && cohorts.length > 1 && (
+              <Select
+                value={selectedCohortId}
+                onValueChange={setSelectedCohortId}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a cohort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cohorts</SelectItem>
+                  {cohorts.map((cohort) => (
+                    <SelectItem key={cohort.id} value={cohort.id}>
+                      {cohort.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[400px]">
           <div className="text-center text-muted-foreground">
@@ -274,8 +292,6 @@ export default function CohortCompletion({
           ))}
         </CardContent>
       )}
-      {/* Carousel Indicator */}
-      {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
     </Card>
   );
 }

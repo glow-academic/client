@@ -442,84 +442,40 @@ export default function Dashboard() {
       {/* Footer Carousel Sections */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Footer Carousel */}
-        {leftFooterCarouselIndex === 0 && (
-          <SkillGrowth
-            carouselIndicator={
-              <div className="flex justify-center gap-2">
-                {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setLeftFooterCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === leftFooterCarouselIndex
-                        ? "bg-primary"
-                        : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            }
-          />
-        )}
-        {leftFooterCarouselIndex === 1 && (
-          <ScenarioData
-            carouselIndicator={
-              <div className="flex justify-center gap-2">
-                {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setLeftFooterCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === leftFooterCarouselIndex
-                        ? "bg-primary"
-                        : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            }
-          />
-        )}
+        <div className="space-y-4">
+          {leftFooterCarouselIndex === 0 && <SkillGrowth />}
+          {leftFooterCarouselIndex === 1 && <ScenarioData />}
+          {/* Left Footer Carousel Indicators */}
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: totalFooterSlides }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setLeftFooterCarouselIndex(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === leftFooterCarouselIndex ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
 
         {/* Right Footer Carousel */}
-        {rightFooterCarouselIndex === 0 && (
-          <CohortCompletion
-            carouselIndicator={
-              <div className="flex justify-center gap-2">
-                {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setRightFooterCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === rightFooterCarouselIndex
-                        ? "bg-primary"
-                        : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            }
-          />
-        )}
-        {rightFooterCarouselIndex === 1 && (
-          <SimulationPerformance
-            carouselIndicator={
-              <div className="flex justify-center gap-2">
-                {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setRightFooterCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === rightFooterCarouselIndex
-                        ? "bg-primary"
-                        : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            }
-          />
-        )}
+        <div className="space-y-4">
+          {rightFooterCarouselIndex === 0 && <CohortCompletion />}
+          {rightFooterCarouselIndex === 1 && <SimulationPerformance />}
+          {/* Right Footer Carousel Indicators */}
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: totalFooterSlides }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setRightFooterCarouselIndex(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === rightFooterCarouselIndex ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

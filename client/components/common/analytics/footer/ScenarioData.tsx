@@ -51,13 +51,9 @@ const chartConfig = {
 
 interface ScenarioDataProps {
   className?: string;
-  carouselIndicator?: React.ReactNode;
 }
 
-export default function ScenarioData({
-  className,
-  carouselIndicator,
-}: ScenarioDataProps) {
+export default function ScenarioData({ className }: ScenarioDataProps) {
   const { data: scenarios, isLoading: scenariosLoading } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
@@ -314,8 +310,6 @@ export default function ScenarioData({
           </p>
         </div>
       </CardContent>
-      {/* Carousel Indicator */}
-      {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
     </Card>
   );
 }

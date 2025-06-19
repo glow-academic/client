@@ -49,12 +49,10 @@ const chartConfig = {
 
 interface SimulationPerformanceProps {
   className?: string;
-  carouselIndicator?: React.ReactNode;
 }
 
 export default function SimulationPerformance({
   className,
-  carouselIndicator,
 }: SimulationPerformanceProps) {
   const { data: cohorts, isLoading: cohortsLoading } = useQuery({
     queryKey: ["cohorts"],
@@ -203,13 +201,35 @@ export default function SimulationPerformance({
     return (
       <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Simulation Performance
-          </CardTitle>
-          <CardDescription>
-            Performance metrics across different simulations
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <BarChart3 className="h-5 w-5" />
+                Simulation Performance
+              </CardTitle>
+              <CardDescription>
+                Performance metrics across different simulations
+              </CardDescription>
+            </div>
+            {cohorts && cohorts.length > 0 && (
+              <Select
+                value={selectedCohortId}
+                onValueChange={setSelectedCohortId}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select a cohort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Cohorts</SelectItem>
+                  {cohorts.map((cohort) => (
+                    <SelectItem key={cohort.id} value={cohort.id}>
+                      {cohort.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[400px]">
           <div className="text-center text-muted-foreground">
@@ -299,8 +319,6 @@ export default function SimulationPerformance({
           Based on completion rates and average scores
         </div>
       </CardContent>
-      {/* Carousel Indicator */}
-      {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
     </Card>
   );
 }
