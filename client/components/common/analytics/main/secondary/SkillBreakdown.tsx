@@ -6,6 +6,13 @@
  */
 "use client";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -16,7 +23,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { Brain, Eye, Target, Zap } from "lucide-react";
+import { Brain, Eye, GraduationCap, Target, Zap } from "lucide-react";
 import { useMemo } from "react";
 
 export default function SkillBreakdown() {
@@ -120,28 +127,50 @@ export default function SkillBreakdown() {
 
   if (!skillCategories.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
-        <p className="text-muted-foreground">
-          No skill breakdown data available
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Skill Breakdown
+          </CardTitle>
+          <CardDescription>Top performing competencies</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px]">
+            <p className="text-muted-foreground">
+              No skill breakdown data available
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6 h-full overflow-y-auto">
-      {skillCategories.map((skill) => (
-        <div key={skill.shortName} className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-2">
-              <skill.icon className="h-4 w-4 text-muted-foreground" />
-              <span className="font-medium">{skill.shortName}</span>
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <GraduationCap className="h-5 w-5" />
+          Skill Breakdown
+        </CardTitle>
+        <CardDescription>Top performing competencies</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-6 h-[300px] overflow-y-auto">
+          {skillCategories.map((skill) => (
+            <div key={skill.shortName} className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-2">
+                  <skill.icon className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{skill.shortName}</span>
+                </div>
+                <span className="font-bold text-lg">{skill.score}%</span>
+              </div>
+              <Progress value={skill.score} className="h-2" />
             </div>
-            <span className="font-bold text-lg">{skill.score}%</span>
-          </div>
-          <Progress value={skill.score} className="h-2" />
+          ))}
         </div>
-      ))}
-    </div>
+      </CardContent>
+    </Card>
   );
 }

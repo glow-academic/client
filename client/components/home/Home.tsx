@@ -51,7 +51,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
-import { useAuth } from "@/hooks/use-auth";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
 import { logInfo } from "@/utils/logger";
@@ -69,6 +68,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import SimulationHistory from "../common/history/SimulationHistory";
+import { useSession } from "next-auth/react";
 
 // Type for attempt data
 interface AttemptData {
@@ -612,8 +612,7 @@ export default function Home() {
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
 
-  const auth = useAuth();
-  const userId = auth.session.data?.user?.id;
+  const userId = useSession().data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],

@@ -7,7 +7,7 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -23,6 +23,7 @@ import {
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
+import { useDashboard } from "@/contexts/dashboard-context";
 
 export default function MainLayout({
   children,
@@ -31,6 +32,7 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { isEditMode, setIsEditMode } = useDashboard();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
@@ -45,9 +47,7 @@ export default function MainLayout({
     loadBreadcrumbs();
   }, [pathname]);
 
-  const handleSectionChange = createSectionChangeHandler(
-    router,
-  );
+  const handleSectionChange = createSectionChangeHandler(router);
 
   // Determine action button based on current path
   const getActionButton = () => {
@@ -60,6 +60,25 @@ export default function MainLayout({
     ) {
       return null;
     }
+
+    if (pathname === "/analytics/dashboard") {
+      if (isEditMode) {
+        return (
+          <Button onClick={() => setIsEditMode(true)} size="sm">
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Dashboard
+          </Button>
+        );
+      } else {
+        return (
+          <Button onClick={() => setIsEditMode(false)} size="sm">
+            <X className="h-4 w-4 mr-2" />
+            Exit
+          </Button>
+        );
+      }
+    }
+
     // Check for individual class page pattern: /classes/c/[classId]
     const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
     if (classPageMatch && !pathname.includes("/edit")) {
@@ -120,10 +139,7 @@ export default function MainLayout({
 
     if (pathname === "/create/classes") {
       return (
-        <Button
-          onClick={() => router.push("/create/classes/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/create/classes/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Class
         </Button>
@@ -159,7 +175,10 @@ export default function MainLayout({
 
     if (pathname === "/management/cohorts") {
       return (
-        <Button onClick={() => router.push("/management/cohorts/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/cohorts/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Cohort
         </Button>
@@ -175,7 +194,10 @@ export default function MainLayout({
       );
     }
 
-    if (pathname.startsWith("/management/evals/e/") && !pathname.includes("/r/")) {
+    if (
+      pathname.startsWith("/management/evals/e/") &&
+      !pathname.includes("/r/")
+    ) {
       return (
         <Button onClick={() => router.push(`${pathname}/edit`)} size="sm">
           <Pencil className="h-4 w-4 mr-2" />

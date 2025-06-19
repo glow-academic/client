@@ -6,11 +6,19 @@
  */
 "use client";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { format, subHours } from "date-fns";
+import { Calendar } from "lucide-react";
 import { useMemo } from "react";
 import {
   Bar,
@@ -29,6 +37,7 @@ const COLORS = {
 
 interface SessionActivityProps {
   timeRange: "1h" | "12h" | "24h";
+  onTimeRangeChange: (range: "1h" | "12h" | "24h") => void;
 }
 
 // Custom tooltip component
@@ -66,7 +75,10 @@ const CustomBarTooltip = ({
   return null;
 };
 
-export default function SessionActivity({ timeRange }: SessionActivityProps) {
+export default function SessionActivity({
+  timeRange,
+  onTimeRangeChange,
+}: SessionActivityProps) {
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -147,41 +159,115 @@ export default function SessionActivity({ timeRange }: SessionActivityProps) {
     }
   }, [chats, timeRange]);
 
+  const timeOptions = [
+    { value: "1h" as const, label: "1 hour" },
+    { value: "12h" as const, label: "12 hours" },
+    { value: "24h" as const, label: "24 hours" },
+  ];
+
   if (!sessionActivityData.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
-        <p className="text-muted-foreground">
-          No session activity data available
-        </p>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Session Activity
+              </CardTitle>
+              <CardDescription>
+                Training session volume and completion rates
+              </CardDescription>
+            </div>
+            <div className="flex gap-1">
+              {timeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onTimeRangeChange(option.value)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    timeRange === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px]">
+            <p className="text-muted-foreground">
+              No session activity data available
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={sessionActivityData}>
-        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-        <XAxis dataKey="date" className="text-xs" />
-        <YAxis className="text-xs" />
-        <Tooltip
-          content={<CustomBarTooltip active={false} payload={[]} label={""} />}
-          position={{ x: 0, y: 0 }}
-          allowEscapeViewBox={{ x: false, y: true }}
-          offset={20}
-        />
-        <Bar
-          dataKey="sessions"
-          fill={COLORS.primary}
-          name="Total Sessions"
-          radius={[4, 4, 0, 0]}
-        />
-        <Bar
-          dataKey="completed"
-          fill={COLORS.success}
-          name="Completed Sessions"
-          radius={[4, 4, 0, 0]}
-        />
-      </BarChart>
-    </ResponsiveContainer>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              Session Activity
+            </CardTitle>
+            <CardDescription>
+              Training session volume and completion rates
+            </CardDescription>
+          </div>
+          <div className="flex gap-1">
+            {timeOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onTimeRangeChange(option.value)}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  timeRange === option.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={sessionActivityData}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis dataKey="date" className="text-xs" />
+              <YAxis className="text-xs" />
+              <Tooltip
+                content={
+                  <CustomBarTooltip active={false} payload={[]} label={""} />
+                }
+                position={{ x: 0, y: 0 }}
+                allowEscapeViewBox={{ x: false, y: true }}
+                offset={20}
+              />
+              <Bar
+                dataKey="sessions"
+                fill={COLORS.primary}
+                name="Total Sessions"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="completed"
+                fill={COLORS.success}
+                name="Completed Sessions"
+                radius={[4, 4, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

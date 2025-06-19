@@ -26,9 +26,9 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { Column, ColumnDef, Row, Table } from "@tanstack/react-table";
+import { useSession } from "next-auth/react";
 import { useMemo } from "react";
 import { Badge } from "../../ui/badge";
-import { useAuth } from "@/hooks/use-auth";
 
 // Enhanced types for the data table
 interface EnhancedAttempt extends SimulationAttempt {
@@ -47,8 +47,7 @@ export function useColumns({
   showAll?: boolean;
   showExport?: boolean;
 }) {
-  const auth = useAuth();
-  const userId = auth.session.data?.user?.id;
+  const userId = useSession().data?.user?.id;
 
   const { data: profile } = useQuery({
     queryKey: ["profile", userId],

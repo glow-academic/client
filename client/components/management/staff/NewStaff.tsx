@@ -36,7 +36,7 @@ import { Class as ClassData } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useAuth } from "@/hooks/use-auth";
+import { useSession } from "next-auth/react";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta";
 
@@ -107,8 +107,7 @@ export default function NewStaff() {
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
   // Get current user's profile to check if they're admin
-  const auth = useAuth();
-  const userId = auth.session.data?.user?.id;
+  const userId = useSession().data?.user?.id;
 
   const { data: currentUserProfile } = useQuery({
     queryKey: ["profile", userId],

@@ -6,13 +6,20 @@
  */
 "use client";
 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { subDays } from "date-fns";
-import { Award, Clock, MessageSquare, TrendingUp } from "lucide-react";
+import { Award, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 
 export default function TrainingInsights() {
@@ -111,77 +118,101 @@ export default function TrainingInsights() {
 
   if (!insights) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
-        <p className="text-muted-foreground">Loading training insights...</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5" />
+            Training Insights
+          </CardTitle>
+          <CardDescription>AI-powered recommendations</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px]">
+            <p className="text-muted-foreground">
+              Loading training insights...
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto space-y-3">
-      {/* Weekly Trend */}
-      <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
-        <div className="flex items-start gap-2">
-          <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
-          <div>
-            <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
-              Weekly Trend
-            </div>
-            <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-              {insights.weeklyTrend > 0
-                ? `Scores improved by ${insights.weeklyTrend}% this week`
-                : insights.weeklyTrend < 0
-                  ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
-                  : "Scores remained stable this week"}
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Target className="h-5 w-5" />
+          Training Insights
+        </CardTitle>
+        <CardDescription>AI-powered recommendations</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[300px] overflow-y-auto space-y-3">
+          {/* Weekly Trend */}
+          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
+            <div className="flex items-start gap-2">
+              <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  Weekly Trend
+                </div>
+                <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                  {insights.weeklyTrend > 0
+                    ? `Scores improved by ${insights.weeklyTrend}% this week`
+                    : insights.weeklyTrend < 0
+                      ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
+                      : "Scores remained stable this week"}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Session Efficiency */}
-      <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950 dark:border-yellow-800">
-        <div className="flex items-start gap-2">
-          <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
-          <div>
-            <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-              Session Efficiency
-            </div>
-            <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-              Average session time: {insights.avgTrainingTime} minutes
+          {/* Session Efficiency */}
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950 dark:border-yellow-800">
+            <div className="flex items-start gap-2">
+              <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                  Session Efficiency
+                </div>
+                <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                  Average session time: {insights.avgTrainingTime} minutes
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Success Rate */}
-      <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950 dark:border-purple-800">
-        <div className="flex items-start gap-2">
-          <Award className="h-4 w-4 text-purple-600 mt-0.5" />
-          <div>
-            <div className="text-sm font-medium text-purple-800 dark:text-purple-200">
-              Success Rate
-            </div>
-            <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-              {insights.passRate}% of sessions meet passing criteria
+          {/* Success Rate */}
+          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950 dark:border-purple-800">
+            <div className="flex items-start gap-2">
+              <Award className="h-4 w-4 text-purple-600 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                  Success Rate
+                </div>
+                <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                  {insights.passRate}% of sessions meet passing criteria
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Overall Performance */}
-      <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950 dark:border-orange-800">
-        <div className="flex items-start gap-2">
-          <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
-          <div>
-            <div className="text-sm font-medium text-orange-800 dark:text-orange-200">
-              Overall Performance
-            </div>
-            <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-              Average score across all sessions: {insights.avgOverallScore}%
+          {/* Overall Performance */}
+          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950 dark:border-orange-800">
+            <div className="flex items-start gap-2">
+              <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
+              <div>
+                <div className="text-sm font-medium text-orange-800 dark:text-orange-200">
+                  Overall Performance
+                </div>
+                <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
+                  Average score across all sessions: {insights.avgOverallScore}%
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -7,6 +7,13 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -16,6 +23,7 @@ import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simula
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, subHours } from "date-fns";
+import { Users } from "lucide-react";
 import { useMemo } from "react";
 import {
   Bar,
@@ -33,10 +41,12 @@ const COLORS = {
 
 interface PerformanceByPersonalityProps {
   timeRange: "12h" | "1d" | "1w";
+  onTimeRangeChange: (range: "12h" | "1d" | "1w") => void;
 }
 
 export default function PerformanceByPersonality({
   timeRange,
+  onTimeRangeChange,
 }: PerformanceByPersonalityProps) {
   // Fetch data
   const { data: profiles } = useQuery({
@@ -118,72 +128,144 @@ export default function PerformanceByPersonality({
     return performanceByType;
   }, [agents, scenarios, chats, grades, timeRange]);
 
+  const timeOptions = [
+    { value: "12h" as const, label: "12 hours" },
+    { value: "1d" as const, label: "1 day" },
+    { value: "1w" as const, label: "1 week" },
+  ];
+
   if (!performanceData.length) {
     return (
-      <div className="flex items-center justify-center h-[300px]">
-        <p className="text-muted-foreground">No performance data available</p>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Performance by Student Personality
+              </CardTitle>
+              <CardDescription>
+                How TAs handle different student types during training
+              </CardDescription>
+            </div>
+            <div className="flex gap-1">
+              {timeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => onTimeRangeChange(option.value)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    timeRange === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-[300px]">
+            <p className="text-muted-foreground">
+              No performance data available
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 h-full">
-      <div className="h-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={performanceData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" domain={[0, 100]} />
-            <YAxis dataKey="name" type="category" width={80} />
-            <Tooltip
-              formatter={(value: number) => [`${value}%`, "Average Score"]}
-              labelFormatter={(label) => `${label} Students`}
-            />
-            <Bar
-              dataKey="score"
-              fill={COLORS.primary}
-              radius={[0, 4, 4, 0]}
-              name="Average Score"
-            />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      <div className="space-y-4 overflow-y-auto">
-        {performanceData.map((type) => (
-          <div
-            key={type.name}
-            className="flex items-center justify-between p-4 rounded-lg border"
-          >
-            <div className="flex items-center gap-3">
-              <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
-              <div>
-                <p className="font-medium">{type.name} Student</p>
-                <p className="text-sm text-muted-foreground">
-                  {type.sessions} sessions
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-lg font-bold">{type.score}%</p>
-              <Badge
-                variant={
-                  type.score >= 80
-                    ? "default"
-                    : type.score >= 70
-                      ? "secondary"
-                      : "destructive"
-                }
-              >
-                {type.score >= 80
-                  ? "Excellent"
-                  : type.score >= 70
-                    ? "Good"
-                    : "Needs Work"}
-              </Badge>
-            </div>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Performance by Student Personality
+            </CardTitle>
+            <CardDescription>
+              How TAs handle different student types during training
+            </CardDescription>
           </div>
-        ))}
-      </div>
-    </div>
+          <div className="flex gap-1">
+            {timeOptions.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => onTimeRangeChange(option.value)}
+                className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                  timeRange === option.value
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="grid gap-6 md:grid-cols-2 h-[300px]">
+          <div className="h-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={performanceData} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" domain={[0, 100]} />
+                <YAxis dataKey="name" type="category" width={80} />
+                <Tooltip
+                  formatter={(value: number) => [`${value}%`, "Average Score"]}
+                  labelFormatter={(label) => `${label} Students`}
+                />
+                <Bar
+                  dataKey="score"
+                  fill={COLORS.primary}
+                  radius={[0, 4, 4, 0]}
+                  name="Average Score"
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="space-y-4 overflow-y-auto">
+            {performanceData.map((type) => (
+              <div
+                key={type.name}
+                className="flex items-center justify-between p-4 rounded-lg border"
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full ${type.color}`}></div>
+                  <div>
+                    <p className="font-medium">{type.name} Student</p>
+                    <p className="text-sm text-muted-foreground">
+                      {type.sessions} sessions
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-lg font-bold">{type.score}%</p>
+                  <Badge
+                    variant={
+                      type.score >= 80
+                        ? "default"
+                        : type.score >= 70
+                          ? "secondary"
+                          : "destructive"
+                    }
+                  >
+                    {type.score >= 80
+                      ? "Excellent"
+                      : type.score >= 70
+                        ? "Good"
+                        : "Needs Work"}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

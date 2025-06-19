@@ -36,7 +36,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useAuth } from "@/hooks/use-auth";
 import { Class as ClassData, Profile, ProfileRole } from "@/types";
 import { logError } from "@/utils/logger";
 import { deleteProfile } from "@/utils/mutations/profiles/delete-profile";
@@ -53,6 +52,7 @@ import {
   Trash2,
   User as UserIcon,
 } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -71,8 +71,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
   const [hasChanges, setHasChanges] = useState(false);
 
   // Get current user's profile to check if they're admin
-  const auth = useAuth();
-  const userId = auth.session.data?.user?.id;
+  const userId = useSession().data?.user?.id;
 
   const { data: currentUserProfile, isLoading: isCurrentUserProfileLoading } =
     useQuery({
@@ -101,9 +100,7 @@ export default function StaffEdit({ profileId }: { profileId: string }) {
 
   // Determine overall loading state
   const isLoading =
-    isProfilesLoading ||
-    isClassesLoading ||
-    isCurrentUserProfileLoading;
+    isProfilesLoading || isClassesLoading || isCurrentUserProfileLoading;
   const isDataReady = !isLoading && targetUser;
 
   const handleInputChange = (field: string, value: string | string[]) => {

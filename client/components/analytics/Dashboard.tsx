@@ -24,28 +24,12 @@ import PerformanceTrends from "@/components/common/analytics/main/primary/Perfor
 import SessionActivity from "@/components/common/analytics/main/primary/SessionActivity";
 import SkillBreakdown from "@/components/common/analytics/main/secondary/SkillBreakdown";
 import TrainingInsights from "@/components/common/analytics/main/secondary/TrainingInsights";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  GraduationCap,
-  Target,
-  TrendingUp,
-  Users,
-} from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Dashboard() {
   // Carousel states
@@ -138,13 +122,6 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [totalFooterSlides]);
 
-  const nextSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev + 1) % totalSlides);
-  }, [totalSlides]);
-
-  const prevSlide = useCallback(() => {
-    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
-  }, [totalSlides]);
   // Header metric components array
   const headerMetrics = [
     {
@@ -182,40 +159,6 @@ export default function Dashboard() {
     {
       component: <TotalTAs />,
       key: "totalTAs",
-    },
-  ];
-
-  // Carousel slides data
-  const slides = [
-    {
-      id: "personality",
-      title: "Performance by Student Personality",
-      description: "How TAs handle different student types during training",
-      timeRange: personalityTimeRange,
-      setTimeRange: (range: "12h" | "1d" | "1w") =>
-        setPersonalityTimeRange(range),
-      timeOptions: ["12h", "1d", "1w"] as const,
-      timeLabels: { "12h": "12 hours", "1d": "1 day", "1w": "1 week" },
-    },
-    {
-      id: "trends",
-      title: "Performance Trends",
-      description: "Training scores and session completion over time",
-      timeRange: performanceTrendTimeRange,
-      setTimeRange: (range: "7d" | "30d" | "90d") =>
-        setPerformanceTrendTimeRange(range),
-      timeOptions: ["7d", "30d", "90d"] as const,
-      timeLabels: { "7d": "7 days", "30d": "30 days", "90d": "90 days" },
-    },
-    {
-      id: "activity",
-      title: "Session Activity",
-      description: "Training session volume and completion rates",
-      timeRange: sessionActivityTimeRange,
-      setTimeRange: (range: "1h" | "12h" | "24h") =>
-        setSessionActivityTimeRange(range),
-      timeOptions: ["1h", "12h", "24h"] as const,
-      timeLabels: { "1h": "1 hour", "12h": "12 hours", "24h": "24 hours" },
     },
   ];
 
@@ -258,184 +201,67 @@ export default function Dashboard() {
       {/* Carousel Section */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <Card
-            className="relative overflow-hidden"
+          <div
+            className="relative"
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
           >
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {currentSlide === 0 && <Users className="h-5 w-5" />}
-                    {currentSlide === 1 && <TrendingUp className="h-5 w-5" />}
-                    {currentSlide === 2 && <Calendar className="h-5 w-5" />}
-                    {slides[currentSlide]?.title}
-                  </CardTitle>
-                  <CardDescription>
-                    {slides[currentSlide]?.description}
-                  </CardDescription>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {slides[currentSlide]?.timeOptions.map((range) => (
-                      <button
-                        key={range}
-                        onClick={() => {
-                          switch (currentSlide) {
-                            case 0:
-                              if (
-                                range === "12h" ||
-                                range === "1d" ||
-                                range === "1w"
-                              ) {
-                                setPersonalityTimeRange(range);
-                              }
-                              break;
-                            case 1:
-                              if (
-                                range === "7d" ||
-                                range === "30d" ||
-                                range === "90d"
-                              ) {
-                                setPerformanceTrendTimeRange(range);
-                              }
-                              break;
-                            case 2:
-                              if (
-                                range === "1h" ||
-                                range === "12h" ||
-                                range === "24h"
-                              ) {
-                                setSessionActivityTimeRange(range);
-                              }
-                              break;
-                          }
-                        }}
-                        className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                          slides[currentSlide]?.timeRange === range
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted text-muted-foreground hover:bg-muted/80"
-                        }`}
-                      >
-                        {slides[currentSlide]?.timeLabels[range]}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex gap-1 ml-2">
-                    <button
-                      onClick={prevSlide}
-                      className="p-1 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={nextSlide}
-                      className="p-1 rounded-md hover:bg-muted transition-colors"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px] relative">
-                {/* Performance by Student Personality */}
-                {currentSlide === 0 && (
-                  <PerformanceByPersonality timeRange={personalityTimeRange} />
-                )}
+            {/* Performance by Student Personality */}
+            {currentSlide === 0 && (
+              <PerformanceByPersonality
+                timeRange={personalityTimeRange}
+                onTimeRangeChange={setPersonalityTimeRange}
+              />
+            )}
 
-                {/* Performance Trends */}
-                {currentSlide === 1 && (
-                  <PerformanceTrends timeRange={performanceTrendTimeRange} />
-                )}
+            {/* Performance Trends */}
+            {currentSlide === 1 && (
+              <PerformanceTrends
+                timeRange={performanceTrendTimeRange}
+                onTimeRangeChange={setPerformanceTrendTimeRange}
+              />
+            )}
 
-                {/* Session Activity */}
-                {currentSlide === 2 && (
-                  <SessionActivity timeRange={sessionActivityTimeRange} />
-                )}
-              </div>
-              {/* Carousel indicators - moved to bottom center */}
-              <div className="flex justify-center gap-2 mt-4">
-                {Array.from({ length: totalSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentSlide ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+            {/* Session Activity */}
+            {currentSlide === 2 && (
+              <SessionActivity
+                timeRange={sessionActivityTimeRange}
+                onTimeRangeChange={setSessionActivityTimeRange}
+              />
+            )}
+          </div>
+          {/* Carousel indicators - moved outside the cards */}
+          <div className="flex justify-center gap-2 mt-4">
+            {Array.from({ length: totalSlides }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === currentSlide ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
         </div>
 
         {/* Side Components Carousel */}
         <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {sideCarouselIndex === 0 && (
-                      <GraduationCap className="h-5 w-5" />
-                    )}
-                    {sideCarouselIndex === 1 && <Target className="h-5 w-5" />}
-                    {sideCarouselIndex === 0
-                      ? "Skill Breakdown"
-                      : "Training Insights"}
-                  </CardTitle>
-                  <CardDescription>
-                    {sideCarouselIndex === 0
-                      ? "Top performing competencies"
-                      : "AI-powered recommendations"}
-                  </CardDescription>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    onClick={() =>
-                      setSideCarouselIndex(
-                        (prev) => (prev - 1 + totalSideSlides) % totalSideSlides
-                      )
-                    }
-                    className="p-1 rounded-md hover:bg-muted transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() =>
-                      setSideCarouselIndex(
-                        (prev) => (prev + 1) % totalSideSlides
-                      )
-                    }
-                    className="p-1 rounded-md hover:bg-muted transition-colors"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[300px]">
-                {sideCarouselIndex === 0 && <SkillBreakdown />}
-                {sideCarouselIndex === 1 && <TrainingInsights />}
-              </div>
-              {/* Side carousel indicators - moved to bottom center */}
-              <div className="flex justify-center gap-2 mt-4">
-                {Array.from({ length: totalSideSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSideCarouselIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === sideCarouselIndex ? "bg-primary" : "bg-muted"
-                    }`}
-                  />
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+          <div>
+            {sideCarouselIndex === 0 && <SkillBreakdown />}
+            {sideCarouselIndex === 1 && <TrainingInsights />}
+          </div>
+          {/* Side carousel indicators - moved outside the cards */}
+          <div className="flex justify-center gap-2">
+            {Array.from({ length: totalSideSlides }).map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setSideCarouselIndex(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === sideCarouselIndex ? "bg-primary" : "bg-muted"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
 
