@@ -348,7 +348,7 @@ export default function Staff() {
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
                       <div className="flex flex-wrap gap-1 max-w-[200px]">
-                        {profile.classIds.length > 0 ? (
+                        {profile.classIds && profile.classIds.length > 0 ? (
                           profile.classIds.map((classId, index) => {
                             const classOption = allClasses.find(
                               (cls) => cls.id === classId
