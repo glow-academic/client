@@ -1,23 +1,33 @@
-# client/Dockerfile
+# syntax=docker/dockerfile:1.7
+# client/Dockerfile - Optimized multi-stage build
 
-# Use a more recent Node image with Yarn pre-installed
-FROM node:20-alpine AS base
+############################################
+# 1️⃣  Dependencies (re-run only if lock-file changes)
+############################################
+FROM node:20-alpine AS deps
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies only once
 RUN apk add --no-cache libc6-compat
 
-# Copy package files
+# Copy package files for dependency installation
 COPY package.json yarn.lock ./
 
-# Install dependencies
-RUN yarn install --frozen-lockfile
+# Re-use Yarn's global cache across builds using BuildKit cache mount
+RUN --mount=type=cache,id=yarn,target=/usr/local/share/.cache/yarn \
+    yarn install --frozen-lockfile
+
+############################################
+# 2️⃣  Build Stage
+############################################
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy installed dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
 
 # Copy source code
 COPY . .
-
-# ——— Production Build Stage ———
-FROM base AS build
 
 # ——— build-args for environment variables ———
 ARG NEXT_PUBLIC_API_URL
@@ -30,7 +40,7 @@ ARG AUTH_SECRET
 ARG AUTH_MICROSOFT_ENTRA_ID_ID
 ARG AUTH_MICROSOFT_ENTRA_ID_SECRET
 
-# Set environment variables
+# Set environment variables for build
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV DB_USER=$DB_USER
 ENV DB_PASSWORD=$DB_PASSWORD
@@ -41,44 +51,45 @@ ENV AUTH_SECRET=$AUTH_SECRET
 ENV AUTH_MICROSOFT_ENTRA_ID_ID=$AUTH_MICROSOFT_ENTRA_ID_ID
 ENV AUTH_MICROSOFT_ENTRA_ID_SECRET=$AUTH_MICROSOFT_ENTRA_ID_SECRET
 
-# Set additional environment variables
+# Set build environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Run unit tests as part of the build process (SHIPPING)
+# Run unit tests as part of the build process (COMMENTED OUT FOR NOW)
+# Uncomment the lines below when you want to enable testing in the build
 # RUN echo "🧪 Running unit tests..." && \
 #     yarn test
 
-# Build the application (includes type checking and linting)
-RUN echo "🏗️  Building Next.js application..." && \
+# Build the application with Next.js cache mount for faster rebuilds
+RUN --mount=type=cache,id=nextjs,target=/app/.next/cache \
+    echo "🏗️  Building Next.js application..." && \
     yarn build
 
-# ——— Production Runtime Stage ———
-FROM node:20-alpine AS production
-
+############################################
+# 3️⃣  Production Runtime (minimal image)
+############################################
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install only production dependencies
-COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile --production
+# Set production environment
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy built application from build stage
-COPY --from=build /app/.next ./.next
-COPY --from=build /app/public ./public
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
 
-# Copy necessary files for runtime
-COPY next.config.ts ./
+# Copy the minimal "standalone" output from builder
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/public ./public
 
-# Create a non-root user
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-# Change ownership of the app directory
+# Change ownership to non-root user
 RUN chown -R nextjs:nodejs /app
 USER nextjs
 
 # Expose the port
 EXPOSE 3000
 
-# Start the application
-CMD ["yarn", "start"]
+# Start the application using the standalone server
+CMD ["node", "server.js"]
