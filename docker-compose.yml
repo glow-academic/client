@@ -14,7 +14,6 @@ services:
     build:
       context: ./database
       dockerfile: Dockerfile
-      target: production
     env_file: .env
     environment:
       - POSTGRES_USER=${DB_USER}
@@ -45,7 +44,6 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-      target: production
     env_file: .env
     environment:
       - DB_HOST=database
@@ -88,7 +86,6 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-      target: production
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
         DB_USER: ${DB_USER}
