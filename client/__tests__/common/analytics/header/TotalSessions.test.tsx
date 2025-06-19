@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import TotalSessions from '@/components/common/analytics/header/TotalSessions';
@@ -43,13 +44,7 @@ describe('TotalSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TotalSessions
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: TotalSessionsProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for TotalSessions
-    });
+    
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -59,7 +54,25 @@ describe('TotalSessions', () => {
     });
   });
 
-  
+  describe('User Interactions', () => {
+    
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for TotalSessions
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for TotalSessions
+    });
+  });
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
@@ -94,12 +107,7 @@ describe('TotalSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TotalSessions
     });
 
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TotalSessions
-    });
+    
   });
 });
 
@@ -110,14 +118,14 @@ describe('TotalSessions', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true
- * - Props interface: TotalSessionsProps
+ * - Has props: false
+ * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -126,7 +134,7 @@ describe('TotalSessions', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TotalSessions {...mockProps} />);
+ * render(<TotalSessions />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

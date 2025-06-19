@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import TotalTAs from '@/components/common/analytics/header/TotalTAs';
@@ -43,13 +44,7 @@ describe('TotalTAs', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TotalTAs
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: TotalTAsProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for TotalTAs
-    });
+    
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -59,7 +54,25 @@ describe('TotalTAs', () => {
     });
   });
 
-  
+  describe('User Interactions', () => {
+    
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for TotalTAs
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for TotalTAs
+    });
+  });
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
@@ -94,12 +107,7 @@ describe('TotalTAs', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TotalTAs
     });
 
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TotalTAs
-    });
+    
   });
 });
 
@@ -110,14 +118,14 @@ describe('TotalTAs', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true
- * - Props interface: TotalTAsProps
+ * - Has props: false
+ * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -126,7 +134,7 @@ describe('TotalTAs', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TotalTAs {...mockProps} />);
+ * render(<TotalTAs />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

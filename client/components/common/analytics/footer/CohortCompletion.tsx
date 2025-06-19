@@ -8,13 +8,6 @@
 
 import { Badge } from "@/components/ui/badge";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
@@ -33,7 +26,7 @@ import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Users } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
 
@@ -141,83 +134,57 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Cohort Progress
-          </CardTitle>
-          <CardDescription>
-            Completion rates across different cohorts
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Loading cohort data...
-          </div>
-        </CardContent>
-      </Card>
+      <div
+        className={`flex items-center justify-center h-[400px] ${className}`}
+      >
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Loading cohort data...
+        </div>
+      </div>
     );
   }
 
   // Show empty state if no data
   if (!cohorts?.length || !radialData.length) {
     return (
-      <Card className={className}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            Cohort Progress
-          </CardTitle>
-          <CardDescription>
-            Completion rates across different cohorts
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
-          <div className="text-center text-muted-foreground">
-            <p>No cohort data available</p>
-            <p className="text-sm">Create cohorts to track training progress</p>
-          </div>
-        </CardContent>
-      </Card>
+      <div
+        className={`flex items-center justify-center h-[400px] ${className}`}
+      >
+        <div className="text-center text-muted-foreground">
+          <p>No cohort data available</p>
+          <p className="text-sm">Create cohorts to track training progress</p>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className={className}>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Cohort Progress
-            </CardTitle>
-            <CardDescription>
-              Completion rates across different cohorts
-            </CardDescription>
-          </div>
-          {cohorts && cohorts.length > 1 && (
-            <Select
-              value={selectedCohortId}
-              onValueChange={setSelectedCohortId}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select a cohort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cohorts</SelectItem>
-                {cohorts.map((cohort) => (
-                  <SelectItem key={cohort.id} value={cohort.id}>
-                    {cohort.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+    <div className={className}>
+      {/* Header with selector */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="text-muted-foreground text-sm">
+          Completion rates across different cohorts
         </div>
-      </CardHeader>
-      <CardContent className="pb-0">
+        {cohorts && cohorts.length > 1 && (
+          <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select a cohort" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cohorts</SelectItem>
+              {cohorts.map((cohort) => (
+                <SelectItem key={cohort.id} value={cohort.id}>
+                  {cohort.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {/* Chart */}
+      <div className="pb-0">
         <ChartContainer
           config={radialChartConfig}
           className="mx-auto aspect-square max-h-[400px]"
@@ -242,9 +209,11 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
             />
           </RadialBarChart>
         </ChartContainer>
-      </CardContent>
+      </div>
+
+      {/* Progress Details */}
       {radialData.length > 0 && (
-        <CardContent className="space-y-3">
+        <div className="space-y-3">
           {radialData.map((cohort) => (
             <div
               key={cohort.name}
@@ -268,8 +237,8 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
               </div>
             </div>
           ))}
-        </CardContent>
+        </div>
       )}
-    </Card>
+    </div>
   );
 }

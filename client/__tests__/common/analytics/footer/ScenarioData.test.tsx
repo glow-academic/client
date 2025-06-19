@@ -1,9 +1,8 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import CompletionRate from '@/components/common/analytics/header/CompletionRate';
+import ScenarioData from '@/components/common/analytics/footer/ScenarioData';
 
 // Mock external dependencies
 
@@ -11,7 +10,7 @@ import CompletionRate from '@/components/common/analytics/header/CompletionRate'
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('CompletionRate', () => {
+describe('ScenarioData', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -37,63 +36,51 @@ describe('CompletionRate', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for CompletionRate
-      renderWithProviders(<CompletionRate />);
+      // TODO: Implement basic rendering test for ScenarioData
+      renderWithProviders(<ScenarioData />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ScenarioData
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ScenarioDataProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for ScenarioData
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ScenarioData
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    it('should handle state changes', async () => {
-      // TODO: Test state management
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for CompletionRate
-    });
-
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for CompletionRate
-    });
-  });
+  
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: API integration test for ScenarioData
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for ScenarioData
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for ScenarioData
     });
   });
 
@@ -104,28 +91,33 @@ describe('CompletionRate', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ScenarioData
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ScenarioData
+    });
   });
 });
 
 /*
- * Component Analysis for CompletionRate:
- * Path: common/analytics/header/CompletionRate.tsx
+ * Component Analysis for ScenarioData:
+ * Path: common/analytics/footer/ScenarioData.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ScenarioDataProps
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo, useState
+ * - Uses hooks: used, useQuery, useMemo
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: true
+ * - Uses state: false
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -134,12 +126,12 @@ describe('CompletionRate', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<CompletionRate />);
+ * render(<ScenarioData {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<CompletionRate {...props} />);
+ * render(<ScenarioData {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

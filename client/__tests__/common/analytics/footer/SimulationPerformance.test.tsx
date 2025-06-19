@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import CompletionRate from '@/components/common/analytics/header/CompletionRate';
+import SimulationPerformance from '@/components/common/analytics/footer/SimulationPerformance';
 
 // Mock external dependencies
 
@@ -11,7 +11,7 @@ import CompletionRate from '@/components/common/analytics/header/CompletionRate'
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('CompletionRate', () => {
+describe('SimulationPerformance', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -37,20 +37,26 @@ describe('CompletionRate', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for CompletionRate
-      renderWithProviders(<CompletionRate />);
+      // TODO: Implement basic rendering test for SimulationPerformance
+      renderWithProviders(<SimulationPerformance />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for SimulationPerformance
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: SimulationPerformanceProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for SimulationPerformance
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for SimulationPerformance
     });
   });
 
@@ -62,7 +68,7 @@ describe('CompletionRate', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: State management test for SimulationPerformance
     });
 
     it('should handle user events', async () => {
@@ -70,7 +76,7 @@ describe('CompletionRate', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: User events test for SimulationPerformance
     });
   });
 
@@ -79,21 +85,21 @@ describe('CompletionRate', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: API integration test for SimulationPerformance
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for SimulationPerformance
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for SimulationPerformance
     });
   });
 
@@ -104,22 +110,27 @@ describe('CompletionRate', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for CompletionRate
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for SimulationPerformance
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for SimulationPerformance
+    });
   });
 });
 
 /*
- * Component Analysis for CompletionRate:
- * Path: common/analytics/header/CompletionRate.tsx
+ * Component Analysis for SimulationPerformance:
+ * Path: common/analytics/footer/SimulationPerformance.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: SimulationPerformanceProps
  * - Client component: true
  * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
@@ -134,12 +145,12 @@ describe('CompletionRate', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<CompletionRate />);
+ * render(<SimulationPerformance {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<CompletionRate {...props} />);
+ * render(<SimulationPerformance {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

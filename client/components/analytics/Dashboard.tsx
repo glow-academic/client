@@ -7,6 +7,8 @@
 "use client";
 
 import CohortCompletion from "@/components/common/analytics/footer/CohortCompletion";
+import ScenarioData from "@/components/common/analytics/footer/ScenarioData";
+import SimulationPerformance from "@/components/common/analytics/footer/SimulationPerformance";
 import SkillGrowth from "@/components/common/analytics/footer/SkillGrowth";
 import ActiveCohorts from "@/components/common/analytics/header/ActiveCohorts";
 import AverageScore from "@/components/common/analytics/header/AverageScore";
@@ -35,6 +37,7 @@ import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grad
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
 import {
+  BarChart3,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -51,9 +54,12 @@ export default function Dashboard() {
   const [isHovered, setIsHovered] = useState(false);
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
   const [sideCarouselIndex, setSideCarouselIndex] = useState(0);
+  const [leftFooterCarouselIndex, setLeftFooterCarouselIndex] = useState(0);
+  const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
 
   const totalSlides = 3; // Main carousel slides
   const totalSideSlides = 2; // Side carousel slides
+  const totalFooterSlides = 2; // Footer carousel slides
 
   // Time range states
   const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
@@ -115,6 +121,23 @@ export default function Dashboard() {
 
     return () => clearInterval(interval);
   }, [totalSideSlides]);
+
+  // Footer carousels auto-scroll
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setLeftFooterCarouselIndex((prev) => (prev + 1) % totalFooterSlides);
+    }, 6000); // Change left footer every 6 seconds
+
+    return () => clearInterval(interval);
+  }, [totalFooterSlides]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRightFooterCarouselIndex((prev) => (prev + 1) % totalFooterSlides);
+    }, 7000); // Change right footer every 7 seconds
+
+    return () => clearInterval(interval);
+  }, [totalFooterSlides]);
 
   const nextSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev + 1) % totalSlides);
@@ -417,13 +440,99 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Radar and Radial Charts */}
+      {/* Footer Carousel Sections */}
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Skill Radar Chart */}
-        <SkillGrowth />
+        {/* Left Footer Carousel */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {leftFooterCarouselIndex === 0 && (
+                    <GraduationCap className="h-5 w-5" />
+                  )}
+                  {leftFooterCarouselIndex === 1 && (
+                    <BarChart3 className="h-5 w-5" />
+                  )}
+                  {leftFooterCarouselIndex === 0
+                    ? "Skill Development"
+                    : "Scenario Analysis"}
+                </CardTitle>
+                <CardDescription>
+                  {leftFooterCarouselIndex === 0
+                    ? "Performance across key teaching competencies"
+                    : "Performance trends across scenario characteristics"}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              {leftFooterCarouselIndex === 0 && <SkillGrowth />}
+              {leftFooterCarouselIndex === 1 && <ScenarioData />}
+            </div>
+            {/* Left footer carousel indicators */}
+            <div className="flex justify-center gap-2 mt-4">
+              {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setLeftFooterCarouselIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === leftFooterCarouselIndex
+                      ? "bg-primary"
+                      : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Cohort Radial Chart */}
-        <CohortCompletion />
+        {/* Right Footer Carousel */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  {rightFooterCarouselIndex === 0 && (
+                    <Users className="h-5 w-5" />
+                  )}
+                  {rightFooterCarouselIndex === 1 && (
+                    <BarChart3 className="h-5 w-5" />
+                  )}
+                  {rightFooterCarouselIndex === 0
+                    ? "Cohort Progress"
+                    : "Simulation Performance"}
+                </CardTitle>
+                <CardDescription>
+                  {rightFooterCarouselIndex === 0
+                    ? "Completion rates across different cohorts"
+                    : "Performance metrics across different simulations"}
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[400px]">
+              {rightFooterCarouselIndex === 0 && <CohortCompletion />}
+              {rightFooterCarouselIndex === 1 && <SimulationPerformance />}
+            </div>
+            {/* Right footer carousel indicators */}
+            <div className="flex justify-center gap-2 mt-4">
+              {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setRightFooterCarouselIndex(index)}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    index === rightFooterCarouselIndex
+                      ? "bg-primary"
+                      : "bg-muted"
+                  }`}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

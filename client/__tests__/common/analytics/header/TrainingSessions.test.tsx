@@ -1,5 +1,6 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import TrainingSessions from '@/components/common/analytics/header/TrainingSessions';
@@ -43,13 +44,7 @@ describe('TrainingSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for TrainingSessions
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: TrainingSessionsProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for TrainingSessions
-    });
+    
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -59,7 +54,25 @@ describe('TrainingSessions', () => {
     });
   });
 
-  
+  describe('User Interactions', () => {
+    
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for TrainingSessions
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for TrainingSessions
+    });
+  });
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
@@ -94,12 +107,7 @@ describe('TrainingSessions', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for TrainingSessions
     });
 
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for TrainingSessions
-    });
+    
   });
 });
 
@@ -110,14 +118,14 @@ describe('TrainingSessions', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true
- * - Props interface: TrainingSessionsProps
+ * - Has props: false
+ * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: false
+ * - Uses state: true
  * - Uses effects: false
  * - Uses context: false
  * 
@@ -126,7 +134,7 @@ describe('TrainingSessions', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<TrainingSessions {...mockProps} />);
+ * render(<TrainingSessions />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
