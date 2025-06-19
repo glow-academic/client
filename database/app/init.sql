@@ -10,23 +10,23 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 -- 1. Independent tables (no foreign key dependencies)
-\i /docker-entrypoint-initdb.d/app/classes/init.sql
-\i /docker-entrypoint-initdb.d/app/models/init.sql
-\i /docker-entrypoint-initdb.d/app/users/init.sql
-\i /docker-entrypoint-initdb.d/app/rubrics/init.sql
-\i /docker-entrypoint-initdb.d/app/logs/init.sql
+\i app/classes/init.sql
+\i app/models/init.sql
+\i app/users/init.sql
+\i app/rubrics/init.sql
+\i app/logs/init.sql
 
 -- 2. Agents
-\i /docker-entrypoint-initdb.d/app/agents/init.sql
+\i app/agents/init.sql
 
 -- 3. Tables that depend on agents (scenarios references agents)
-\i /docker-entrypoint-initdb.d/app/scenarios/init.sql
+\i app/scenarios/init.sql
 
 -- 4. Tables that depend on multiple previous tables
-\i /docker-entrypoint-initdb.d/app/simulations/init.sql
+\i app/simulations/init.sql
 
 -- 5. Evaluation system (depends on rubrics)
-\i /docker-entrypoint-initdb.d/app/evals/init.sql
+\i app/evals/init.sql
 
 -- ============================================================================
 -- COMPLETION MESSAGE

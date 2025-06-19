@@ -162,8 +162,11 @@ else
   # Copy the main initialization script for fresh database
   log_info "📋 Setting up main database schema..."
   if [ -f "/docker-entrypoint-initdb.d/app/init.sql" ]; then
-    cp /docker-entrypoint-initdb.d/app/init.sql /docker-entrypoint-initdb.d/10-main-init.sql
-    log_success "✅ Main initialization script prepared"
+    # Create a Docker-specific version with correct paths
+    log_info "🔄 Generating Docker-specific init.sql with container paths..."
+    sed 's|\\i app/|\\i /docker-entrypoint-initdb.d/app/|g' \
+      /docker-entrypoint-initdb.d/app/init.sql > /docker-entrypoint-initdb.d/10-main-init.sql
+    log_success "✅ Docker-specific initialization script prepared"
   else
     log_warning "⚠️  Main init.sql not found"
   fi
