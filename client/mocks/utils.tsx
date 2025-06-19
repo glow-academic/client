@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import React from 'react';
 import { vi } from 'vitest';
+import { ProfileRole } from '@/types';
 
 /* ------------------------------------------------------------------ */
 /* 1️⃣  React-Query test helper                                        */
@@ -28,6 +29,7 @@ const defaultSession = {
  */
 export function renderWithProviders(
   ui: React.ReactElement,
+  testUserRole: ProfileRole,
   options?: {
     session?: typeof defaultSession | null;
     queryClient?: QueryClient;
