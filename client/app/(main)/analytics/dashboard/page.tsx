@@ -6,14 +6,11 @@
  */
 
 import Dashboard from "@/components/analytics/Dashboard";
-import { DashboardProvider } from "@/contexts/dashboard-context";
 
 export default function DashboardPage() {
   return (
-    <DashboardProvider>
-      <div className="space-y-6">
-        <Dashboard />
-      </div>
-    </DashboardProvider>
+    <div className="space-y-6">
+      <Dashboard />
+    </div>
   );
 }

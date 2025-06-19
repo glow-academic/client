@@ -4,7 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/19/2025
  */
-
+"use client";
 import { logError } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
