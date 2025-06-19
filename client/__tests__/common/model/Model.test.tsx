@@ -5,21 +5,8 @@ import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
 
 // Mock the queries
-
 vi.mock("@/utils/queries/models/get-all-models", () => ({
   getAllModels: vi.fn(() => Promise.resolve([])),
 }));
@@ -35,8 +22,6 @@ vi.mock("@/utils/queries/providers/get-all-providers", () => ({
     ])
   ),
 }));
-
-global.fetch = vi.fn();
 
 describe("Model Component", () => {
   beforeEach(() => {
@@ -148,40 +133,3 @@ describe("Model Component", () => {
     });
   });
 });
-
-/*
- * Component Analysis for Model:
- * Path: common/model/Model.tsx
- *
- * Features detected:
- * - Default export: true
- * - Named exports: None
- * - Has props: true
- * - Props interface: ModelProps
- * - Client component: true
- * - Uses hooks: useQuery, useQueryClient, useEffect, useState, useRouter
- * - Uses router: true
- * - Has API calls: true
- * - Has form handling: true
- * - Uses state: true
- * - Uses effects: true
- * - Uses context: false
- *
- * TODO: Implement the failing tests above with actual test logic
- *
- * Example implementations:
- *
- * Basic rendering:
- * render(<Model {...mockProps} />);
- * expect(screen.getByRole('...')).toBeInTheDocument();
- *
- * Props testing:
- * const props = { ... };
- * render(<Model {...props} />);
- * expect(screen.getByText(props.someText)).toBeInTheDocument();
- *
- * User interaction:
- * const button = screen.getByRole('button');
- * await user.click(button);
- * expect(mockFunction).toHaveBeenCalled();
- */
