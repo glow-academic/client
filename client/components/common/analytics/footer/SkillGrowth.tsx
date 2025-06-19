@@ -29,7 +29,6 @@ import {
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
-import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
@@ -52,11 +51,6 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
-  });
-
-  const { data: chats, isLoading: chatsLoading } = useQuery({
-    queryKey: ["chats"],
-    queryFn: () => getAllSimulationChats(),
   });
 
   const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
@@ -133,14 +127,6 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
     const selectedRubric = rubrics.find((r) => r.id === selectedRubricId);
     const rubricTotalPoints = selectedRubric?.points || 20;
 
-    // Calculate overall score from grades - normalize to percentage based on rubric total points
-    const avgScore = Math.round(
-      (grades.reduce((sum, grade) => sum + grade.score, 0) /
-        grades.length /
-        rubricTotalPoints) *
-        100
-    );
-
     // Calculate skill-based scores from feedbacks and standards using rubric total points
     const skillScores = filteredStandardGroups.reduce(
       (acc, group) => {
@@ -166,30 +152,14 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
       {} as Record<string, number>
     );
 
-    // Calculate time management score from grades (inverse of time taken, normalized)
-    const avgTimeTaken =
-      grades.reduce((sum, grade) => sum + grade.timeTaken, 0) / grades.length;
-    const timeManagementScore = Math.max(
-      0,
-      Math.min(100, 100 - avgTimeTaken / 3600)
-    ); // Normalize based on hours
+    // Create metrics based only on filtered standard groups (no overall metrics)
+    const dynamicMetrics: Array<{
+      metric: string;
+      value: number;
+      fullMark: number;
+    }> = [];
 
-    // Calculate engagement score based on interaction frequency and completion
-    const completedChats = chats?.filter((chat) => chat.completed).length || 0;
-    const totalChats = chats?.length || 0;
-    const engagementScore =
-      totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
-
-    // Create dynamic metrics based on filtered standard groups
-    const dynamicMetrics = [
-      {
-        metric: "Overall Score",
-        value: avgScore,
-        fullMark: 100,
-      },
-    ];
-
-    // Add skill scores based on filtered standard groups
+    // Add skill scores based on filtered standard groups only
     filteredStandardGroups.forEach((group) => {
       const skillKey = group.name.toLowerCase().replace(/\s+/g, "");
       const skillValue = skillScores[skillKey] || 0;
@@ -200,30 +170,8 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
       });
     });
 
-    // Add calculated metrics
-    dynamicMetrics.push(
-      {
-        metric: "Time Management",
-        value: Math.round(timeManagementScore),
-        fullMark: 100,
-      },
-      {
-        metric: "Engagement",
-        value: engagementScore,
-        fullMark: 100,
-      }
-    );
-
     return dynamicMetrics;
-  }, [
-    grades,
-    feedbacks,
-    standards,
-    standardGroups,
-    chats,
-    rubrics,
-    selectedRubricId,
-  ]);
+  }, [grades, feedbacks, standards, standardGroups, rubrics, selectedRubricId]);
 
   // Calculate growth trend - filtered by selected rubric
   const growthTrend = useMemo(() => {
@@ -271,7 +219,6 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   // Check if any critical data is still loading
   const isLoading =
     rubricsLoading ||
-    chatsLoading ||
     standardGroupsLoading ||
     standardsLoading ||
     gradesLoading ||
@@ -357,41 +304,43 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-0">
-        <ChartContainer
-          config={radarChartConfig}
-          className="mx-auto aspect-square max-h-[400px]"
-        >
-          <RadarChart data={radarData}>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-            <PolarAngleAxis dataKey="metric" />
-            <PolarGrid />
-            <Radar
-              dataKey="value"
-              fill="var(--color-score)"
-              fillOpacity={0.6}
-              dot={{
-                r: 4,
-                fillOpacity: 1,
-              }}
-            />
-          </RadarChart>
-        </ChartContainer>
-      </CardContent>
-      {radarData.length > 0 && (
-        <CardContent className="flex-col gap-2 text-sm">
-          <div className="flex items-center gap-2 leading-none font-medium">
-            {growthTrend.isPositive ? "Trending up" : "Needs attention"}
-            {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
-            <TrendingUp
-              className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
-            />
-          </div>
-          <div className="text-muted-foreground flex items-center gap-2 leading-none">
-            Based on recent training sessions
-          </div>
+      <div className="flex flex-col flex-1">
+        <CardContent className="pb-0 flex-1">
+          <ChartContainer
+            config={radarChartConfig}
+            className="mx-auto aspect-square max-h-[400px]"
+          >
+            <RadarChart data={radarData}>
+              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+              <PolarAngleAxis dataKey="metric" />
+              <PolarGrid />
+              <Radar
+                dataKey="value"
+                fill="var(--color-score)"
+                fillOpacity={0.6}
+                dot={{
+                  r: 4,
+                  fillOpacity: 1,
+                }}
+              />
+            </RadarChart>
+          </ChartContainer>
         </CardContent>
-      )}
+        {radarData.length > 0 && (
+          <CardContent className="flex-col gap-2 text-sm mt-auto">
+            <div className="flex items-center gap-2 leading-none font-medium">
+              {growthTrend.isPositive ? "Trending up" : "Needs attention"}
+              {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
+              <TrendingUp
+                className={`h-4 w-4 ${growthTrend.isPositive ? "" : "rotate-180"}`}
+              />
+            </div>
+            <div className="text-muted-foreground flex items-center gap-2 leading-none">
+              Based on recent training sessions
+            </div>
+          </CardContent>
+        )}
+      </div>
     </Card>
   );
 }
