@@ -521,26 +521,19 @@ import * as mockSchema from '@/mocks/schema';
 
       // Generate appropriate mock return based on function name
       let mockReturn;
+      // Convert table name to camelCase for schema key
+      const schemaKey = tableName
+        .replace(/_/g, "-")
+        .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+
       if (functionName.startsWith("getAll")) {
-        const schemaKey = fileName.includes("get-all-")
-          ? fileName.replace("get-all-", "")
-          : tableName;
-        const camelCaseKey = schemaKey.replace(/-([a-z])/g, (_, letter) =>
-          letter.toUpperCase()
-        );
-        mockReturn = `mockSchema.${camelCaseKey} || []`;
+        mockReturn = `mockSchema.${schemaKey} || []`;
       } else if (
         functionName.startsWith("get") &&
         !functionName.includes("By")
       ) {
-        const schemaKey = tableName.replace(/-([a-z])/g, (_, letter) =>
-          letter.toUpperCase()
-        );
         mockReturn = `mockSchema.${schemaKey}?.[0] || null`;
       } else {
-        const schemaKey = tableName.replace(/-([a-z])/g, (_, letter) =>
-          letter.toUpperCase()
-        );
         mockReturn = `mockSchema.${schemaKey} || []`;
       }
 
@@ -591,9 +584,9 @@ import * as mockSchema from '@/mocks/schema';
 
       // Generate appropriate mock return based on function name
       let mockReturn;
-      const schemaKey = tableName.replace(/-([a-z])/g, (_, letter) =>
-        letter.toUpperCase()
-      );
+      const schemaKey = tableName
+        .replace(/_/g, "-")
+        .replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 
       if (functionName.startsWith("create") && !functionName.endsWith("s")) {
         mockReturn = `mockSchema.${schemaKey}?.[0] || {}`;
