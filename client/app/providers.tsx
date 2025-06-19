@@ -2,7 +2,6 @@
 "use client";
 
 import { RoleProvider } from "@/contexts/role-context";
-import { DashboardProvider } from "@/contexts/dashboard-context";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { createQueryClient } from "@/utils/react-query/queryClient";
 import {
@@ -45,12 +44,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
         <ReactQueryClientProvider>
-          <DashboardProvider>
             <RoleProviderWrapper>
               {children}
               <Toaster />
             </RoleProviderWrapper>
-          </DashboardProvider>
         </ReactQueryClientProvider>
       </QueryClientProvider>
     </SessionProvider>

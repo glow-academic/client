@@ -5,25 +5,25 @@
  * 06/08/2025
  */
 "use client";
-import React from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Pencil, Plus, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import {
-  SidebarProvider,
   SidebarInset,
+  SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
+import { Pencil, Plus, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import React from "react";
 
-import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
+import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { useDashboard } from "@/contexts/dashboard-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
-import { useDashboard } from "@/contexts/dashboard-context";
 
 export default function MainLayout({
   children,
@@ -64,16 +64,20 @@ export default function MainLayout({
     if (pathname === "/analytics/dashboard") {
       if (isEditMode) {
         return (
-          <Button onClick={() => setIsEditMode(true)} size="sm">
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit Dashboard
+          <Button
+            onClick={() => setIsEditMode(false)}
+            size="sm"
+            variant="outline"
+          >
+            <X className="h-4 w-4 mr-2" />
+            Exit Edit
           </Button>
         );
       } else {
         return (
-          <Button onClick={() => setIsEditMode(false)} size="sm">
-            <X className="h-4 w-4 mr-2" />
-            Exit
+          <Button onClick={() => setIsEditMode(true)} size="sm">
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit Dashboard
           </Button>
         );
       }

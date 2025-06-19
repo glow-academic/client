@@ -7,7 +7,7 @@
  */
 "use client";
 
-import registry from "@/components/common/analytics/Registry";
+import { useDashboard } from "@/contexts/dashboard-context";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
@@ -41,6 +41,14 @@ interface DashboardConfig {
 }
 
 export default function Dashboard() {
+  // Get edit mode state from context
+  const {
+    isEditMode,
+    dashboardConfig: contextDashboardConfig,
+    setDashboardConfig,
+    setAvailableComponents,
+  } = useDashboard();
+
   // Session and user data
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -126,6 +134,33 @@ export default function Dashboard() {
     };
   }, [dashboards, userProfile]);
 
+  // Update context when dashboard config changes
+  useEffect(() => {
+    if (dashboardConfig && !contextDashboardConfig) {
+      setDashboardConfig(dashboardConfig);
+    }
+  }, [dashboardConfig, contextDashboardConfig, setDashboardConfig]);
+
+  // Update available components for edit mode
+  useEffect(() => {
+    if (components && dashboardConfig) {
+      // Get all component IDs currently in use
+      const usedComponentIds = [
+        ...dashboardConfig.headerComponentIds,
+        ...dashboardConfig.primaryComponentIds,
+        ...dashboardConfig.secondaryComponentIds,
+        ...dashboardConfig.footerComponentIds,
+      ];
+
+      // Filter available components to exclude those already in use
+      const availableComponents = components.filter(
+        (comp) => !usedComponentIds.includes(comp.id)
+      );
+
+      setAvailableComponents(availableComponents);
+    }
+  }, [components, dashboardConfig, setAvailableComponents]);
+
   // Memoized components lookup
   const componentsLookup = useMemo(() => {
     if (!components) return new Map<string, DashboardComponent>();
@@ -142,35 +177,6 @@ export default function Dashboard() {
       ])
     );
   }, [components]);
-
-  // Render a single component by UUID
-  const renderComponent = (componentId: string, key?: string) => {
-    const component = componentsLookup.get(componentId);
-    if (!component) {
-      logError("Component not found in registry", undefined, {
-        componentId,
-        availableComponents: Array.from(componentsLookup.keys()),
-      });
-      return null;
-    }
-
-    const registryEntry = registry[componentId];
-    if (!registryEntry) {
-      logError("Component not found in registry", undefined, {
-        componentId,
-        registryKeys: Object.keys(registry),
-      });
-      return null;
-    }
-
-    const Component = registryEntry.component;
-    const props = {
-      ...registryEntry.props,
-      ...component.layout,
-    };
-
-    return <Component key={key || componentId} {...props} />;
-  };
 
   // Header pagination logic
   const headerPages = useMemo(() => {
