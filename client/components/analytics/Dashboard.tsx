@@ -364,6 +364,130 @@ export default function Dashboard() {
     }
   };
 
+  // Render chart component based on metric type
+  const renderMetricChart = (metricType: string) => {
+    const metricDetails = getMetricDetails(metricType);
+    if (!metricDetails) return null;
+
+    switch (metricDetails.type) {
+      case "score-distribution":
+        return (
+          <PieChart>
+            <Pie
+              data={metricDetails.data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ range, percent }) =>
+                `${range}: ${(percent * 100).toFixed(0)}%`
+              }
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="count"
+            >
+              {(metricDetails.data as ChartDataEntry[])?.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value: number) => [value, "Sessions"]} />
+          </PieChart>
+        );
+
+      case "completion-trend":
+        return (
+          <LineChart data={metricDetails.data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis domain={[0, 100]} />
+            <Tooltip
+              formatter={(value: number) => [`${value}%`, "Completion Rate"]}
+            />
+            <Line
+              type="monotone"
+              dataKey="rate"
+              stroke={COLORS.success}
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+          </LineChart>
+        );
+
+      case "pass-trend":
+        return (
+          <BarChart data={metricDetails.data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Bar
+              dataKey="passed"
+              fill={COLORS.success}
+              name="Passed"
+              radius={[4, 4, 0, 0]}
+            />
+            <Bar
+              dataKey="failed"
+              fill={COLORS.danger}
+              name="Failed"
+              radius={[4, 4, 0, 0]}
+            />
+          </BarChart>
+        );
+
+      case "session-trend":
+        return (
+          <AreaChart data={metricDetails.data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Area
+              type="monotone"
+              dataKey="sessions"
+              stroke={COLORS.primary}
+              fill={COLORS.primary}
+              fillOpacity={0.6}
+              name="Total Sessions"
+            />
+            <Area
+              type="monotone"
+              dataKey="completed"
+              stroke={COLORS.success}
+              fill={COLORS.success}
+              fillOpacity={0.6}
+              name="Completed"
+            />
+          </AreaChart>
+        );
+
+      case "time-distribution":
+        return (
+          <PieChart>
+            <Pie
+              data={metricDetails.data}
+              cx="50%"
+              cy="50%"
+              labelLine={false}
+              label={({ range, percent }) =>
+                `${range}: ${(percent * 100).toFixed(0)}%`
+              }
+              outerRadius={80}
+              fill="#8884d8"
+              dataKey="count"
+            >
+              {(metricDetails.data as ChartDataEntry[])?.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value: number) => [value, "Sessions"]} />
+          </PieChart>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   // Header metric components array
   const headerMetrics = [
     {
@@ -714,140 +838,9 @@ export default function Dashboard() {
             </DialogTitle>
           </DialogHeader>
           <div className="h-64">
-            {selectedMetric && (
+            {selectedMetric && renderMetricChart(selectedMetric) && (
               <ResponsiveContainer width="100%" height="100%">
-                <>
-                  {getMetricDetails(selectedMetric)?.type ===
-                    "score-distribution" && (
-                    <PieChart>
-                      <Pie
-                        data={getMetricDetails(selectedMetric)?.data || []}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ range, percent }) =>
-                          `${range}: ${(percent * 100).toFixed(0)}%`
-                        }
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="count"
-                      >
-                        {(
-                          getMetricDetails(selectedMetric)
-                            ?.data as ChartDataEntry[]
-                        )?.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => [value, "Sessions"]}
-                      />
-                    </PieChart>
-                  )}
-
-                  {getMetricDetails(selectedMetric)?.type ===
-                    "completion-trend" && (
-                    <LineChart
-                      data={getMetricDetails(selectedMetric)?.data || []}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis domain={[0, 100]} />
-                      <Tooltip
-                        formatter={(value: number) => [
-                          `${value}%`,
-                          "Completion Rate",
-                        ]}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="rate"
-                        stroke={COLORS.success}
-                        strokeWidth={2}
-                        dot={{ r: 4 }}
-                      />
-                    </LineChart>
-                  )}
-
-                  {getMetricDetails(selectedMetric)?.type === "pass-trend" && (
-                    <BarChart
-                      data={getMetricDetails(selectedMetric)?.data || []}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar
-                        dataKey="passed"
-                        fill={COLORS.success}
-                        name="Passed"
-                        radius={[4, 4, 0, 0]}
-                      />
-                      <Bar
-                        dataKey="failed"
-                        fill={COLORS.danger}
-                        name="Failed"
-                        radius={[4, 4, 0, 0]}
-                      />
-                    </BarChart>
-                  )}
-
-                  {getMetricDetails(selectedMetric)?.type ===
-                    "session-trend" && (
-                    <AreaChart
-                      data={getMetricDetails(selectedMetric)?.data || []}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Area
-                        type="monotone"
-                        dataKey="sessions"
-                        stroke={COLORS.primary}
-                        fill={COLORS.primary}
-                        fillOpacity={0.6}
-                        name="Total Sessions"
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="completed"
-                        stroke={COLORS.success}
-                        fill={COLORS.success}
-                        fillOpacity={0.6}
-                        name="Completed"
-                      />
-                    </AreaChart>
-                  )}
-
-                  {getMetricDetails(selectedMetric)?.type ===
-                    "time-distribution" && (
-                    <PieChart>
-                      <Pie
-                        data={getMetricDetails(selectedMetric)?.data || []}
-                        cx="50%"
-                        cy="50%"
-                        labelLine={false}
-                        label={({ range, percent }) =>
-                          `${range}: ${(percent * 100).toFixed(0)}%`
-                        }
-                        outerRadius={80}
-                        fill="#8884d8"
-                        dataKey="count"
-                      >
-                        {(
-                          getMetricDetails(selectedMetric)
-                            ?.data as ChartDataEntry[]
-                        )?.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => [value, "Sessions"]}
-                      />
-                    </PieChart>
-                  )}
-                </>
+                {renderMetricChart(selectedMetric)!}
               </ResponsiveContainer>
             )}
           </div>
