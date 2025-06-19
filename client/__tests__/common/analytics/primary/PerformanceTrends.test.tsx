@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import Dashboard from '@/components/analytics/Dashboard';
+import PerformanceTrends from '@/components/common/analytics/primary/PerformanceTrends';
 
 // Mock external dependencies
 
@@ -11,7 +11,7 @@ import Dashboard from '@/components/analytics/Dashboard';
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('Dashboard', () => {
+describe('PerformanceTrends', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -37,11 +37,11 @@ describe('Dashboard', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for Dashboard
-      renderWithProviders(<Dashboard />);
+      // TODO: Implement basic rendering test for PerformanceTrends
+      renderWithProviders(<PerformanceTrends />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for PerformanceTrends
     });
 
     
@@ -50,7 +50,7 @@ describe('Dashboard', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for PerformanceTrends
     });
   });
 
@@ -62,7 +62,7 @@ describe('Dashboard', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: State management test for PerformanceTrends
     });
 
     it('should handle user events', async () => {
@@ -70,7 +70,7 @@ describe('Dashboard', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: User events test for PerformanceTrends
     });
   });
 
@@ -79,21 +79,21 @@ describe('Dashboard', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: API integration test for PerformanceTrends
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for PerformanceTrends
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for PerformanceTrends
     });
   });
 
@@ -104,7 +104,7 @@ describe('Dashboard', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Dashboard
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for PerformanceTrends
     });
 
     
@@ -112,8 +112,8 @@ describe('Dashboard', () => {
 });
 
 /*
- * Component Analysis for Dashboard:
- * Path: analytics/Dashboard.tsx
+ * Component Analysis for PerformanceTrends:
+ * Path: common/analytics/primary/PerformanceTrends.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -121,12 +121,12 @@ describe('Dashboard', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useEffect, useState, usel, uselIndex, usels, useEnter, useLeave
+ * - Uses hooks: used, useQuery, useMemo, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
- * - Uses effects: true
+ * - Uses effects: false
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -134,12 +134,12 @@ describe('Dashboard', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<Dashboard />);
+ * render(<PerformanceTrends />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<Dashboard {...props} />);
+ * render(<PerformanceTrends {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

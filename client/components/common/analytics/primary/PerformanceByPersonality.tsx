@@ -24,7 +24,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { useQuery } from "@tanstack/react-query";
 import { isAfter, subHours } from "date-fns";
 import { Users } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -39,15 +39,12 @@ const COLORS = {
   primary: "#3b82f6",
 };
 
-interface PerformanceByPersonalityProps {
-  timeRange: "12h" | "1d" | "1w";
-  onTimeRangeChange: (range: "12h" | "1d" | "1w") => void;
-}
+export default function PerformanceByPersonality() {
+  const [personalityTimeRange, setPersonalityTimeRange] = useState<
+  "12h" | "1d" | "1w"
+>("1d");
 
-export default function PerformanceByPersonality({
-  timeRange,
-  onTimeRangeChange,
-}: PerformanceByPersonalityProps) {
+  
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -90,7 +87,7 @@ export default function PerformanceByPersonality({
     if (!agents || !scenarios || !chats || !grades) return [];
 
     // Filter data by time range
-    const hours = timeRange === "12h" ? 12 : timeRange === "1d" ? 24 : 168; // 1 week = 7 * 24 hours
+    const hours = personalityTimeRange === "12h" ? 12 : personalityTimeRange === "1d" ? 24 : 168; // 1 week = 7 * 24 hours
     const cutoff = subHours(new Date(), hours);
     const filteredGrades = grades.filter((grade) =>
       isAfter(new Date(grade.createdAt), cutoff)
@@ -126,7 +123,7 @@ export default function PerformanceByPersonality({
       .filter((agent) => agent.sessions > 0); // Only show agents with sessions
 
     return performanceByType;
-  }, [agents, scenarios, chats, grades, timeRange]);
+  }, [agents, scenarios, chats, grades, personalityTimeRange]);
 
   const timeOptions = [
     { value: "12h" as const, label: "12 hours" },
@@ -152,9 +149,9 @@ export default function PerformanceByPersonality({
               {timeOptions.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => onTimeRangeChange(option.value)}
+                  onClick={() => setPersonalityTimeRange(option.value)}
                   className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    timeRange === option.value
+                    personalityTimeRange === option.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
@@ -193,9 +190,9 @@ export default function PerformanceByPersonality({
             {timeOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => onTimeRangeChange(option.value)}
+                onClick={() => setPersonalityTimeRange(option.value)}
                 className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  timeRange === option.value
+                  personalityTimeRange === option.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}

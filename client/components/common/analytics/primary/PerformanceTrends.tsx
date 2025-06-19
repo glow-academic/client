@@ -20,7 +20,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import { TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -34,16 +34,11 @@ import {
 const COLORS = {
   primary: "#3b82f6",
 };
+export default function PerformanceTrends() {
+  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
+    "7d" | "30d" | "90d"
+  >("30d");
 
-interface PerformanceTrendsProps {
-  timeRange: "7d" | "30d" | "90d";
-  onTimeRangeChange: (range: "7d" | "30d" | "90d") => void;
-}
-
-export default function PerformanceTrends({
-  timeRange,
-  onTimeRangeChange,
-}: PerformanceTrendsProps) {
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -75,7 +70,7 @@ export default function PerformanceTrends({
   const performanceTrendData = useMemo(() => {
     if (!grades) return [];
 
-    const days = timeRange === "7d" ? 7 : timeRange === "30d" ? 30 : 90;
+    const days = performanceTrendTimeRange === "7d" ? 7 : performanceTrendTimeRange === "30d" ? 30 : 90;
 
     return Array.from({ length: days }, (_, i) => {
       const date = subDays(new Date(), days - 1 - i);
@@ -100,7 +95,7 @@ export default function PerformanceTrends({
             : 0,
       };
     });
-  }, [grades, timeRange]);
+  }, [grades, performanceTrendTimeRange]);
 
   const timeOptions = [
     { value: "7d" as const, label: "7 days" },
@@ -126,9 +121,9 @@ export default function PerformanceTrends({
               {timeOptions.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => onTimeRangeChange(option.value)}
+                  onClick={() => setPerformanceTrendTimeRange(option.value)}
                   className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    timeRange === option.value
+                    performanceTrendTimeRange === option.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
@@ -167,9 +162,9 @@ export default function PerformanceTrends({
             {timeOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => onTimeRangeChange(option.value)}
+                onClick={() => setPerformanceTrendTimeRange(option.value)}
                 className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  timeRange === option.value
+                  performanceTrendTimeRange === option.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}

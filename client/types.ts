@@ -14,14 +14,16 @@ import {
   standardGroups as StandardGroups,
   standards as Standards,
   appLogs as AppLogs,
+  components as Components,
+  dashboards as Dashboards,
+  simulationMessages as SimulationMessages,
   agents as Agents,
   scenarios as Scenarios,
   cohorts as Cohorts,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
-  simulationChatGrades as SimulationChatGrades,
   simulationChats as SimulationChats,
-  simulationMessages as SimulationMessages,
+  simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
   evals as Evals,
   evalRuns as EvalRuns,
@@ -49,14 +51,16 @@ type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
+type Component = typeof Components.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
+type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
-type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
-type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type Eval = typeof Evals.$inferSelect;
 type EvalRun = typeof EvalRuns.$inferSelect;
@@ -88,14 +92,16 @@ export type {
   StandardGroup,
   Standard,
   AppLog,
+  Component,
+  Dashboard,
+  SimulationMessage,
   Agent,
   Scenario,
   Cohort,
   Simulation,
   SimulationAttempt,
-  SimulationChatGrade,
   SimulationChat,
-  SimulationMessage,
+  SimulationChatGrade,
   SimulationChatFeedback,
   Eval,
   EvalRun,

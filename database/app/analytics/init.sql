@@ -25,7 +25,10 @@ CREATE TABLE dashboards (
     secondary_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     footer_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     auto_scroll BOOLEAN NOT NULL DEFAULT FALSE,
-    show_indicators BOOLEAN NOT NULL DEFAULT FALSE
+    show_indicators BOOLEAN NOT NULL DEFAULT FALSE,
+    header_components INTEGER NOT NULL DEFAULT 4, -- number of components in the header
+    main_split FLOAT NOT NULL DEFAULT 0.75, -- number 0-1 for split between primary and secondary
+    footer_split FLOAT NOT NULL DEFAULT 0.5 -- number 0-1 for split between footer section
 );
 
 -- ============================================================================
@@ -46,9 +49,9 @@ INSERT INTO components (id, name, description, file_name, layout, default_compon
   ('e412e43b-468c-489c-f262-1607bc64dc43', 'Total T As', 'Analytics component for total t as', 'TotalTAs.tsx', '{}', false),
   ('71724c23-ef68-189d-94b3-8ed2c8ffded3', 'Training Hours', 'Analytics component for training hours', 'TrainingHours.tsx', '{}', false),
   ('654ffdaa-be1f-8f87-c2ac-5a11b7076c8f', 'Training Sessions', 'Analytics component for training sessions', 'TrainingSessions.tsx', '{}', false),
-  ('bab2e342-c823-2e94-a85a-816d9cb78bd2', 'Performance By Personality', 'Analytics component for performance by personality', 'PerformanceByPersonality.tsx', '{"timeRange":"12h"}', false),
-  ('a7e8e793-011f-b291-eec4-a74232db4491', 'Performance Trends', 'Analytics component for performance trends', 'PerformanceTrends.tsx', '{"timeRange":"7d"}', false),
-  ('c2940e17-d668-43e3-ad76-9abf53d5b21f', 'Session Activity', 'Analytics component for session activity', 'SessionActivity.tsx', '{"timeRange":"1h"}', false),
+  ('bab2e342-c823-2e94-a85a-816d9cb78bd2', 'Performance By Personality', 'Analytics component for performance by personality', 'PerformanceByPersonality.tsx', '{}', false),
+  ('a7e8e793-011f-b291-eec4-a74232db4491', 'Performance Trends', 'Analytics component for performance trends', 'PerformanceTrends.tsx', '{}', false),
+  ('c2940e17-d668-43e3-ad76-9abf53d5b21f', 'Session Activity', 'Analytics component for session activity', 'SessionActivity.tsx', '{}', false),
   ('2a27f6d4-e6a9-f2fd-d691-7de103d7c443', 'Class Performance', 'Analytics component for class performance', 'ClassPerformance.tsx', '{}', false),
   ('ce392c42-3858-091d-cd39-3fc69bca92c2', 'Skill Breakdown', 'Analytics component for skill breakdown', 'SkillBreakdown.tsx', '{}', false),
   ('e5fd9fa5-5da1-7262-f40a-c2300888e1ad', 'Training Insights', 'Analytics component for training insights', 'TrainingInsights.tsx', '{}', false);
@@ -65,7 +68,10 @@ INSERT INTO dashboards (
   secondary_component_ids, 
   footer_component_ids,
   auto_scroll,
-  show_indicators
+  show_indicators,
+  header_components,
+  main_split,
+  footer_split
 ) VALUES (
   'cc105744-d671-e556-c44d-3114be8cecd0',
   NULL, -- Global dashboard
@@ -74,5 +80,8 @@ INSERT INTO dashboards (
   ARRAY['2a27f6d4-e6a9-f2fd-d691-7de103d7c443', 'ce392c42-3858-091d-cd39-3fc69bca92c2', 'e5fd9fa5-5da1-7262-f40a-c2300888e1ad']::UUID[],
   ARRAY['49990ffa-5698-bd91-b379-6703a8cf4835', 'd8e58a90-32e7-0b43-447c-fda790891cee', '6b8684a8-cd06-6f6a-9a53-d57ad527041b', '2e3380af-e6a2-6080-ceee-1c91b65121c4']::UUID[],
   false,
-  true
+  true,
+  4,
+  0.75,
+  0.5
 );

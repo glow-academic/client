@@ -46,17 +46,6 @@ export default function Dashboard() {
   const totalFooterSlides = 2; // Footer carousel slides
   const totalHeaderPages = 2; // Header carousel pages (4 cards per page, 8 total cards = 2 pages)
 
-  // Time range states
-  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
-    "7d" | "30d" | "90d"
-  >("30d");
-  const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<
-    "1h" | "12h" | "24h"
-  >("24h");
-  const [personalityTimeRange, setPersonalityTimeRange] = useState<
-    "12h" | "1d" | "1w"
-  >("1d");
-
   const { isLoading: isLoadingProfiles } = useQuery({
     queryKey: ["profiles"],
     queryFn: () => getAllProfiles(),
@@ -225,26 +214,17 @@ export default function Dashboard() {
           >
             {/* Performance by Student Personality */}
             {currentSlide === 0 && (
-              <PerformanceByPersonality
-                timeRange={personalityTimeRange}
-                onTimeRangeChange={setPersonalityTimeRange}
-              />
+              <PerformanceByPersonality />
             )}
 
             {/* Performance Trends */}
             {currentSlide === 1 && (
-              <PerformanceTrends
-                timeRange={performanceTrendTimeRange}
-                onTimeRangeChange={setPerformanceTrendTimeRange}
-              />
+              <PerformanceTrends />
             )}
 
             {/* Session Activity */}
             {currentSlide === 2 && (
-              <SessionActivity
-                timeRange={sessionActivityTimeRange}
-                onTimeRangeChange={setSessionActivityTimeRange}
-              />
+              <SessionActivity />
             )}
           </div>
           {/* Carousel indicators - moved outside the cards */}

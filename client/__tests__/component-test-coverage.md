@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-19T18:10:34.000Z
+Generated on: 2025-06-19T21:58:40.434Z
 
 ## Summary
-- **Total Components**: 83
+- **Total Components**: 85
 - **Tests Created**: 0
-- **Tests Updated**: 25
+- **Tests Updated**: 27
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -16,6 +16,7 @@ Generated on: 2025-06-19T18:10:34.000Z
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| Registry | common/analytics/Registry.tsx | Registry.test.tsx | ❌ Needs Implementation |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ❌ Needs Implementation |
 | SimulationPerformance | common/analytics/footer/SimulationPerformance.tsx | SimulationPerformance.test.tsx | ❌ Needs Implementation |
@@ -29,11 +30,12 @@ Generated on: 2025-06-19T18:10:34.000Z
 | TotalTAs | common/analytics/header/TotalTAs.tsx | TotalTAs.test.tsx | ❌ Needs Implementation |
 | TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ❌ Needs Implementation |
 | TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ❌ Needs Implementation |
-| PerformanceByPersonality | common/analytics/main/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ❌ Needs Implementation |
-| PerformanceTrends | common/analytics/main/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ❌ Needs Implementation |
-| SessionActivity | common/analytics/main/primary/SessionActivity.tsx | SessionActivity.test.tsx | ❌ Needs Implementation |
-| SkillBreakdown | common/analytics/main/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
-| TrainingInsights | common/analytics/main/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
+| PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ❌ Needs Implementation |
+| PerformanceTrends | common/analytics/primary/PerformanceTrends.tsx | PerformanceTrends.test.tsx | ❌ Needs Implementation |
+| SessionActivity | common/analytics/primary/SessionActivity.tsx | SessionActivity.test.tsx | ❌ Needs Implementation |
+| ClassPerformance | common/analytics/secondary/ClassPerformance.tsx | ClassPerformance.test.tsx | ❌ Needs Implementation |
+| SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
+| TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
@@ -108,6 +110,7 @@ __tests__/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
 │   ├── analytics/
+│   │   ├── Registry.test.tsx
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   ├── ScenarioData.test.tsx
@@ -123,14 +126,14 @@ __tests__/
 │   │   │   ├── TotalTAs.test.tsx
 │   │   │   ├── TrainingHours.test.tsx
 │   │   │   ├── TrainingSessions.test.tsx
-│   │   ├── main/
-│   │   │   ├── primary/
-│   │   │   │   ├── PerformanceByPersonality.test.tsx
-│   │   │   │   ├── PerformanceTrends.test.tsx
-│   │   │   │   ├── SessionActivity.test.tsx
-│   │   │   ├── secondary/
-│   │   │   │   ├── SkillBreakdown.test.tsx
-│   │   │   │   ├── TrainingInsights.test.tsx
+│   │   ├── primary/
+│   │   │   ├── PerformanceByPersonality.test.tsx
+│   │   │   ├── PerformanceTrends.test.tsx
+│   │   │   ├── SessionActivity.test.tsx
+│   │   ├── secondary/
+│   │   │   ├── ClassPerformance.test.tsx
+│   │   │   ├── SkillBreakdown.test.tsx
+│   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
 │   │   ├── Attempt.test.tsx
 │   │   ├── Chat.test.tsx

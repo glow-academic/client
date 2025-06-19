@@ -19,7 +19,7 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { useQuery } from "@tanstack/react-query";
 import { format, subHours } from "date-fns";
 import { Calendar } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -34,11 +34,6 @@ const COLORS = {
   primary: "#3b82f6",
   success: "#10b981",
 };
-
-interface SessionActivityProps {
-  timeRange: "1h" | "12h" | "24h";
-  onTimeRangeChange: (range: "1h" | "12h" | "24h") => void;
-}
 
 // Custom tooltip component
 const CustomBarTooltip = ({
@@ -75,10 +70,10 @@ const CustomBarTooltip = ({
   return null;
 };
 
-export default function SessionActivity({
-  timeRange,
-  onTimeRangeChange,
-}: SessionActivityProps) {
+export default function SessionActivity() {
+  const [sessionActivityTimeRange, setSessionActivityTimeRange] = useState<
+    "1h" | "12h" | "24h"
+  >("24h");
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -103,7 +98,7 @@ export default function SessionActivity({
   const sessionActivityData = useMemo(() => {
     if (!chats) return [];
 
-    if (timeRange === "1h") {
+    if (sessionActivityTimeRange === "1h") {
       // Last hour in 10-minute intervals
       return Array.from({ length: 6 }, (_, i) => {
         const time = subHours(new Date(), (5 - i) * (1 / 6)); // 10-minute intervals
@@ -121,7 +116,7 @@ export default function SessionActivity({
           completed: intervalChats.filter((chat) => chat.completed).length,
         };
       });
-    } else if (timeRange === "12h") {
+    } else if (sessionActivityTimeRange === "12h") {
       // Last 12 hours in hourly intervals
       return Array.from({ length: 12 }, (_, i) => {
         const time = subHours(new Date(), 11 - i);
@@ -157,7 +152,7 @@ export default function SessionActivity({
         };
       });
     }
-  }, [chats, timeRange]);
+  }, [chats, sessionActivityTimeRange]);
 
   const timeOptions = [
     { value: "1h" as const, label: "1 hour" },
@@ -183,9 +178,9 @@ export default function SessionActivity({
               {timeOptions.map((option) => (
                 <button
                   key={option.value}
-                  onClick={() => onTimeRangeChange(option.value)}
+                  onClick={() => setSessionActivityTimeRange(option.value)}
                   className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    timeRange === option.value
+                    sessionActivityTimeRange === option.value
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
@@ -224,9 +219,9 @@ export default function SessionActivity({
             {timeOptions.map((option) => (
               <button
                 key={option.value}
-                onClick={() => onTimeRangeChange(option.value)}
+                onClick={() => setSessionActivityTimeRange(option.value)}
                 className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  timeRange === option.value
+                  sessionActivityTimeRange === option.value
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}

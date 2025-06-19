@@ -16,16 +16,19 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i app/rubrics/init.sql
 \i app/logs/init.sql
 
--- 2. Agents
+-- 2. Analytics tables
+\i app/analytics/init.sql
+
+-- 3. Agents
 \i app/agents/init.sql
 
--- 3. Tables that depend on agents (scenarios references agents)
+-- 4. Tables that depend on agents (scenarios references agents)
 \i app/scenarios/init.sql
 
--- 4. Tables that depend on multiple previous tables
+-- 5. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
 
--- 5. Evaluation system (depends on rubrics)
+-- 6. Evaluation system (depends on rubrics)
 \i app/evals/init.sql
 
 -- ============================================================================
