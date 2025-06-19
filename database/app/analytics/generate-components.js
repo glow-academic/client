@@ -258,10 +258,10 @@ CREATE TABLE dashboards (
     primary_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     secondary_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     footer_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
-    auto_scroll BOOLEAN NOT NULL DEFAULT FALSE,
-    show_indicators BOOLEAN NOT NULL DEFAULT FALSE,
+    auto_scroll BOOLEAN NOT NULL DEFAULT TRUE,
+    show_indicators BOOLEAN NOT NULL DEFAULT TRUE,
     header_components INTEGER NOT NULL DEFAULT 4, -- number of components in the header
-    main_split FLOAT NOT NULL DEFAULT 0.75, -- number 0-1 for split between primary and secondary
+    main_split FLOAT NOT NULL DEFAULT 0.65, -- number 0-1 for split between primary and secondary
     footer_split FLOAT NOT NULL DEFAULT 0.5 -- number 0-1 for split between footer section
 );
 
@@ -295,10 +295,10 @@ INSERT INTO dashboards (
   ARRAY[${folderGroups.primary.map((id) => `'${id}'`).join(", ")}]::UUID[],
   ARRAY[${folderGroups.secondary.map((id) => `'${id}'`).join(", ")}]::UUID[],
   ARRAY[${folderGroups.footer.map((id) => `'${id}'`).join(", ")}]::UUID[],
-  false,
+  true,
   true,
   4,
-  0.75,
+  0.65, 
   0.5
 );
 `;

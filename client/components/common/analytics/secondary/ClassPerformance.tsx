@@ -1,12 +1,11 @@
 /**
  * ClassPerformance.tsx
- * This component is used to display the class performance for the analytics page.
+ * This component displays class performance as a bar chart for the analytics page.
  * @AshokSaravanan222 & @siladiea
  * 06/19/2025
  */
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -16,123 +15,95 @@ import {
 } from "@/components/ui/card";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
+import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
+import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen } from "lucide-react";
 import { useMemo } from "react";
 
 export default function ClassPerformance() {
-  const { data: _classes } = useQuery({
+  const { data: classes } = useQuery({
     queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
+    queryFn: getAllClasses,
   });
 
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
+    queryFn: getAllProfiles,
   });
 
   const { data: attempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
+    queryKey: ["attempts"],
+    queryFn: getAllSimulationAttempts,
   });
 
   const { data: chats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
+    queryKey: ["chats"],
+    queryFn: getAllSimulationChats,
   });
 
   const { data: grades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
+    queryKey: ["grades"],
+    queryFn: getAllSimulationChatGrades,
   });
 
   // Calculate class performance metrics
   const classMetrics = useMemo(() => {
-    if (!profiles || !grades) return null;
+    if (!classes || !profiles || !attempts || !chats || !grades) return [];
 
-    // Group profiles by class and calculate metrics
-    const classGroups = profiles.reduce(
-      (acc, profile) => {
-        const className = profile.classIds?.[0] || "Unassigned";
-        if (!acc[className]) {
-          acc[className] = {
-            profiles: [],
-            totalSessions: 0,
-            totalScore: 0,
-            passedSessions: 0,
-          };
-        }
-        acc[className].profiles.push(profile);
-        return acc;
-      },
-      {} as Record<
-        string,
-        {
-          profiles: typeof profiles;
-          totalSessions: number;
-          totalScore: number;
-          passedSessions: number;
-        }
-      >
-    );
+    // Create a map of class ID to class data
+    const classMap = new Map();
+    classes.forEach((cls) => {
+      classMap.set(cls.id, {
+        ...cls,
+        totalScore: 0,
+        totalGrades: 0,
+        avgScore: 0,
+      });
+    });
 
-    // Calculate performance for each class
-    const classPerformance = Object.entries(classGroups).map(
-      ([className, classData]) => {
-        const classProfileIds = classData.profiles.map((p) => p.id);
-        const classAttempts =
-          attempts?.filter((attempt) =>
-            classProfileIds.includes(attempt.profileId || "")
-          ) || [];
+    // For each grade, find the associated class through the profile
+    grades.forEach((grade) => {
+      // Find the chat
+      const chat = chats.find((c) => c.id === grade.simulationChatId);
+      if (!chat) return;
 
-        const classChats =
-          chats?.filter((chat) =>
-            classAttempts.some((attempt) => attempt.id === chat.attemptId)
-          ) || [];
+      // Find the attempt
+      const attempt = attempts.find((a) => a.id === chat.attemptId);
+      if (!attempt) return;
 
-        const classChatIds = classChats.map((chat) => chat.id);
-        const classGrades = grades.filter((grade) =>
-          classChatIds.includes(grade.simulationChatId)
-        );
+      // Find the profile
+      const profile = profiles.find((p) => p.id === attempt.profileId);
+      if (!profile || !profile.classIds || profile.classIds.length === 0)
+        return;
 
-        const avgScore =
-          classGrades.length > 0
-            ? Math.round(
-                classGrades.reduce((sum, grade) => sum + grade.score, 0) /
-                  classGrades.length
-              )
-            : 0;
+      // Get the first class ID (assuming single class per profile for simplicity)
+      const classId = profile.classIds[0];
+      if (!classId) return;
 
-        const passRate =
-          classGrades.length > 0
-            ? Math.round(
-                (classGrades.filter((grade) => grade.passed).length /
-                  classGrades.length) *
-                  100
-              )
-            : 0;
+      const classData = classMap.get(classId);
+      if (!classData) return;
 
-        return {
-          className: className === "null" ? "Unassigned" : className,
-          studentCount: classData.profiles.length,
-          avgScore,
-          passRate,
-          totalSessions: classGrades.length,
-        };
-      }
-    );
+      // Update the class metrics
+      classData.totalScore += grade.score;
+      classData.totalGrades += 1;
+      classData.avgScore = Math.round(
+        classData.totalScore / classData.totalGrades
+      );
+    });
 
-    return classPerformance.sort((a, b) => b.avgScore - a.avgScore);
-  }, [profiles, attempts, chats, grades]);
+    // Convert to array and filter out classes with no data
+    return Array.from(classMap.values())
+      .filter((cls) => cls.totalGrades > 0)
+      .map((cls) => ({
+        classCode: cls.classCode || cls.name || "Unknown",
+        className: cls.name || cls.classCode || "Unknown",
+        avgScore: cls.avgScore,
+        totalGrades: cls.totalGrades,
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore);
+  }, [classes, profiles, attempts, chats, grades]);
 
   if (!classMetrics || classMetrics.length === 0) {
     return (
@@ -142,7 +113,7 @@ export default function ClassPerformance() {
             <BookOpen className="h-5 w-5" />
             Class Performance
           </CardTitle>
-          <CardDescription>Performance metrics by class</CardDescription>
+          <CardDescription>Average performance by class</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-center h-[300px]">
@@ -155,6 +126,8 @@ export default function ClassPerformance() {
     );
   }
 
+  const maxScore = Math.max(...classMetrics.map((cls) => cls.avgScore));
+
   return (
     <Card>
       <CardHeader>
@@ -162,51 +135,34 @@ export default function ClassPerformance() {
           <BookOpen className="h-5 w-5" />
           Class Performance
         </CardTitle>
-        <CardDescription>Performance metrics by class</CardDescription>
+        <CardDescription>Average performance by class</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="space-y-4 h-[300px] overflow-y-auto">
-          {classMetrics.slice(0, 6).map((classData, index) => (
-            <div
-              key={classData.className}
-              className="flex items-center justify-between p-3 rounded-lg border"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                  {index + 1}
-                </div>
-                <div>
-                  <p className="font-medium">{classData.className}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {classData.studentCount} students •{" "}
-                    {classData.totalSessions} sessions
-                  </p>
-                </div>
-              </div>
-              <div className="text-right space-y-1">
+          {classMetrics.map((classData) => (
+            <div key={classData.classCode} className="space-y-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold">
-                    {classData.avgScore}%
+                  <span className="font-medium text-sm">
+                    {classData.classCode}
                   </span>
-                  <Badge
-                    variant={
-                      classData.avgScore >= 85
-                        ? "default"
-                        : classData.avgScore >= 75
-                          ? "secondary"
-                          : "destructive"
-                    }
-                  >
-                    {classData.avgScore >= 85
-                      ? "Excellent"
-                      : classData.avgScore >= 75
-                        ? "Good"
-                        : "Needs Work"}
-                  </Badge>
+                  <span className="text-xs text-muted-foreground">
+                    ({classData.totalGrades} sessions)
+                  </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {classData.passRate}% pass rate
-                </p>
+                <span className="text-sm font-semibold">
+                  {classData.avgScore}%
+                </span>
+              </div>
+              <div className="relative">
+                <div className="h-6 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-all duration-500 ease-out"
+                    style={{
+                      width: `${maxScore > 0 ? (classData.avgScore / maxScore) * 100 : 0}%`,
+                    }}
+                  />
+                </div>
               </div>
             </div>
           ))}

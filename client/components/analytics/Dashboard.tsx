@@ -328,7 +328,7 @@ export default function Dashboard() {
           <div
             className="grid gap-4"
             style={{
-              gridTemplateColumns: `repeat(${Math.min(headerComponents, currentHeaderPage.length)}, 1fr)`,
+              gridTemplateColumns: `repeat(${headerComponents}, 1fr)`,
             }}
           >
             {currentHeaderPage.map((componentId, index) => (

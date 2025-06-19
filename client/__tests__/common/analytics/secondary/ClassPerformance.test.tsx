@@ -102,7 +102,7 @@ describe('ClassPerformance', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: used, useQuery, useMemo
+ * - Uses hooks: useQuery, useMemo
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

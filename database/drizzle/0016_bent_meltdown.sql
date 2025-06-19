@@ -1,0 +1,1 @@
+ALTER TABLE "dashboards" ALTER COLUMN "main_split" SET DEFAULT 0.65;
