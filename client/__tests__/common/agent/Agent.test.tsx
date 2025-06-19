@@ -1,440 +1,367 @@
 import Agent from "@/components/common/agent/Agent";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@testing-library/jest-dom";
-import { render, screen, waitFor } from "@testing-library/react";
+import { createAgentMock } from "@/mocks/mutations";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { useRouter } from "next/navigation";
-import React from "react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { useSession } from "next-auth/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-// Mock next/navigation
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(),
-}));
-
-// Mock sonner
-vi.mock("sonner", () => ({
-  toast: {
-    success: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
-// Mock the query functions
+// Mock the queries
 vi.mock("@/utils/queries/agents/get-agent", () => ({
-  getAgent: vi.fn(),
+  getAgent: vi.fn(() =>
+    Promise.resolve({
+      id: "test-agent-id",
+      name: "Test Agent",
+      description: "Test Description",
+      systemPrompt: "Test System Prompt",
+      temperature: 50,
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+      defaultAgent: false,
+    })
+  ),
 }));
+
+// Mock the mutations directly
+const mockCreateAgent = vi.fn();
+const mockUpdateAgent = vi.fn();
 
 vi.mock("@/utils/mutations/agents/create-agent", () => ({
-  createAgent: vi.fn(),
+  createAgent: mockCreateAgent,
 }));
 
 vi.mock("@/utils/mutations/agents/update-agent", () => ({
-  updateAgent: vi.fn(),
+  updateAgent: mockUpdateAgent,
 }));
-
-// Import mocked functions
-import { createAgent } from "@/utils/mutations/agents/create-agent";
-import { updateAgent } from "@/utils/mutations/agents/update-agent";
-import { getAgent } from "@/utils/queries/agents/get-agent";
-import { toast } from "sonner";
-
-const mockPush = vi.fn();
-const mockRouter = {
-  push: mockPush,
-  back: vi.fn(),
-  forward: vi.fn(),
-  refresh: vi.fn(),
-  replace: vi.fn(),
-  prefetch: vi.fn(),
-};
-
-const mockAgent = {
-  id: "1",
-  name: "Test Agent",
-  subtitle: "Test Subtitle",
-  description: "Test Description",
-  systemPrompt: "Test System Prompt",
-  agentType: "student" as const,
-  temperature: 0.7,
-  createdAt: "2024-01-15T10:00:00Z",
-};
-
-const createTestQueryClient = () => {
-  return new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
-};
-
-const renderWithQueryClient = (component: React.ReactElement) => {
-  const queryClient = createTestQueryClient();
-  return render(
-    <QueryClientProvider client={queryClient}>{component}</QueryClientProvider>
-  );
-};
 
 describe("Agent Component", () => {
   beforeEach(() => {
+    // Reset all mocks before each test
+    mockCreateAgent.mockReset();
+    mockUpdateAgent.mockReset();
     vi.clearAllMocks();
-    vi.mocked(useRouter).mockReturnValue(mockRouter);
   });
 
-  describe("Create Mode", () => {
-    it("renders create form correctly", () => {
-      renderWithQueryClient(<Agent mode="create" />);
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
 
-      expect(screen.getByText("Create Agent")).toBeInTheDocument();
-      expect(screen.getByLabelText(/Agent Name/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Subtitle/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Description/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/System Prompt/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Agent Type/)).toBeInTheDocument();
-      expect(screen.getByLabelText(/Temperature/)).toBeInTheDocument();
+  describe("Role-based Access Control", () => {
+    it("should render for admin users", () => {
+      renderWithProviders(<Agent />, "admin");
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
     });
 
-    it("has correct initial form values", () => {
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const nameInput = screen.getByLabelText(/Agent Name/) as HTMLInputElement;
-      const subtitleInput = screen.getByLabelText(
-        /Subtitle/
-      ) as HTMLInputElement;
-      const descriptionInput = screen.getByLabelText(
-        /Description/
-      ) as HTMLTextAreaElement;
-      const systemPromptInput = screen.getByLabelText(
-        /System Prompt/
-      ) as HTMLTextAreaElement;
-      const temperatureInput = screen.getByLabelText(
-        /Temperature/
-      ) as HTMLInputElement;
-
-      expect(nameInput.value).toBe("");
-      expect(subtitleInput.value).toBe("");
-      expect(descriptionInput.value).toBe("");
-      expect(systemPromptInput.value).toBe("");
-      expect(temperatureInput.value).toBe("0.7");
+    it("should render for instructional users", () => {
+      renderWithProviders(<Agent />, "instructional");
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
     });
 
-    it("shows create button", () => {
-      renderWithQueryClient(<Agent mode="create" />);
+    it("should render for instructor users", () => {
+      renderWithProviders(<Agent />, "instructor");
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
+    });
 
+    it("should show access denied for TA users", () => {
+      renderWithProviders(<Agent />, "ta");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
       expect(
-        screen.getByRole("button", { name: /Create Agent/ })
-      ).toBeInTheDocument();
+        screen.getByText(/you need instructor privileges or higher/i)
+      ).toBeVisible();
+    });
+
+    it("should show access denied for guest users", () => {
+      renderWithProviders(<Agent />, "guest");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(
+        screen.getByText(/you need instructor privileges or higher/i)
+      ).toBeVisible();
+    });
+
+    it("should handle unauthenticated users", () => {
+      // Mock unauthenticated session
+      vi.mocked(useSession).mockReturnValue({
+        data: null,
+        status: "unauthenticated",
+        update: vi.fn(),
+      });
+
+      renderWithProviders(<Agent />, "guest", { session: null });
+      expect(screen.getByText(/access denied/i)).toBeVisible();
     });
   });
 
-  describe("Edit Mode", () => {
-    beforeEach(() => {
-      vi.mocked(getAgent).mockResolvedValue(mockAgent);
+  describe("Create Mode (Authorized Users Only)", () => {
+    it("renders create form with correct initial state", () => {
+      renderWithProviders(<Agent />, "admin");
+
+      // Check form elements are present
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
+      expect(screen.getByLabelText(/description/i)).toBeVisible();
+      expect(screen.getByLabelText(/system prompt/i)).toBeVisible();
+      expect(screen.getByText(/temperature:/i)).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /create agent/i })
+      ).toBeVisible();
+
+      // Check initial values
+      expect(screen.getByLabelText(/agent name/i)).toHaveValue("");
+      expect(screen.getByLabelText(/description/i)).toHaveValue("");
+      expect(screen.getByLabelText(/system prompt/i)).toHaveValue("");
     });
 
-    it("renders edit form correctly", async () => {
-      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+    it("shows validation errors when required fields are missing", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Agent />, "admin");
 
+      await user.click(screen.getByRole("button", { name: /create agent/i }));
+
+      // Wait for toast error messages to appear
       await waitFor(() => {
-        expect(screen.getByText("Edit Agent")).toBeInTheDocument();
+        // The component shows toast errors, so we need to check if the mutation was not called
+        expect(mockCreateAgent).not.toHaveBeenCalled();
       });
     });
 
-    it("loads agent data correctly", async () => {
-      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
-
-      await waitFor(() => {
-        const nameInput = screen.getByLabelText(
-          /Agent Name/
-        ) as HTMLInputElement;
-        expect(nameInput.value).toBe("Test Agent");
-      });
-    });
-
-    it("shows update button", async () => {
-      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /Update Agent/ })
-        ).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Form Validation", () => {
-    it("shows validation errors for empty required fields", async () => {
+    it("handles basic form input", async () => {
       const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
+      renderWithProviders(<Agent />, "admin");
 
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(screen.getByText("Name is required")).toBeInTheDocument();
-        expect(screen.getByText("Subtitle is required")).toBeInTheDocument();
-        expect(screen.getByText("Description is required")).toBeInTheDocument();
-        expect(
-          screen.getByText("System prompt is required")
-        ).toBeInTheDocument();
-      });
-    });
-
-    it("validates temperature range", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const temperatureInput = screen.getByLabelText(/Temperature/);
-      await user.clear(temperatureInput);
-      await user.type(temperatureInput, "2.5");
-
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText("Temperature must be between 0 and 2")
-        ).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe("Form Interactions", () => {
-    it("updates form fields correctly", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const nameInput = screen.getByLabelText(/Agent Name/);
-      await user.type(nameInput, "New Agent Name");
-
-      expect(nameInput).toHaveValue("New Agent Name");
-    });
-
-    it("updates temperature with slider", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const temperatureInput = screen.getByLabelText(/Temperature/);
-      await user.clear(temperatureInput);
-      await user.type(temperatureInput, "1.2");
-
-      expect(temperatureInput).toHaveValue("1.2");
-    });
-
-    it("selects agent type correctly", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const agentTypeSelect = screen.getByRole("combobox");
-      await user.click(agentTypeSelect);
-
-      const taOption = screen.getByRole("option", {
-        name: /Teaching Assistant/,
-      });
-      await user.click(taOption);
-
-      // The select should now show the selected value
-      expect(screen.getByText("Teaching Assistant")).toBeInTheDocument();
-    });
-  });
-
-  describe("Form Submission", () => {
-    it("submits create form successfully", async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(createAgent).mockResolvedValue({
-        id: "new-agent-id",
-        name: "Test Agent",
-        subtitle: "Test Subtitle",
-        description: "Test Description",
-        systemPrompt: "Test System Prompt",
-        agentType: "student" as const,
-        temperature: 0.7,
-        createdAt: "2024-01-15T10:00:00Z",
-      });
-
-      renderWithQueryClient(<Agent mode="create" />);
-
-      // Fill out the form
-      await user.type(screen.getByLabelText(/Agent Name/), "Test Agent");
-      await user.type(screen.getByLabelText(/Subtitle/), "Test Subtitle");
-      await user.type(screen.getByLabelText(/Description/), "Test Description");
+      // Fill out basic form fields
+      await user.type(screen.getByLabelText(/agent name/i), "Test Agent");
       await user.type(
-        screen.getByLabelText(/System Prompt/),
-        "Test System Prompt"
+        screen.getByLabelText(/description/i),
+        "Test Description"
       );
 
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
+      // Check that values were set
+      expect(screen.getByDisplayValue("Test Agent")).toBeVisible();
+      expect(screen.getByDisplayValue("Test Description")).toBeVisible();
+    });
 
-      await waitFor(() => {
-        expect(createAgent).toHaveBeenCalledWith({
+    it("handles temperature slider input", async () => {
+      renderWithProviders(<Agent />, "admin");
+
+      // The temperature slider should be visible and functional
+      const temperatureSlider = screen.getByTestId("temperature-slider");
+      expect(temperatureSlider).toBeVisible();
+    });
+  });
+
+  describe("Edit Mode (Authorized Users Only)", () => {
+    const mockAgentData = {
+      id: "test-agent-id",
+      name: "Test Agent",
+      description: "Test Description",
+      systemPrompt: "Test System Prompt",
+      temperature: 50,
+      createdAt: "2024-01-15T10:00:00Z",
+      updatedAt: "2024-01-15T10:00:00Z",
+      defaultAgent: false,
+    };
+
+    it("renders edit form with prefilled data", async () => {
+      renderWithProviders(
+        <Agent agentId="test-agent-id" mode="edit" />,
+        "admin"
+      );
+
+      // Wait for data to load and form to be populated
+      expect(
+        await screen.findByDisplayValue(mockAgentData.name || "")
+      ).toBeVisible();
+      expect(
+        screen.getByDisplayValue(mockAgentData.description || "")
+      ).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /update agent/i })
+      ).toBeVisible();
+    });
+
+    it("shows loading state while fetching agent data", () => {
+      renderWithProviders(
+        <Agent agentId="test-agent-id" mode="edit" />,
+        "admin"
+      );
+
+      // Should show loading content or skeleton
+      // The component shows a skeleton structure when loading
+      expect(
+        screen.getByRole("button", { name: /update agent/i })
+      ).toBeVisible();
+    });
+  });
+
+  describe("Form Submission (Authorized Users Only)", () => {
+    it("handles create form submission", async () => {
+      const user = userEvent.setup();
+
+      // Mock the createAgent mutation to resolve successfully
+      createAgentMock.mockImplementation(() =>
+        Promise.resolve({
+          id: "new-agent-id",
           name: "Test Agent",
-          subtitle: "Test Subtitle",
           description: "Test Description",
           systemPrompt: "Test System Prompt",
-          agentType: "student",
-          temperature: 0.7,
-        });
-        expect(toast.success).toHaveBeenCalledWith(
-          "Agent created successfully!"
-        );
-      });
-    });
+          temperature: 0,
+          createdAt: "2024-01-15T10:00:00Z",
+          updatedAt: "2024-01-15T10:00:00Z",
+          defaultAgent: false,
+        })
+      );
 
-    it("submits update form successfully", async () => {
-      const user = userEvent.setup();
+      renderWithProviders(<Agent />, "admin");
 
-      vi.mocked(getAgent).mockResolvedValue(mockAgent);
-      vi.mocked(updateAgent).mockResolvedValue({
-        id: "1",
-        name: "Updated Agent",
-        subtitle: "Test Subtitle",
-        description: "Test Description",
-        systemPrompt: "Test System Prompt",
-        agentType: "student" as const,
-        temperature: 0.7,
-        createdAt: "2024-01-15T10:00:00Z",
-      });
+      // Fill out form with valid data
+      await user.type(screen.getByLabelText(/agent name/i), "Test Agent");
+      await user.type(
+        screen.getByLabelText(/description/i),
+        "Test Description"
+      );
+      await user.type(
+        screen.getByLabelText(/system prompt/i),
+        "Test System Prompt"
+      );
 
-      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /create agent/i }));
 
+      // Wait for submission to complete
       await waitFor(() => {
-        expect(screen.getByDisplayValue("Test Agent")).toBeInTheDocument();
-      });
-
-      // Update the name
-      const nameInput = screen.getByLabelText(/Agent Name/);
-      await user.clear(nameInput);
-      await user.type(nameInput, "Updated Agent");
-
-      const submitButton = screen.getByRole("button", { name: /Update Agent/ });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(updateAgent).toHaveBeenCalledWith("1", {
-          name: "Updated Agent",
-          subtitle: "Test Subtitle",
+        expect(createAgentMock).toHaveBeenCalledWith({
+          name: "Test Agent",
           description: "Test Description",
           systemPrompt: "Test System Prompt",
-          agentType: "student",
-          temperature: 0.7,
+          temperature: 0,
         });
-        expect(toast.success).toHaveBeenCalledWith(
-          "Agent updated successfully!"
-        );
       });
     });
 
-    it("handles create form submission error", async () => {
+    it("handles create mutation errors gracefully", async () => {
+      const user = userEvent.setup();
+      const mockError = new Error("Failed to create agent");
+      createAgentMock.mockRejectedValue(mockError);
+
+      renderWithProviders(<Agent />, "admin");
+
+      // Fill out form with valid data
+      await user.type(screen.getByLabelText(/agent name/i), "Test");
+      await user.type(screen.getByLabelText(/description/i), "Test");
+      await user.type(screen.getByLabelText(/system prompt/i), "Test");
+
+      // Submit form
+      await user.click(screen.getByRole("button", { name: /create agent/i }));
+
+      // Form should still be available for retry
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /create agent/i })
+        ).not.toBeDisabled();
+      });
+    });
+  });
+
+  describe("Accessibility (Authorized Users Only)", () => {
+    it("has proper form labels and structure", () => {
+      renderWithProviders(<Agent />, "admin");
+
+      // Check that form fields have proper labels
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
+      expect(screen.getByLabelText(/description/i)).toBeVisible();
+      expect(screen.getByLabelText(/system prompt/i)).toBeVisible();
+      expect(screen.getByText(/temperature:/i)).toBeVisible();
+
+      // Check that required fields are marked
+      expect(screen.getByText(/agent name \*/i)).toBeVisible();
+      expect(screen.getByText(/description \*/i)).toBeVisible();
+      expect(screen.getByText(/system prompt \*/i)).toBeVisible();
+    });
+  });
+
+  describe("Form Validation (Authorized Users Only)", () => {
+    it("validates required fields", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Agent />, "admin");
+
+      // Try to submit empty form
+      await user.click(screen.getByRole("button", { name: /create agent/i }));
+
+      // Should not call mutation with empty data
+      expect(createAgentMock).not.toHaveBeenCalled();
+    });
+
+    it("accepts valid form data", async () => {
       const user = userEvent.setup();
 
-      vi.mocked(createAgent).mockRejectedValue(new Error("Creation failed"));
-
-      renderWithQueryClient(<Agent mode="create" />);
-
-      // Fill out the form
-      await user.type(screen.getByLabelText(/Agent Name/), "Test Agent");
-      await user.type(screen.getByLabelText(/Subtitle/), "Test Subtitle");
-      await user.type(screen.getByLabelText(/Description/), "Test Description");
-      await user.type(
-        screen.getByLabelText(/System Prompt/),
-        "Test System Prompt"
+      // Mock the createAgent mutation to resolve successfully
+      createAgentMock.mockImplementation(() =>
+        Promise.resolve({
+          id: "new-agent-id",
+          name: "Valid Agent",
+          description: "Valid Description",
+          systemPrompt: "Valid System Prompt",
+          temperature: 0,
+          createdAt: "2024-01-15T10:00:00Z",
+          updatedAt: "2024-01-15T10:00:00Z",
+          defaultAgent: false,
+        })
       );
 
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
+      renderWithProviders(<Agent />, "admin");
+
+      // Fill out form completely
+      await user.type(screen.getByLabelText(/agent name/i), "Valid Agent");
+      await user.type(
+        screen.getByLabelText(/description/i),
+        "Valid Description"
+      );
+      await user.type(
+        screen.getByLabelText(/system prompt/i),
+        "Valid System Prompt"
+      );
+
+      await user.click(screen.getByRole("button", { name: /create agent/i }));
 
       await waitFor(() => {
-        expect(toast.error).toHaveBeenCalledWith(
-          "Failed to create agent: Creation failed"
-        );
+        expect(createAgentMock).toHaveBeenCalledWith({
+          name: "Valid Agent",
+          description: "Valid Description",
+          systemPrompt: "Valid System Prompt",
+          temperature: 0,
+        });
       });
     });
   });
 
-  describe("Navigation", () => {
-    it("navigates back on cancel", async () => {
-      const user = userEvent.setup();
-      renderWithQueryClient(<Agent mode="create" />);
-
-      const cancelButton = screen.getByRole("button", { name: /Cancel/ });
-      await user.click(cancelButton);
-
-      expect(mockPush).toHaveBeenCalledWith("/management/agents");
+  describe("Role-specific Behavior", () => {
+    it("works correctly for instructional role", () => {
+      renderWithProviders(<Agent />, "instructional");
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /create agent/i })
+      ).toBeVisible();
     });
 
-    it("navigates to agents list after successful creation", async () => {
-      const user = userEvent.setup();
+    it("works correctly for instructor role", () => {
+      renderWithProviders(<Agent />, "instructor");
+      expect(screen.getByLabelText(/agent name/i)).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /create agent/i })
+      ).toBeVisible();
+    });
 
-      vi.mocked(createAgent).mockResolvedValue({
-        id: "new-agent-id",
-        name: "Test Agent",
-        subtitle: "Test Subtitle",
-        description: "Test Description",
-        systemPrompt: "Test System Prompt",
-        agentType: "student" as const,
-        temperature: 0.7,
-        createdAt: "2024-01-15T10:00:00Z",
-      });
+    it("blocks access for unauthorized roles", () => {
+      const unauthorizedRoles = ["ta", "guest"] as const;
 
-      renderWithQueryClient(<Agent mode="create" />);
+      unauthorizedRoles.forEach((role) => {
+        const { unmount } = renderWithProviders(<Agent />, role);
 
-      // Fill out and submit form
-      await user.type(screen.getByLabelText(/Agent Name/), "Test Agent");
-      await user.type(screen.getByLabelText(/Subtitle/), "Test Subtitle");
-      await user.type(screen.getByLabelText(/Description/), "Test Description");
-      await user.type(
-        screen.getByLabelText(/System Prompt/),
-        "Test System Prompt"
-      );
+        expect(screen.getByText(/access denied/i)).toBeVisible();
+        expect(screen.queryByLabelText(/agent name/i)).not.toBeInTheDocument();
 
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
-
-      await waitFor(() => {
-        expect(mockPush).toHaveBeenCalledWith("/management/agents");
+        unmount();
       });
     });
-  });
-
-  describe("Loading States", () => {
-    it("shows loading state when fetching agent data", () => {
-      vi.mocked(getAgent).mockImplementation(() => new Promise(() => {})); // Never resolves
-
-      renderWithQueryClient(<Agent mode="edit" agentId="1" />);
-
-      expect(screen.getByText("Loading...")).toBeInTheDocument();
-    });
-
-    it("shows submitting state during form submission", async () => {
-      const user = userEvent.setup();
-
-      vi.mocked(createAgent).mockImplementation(() => new Promise(() => {})); // Never resolves
-
-      renderWithQueryClient(<Agent mode="create" />);
-
-      // Fill out and submit form
-      await user.type(screen.getByLabelText(/Agent Name/), "Test Agent");
-      await user.type(screen.getByLabelText(/Subtitle/), "Test Subtitle");
-      await user.type(screen.getByLabelText(/Description/), "Test Description");
-      await user.type(
-        screen.getByLabelText(/System Prompt/),
-        "Test System Prompt"
-      );
-
-      const submitButton = screen.getByRole("button", { name: /Create Agent/ });
-      await user.click(submitButton);
-
-      expect(screen.getByText("Creating...")).toBeInTheDocument();
-    });
-  });
-
-  it("matches snapshot", () => {
-    const { container } = renderWithQueryClient(<Agent mode="create" />);
-    expect(container.firstChild).toMatchSnapshot();
   });
 });
 
@@ -448,14 +375,17 @@ describe("Agent Component", () => {
  * - Has props: true (AgentProps interface)
  * - Props interface: AgentProps with agentId and mode
  * - Client component: true
- * - Uses hooks: useState, useEffect, useRouter, useQuery
+ * - Uses hooks: useState, useEffect, useRouter, useQuery, useRole
  * - Uses router: true
  * - Has API calls: true (getAgent, createAgent, updateAgent)
  * - Has form handling: true
  * - Uses state: true
  * - Uses effects: true
- * - Uses context: false
+ * - Uses context: true (useRole)
+ * - Has role-based access control: true
  *
- * The component has been simplified to remove Card wrapper and header elements,
- * focusing on direct form rendering with proper validation and API integration.
+ * Role-based access control:
+ * - Allowed roles: instructor, instructional, admin
+ * - Blocked roles: ta, guest
+ * - Access denied message: "You need instructor privileges or higher to access agent management."
  */

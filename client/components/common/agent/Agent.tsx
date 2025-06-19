@@ -12,12 +12,19 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
+import { useRole } from "@/contexts/role-context";
 import { type Agent } from "@/types";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
@@ -35,6 +42,9 @@ export default function Agent({
   const router = useRouter();
   const isEditMode = mode === "edit" && !!agentId;
   const queryClient = useQueryClient();
+
+  // Role-based access control
+  const { effectiveRole } = useRole();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<Partial<Agent>>({
@@ -60,6 +70,23 @@ export default function Agent({
       });
     }
   }, [agent, isEditMode]);
+
+  // Role-based access control - check after all hooks
+  if (!["instructor", "instructional", "admin"].includes(effectiveRole)) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-destructive">Access Denied</CardTitle>
+            <CardDescription>
+              You need instructor privileges or higher to access agent
+              management.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

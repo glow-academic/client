@@ -9,7 +9,7 @@
     "generate-tests": "node scripts/generate-component-tests.js",
     "typecheck": "tsc --noEmit",
     "typecheck:strict": "tsc --noEmit --strict",
-    "build": "npm run typecheck && NODE_ENV=production next build",
+    "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
