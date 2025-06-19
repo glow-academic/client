@@ -7,6 +7,13 @@
 "use client";
 
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
@@ -25,7 +32,7 @@ import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/ge
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, TrendingUp } from "lucide-react";
+import { BarChart3, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
@@ -42,10 +49,12 @@ const chartConfig = {
 
 interface SimulationPerformanceProps {
   className?: string;
+  carouselIndicator?: React.ReactNode;
 }
 
 export default function SimulationPerformance({
   className,
+  carouselIndicator,
 }: SimulationPerformanceProps) {
   const { data: cohorts, isLoading: cohortsLoading } = useQuery({
     queryKey: ["cohorts"],
@@ -169,59 +178,85 @@ export default function SimulationPerformance({
   // Show loading state
   if (isLoading) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading simulation data...
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Simulation Performance
+          </CardTitle>
+          <CardDescription>
+            Performance metrics across different simulations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading simulation data...
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   // Show empty state if no data
   if (!performanceData.length) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="text-center text-muted-foreground">
-          <p>No simulation data available</p>
-          <p className="text-sm">
-            Complete some simulations to see performance metrics
-          </p>
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Simulation Performance
+          </CardTitle>
+          <CardDescription>
+            Performance metrics across different simulations
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-center text-muted-foreground">
+            <p>No simulation data available</p>
+            <p className="text-sm">
+              Complete some simulations to see performance metrics
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={className}>
-      {/* Header with selector */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-muted-foreground text-sm">
-          Performance metrics across different simulations
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Simulation Performance
+            </CardTitle>
+            <CardDescription>
+              Performance metrics across different simulations
+            </CardDescription>
+          </div>
+          {cohorts && cohorts.length > 0 && (
+            <Select
+              value={selectedCohortId}
+              onValueChange={setSelectedCohortId}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a cohort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cohorts</SelectItem>
+                {cohorts.map((cohort) => (
+                  <SelectItem key={cohort.id} value={cohort.id}>
+                    {cohort.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
-        {cohorts && cohorts.length > 0 && (
-          <Select value={selectedCohortId} onValueChange={setSelectedCohortId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a cohort" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cohorts</SelectItem>
-              {cohorts.map((cohort) => (
-                <SelectItem key={cohort.id} value={cohort.id}>
-                  {cohort.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      {/* Chart */}
-      <div className="pb-0">
+      </CardHeader>
+      <CardContent className="pb-0">
         <ChartContainer config={chartConfig} className="max-h-[400px] w-full">
           <BarChart
             data={performanceData}
@@ -252,10 +287,8 @@ export default function SimulationPerformance({
             />
           </BarChart>
         </ChartContainer>
-      </div>
-
-      {/* Performance Summary */}
-      <div className="flex-col gap-2 text-sm">
+      </CardContent>
+      <CardContent className="flex-col gap-2 text-sm">
         <div className="flex items-center gap-2 leading-none font-medium">
           Overall Performance: {performanceTrend.value}%
           <TrendingUp
@@ -265,7 +298,9 @@ export default function SimulationPerformance({
         <div className="text-muted-foreground leading-none">
           Based on completion rates and average scores
         </div>
-      </div>
-    </div>
+      </CardContent>
+      {/* Carousel Indicator */}
+      {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
+    </Card>
   );
 }

@@ -7,6 +7,13 @@
 "use client";
 
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
@@ -25,7 +32,7 @@ import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_cha
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, TrendingUp } from "lucide-react";
+import { GraduationCap, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
@@ -38,9 +45,13 @@ const radarChartConfig = {
 
 interface SkillGrowthProps {
   className?: string;
+  carouselIndicator?: React.ReactNode;
 }
 
-export default function SkillGrowth({ className }: SkillGrowthProps) {
+export default function SkillGrowth({
+  className,
+  carouselIndicator,
+}: SkillGrowthProps) {
   const { data: rubrics, isLoading: rubricsLoading } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
@@ -220,59 +231,85 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading skill data...
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Skill Development
+          </CardTitle>
+          <CardDescription>
+            Performance across key teaching competencies
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading skill data...
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   // Show empty state if no data
   if (!availableRubrics.length || !radarData.length) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="text-center text-muted-foreground">
-          <p>No skill data available</p>
-          <p className="text-sm">
-            Complete some training sessions to see your progress
-          </p>
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Skill Development
+          </CardTitle>
+          <CardDescription>
+            Performance across key teaching competencies
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-center text-muted-foreground">
+            <p>No skill data available</p>
+            <p className="text-sm">
+              Complete some training sessions to see your progress
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={className}>
-      {/* Header with selector */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="text-muted-foreground text-sm">
-          Performance across key teaching competencies
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Skill Development
+            </CardTitle>
+            <CardDescription>
+              Performance across key teaching competencies
+            </CardDescription>
+          </div>
+          {availableRubrics.length > 1 && (
+            <Select
+              value={selectedRubricId}
+              onValueChange={setSelectedRubricId}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a rubric" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRubrics.map((rubric) => (
+                  <SelectItem key={rubric.id} value={rubric.id}>
+                    {rubric.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
-        {availableRubrics.length > 1 && (
-          <Select value={selectedRubricId} onValueChange={setSelectedRubricId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a rubric" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableRubrics.map((rubric) => (
-                <SelectItem key={rubric.id} value={rubric.id}>
-                  {rubric.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
-
-      {/* Chart */}
+      </CardHeader>
       <div className="flex flex-col flex-1">
-        <div className="pb-0 flex-1">
+        <CardContent className="pb-0 flex-1">
           <ChartContainer
             config={radarChartConfig}
             className="mx-auto aspect-square max-h-[400px]"
@@ -292,9 +329,9 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
               />
             </RadarChart>
           </ChartContainer>
-        </div>
+        </CardContent>
         {radarData.length > 0 && (
-          <div className="flex-col gap-2 text-sm mt-auto">
+          <CardContent className="flex-col gap-2 text-sm mt-auto">
             <div className="flex items-center gap-2 leading-none font-medium">
               {growthTrend.isPositive ? "Trending up" : "Needs attention"}
               {growthTrend.value > 0 && ` by ${growthTrend.value}%`}
@@ -305,9 +342,11 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
             <div className="text-muted-foreground flex items-center gap-2 leading-none">
               Based on recent training sessions
             </div>
-          </div>
+          </CardContent>
         )}
+        {/* Carousel Indicator */}
+        {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
       </div>
-    </div>
+    </Card>
   );
 }

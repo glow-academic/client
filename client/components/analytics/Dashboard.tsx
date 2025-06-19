@@ -37,7 +37,6 @@ import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grad
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BarChart3,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -443,96 +442,84 @@ export default function Dashboard() {
       {/* Footer Carousel Sections */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Left Footer Carousel */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  {leftFooterCarouselIndex === 0 && (
-                    <GraduationCap className="h-5 w-5" />
-                  )}
-                  {leftFooterCarouselIndex === 1 && (
-                    <BarChart3 className="h-5 w-5" />
-                  )}
-                  {leftFooterCarouselIndex === 0
-                    ? "Skill Development"
-                    : "Scenario Analysis"}
-                </CardTitle>
-                <CardDescription>
-                  {leftFooterCarouselIndex === 0
-                    ? "Performance across key teaching competencies"
-                    : "Performance trends across scenario characteristics"}
-                </CardDescription>
+        {leftFooterCarouselIndex === 0 && (
+          <SkillGrowth
+            carouselIndicator={
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setLeftFooterCarouselIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === leftFooterCarouselIndex
+                        ? "bg-primary"
+                        : "bg-muted"
+                    }`}
+                  />
+                ))}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px]">
-              {leftFooterCarouselIndex === 0 && <SkillGrowth />}
-              {leftFooterCarouselIndex === 1 && <ScenarioData />}
-            </div>
-            {/* Left footer carousel indicators */}
-            <div className="flex justify-center gap-2 mt-4">
-              {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setLeftFooterCarouselIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === leftFooterCarouselIndex
-                      ? "bg-primary"
-                      : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            }
+          />
+        )}
+        {leftFooterCarouselIndex === 1 && (
+          <ScenarioData
+            carouselIndicator={
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setLeftFooterCarouselIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === leftFooterCarouselIndex
+                        ? "bg-primary"
+                        : "bg-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            }
+          />
+        )}
 
         {/* Right Footer Carousel */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  {rightFooterCarouselIndex === 0 && (
-                    <Users className="h-5 w-5" />
-                  )}
-                  {rightFooterCarouselIndex === 1 && (
-                    <BarChart3 className="h-5 w-5" />
-                  )}
-                  {rightFooterCarouselIndex === 0
-                    ? "Cohort Progress"
-                    : "Simulation Performance"}
-                </CardTitle>
-                <CardDescription>
-                  {rightFooterCarouselIndex === 0
-                    ? "Completion rates across different cohorts"
-                    : "Performance metrics across different simulations"}
-                </CardDescription>
+        {rightFooterCarouselIndex === 0 && (
+          <CohortCompletion
+            carouselIndicator={
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setRightFooterCarouselIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === rightFooterCarouselIndex
+                        ? "bg-primary"
+                        : "bg-muted"
+                    }`}
+                  />
+                ))}
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[400px]">
-              {rightFooterCarouselIndex === 0 && <CohortCompletion />}
-              {rightFooterCarouselIndex === 1 && <SimulationPerformance />}
-            </div>
-            {/* Right footer carousel indicators */}
-            <div className="flex justify-center gap-2 mt-4">
-              {Array.from({ length: totalFooterSlides }).map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setRightFooterCarouselIndex(index)}
-                  className={`w-2 h-2 rounded-full transition-colors ${
-                    index === rightFooterCarouselIndex
-                      ? "bg-primary"
-                      : "bg-muted"
-                  }`}
-                />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            }
+          />
+        )}
+        {rightFooterCarouselIndex === 1 && (
+          <SimulationPerformance
+            carouselIndicator={
+              <div className="flex justify-center gap-2">
+                {Array.from({ length: totalFooterSlides }).map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setRightFooterCarouselIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      index === rightFooterCarouselIndex
+                        ? "bg-primary"
+                        : "bg-muted"
+                    }`}
+                  />
+                ))}
+              </div>
+            }
+          />
+        )}
       </div>
     </div>
   );

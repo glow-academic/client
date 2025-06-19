@@ -8,6 +8,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
   ChartConfig,
   ChartContainer,
   ChartTooltip,
@@ -20,7 +27,7 @@ import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
 import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, TrendingDown, TrendingUp } from "lucide-react";
+import { BarChart3, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 import {
   Bar,
@@ -44,9 +51,13 @@ const chartConfig = {
 
 interface ScenarioDataProps {
   className?: string;
+  carouselIndicator?: React.ReactNode;
 }
 
-export default function ScenarioData({ className }: ScenarioDataProps) {
+export default function ScenarioData({
+  className,
+  carouselIndicator,
+}: ScenarioDataProps) {
   const { data: scenarios, isLoading: scenariosLoading } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
@@ -175,42 +186,63 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Loading scenario data...
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance trends across scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading scenario data...
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   // Show empty state if no data
   if (!scenarioAnalysis.chartData.length) {
     return (
-      <div
-        className={`flex items-center justify-center h-[400px] ${className}`}
-      >
-        <div className="text-center text-muted-foreground">
-          <p>No scenario data available</p>
-          <p className="text-sm">
-            Complete some scenarios to see performance analysis
-          </p>
-        </div>
-      </div>
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Scenario Analysis
+          </CardTitle>
+          <CardDescription>
+            Performance trends across scenario characteristics
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-center text-muted-foreground">
+            <p>No scenario data available</p>
+            <p className="text-sm">
+              Complete some scenarios to see performance analysis
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className={className}>
-      {/* Header */}
-      <div className="text-muted-foreground text-sm mb-4">
-        Performance trends across scenario characteristics
-      </div>
-
-      {/* Content Container */}
-      <div className="space-y-6">
+    <Card className={className}>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" />
+          Scenario Analysis
+        </CardTitle>
+        <CardDescription>
+          Performance trends across scenario characteristics
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
         {/* Performance Summary */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -281,7 +313,9 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
             Analysis based on scenario complexity factors and completion rates
           </p>
         </div>
-      </div>
-    </div>
+      </CardContent>
+      {/* Carousel Indicator */}
+      {carouselIndicator && <CardContent>{carouselIndicator}</CardContent>}
+    </Card>
   );
 }
