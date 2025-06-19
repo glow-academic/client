@@ -1,7 +1,6 @@
 import { Simulations } from "@/components/create/simulations/Simulations";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
@@ -52,7 +51,6 @@ describe("Simulations", () => {
 
   describe("User Interactions", () => {
     it("should handle button clicks", async () => {
-      const user = userEvent.setup();
       renderWithProviders(<Simulations />);
 
       // Wait for component to load
