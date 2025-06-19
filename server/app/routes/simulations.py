@@ -107,15 +107,15 @@ async def start_attempt(
             scenario.name = name
             scenario.description = description
 
-            session.add(scenario)
-            session.commit()
-            session.refresh(scenario)
-
             scenario_id = scenario.id
             chat_title = scenario.name
         else:
             chat_title = scenario.name
             trace_id = None
+
+        session.add(scenario)
+        session.commit()
+        session.refresh(scenario)
 
         # Create the chat with the scenario and link it to this attempt
         chat = SimulationChats(

@@ -7,7 +7,7 @@
 "use client";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Pencil, Plus, TrendingUp } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import {
   SidebarProvider,
   SidebarInset,
@@ -189,17 +189,6 @@ export default function MainLayout({
         <Button onClick={() => router.push("/management/models/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Model
-        </Button>
-      );
-    }
-
-    if (pathname === "/home") {
-      return (
-        <Button onClick={() => {
-          // should show the growth page in a dialog, just that radar chart
-        }} size="sm">
-          <TrendingUp className="h-4 w-4 mr-2" />
-          Growth
         </Button>
       );
     }

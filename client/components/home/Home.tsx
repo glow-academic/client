@@ -761,10 +761,19 @@ export default function Home() {
   );
 
   // Get user's cohorts and filter simulations based on cohort membership
+  // Admins can see all cohorts, regular users only see cohorts they're members of
   const userCohorts = useMemo(() => {
-    if (!cohorts || !profile) return [];
+    if (!cohorts) return [];
+
+    // Admins can see all cohorts
+    if (effectiveRole === "admin") {
+      return cohorts;
+    }
+
+    // Regular users only see cohorts they're members of
+    if (!profile) return [];
     return cohorts.filter((cohort) => cohort.profileIds?.includes(profile.id));
-  }, [cohorts, profile]);
+  }, [cohorts, profile, effectiveRole]);
 
   const cohortSimulations = useMemo(() => {
     if (!simulations || !userCohorts.length) return [];

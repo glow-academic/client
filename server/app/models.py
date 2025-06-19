@@ -98,16 +98,6 @@ class Cohorts(_Base, table=True):
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
 
 
-class Migrations(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='migrations_pkey'),
-    )
-
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    hash: str = Field(sa_column=Column('hash', Text))
-    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
-
-
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
