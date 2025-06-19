@@ -29,6 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   secret: secret,
+  trustHost: true,
   events: {
     async createUser({ user }) {
       try {

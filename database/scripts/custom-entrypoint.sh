@@ -103,8 +103,8 @@ mkdir -p /docker-entrypoint-initdb.d
 
 # --- GENERATE DYNAMIC SQL FROM MARKDOWN ------------------------------
 log_info "🔧 Generating agent SQL from markdown files..."
-if [ -f "/database/app/agents/generate-agents-sql.sh" ]; then
-  cd /database/app/agents
+if [ -f "/docker-entrypoint-initdb.d/app/agents/generate-agents-sql.sh" ]; then
+  cd /docker-entrypoint-initdb.d/app/agents
   ./generate-agents-sql.sh
   log_success "✅ Agent SQL generated from markdown files"
 else
@@ -113,8 +113,8 @@ fi
 
 # --- GENERATE MODEL SQL WITH ENCRYPTED KEYS -------------------------
 log_info "🔐 Generating model SQL with encrypted API keys..."
-if [ -f "/database/app/models/generate-models.sh" ]; then
-  cd /database/app/models
+if [ -f "/docker-entrypoint-initdb.d/app/models/generate-models.sh" ]; then
+  cd /docker-entrypoint-initdb.d/app/models
   if ./generate-models.sh; then
     log_success "✅ Model SQL generated with encrypted API keys"
   else
@@ -161,8 +161,8 @@ else
   
   # Copy the main initialization script for fresh database
   log_info "📋 Setting up main database schema..."
-  if [ -f "/database/init.sql" ]; then
-    cp /database/init.sql /docker-entrypoint-initdb.d/10-main-init.sql
+  if [ -f "/docker-entrypoint-initdb.d/app/init.sql" ]; then
+    cp /docker-entrypoint-initdb.d/app/init.sql /docker-entrypoint-initdb.d/10-main-init.sql
     log_success "✅ Main initialization script prepared"
   else
     log_warning "⚠️  Main init.sql not found"

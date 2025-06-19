@@ -2,9 +2,9 @@
 FROM postgres:15-alpine
 
 # ──────────────────────────────────────────────────────────
-# 1️⃣  Extra packages (bash only) – put in one RUN layer
+# 1️⃣  Extra packages (bash and nodejs) – put in one RUN layer
 # ──────────────────────────────────────────────────────────
-RUN apk add --no-cache bash
+RUN apk add --no-cache bash nodejs npm
 
 # ──────────────────────────────────────────────────────────
 # 2️⃣  Non-root user (optional, Postgres runs as postgres:999 by default)
