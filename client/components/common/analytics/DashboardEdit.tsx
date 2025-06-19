@@ -26,6 +26,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
+import { logError } from "@/utils/logger";
 import { Minus, PanelRightClose, Settings, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -91,7 +92,7 @@ const mockCharts = {
 
 const getRandomMockChart = () => {
   const charts = Object.values(mockCharts);
-  return charts[Math.floor(Math.random() * charts.length)]();
+  return charts[Math.floor(Math.random() * charts.length)]?.();
 };
 
 interface DraggableComponentProps {
@@ -220,7 +221,7 @@ function DropZone({
           onDrop(data.componentId, section);
         }
       } catch (error) {
-        console.error("Failed to parse drop data:", error);
+        logError("Failed to parse drop data:", error);
       }
     },
     [section, onDrop]
@@ -345,7 +346,7 @@ function SettingsDialog() {
                 onValueChange={([value]) =>
                   setLocalSettings((prev) => ({
                     ...prev,
-                    headerComponents: value,
+                    headerComponents: value ?? 1,
                   }))
                 }
                 className="flex-1"
@@ -467,7 +468,7 @@ export default function DashboardEdit() {
   const handleResizeEnd = useCallback(
     (sizes: number[]) => {
       if (sizes.length >= 2) {
-        const mainSplit = sizes[0] / 100;
+        const mainSplit = sizes[0] ? sizes[0] / 100 : 0.65;
         updateSettings({ mainSplit });
       }
     },
@@ -477,7 +478,9 @@ export default function DashboardEdit() {
   const handleFooterResizeEnd = useCallback(
     (sizes: number[]) => {
       if (sizes.length >= 2) {
-        const footerSplit = sizes[0] / (sizes[0] + sizes[1]);
+        const footerSplit = sizes[0]
+          ? sizes[0] / (sizes[0] + (sizes[1] ?? 0))
+          : 0.35;
         updateSettings({ footerSplit });
       }
     },
