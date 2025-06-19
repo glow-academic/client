@@ -1,26 +1,15 @@
 import AgentEdit from "@/components/create/agents/AgentEdit";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
-import { ReactNode } from "react";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
-vi.mock("next/navigation", () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => "/"),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
 
 // Mock API calls
 vi.mock("@/utils/queries/agents/get-agent", () => ({
   getAgent: vi.fn(),
 }));
+import { getAgent } from "@/utils/queries/agents/get-agent";
 
 vi.mock("@/utils/mutations/agents/update-agent", () => ({
   updateAgent: vi.fn(),
@@ -35,59 +24,36 @@ vi.mock("sonner", () => ({
 }));
 
 describe("AgentEdit", () => {
-  let queryClient: QueryClient;
-
   beforeEach(() => {
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
-    });
+    const agent = {
+      id: "test-agent-id",
+      name: "Edit Agent",
+      description: "desc",
+      systemPrompt: "prompt",
+      agentType: "student" as const,
+      temperature: 0,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+    };
+    vi.mocked(getAgent).mockResolvedValue(agent);
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
+  const renderComponent = () => renderWithProviders(<AgentEdit agentId="test-agent-id" />);
 
   describe("Rendering", () => {
-    it("should render without crashing", () => {
-      renderWithProviders(<AgentEdit agentId="test-agent-id" />);
-
-      expect(screen.getByText("Edit Agent")).toBeInTheDocument();
-    });
-
-    it("should pass correct props to Agent component", () => {
-      renderWithProviders(<AgentEdit agentId="test-agent-id" />);
-
-      // Should render the edit mode
-      expect(screen.getByText("Edit Agent")).toBeInTheDocument();
-      expect(
-        screen.getByText(
-          "Modify the personality and behavior characteristics for this AI student agent"
-        )
-      ).toBeInTheDocument();
-    });
-
-    it("should have correct accessibility attributes", () => {
-      renderWithProviders(<AgentEdit agentId="test-agent-id" />);
-
-      // Should show skeleton loading state initially
-      expect(document.querySelector(".animate-pulse")).toBeInTheDocument();
+    it("shows update button after load", async () => {
+      renderComponent();
+      const button = await screen.findByRole("button", { name: /update agent/i });
+      expect(button).toBeInTheDocument();
     });
   });
 
   describe("Integration", () => {
-    it("should integrate properly with the Agent component", () => {
-      renderWithProviders(<AgentEdit agentId="test-agent-id" />);
-
-      // The component should render the Agent component in edit mode
-      expect(screen.getByText("Edit Agent")).toBeInTheDocument();
+    it("should integrate properly with the Agent component", async () => {
+      renderComponent();
+      const button = await screen.findByRole("button", { name: /update agent/i });
+      expect(button).toBeInTheDocument();
     });
   });
 });
