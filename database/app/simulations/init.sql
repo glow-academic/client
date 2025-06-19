@@ -91,14 +91,14 @@ INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id,
   ('cccccccc-1111-2222-3333-444444444444', 'Confused Student Practice', NULL, true, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333', true);
 
 -- Insert Custom Randomized Simulations (3 additional diverse simulations)
-INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation) VALUES
-  ('c5a0b001-aaaa-bbbb-cccc-dddddddddddd', 'CS 180 Programming Challenge', 45, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333', false),
-  ('c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee', 'Multi-Course Algorithm Assessment', 60, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '33333333-3333-3333-3333-333333333333', false),
-  ('c5a0b003-cccc-dddd-eeee-ffffffffffff', 'Advanced Theory Deep Dive', 90, true, ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], '33333333-3333-3333-3333-333333333333', false);
+INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation, cohort_ids) VALUES
+  ('c5a0b001-aaaa-bbbb-cccc-dddddddddddd', 'CS 180 Programming Challenge', 45, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee', 'Multi-Course Algorithm Assessment', 60, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('c5a0b003-cccc-dddd-eeee-ffffffffffff', 'Advanced Theory Deep Dive', 90, true, ARRAY['bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', '99999999-cccc-dddd-eeee-999999999999']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111']::UUID[]);
 
 -- Insert Main Coding Practice Simulation
 INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation) VALUES
-  ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'Coding Practice Simulation', 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333', true)
+  ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'General Coding Practice', 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Insert Simulation Attempts (Essential for linking chats to simulations and profiles)

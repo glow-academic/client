@@ -35,7 +35,7 @@ import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { GripVertical, Shuffle, Trash2, User } from "lucide-react";
+import { GripVertical, Trash2, User } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface CohortProps {
@@ -137,14 +137,6 @@ export default function Cohort({ cohortId }: CohortProps) {
       ...prev,
       profileIds: prev.profileIds?.filter((id) => id !== profileId) || [],
     }));
-  };
-
-  const randomizeProfiles = () => {
-    const shuffled = [...(formData.profileIds || [])].sort(
-      () => Math.random() - 0.5
-    );
-    setFormData((prev) => ({ ...prev, profileIds: shuffled }));
-    toast.success("Profiles randomized!");
   };
 
   const handleDragStart = (e: React.DragEvent, profileId: string) => {
@@ -306,18 +298,6 @@ export default function Cohort({ cohortId }: CohortProps) {
                     ))}
                 </SelectContent>
               </Select>
-              {formData.profileIds && formData.profileIds?.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={randomizeProfiles}
-                  className="flex items-center gap-2"
-                >
-                  <Shuffle className="h-4 w-4" />
-                  Randomize
-                </Button>
-              )}
             </div>
           </div>
 

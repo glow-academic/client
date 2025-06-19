@@ -51,11 +51,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
+import { useAuth } from "@/hooks/use-auth";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
 import { logInfo } from "@/utils/logger";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
+import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
@@ -67,7 +69,6 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import SimulationHistory from "../common/history/SimulationHistory";
-import { useAuth } from "@/hooks/use-auth";
 
 // Type for attempt data
 interface AttemptData {
@@ -252,7 +253,7 @@ const SimulationCard = React.memo(
     standards,
   }: {
     simulation: Simulation;
-    type: "solo" | "multi";
+    type: "default" | "cohort";
     onStartSimulation: (id: string) => void;
     loadingSimulation: string | null;
     effectiveRole: string;
@@ -274,24 +275,25 @@ const SimulationCard = React.memo(
     const validScenarioIds =
       simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
 
-    // Solo-specific data
+    // Default simulation-specific data
     const interaction =
-      type === "solo"
+      type === "default"
         ? scenarios?.find((i: Scenario) => i.id === validScenarioIds[0])
         : null;
     const agent = interaction
       ? agents?.find((a: Agent) => a.id === interaction.agentId)
       : null;
     const agentConfig = agent ? getAgentConfig(agent.name || "general") : null;
-    const IconComponent = type === "solo" ? agentConfig?.icon || User : Users;
+    const IconComponent =
+      type === "default" ? agentConfig?.icon || User : Users;
 
     const gradientClass =
-      type === "solo"
+      type === "default"
         ? agentConfig?.colors?.gradient || "from-gray-500 to-gray-600"
         : "from-blue-500 to-purple-600";
 
     const backgroundGradient =
-      type === "solo"
+      type === "default"
         ? "from-gray-900 to-gray-600"
         : "from-blue-900 to-purple-600";
 
@@ -305,7 +307,9 @@ const SimulationCard = React.memo(
           {/* Front Side */}
           <Card
             data-testid={
-              type === "solo" ? "permanent-simulation-card" : "simulation-card"
+              type === "default"
+                ? "permanent-simulation-card"
+                : "simulation-card"
             }
             className="group overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2 bg-white dark:bg-gray-900 border-0 shadow-lg backface-hidden"
           >
@@ -353,15 +357,15 @@ const SimulationCard = React.memo(
                       <div
                         className="text-xs font-medium text-gray-500 dark:text-gray-400"
                         data-testid={
-                          type === "solo"
+                          type === "default"
                             ? "simulation-type"
                             : "simulation-class"
                         }
                       >
-                        {type === "solo" ? "Solo" : "Multi"}
+                        {type === "default" ? "Default" : "Cohort"}
                       </div>
                       <div className="text-xs text-gray-400">
-                        {type === "solo" ? "Simulation" : "Simulations"}
+                        {type === "default" ? "Simulation" : "Simulations"}
                       </div>
                     </div>
                   )}
@@ -378,7 +382,7 @@ const SimulationCard = React.memo(
                   {simulation.title}
                 </h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 leading-relaxed">
-                  {type === "solo"
+                  {type === "default"
                     ? agent?.description
                     : `Interactive simulation with ${validScenarioIds.length} scenario${validScenarioIds.length !== 1 ? "s" : ""}`}
                 </p>
@@ -395,13 +399,13 @@ const SimulationCard = React.memo(
                   </span>
                 </div>
                 <div className="flex items-center">
-                  {type === "solo" ? (
+                  {type === "default" ? (
                     <User className="h-3 w-3 mr-1" />
                   ) : (
                     <Users className="h-3 w-3 mr-1" />
                   )}
                   <span>
-                    {type === "solo"
+                    {type === "default"
                       ? "1 session"
                       : `${validScenarioIds.length} session${validScenarioIds.length !== 1 ? "s" : ""}`}
                   </span>
@@ -436,7 +440,7 @@ const SimulationCard = React.memo(
               >
                 {loadingSimulation === simulation.id
                   ? "Starting..."
-                  : type === "solo"
+                  : type === "default"
                     ? "Start Simulation"
                     : "Start Simulations"}
               </button>
@@ -624,6 +628,11 @@ export default function Home() {
     queryFn: () => getAllClasses(),
   });
 
+  const { data: cohorts } = useQuery({
+    queryKey: ["cohorts"],
+    queryFn: () => getAllCohorts(),
+  });
+
   const { data: simulations, isLoading: simulationsLoading } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
@@ -742,28 +751,32 @@ export default function Home() {
     [classes, effectiveRole, profile, router]
   );
 
-  // Separate simulations into solo and multi based on interaction count
-  const soloSimulations = useMemo(
+  // Separate simulations into default and cohort-based
+  const defaultSimulations = useMemo(
     () =>
       simulations?.filter((simulation: Simulation) => {
-        const validInteractionIds =
-          simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-        return (
-          validInteractionIds.length === 1 || validInteractionIds.length === 0
-        );
+        return simulation.defaultSimulation === true;
       }) || [],
     [simulations]
   );
 
-  const multiSimulations = useMemo(
-    () =>
-      simulations?.filter((simulation: Simulation) => {
-        const validInteractionIds =
-          simulation.scenarioIds?.filter((id: string) => id !== "RAY") || [];
-        return validInteractionIds.length > 1;
-      }) || [],
-    [simulations]
-  );
+  // Get user's cohorts and filter simulations based on cohort membership
+  const userCohorts = useMemo(() => {
+    if (!cohorts || !profile) return [];
+    return cohorts.filter((cohort) => cohort.profileIds?.includes(profile.id));
+  }, [cohorts, profile]);
+
+  const cohortSimulations = useMemo(() => {
+    if (!simulations || !userCohorts.length) return [];
+    const userCohortIds = userCohorts.map((cohort) => cohort.id);
+    return simulations.filter((simulation: Simulation) => {
+      // Check if any of the simulation's cohort IDs match user's cohorts
+      return simulation.cohortIds?.some(
+        (cohortId: string) =>
+          cohortId !== "RAY" && userCohortIds.includes(cohortId)
+      );
+    });
+  }, [simulations, userCohorts]);
 
   // Memoize rubric data calculation to prevent unnecessary recalculations
   const rubricDataCache = useMemo(() => {
@@ -895,11 +908,11 @@ export default function Home() {
   );
 
   const renderCarousel = useCallback(
-    (simulations: Simulation[], type: "solo" | "multi") => {
+    (simulations: Simulation[], type: "default" | "cohort") => {
       const carouselIndex =
-        type === "solo" ? soloCarouselIndex : multiCarouselIndex;
+        type === "default" ? soloCarouselIndex : multiCarouselIndex;
       const setCarouselIndex =
-        type === "solo" ? setSoloCarouselIndex : setMultiCarouselIndex;
+        type === "default" ? setSoloCarouselIndex : setMultiCarouselIndex;
       const maxVisible = 3;
 
       // Fix pagination to avoid duplicates
@@ -931,7 +944,7 @@ export default function Home() {
           {/* Header with navigation */}
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              {type === "solo" ? "Solo Simulations" : "Multi Simulations"}
+              {type === "default" ? "Default Simulations" : "My Cohorts"}
             </h2>
             {totalPages > 1 && (
               <div className="flex items-center space-x-2">
@@ -1070,25 +1083,26 @@ export default function Home() {
     return (
       <TooltipProvider>
         <div className="space-y-8">
-          {/* Solo Simulations Carousel */}
-          {soloSimulations.length > 0 &&
-            renderCarousel(soloSimulations, "solo")}
+          {/* Default Simulations Carousel */}
+          {defaultSimulations.length > 0 &&
+            renderCarousel(defaultSimulations, "default")}
 
-          {/* Multi Simulations Carousel */}
-          {multiSimulations.length > 0 &&
-            renderCarousel(multiSimulations, "multi")}
+          {/* Cohort Simulations Carousel */}
+          {cohortSimulations.length > 0 &&
+            renderCarousel(cohortSimulations, "cohort")}
 
           {/* No simulations message */}
-          {soloSimulations.length === 0 && multiSimulations.length === 0 && (
-            <div className="text-center py-12">
-              <h3 className="text-lg font-semibold mb-2">
-                No simulations available
-              </h3>
-              <p className="text-muted-foreground">
-                Contact an administrator to add simulations.
-              </p>
-            </div>
-          )}
+          {defaultSimulations.length === 0 &&
+            cohortSimulations.length === 0 && (
+              <div className="text-center py-12">
+                <h3 className="text-lg font-semibold mb-2">
+                  No simulations available
+                </h3>
+                <p className="text-muted-foreground">
+                  Contact an administrator to add simulations.
+                </p>
+              </div>
+            )}
         </div>
       </TooltipProvider>
     );
@@ -1098,17 +1112,18 @@ export default function Home() {
   return (
     <TooltipProvider>
       <div className="space-y-8">
-        {/* Solo Simulations Carousel */}
-        {soloSimulations.length > 0 && renderCarousel(soloSimulations, "solo")}
+        {/* Cohort Simulations Carousel */}
+        {cohortSimulations.length > 0 &&
+          renderCarousel(cohortSimulations, "cohort")}
 
-        {/* Multi Simulations Carousel */}
-        {multiSimulations.length > 0 &&
-          renderCarousel(multiSimulations, "multi")}
+        {/* Default Simulations Carousel */}
+        {defaultSimulations.length > 0 &&
+          renderCarousel(defaultSimulations, "default")}
 
         <SimulationHistory showAll={false} showExport={false} />
 
         {/* No simulations message */}
-        {soloSimulations.length === 0 && multiSimulations.length === 0 && (
+        {defaultSimulations.length === 0 && cohortSimulations.length === 0 && (
           <div className="text-center py-12">
             <h3 className="text-lg font-semibold mb-2">
               No simulations available
