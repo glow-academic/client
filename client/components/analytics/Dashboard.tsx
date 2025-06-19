@@ -22,6 +22,7 @@ import TrainingSessions from "@/components/common/analytics/header/TrainingSessi
 import PerformanceByPersonality from "@/components/common/analytics/main/primary/PerformanceByPersonality";
 import PerformanceTrends from "@/components/common/analytics/main/primary/PerformanceTrends";
 import SessionActivity from "@/components/common/analytics/main/primary/SessionActivity";
+import ClassPerformance from "@/components/common/analytics/main/secondary/ClassPerformance";
 import SkillBreakdown from "@/components/common/analytics/main/secondary/SkillBreakdown";
 import TrainingInsights from "@/components/common/analytics/main/secondary/TrainingInsights";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -41,8 +42,9 @@ export default function Dashboard() {
   const [rightFooterCarouselIndex, setRightFooterCarouselIndex] = useState(0);
 
   const totalSlides = 3; // Main carousel slides
-  const totalSideSlides = 2; // Side carousel slides
+  const totalSideSlides = 3; // Side carousel slides (SkillBreakdown, TrainingInsights, ClassPerformance)
   const totalFooterSlides = 2; // Footer carousel slides
+  const totalHeaderPages = 2; // Header carousel pages (4 cards per page, 8 total cards = 2 pages)
 
   // Time range states
   const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
@@ -87,14 +89,14 @@ export default function Dashboard() {
     return () => {}; // Return empty cleanup function when hovered
   }, [isHovered, totalSlides]);
 
-  // Header carousel auto-scroll
+  // Header carousel auto-scroll (now page-based)
   useEffect(() => {
     const interval = setInterval(() => {
-      setHeaderCarouselIndex((prev) => (prev + 1) % 8); // 8 total header metrics
-    }, 3000); // Change header every 3 seconds
+      setHeaderCarouselIndex((prev) => (prev + 1) % totalHeaderPages);
+    }, 4000); // Change header page every 4 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [totalHeaderPages]);
 
   // Side carousel auto-scroll
   useEffect(() => {
@@ -162,6 +164,12 @@ export default function Dashboard() {
     },
   ];
 
+  // Get current header page metrics (4 per page)
+  const getCurrentHeaderMetrics = () => {
+    const startIndex = headerCarouselIndex * 4;
+    return headerMetrics.slice(startIndex, startIndex + 4);
+  };
+
   // Loading state
   if (
     isLoadingProfiles ||
@@ -181,21 +189,30 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Rotating Header Metrics */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {Array.from({ length: 4 }, (_, i) => {
-          const metricIndex = (headerCarouselIndex + i) % headerMetrics.length;
-          const metric = headerMetrics[metricIndex];
-          if (!metric) return null;
-          return (
+      {/* Header Metrics with Page-based Carousel */}
+      <div className="space-y-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {getCurrentHeaderMetrics().map((metric, i) => (
             <div
               key={`${metric.key}-${headerCarouselIndex}-${i}`}
               className="transition-all duration-500 ease-in-out"
             >
               {metric.component}
             </div>
-          );
-        })}
+          ))}
+        </div>
+        {/* Header carousel indicators */}
+        <div className="flex justify-center gap-2">
+          {Array.from({ length: totalHeaderPages }).map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setHeaderCarouselIndex(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === headerCarouselIndex ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
       {/* Carousel Section */}
@@ -249,6 +266,7 @@ export default function Dashboard() {
           <div>
             {sideCarouselIndex === 0 && <SkillBreakdown />}
             {sideCarouselIndex === 1 && <TrainingInsights />}
+            {sideCarouselIndex === 2 && <ClassPerformance />}
           </div>
           {/* Side carousel indicators - moved outside the cards */}
           <div className="flex justify-center gap-2">
