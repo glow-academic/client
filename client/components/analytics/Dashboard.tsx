@@ -527,16 +527,19 @@ export default function Dashboard() {
     <div className="space-y-6">
       {/* Rotating Header Metrics */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {headerMetrics
-          .slice(headerCarouselIndex, headerCarouselIndex + 4)
-          .map((metric) => (
+        {Array.from({ length: 4 }, (_, i) => {
+          const metricIndex = (headerCarouselIndex + i) % headerMetrics.length;
+          const metric = headerMetrics[metricIndex];
+          if (!metric) return null;
+          return (
             <div
-              key={metric.key}
+              key={`${metric.key}-${headerCarouselIndex}-${i}`}
               className="transition-all duration-500 ease-in-out"
             >
               {metric.component}
             </div>
-          ))}
+          );
+        })}
       </div>
 
       {/* Carousel Section */}

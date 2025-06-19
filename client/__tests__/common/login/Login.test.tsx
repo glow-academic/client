@@ -138,12 +138,12 @@ describe('Login', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useQuery, useSession, useRouter, useState, userId
+ * - Uses hooks: user, useQuery, useSession, useRouter, useEffect, useState, userId
  * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
