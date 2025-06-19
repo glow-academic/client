@@ -7,19 +7,38 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
 import { useQuery } from "@tanstack/react-query";
+import { format, subDays } from "date-fns";
 import { Award } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
-interface PassRateProps {
-  onClick?: () => void;
-}
+const COLORS = {
+  success: "#10b981",
+  danger: "#ef4444",
+};
 
-export default function PassRate({ onClick }: PassRateProps) {
+export default function PassRate() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -57,23 +76,83 @@ export default function PassRate({ onClick }: PassRateProps) {
       : 0;
   }, [grades]);
 
+  // Pass/fail trend data
+  const passFailTrend = useMemo(() => {
+    if (!grades) return [];
+
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = subDays(new Date(), 6 - i);
+      const dateStr = format(date, "yyyy-MM-dd");
+
+      const dayGrades = grades.filter((grade) => {
+        const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
+        return gradeDate === dateStr;
+      });
+
+      const passRate =
+        dayGrades.length > 0
+          ? Math.round(
+              (dayGrades.filter((g) => g.passed).length / dayGrades.length) *
+                100
+            )
+          : 0;
+
+      return {
+        date: format(date, "MM/dd"),
+        passRate,
+        passed: dayGrades.filter((g) => g.passed).length,
+        failed: dayGrades.filter((g) => !g.passed).length,
+      };
+    });
+  }, [grades]);
+
   return (
-    <Card
-      className={`bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 ${
-        onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""
-      }`}
-      onClick={onClick}
-    >
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
-        <Award className="h-4 w-4 text-emerald-600" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-emerald-700">{passRate}%</div>
-        <p className="text-xs text-emerald-600 mt-1">
-          Sessions meeting criteria
-        </p>
-      </CardContent>
-    </Card>
+    <>
+      <Card
+        className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900 border-emerald-200 cursor-pointer hover:shadow-md transition-shadow"
+        onClick={() => setIsDialogOpen(true)}
+      >
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Pass Rate</CardTitle>
+          <Award className="h-4 w-4 text-emerald-600" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-emerald-700">{passRate}%</div>
+          <p className="text-xs text-emerald-600 mt-1">
+            Sessions meeting criteria
+          </p>
+        </CardContent>
+      </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pass/Fail Trend</DialogTitle>
+          </DialogHeader>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={passFailTrend}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" />
+                <YAxis />
+                <Tooltip />
+                <Bar
+                  dataKey="passed"
+                  fill={COLORS.success}
+                  name="Passed"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="failed"
+                  fill={COLORS.danger}
+                  name="Failed"
+                  radius={[4, 4, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

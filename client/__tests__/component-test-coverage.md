@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-19T15:14:55.460Z
+Generated on: 2025-06-19T16:04:18.565Z
 
 ## Summary
 - **Total Components**: 81
-- **Tests Created**: 0
-- **Tests Updated**: 23
+- **Tests Created**: 1
+- **Tests Updated**: 22
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -18,7 +18,7 @@ Generated on: 2025-06-19T15:14:55.460Z
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | SkillGrowth | common/analytics/footer/SkillGrowth.tsx | SkillGrowth.test.tsx | ❌ Needs Implementation |
-| ActiveTAs | common/analytics/header/ActiveTAs.tsx | ActiveTAs.test.tsx | ❌ Needs Implementation |
+| ActiveCohorts | common/analytics/header/ActiveCohorts.tsx | ActiveCohorts.test.tsx | ❌ Needs Implementation |
 | AverageScore | common/analytics/header/AverageScore.tsx | AverageScore.test.tsx | ❌ Needs Implementation |
 | CompletionRate | common/analytics/header/CompletionRate.tsx | CompletionRate.test.tsx | ❌ Needs Implementation |
 | NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ❌ Needs Implementation |
@@ -110,7 +110,7 @@ __tests__/
 │   │   │   ├── CohortCompletion.test.tsx
 │   │   │   ├── SkillGrowth.test.tsx
 │   │   ├── header/
-│   │   │   ├── ActiveTAs.test.tsx
+│   │   │   ├── ActiveCohorts.test.tsx
 │   │   │   ├── AverageScore.test.tsx
 │   │   │   ├── CompletionRate.test.tsx
 │   │   │   ├── NeedSupport.test.tsx

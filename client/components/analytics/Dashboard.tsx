@@ -29,18 +29,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
+import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
+import { getAllSimulationChatGrades } from "@/utils/queries/simulation_chat_grades/get-all-simulation-chat-grades";
+import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
 import { useQuery } from "@tanstack/react-query";
-import { format, subDays } from "date-fns";
 import {
   Calendar,
   ChevronLeft,
@@ -50,42 +43,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-
-// Color palette for charts
-const COLORS = {
-  primary: "#3b82f6",
-  success: "#10b981",
-  warning: "#f59e0b",
-  danger: "#ef4444",
-  purple: "#8b5cf6",
-  pink: "#ec4899",
-  teal: "#14b8a6",
-  orange: "#f97316",
-};
-
-// Type for chart data entries with fill property
-interface ChartDataEntry {
-  fill: string;
-  count?: number;
-  range?: string;
-}
+import { useCallback, useEffect, useState } from "react";
 
 export default function Dashboard() {
   // Carousel states
@@ -93,7 +51,7 @@ export default function Dashboard() {
   const [isHovered, setIsHovered] = useState(false);
   const [headerCarouselIndex, setHeaderCarouselIndex] = useState(0);
   const [sideCarouselIndex, setSideCarouselIndex] = useState(0);
-  const [selectedMetric, setSelectedMetric] = useState<string | null>(null);
+
   const totalSlides = 3; // Main carousel slides
   const totalSideSlides = 2; // Side carousel slides
 
@@ -107,6 +65,26 @@ export default function Dashboard() {
   const [personalityTimeRange, setPersonalityTimeRange] = useState<
     "12h" | "1d" | "1w"
   >("1d");
+
+  const { isLoading: isLoadingProfiles } = useQuery({
+    queryKey: ["profiles"],
+    queryFn: () => getAllProfiles(),
+  });
+
+  const { isLoading: isLoadingAttempts } = useQuery({
+    queryKey: ["attempts"],
+    queryFn: () => getAllSimulationAttempts(),
+  });
+
+  const { isLoading: isLoadingChats } = useQuery({
+    queryKey: ["chats"],
+    queryFn: () => getAllSimulationChats(),
+  });
+
+  const { isLoading: isLoadingGrades } = useQuery({
+    queryKey: ["grades"],
+    queryFn: () => getAllSimulationChatGrades(),
+  });
 
   // Auto-scroll carousels
   useEffect(() => {
@@ -145,401 +123,42 @@ export default function Dashboard() {
   const prevSlide = useCallback(() => {
     setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   }, [totalSlides]);
-
-  // Fetch data for radar and radial charts
-  const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
-    queryKey: ["profiles"],
-    queryFn: () => getAllProfiles(),
-  });
-
-  const { data: attempts, isLoading: isLoadingAttempts } = useQuery({
-    queryKey: ["simulationAttempts", profiles?.map((profile) => profile.id)],
-    queryFn: () =>
-      getSimulationAttemptsByProfiles(profiles!.map((profile) => profile.id)),
-    enabled: !!profiles && profiles.length > 0,
-  });
-
-  const { data: chats, isLoading: isLoadingChats } = useQuery({
-    queryKey: ["simulationChats", attempts?.map((attempt) => attempt.id)],
-    queryFn: () =>
-      getSimulationChatsByAttempts(attempts!.map((attempt) => attempt.id)),
-    enabled: !!attempts && attempts.length > 0,
-  });
-
-  const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats && chats.length > 0,
-  });
-
-  // Calculate metrics for struggling TAs
-  const strugglingTAs = useMemo(() => {
-    if (!profiles || !attempts || !chats || !grades) return 0;
-
-    const tas = profiles.filter((profile) => profile.role === "ta");
-    const taPerformance = tas.map((ta) => {
-      const taAttempts =
-        attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
-      const taChats = chats.filter((chat) =>
-        taAttempts.some((attempt) => attempt.id === chat.attemptId)
-      );
-      const taGrades = grades.filter((grade) =>
-        taChats.some((chat) => chat.id === grade.simulationChatId)
-      );
-
-      const avgScore =
-        taGrades.length > 0
-          ? Math.round(
-              taGrades.reduce((sum, g) => sum + g.score, 0) / taGrades.length
-            )
-          : 0;
-
-      return { avgScore };
-    });
-
-    return taPerformance.filter((ta) => ta.avgScore < 70).length;
-  }, [profiles, attempts, chats, grades]);
-
-  // Calculate average training time
-  const avgTrainingTime = useMemo(() => {
-    if (!grades) return 0;
-    return grades.length > 0
-      ? Math.round(
-          grades.reduce((sum, g) => sum + g.timeTaken, 0) / grades.length / 60
-        )
-      : 45;
-  }, [grades]);
-
-  // Generate detailed metric data for dialogs
-  const getMetricDetails = (metricType: string) => {
-    if (!profiles || !grades || !chats || !attempts) return null;
-
-    switch (metricType) {
-      case "averageScore":
-        const scoreDistribution = [
-          {
-            range: "90-100%",
-            count: grades.filter((g) => g.score >= 90).length,
-            fill: COLORS.success,
-          },
-          {
-            range: "80-89%",
-            count: grades.filter((g) => g.score >= 80 && g.score < 90).length,
-            fill: COLORS.primary,
-          },
-          {
-            range: "70-79%",
-            count: grades.filter((g) => g.score >= 70 && g.score < 80).length,
-            fill: COLORS.warning,
-          },
-          {
-            range: "60-69%",
-            count: grades.filter((g) => g.score >= 60 && g.score < 70).length,
-            fill: COLORS.orange,
-          },
-          {
-            range: "<60%",
-            count: grades.filter((g) => g.score < 60).length,
-            fill: COLORS.danger,
-          },
-        ].filter((item) => item.count > 0);
-
-        return { type: "score-distribution", data: scoreDistribution };
-
-      case "completionRate":
-        const completionTrend = Array.from({ length: 7 }, (_, i) => {
-          const date = subDays(new Date(), 6 - i);
-          const dateStr = format(date, "yyyy-MM-dd");
-
-          const dayChats = chats.filter((chat) => {
-            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-            return chatDate === dateStr;
-          });
-
-          const completionRate =
-            dayChats.length > 0
-              ? Math.round(
-                  (dayChats.filter((chat) => chat.completed).length /
-                    dayChats.length) *
-                    100
-                )
-              : 0;
-
-          return {
-            date: format(date, "MM/dd"),
-            rate: completionRate,
-            total: dayChats.length,
-          };
-        });
-
-        return { type: "completion-trend", data: completionTrend };
-
-      case "passRate":
-        const passFailTrend = Array.from({ length: 7 }, (_, i) => {
-          const date = subDays(new Date(), 6 - i);
-          const dateStr = format(date, "yyyy-MM-dd");
-
-          const dayGrades = grades.filter((grade) => {
-            const gradeDate = format(new Date(grade.createdAt), "yyyy-MM-dd");
-            return gradeDate === dateStr;
-          });
-
-          const passRate =
-            dayGrades.length > 0
-              ? Math.round(
-                  (dayGrades.filter((g) => g.passed).length /
-                    dayGrades.length) *
-                    100
-                )
-              : 0;
-
-          return {
-            date: format(date, "MM/dd"),
-            passRate,
-            passed: dayGrades.filter((g) => g.passed).length,
-            failed: dayGrades.filter((g) => !g.passed).length,
-          };
-        });
-
-        return { type: "pass-trend", data: passFailTrend };
-
-      case "totalSessions":
-        const sessionTrend = Array.from({ length: 7 }, (_, i) => {
-          const date = subDays(new Date(), 6 - i);
-          const dateStr = format(date, "yyyy-MM-dd");
-
-          const dayChats = chats.filter((chat) => {
-            const chatDate = format(new Date(chat.createdAt), "yyyy-MM-dd");
-            return chatDate === dateStr;
-          });
-
-          return {
-            date: format(date, "MM/dd"),
-            sessions: dayChats.length,
-            completed: dayChats.filter((chat) => chat.completed).length,
-          };
-        });
-
-        return { type: "session-trend", data: sessionTrend };
-
-      case "trainingHours":
-        const timeDistribution = [
-          {
-            range: "<15 min",
-            count: grades.filter((g) => g.timeTaken < 900).length,
-            fill: COLORS.success,
-          },
-          {
-            range: "15-30 min",
-            count: grades.filter(
-              (g) => g.timeTaken >= 900 && g.timeTaken < 1800
-            ).length,
-            fill: COLORS.primary,
-          },
-          {
-            range: "30-45 min",
-            count: grades.filter(
-              (g) => g.timeTaken >= 1800 && g.timeTaken < 2700
-            ).length,
-            fill: COLORS.warning,
-          },
-          {
-            range: "45+ min",
-            count: grades.filter((g) => g.timeTaken >= 2700).length,
-            fill: COLORS.danger,
-          },
-        ].filter((item) => item.count > 0);
-
-        return { type: "time-distribution", data: timeDistribution };
-
-      default:
-        return null;
-    }
-  };
-
-  // Render chart component based on metric type
-  const renderMetricChart = (metricType: string) => {
-    const metricDetails = getMetricDetails(metricType);
-    if (!metricDetails) return null;
-
-    switch (metricDetails.type) {
-      case "score-distribution":
-        return (
-          <PieChart>
-            <Pie
-              data={metricDetails.data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ range, percent }) =>
-                `${range}: ${(percent * 100).toFixed(0)}%`
-              }
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="count"
-            >
-              {(metricDetails.data as ChartDataEntry[])?.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value: number) => [value, "Sessions"]} />
-          </PieChart>
-        );
-
-      case "completion-trend":
-        return (
-          <LineChart data={metricDetails.data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis domain={[0, 100]} />
-            <Tooltip
-              formatter={(value: number) => [`${value}%`, "Completion Rate"]}
-            />
-            <Line
-              type="monotone"
-              dataKey="rate"
-              stroke={COLORS.success}
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          </LineChart>
-        );
-
-      case "pass-trend":
-        return (
-          <BarChart data={metricDetails.data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Bar
-              dataKey="passed"
-              fill={COLORS.success}
-              name="Passed"
-              radius={[4, 4, 0, 0]}
-            />
-            <Bar
-              dataKey="failed"
-              fill={COLORS.danger}
-              name="Failed"
-              radius={[4, 4, 0, 0]}
-            />
-          </BarChart>
-        );
-
-      case "session-trend":
-        return (
-          <AreaChart data={metricDetails.data}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="date" />
-            <YAxis />
-            <Tooltip />
-            <Area
-              type="monotone"
-              dataKey="sessions"
-              stroke={COLORS.primary}
-              fill={COLORS.primary}
-              fillOpacity={0.6}
-              name="Total Sessions"
-            />
-            <Area
-              type="monotone"
-              dataKey="completed"
-              stroke={COLORS.success}
-              fill={COLORS.success}
-              fillOpacity={0.6}
-              name="Completed"
-            />
-          </AreaChart>
-        );
-
-      case "time-distribution":
-        return (
-          <PieChart>
-            <Pie
-              data={metricDetails.data}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ range, percent }) =>
-                `${range}: ${(percent * 100).toFixed(0)}%`
-              }
-              outerRadius={80}
-              fill="#8884d8"
-              dataKey="count"
-            >
-              {(metricDetails.data as ChartDataEntry[])?.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <Tooltip formatter={(value: number) => [value, "Sessions"]} />
-          </PieChart>
-        );
-
-      default:
-        return null;
-    }
-  };
-
   // Header metric components array
   const headerMetrics = [
     {
-      component: (
-        <ActiveCohorts onClick={() => setSelectedMetric("activeCohorts")} />
-      ),
+      component: <ActiveCohorts />,
       key: "activeCohorts",
     },
     {
-      component: (
-        <TrainingSessions
-          onClick={() => setSelectedMetric("trainingSessions")}
-        />
-      ),
+      component: <TrainingSessions />,
       key: "trainingSessions",
     },
     {
-      component: (
-        <TrainingHours
-          avgTrainingTime={avgTrainingTime}
-          onClick={() => setSelectedMetric("trainingHours")}
-        />
-      ),
+      component: <TrainingHours />,
       key: "trainingHours",
     },
     {
-      component: (
-        <NeedSupport
-          strugglingTAs={strugglingTAs}
-          onClick={() => setSelectedMetric("needSupport")}
-        />
-      ),
+      component: <NeedSupport />,
       key: "needSupport",
     },
     {
-      component: (
-        <AverageScore onClick={() => setSelectedMetric("averageScore")} />
-      ),
+      component: <AverageScore />,
       key: "averageScore",
     },
     {
-      component: (
-        <CompletionRate onClick={() => setSelectedMetric("completionRate")} />
-      ),
+      component: <CompletionRate />,
       key: "completionRate",
     },
     {
-      component: <PassRate onClick={() => setSelectedMetric("passRate")} />,
+      component: <PassRate />,
       key: "passRate",
     },
     {
-      component: (
-        <TotalSessions onClick={() => setSelectedMetric("totalSessions")} />
-      ),
+      component: <TotalSessions />,
       key: "totalSessions",
     },
     {
-      component: <TotalTAs onClick={() => setSelectedMetric("totalTAs")} />,
+      component: <TotalTAs />,
       key: "totalTAs",
     },
   ];
@@ -777,7 +396,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[305px]">
+              <div className="h-[300px]">
                 {sideCarouselIndex === 0 && <SkillBreakdown />}
                 {sideCarouselIndex === 1 && <TrainingInsights />}
               </div>
@@ -806,45 +425,6 @@ export default function Dashboard() {
         {/* Cohort Radial Chart */}
         <CohortCompletion />
       </div>
-
-      {/* Metric Detail Dialogs */}
-      <Dialog
-        open={!!selectedMetric}
-        onOpenChange={(open) => !open && setSelectedMetric(null)}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedMetric === "averageScore"
-                ? "Score Distribution"
-                : selectedMetric === "completionRate"
-                  ? "Completion Rate Trend"
-                  : selectedMetric === "passRate"
-                    ? "Pass/Fail Trend"
-                    : selectedMetric === "totalSessions"
-                      ? "Session Activity"
-                      : selectedMetric === "trainingHours"
-                        ? "Training Time Distribution"
-                        : selectedMetric === "activeCohorts"
-                          ? "Active Cohorts"
-                          : selectedMetric === "trainingSessions"
-                            ? "Training Sessions"
-                            : selectedMetric === "needSupport"
-                              ? "Need Support"
-                              : selectedMetric === "totalTAs"
-                                ? "Total TAs"
-                                : ""}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="h-64">
-            {selectedMetric && renderMetricChart(selectedMetric) && (
-              <ResponsiveContainer width="100%" height="100%">
-                {renderMetricChart(selectedMetric)!}
-              </ResponsiveContainer>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
