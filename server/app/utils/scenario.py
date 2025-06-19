@@ -68,6 +68,8 @@ async def randomly_fill_scenario_attributes(
         if all_agents:
             scenario_agent_id = random.choice(all_agents).id
             logger.info(f"Randomly selected agent_id: {scenario_agent_id}")
+        else:
+            scenario_agent_id = None
     else:
         scenario_agent_id = scenario.agent_id
 
@@ -77,6 +79,8 @@ async def randomly_fill_scenario_attributes(
         if all_classes:
             scenario_class_id = random.choice(all_classes).id
             logger.info(f"Randomly selected class_id: {scenario_class_id}")
+        else:
+            scenario_class_id = None
     else:
         scenario_class_id = scenario.class_id
 
