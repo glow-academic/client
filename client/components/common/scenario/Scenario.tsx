@@ -134,7 +134,6 @@ export default function Scenario({
     name: agent.name,
     description: agent.description,
     type: "Agents" as const,
-    strengths: agent.subtitle,
   }));
 
   const classModels: Model[] = classes.map((cls: Class) => ({
@@ -540,7 +539,6 @@ export default function Scenario({
                         name: selectedAgent.name,
                         description: selectedAgent.description,
                         type: "Agents" as const,
-                        strengths: selectedAgent.subtitle,
                       }
                     : undefined
                 }

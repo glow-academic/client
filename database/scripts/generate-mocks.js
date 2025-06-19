@@ -179,6 +179,14 @@ function generateMockData(tables, enums) {
       recordCount = 2; // More for key entities that have relationships
     }
 
+    // Create 4 users and 4 profiles for testing different roles
+    if (exportName === "users") {
+      recordCount = 4;
+    }
+    if (exportName === "profiles") {
+      recordCount = 4;
+    }
+
     const records = [];
 
     for (let i = 0; i < recordCount; i++) {
@@ -252,7 +260,13 @@ function generateMockData(tables, enums) {
           case "enum":
             if (enumType && enums[enumType]) {
               const enumValues = enums[enumType].values;
-              value = enumValues[i % enumValues.length];
+              // Special handling for profile roles to ensure we get all 4 types
+              if (exportName === "profiles" && enumType === "profileRole") {
+                const roles = ["admin", "instructional", "instructor", "ta"];
+                value = roles[i % roles.length];
+              } else {
+                value = enumValues[i % enumValues.length];
+              }
             }
             break;
 
@@ -379,6 +393,29 @@ function generateMeaningfulText(tableName, fieldName, index) {
           "Evaluation of writing skills and techniques",
         ][index] || `Description for evaluation ${index + 1}`,
     },
+    users: {
+      name:
+        ["Admin User", "Instructional User", "Instructor User", "TA User"][
+          index
+        ] || `User ${index + 1}`,
+      email:
+        [
+          "admin@example.com",
+          "instructional@example.com",
+          "instructor@example.com",
+          "ta@example.com",
+        ][index] || `user${index + 1}@example.com`,
+    },
+    profiles: {
+      firstName:
+        ["Admin", "Instructional", "Instructor", "TA"][index] ||
+        `User${index + 1}`,
+      lastName: ["User", "User", "User", "User"][index] || `Last${index + 1}`,
+      alias:
+        ["admin-user", "instructional-user", "instructor-user", "ta-user"][
+          index
+        ] || `user${index + 1}`,
+    },
   };
 
   const tableContext = contexts[tableName];
@@ -415,6 +452,15 @@ function generateMeaningfulText(tableName, fieldName, index) {
  * Set up foreign key relationships between mock data
  */
 function setupForeignKeyRelationships(mockData, tables) {
+  // Special handling for user-profile relationships (1:1 mapping)
+  if (mockData.users && mockData.profiles) {
+    mockData.profiles.forEach((profile, index) => {
+      if (mockData.users[index]) {
+        profile.userId = mockData.users[index].id;
+      }
+    });
+  }
+
   // Common foreign key mappings
   const foreignKeyMappings = {
     agentId: "agents",
