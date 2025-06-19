@@ -6,8 +6,10 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: false,
   },
   typescript: {
-    // Fail the build on TypeScript errors
+    // Fail the build on TypeScript errors - this ensures Next.js respects TS errors
     ignoreBuildErrors: false,
+    // Run full type checking during build (slower but more comprehensive)
+    tsconfigPath: "./tsconfig.json",
   },
   // Enable strict mode for better error catching
   reactStrictMode: true,

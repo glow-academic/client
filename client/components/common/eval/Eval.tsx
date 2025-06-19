@@ -84,7 +84,6 @@ export default function Eval({
     baseAgentId: "",
     scenarioIds: [],
     agentIds: [],
-    evalType: "student",
     maxTurns: 10,
     rubricIds: [],
   };
@@ -151,7 +150,6 @@ export default function Eval({
         scenarioIds:
           evalData.scenarioIds?.filter((id: string) => id !== "RAY") || [],
         agentIds: evalData.agentIds?.filter((id: string) => id !== "RAY") || [],
-        evalType: evalData.evalType || "student",
         maxTurns: evalData.maxTurns || 10,
         rubricIds:
           evalData.rubricIds?.filter((id: string) => id !== "RAY") || [],
@@ -295,7 +293,6 @@ export default function Eval({
           formData.agentIds && formData.agentIds.length > 0
             ? formData.agentIds
             : ["RAY"],
-        evalType: formData.evalType || "student",
         maxTurns: formData.maxTurns || 10,
         rubricIds:
           formData.rubricIds && formData.rubricIds.length > 0
@@ -639,9 +636,6 @@ export default function Eval({
                         </div>
                       </div>
                       <h4 className="font-medium text-sm mb-1">{agent.name}</h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {agent.subtitle}
-                      </p>
                     </Card>
                   );
                 })}

@@ -101,9 +101,8 @@ const mockEval = {
   scenarioIds: ["scenario1"],
   agentIds: ["agent1"],
   rubricIds: ["rubric1"],
-  evalType: "ta" as const,
   maxTurns: 10,
-  maxParallelRuns: 5,
+  startOnCreation: true,
 };
 
 const mockResults = [

@@ -7,12 +7,15 @@
     "dev": "concurrently \"next dev\" \"node scripts/generate-component-tests.js\"",
     "dev:next": "next dev",
     "generate-tests": "node scripts/generate-component-tests.js",
-    "build": "NODE_ENV=production next build",
+    "typecheck": "tsc --noEmit",
+    "typecheck:strict": "tsc --noEmit --strict",
+    "build": "npm run typecheck && NODE_ENV=production next build",
     "start": "next start",
     "lint": "next lint --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prebuild": "npm run typecheck"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",
