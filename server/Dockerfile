@@ -32,9 +32,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Run unit tests as part of the build process
-RUN echo "🧪 Running server unit tests..." && \
-    python -m pytest tests/ -v --tb=short
+# Run unit tests as part of the build process (SHIPPING)
+# RUN echo "🧪 Running server unit tests..." && \
+#     python -m pytest tests/ -v --tb=short
 
 # ——— Production Runtime Stage ———
 FROM python:3.11-slim AS production

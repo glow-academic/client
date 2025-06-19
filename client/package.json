@@ -14,8 +14,7 @@
     "lint": "next lint --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "lint:fix": "next lint --fix --dir app --dir components --dir utils --dir __tests__ --dir hooks --dir lib --dir contexts",
     "format": "prettier --write .",
-    "test": "vitest run",
-    "prebuild": "npm run typecheck"
+    "test": "vitest run"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.9.1",

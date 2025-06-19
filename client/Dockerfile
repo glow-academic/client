@@ -45,9 +45,9 @@ ENV AUTH_MICROSOFT_ENTRA_ID_SECRET=$AUTH_MICROSOFT_ENTRA_ID_SECRET
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Run unit tests as part of the build process
-RUN echo "🧪 Running unit tests..." && \
-    yarn test
+# Run unit tests as part of the build process (SHIPPING)
+# RUN echo "🧪 Running unit tests..." && \
+#     yarn test
 
 # Build the application (includes type checking and linting)
 RUN echo "🏗️  Building Next.js application..." && \

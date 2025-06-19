@@ -30,13 +30,14 @@ WORKDIR /database
 RUN mkdir -p /database/history
 
 # Copy custom entrypoint from base stage
-COPY --from=base /scripts/custom-entrypoint.sh /custom-entrypoint.sh
+COPY scripts/custom-entrypoint.sh /custom-entrypoint.sh
 RUN chmod +x /custom-entrypoint.sh
 
-# Copy database initialization files
-COPY init/ /database/init/
-COPY init.sql /database/init.sql
-RUN chmod +x /database/init/agents/generate-agents-sql.sh
+# Copy database initialization files from app folder
+COPY app/ /database/app/
+# Make the generate scripts executable
+RUN chmod +x /database/app/agents/generate-agents-sql.sh
+RUN chmod +x /database/app/models/generate-models.sh
 
 # Set default environment variables
 ENV POSTGRES_USER=myuser
