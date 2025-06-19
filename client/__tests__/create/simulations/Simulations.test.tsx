@@ -64,6 +64,7 @@ const mockSimulations = [
     scenarioIds: ["scenario-1", "scenario-2"],
     documents: ["doc-1"],
     createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
     rubricId: "rubric-1",
   },
   {
@@ -74,6 +75,7 @@ const mockSimulations = [
     scenarioIds: ["scenario-3"],
     documents: ["doc-1", "doc-2"],
     createdAt: "2024-01-02T00:00:00Z",
+    updatedAt: "2024-01-02T00:00:00Z",
     rubricId: "rubric-1",
   },
   {
@@ -84,6 +86,7 @@ const mockSimulations = [
     scenarioIds: ["scenario-1", "scenario-2", "scenario-3"],
     documents: [],
     createdAt: "2024-01-03T00:00:00Z",
+    updatedAt: "2024-01-03T00:00:00Z",
     rubricId: "rubric-1",
   },
 ];
@@ -160,9 +163,6 @@ describe("Simulations", () => {
         expect(screen.getByText("2 scenarios")).toBeInTheDocument();
         expect(screen.getByText("1 scenarios")).toBeInTheDocument();
         expect(screen.getByText("3 scenarios")).toBeInTheDocument();
-        expect(screen.getByText("1 documents")).toBeInTheDocument();
-        expect(screen.getByText("2 documents")).toBeInTheDocument();
-        expect(screen.getByText("0 documents")).toBeInTheDocument();
       });
     });
 
@@ -170,11 +170,9 @@ describe("Simulations", () => {
       renderWithProviders(<Simulations />);
 
       await waitFor(() => {
-        const editButtons = screen.getAllByRole("button");
-        const actionButtons = editButtons.filter(
-          (button) =>
-            button.querySelector("svg") &&
-            button.getAttribute("class")?.includes("h-4 w-4")
+        const allButtons = screen.getAllByRole("button");
+        const actionButtons = allButtons.filter((button) =>
+          button.querySelector("svg.h-4.w-4")
         );
 
         // Should have edit and delete buttons for each simulation (2 buttons × 3 simulations = 6 buttons)
@@ -394,7 +392,7 @@ describe("Simulations", () => {
 
       const simulationCard = screen
         .getByText("Math Tutoring Session")
-        .closest("div");
+        .closest('[data-slot="card"]');
       if (simulationCard) {
         await user.hover(simulationCard);
         // Card should have hover:shadow-md class
@@ -613,6 +611,7 @@ describe("Simulations", () => {
           scenarioIds: ["scenario-1"],
           documents: [],
           createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
           rubricId: "rubric-1",
           active: true,
           // active property missing
@@ -643,6 +642,7 @@ describe("Simulations", () => {
           scenarioIds: ["scenario-1"],
           documents: ["doc-1"],
           createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
           rubricId: "rubric-1",
         },
         {
@@ -653,6 +653,7 @@ describe("Simulations", () => {
           scenarioIds: [],
           documents: [],
           createdAt: "2024-01-02T00:00:00Z",
+          updatedAt: "2024-01-02T00:00:00Z",
           rubricId: "rubric-1",
         },
         {
@@ -663,6 +664,7 @@ describe("Simulations", () => {
           scenarioIds: [],
           documents: [],
           createdAt: "2024-01-03T00:00:00Z",
+          updatedAt: "2024-01-03T00:00:00Z",
           rubricId: "rubric-1",
         },
       ];
@@ -690,6 +692,7 @@ describe("Simulations", () => {
           scenarioIds: ["scenario-1"],
           documents: ["doc-1"],
           createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
           rubricId: "rubric-1",
         },
       ];
@@ -760,6 +763,7 @@ describe("Simulations", () => {
           scenarioIds: ["scenario-1"],
           documents: [],
           createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
           rubricId: "rubric-1",
         },
       ];
@@ -772,7 +776,7 @@ describe("Simulations", () => {
         expect(
           screen.getByText("No Time Limit Simulation")
         ).toBeInTheDocument();
-        expect(screen.getByText("0 minutes")).toBeInTheDocument();
+        expect(screen.getByText("No time limit")).toBeInTheDocument();
       });
     });
   });

@@ -73,7 +73,10 @@ describe("NewRubric", () => {
     it("should display create rubric interface", () => {
       renderWithProviders(<NewRubric />);
 
-      expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      // There are multiple elements with the text "Create Rubric" (header and
+      // submit button). Ensure at least one is present instead of expecting a
+      // single match.
+      expect(screen.getAllByText("Create Rubric").length).toBeGreaterThan(0);
       expect(screen.getByLabelText(/rubric name/i)).toBeInTheDocument();
       expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
     });
@@ -107,14 +110,14 @@ describe("NewRubric", () => {
     it("should render form elements from Rubric component", () => {
       renderWithProviders(<NewRubric />);
 
-      // Verify that form elements are rendered
-      expect(screen.getByRole("form")).toBeInTheDocument();
-      expect(
-        screen.getByRole("textbox", { name: /rubric name/i })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole("textbox", { name: /description/i })
-      ).toBeInTheDocument();
+      // Verify that form elements are rendered. We query the form element by
+      // searching within the mocked Rubric component since the form does not
+      // have an accessible name that `getByRole` can use.
+      const rubricContainer = screen.getByTestId("rubric-component");
+      const form = rubricContainer.querySelector("form");
+      expect(form).not.toBeNull();
+      expect(screen.getByLabelText(/rubric name/i)).toBeInTheDocument();
+      expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
     });
 
     it("should handle user interactions through Rubric component", async () => {
@@ -177,8 +180,10 @@ describe("NewRubric", () => {
     it("should have proper form structure", () => {
       renderWithProviders(<NewRubric />);
 
-      const form = screen.getByRole("form");
-      expect(form).toBeInTheDocument();
+      // The mocked Rubric component does not give the form an accessible name,
+      // so querying by role fails. Instead, locate the form via the wrapper.
+      const form = screen.getByTestId("rubric-component").querySelector("form");
+      expect(form).not.toBeNull();
     });
   });
 
@@ -246,7 +251,7 @@ describe("NewRubric", () => {
       renderWithProviders(<NewRubric />);
 
       // Basic functionality should still work
-      expect(screen.getByText("Create Rubric")).toBeInTheDocument();
+      expect(screen.getAllByText("Create Rubric").length).toBeGreaterThan(0);
       expect(screen.getByLabelText(/rubric name/i)).toBeInTheDocument();
     });
   });
