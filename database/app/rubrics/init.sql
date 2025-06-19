@@ -43,8 +43,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Insert Teaching Assistant Evaluation Rubric (matching the static data in RubricEdit component)
 INSERT INTO rubrics (id, name, description, points, pass_points, default_rubric) VALUES
-  ('33333333-3333-3333-3333-333333333333', 'Teaching Assistant Evaluation Rubric', 'Evaluates teaching assistants on their pedagogical effectiveness, student interaction quality, and session management', 20, 17, true),
-  ('44444444-4444-4444-4444-444444444444', 'AI Student Performance Evaluation Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 20, 17, true);
+  ('33333333-3333-3333-3333-333333333333', 'TA Rubric', 'Evaluates teaching assistants on their pedagogical effectiveness, student interaction quality, and session management', 20, 17, true),
+  ('44444444-4444-4444-4444-444444444444', 'AI Student Rubric', 'Evaluates AI students on their ability to maintain character consistency, demonstrate realistic learning progression, and engage appropriately in educational conversations', 20, 17, true);
 
 -- Insert Standard Groups for Teaching Assistant Rubric
 INSERT INTO standard_groups (id, name, short_name, description, points, pass_points, rubric_id) VALUES

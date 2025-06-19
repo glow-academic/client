@@ -19,8 +19,22 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
-import { TrendingUp } from "lucide-react";
-import { useMemo } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
+import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-simulation-chats";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { useQuery } from "@tanstack/react-query";
+import { GraduationCap, Loader2, TrendingUp } from "lucide-react";
+import { useMemo, useState } from "react";
 import { PolarAngleAxis, PolarGrid, Radar, RadarChart } from "recharts";
 
 const radarChartConfig = {
@@ -30,60 +44,96 @@ const radarChartConfig = {
   },
 } satisfies ChartConfig;
 
-interface SkillRadarChartProps {
-  grades: Array<{
-    id: string;
-    score: number;
-    timeTaken: number;
-    createdAt: string;
-    simulationChatId: string;
-  }>;
-  feedbacks: Array<{
-    id: string;
-    standardId: string;
-    total: number;
-  }>;
-  standards: Array<{
-    id: string;
-    standardGroupId: string;
-  }>;
-  standardGroups: Array<{
-    id: string;
-    name: string;
-    shortName: string;
-    rubricId: string;
-  }>;
-  chats: Array<{
-    id: string;
-    completed: boolean;
-  }>;
-  rubrics: Array<{
-    id: string;
-    points: number;
-  }>;
+interface SkillGrowthProps {
+  className?: string;
 }
 
-export default function SkillGrowth({
-  grades,
-  feedbacks,
-  standards,
-  standardGroups,
-  chats,
-  rubrics,
-}: SkillRadarChartProps) {
-  // Calculate radar chart data (skill development)
+export default function SkillGrowth({ className }: SkillGrowthProps) {
+  const { data: rubrics, isLoading: rubricsLoading } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  const { data: chats, isLoading: chatsLoading } = useQuery({
+    queryKey: ["chats"],
+    queryFn: () => getAllSimulationChats(),
+  });
+
+  const { data: standardGroups, isLoading: standardGroupsLoading } = useQuery({
+    queryKey: ["standardGroups", rubrics?.map((r) => r.id) || []],
+    queryFn: () => getStandardGroupsByRubrics(rubrics?.map((r) => r.id) || []),
+    enabled: !!rubrics && rubrics.length > 0,
+  });
+
+  const { data: standards, isLoading: standardsLoading } = useQuery({
+    queryKey: ["standards", standardGroups?.map((sg) => sg.id) || []],
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups?.map((sg) => sg.id) || []),
+    enabled: !!standardGroups && standardGroups.length > 0,
+  });
+
+  const { data: grades, isLoading: gradesLoading } = useQuery({
+    queryKey: ["grades", rubrics?.map((r) => r.id) || []],
+    queryFn: () =>
+      getSimulationChatGradesByRubrics(rubrics?.map((r) => r.id) || []),
+    enabled: !!rubrics && rubrics.length > 0,
+  });
+
+  const { data: feedbacks, isLoading: feedbacksLoading } = useQuery({
+    queryKey: ["feedbacks", grades?.map((g) => g.id) || []],
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades?.map((g) => g.id) || []
+      ),
+    enabled: !!grades && grades.length > 0,
+  });
+
+  // State for selected rubric
+  const [selectedRubricId, setSelectedRubricId] = useState<string>(() => {
+    // Default to the first rubric if available
+    return rubrics?.[0]?.id || "";
+  });
+
+  // Get unique rubrics from the data
+  const availableRubrics = useMemo(() => {
+    if (!rubrics || !standardGroups) return [];
+
+    return rubrics.filter((rubric) =>
+      standardGroups.some((sg) => sg.rubricId === rubric.id)
+    );
+  }, [rubrics, standardGroups]);
+
+  // Update selected rubric if it becomes unavailable or set initial value
+  useMemo(() => {
+    if (!selectedRubricId && availableRubrics.length > 0) {
+      setSelectedRubricId(availableRubrics[0]?.id || "");
+    } else if (
+      selectedRubricId &&
+      !availableRubrics.some((r) => r.id === selectedRubricId)
+    ) {
+      setSelectedRubricId(availableRubrics[0]?.id || "");
+    }
+  }, [selectedRubricId, availableRubrics]);
+
+  // Calculate radar chart data (skill development) - filtered by selected rubric
   const radarData = useMemo(() => {
     if (!grades || !feedbacks || !standards || !standardGroups || !rubrics)
       return [];
 
-    if (grades.length === 0) return [];
+    if (grades.length === 0 || !selectedRubricId) return [];
+
+    // Filter standard groups by selected rubric
+    const filteredStandardGroups = standardGroups.filter(
+      (sg) => sg.rubricId === selectedRubricId
+    );
+
+    if (filteredStandardGroups.length === 0) return [];
+
+    // Get the selected rubric
+    const selectedRubric = rubrics.find((r) => r.id === selectedRubricId);
+    const rubricTotalPoints = selectedRubric?.points || 20;
 
     // Calculate overall score from grades - normalize to percentage based on rubric total points
-    const rubric = rubrics?.find((r) =>
-      standardGroups?.some((sg) => sg.rubricId === r.id)
-    );
-    const rubricTotalPoints = rubric?.points || 20;
-
     const avgScore = Math.round(
       (grades.reduce((sum, grade) => sum + grade.score, 0) /
         grades.length /
@@ -92,7 +142,7 @@ export default function SkillGrowth({
     );
 
     // Calculate skill-based scores from feedbacks and standards using rubric total points
-    const skillScores = standardGroups.reduce(
+    const skillScores = filteredStandardGroups.reduce(
       (acc, group) => {
         const groupStandards = standards.filter(
           (s) => s.standardGroupId === group.id
@@ -102,9 +152,6 @@ export default function SkillGrowth({
         );
 
         if (groupFeedbacks.length > 0) {
-          const rubric = rubrics?.find((r) => r.id === group.rubricId);
-          const rubricTotalPoints = rubric?.points || 20;
-
           const avgScore = Math.round(
             (groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
               groupFeedbacks.length /
@@ -133,7 +180,7 @@ export default function SkillGrowth({
     const engagementScore =
       totalChats > 0 ? Math.round((completedChats / totalChats) * 100) : 0;
 
-    // Create dynamic metrics based on actual standard groups
+    // Create dynamic metrics based on filtered standard groups
     const dynamicMetrics = [
       {
         metric: "Overall Score",
@@ -142,8 +189,8 @@ export default function SkillGrowth({
       },
     ];
 
-    // Add skill scores based on actual standard groups
-    standardGroups.forEach((group) => {
+    // Add skill scores based on filtered standard groups
+    filteredStandardGroups.forEach((group) => {
       const skillKey = group.name.toLowerCase().replace(/\s+/g, "");
       const skillValue = skillScores[skillKey] || 0;
       dynamicMetrics.push({
@@ -168,18 +215,30 @@ export default function SkillGrowth({
     );
 
     return dynamicMetrics;
-  }, [grades, feedbacks, standards, standardGroups, chats, rubrics]);
+  }, [
+    grades,
+    feedbacks,
+    standards,
+    standardGroups,
+    chats,
+    rubrics,
+    selectedRubricId,
+  ]);
 
-  // Calculate growth trend
+  // Calculate growth trend - filtered by selected rubric
   const growthTrend = useMemo(() => {
-    if (!grades || grades.length < 2 || !rubrics || !standardGroups)
+    if (
+      !grades ||
+      grades.length < 2 ||
+      !rubrics ||
+      !standardGroups ||
+      !selectedRubricId
+    )
       return { value: 0, isPositive: true };
 
-    // Get the rubric total points dynamically
-    const rubric = rubrics?.find((r) =>
-      standardGroups?.some((sg) => sg.rubricId === r.id)
-    );
-    const rubricTotalPoints = rubric?.points || 20;
+    // Get the selected rubric
+    const selectedRubric = rubrics.find((r) => r.id === selectedRubricId);
+    const rubricTotalPoints = selectedRubric?.points || 20;
 
     // Sort grades by creation date
     const sortedGrades = [...grades].sort(
@@ -207,15 +266,96 @@ export default function SkillGrowth({
 
     const change = Math.round(((recentAvg - previousAvg) / previousAvg) * 100);
     return { value: Math.abs(change), isPositive: change >= 0 };
-  }, [grades, rubrics, standardGroups]);
+  }, [grades, rubrics, standardGroups, selectedRubricId]);
+
+  // Check if any critical data is still loading
+  const isLoading =
+    rubricsLoading ||
+    chatsLoading ||
+    standardGroupsLoading ||
+    standardsLoading ||
+    gradesLoading ||
+    feedbacksLoading;
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Skill Development
+          </CardTitle>
+          <CardDescription>
+            Performance across key teaching competencies
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Loading skill data...
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Show empty state if no data
+  if (!availableRubrics.length || !radarData.length) {
+    return (
+      <Card className={className}>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <GraduationCap className="h-5 w-5" />
+            Skill Development
+          </CardTitle>
+          <CardDescription>
+            Performance across key teaching competencies
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[400px]">
+          <div className="text-center text-muted-foreground">
+            <p>No skill data available</p>
+            <p className="text-sm">
+              Complete some training sessions to see your progress
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card>
-      <CardHeader className="items-center">
-        <CardTitle>Skill Development</CardTitle>
-        <CardDescription>
-          Performance across key teaching competencies
-        </CardDescription>
+    <Card className={className}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <GraduationCap className="h-5 w-5" />
+              Skill Development
+            </CardTitle>
+            <CardDescription>
+              Performance across key teaching competencies
+            </CardDescription>
+          </div>
+          {availableRubrics.length > 1 && (
+            <Select
+              value={selectedRubricId}
+              onValueChange={setSelectedRubricId}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select a rubric" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableRubrics.map((rubric) => (
+                  <SelectItem key={rubric.id} value={rubric.id}>
+                    {rubric.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="pb-0">
         <ChartContainer

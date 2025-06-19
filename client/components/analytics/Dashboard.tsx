@@ -37,19 +37,17 @@ import {
 } from "@/components/ui/dialog";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery } from "@tanstack/react-query";
 import { format, subDays } from "date-fns";
 import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  GraduationCap,
+  Target,
   TrendingUp,
   Users,
 } from "lucide-react";
@@ -179,36 +177,6 @@ export default function Dashboard() {
     queryFn: () =>
       getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats && chats.length > 0,
-  });
-
-  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
-      ),
-    enabled: !!grades && grades.length > 0,
-  });
-
-  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
-    {
-      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-      queryFn: () =>
-        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-      enabled: !!rubrics && rubrics.length > 0,
-    }
-  );
-
-  const { data: standards, isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups && standardGroups.length > 0,
   });
 
   // Calculate metrics for struggling TAs
@@ -507,11 +475,7 @@ export default function Dashboard() {
     isLoadingCohorts ||
     isLoadingAttempts ||
     isLoadingChats ||
-    isLoadingGrades ||
-    isLoadingFeedbacks ||
-    isLoadingStandards ||
-    isLoadingStandardGroups ||
-    isLoadingRubrics
+    isLoadingGrades
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -665,7 +629,11 @@ export default function Dashboard() {
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    {sideCarouselIndex === 0 && (
+                      <GraduationCap className="h-5 w-5" />
+                    )}
+                    {sideCarouselIndex === 1 && <Target className="h-5 w-5" />}
                     {sideCarouselIndex === 0
                       ? "Skill Breakdown"
                       : "Training Insights"}
@@ -725,21 +693,7 @@ export default function Dashboard() {
       {/* Radar and Radial Charts */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* Skill Radar Chart */}
-        {grades &&
-          feedbacks &&
-          standards &&
-          standardGroups &&
-          chats &&
-          rubrics && (
-            <SkillGrowth
-              grades={grades}
-              feedbacks={feedbacks}
-              standards={standards}
-              standardGroups={standardGroups}
-              chats={chats}
-              rubrics={rubrics}
-            />
-          )}
+        <SkillGrowth />
 
         {/* Cohort Radial Chart */}
         {cohorts && profiles && attempts && chats && (
