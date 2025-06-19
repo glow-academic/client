@@ -1,12 +1,12 @@
-import { render } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode } from 'react';
-import Model from '@/components/common/model/Model';
+import Model from "@/components/common/model/Model";
+import { createModelMock, updateModelMock } from "@/mocks/mutations";
+import { renderWithProviders } from "@/mocks/utils";
+import { screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock external dependencies
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
     push: vi.fn(),
     back: vi.fn(),
@@ -14,133 +14,137 @@ vi.mock('next/navigation', () => ({
     refresh: vi.fn(),
     replace: vi.fn(),
   })),
-  usePathname: vi.fn(() => '/'),
+  usePathname: vi.fn(() => "/"),
   useSearchParams: vi.fn(() => new URLSearchParams()),
 }));
 
-// Mock API calls
+// Mock the queries
+
+vi.mock("@/utils/queries/models/get-all-models", () => ({
+  getAllModels: vi.fn(() => Promise.resolve([])),
+}));
+
+vi.mock("@/utils/queries/providers/get-all-providers", () => ({
+  getAllProviders: vi.fn(() =>
+    Promise.resolve([
+      {
+        id: "provider1",
+        name: "Test Provider",
+        description: "Test Description",
+      },
+    ])
+  ),
+}));
+
 global.fetch = vi.fn();
 
-describe('Model', () => {
-  let queryClient: QueryClient;
-  
+describe("Model Component", () => {
   beforeEach(() => {
+    // Reset all mocks before each test
+    createModelMock.mockReset();
+    updateModelMock.mockReset();
     vi.clearAllMocks();
-    queryClient = new QueryClient({
-      defaultOptions: {
-        queries: { retry: false },
-        mutations: { retry: false },
-      },
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  describe("Role-based Access Control", () => {
+    it("should render for admin users", () => {
+      renderWithProviders(<Model />, "admin");
+      expect(screen.getByLabelText(/name/i)).toBeVisible();
+    });
+
+    it("should show access denied for instructional users", () => {
+      renderWithProviders(<Model />, "instructional");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for instructor users", () => {
+      renderWithProviders(<Model />, "instructor");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for TA users", () => {
+      renderWithProviders(<Model />, "ta");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should show access denied for guest users", () => {
+      renderWithProviders(<Model />, "guest");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
+      expect(screen.getByText(/you need admin privileges/i)).toBeVisible();
+    });
+
+    it("should handle unauthenticated users", () => {
+      renderWithProviders(<Model />, "guest");
+      expect(screen.getByText(/access denied/i)).toBeVisible();
     });
   });
 
-  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
-    const AllProviders = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
-    );
+  describe("Create Mode (Admin Only)", () => {
+    it("renders create form with correct initial state", () => {
+      renderWithProviders(<Model />, "admin");
 
-    return render(ui, { wrapper: AllProviders, ...options });
-  };
-  
-
-  describe('Rendering', () => {
-    it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for Model
-      renderWithProviders(<Model />);
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Model
+      // Check form elements are present
+      expect(screen.getByLabelText(/name/i)).toBeVisible();
+      expect(screen.getByLabelText(/description/i)).toBeVisible();
+      expect(screen.getByText("Provider")).toBeVisible();
+      expect(screen.getByText("Select a provider...")).toBeVisible();
+      expect(screen.getByText("Status")).toBeVisible();
+      expect(
+        screen.getByRole("button", { name: /create model/i })
+      ).toBeVisible();
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ModelProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for Model
+    it("shows validation errors when required fields are missing", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Model />, "admin");
+
+      await user.click(screen.getByRole("button", { name: /create model/i }));
+
+      // Check validation messages appear
+      expect(await screen.findByText(/name is required/i)).toBeVisible();
+      expect(screen.getByText(/description is required/i)).toBeVisible();
+      expect(screen.getByText(/provider is required/i)).toBeVisible();
+
+      // Ensure mutation was not called
+      expect(createModelMock).not.toHaveBeenCalled();
     });
 
-    it('should have correct accessibility attributes', () => {
-      // TODO: Test accessibility features
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Model
-    });
-  });
+    it("handles basic form input", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Model />, "admin");
 
-  describe('User Interactions', () => {
-    it('should handle form submissions', async () => {
-      // TODO: Test form handling
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for Model
-    });
+      // Fill out basic form fields
+      await user.type(screen.getByLabelText(/name/i), "Test Model");
+      await user.type(
+        screen.getByLabelText(/description/i),
+        "Test Description"
+      );
 
-    it('should handle state changes', async () => {
-      // TODO: Test state management
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for Model
-    });
-
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Model
+      // Check that values were set
+      expect(screen.getByDisplayValue("Test Model")).toBeVisible();
+      expect(screen.getByDisplayValue("Test Description")).toBeVisible();
     });
   });
 
-  describe('API Integration', () => {
-    it('should handle API calls', async () => {
-      // TODO: Test API integration
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for Model
-    });
+  describe("Form Validation (Admin Only)", () => {
+    it("validates name field", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<Model />, "admin");
 
-    it('should handle loading states', () => {
-      // TODO: Test loading states
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for Model
-    });
+      // Try to submit without name
+      await user.click(screen.getByRole("button", { name: /create model/i }));
+      expect(await screen.findByText(/name is required/i)).toBeVisible();
 
-    it('should handle error states', () => {
-      // TODO: Test error handling
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for Model
-    });
-  });
-
-  describe('Navigation', () => {
-    it('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for Model
-    });
-  });
-
-  describe('Edge Cases', () => {
-    it('should handle edge cases gracefully', () => {
-      // TODO: Test edge cases and error scenarios
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Model
-    });
-
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for Model
+      // Fill name and error should disappear
+      await user.type(screen.getByLabelText(/name/i), "Valid Name");
+      expect(screen.queryByText(/name is required/i)).not.toBeInTheDocument();
     });
   });
 });
@@ -148,7 +152,7 @@ describe('Model', () => {
 /*
  * Component Analysis for Model:
  * Path: common/model/Model.tsx
- * 
+ *
  * Features detected:
  * - Default export: true
  * - Named exports: None
@@ -162,20 +166,20 @@ describe('Model', () => {
  * - Uses state: true
  * - Uses effects: true
  * - Uses context: false
- * 
+ *
  * TODO: Implement the failing tests above with actual test logic
- * 
+ *
  * Example implementations:
- * 
+ *
  * Basic rendering:
  * render(<Model {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
- * 
+ *
  * Props testing:
  * const props = { ... };
  * render(<Model {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
- * 
+ *
  * User interaction:
  * const button = screen.getByRole('button');
  * await user.click(button);

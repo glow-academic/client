@@ -11,6 +11,12 @@ import { toast } from "sonner";
 
 // UI Components
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+import { useRole } from "@/contexts/role-context";
 import { Model as ModelType, Provider } from "@/types";
 import { createModel } from "@/utils/mutations/models/create-model";
 import { updateModel } from "@/utils/mutations/models/update-model";
@@ -41,10 +48,13 @@ interface FormErrors {
 
 export default function Model({ modelId }: ModelProps) {
   const queryClient = useQueryClient();
+  const router = useRouter();
+
+  // Role-based access control
+  const { effectiveRole } = useRole();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingModelId, setEditingModelId] = useState<string | null>(null);
-  const router = useRouter();
 
   const initialFormData: Partial<ModelType> = {
     name: "",
@@ -82,6 +92,22 @@ export default function Model({ modelId }: ModelProps) {
       }
     }
   }, [modelId, editingModelId, models]);
+
+  // Role-based access control - check after all hooks
+  if (effectiveRole !== "admin") {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Card className="w-full max-w-md">
+          <CardHeader className="text-center">
+            <CardTitle className="text-destructive">Access Denied</CardTitle>
+            <CardDescription>
+              You need admin privileges to access model management.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
 
   const handleInputChange = (
     field: keyof Partial<ModelType>,
