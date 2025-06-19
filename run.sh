@@ -1,6 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Glow Development Environment Startup Script
+# 
+# This script handles PostgreSQL installation and startup across different environments:
+# - macOS (via Homebrew)
+# - Linux with systemd (Ubuntu/Debian/RHEL with systemd)
+# - Linux without systemd (Docker containers, Codespaces, some WSL)
+# 
+# For environments without systemd, you can also use Docker:
+#   docker run --name glow-dev-db -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:16
+# Or set PGHOST/DATABASE_URL to point to an external database.
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -48,6 +59,12 @@ for arg in "$@"; do
       echo "Database behavior:"
       echo "  Default: Restore from latest backup (like 'yarn start')"
       echo "  --clean: Create backup, then start fresh (like 'yarn start --clean')"
+      echo ""
+      echo "Environment compatibility:"
+      echo "  This script works on macOS, Linux with systemd, and containers/Codespaces"
+      echo "  For Docker environments, you can also run PostgreSQL in a container:"
+      echo "    docker run --name glow-dev-db -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:16"
+      echo "  Or set PGHOST/DATABASE_URL environment variables for external databases"
       exit 0
       ;;
   esac
@@ -112,8 +129,10 @@ wait_for_service() {
 check_and_install_deps() {
   log_step "Checking and installing dependencies..."
   
-  # Check PostgreSQL
-  if ! command -v psql &>/dev/null; then
+  # Skip PostgreSQL setup if external database is configured
+  if [[ -n "${PGHOST:-}" ]] || [[ -n "${DATABASE_URL:-}" ]]; then
+    log_info "External database configured (PGHOST or DATABASE_URL set), skipping PostgreSQL installation"
+  elif ! command -v psql &>/dev/null; then
     log_warning "PostgreSQL not found. Attempting to install..."
     if command -v brew &>/dev/null; then
       log_info "Installing PostgreSQL via Homebrew..."
@@ -122,15 +141,15 @@ check_and_install_deps() {
     elif command -v apt-get &>/dev/null; then
       log_info "Installing PostgreSQL via apt..."
       sudo apt-get update
-      sudo apt-get install -y postgresql postgresql-contrib
-      sudo systemctl start postgresql
-      sudo systemctl enable postgresql
+      sudo DEBIAN_FRONTEND=noninteractive apt-get install -y postgresql postgresql-contrib
+      # Don't try to start with systemctl here - let the startup logic handle it
+      log_info "PostgreSQL packages installed, startup will be handled later"
     elif command -v yum &>/dev/null; then
       log_info "Installing PostgreSQL via yum..."
       sudo yum install -y postgresql-server postgresql-contrib
       sudo postgresql-setup initdb
-      sudo systemctl start postgresql
-      sudo systemctl enable postgresql
+      # Don't try to start with systemctl here - let the startup logic handle it
+      log_info "PostgreSQL packages installed, startup will be handled later"
     else
       log_error "Could not install PostgreSQL automatically. Please install manually."
       log_info "See README.md for installation instructions."
@@ -141,15 +160,43 @@ check_and_install_deps() {
     log_success "PostgreSQL found"
   fi
   
-  # Check if PostgreSQL is running
-  if ! pg_isready -q 2>/dev/null; then
+    # Check if PostgreSQL is running (skip if external database configured)
+  if [[ -n "${PGHOST:-}" ]] || [[ -n "${DATABASE_URL:-}" ]]; then
+    log_info "Using external database, skipping local PostgreSQL startup check"
+  elif ! pg_isready -q 2>/dev/null; then
     log_warning "PostgreSQL is not running. Attempting to start..."
     if command -v brew &>/dev/null; then
       brew services start postgresql@15
-    elif command -v systemctl &>/dev/null; then
+    elif command -v systemctl &>/dev/null && systemctl is-system-running &>/dev/null; then
+      # Only use systemctl if systemd is actually running
       sudo systemctl start postgresql
+    elif command -v pg_ctlcluster &>/dev/null; then
+      # Debian/Ubuntu systems - try to start with pg_ctlcluster
+      log_info "Using pg_ctlcluster to start PostgreSQL..."
+      # Try different versions (16, 15, 14, 13)
+      for version in 16 15 14 13; do
+        if sudo pg_ctlcluster $version main start 2>/dev/null; then
+          log_success "PostgreSQL $version started with pg_ctlcluster"
+          break
+        fi
+      done
+    elif command -v pg_ctl &>/dev/null; then
+      # Generic PostgreSQL start
+      log_info "Using pg_ctl to start PostgreSQL..."
+      # Try common data directories
+      for data_dir in "/var/lib/postgresql/data" "/var/lib/postgresql/16/main" "/var/lib/postgresql/15/main" "/usr/local/var/postgres"; do
+        if [ -d "$data_dir" ]; then
+          if sudo -u postgres pg_ctl -D "$data_dir" -l "$data_dir/logfile" start 2>/dev/null; then
+            log_success "PostgreSQL started with pg_ctl using $data_dir"
+            break
+          fi
+        fi
+      done
     else
-      log_error "Could not start PostgreSQL automatically. Please start manually."
+      log_warning "Could not find a way to start PostgreSQL automatically."
+      log_info "Please start PostgreSQL manually or use Docker:"
+      log_info "  docker run --name glow-dev-db -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:16"
+      log_info "Or set PGHOST/DATABASE_URL environment variables to point to an external database."
       exit 1
     fi
     
@@ -159,6 +206,10 @@ check_and_install_deps() {
       log_success "PostgreSQL started successfully"
     else
       log_error "PostgreSQL failed to start. Please check your installation."
+      log_info "You may need to:"
+      log_info "  1. Initialize the database cluster first"
+      log_info "  2. Use Docker: docker run --name glow-dev-db -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres:16"
+      log_info "  3. Set PGHOST/DATABASE_URL to point to an external database"
       exit 1
     fi
   else

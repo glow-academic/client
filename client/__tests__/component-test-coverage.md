@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-19T01:52:13.960Z
+Generated on: 2025-06-19T04:05:01.982Z
 
 ## Summary
 - **Total Components**: 81
-- **Tests Created**: 0
-- **Tests Updated**: 27
-- **Tests Skipped** (already implemented): 54
+- **Tests Created**: 1
+- **Tests Updated**: 25
+- **Tests Skipped** (already implemented): 55
 
 ## Component Coverage
 
@@ -39,7 +39,7 @@ Generated on: 2025-06-19T01:52:13.960Z
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
-| Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ❌ Needs Implementation |
+| Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | Eval | common/eval/Eval.tsx | Eval.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
@@ -53,7 +53,7 @@ Generated on: 2025-06-19T01:52:13.960Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
-| Model | common/model/Model.tsx | Model.test.tsx | ❌ Needs Implementation |
+| Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
 | Rubric | common/rubric/Rubric.tsx | Rubric.test.tsx | ✅ Implemented |
 | TableRubric | common/rubric/TableRubric.tsx | TableRubric.test.tsx | ✅ Implemented |
 | Scenario | common/scenario/Scenario.tsx | Scenario.test.tsx | ✅ Implemented |
@@ -76,7 +76,7 @@ Generated on: 2025-06-19T01:52:13.960Z
 | NewSimulation | create/simulations/NewSimulation.tsx | NewSimulation.test.tsx | ✅ Implemented |
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
-| Growth | growth/Growth.tsx | Growth.test.tsx | ✅ Implemented |
+| Growth | growth/Growth.tsx | Growth.test.tsx | ❌ Needs Implementation |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
 | CohortEdit | management/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ❌ Needs Implementation |
 | Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
