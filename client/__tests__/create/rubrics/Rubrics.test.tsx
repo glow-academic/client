@@ -2,12 +2,14 @@ import Rubrics from "@/components/create/rubrics/Rubrics";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const mockPush = vi.fn();
 
 // Mock external dependencies
 vi.mock("next/navigation", () => ({
   useRouter: vi.fn(() => ({
-    push: vi.fn(),
+    push: mockPush,
     back: vi.fn(),
     forward: vi.fn(),
     refresh: vi.fn(),
@@ -30,25 +32,34 @@ vi.mock("@/utils/logger", () => ({
 }));
 
 // Import the mocked functions after mocking
-import { rubrics as mockRubrics } from "@/mocks/schema";
 import { deleteRubric } from "@/utils/mutations/rubrics/delete-rubric";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 
+// Add mock for mutations
+vi.mock("@/utils/mutations/rubrics/delete-rubric", () => ({
+  deleteRubric: vi.fn(),
+}));
+
+vi.mock("@/utils/queries/rubrics/get-all-rubrics", () => ({
+  getAllRubrics: vi.fn(),
+}));
+
+// Create properly typed mock rubric data
+const mockRubric = {
+  id: "gk22ciuf-dki0-hh37-7fr2-qff3wnsodnk",
+  createdAt: "2025-06-19T01:27:00.767Z",
+  updatedAt: "2025-06-19T01:27:00.767Z",
+  name: "Math Problem Solving Rubric",
+  description: "Evaluates mathematical reasoning and problem-solving skills",
+  points: 77,
+  passPoints: 50,
+  defaultRubric: false,
+};
+
 describe("Rubrics", () => {
-  const mockPush = vi.fn();
-
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-
-    const { useRouter } = await import("next/navigation");
-    vi.mocked(useRouter).mockReturnValue({
-      push: mockPush,
-      back: vi.fn(),
-      forward: vi.fn(),
-      refresh: vi.fn(),
-      replace: vi.fn(),
-      prefetch: vi.fn(),
-    });
+    mockPush.mockClear();
   });
 
   describe("Rendering", () => {
@@ -93,14 +104,14 @@ describe("Rubrics", () => {
     });
 
     it("should handle edit rubric", async () => {
-      vi.mocked(getAllRubrics).mockResolvedValue([mockRubrics[0]]);
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
       const user = userEvent.setup();
       renderWithProviders(<Rubrics />);
 
       // Wait for rubric to load
       await waitFor(() => {
-        expect(screen.getByText(mockRubrics[0].name)).toBeInTheDocument();
+        expect(screen.getByText(mockRubric.name)).toBeInTheDocument();
       });
 
       // Find edit button (icon only button)
@@ -115,19 +126,19 @@ describe("Rubrics", () => {
       await user.click(editButton!);
 
       expect(mockPush).toHaveBeenCalledWith(
-        `/create/rubrics/r/${mockRubrics[0].id}`
+        `/create/rubrics/r/${mockRubric.id}`
       );
     });
 
     it("should handle delete confirmation dialog", async () => {
-      vi.mocked(getAllRubrics).mockResolvedValue([mockRubrics[0]]);
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
       const user = userEvent.setup();
       renderWithProviders(<Rubrics />);
 
       // Wait for rubric to load
       await waitFor(() => {
-        expect(screen.getByText(mockRubrics[0].name)).toBeInTheDocument();
+        expect(screen.getByText(mockRubric.name)).toBeInTheDocument();
       });
 
       // Find delete button (icon only button with trash icon)
@@ -196,23 +207,23 @@ describe("Rubrics", () => {
 
   describe("Data Display", () => {
     it("should display rubric information correctly", async () => {
-      vi.mocked(getAllRubrics).mockResolvedValue([mockRubrics[0]]);
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
       renderWithProviders(<Rubrics />);
 
       // Check if rubric data is displayed
       await waitFor(() => {
-        expect(screen.getByText(mockRubrics[0].name)).toBeInTheDocument();
+        expect(screen.getByText(mockRubric.name)).toBeInTheDocument();
       });
-      expect(screen.getByText(mockRubrics[0].description)).toBeInTheDocument();
+      expect(screen.getByText(mockRubric.description)).toBeInTheDocument();
       expect(
-        screen.getByText(`${mockRubrics[0].points} total points`)
+        screen.getByText(`${mockRubric.points} total points`)
       ).toBeInTheDocument();
     });
 
     it("should calculate pass percentage correctly", async () => {
       const highStandardRubric = {
-        ...mockRubrics[0],
+        ...mockRubric,
         passPoints: 85,
         points: 100,
       };
@@ -230,7 +241,7 @@ describe("Rubrics", () => {
 
     it("should show standard badge for 70% pass rate", async () => {
       const standardRubric = {
-        ...mockRubrics[0],
+        ...mockRubric,
         passPoints: 70,
         points: 100,
       };
@@ -257,7 +268,7 @@ describe("Rubrics", () => {
 
     it("should handle rubrics with zero points", async () => {
       const zeroPointsRubric = {
-        ...mockRubrics[0],
+        ...mockRubric,
         name: "Zero Points Rubric",
         points: 0,
         passPoints: 0,
@@ -276,7 +287,7 @@ describe("Rubrics", () => {
 
     it("should handle rubrics without description", async () => {
       const noDescriptionRubric = {
-        ...mockRubrics[0],
+        ...mockRubric,
         name: "No Description Rubric",
         description: "",
       };
@@ -288,14 +299,16 @@ describe("Rubrics", () => {
       await waitFor(() => {
         expect(screen.getByText("No Description Rubric")).toBeInTheDocument();
       });
-      // Description should not be displayed if empty
-      expect(screen.queryByText("")).not.toBeInTheDocument();
+      // Description should not be displayed if empty - check that the card exists but no description text
+      expect(
+        screen.queryByText(mockRubric.description)
+      ).not.toBeInTheDocument();
     });
   });
 
   describe("Delete Functionality", () => {
     it("should handle successful delete", async () => {
-      vi.mocked(getAllRubrics).mockResolvedValue([mockRubrics[0]]);
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
       vi.mocked(deleteRubric).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -303,7 +316,7 @@ describe("Rubrics", () => {
 
       // Wait for rubric to load
       await waitFor(() => {
-        expect(screen.getByText(mockRubrics[0].name)).toBeInTheDocument();
+        expect(screen.getByText(mockRubric.name)).toBeInTheDocument();
       });
 
       // Find and click delete button
@@ -324,18 +337,18 @@ describe("Rubrics", () => {
       const confirmButton = screen.getByRole("button", { name: /delete/i });
       await user.click(confirmButton);
 
-      expect(deleteRubric).toHaveBeenCalledWith(mockRubrics[0].id);
+      expect(deleteRubric).toHaveBeenCalledWith(mockRubric.id);
     });
 
     it("should handle delete cancellation", async () => {
-      vi.mocked(getAllRubrics).mockResolvedValue([mockRubrics[0]]);
+      vi.mocked(getAllRubrics).mockResolvedValue([mockRubric]);
 
       const user = userEvent.setup();
       renderWithProviders(<Rubrics />);
 
       // Wait for rubric to load
       await waitFor(() => {
-        expect(screen.getByText(mockRubrics[0].name)).toBeInTheDocument();
+        expect(screen.getByText(mockRubric.name)).toBeInTheDocument();
       });
 
       // Find and click delete button

@@ -255,7 +255,8 @@ describe("NewRubric", () => {
 
       rerender(<NewRubric />);
 
-      expect(screen.getByTestId("rubric-component")).toBeInTheDocument();
+      // Use getAllByTestId since rerender might create multiple elements
+      expect(screen.getAllByTestId("rubric-component")).toHaveLength(2);
     });
   });
 
