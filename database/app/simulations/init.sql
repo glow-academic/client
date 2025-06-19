@@ -80,6 +80,10 @@ CREATE TABLE simulation_chat_grades (
 -- ESSENTIAL TEST DATA
 -- ============================================================================
 
+-- Insert Default Cohorts
+INSERT INTO cohorts (id, title, description, active) VALUES
+  ('11111111-aaaa-aaaa-aaaa-111111111111', 'August TA Training (Fall 2025)', 'Students enrolled in August TA Training (Fall 2025)', true);
+
 -- Insert Default Simulations (3 for the main agents)
 INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation) VALUES
   ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333', true),
