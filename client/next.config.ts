@@ -3,7 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Enable standalone output for optimized Docker builds
   output: "standalone",
-
+  devIndicators: false,
   eslint: {
     // Fail the build on ESLint errors
     ignoreDuringBuilds: false,
