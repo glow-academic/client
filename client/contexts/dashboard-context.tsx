@@ -1,104 +1,20 @@
 /**
  * DashboardContext.tsx
- * This context is used to store the state of the dashboard
+ * Simplified context for basic dashboard state management
  * @AshokSaravanan222 & @siladiea
  * 06/19/2025
  */
 "use client";
-import { logError } from "@/utils/logger";
-import { useQueryClient } from "@tanstack/react-query";
-import { useSession } from "next-auth/react";
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useRef,
-  useState,
-} from "react";
-import { toast } from "sonner";
-
-interface DashboardComponent {
-  id: string;
-  name: string;
-  fileName: string;
-  layout: Record<string, unknown>;
-}
-
-interface DashboardConfig {
-  id: string;
-  headerComponentIds: string[];
-  primaryComponentIds: string[];
-  secondaryComponentIds: string[];
-  footerComponentIds: string[];
-  autoScroll: boolean;
-  showIndicators: boolean;
-  headerComponents: number;
-  mainSplit: number;
-  footerSplit: number;
-}
+import { createContext, useContext, useState } from "react";
 
 interface DashboardContextType {
   // Basic edit mode
   isEditMode: boolean;
   setIsEditMode: (isEditMode: boolean) => void;
 
-  // Dashboard configuration
-  dashboardConfig: DashboardConfig | null;
-  setDashboardConfig: (config: DashboardConfig | null) => void;
-
-  // Available components
-  availableComponents: DashboardComponent[];
-  setAvailableComponents: (components: DashboardComponent[]) => void;
-
-  // Component management
-  addComponentToSection: (
-    componentId: string,
-    section: keyof Pick<
-      DashboardConfig,
-      | "headerComponentIds"
-      | "primaryComponentIds"
-      | "secondaryComponentIds"
-      | "footerComponentIds"
-    >
-  ) => void;
-  removeComponentFromSection: (
-    componentId: string,
-    section: keyof Pick<
-      DashboardConfig,
-      | "headerComponentIds"
-      | "primaryComponentIds"
-      | "secondaryComponentIds"
-      | "footerComponentIds"
-    >
-  ) => void;
-  moveComponent: (
-    componentId: string,
-    fromSection: string,
-    toSection: string,
-    toIndex?: number
-  ) => void;
-
-  // Settings management
-  updateSettings: (
-    settings: Partial<
-      Pick<
-        DashboardConfig,
-        | "autoScroll"
-        | "showIndicators"
-        | "headerComponents"
-        | "mainSplit"
-        | "footerSplit"
-      >
-    >
-  ) => void;
-
-  // Sidebar state
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-
-  // Auto-save
-  saveChanges: () => Promise<void>;
-  isSaving: boolean;
+  // Save function for edit mode
+  saveChanges: (() => Promise<void>) | null;
+  setSaveChanges: (saveChanges: (() => Promise<void>) | null) => void;
 }
 
 export const DashboardContext = createContext<DashboardContextType | null>(
@@ -119,204 +35,15 @@ export const DashboardProvider = ({
   children: React.ReactNode;
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [dashboardConfig, setDashboardConfig] =
-    useState<DashboardConfig | null>(null);
-  const [availableComponents, setAvailableComponents] = useState<
-    DashboardComponent[]
-  >([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  const { data: session } = useSession();
-  const queryClient = useQueryClient();
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const saveChanges = useCallback(async () => {
-    if (!dashboardConfig || !session?.user?.id) return;
-
-    setIsSaving(true);
-    try {
-      // Here you would make your API call to update the dashboard
-      // For now, I'll simulate with a delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ["dashboards"] });
-
-      toast.success("Dashboard saved successfully");
-    } catch (error) {
-      logError("Failed to save dashboard", error);
-      toast.error("Failed to save dashboard");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [dashboardConfig, session?.user?.id, queryClient]);
-
-  const debouncedSave = useCallback(() => {
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    saveTimeoutRef.current = setTimeout(() => {
-      saveChanges();
-    }, 1000); // 1 second debounce
-  }, [saveChanges]);
-
-  const addComponentToSection = useCallback(
-    (
-      componentId: string,
-      section: keyof Pick<
-        DashboardConfig,
-        | "headerComponentIds"
-        | "primaryComponentIds"
-        | "secondaryComponentIds"
-        | "footerComponentIds"
-      >
-    ) => {
-      if (!dashboardConfig) return;
-
-      // Remove from available components
-      setAvailableComponents((prev) =>
-        prev.filter((comp) => comp.id !== componentId)
-      );
-
-      // Add to section
-      setDashboardConfig((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          [section]: [...prev[section], componentId],
-        };
-      });
-
-      debouncedSave();
-    },
-    [dashboardConfig, debouncedSave]
-  );
-
-  const removeComponentFromSection = useCallback(
-    (
-      componentId: string,
-      section: keyof Pick<
-        DashboardConfig,
-        | "headerComponentIds"
-        | "primaryComponentIds"
-        | "secondaryComponentIds"
-        | "footerComponentIds"
-      >
-    ) => {
-      if (!dashboardConfig) return;
-
-      // Find the component to add back to available
-      // This would need to be populated from your components query
-      const component = availableComponents.find(
-        (comp) => comp.id === componentId
-      );
-      if (component) {
-        setAvailableComponents((prev) => [...prev, component]);
-      }
-
-      // Remove from section
-      setDashboardConfig((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          [section]: prev[section].filter((id) => id !== componentId),
-        };
-      });
-
-      debouncedSave();
-    },
-    [dashboardConfig, availableComponents, debouncedSave]
-  );
-
-  const moveComponent = useCallback(
-    (
-      componentId: string,
-      fromSection: string,
-      toSection: string,
-      toIndex?: number
-    ) => {
-      if (!dashboardConfig || !isValidUUID(componentId)) return;
-
-      setDashboardConfig((prev) => {
-        if (!prev) return prev;
-
-        const newConfig = { ...prev };
-        const fromKey = fromSection as keyof Pick<
-          DashboardConfig,
-          | "headerComponentIds"
-          | "primaryComponentIds"
-          | "secondaryComponentIds"
-          | "footerComponentIds"
-        >;
-        const toKey = toSection as keyof Pick<
-          DashboardConfig,
-          | "headerComponentIds"
-          | "primaryComponentIds"
-          | "secondaryComponentIds"
-          | "footerComponentIds"
-        >;
-
-        // Filter out invalid IDs and remove from source
-        const fromIds = filterValidComponentIds(newConfig[fromKey]);
-        newConfig[fromKey] = fromIds.filter((id) => id !== componentId);
-
-        // Add to destination
-        const toIds = filterValidComponentIds(newConfig[toKey]);
-        if (toIndex !== undefined) {
-          toIds.splice(toIndex, 0, componentId);
-          newConfig[toKey] = toIds;
-        } else {
-          newConfig[toKey] = [...toIds, componentId];
-        }
-
-        return newConfig;
-      });
-
-      debouncedSave();
-    },
-    [dashboardConfig, debouncedSave]
-  );
-
-  const updateSettings = useCallback(
-    (
-      settings: Partial<
-        Pick<
-          DashboardConfig,
-          | "autoScroll"
-          | "showIndicators"
-          | "headerComponents"
-          | "mainSplit"
-          | "footerSplit"
-        >
-      >
-    ) => {
-      setDashboardConfig((prev) => {
-        if (!prev) return prev;
-        return { ...prev, ...settings };
-      });
-
-      // Don't auto-save settings - they'll be saved explicitly
-    },
-    []
+  const [saveChanges, setSaveChanges] = useState<(() => Promise<void>) | null>(
+    null
   );
 
   const value: DashboardContextType = {
     isEditMode,
     setIsEditMode,
-    dashboardConfig,
-    setDashboardConfig,
-    availableComponents,
-    setAvailableComponents,
-    addComponentToSection,
-    removeComponentFromSection,
-    moveComponent,
-    updateSettings,
-    sidebarOpen,
-    setSidebarOpen,
     saveChanges,
-    isSaving,
+    setSaveChanges,
   };
 
   return (

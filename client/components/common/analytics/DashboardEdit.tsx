@@ -37,6 +37,13 @@ import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
+interface DashboardComponent {
+  id: string;
+  name: string;
+  fileName: string;
+  layout: Record<string, unknown>;
+}
+
 interface DashboardConfig {
   id: string;
   headerComponentIds: string[];
@@ -676,9 +683,28 @@ function DropZone({
   );
 }
 
-function SettingsDialog() {
-  const { dashboardConfig, updateSettings, saveChanges, isSaving } =
-    useDashboard();
+function SettingsDialog({
+  dashboardConfig,
+  updateSettings,
+  saveChanges,
+  isSaving,
+}: {
+  dashboardConfig: DashboardConfig | null;
+  updateSettings: (
+    settings: Partial<
+      Pick<
+        DashboardConfig,
+        | "autoScroll"
+        | "showIndicators"
+        | "headerComponents"
+        | "mainSplit"
+        | "footerSplit"
+      >
+    >
+  ) => void;
+  saveChanges: () => Promise<void>;
+  isSaving: boolean;
+}) {
   const [localSettings, setLocalSettings] = useState({
     autoScroll: dashboardConfig?.autoScroll ?? true,
     showIndicators: dashboardConfig?.showIndicators ?? true,
@@ -774,21 +800,19 @@ function SettingsDialog() {
 }
 
 export default function DashboardEdit() {
+  const { setSaveChanges } = useDashboard();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
-  const {
-    dashboardConfig,
-    availableComponents,
-    addComponentToSection,
-    removeComponentFromSection,
-    moveComponent,
-    updateSettings,
-    sidebarOpen,
-    setSidebarOpen,
-    setDashboardConfig,
-  } = useDashboard();
+  // Local state for dashboard editing
+  const [dashboardConfig, setDashboardConfig] =
+    useState<DashboardConfig | null>(null);
+  const [availableComponents, setAvailableComponents] = useState<
+    DashboardComponent[]
+  >([]);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: components } = useQuery({
     queryKey: ["components"],
@@ -807,6 +831,69 @@ export default function DashboardEdit() {
     queryFn: () => getAllDashboards(),
   });
 
+  // Initialize dashboard config from loaded data
+  useEffect(() => {
+    if (dashboards && userProfile && !dashboardConfig) {
+      let dashboard = dashboards.find((d) => d.profileId === userProfile.id);
+
+      if (!dashboard) {
+        dashboard = dashboards.find((d) => d.profileId === null);
+      }
+
+      if (dashboard) {
+        setDashboardConfig({
+          id: dashboard.id,
+          headerComponentIds: dashboard.headerComponentIds || [],
+          primaryComponentIds: dashboard.primaryComponentIds || [],
+          secondaryComponentIds: dashboard.secondaryComponentIds || [],
+          footerComponentIds: dashboard.footerComponentIds || [],
+          autoScroll: dashboard.autoScroll || false,
+          showIndicators: dashboard.showIndicators || false,
+          headerComponents: dashboard.headerComponents || 4,
+          mainSplit: dashboard.mainSplit || 0.75,
+          footerSplit: dashboard.footerSplit || 0.5,
+        });
+      }
+    }
+  }, [dashboards, userProfile, dashboardConfig]);
+
+  // Initialize available components
+  useEffect(() => {
+    if (components && dashboardConfig) {
+      const isValidUUID = (uuid: string) => {
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(uuid);
+      };
+
+      const usedComponentIds = [
+        ...dashboardConfig.headerComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.primaryComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.secondaryComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.footerComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+      ];
+
+      const available = components
+        .filter((comp) => !usedComponentIds.includes(comp.id))
+        .map((comp) => ({
+          id: comp.id,
+          name: comp.name,
+          fileName: comp.fileName,
+          layout: (comp.layout as Record<string, unknown>) || {},
+        }));
+
+      setAvailableComponents(available);
+    }
+  }, [components, dashboardConfig]);
+
   // Check if current dashboard is global
   const isGlobalDashboard = useMemo(() => {
     if (!dashboards || !dashboardConfig) return false;
@@ -815,6 +902,155 @@ export default function DashboardEdit() {
     );
     return currentDashboard?.profileId === null;
   }, [dashboards, dashboardConfig]);
+
+  // Component management functions
+  const addComponentToSection = useCallback(
+    (componentId: string, section: string) => {
+      if (!dashboardConfig) return;
+
+      // Remove from available components
+      setAvailableComponents((prev) =>
+        prev.filter((comp) => comp.id !== componentId)
+      );
+
+      // Add to section
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [section]: [
+            ...(prev[section as keyof DashboardConfig] as string[]),
+            componentId,
+          ],
+        };
+      });
+    },
+    [dashboardConfig]
+  );
+
+  const removeComponentFromSection = useCallback(
+    (componentId: string, section: string) => {
+      if (!dashboardConfig) return;
+
+      // Find the component to add back to available
+      const component = components?.find((comp) => comp.id === componentId);
+      if (component) {
+        setAvailableComponents((prev) => [
+          ...prev,
+          {
+            id: component.id,
+            name: component.name,
+            fileName: component.fileName,
+            layout: (component.layout as Record<string, unknown>) || {},
+          },
+        ]);
+      }
+
+      // Remove from section
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          [section]: (
+            prev[section as keyof DashboardConfig] as string[]
+          ).filter((id) => id !== componentId),
+        };
+      });
+    },
+    [dashboardConfig, components]
+  );
+
+  const moveComponent = useCallback(
+    (
+      componentId: string,
+      fromSection: string,
+      toSection: string,
+      toIndex?: number
+    ) => {
+      if (!dashboardConfig) return;
+
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+
+        const newConfig = { ...prev };
+        const fromArray = [
+          ...(newConfig[fromSection as keyof DashboardConfig] as string[]),
+        ];
+        const toArray = [
+          ...(newConfig[toSection as keyof DashboardConfig] as string[]),
+        ];
+
+        // Remove from source
+        const itemIndex = fromArray.findIndex((id) => id === componentId);
+        if (itemIndex >= 0) {
+          fromArray.splice(itemIndex, 1);
+        }
+
+        // Add to destination
+        if (toIndex !== undefined) {
+          toArray.splice(toIndex, 0, componentId);
+        } else {
+          toArray.push(componentId);
+        }
+
+        return {
+          ...newConfig,
+          [fromSection]: fromArray,
+          [toSection]: toArray,
+        };
+      });
+    },
+    [dashboardConfig]
+  );
+
+  const updateSettings = useCallback(
+    (
+      settings: Partial<
+        Pick<
+          DashboardConfig,
+          | "autoScroll"
+          | "showIndicators"
+          | "headerComponents"
+          | "mainSplit"
+          | "footerSplit"
+        >
+      >
+    ) => {
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+        return { ...prev, ...settings };
+      });
+    },
+    []
+  );
+
+  // Save changes function
+  const saveChanges = useCallback(async () => {
+    if (!dashboardConfig || !session?.user?.id) return;
+
+    setIsSaving(true);
+    try {
+      // Here you would make your API call to update the dashboard
+      // For now, I'll simulate with a delay
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ["dashboards"] });
+
+      toast.success("Dashboard saved successfully");
+    } catch (error) {
+      logError("Failed to save dashboard", error);
+      toast.error("Failed to save dashboard");
+    } finally {
+      setIsSaving(false);
+    }
+  }, [dashboardConfig, session?.user?.id, queryClient]);
+
+  // Register save function with context
+  useEffect(() => {
+    setSaveChanges(saveChanges);
+    return () => setSaveChanges(null);
+  }, [saveChanges, setSaveChanges]);
 
   // Auto-create personal dashboard when editing global dashboard
   const createPersonalDashboard = useCallback(async () => {
@@ -1219,7 +1455,12 @@ export default function DashboardEdit() {
                 <div className="p-4 border-b bg-background">
                   <div className="flex items-center justify-between">
                     <h2 className="font-semibold">Components</h2>
-                    <SettingsDialog />
+                    <SettingsDialog
+                      dashboardConfig={dashboardConfig}
+                      updateSettings={updateSettings}
+                      saveChanges={saveChanges}
+                      isSaving={isSaving}
+                    />
                   </div>
                 </div>
 

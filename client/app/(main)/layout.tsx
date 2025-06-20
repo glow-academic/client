@@ -12,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Pencil, Plus, X } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
@@ -32,7 +32,7 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isEditMode, setIsEditMode } = useDashboard();
+  const { isEditMode, setIsEditMode, saveChanges } = useDashboard();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
@@ -65,12 +65,17 @@ export default function MainLayout({
       if (isEditMode) {
         return (
           <Button
-            onClick={() => setIsEditMode(false)}
+            onClick={async () => {
+              if (saveChanges) {
+                await saveChanges();
+              }
+              setIsEditMode(false);
+            }}
             size="sm"
-            variant="outline"
+            variant="default"
           >
-            <X className="h-4 w-4 mr-2" />
-            Exit Edit
+            <Plus className="h-4 w-4 mr-2" />
+            Save Changes
           </Button>
         );
       } else {
