@@ -358,64 +358,68 @@ function DraggableComponent({
         </Button>
       )}
 
-      {/* Edit button for components with props */}
-      {isInSidebar && hasProps && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogTrigger asChild>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500 text-white hover:bg-blue-600 rounded-full z-10"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setLayoutForm(component.layout || registryEntry?.props || {});
-                setIsEditDialogOpen(true);
-              }}
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Edit {component.name}</DialogTitle>
-              <DialogDescription>
-                Configure the properties for this component.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {registryEntry?.props &&
-                Object.entries(registryEntry.props).map(([key, value]) =>
-                  renderFormField(key, value)
-                )}
-            </div>
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button onClick={handleSaveLayout}>Save Changes</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
-
-      <div className="space-y-2 min-w-0">
-        <div className="flex items-center gap-2 min-w-0">
-          <Badge variant="outline" className="text-xs truncate max-w-full">
-            {component.name}
-          </Badge>
-          {isInSidebar && (
-            <Badge
-              variant={component.stat ? "default" : "secondary"}
-              className="text-xs"
-            >
-              {component.stat ? "Stat" : "Graph"}
+      <div className="space-y-2 min-w-0 flex flex-col justify-between">
+        <div className="flex items-center gap-2 min-w-0 justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Badge variant="outline" className="text-xs truncate max-w-full">
+              {component.name}
             </Badge>
-          )}
+            {isInSidebar && (
+              <Badge
+                variant={component.stat ? "default" : "secondary"}
+                className="text-xs"
+              >
+                {component.stat ? "Stat" : "Graph"}
+              </Badge>
+            )}
+          </div>
+          
           {isInSidebar && hasProps && (
-            <Badge variant="outline" className="text-xs">
-              Props
-            </Badge>
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DialogTrigger asChild>
+                    <Button
+                      size="sm"
+                      className="h-6 w-6 p-0 text-white rounded-full"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setLayoutForm(
+                          component.layout || registryEntry?.props || {}
+                        );
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                  </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Edit</p>
+                </TooltipContent>
+              </Tooltip>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Edit {component.name}</DialogTitle>
+                  <DialogDescription>
+                    Configure the properties for this component.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  {registryEntry?.props &&
+                    Object.entries(registryEntry.props).map(([key, value]) =>
+                      renderFormField(key, value)
+                    )}
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button onClick={handleSaveLayout}>Save Changes</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
         </div>
 
