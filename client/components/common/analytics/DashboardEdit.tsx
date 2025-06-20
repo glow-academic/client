@@ -729,11 +729,18 @@ function SettingsDialog({
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost">
-          <Settings className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button size="sm" variant="ghost">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p> Settings</p>
+        </TooltipContent>
+      </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Dashboard Settings</DialogTitle>
@@ -1234,52 +1241,36 @@ export default function DashboardEdit() {
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
           <div className="h-full flex flex-col">
-            {/* Header with sidebar toggle */}
+            {/* Header with action buttons */}
             <div className="p-4 border-b bg-background flex items-center justify-between">
               <h1 className="font-semibold text-lg">Dashboard Editor</h1>
-              {!sidebarOpen && (
-                <div className="flex items-center gap-2">
-                  {/* Settings Button - shown when sidebar is closed */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <SettingsDialog
-                        dashboardConfig={dashboardConfig}
-                        updateSettings={updateSettings}
-                        saveChanges={saveChanges}
-                        isSaving={isSaving}
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Dashboard Settings</p>
-                    </TooltipContent>
-                  </Tooltip>
+              <div className="flex items-center gap-2">
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      onClick={saveChanges}
+                      disabled={!hasChanges || isSaving}
+                      variant={!hasChanges || isSaving ? "outline" : "default"}
+                      size="sm"
+                    >
+                      <Save className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{isSaving ? "Saving..." : "Save"}</p>
+                  </TooltipContent>
+                </Tooltip>
 
-                  {/* Save Button - shown when sidebar is closed */}
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        onClick={saveChanges}
-                        disabled={!hasChanges || isSaving}
-                        variant={
-                          !hasChanges || isSaving ? "outline" : "default"
-                        }
-                        size="sm"
-                      >
-                        <Save className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>
-                        {isSaving
-                          ? "Saving..."
-                          : hasChanges
-                            ? "Save Changes"
-                            : "No Changes"}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
+                {/* Settings Button - always visible */}
+                <SettingsDialog
+                  dashboardConfig={dashboardConfig}
+                  updateSettings={updateSettings}
+                  saveChanges={saveChanges}
+                  isSaving={isSaving}
+                />
 
-                  {/* Open Panel Button */}
+                {/* Panel Toggle Button - always visible */}
+                {!sidebarOpen && (
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
@@ -1294,8 +1285,8 @@ export default function DashboardEdit() {
                       <p>Open Panel</p>
                     </TooltipContent>
                   </Tooltip>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="flex-1 p-6 overflow-auto">
@@ -1481,63 +1472,20 @@ export default function DashboardEdit() {
                 <div className="p-4 border-b bg-background">
                   <div className="flex items-center justify-between">
                     <h2 className="font-semibold">Components</h2>
-                    <div className="flex items-center gap-2">
-                      {/* Settings Button */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SettingsDialog
-                            dashboardConfig={dashboardConfig}
-                            updateSettings={updateSettings}
-                            saveChanges={saveChanges}
-                            isSaving={isSaving}
-                          />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Dashboard Settings</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      {/* Save Button */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            onClick={saveChanges}
-                            disabled={!hasChanges || isSaving}
-                            variant={
-                              !hasChanges || isSaving ? "outline" : "default"
-                            }
-                            size="sm"
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>
-                            {isSaving
-                              ? "Saving..."
-                              : hasChanges
-                                ? "Save Changes"
-                                : "No Changes"}
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      {/* Close Panel Button */}
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setSidebarOpen(!sidebarOpen)}
-                          >
-                            <PanelRightClose className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Close Panel</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSidebarOpen(!sidebarOpen)}
+                        >
+                          <PanelRightClose className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Close Panel</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 

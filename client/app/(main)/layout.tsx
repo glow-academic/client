@@ -12,7 +12,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
@@ -62,7 +62,14 @@ export default function MainLayout({
     }
 
     if (pathname === "/analytics/dashboard") {
-      if (!isEditMode) {
+      if (isEditMode) {
+        return (
+          <Button onClick={() => setIsEditMode(false)} size="sm">
+            <X className="h-4 w-4 mr-2" />
+            Exit Edit Mode
+          </Button>
+        );
+      } else {
         return (
           <Button onClick={() => setIsEditMode(true)} size="sm">
             <Pencil className="h-4 w-4 mr-2" />
