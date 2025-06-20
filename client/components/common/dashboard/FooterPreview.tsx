@@ -85,14 +85,10 @@ export default function FooterPreview({
       <ResizablePanelGroup
         direction="horizontal"
         onLayout={onResizeEnd}
-        className="min-h-64"
       >
         {/* Left Footer Section */}
         <ResizablePanel defaultSize={footerSplit * 100} minSize={30}>
           <div className="h-full mr-3">
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">
-              Left Footer
-            </h4>
             {leftComponents.length > 0 ? (
               <div className="space-y-4">
                 <DraggableComponent
@@ -139,9 +135,6 @@ export default function FooterPreview({
         {/* Right Footer Section */}
         <ResizablePanel defaultSize={(1 - footerSplit) * 100} minSize={20}>
           <div className="h-full ml-3">
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">
-              Right Footer
-            </h4>
             {rightComponents.length > 0 ? (
               <div className="space-y-4">
                 <DraggableComponent

@@ -1088,9 +1088,6 @@ export default function DashboardEdit() {
                         minSize={30}
                       >
                         <div className="h-full mr-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Primary Section
-                          </h4>
                           <CarouselSection
                             components={
                               dashboardConfig.primaryComponentIds ?? []
@@ -1132,9 +1129,6 @@ export default function DashboardEdit() {
                         minSize={20}
                       >
                         <div className="h-full ml-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Secondary Section
-                          </h4>
                           <CarouselSection
                             components={
                               dashboardConfig.secondaryComponentIds ?? []
