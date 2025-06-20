@@ -330,7 +330,12 @@ export default function DraggableComponent({
             <Button
               size="sm"
               variant="ghost"
-              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10"
+              className={cn(
+                "absolute h-6 w-6 p-0 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10",
+                isManagementView 
+                  ? "top-2.5 right-2.5 opacity-100" 
+                  : "top-1 right-1 opacity-0 group-hover:opacity-100"
+              )}
               onClick={onRemove}
             >
               <X className="h-3 w-3" />
@@ -354,7 +359,7 @@ export default function DraggableComponent({
                   className={cn(
                     "absolute h-6 w-6 p-0 transition-opacity bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-full z-10",
                     isInSidebar || isManagementView
-                      ? "top-2.5 right-2.5 opacity-100"
+                      ? `top-2.5 right-${!isManagementView ? "2.5" : "10.5"} opacity-100`
                       : "top-1 right-8 opacity-0 group-hover:opacity-100"
                   )}
                   onClick={(e) => {
