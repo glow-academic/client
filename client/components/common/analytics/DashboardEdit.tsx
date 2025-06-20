@@ -22,15 +22,25 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
+import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
+import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery } from "@tanstack/react-query";
-import { Minus, PanelRightClose, Settings, X } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Copy, Minus, PanelRightClose, Settings, X } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface DashboardConfig {
@@ -92,9 +102,17 @@ const mockCharts = {
   ),
 };
 
-const getRandomMockChart = () => {
-  const charts = Object.values(mockCharts);
-  return charts[Math.floor(Math.random() * charts.length)]?.();
+// Assign consistent chart types to components
+const getConsistentMockChart = (componentId: string) => {
+  const chartTypes = Object.keys(mockCharts);
+  const hash = componentId.split("").reduce((a, b) => {
+    a = (a << 5) - a + b.charCodeAt(0);
+    return a & a;
+  }, 0);
+  const chartType = chartTypes[
+    Math.abs(hash) % chartTypes.length
+  ] as keyof typeof mockCharts;
+  return mockCharts[chartType]();
 };
 
 interface DraggableComponentProps {
@@ -171,10 +189,258 @@ function DraggableComponent({
 
         {!isInSidebar && (
           <div className="bg-muted/50 rounded-md p-2">
-            {getRandomMockChart()}
+            {getConsistentMockChart(component.id)}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+interface HeaderPreviewProps {
+  components: string[];
+  allComponents: {
+    [key: string]: { id: string; name: string; fileName: string };
+  };
+  headerComponents: number;
+  showIndicators: boolean;
+  autoScroll: boolean;
+  onRemove: (componentId: string) => void;
+}
+
+function HeaderPreview({
+  components,
+  allComponents,
+  headerComponents,
+  showIndicators,
+  autoScroll,
+  onRemove,
+}: HeaderPreviewProps) {
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Create pages based on headerComponents setting
+  const pages = useMemo(() => {
+    const result = [];
+    const totalPages = Math.ceil(components.length / headerComponents);
+
+    for (let i = 0; i < totalPages; i++) {
+      const start = i * headerComponents;
+      const end = start + headerComponents;
+      result.push(components.slice(start, end));
+    }
+
+    return result;
+  }, [components, headerComponents]);
+
+  // Auto-scroll effect
+  useEffect(() => {
+    if (!autoScroll || pages.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setCurrentPage((prev) => (prev + 1) % pages.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [autoScroll, pages.length]);
+
+  const currentPageComponents = pages[currentPage] || [];
+
+  return (
+    <div className="space-y-4">
+      <div
+        className="grid gap-4"
+        style={{
+          gridTemplateColumns: `repeat(${headerComponents}, 1fr)`,
+        }}
+      >
+        {currentPageComponents.map((componentId, index) => {
+          const component = allComponents[componentId];
+          if (!component) return null;
+
+          return (
+            <div
+              key={`${componentId}-${currentPage}-${index}`}
+              className="transition-all duration-500 ease-in-out"
+            >
+              <DraggableComponent
+                component={component}
+                section="headerComponentIds"
+                onRemove={() => onRemove(componentId)}
+              />
+            </div>
+          );
+        })}
+
+        {/* Fill remaining slots with empty divs for consistent spacing */}
+        {Array.from({
+          length: Math.max(0, headerComponents - currentPageComponents.length),
+        }).map((_, index) => (
+          <div key={`empty-${index}`} className="invisible" />
+        ))}
+      </div>
+
+      {/* Carousel indicators */}
+      {showIndicators && pages.length > 1 && (
+        <div className="flex justify-center gap-2">
+          {pages.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentPage(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentPage ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface CarouselSectionProps {
+  components: string[];
+  allComponents: {
+    [key: string]: { id: string; name: string; fileName: string };
+  };
+  showIndicators: boolean;
+  autoScroll: boolean;
+  onRemove: (componentId: string) => void;
+  interval?: number;
+}
+
+function CarouselSection({
+  components,
+  allComponents,
+  showIndicators,
+  autoScroll,
+  onRemove,
+  interval = 5000,
+}: CarouselSectionProps) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!autoScroll || components.length <= 1) return;
+
+    const intervalId = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % components.length);
+    }, interval);
+
+    return () => clearInterval(intervalId);
+  }, [autoScroll, components.length, interval]);
+
+  if (components.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
+        Drop components here
+      </div>
+    );
+  }
+
+  const currentComponentId =
+    components.length > 0 ? components[currentIndex % components.length] : null;
+  const currentComponent = currentComponentId
+    ? allComponents[currentComponentId]
+    : undefined;
+
+  return (
+    <div className="space-y-4">
+      {currentComponent && (
+        <DraggableComponent
+          key={`${currentComponent.id}-${currentIndex}`}
+          component={currentComponent}
+          onRemove={() => onRemove(currentComponent.id)}
+        />
+      )}
+
+      {/* Carousel indicators */}
+      {showIndicators && components.length > 1 && (
+        <div className="flex justify-center gap-2">
+          {components.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => setCurrentIndex(index)}
+              className={`w-2 h-2 rounded-full transition-colors ${
+                index === currentIndex % components.length
+                  ? "bg-primary"
+                  : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DashboardSelector() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const { dashboardConfig, setDashboardConfig } = useDashboard();
+
+  const { data: userProfile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
+    select: (data) => data[0],
+    enabled: !!userId,
+  });
+
+  const { data: dashboards } = useQuery({
+    queryKey: ["dashboards"],
+    queryFn: () => getAllDashboards(),
+  });
+
+  const currentDashboard = useMemo(() => {
+    if (!dashboards || !dashboardConfig) return null;
+    return dashboards.find((d) => d.id === dashboardConfig.id);
+  }, [dashboards, dashboardConfig]);
+
+  const isGlobalDashboard = currentDashboard?.profileId === null;
+
+  const handleCreatePersonalCopy = useCallback(async () => {
+    if (!dashboardConfig || !userProfile) return;
+
+    // Create a new personal dashboard based on the current one
+    const newDashboard = {
+      ...dashboardConfig,
+      id: `personal-${Date.now()}`, // Generate new ID
+      profileId: userProfile.id,
+    };
+
+    setDashboardConfig(newDashboard);
+    toast.success("Created personal copy of dashboard");
+  }, [dashboardConfig, userProfile, setDashboardConfig]);
+
+  if (!dashboardConfig || !currentDashboard) return null;
+
+  return (
+    <div className="flex items-center gap-4 p-4 border-b bg-muted/30">
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <Label className="text-sm font-medium">Current Dashboard:</Label>
+          <Select value={dashboardConfig.id} disabled>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={dashboardConfig.id}>
+                {isGlobalDashboard ? "Global Default" : "Personal Dashboard"}
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {isGlobalDashboard && (
+          <p className="text-xs text-muted-foreground mt-1">
+            You're editing the global template. Changes will affect all users.
+          </p>
+        )}
+      </div>
+
+      {isGlobalDashboard && (
+        <Button size="sm" variant="outline" onClick={handleCreatePersonalCopy}>
+          <Copy className="h-4 w-4 mr-2" />
+          Create Personal Copy
+        </Button>
+      )}
     </div>
   );
 }
@@ -403,8 +669,6 @@ export default function DashboardEdit() {
       ...dashboardConfig.footerComponentIds,
     ];
 
-    // This would need to be populated from your actual components data
-    // For now, creating mock entries for components that are in use but not in availableComponents
     allUsedComponents.forEach((id) => {
       const component = components?.find((comp) => comp.id === id);
       if (!allComponentsLookup[id]) {
@@ -419,7 +683,6 @@ export default function DashboardEdit() {
 
   const handleDrop = useCallback(
     (componentId: string, toSection: string) => {
-      // Check if component is coming from sidebar
       const isFromSidebar = availableComponents.some(
         (comp) => comp.id === componentId
       );
@@ -436,7 +699,6 @@ export default function DashboardEdit() {
           >
         );
       } else {
-        // Find which section it's coming from
         if (!dashboardConfig) return;
 
         let fromSection = "";
@@ -507,179 +769,259 @@ export default function DashboardEdit() {
   }
 
   return (
-    <div className="h-screen flex bg-background">
-      {/* Main Edit Area (2/3) */}
-      <ResizablePanelGroup direction="horizontal" className="flex-1">
-        <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
-          <div className="h-full p-6 overflow-auto">
-            <div className="space-y-6">
-              {/* Header Section */}
-              <DropZone
-                section="headerComponentIds"
-                title="Header Metrics"
-                components={dashboardConfig.headerComponentIds}
-                allComponents={allComponentsLookup}
-                onDrop={handleDrop}
-                onRemove={handleRemove}
-              />
+    <div className="h-screen flex bg-background flex-col">
+      {/* Dashboard Selector */}
+      <DashboardSelector />
 
-              {/* Main Content Section with Resizable Panels */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Main Content
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResizablePanelGroup
-                    direction="horizontal"
-                    onLayout={handleResizeEnd}
-                    className="min-h-64"
-                  >
-                    <ResizablePanel
-                      defaultSize={dashboardConfig.mainSplit * 100}
-                      minSize={30}
-                    >
+      <div className="flex flex-1">
+        {/* Main Edit Area (2/3) */}
+        <ResizablePanelGroup direction="horizontal" className="flex-1">
+          <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
+            <div className="h-full p-6 overflow-auto">
+              <div className="space-y-6">
+                {/* Header Section with Pagination Preview */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Header Metrics
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <HeaderPreview
+                      components={dashboardConfig.headerComponentIds}
+                      allComponents={allComponentsLookup}
+                      headerComponents={dashboardConfig.headerComponents}
+                      showIndicators={dashboardConfig.showIndicators}
+                      autoScroll={dashboardConfig.autoScroll}
+                      onRemove={(componentId) =>
+                        handleRemove(componentId, "headerComponentIds")
+                      }
+                    />
+
+                    {/* Drop zone for adding new components */}
+                    <div className="mt-4 pt-4 border-t">
                       <DropZone
-                        section="primaryComponentIds"
-                        title="Primary Section"
-                        components={dashboardConfig.primaryComponentIds}
+                        section="headerComponentIds"
+                        title="Add Header Components"
+                        components={[]}
                         allComponents={allComponentsLookup}
                         onDrop={handleDrop}
                         onRemove={handleRemove}
-                        className="h-full mr-3"
+                        className="min-h-20"
                       />
-                    </ResizablePanel>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                    <ResizableHandle withHandle />
-
-                    <ResizablePanel
-                      defaultSize={(1 - dashboardConfig.mainSplit) * 100}
-                      minSize={20}
+                {/* Main Content Section with Resizable Panels */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Main Content
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResizablePanelGroup
+                      direction="horizontal"
+                      onLayout={handleResizeEnd}
+                      className="min-h-64"
                     >
-                      <DropZone
-                        section="secondaryComponentIds"
-                        title="Secondary Section"
-                        components={dashboardConfig.secondaryComponentIds}
-                        allComponents={allComponentsLookup}
-                        onDrop={handleDrop}
-                        onRemove={handleRemove}
-                        className="h-full ml-3"
-                      />
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
-                </CardContent>
-              </Card>
-
-              {/* Footer Section with Resizable Panels */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    Footer Content
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResizablePanelGroup
-                    direction="horizontal"
-                    onLayout={handleFooterResizeEnd}
-                    className="min-h-48"
-                  >
-                    <ResizablePanel
-                      defaultSize={dashboardConfig.footerSplit * 100}
-                      minSize={30}
-                    >
-                      <div className="h-full mr-3">
-                        <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                          Left Footer
-                        </h4>
-                        <div className="border-2 border-dashed rounded-lg p-4 h-32 border-muted-foreground/25">
-                          <div className="text-muted-foreground text-sm">
-                            Left section of footer components
-                          </div>
-                        </div>
-                      </div>
-                    </ResizablePanel>
-
-                    <ResizableHandle withHandle />
-
-                    <ResizablePanel
-                      defaultSize={(1 - dashboardConfig.footerSplit) * 100}
-                      minSize={20}
-                    >
-                      <div className="h-full ml-3">
-                        <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                          Right Footer
-                        </h4>
-                        <div className="border-2 border-dashed rounded-lg p-4 h-32 border-muted-foreground/25">
-                          <div className="text-muted-foreground text-sm">
-                            Right section of footer components
-                          </div>
-                        </div>
-                      </div>
-                    </ResizablePanel>
-                  </ResizablePanelGroup>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </ResizablePanel>
-
-        {/* Sidebar (1/3) */}
-        {sidebarOpen && (
-          <>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={33} minSize={20} maxSize={50}>
-              <div className="h-full border-l bg-muted/30">
-                <div className="p-4 border-b bg-background">
-                  <div className="flex items-center justify-between">
-                    <h2 className="font-semibold">Components</h2>
-                    <div className="flex items-center gap-2">
-                      <SettingsDialog />
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSidebarOpen(false)}
+                      <ResizablePanel
+                        defaultSize={dashboardConfig.mainSplit * 100}
+                        minSize={30}
                       >
-                        <X className="h-4 w-4" />
-                      </Button>
+                        <div className="h-full mr-3">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                            Primary Section
+                          </h4>
+                          <CarouselSection
+                            components={dashboardConfig.primaryComponentIds}
+                            allComponents={allComponentsLookup}
+                            showIndicators={dashboardConfig.showIndicators}
+                            autoScroll={dashboardConfig.autoScroll}
+                            onRemove={(componentId) =>
+                              handleRemove(componentId, "primaryComponentIds")
+                            }
+                            interval={5000}
+                          />
+
+                          {/* Drop zone */}
+                          <div className="mt-4">
+                            <DropZone
+                              section="primaryComponentIds"
+                              title="Add Primary Components"
+                              components={[]}
+                              allComponents={allComponentsLookup}
+                              onDrop={handleDrop}
+                              onRemove={handleRemove}
+                              className="min-h-16"
+                            />
+                          </div>
+                        </div>
+                      </ResizablePanel>
+
+                      <ResizableHandle withHandle />
+
+                      <ResizablePanel
+                        defaultSize={(1 - dashboardConfig.mainSplit) * 100}
+                        minSize={20}
+                      >
+                        <div className="h-full ml-3">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                            Secondary Section
+                          </h4>
+                          <CarouselSection
+                            components={dashboardConfig.secondaryComponentIds}
+                            allComponents={allComponentsLookup}
+                            showIndicators={dashboardConfig.showIndicators}
+                            autoScroll={dashboardConfig.autoScroll}
+                            onRemove={(componentId) =>
+                              handleRemove(componentId, "secondaryComponentIds")
+                            }
+                            interval={4000}
+                          />
+
+                          {/* Drop zone */}
+                          <div className="mt-4">
+                            <DropZone
+                              section="secondaryComponentIds"
+                              title="Add Secondary Components"
+                              components={[]}
+                              allComponents={allComponentsLookup}
+                              onDrop={handleDrop}
+                              onRemove={handleRemove}
+                              className="min-h-16"
+                            />
+                          </div>
+                        </div>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </CardContent>
+                </Card>
+
+                {/* Footer Section with Resizable Panels */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      Footer Content
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResizablePanelGroup
+                      direction="horizontal"
+                      onLayout={handleFooterResizeEnd}
+                      className="min-h-48"
+                    >
+                      <ResizablePanel
+                        defaultSize={dashboardConfig.footerSplit * 100}
+                        minSize={30}
+                      >
+                        <div className="h-full mr-3">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                            Left Footer
+                          </h4>
+                          <div className="text-muted-foreground text-sm mb-2">
+                            Shows components at even indices (0, 2, 4...)
+                          </div>
+
+                          {/* Drop zone */}
+                          <DropZone
+                            section="footerComponentIds"
+                            title="Add Footer Components"
+                            components={[]}
+                            allComponents={allComponentsLookup}
+                            onDrop={handleDrop}
+                            onRemove={handleRemove}
+                            className="h-32"
+                          />
+                        </div>
+                      </ResizablePanel>
+
+                      <ResizableHandle withHandle />
+
+                      <ResizablePanel
+                        defaultSize={(1 - dashboardConfig.footerSplit) * 100}
+                        minSize={20}
+                      >
+                        <div className="h-full ml-3">
+                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                            Right Footer
+                          </h4>
+                          <div className="text-muted-foreground text-sm mb-2">
+                            Shows components at odd indices (1, 3, 5...)
+                          </div>
+
+                          <div className="border-2 border-dashed rounded-lg p-4 h-32 border-muted-foreground/25">
+                            <div className="text-muted-foreground text-sm">
+                              Components added to footer appear here alternately
+                            </div>
+                          </div>
+                        </div>
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </ResizablePanel>
+
+          {/* Sidebar (1/3) */}
+          {sidebarOpen && (
+            <>
+              <ResizableHandle withHandle />
+              <ResizablePanel defaultSize={33} minSize={20} maxSize={50}>
+                <div className="h-full border-l bg-muted/30">
+                  <div className="p-4 border-b bg-background">
+                    <div className="flex items-center justify-between">
+                      <h2 className="font-semibold">Components</h2>
+                      <div className="flex items-center gap-2">
+                        <SettingsDialog />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 h-full overflow-auto">
+                    <div className="space-y-3">
+                      {availableComponents.map((component) => (
+                        <DraggableComponent
+                          key={component.id}
+                          component={component}
+                          isInSidebar
+                        />
+                      ))}
+
+                      {availableComponents.length === 0 && (
+                        <div className="text-center text-muted-foreground text-sm py-8">
+                          No available components
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
+              </ResizablePanel>
+            </>
+          )}
+        </ResizablePanelGroup>
 
-                <div className="p-4 h-full overflow-auto">
-                  <div className="space-y-3">
-                    {availableComponents.map((component) => (
-                      <DraggableComponent
-                        key={component.id}
-                        component={component}
-                        isInSidebar
-                      />
-                    ))}
-
-                    {availableComponents.length === 0 && (
-                      <div className="text-center text-muted-foreground text-sm py-8">
-                        No available components
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </ResizablePanel>
-          </>
+        {/* Sidebar Toggle Button */}
+        {!sidebarOpen && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="fixed top-4 right-4 z-50"
+            onClick={() => setSidebarOpen(true)}
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </Button>
         )}
-      </ResizablePanelGroup>
-
-      {/* Sidebar Toggle Button */}
-      {!sidebarOpen && (
-        <Button
-          size="sm"
-          variant="outline"
-          className="fixed top-4 right-4 z-50"
-          onClick={() => setSidebarOpen(true)}
-        >
-          <PanelRightClose className="h-4 w-4" />
-        </Button>
-      )}
+      </div>
     </div>
   );
 }
