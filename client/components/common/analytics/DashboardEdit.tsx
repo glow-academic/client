@@ -27,6 +27,7 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
+import { Dashboard } from "@/types";
 import { logError } from "@/utils/logger";
 import { createDashboard } from "@/utils/mutations/dashboards/create-dashboard";
 import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
@@ -44,19 +45,6 @@ interface DashboardComponent {
   name: string;
   fileName: string;
   layout: Record<string, unknown>;
-}
-
-interface DashboardConfig {
-  id: string;
-  headerComponentIds: string[];
-  primaryComponentIds: string[];
-  secondaryComponentIds: string[];
-  footerComponentIds: string[];
-  autoScroll: boolean;
-  showIndicators: boolean;
-  headerComponents: number;
-  mainSplit: number;
-  footerSplit: number;
 }
 
 // Mock data generators for different chart types
@@ -691,11 +679,11 @@ function SettingsDialog({
   saveChanges,
   isSaving,
 }: {
-  dashboardConfig: DashboardConfig | null;
+  dashboardConfig: Partial<Dashboard> | null;
   updateSettings: (
     settings: Partial<
       Pick<
-        DashboardConfig,
+        Partial<Dashboard>,
         | "autoScroll"
         | "showIndicators"
         | "headerComponents"
@@ -716,9 +704,9 @@ function SettingsDialog({
   useEffect(() => {
     if (dashboardConfig) {
       setLocalSettings({
-        autoScroll: dashboardConfig.autoScroll,
-        showIndicators: dashboardConfig.showIndicators,
-        headerComponents: dashboardConfig.headerComponents,
+        autoScroll: dashboardConfig.autoScroll ?? false,
+        showIndicators: dashboardConfig.showIndicators ?? false,
+        headerComponents: dashboardConfig.headerComponents ?? 4,
       });
     }
   }, [dashboardConfig]);
@@ -809,9 +797,9 @@ export default function DashboardEdit() {
 
   // Local state for dashboard editing
   const [dashboardConfig, setDashboardConfig] =
-    useState<DashboardConfig | null>(null);
+    useState<Partial<Dashboard> | null>(null);
   const [originalDashboardConfig, setOriginalDashboardConfig] =
-    useState<DashboardConfig | null>(null);
+    useState<Partial<Dashboard> | null>(null);
   const [availableComponents, setAvailableComponents] = useState<
     DashboardComponent[]
   >([]);
@@ -875,16 +863,16 @@ export default function DashboardEdit() {
     };
 
     const usedComponentIds = [
-      ...dashboardConfig.headerComponentIds.filter(
+      ...(dashboardConfig.headerComponentIds ?? []).filter(
         (id) => id && isValidUUID(id)
       ),
-      ...dashboardConfig.primaryComponentIds.filter(
+      ...(dashboardConfig.primaryComponentIds ?? []).filter(
         (id) => id && isValidUUID(id)
       ),
-      ...dashboardConfig.secondaryComponentIds.filter(
+      ...(dashboardConfig.secondaryComponentIds ?? []).filter(
         (id) => id && isValidUUID(id)
       ),
-      ...dashboardConfig.footerComponentIds.filter(
+      ...(dashboardConfig.footerComponentIds ?? []).filter(
         (id) => id && isValidUUID(id)
       ),
     ];
@@ -938,7 +926,7 @@ export default function DashboardEdit() {
         return {
           ...prev,
           [section]: [
-            ...(prev[section as keyof DashboardConfig] as string[]),
+            ...(prev[section as keyof Partial<Dashboard>] as string[]),
             componentId,
           ],
         };
@@ -972,7 +960,7 @@ export default function DashboardEdit() {
         return {
           ...prev,
           [section]: (
-            prev[section as keyof DashboardConfig] as string[]
+            prev[section as keyof Partial<Dashboard>] as string[]
           ).filter((id) => id !== componentId),
         };
       });
@@ -995,10 +983,10 @@ export default function DashboardEdit() {
 
         const newConfig = { ...prev };
         const fromArray = [
-          ...(newConfig[fromSection as keyof DashboardConfig] as string[]),
+          ...(newConfig[fromSection as keyof Partial<Dashboard>] as string[]),
         ];
         const toArray = [
-          ...(newConfig[toSection as keyof DashboardConfig] as string[]),
+          ...(newConfig[toSection as keyof Partial<Dashboard>] as string[]),
         ];
 
         // Remove from source
@@ -1029,7 +1017,7 @@ export default function DashboardEdit() {
     (
       settings: Partial<
         Pick<
-          DashboardConfig,
+          Partial<Dashboard>,
           | "autoScroll"
           | "showIndicators"
           | "headerComponents"
@@ -1059,6 +1047,9 @@ export default function DashboardEdit() {
           profileId: userProfile.id,
         };
 
+        // delete the id key
+        delete personalDashboard.id;
+
         await createDashboard(personalDashboard);
 
         toast.success("Personal dashboard created successfully", {
@@ -1067,7 +1058,7 @@ export default function DashboardEdit() {
         });
       } else {
         // Update existing personal dashboard
-        await updateDashboard(dashboardConfig.id, dashboardConfig);
+        await updateDashboard(dashboardConfig.id!, dashboardConfig);
 
         toast.success("Dashboard updated successfully");
       }
@@ -1108,10 +1099,10 @@ export default function DashboardEdit() {
     // Add components that are currently in use to the lookup
     if (dashboardConfig) {
       const allUsedComponents = [
-        ...dashboardConfig.headerComponentIds,
-        ...dashboardConfig.primaryComponentIds,
-        ...dashboardConfig.secondaryComponentIds,
-        ...dashboardConfig.footerComponentIds,
+        ...(dashboardConfig.headerComponentIds ?? []),
+        ...(dashboardConfig.primaryComponentIds ?? []),
+        ...(dashboardConfig.secondaryComponentIds ?? []),
+        ...(dashboardConfig.footerComponentIds ?? []),
       ];
 
       allUsedComponents.forEach((id) => {
@@ -1141,13 +1132,13 @@ export default function DashboardEdit() {
         if (!dashboardConfig) return;
 
         let fromSection = "";
-        if (dashboardConfig.headerComponentIds.includes(componentId))
+        if (dashboardConfig.headerComponentIds?.includes(componentId))
           fromSection = "headerComponentIds";
-        else if (dashboardConfig.primaryComponentIds.includes(componentId))
+        else if (dashboardConfig.primaryComponentIds?.includes(componentId))
           fromSection = "primaryComponentIds";
-        else if (dashboardConfig.secondaryComponentIds.includes(componentId))
+        else if (dashboardConfig.secondaryComponentIds?.includes(componentId))
           fromSection = "secondaryComponentIds";
-        else if (dashboardConfig.footerComponentIds.includes(componentId))
+        else if (dashboardConfig.footerComponentIds?.includes(componentId))
           fromSection = "footerComponentIds";
 
         if (fromSection && fromSection !== toSection) {
@@ -1173,7 +1164,7 @@ export default function DashboardEdit() {
 
       const sectionArray = dashboardConfig[
         section as keyof Pick<
-          DashboardConfig,
+          Partial<Dashboard>,
           | "headerComponentIds"
           | "primaryComponentIds"
           | "secondaryComponentIds"
@@ -1228,12 +1219,12 @@ export default function DashboardEdit() {
   }
 
   return (
-    <div className="h-screen flex bg-background relative">
-      {/* Save Button - Absolute positioned in top right */}
+    <div className="h-screen flex bg-background">
+      {/* Save Button - Fixed positioned in top right corner of the page */}
       <Button
         onClick={saveChanges}
         disabled={!hasChanges || isSaving}
-        className="absolute top-4 right-4 z-50"
+        className="fixed top-4 right-4 z-50"
         size="sm"
       >
         {isSaving ? "Saving..." : "Save Changes"}
@@ -1265,11 +1256,11 @@ export default function DashboardEdit() {
                   </CardHeader>
                   <CardContent>
                     <HeaderPreview
-                      components={dashboardConfig.headerComponentIds}
+                      components={dashboardConfig.headerComponentIds ?? []}
                       allComponents={allComponentsLookup}
-                      headerComponents={dashboardConfig.headerComponents}
-                      showIndicators={dashboardConfig.showIndicators}
-                      autoScroll={dashboardConfig.autoScroll}
+                      headerComponents={dashboardConfig.headerComponents ?? 4}
+                      showIndicators={dashboardConfig.showIndicators ?? false}
+                      autoScroll={dashboardConfig.autoScroll ?? false}
                       onRemove={(componentId) =>
                         handleRemove(componentId, "headerComponentIds")
                       }
@@ -1307,7 +1298,7 @@ export default function DashboardEdit() {
                       className="min-h-64"
                     >
                       <ResizablePanel
-                        defaultSize={dashboardConfig.mainSplit * 100}
+                        defaultSize={(dashboardConfig.mainSplit ?? 0.75) * 100}
                         minSize={30}
                       >
                         <div className="h-full mr-3">
@@ -1315,10 +1306,14 @@ export default function DashboardEdit() {
                             Primary Section
                           </h4>
                           <CarouselSection
-                            components={dashboardConfig.primaryComponentIds}
+                            components={
+                              dashboardConfig.primaryComponentIds ?? []
+                            }
                             allComponents={allComponentsLookup}
-                            showIndicators={dashboardConfig.showIndicators}
-                            autoScroll={dashboardConfig.autoScroll}
+                            showIndicators={
+                              dashboardConfig.showIndicators ?? false
+                            }
+                            autoScroll={dashboardConfig.autoScroll ?? false}
                             onRemove={(componentId) =>
                               handleRemove(componentId, "primaryComponentIds")
                             }
@@ -1343,7 +1338,9 @@ export default function DashboardEdit() {
                       <ResizableHandle withHandle />
 
                       <ResizablePanel
-                        defaultSize={(1 - dashboardConfig.mainSplit) * 100}
+                        defaultSize={
+                          (1 - (dashboardConfig.mainSplit ?? 0.75)) * 100
+                        }
                         minSize={20}
                       >
                         <div className="h-full ml-3">
@@ -1351,10 +1348,14 @@ export default function DashboardEdit() {
                             Secondary Section
                           </h4>
                           <CarouselSection
-                            components={dashboardConfig.secondaryComponentIds}
+                            components={
+                              dashboardConfig.secondaryComponentIds ?? []
+                            }
                             allComponents={allComponentsLookup}
-                            showIndicators={dashboardConfig.showIndicators}
-                            autoScroll={dashboardConfig.autoScroll}
+                            showIndicators={
+                              dashboardConfig.showIndicators ?? false
+                            }
+                            autoScroll={dashboardConfig.autoScroll ?? false}
                             onRemove={(componentId) =>
                               handleRemove(componentId, "secondaryComponentIds")
                             }
@@ -1388,11 +1389,11 @@ export default function DashboardEdit() {
                   </CardHeader>
                   <CardContent>
                     <FooterPreview
-                      components={dashboardConfig.footerComponentIds}
+                      components={dashboardConfig.footerComponentIds ?? []}
                       allComponents={allComponentsLookup}
-                      showIndicators={dashboardConfig.showIndicators}
-                      autoScroll={dashboardConfig.autoScroll}
-                      footerSplit={dashboardConfig.footerSplit}
+                      showIndicators={dashboardConfig.showIndicators ?? false}
+                      autoScroll={dashboardConfig.autoScroll ?? false}
+                      footerSplit={dashboardConfig.footerSplit ?? 0.5}
                       onRemove={(componentId) =>
                         handleRemove(componentId, "footerComponentIds")
                       }
