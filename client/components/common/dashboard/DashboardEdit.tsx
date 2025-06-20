@@ -678,13 +678,14 @@ export default function DashboardEdit() {
                     onDragStart={(e) => handleDragStart(e, index)}
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, index)}
-                    className={`p-2 border rounded-lg bg-card hover:bg-muted/50 cursor-move transition-colors ${
+                    className={`transition-colors ${
                       draggedIndex === index ? "opacity-50" : ""
                     }`}
                   >
                     <DraggableComponent
                       component={component}
-                      onRemove={() => handleRemove(componentId, sectionKey)}
+                      isInSidebar={true}
+                      hideRemoveButton={true}
                       onUpdateLayout={handleUpdateLayout}
                     />
                   </div>
@@ -847,8 +848,8 @@ export default function DashboardEdit() {
                             <DialogHeader>
                               <DialogTitle>Reset Header Settings</DialogTitle>
                               <DialogDescription>
-                                Are you sure you want to apply the default header
-                                settings?
+                                Are you sure you want to apply the default
+                                header settings?
                               </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
@@ -1133,8 +1134,8 @@ export default function DashboardEdit() {
                             <DialogHeader>
                               <DialogTitle>Reset Footer Settings</DialogTitle>
                               <DialogDescription>
-                                Are you sure you want to apply the default footer
-                                settings?
+                                Are you sure you want to apply the default
+                                footer settings?
                               </DialogDescription>
                             </DialogHeader>
                             <DialogFooter>
