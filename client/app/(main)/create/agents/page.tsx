@@ -4,7 +4,6 @@
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
-"use client";
 import Agents from "@/components/create/agents/Agents";
 
 import type { Metadata } from "next";
