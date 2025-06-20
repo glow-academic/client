@@ -686,8 +686,6 @@ function DropZone({
 function SettingsDialog({
   dashboardConfig,
   updateSettings,
-  saveChanges,
-  isSaving,
 }: {
   dashboardConfig: Partial<Dashboard> | null;
   updateSettings: (
@@ -702,8 +700,6 @@ function SettingsDialog({
       >
     >
   ) => void;
-  saveChanges: () => Promise<void>;
-  isSaving: boolean;
 }) {
   const [localSettings, setLocalSettings] = useState({
     autoScroll: dashboardConfig?.autoScroll ?? true,
@@ -721,10 +717,9 @@ function SettingsDialog({
     }
   }, [dashboardConfig]);
 
-  const handleSave = async () => {
+  const handleApply = () => {
     updateSettings(localSettings);
-    await saveChanges();
-    toast.success("Settings saved successfully");
+    toast.success("Settings updated - click Save Changes to persist");
   };
 
   return (
@@ -797,8 +792,8 @@ function SettingsDialog({
             </div>
           </div>
 
-          <Button onClick={handleSave} disabled={isSaving} className="w-full">
-            {isSaving ? "Saving..." : "Save Settings"}
+          <Button onClick={handleApply} className="w-full">
+            Apply Settings
           </Button>
         </div>
       </DialogContent>
@@ -1265,8 +1260,6 @@ export default function DashboardEdit() {
                 <SettingsDialog
                   dashboardConfig={dashboardConfig}
                   updateSettings={updateSettings}
-                  saveChanges={saveChanges}
-                  isSaving={isSaving}
                 />
 
                 {/* Panel Toggle Button - always visible */}
