@@ -12,9 +12,7 @@ import { toast } from "sonner";
 // UI Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card
-} from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -31,12 +29,7 @@ import { updateSimulation } from "@/utils/mutations/simulations/update-simulatio
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getAllScenarios } from "@/utils/queries/scenarios/get-all-scenarios";
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
-import {
-  GripVertical,
-  MessageSquare,
-  Shuffle,
-  Trash2,
-} from "lucide-react";
+import { GripVertical, Pencil, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface SimulationProps {
@@ -49,9 +42,7 @@ interface FormErrors {
   rubricId?: string;
 }
 
-export default function Simulation({
-  simulationId,
-}: SimulationProps) {
+export default function Simulation({ simulationId }: SimulationProps) {
   const queryClient = useQueryClient();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -69,7 +60,8 @@ export default function Simulation({
     rubricId: "",
   };
 
-  const [formData, setFormData] = useState<Partial<SimulationType>>(initialFormData);
+  const [formData, setFormData] =
+    useState<Partial<SimulationType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch simulations for the list mode
@@ -121,7 +113,7 @@ export default function Simulation({
     if (!formData.scenarioIds?.includes(scenarioId)) {
       setFormData((prev) => ({
         ...prev,
-        scenarioIds: [...prev.scenarioIds || [], scenarioId],
+        scenarioIds: [...(prev.scenarioIds || []), scenarioId],
       }));
     }
   };
@@ -131,12 +123,6 @@ export default function Simulation({
       ...prev,
       scenarioIds: prev.scenarioIds?.filter((id) => id !== scenarioId) || [],
     }));
-  };
-
-  const randomizeScenarios = () => {
-    const shuffled = [...formData.scenarioIds || []].sort(() => Math.random() - 0.5);
-    setFormData((prev) => ({ ...prev, scenarioIds: shuffled }));
-    toast.success("Scenarios randomized!");
   };
 
   const handleDragStart = (e: React.DragEvent, scenarioId: string) => {
@@ -154,7 +140,7 @@ export default function Simulation({
 
     if (!draggedScenario) return;
 
-    const newOrder = [...formData.scenarioIds || []];
+    const newOrder = [...(formData.scenarioIds || [])];
     const draggedIndex = newOrder.findIndex((id) => id === draggedScenario);
     const targetIndex = newOrder.findIndex((id) => id === targetScenarioId);
 
@@ -207,7 +193,6 @@ export default function Simulation({
     setIsSubmitting(true);
 
     try {
-
       let result;
       const targetSimulationId = simulationId || editingSimulationId;
       if (targetSimulationId) {
@@ -250,6 +235,10 @@ export default function Simulation({
     }
   };
 
+  const editScenario = (scenarioId: string) => {
+    router.push(`/create/scenarios/s/${scenarioId}`);
+  };
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -270,7 +259,7 @@ export default function Simulation({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="timeLimit">Time Limit (minutes)</Label>
+          <Label htmlFor="timeLimit">Minutes Allowed</Label>
           <Input
             id="timeLimit"
             type="number"
@@ -300,12 +289,11 @@ export default function Simulation({
               <SelectValue placeholder="Select a rubric..." />
             </SelectTrigger>
             <SelectContent>
-              {rubrics
-                .map((rubric: Rubric) => (
-                  <SelectItem key={rubric.id} value={rubric.id}>
-                    {rubric.name} ({rubric.points} points)
-                  </SelectItem>
-                ))}
+              {rubrics.map((rubric: Rubric) => (
+                <SelectItem key={rubric.id} value={rubric.id}>
+                  {rubric.name} ({rubric.points} points)
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           {errors.rubricId && (
@@ -345,18 +333,6 @@ export default function Simulation({
                     ))}
                 </SelectContent>
               </Select>
-              {formData.scenarioIds && formData.scenarioIds?.length > 1 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={randomizeScenarios}
-                  className="flex items-center gap-2"
-                >
-                  <Shuffle className="h-4 w-4" />
-                  Randomize
-                </Button>
-              )}
             </div>
           </div>
 
@@ -368,7 +344,7 @@ export default function Simulation({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.scenarioIds?.map((scenarioId, index) => {
+              {formData.scenarioIds?.map((scenarioId) => {
                 const scenario = scenarios.find(
                   (s: Scenario) => s.id === scenarioId
                 );
@@ -387,13 +363,19 @@ export default function Simulation({
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-sm">
+                          {scenario.name || "Unnamed Scenario"}
+                        </h4>
                         <div className="flex items-center gap-2">
-                          <MessageSquare className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium">
-                            #{index + 1}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => editScenario(scenarioId)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </Button>
                           <Button
                             type="button"
                             variant="outline"
@@ -408,9 +390,6 @@ export default function Simulation({
                       </div>
 
                       <div className="space-y-2">
-                        <h4 className="font-medium text-sm">
-                          {scenario.name || "Unnamed Scenario"}
-                        </h4>
                         <p className="text-xs text-muted-foreground line-clamp-3">
                           {scenario.description || "No description provided"}
                         </p>

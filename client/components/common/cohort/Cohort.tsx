@@ -35,7 +35,7 @@ import { createCohort } from "@/utils/mutations/cohorts/create-cohort";
 import { updateCohort } from "@/utils/mutations/cohorts/update-cohort";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
-import { GripVertical, Trash2, User } from "lucide-react";
+import { GripVertical, Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface CohortProps {
@@ -271,9 +271,6 @@ export default function Cohort({ cohortId }: CohortProps) {
           <div className="flex justify-between items-center">
             <div>
               <Label htmlFor="profiles">Members</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                Add profiles to this cohort
-              </p>
             </div>
             <div className="flex gap-2">
               <Select
@@ -309,7 +306,7 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.profileIds?.map((profileId, index) => {
+              {formData.profileIds?.map((profileId) => {
                 const profile = profiles.find(
                   (p: Profile) => p.id === profileId
                 );
@@ -328,12 +325,9 @@ export default function Cohort({ cohortId }: CohortProps) {
                   >
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-blue-500" />
-                          <span className="text-sm font-medium">
-                            #{index + 1}
-                          </span>
-                        </div>
+                        <h4 className="font-medium text-sm">
+                          {profile.firstName} {profile.lastName}
+                        </h4>
                         <div className="flex items-center gap-2">
                           <Button
                             type="button"
@@ -349,9 +343,6 @@ export default function Cohort({ cohortId }: CohortProps) {
                       </div>
 
                       <div className="space-y-2">
-                        <h4 className="font-medium text-sm">
-                          {profile.firstName} {profile.lastName}
-                        </h4>
                         <p className="text-xs text-muted-foreground">
                           {profile.alias}
                         </p>

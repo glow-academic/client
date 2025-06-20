@@ -6,6 +6,13 @@
  */
 import Reports from "@/components/analytics/Reports";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Reports",
+  description: "Reports in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function ReportsPage() {
   return (
     <div className="space-y-6">

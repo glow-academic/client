@@ -7,6 +7,13 @@
 
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Agents",
+  description: "Agents in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function AgentPage() {
   return redirect("/create/agents/new");
 }

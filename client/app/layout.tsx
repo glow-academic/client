@@ -14,7 +14,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GLOW",
+  title: {
+    template: "%s | GLOW",
+    default: "GLOW",
+  },
   description: "Graduate Learning Orientation Workshop",
 };
 

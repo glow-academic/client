@@ -7,6 +7,13 @@
 
 import Classes from "@/components/create/classes/Classes";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Classes",
+  description: "Classes in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function ClassesPage() {
   return (
     <div className="space-y-6">

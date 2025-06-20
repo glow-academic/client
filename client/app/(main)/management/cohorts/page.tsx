@@ -6,6 +6,13 @@
  */
 import Cohorts from "@/components/management/cohorts/Cohorts";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Cohorts",
+  description: "Manage cohorts in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function CohortsPage() {
   return (
     <div className="space-y-6">

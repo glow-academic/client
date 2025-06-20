@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
                         Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text)
+                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text, Double)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
@@ -96,6 +96,32 @@ class Cohorts(_Base, table=True):
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
     profile_ids: List[uuid.UUID] = Field(sa_column=Column('profile_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
     description: Optional[str] = Field(default=None, sa_column=Column('description', Text))
+
+
+class Components(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='components_pkey'),
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    name: str = Field(sa_column=Column('name', Text))
+    description: str = Field(sa_column=Column('description', Text))
+    file_name: str = Field(sa_column=Column('file_name', Text))
+    layout: dict = Field(sa_column=Column('layout', JSONB, server_default=text("'{}'::jsonb")))
+    stat: bool = Field(sa_column=Column('stat', Boolean, server_default=text('false')))
+    default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
+
+
+class Migrations(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
 
 
 class Models(_Base, table=True):
@@ -243,6 +269,7 @@ class Profiles(_Base, table=True):
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
+    dashboards: List['Dashboards'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
 
 
@@ -345,6 +372,29 @@ class Topics(_Base, table=True):
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
 
     class_: Optional['Classes'] = Relationship(back_populates='topics')
+
+
+class Dashboards(_Base, table=True):
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='dashboards_profile_id_fkey'),
+        PrimaryKeyConstraint('id', name='dashboards_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    header_component_ids: List[uuid.UUID] = Field(sa_column=Column('header_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    primary_component_ids: List[uuid.UUID] = Field(sa_column=Column('primary_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    secondary_component_ids: List[uuid.UUID] = Field(sa_column=Column('secondary_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    footer_component_ids: List[uuid.UUID] = Field(sa_column=Column('footer_component_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    auto_scroll: bool = Field(sa_column=Column('auto_scroll', Boolean, server_default=text('true')))
+    show_indicators: bool = Field(sa_column=Column('show_indicators', Boolean, server_default=text('true')))
+    header_components: int = Field(sa_column=Column('header_components', Integer, server_default=text('4')))
+    main_split: float = Field(sa_column=Column('main_split', Double(53), server_default=text('0.65')))
+    footer_split: float = Field(sa_column=Column('footer_split', Double(53), server_default=text('0.5')))
+    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='dashboards')
 
 
 class EvalRuns(_Base, table=True):

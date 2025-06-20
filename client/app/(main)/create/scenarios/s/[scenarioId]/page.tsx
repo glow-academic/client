@@ -8,6 +8,25 @@
 import { use } from "react";
 import ScenarioEdit from "@/components/create/scenarios/ScenarioEdit";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ scenarioId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { scenarioId } = await params;
+  const scenario = await getScenario(scenarioId);
+
+  return {
+    title: `${scenario?.name || "Scenario"}`,
+    description: `${scenario?.name + " " + scenario?.description || "Scenario"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
+
+
 export default function EditScenarioPage({
   params,
 }: {

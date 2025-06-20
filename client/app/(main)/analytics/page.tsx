@@ -6,6 +6,13 @@
  */
 import { redirect } from "next/navigation";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Analytics",
+  description: "Analytics in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function AnalyticsPage() {
   return redirect("/analytics/dashboard");
 }

@@ -7,6 +7,13 @@
 import React from "react";
 import Evals from "@/components/management/evals/Evals";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Evals",
+  description: "Manage evals in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function RubricsPage() {
   return (
     <div className="space-y-6">

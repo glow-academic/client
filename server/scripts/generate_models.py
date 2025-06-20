@@ -47,7 +47,7 @@ def generate_sqlmodel_from_sql():
             "",
             "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
             "                        Enum, ForeignKeyConstraint, Integer,",
-            "                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text)",
+            "                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text, Double)",
             "from sqlalchemy.dialects.postgresql import JSONB",
             "from sqlmodel import Field, Relationship, SQLModel",
             "from sqlalchemy.orm import Mapped",

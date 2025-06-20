@@ -7,6 +7,13 @@
 
 import NewAgent from "@/components/create/agents/NewAgent";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New Agent",
+  description: "New agent creation page for the agents section in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function NewAgentPage() {
   return (
     <div className="space-y-6">

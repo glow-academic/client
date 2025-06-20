@@ -8,6 +8,24 @@
 import { use } from "react";
 import { redirect } from "next/navigation";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getEval } from "@/utils/queries/evals/get-eval";
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ evalId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const { evalId } = await params
+
+  const evalDetails = await getEval(evalId);
+
+  return {
+    title: `${evalDetails?.name || "Eval"} Runs`,
+    description: `${evalDetails?.name + " " + evalDetails?.description || "Eval"} runs in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
 export default function EvaluationRunPage({
   params,
 }: {

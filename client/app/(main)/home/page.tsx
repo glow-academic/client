@@ -7,6 +7,13 @@
 
 import Home from "@/components/home/Home";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Home",
+  description: "Home page for GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function HomePage() {
   return (
     <div className="space-y-6">

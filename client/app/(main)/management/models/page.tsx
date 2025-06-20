@@ -6,6 +6,13 @@
  */
 import Models from "@/components/management/models/Models";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Models",
+  description: "Manage AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function ModelsPage() {
   return (
     <div className="space-y-6">

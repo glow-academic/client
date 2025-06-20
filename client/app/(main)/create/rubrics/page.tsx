@@ -7,6 +7,13 @@
 import React from "react";
 import Rubrics from "@/components/create/rubrics/Rubrics";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Rubrics",
+  description: "Rubrics in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function RubricsPage() {
   return (
     <div className="space-y-6">

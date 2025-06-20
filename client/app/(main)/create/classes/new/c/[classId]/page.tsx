@@ -8,6 +8,26 @@
 import ClassStatus from "@/components/create/classes/ClassStatus";
 import { use } from "react";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getClass } from "@/utils/queries/classes/get-class";
+
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ classId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { classId } = await params;
+  const classData = await getClass(classId);
+  return {
+    title: `${classData?.name || "Class"} Status`,
+    description: `${classData?.name + " " + classData?.description || "Class"} status in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
+
+
+
+
 export default function ClassStatusPage({
   params,
 }: {

@@ -7,6 +7,13 @@
 
 import NewModel from "@/components/management/models/NewModel";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Models",
+  description: "Create new AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function NewModelPage() {
   return (
     <div className="space-y-6">

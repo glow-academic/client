@@ -8,6 +8,24 @@
 import StaffEdit from "@/components/management/staff/StaffEdit";
 import { use } from "react";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getProfile } from "@/utils/queries/profiles/get-profile";
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ profileId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const { profileId } = await params
+
+  const profile = await getProfile(profileId);
+
+  return {
+    title: `${profile?.firstName} ${profile?.lastName}`,
+    description: `Manage individual staff in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
 export default function StaffEditPage({
   params,
 }: {

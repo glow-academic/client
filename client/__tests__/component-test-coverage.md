@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-20T15:59:55.118Z
+Generated on: 2025-06-20T20:44:59.654Z
 
 ## Summary
-- **Total Components**: 86
+- **Total Components**: 92
 - **Tests Created**: 0
-- **Tests Updated**: 28
+- **Tests Updated**: 34
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -13,7 +13,6 @@ Generated on: 2025-06-20T15:59:55.118Z
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
-| DashboardEdit | analytics/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
@@ -45,6 +44,13 @@ Generated on: 2025-06-20T15:59:55.118Z
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
+| CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ❌ Needs Implementation |
+| DashboardEdit | common/dashboard/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
+| DraggableComponent | common/dashboard/DraggableComponent.tsx | DraggableComponent.test.tsx | ❌ Needs Implementation |
+| DropZone | common/dashboard/DropZone.tsx | DropZone.test.tsx | ❌ Needs Implementation |
+| FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ❌ Needs Implementation |
+| HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ❌ Needs Implementation |
+| SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ❌ Needs Implementation |
 | Eval | common/eval/Eval.tsx | Eval.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
@@ -105,7 +111,6 @@ Generated on: 2025-06-20T15:59:55.118Z
 __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
-│   ├── DashboardEdit.test.tsx
 │   ├── History.test.tsx
 │   ├── Reports.test.tsx
 ├── common/
@@ -147,6 +152,14 @@ __tests__/
 │   │   ├── ClassForm.test.tsx
 │   ├── cohort/
 │   │   ├── Cohort.test.tsx
+│   ├── dashboard/
+│   │   ├── CarouselSection.test.tsx
+│   │   ├── DashboardEdit.test.tsx
+│   │   ├── DraggableComponent.test.tsx
+│   │   ├── DropZone.test.tsx
+│   │   ├── FooterPreview.test.tsx
+│   │   ├── HeaderPreview.test.tsx
+│   │   ├── SettingsDialog.test.tsx
 │   ├── eval/
 │   │   ├── Eval.test.tsx
 │   ├── history/

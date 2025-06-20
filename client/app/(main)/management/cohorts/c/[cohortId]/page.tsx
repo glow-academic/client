@@ -8,6 +8,24 @@
 import CohortEdit from "@/components/management/cohorts/CohortEdit";
 import { use } from "react";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getCohort } from "@/utils/queries/cohorts/get-cohort";
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ cohortId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const { cohortId } = await params
+
+  const cohort = await getCohort(cohortId);
+
+  return {
+    title: `${cohort?.title || "Cohort"}`,
+    description: `${cohort?.title + " " + cohort?.description || "Cohort"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
 export default function CohortEditPage({
   params,
 }: {

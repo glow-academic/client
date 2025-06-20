@@ -8,6 +8,25 @@
 import { use } from "react";
 import RubricEdit from "@/components/create/rubrics/RubricEdit";
 
+import type { Metadata, ResolvingMetadata } from "next";
+import { getRubric } from "@/utils/queries/rubrics/get-rubric";
+
+
+export async function generateMetadata(
+  { params }: { params: Promise<{ rubricId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  const { rubricId } = await params;
+  const rubric = await getRubric(rubricId);
+
+  return {
+    title: `${rubric?.name || "Rubric"}`,
+    description: `${rubric?.name + " " + rubric?.description || "Rubric"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+  };
+}
+
+
+
 export default function EditRubricPage({
   params,
 }: {

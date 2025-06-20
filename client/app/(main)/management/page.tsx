@@ -6,6 +6,12 @@
  */
 
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Management",
+  description: "Manage cohorts, evals, logs, models, and staff in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
 
 export default function ManagementPage() {
   return redirect("/management/staff");

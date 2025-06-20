@@ -7,6 +7,13 @@
 
 import NewRubric from "@/components/create/rubrics/NewRubric";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "New Rubric",
+  description: "New rubric creation page using the unified rubric component in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function NewRubricPage() {
   return (
     <div className="space-y-6">

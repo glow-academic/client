@@ -7,6 +7,13 @@
 
 import Dashboard from "@/components/analytics/Dashboard";
 
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Dashboard in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+};
+
 export default function DashboardPage() {
   return (
     <div className="space-y-6">

@@ -7,8 +7,26 @@
 
 import ModelEdit from "@/components/management/models/ModelEdit";
 import { use } from "react";
+import type { Metadata } from "next";
+import type { ResolvingMetadata } from "next";
+import { getModel } from "@/utils/queries/models/get-model";
 
-export default function CohortEditPage({
+export async function generateMetadata(
+  { params }: { params: Promise<{ modelId: string }> },
+  _parent: ResolvingMetadata
+): Promise<Metadata> {
+  // read route params
+  const { modelId } = await params
+
+  const model = await getModel(modelId);
+
+  return {
+    title: `${model?.name || "Model"}`,
+    description: model?.description || "Manage individual AI models in GLOW (Graduate Learning Orientation Workshop) at Purdue University.",
+  };
+}
+
+export default function ModelEditPage({
   params,
 }: {
   params: Promise<{ modelId: string }>;
