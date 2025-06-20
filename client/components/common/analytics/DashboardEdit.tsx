@@ -22,13 +22,7 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
@@ -37,8 +31,8 @@ import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useQuery } from "@tanstack/react-query";
-import { Copy, Minus, PanelRightClose, Settings, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Minus, PanelRightClose, Settings, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -372,79 +366,6 @@ function CarouselSection({
   );
 }
 
-function DashboardSelector() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
-  const { dashboardConfig, setDashboardConfig } = useDashboard();
-
-  const { data: userProfile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId,
-  });
-
-  const { data: dashboards } = useQuery({
-    queryKey: ["dashboards"],
-    queryFn: () => getAllDashboards(),
-  });
-
-  const currentDashboard = useMemo(() => {
-    if (!dashboards || !dashboardConfig) return null;
-    return dashboards.find((d) => d.id === dashboardConfig.id);
-  }, [dashboards, dashboardConfig]);
-
-  const isGlobalDashboard = currentDashboard?.profileId === null;
-
-  const handleCreatePersonalCopy = useCallback(async () => {
-    if (!dashboardConfig || !userProfile) return;
-
-    // Create a new personal dashboard based on the current one
-    const newDashboard = {
-      ...dashboardConfig,
-      id: `personal-${Date.now()}`, // Generate new ID
-      profileId: userProfile.id,
-    };
-
-    setDashboardConfig(newDashboard);
-    toast.success("Created personal copy of dashboard");
-  }, [dashboardConfig, userProfile, setDashboardConfig]);
-
-  if (!dashboardConfig || !currentDashboard) return null;
-
-  return (
-    <div className="flex items-center gap-4 p-4 border-b bg-muted/30">
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <Label className="text-sm font-medium">Current Dashboard:</Label>
-          <Select value={dashboardConfig.id} disabled>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={dashboardConfig.id}>
-                {isGlobalDashboard ? "Global Default" : "Personal Dashboard"}
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {isGlobalDashboard && (
-          <p className="text-xs text-muted-foreground mt-1">
-            You're editing the global template. Changes will affect all users.
-          </p>
-        )}
-      </div>
-
-      {isGlobalDashboard && (
-        <Button size="sm" variant="outline" onClick={handleCreatePersonalCopy}>
-          <Copy className="h-4 w-4 mr-2" />
-          Create Personal Copy
-        </Button>
-      )}
-    </div>
-  );
-}
-
 interface DropZoneProps {
   section: string;
   title: string;
@@ -635,6 +556,10 @@ function SettingsDialog() {
 }
 
 export default function DashboardEdit() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const queryClient = useQueryClient();
+
   const {
     dashboardConfig,
     availableComponents,
@@ -644,6 +569,7 @@ export default function DashboardEdit() {
     updateSettings,
     sidebarOpen,
     setSidebarOpen,
+    setDashboardConfig,
   } = useDashboard();
 
   const { data: components } = useQuery({
@@ -651,38 +577,94 @@ export default function DashboardEdit() {
     queryFn: () => getAllComponents(),
   });
 
-  // Create lookup for all components
-  const allComponentsLookup = availableComponents.reduce(
-    (acc, comp) => {
-      acc[comp.id] = comp;
-      return acc;
-    },
-    {} as { [key: string]: { id: string; name: string; fileName: string } }
-  );
+  const { data: userProfile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
+    select: (data) => data[0],
+    enabled: !!userId,
+  });
 
-  // Add components that are currently in use to the lookup
-  if (dashboardConfig) {
-    const allUsedComponents = [
-      ...dashboardConfig.headerComponentIds,
-      ...dashboardConfig.primaryComponentIds,
-      ...dashboardConfig.secondaryComponentIds,
-      ...dashboardConfig.footerComponentIds,
-    ];
+  const { data: dashboards } = useQuery({
+    queryKey: ["dashboards"],
+    queryFn: () => getAllDashboards(),
+  });
 
-    allUsedComponents.forEach((id) => {
-      const component = components?.find((comp) => comp.id === id);
-      if (!allComponentsLookup[id]) {
-        allComponentsLookup[id] = {
-          id,
-          name: component?.name ?? `Component ${id.slice(0, 8)}`,
-          fileName: `component-${id}`,
-        };
-      }
+  // Check if current dashboard is global
+  const isGlobalDashboard = useMemo(() => {
+    if (!dashboards || !dashboardConfig) return false;
+    const currentDashboard = dashboards.find(
+      (d) => d.id === dashboardConfig.id
+    );
+    return currentDashboard?.profileId === null;
+  }, [dashboards, dashboardConfig]);
+
+  // Auto-create personal dashboard when editing global dashboard
+  const createPersonalDashboard = useCallback(async () => {
+    if (!dashboardConfig || !userProfile || !isGlobalDashboard) return;
+
+    const personalDashboard = {
+      ...dashboardConfig,
+      id: `personal-${userProfile.id}-${Date.now()}`,
+      profileId: userProfile.id,
+    };
+
+    setDashboardConfig(personalDashboard);
+
+    // Invalidate queries to refresh data
+    await queryClient.invalidateQueries({ queryKey: ["dashboards"] });
+
+    toast.success("Created personal dashboard copy", {
+      description: "You're now editing your personal dashboard",
     });
-  }
+  }, [
+    dashboardConfig,
+    userProfile,
+    isGlobalDashboard,
+    setDashboardConfig,
+    queryClient,
+  ]);
+
+  // Create lookup for all components
+  const allComponentsLookup = useMemo(() => {
+    const lookup = availableComponents.reduce(
+      (acc, comp) => {
+        acc[comp.id] = comp;
+        return acc;
+      },
+      {} as { [key: string]: { id: string; name: string; fileName: string } }
+    );
+
+    // Add components that are currently in use to the lookup
+    if (dashboardConfig) {
+      const allUsedComponents = [
+        ...dashboardConfig.headerComponentIds,
+        ...dashboardConfig.primaryComponentIds,
+        ...dashboardConfig.secondaryComponentIds,
+        ...dashboardConfig.footerComponentIds,
+      ];
+
+      allUsedComponents.forEach((id) => {
+        const component = components?.find((comp) => comp.id === id);
+        if (!lookup[id] && component) {
+          lookup[id] = {
+            id,
+            name: component.name,
+            fileName: component.fileName,
+          };
+        }
+      });
+    }
+
+    return lookup;
+  }, [availableComponents, dashboardConfig, components]);
 
   const handleDrop = useCallback(
-    (componentId: string, toSection: string) => {
+    async (componentId: string, toSection: string) => {
+      // Auto-create personal dashboard if editing global
+      if (isGlobalDashboard) {
+        await createPersonalDashboard();
+      }
+
       const isFromSidebar = availableComponents.some(
         (comp) => comp.id === componentId
       );
@@ -716,11 +698,23 @@ export default function DashboardEdit() {
         }
       }
     },
-    [availableComponents, dashboardConfig, addComponentToSection, moveComponent]
+    [
+      availableComponents,
+      dashboardConfig,
+      addComponentToSection,
+      moveComponent,
+      isGlobalDashboard,
+      createPersonalDashboard,
+    ]
   );
 
   const handleRemove = useCallback(
-    (componentId: string, section: string) => {
+    async (componentId: string, section: string) => {
+      // Auto-create personal dashboard if editing global
+      if (isGlobalDashboard) {
+        await createPersonalDashboard();
+      }
+
       removeComponentFromSection(
         componentId,
         section as keyof Pick<
@@ -732,29 +726,22 @@ export default function DashboardEdit() {
         >
       );
     },
-    [removeComponentFromSection]
+    [removeComponentFromSection, isGlobalDashboard, createPersonalDashboard]
   );
 
   const handleResizeEnd = useCallback(
-    (sizes: number[]) => {
+    async (sizes: number[]) => {
+      // Auto-create personal dashboard if editing global
+      if (isGlobalDashboard) {
+        await createPersonalDashboard();
+      }
+
       if (sizes.length >= 2) {
         const mainSplit = sizes[0] ? sizes[0] / 100 : 0.65;
         updateSettings({ mainSplit });
       }
     },
-    [updateSettings]
-  );
-
-  const handleFooterResizeEnd = useCallback(
-    (sizes: number[]) => {
-      if (sizes.length >= 2) {
-        const footerSplit = sizes[0]
-          ? sizes[0] / (sizes[0] + (sizes[1] ?? 0))
-          : 0.35;
-        updateSettings({ footerSplit });
-      }
-    },
-    [updateSettings]
+    [updateSettings, isGlobalDashboard, createPersonalDashboard]
   );
 
   if (!dashboardConfig) {
@@ -769,259 +756,228 @@ export default function DashboardEdit() {
   }
 
   return (
-    <div className="h-screen flex bg-background flex-col">
-      {/* Dashboard Selector */}
-      <DashboardSelector />
+    <div className="h-screen flex bg-background">
+      {/* Main Edit Area (2/3) */}
+      <ResizablePanelGroup direction="horizontal" className="flex-1">
+        <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
+          <div className="h-full p-6 overflow-auto">
+            <div className="space-y-6">
+              {/* Header Section with Pagination Preview */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Header Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <HeaderPreview
+                    components={dashboardConfig.headerComponentIds}
+                    allComponents={allComponentsLookup}
+                    headerComponents={dashboardConfig.headerComponents}
+                    showIndicators={dashboardConfig.showIndicators}
+                    autoScroll={dashboardConfig.autoScroll}
+                    onRemove={(componentId) =>
+                      handleRemove(componentId, "headerComponentIds")
+                    }
+                  />
 
-      <div className="flex flex-1">
-        {/* Main Edit Area (2/3) */}
-        <ResizablePanelGroup direction="horizontal" className="flex-1">
-          <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
-            <div className="h-full p-6 overflow-auto">
-              <div className="space-y-6">
-                {/* Header Section with Pagination Preview */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Header Metrics
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <HeaderPreview
-                      components={dashboardConfig.headerComponentIds}
+                  {/* Drop zone for adding new components */}
+                  <div className="mt-4 pt-4 border-t">
+                    <DropZone
+                      section="headerComponentIds"
+                      title="Add Header Components"
+                      components={[]}
                       allComponents={allComponentsLookup}
-                      headerComponents={dashboardConfig.headerComponents}
-                      showIndicators={dashboardConfig.showIndicators}
-                      autoScroll={dashboardConfig.autoScroll}
-                      onRemove={(componentId) =>
-                        handleRemove(componentId, "headerComponentIds")
-                      }
+                      onDrop={handleDrop}
+                      onRemove={handleRemove}
+                      className="min-h-20"
                     />
+                  </div>
+                </CardContent>
+              </Card>
 
-                    {/* Drop zone for adding new components */}
-                    <div className="mt-4 pt-4 border-t">
-                      <DropZone
-                        section="headerComponentIds"
-                        title="Add Header Components"
-                        components={[]}
-                        allComponents={allComponentsLookup}
-                        onDrop={handleDrop}
-                        onRemove={handleRemove}
-                        className="min-h-20"
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Main Content Section with Resizable Panels */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Main Content
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResizablePanelGroup
-                      direction="horizontal"
-                      onLayout={handleResizeEnd}
-                      className="min-h-64"
+              {/* Main Content Section with Resizable Panels */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Main Content
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ResizablePanelGroup
+                    direction="horizontal"
+                    onLayout={handleResizeEnd}
+                    className="min-h-64"
+                  >
+                    <ResizablePanel
+                      defaultSize={dashboardConfig.mainSplit * 100}
+                      minSize={30}
                     >
-                      <ResizablePanel
-                        defaultSize={dashboardConfig.mainSplit * 100}
-                        minSize={30}
-                      >
-                        <div className="h-full mr-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Primary Section
-                          </h4>
-                          <CarouselSection
-                            components={dashboardConfig.primaryComponentIds}
-                            allComponents={allComponentsLookup}
-                            showIndicators={dashboardConfig.showIndicators}
-                            autoScroll={dashboardConfig.autoScroll}
-                            onRemove={(componentId) =>
-                              handleRemove(componentId, "primaryComponentIds")
-                            }
-                            interval={5000}
-                          />
+                      <div className="h-full mr-3">
+                        <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                          Primary Section
+                        </h4>
+                        <CarouselSection
+                          components={dashboardConfig.primaryComponentIds}
+                          allComponents={allComponentsLookup}
+                          showIndicators={dashboardConfig.showIndicators}
+                          autoScroll={dashboardConfig.autoScroll}
+                          onRemove={(componentId) =>
+                            handleRemove(componentId, "primaryComponentIds")
+                          }
+                          interval={5000}
+                        />
 
-                          {/* Drop zone */}
-                          <div className="mt-4">
-                            <DropZone
-                              section="primaryComponentIds"
-                              title="Add Primary Components"
-                              components={[]}
-                              allComponents={allComponentsLookup}
-                              onDrop={handleDrop}
-                              onRemove={handleRemove}
-                              className="min-h-16"
-                            />
-                          </div>
-                        </div>
-                      </ResizablePanel>
-
-                      <ResizableHandle withHandle />
-
-                      <ResizablePanel
-                        defaultSize={(1 - dashboardConfig.mainSplit) * 100}
-                        minSize={20}
-                      >
-                        <div className="h-full ml-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Secondary Section
-                          </h4>
-                          <CarouselSection
-                            components={dashboardConfig.secondaryComponentIds}
-                            allComponents={allComponentsLookup}
-                            showIndicators={dashboardConfig.showIndicators}
-                            autoScroll={dashboardConfig.autoScroll}
-                            onRemove={(componentId) =>
-                              handleRemove(componentId, "secondaryComponentIds")
-                            }
-                            interval={4000}
-                          />
-
-                          {/* Drop zone */}
-                          <div className="mt-4">
-                            <DropZone
-                              section="secondaryComponentIds"
-                              title="Add Secondary Components"
-                              components={[]}
-                              allComponents={allComponentsLookup}
-                              onDrop={handleDrop}
-                              onRemove={handleRemove}
-                              className="min-h-16"
-                            />
-                          </div>
-                        </div>
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  </CardContent>
-                </Card>
-
-                {/* Footer Section with Resizable Panels */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Footer Content
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ResizablePanelGroup
-                      direction="horizontal"
-                      onLayout={handleFooterResizeEnd}
-                      className="min-h-48"
-                    >
-                      <ResizablePanel
-                        defaultSize={dashboardConfig.footerSplit * 100}
-                        minSize={30}
-                      >
-                        <div className="h-full mr-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Left Footer
-                          </h4>
-                          <div className="text-muted-foreground text-sm mb-2">
-                            Shows components at even indices (0, 2, 4...)
-                          </div>
-
-                          {/* Drop zone */}
+                        {/* Drop zone */}
+                        <div className="mt-4">
                           <DropZone
-                            section="footerComponentIds"
-                            title="Add Footer Components"
+                            section="primaryComponentIds"
+                            title="Add Primary Components"
                             components={[]}
                             allComponents={allComponentsLookup}
                             onDrop={handleDrop}
                             onRemove={handleRemove}
-                            className="h-32"
+                            className="min-h-16"
                           />
                         </div>
-                      </ResizablePanel>
-
-                      <ResizableHandle withHandle />
-
-                      <ResizablePanel
-                        defaultSize={(1 - dashboardConfig.footerSplit) * 100}
-                        minSize={20}
-                      >
-                        <div className="h-full ml-3">
-                          <h4 className="font-medium text-sm text-muted-foreground mb-3">
-                            Right Footer
-                          </h4>
-                          <div className="text-muted-foreground text-sm mb-2">
-                            Shows components at odd indices (1, 3, 5...)
-                          </div>
-
-                          <div className="border-2 border-dashed rounded-lg p-4 h-32 border-muted-foreground/25">
-                            <div className="text-muted-foreground text-sm">
-                              Components added to footer appear here alternately
-                            </div>
-                          </div>
-                        </div>
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </ResizablePanel>
-
-          {/* Sidebar (1/3) */}
-          {sidebarOpen && (
-            <>
-              <ResizableHandle withHandle />
-              <ResizablePanel defaultSize={33} minSize={20} maxSize={50}>
-                <div className="h-full border-l bg-muted/30">
-                  <div className="p-4 border-b bg-background">
-                    <div className="flex items-center justify-between">
-                      <h2 className="font-semibold">Components</h2>
-                      <div className="flex items-center gap-2">
-                        <SettingsDialog />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setSidebarOpen(false)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
+                    </ResizablePanel>
+
+                    <ResizableHandle withHandle />
+
+                    <ResizablePanel
+                      defaultSize={(1 - dashboardConfig.mainSplit) * 100}
+                      minSize={20}
+                    >
+                      <div className="h-full ml-3">
+                        <h4 className="font-medium text-sm text-muted-foreground mb-3">
+                          Secondary Section
+                        </h4>
+                        <CarouselSection
+                          components={dashboardConfig.secondaryComponentIds}
+                          allComponents={allComponentsLookup}
+                          showIndicators={dashboardConfig.showIndicators}
+                          autoScroll={dashboardConfig.autoScroll}
+                          onRemove={(componentId) =>
+                            handleRemove(componentId, "secondaryComponentIds")
+                          }
+                          interval={4000}
+                        />
+
+                        {/* Drop zone */}
+                        <div className="mt-4">
+                          <DropZone
+                            section="secondaryComponentIds"
+                            title="Add Secondary Components"
+                            components={[]}
+                            allComponents={allComponentsLookup}
+                            onDrop={handleDrop}
+                            onRemove={handleRemove}
+                            className="min-h-16"
+                          />
+                        </div>
+                      </div>
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                </CardContent>
+              </Card>
+
+              {/* Footer Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    Footer Content
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <HeaderPreview
+                    components={dashboardConfig.footerComponentIds}
+                    allComponents={allComponentsLookup}
+                    headerComponents={dashboardConfig.headerComponents}
+                    showIndicators={dashboardConfig.showIndicators}
+                    autoScroll={dashboardConfig.autoScroll}
+                    onRemove={(componentId) =>
+                      handleRemove(componentId, "footerComponentIds")
+                    }
+                  />
+
+                  {/* Single drop zone for footer components */}
+                  <div className="mt-4 pt-4 border-t">
+                    <DropZone
+                      section="footerComponentIds"
+                      title="Add Footer Components"
+                      components={[]}
+                      allComponents={allComponentsLookup}
+                      onDrop={handleDrop}
+                      onRemove={handleRemove}
+                      className="min-h-20"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </ResizablePanel>
+
+        {/* Sidebar (1/3) */}
+        {sidebarOpen && (
+          <>
+            <ResizableHandle withHandle />
+            <ResizablePanel defaultSize={33} minSize={20} maxSize={50}>
+              <div className="h-full border-l bg-muted/30">
+                <div className="p-4 border-b bg-background">
+                  <div className="flex items-center justify-between">
+                    <h2 className="font-semibold">Components</h2>
+                    <div className="flex items-center gap-2">
+                      <SettingsDialog />
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSidebarOpen(false)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
+                </div>
 
-                  <div className="p-4 h-full overflow-auto">
-                    <div className="space-y-3">
-                      {availableComponents.map((component) => (
+                <div className="p-4 h-full overflow-auto">
+                  <div className="space-y-3">
+                    {availableComponents.length > 0 ? (
+                      availableComponents.map((component) => (
                         <DraggableComponent
                           key={component.id}
                           component={component}
                           isInSidebar
                         />
-                      ))}
-
-                      {availableComponents.length === 0 && (
-                        <div className="text-center text-muted-foreground text-sm py-8">
-                          No available components
-                        </div>
-                      )}
-                    </div>
+                      ))
+                    ) : (
+                      <div className="text-center text-muted-foreground text-sm py-8">
+                        <p>No available components</p>
+                        <p className="text-xs mt-2">
+                          All components are currently in use on the dashboard
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </ResizablePanel>
-            </>
-          )}
-        </ResizablePanelGroup>
-
-        {/* Sidebar Toggle Button */}
-        {!sidebarOpen && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="fixed top-4 right-4 z-50"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <PanelRightClose className="h-4 w-4" />
-          </Button>
+              </div>
+            </ResizablePanel>
+          </>
         )}
-      </div>
+      </ResizablePanelGroup>
+
+      {/* Sidebar Toggle Button */}
+      {!sidebarOpen && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="fixed top-4 right-4 z-50"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <PanelRightClose className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
