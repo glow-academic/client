@@ -22,9 +22,13 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { Dashboard } from "@/types";
@@ -35,7 +39,13 @@ import { getAllComponents } from "@/utils/queries/components/get-all-components"
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PanelRightClose, Settings, X } from "lucide-react";
+import {
+  PanelRightClose,
+  PanelRightOpen,
+  Save,
+  Settings,
+  X,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -1220,15 +1230,6 @@ export default function DashboardEdit() {
 
   return (
     <div className="h-screen flex bg-background">
-      {/* Save Button - Fixed positioned in top right corner of the page */}
-      <Button
-        onClick={saveChanges}
-        disabled={!hasChanges || isSaving}
-        className="fixed top-4 right-4 z-50"
-        size="sm"
-      >
-        {isSaving ? "Saving..." : "Save Changes"}
-      </Button>
       {/* Main Edit Area */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
@@ -1236,13 +1237,65 @@ export default function DashboardEdit() {
             {/* Header with sidebar toggle */}
             <div className="p-4 border-b bg-background flex items-center justify-between">
               <h1 className="font-semibold text-lg">Dashboard Editor</h1>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setSidebarOpen(!sidebarOpen)}
-              >
-                <PanelRightClose className="h-4 w-4" />
-              </Button>
+              {!sidebarOpen && (
+                <div className="flex items-center gap-2">
+                  {/* Settings Button - shown when sidebar is closed */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <SettingsDialog
+                        dashboardConfig={dashboardConfig}
+                        updateSettings={updateSettings}
+                        saveChanges={saveChanges}
+                        isSaving={isSaving}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Dashboard Settings</p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Save Button - shown when sidebar is closed */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={saveChanges}
+                        disabled={!hasChanges || isSaving}
+                        variant={
+                          !hasChanges || isSaving ? "outline" : "default"
+                        }
+                        size="sm"
+                      >
+                        <Save className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>
+                        {isSaving
+                          ? "Saving..."
+                          : hasChanges
+                            ? "Save Changes"
+                            : "No Changes"}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+
+                  {/* Open Panel Button */}
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                      >
+                        <PanelRightOpen className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Open Panel</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
 
             <div className="flex-1 p-6 overflow-auto">
@@ -1428,12 +1481,63 @@ export default function DashboardEdit() {
                 <div className="p-4 border-b bg-background">
                   <div className="flex items-center justify-between">
                     <h2 className="font-semibold">Components</h2>
-                    <SettingsDialog
-                      dashboardConfig={dashboardConfig}
-                      updateSettings={updateSettings}
-                      saveChanges={saveChanges}
-                      isSaving={isSaving}
-                    />
+                    <div className="flex items-center gap-2">
+                      {/* Settings Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SettingsDialog
+                            dashboardConfig={dashboardConfig}
+                            updateSettings={updateSettings}
+                            saveChanges={saveChanges}
+                            isSaving={isSaving}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Dashboard Settings</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {/* Save Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            onClick={saveChanges}
+                            disabled={!hasChanges || isSaving}
+                            variant={
+                              !hasChanges || isSaving ? "outline" : "default"
+                            }
+                            size="sm"
+                          >
+                            <Save className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>
+                            {isSaving
+                              ? "Saving..."
+                              : hasChanges
+                                ? "Save Changes"
+                                : "No Changes"}
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {/* Close Panel Button */}
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setSidebarOpen(!sidebarOpen)}
+                          >
+                            <PanelRightClose className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Close Panel</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                   </div>
                 </div>
 
