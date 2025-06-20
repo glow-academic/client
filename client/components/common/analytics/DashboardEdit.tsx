@@ -27,6 +27,8 @@ import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { logError } from "@/utils/logger";
+import { getAllComponents } from "@/utils/queries/components/get-all-components";
+import { useQuery } from "@tanstack/react-query";
 import { Minus, PanelRightClose, Settings, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -378,6 +380,11 @@ export default function DashboardEdit() {
     setSidebarOpen,
   } = useDashboard();
 
+  const { data: components } = useQuery({
+    queryKey: ["components"],
+    queryFn: () => getAllComponents(),
+  });
+
   // Create lookup for all components
   const allComponentsLookup = availableComponents.reduce(
     (acc, comp) => {
@@ -399,10 +406,11 @@ export default function DashboardEdit() {
     // This would need to be populated from your actual components data
     // For now, creating mock entries for components that are in use but not in availableComponents
     allUsedComponents.forEach((id) => {
+      const component = components?.find((comp) => comp.id === id);
       if (!allComponentsLookup[id]) {
         allComponentsLookup[id] = {
           id,
-          name: `Component ${id.slice(0, 8)}`,
+          name: component?.name ?? `Component ${id.slice(0, 8)}`,
           fileName: `component-${id}`,
         };
       }
