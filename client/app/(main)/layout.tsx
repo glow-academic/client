@@ -32,7 +32,7 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isEditMode, setIsEditMode, saveChanges } = useDashboard();
+  const { isEditMode, setIsEditMode } = useDashboard();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
@@ -62,23 +62,7 @@ export default function MainLayout({
     }
 
     if (pathname === "/analytics/dashboard") {
-      if (isEditMode) {
-        return (
-          <Button
-            onClick={async () => {
-              if (saveChanges) {
-                await saveChanges();
-              }
-              setIsEditMode(false);
-            }}
-            size="sm"
-            variant="default"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Save Changes
-          </Button>
-        );
-      } else {
+      if (!isEditMode) {
         return (
           <Button onClick={() => setIsEditMode(true)} size="sm">
             <Pencil className="h-4 w-4 mr-2" />

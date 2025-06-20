@@ -802,13 +802,15 @@ function SettingsDialog({
 }
 
 export default function DashboardEdit() {
-  const { setSaveChanges } = useDashboard();
+  const { setIsEditMode } = useDashboard();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
 
   // Local state for dashboard editing
   const [dashboardConfig, setDashboardConfig] =
+    useState<DashboardConfig | null>(null);
+  const [originalDashboardConfig, setOriginalDashboardConfig] =
     useState<DashboardConfig | null>(null);
   const [availableComponents, setAvailableComponents] = useState<
     DashboardComponent[]
@@ -834,67 +836,82 @@ export default function DashboardEdit() {
   });
 
   // Initialize dashboard config from loaded data
-  useEffect(() => {
-    if (dashboards && userProfile && !dashboardConfig) {
-      let dashboard = dashboards.find((d) => d.profileId === userProfile.id);
+  // Initialize dashboard config from loaded data
+  useMemo(() => {
+    if (!dashboards || !userProfile || dashboardConfig) return;
 
-      if (!dashboard) {
-        dashboard = dashboards.find((d) => d.profileId === null);
-      }
+    let dashboard = dashboards.find((d) => d.profileId === userProfile.id);
+    if (!dashboard) {
+      dashboard = dashboards.find((d) => d.profileId === null);
+    }
 
-      if (dashboard) {
-        setDashboardConfig({
-          id: dashboard.id,
-          headerComponentIds: dashboard.headerComponentIds || [],
-          primaryComponentIds: dashboard.primaryComponentIds || [],
-          secondaryComponentIds: dashboard.secondaryComponentIds || [],
-          footerComponentIds: dashboard.footerComponentIds || [],
-          autoScroll: dashboard.autoScroll || false,
-          showIndicators: dashboard.showIndicators || false,
-          headerComponents: dashboard.headerComponents || 4,
-          mainSplit: dashboard.mainSplit || 0.75,
-          footerSplit: dashboard.footerSplit || 0.5,
-        });
-      }
+    if (dashboard) {
+      const config = {
+        id: dashboard.id,
+        headerComponentIds: dashboard.headerComponentIds || [],
+        primaryComponentIds: dashboard.primaryComponentIds || [],
+        secondaryComponentIds: dashboard.secondaryComponentIds || [],
+        footerComponentIds: dashboard.footerComponentIds || [],
+        autoScroll: dashboard.autoScroll || false,
+        showIndicators: dashboard.showIndicators || false,
+        headerComponents: dashboard.headerComponents || 4,
+        mainSplit: dashboard.mainSplit || 0.75,
+        footerSplit: dashboard.footerSplit || 0.5,
+      };
+
+      setDashboardConfig(config);
+      setOriginalDashboardConfig(config);
     }
   }, [dashboards, userProfile, dashboardConfig]);
 
-  // Initialize available components
-  useEffect(() => {
-    if (components && dashboardConfig) {
-      const isValidUUID = (uuid: string) => {
-        const uuidRegex =
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(uuid);
-      };
+  // Calculate available components
+  const availableComponentsData = useMemo(() => {
+    if (!components || !dashboardConfig) return [];
 
-      const usedComponentIds = [
-        ...dashboardConfig.headerComponentIds.filter(
-          (id) => id && isValidUUID(id)
-        ),
-        ...dashboardConfig.primaryComponentIds.filter(
-          (id) => id && isValidUUID(id)
-        ),
-        ...dashboardConfig.secondaryComponentIds.filter(
-          (id) => id && isValidUUID(id)
-        ),
-        ...dashboardConfig.footerComponentIds.filter(
-          (id) => id && isValidUUID(id)
-        ),
-      ];
+    const isValidUUID = (uuid: string) => {
+      const uuidRegex =
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      return uuidRegex.test(uuid);
+    };
 
-      const available = components
-        .filter((comp) => !usedComponentIds.includes(comp.id))
-        .map((comp) => ({
-          id: comp.id,
-          name: comp.name,
-          fileName: comp.fileName,
-          layout: (comp.layout as Record<string, unknown>) || {},
-        }));
+    const usedComponentIds = [
+      ...dashboardConfig.headerComponentIds.filter(
+        (id) => id && isValidUUID(id)
+      ),
+      ...dashboardConfig.primaryComponentIds.filter(
+        (id) => id && isValidUUID(id)
+      ),
+      ...dashboardConfig.secondaryComponentIds.filter(
+        (id) => id && isValidUUID(id)
+      ),
+      ...dashboardConfig.footerComponentIds.filter(
+        (id) => id && isValidUUID(id)
+      ),
+    ];
 
-      setAvailableComponents(available);
-    }
+    return components
+      .filter((comp) => !usedComponentIds.includes(comp.id))
+      .map((comp) => ({
+        id: comp.id,
+        name: comp.name,
+        fileName: comp.fileName,
+        layout: (comp.layout as Record<string, unknown>) || {},
+      }));
   }, [components, dashboardConfig]);
+
+  // Update available components when data changes
+  useEffect(() => {
+    setAvailableComponents(availableComponentsData);
+  }, [availableComponentsData]);
+
+  // Check if there are unsaved changes
+  const hasChanges = useMemo(() => {
+    if (!dashboardConfig || !originalDashboardConfig) return false;
+    return (
+      JSON.stringify(dashboardConfig) !==
+      JSON.stringify(originalDashboardConfig)
+    );
+  }, [dashboardConfig, originalDashboardConfig]);
 
   // Check if current dashboard is global
   const isGlobalDashboard = useMemo(() => {
@@ -1055,8 +1072,14 @@ export default function DashboardEdit() {
         toast.success("Dashboard updated successfully");
       }
 
+      // Update original config to reset change tracking
+      setOriginalDashboardConfig({ ...dashboardConfig });
+
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboards"] });
+
+      // Exit edit mode
+      setIsEditMode(false);
     } catch (error) {
       logError("Failed to save dashboard", error);
       toast.error("Failed to save dashboard");
@@ -1069,13 +1092,8 @@ export default function DashboardEdit() {
     userProfile,
     isGlobalDashboard,
     queryClient,
+    setIsEditMode,
   ]);
-
-  // Register save function with context
-  useEffect(() => {
-    setSaveChanges(saveChanges);
-    return () => setSaveChanges(null);
-  }, [saveChanges, setSaveChanges]);
 
   // Create lookup for all components
   const allComponentsLookup = useMemo(() => {
@@ -1210,7 +1228,16 @@ export default function DashboardEdit() {
   }
 
   return (
-    <div className="h-screen flex bg-background">
+    <div className="h-screen flex bg-background relative">
+      {/* Save Button - Absolute positioned in top right */}
+      <Button
+        onClick={saveChanges}
+        disabled={!hasChanges || isSaving}
+        className="absolute top-4 right-4 z-50"
+        size="sm"
+      >
+        {isSaving ? "Saving..." : "Save Changes"}
+      </Button>
       {/* Main Edit Area */}
       <ResizablePanelGroup direction="horizontal" className="flex-1">
         <ResizablePanel defaultSize={sidebarOpen ? 67 : 100} minSize={50}>
