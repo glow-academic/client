@@ -28,6 +28,8 @@ import { Switch } from "@/components/ui/switch";
 import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { logError } from "@/utils/logger";
+import { createDashboard } from "@/utils/mutations/dashboards/create-dashboard";
+import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
@@ -924,6 +926,7 @@ export default function DashboardEdit() {
           ],
         };
       });
+      // No auto-save - only save when user clicks "Save Changes"
     },
     [dashboardConfig]
   );
@@ -956,6 +959,7 @@ export default function DashboardEdit() {
           ).filter((id) => id !== componentId),
         };
       });
+      // No auto-save - only save when user clicks "Save Changes"
     },
     [dashboardConfig, components]
   );
@@ -999,6 +1003,7 @@ export default function DashboardEdit() {
           [toSection]: toArray,
         };
       });
+      // No auto-save - only save when user clicks "Save Changes"
     },
     [dashboardConfig]
   );
@@ -1026,57 +1031,51 @@ export default function DashboardEdit() {
 
   // Save changes function
   const saveChanges = useCallback(async () => {
-    if (!dashboardConfig || !session?.user?.id) return;
+    if (!dashboardConfig || !session?.user?.id || !userProfile) return;
 
     setIsSaving(true);
     try {
-      // Here you would make your API call to update the dashboard
-      // For now, I'll simulate with a delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      if (isGlobalDashboard) {
+        // Create a new personal dashboard
+        const personalDashboard = {
+          ...dashboardConfig,
+          profileId: userProfile.id,
+        };
+
+        await createDashboard(personalDashboard);
+
+        toast.success("Personal dashboard created successfully", {
+          description:
+            "Your changes have been saved to your personal dashboard",
+        });
+      } else {
+        // Update existing personal dashboard
+        await updateDashboard(dashboardConfig.id, dashboardConfig);
+
+        toast.success("Dashboard updated successfully");
+      }
 
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboards"] });
-
-      toast.success("Dashboard saved successfully");
     } catch (error) {
       logError("Failed to save dashboard", error);
       toast.error("Failed to save dashboard");
     } finally {
       setIsSaving(false);
     }
-  }, [dashboardConfig, session?.user?.id, queryClient]);
+  }, [
+    dashboardConfig,
+    session?.user?.id,
+    userProfile,
+    isGlobalDashboard,
+    queryClient,
+  ]);
 
   // Register save function with context
   useEffect(() => {
     setSaveChanges(saveChanges);
     return () => setSaveChanges(null);
   }, [saveChanges, setSaveChanges]);
-
-  // Auto-create personal dashboard when editing global dashboard
-  const createPersonalDashboard = useCallback(async () => {
-    if (!dashboardConfig || !userProfile || !isGlobalDashboard) return;
-
-    const personalDashboard = {
-      ...dashboardConfig,
-      id: `personal-${userProfile.id}-${Date.now()}`,
-      profileId: userProfile.id,
-    };
-
-    setDashboardConfig(personalDashboard);
-
-    // Invalidate queries to refresh data
-    await queryClient.invalidateQueries({ queryKey: ["dashboards"] });
-
-    toast.success("Created personal dashboard copy", {
-      description: "You're now editing your personal dashboard",
-    });
-  }, [
-    dashboardConfig,
-    userProfile,
-    isGlobalDashboard,
-    setDashboardConfig,
-    queryClient,
-  ]);
 
   // Create lookup for all components
   const allComponentsLookup = useMemo(() => {
@@ -1113,27 +1112,13 @@ export default function DashboardEdit() {
   }, [availableComponents, dashboardConfig, components]);
 
   const handleDrop = useCallback(
-    async (componentId: string, toSection: string) => {
-      // Auto-create personal dashboard if editing global
-      if (isGlobalDashboard) {
-        await createPersonalDashboard();
-      }
-
+    (componentId: string, toSection: string) => {
       const isFromSidebar = availableComponents.some(
         (comp) => comp.id === componentId
       );
 
       if (isFromSidebar) {
-        addComponentToSection(
-          componentId,
-          toSection as keyof Pick<
-            DashboardConfig,
-            | "headerComponentIds"
-            | "primaryComponentIds"
-            | "secondaryComponentIds"
-            | "footerComponentIds"
-          >
-        );
+        addComponentToSection(componentId, toSection);
       } else {
         if (!dashboardConfig) return;
 
@@ -1151,49 +1136,21 @@ export default function DashboardEdit() {
           moveComponent(componentId, fromSection, toSection);
         }
       }
+      // Changes will only be saved when user clicks "Save Changes"
     },
-    [
-      availableComponents,
-      dashboardConfig,
-      addComponentToSection,
-      moveComponent,
-      isGlobalDashboard,
-      createPersonalDashboard,
-    ]
+    [availableComponents, dashboardConfig, addComponentToSection, moveComponent]
   );
 
   const handleRemove = useCallback(
-    async (componentId: string, section: string) => {
-      // Auto-create personal dashboard if editing global
-      if (isGlobalDashboard) {
-        await createPersonalDashboard();
-      }
-
-      removeComponentFromSection(
-        componentId,
-        section as keyof Pick<
-          DashboardConfig,
-          | "headerComponentIds"
-          | "primaryComponentIds"
-          | "secondaryComponentIds"
-          | "footerComponentIds"
-        >
-      );
+    (componentId: string, section: string) => {
+      removeComponentFromSection(componentId, section);
+      // Changes will only be saved when user clicks "Save Changes"
     },
-    [removeComponentFromSection, isGlobalDashboard, createPersonalDashboard]
+    [removeComponentFromSection]
   );
 
   const handleReorder = useCallback(
-    async (
-      fromIndex: number,
-      toIndex: number,
-      section = "headerComponentIds"
-    ) => {
-      // Auto-create personal dashboard if editing global
-      if (isGlobalDashboard) {
-        await createPersonalDashboard();
-      }
-
+    (fromIndex: number, toIndex: number, section = "headerComponentIds") => {
       if (!dashboardConfig) return;
 
       const sectionArray = dashboardConfig[
@@ -1214,43 +1171,31 @@ export default function DashboardEdit() {
         ...dashboardConfig,
         [section]: newArray,
       });
+      // Changes will only be saved when user clicks "Save Changes"
     },
-    [
-      dashboardConfig,
-      setDashboardConfig,
-      isGlobalDashboard,
-      createPersonalDashboard,
-    ]
+    [dashboardConfig, setDashboardConfig]
   );
 
   const handleMainResizeEnd = useCallback(
-    async (sizes: number[]) => {
-      // Auto-create personal dashboard if editing global
-      if (isGlobalDashboard) {
-        await createPersonalDashboard();
-      }
-
+    (sizes: number[]) => {
       if (sizes.length >= 2) {
         const mainSplit = sizes[0] ? sizes[0] / 100 : 0.65;
         updateSettings({ mainSplit });
       }
+      // Changes will only be saved when user clicks "Save Changes"
     },
-    [updateSettings, isGlobalDashboard, createPersonalDashboard]
+    [updateSettings]
   );
 
   const handleFooterResizeEnd = useCallback(
-    async (sizes: number[]) => {
-      // Auto-create personal dashboard if editing global
-      if (isGlobalDashboard) {
-        await createPersonalDashboard();
-      }
-
+    (sizes: number[]) => {
       if (sizes.length >= 2) {
         const footerSplit = sizes[0] ? sizes[0] / 100 : 0.5;
         updateSettings({ footerSplit });
       }
+      // Changes will only be saved when user clicks "Save Changes"
     },
-    [updateSettings, isGlobalDashboard, createPersonalDashboard]
+    [updateSettings]
   );
 
   if (!dashboardConfig) {

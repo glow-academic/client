@@ -11,10 +11,6 @@ interface DashboardContextType {
   // Basic edit mode
   isEditMode: boolean;
   setIsEditMode: (isEditMode: boolean) => void;
-
-  // Save function for edit mode
-  saveChanges: (() => Promise<void>) | null;
-  setSaveChanges: (saveChanges: (() => Promise<void>) | null) => void;
 }
 
 export const DashboardContext = createContext<DashboardContextType | null>(
@@ -35,15 +31,10 @@ export const DashboardProvider = ({
   children: React.ReactNode;
 }) => {
   const [isEditMode, setIsEditMode] = useState(false);
-  const [saveChanges, setSaveChanges] = useState<(() => Promise<void>) | null>(
-    null
-  );
 
   const value: DashboardContextType = {
     isEditMode,
     setIsEditMode,
-    saveChanges,
-    setSaveChanges,
   };
 
   return (
