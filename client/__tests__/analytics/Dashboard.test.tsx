@@ -121,7 +121,7 @@ describe('Dashboard', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useQuery, useSession, useEffect, useMemo, useState, userId, usel, uselIndex, userProfile, used, useEnter, useLeave
+ * - Uses hooks: useDashboard, user, useQuery, useSession, useEffect, useMemo, useState, userId, usel, uselIndex, userProfile, used, useEnter, useLeave
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

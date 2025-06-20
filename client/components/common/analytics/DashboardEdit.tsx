@@ -58,6 +58,7 @@ interface DashboardComponent {
   name: string;
   fileName: string;
   layout: Record<string, unknown>;
+  stat?: boolean;
 }
 
 // Mock data generators for different chart types
@@ -104,18 +105,42 @@ const mockCharts = {
       ))}
     </div>
   ),
+  stat: (componentId: string) => {
+    // Generate a consistent number based on component ID
+    const hash = componentId.split("").reduce((a, b) => {
+      a = (a << 5) - a + b.charCodeAt(0);
+      return a & a;
+    }, 0);
+    const number = (Math.abs(hash) % 1000) + 100; // Number between 100-1099
+    const formatted = number.toLocaleString();
+
+    return (
+      <div className="w-full h-24 flex flex-col items-center justify-center">
+        <div className="text-2xl font-bold text-primary">{formatted}</div>
+        <div className="text-xs text-muted-foreground mt-1">Sample Stat</div>
+      </div>
+    );
+  },
 };
 
 // Assign consistent chart types to components
-const getConsistentMockChart = (componentId: string) => {
-  const chartTypes = Object.keys(mockCharts);
+const getConsistentMockChart = (
+  componentId: string,
+  component?: { stat?: boolean }
+) => {
+  // Check if component has stat property
+  const isStat = component?.stat === true;
+
+  if (isStat) {
+    return (mockCharts.stat as (id: string) => React.JSX.Element)(componentId);
+  }
+
+  const chartTypes = ["bar", "pie", "line", "activity"] as const;
   const hash = componentId.split("").reduce((a, b) => {
     a = (a << 5) - a + b.charCodeAt(0);
     return a & a;
   }, 0);
-  const chartType = chartTypes[
-    Math.abs(hash) % chartTypes.length
-  ] as keyof typeof mockCharts;
+  const chartType = chartTypes[Math.abs(hash) % chartTypes.length]!;
   return mockCharts[chartType]();
 };
 
@@ -124,6 +149,7 @@ interface DraggableComponentProps {
     id: string;
     name: string;
     fileName: string;
+    stat?: boolean;
   };
   isInSidebar?: boolean;
   onRemove?: () => void;
@@ -235,7 +261,7 @@ function DraggableComponent({
 
         {!isInSidebar && (
           <div className="bg-muted/50 rounded-md p-2">
-            {getConsistentMockChart(component.id)}
+            {getConsistentMockChart(component.id, component)}
           </div>
         )}
       </div>
@@ -246,7 +272,12 @@ function DraggableComponent({
 interface HeaderPreviewProps {
   components: string[];
   allComponents: {
-    [key: string]: { id: string; name: string; fileName: string };
+    [key: string]: {
+      id: string;
+      name: string;
+      fileName: string;
+      stat?: boolean;
+    };
   };
   headerComponents: number;
   showIndicators: boolean;
@@ -358,7 +389,12 @@ function HeaderPreview({
 interface FooterPreviewProps {
   components: string[];
   allComponents: {
-    [key: string]: { id: string; name: string; fileName: string };
+    [key: string]: {
+      id: string;
+      name: string;
+      fileName: string;
+      stat?: boolean;
+    };
   };
   showIndicators: boolean;
   autoScroll: boolean;
@@ -522,7 +558,12 @@ function FooterPreview({
 interface CarouselSectionProps {
   components: string[];
   allComponents: {
-    [key: string]: { id: string; name: string; fileName: string };
+    [key: string]: {
+      id: string;
+      name: string;
+      fileName: string;
+      stat?: boolean;
+    };
   };
   showIndicators: boolean;
   autoScroll: boolean;
@@ -599,7 +640,12 @@ interface DropZoneProps {
   title: string;
   components: string[];
   allComponents: {
-    [key: string]: { id: string; name: string; fileName: string };
+    [key: string]: {
+      id: string;
+      name: string;
+      fileName: string;
+      stat?: boolean;
+    };
   };
   onDrop: (componentId: string, section: string) => void;
   onRemove: (componentId: string, section: string) => void;
@@ -898,6 +944,7 @@ export default function DashboardEdit() {
         name: comp.name,
         fileName: comp.fileName,
         layout: (comp.layout as Record<string, unknown>) || {},
+        stat: comp.stat,
       }));
   }, [components, dashboardConfig]);
 
@@ -964,6 +1011,7 @@ export default function DashboardEdit() {
             name: component.name,
             fileName: component.fileName,
             layout: (component.layout as Record<string, unknown>) || {},
+            stat: component.stat,
           },
         ]);
       }
@@ -1107,7 +1155,14 @@ export default function DashboardEdit() {
         acc[comp.id] = comp;
         return acc;
       },
-      {} as { [key: string]: { id: string; name: string; fileName: string } }
+      {} as {
+        [key: string]: {
+          id: string;
+          name: string;
+          fileName: string;
+          stat?: boolean;
+        };
+      }
     );
 
     // Add components that are currently in use to the lookup
@@ -1126,6 +1181,7 @@ export default function DashboardEdit() {
             id,
             name: component.name,
             fileName: component.fileName,
+            stat: component.stat,
           };
         }
       });
@@ -1261,6 +1317,7 @@ export default function DashboardEdit() {
         name: comp.name,
         fileName: comp.fileName,
         layout: (comp.layout as Record<string, unknown>) || {},
+        stat: comp.stat,
       }));
 
     setAvailableComponents(newAvailableComponents);
@@ -1326,7 +1383,8 @@ export default function DashboardEdit() {
                     <DialogHeader>
                       <DialogTitle>Reset to Default Settings</DialogTitle>
                       <DialogDescription>
-                        Are you sure you want to apply the default dashboard settings?
+                        Are you sure you want to apply the default dashboard
+                        settings?
                       </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -1334,9 +1392,7 @@ export default function DashboardEdit() {
                         <Button variant="outline">Cancel</Button>
                       </DialogClose>
                       <DialogClose asChild>
-                        <Button onClick={resetToGlobalSettings}>
-                          Apply
-                        </Button>
+                        <Button onClick={resetToGlobalSettings}>Apply</Button>
                       </DialogClose>
                     </DialogFooter>
                   </DialogContent>

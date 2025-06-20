@@ -206,11 +206,13 @@ function generateSQL(components) {
       const layout = comp.props
         ? JSON.stringify(comp.props).replace(/'/g, "''")
         : "{}";
+      // Set stat to true for header components
+      const isStatComponent = comp.folderName === "header";
       return `  ('${comp.uuid}', '${
         comp.titleCase
       }', 'Analytics component for ${comp.titleCase.toLowerCase()}', '${
         comp.fileName
-      }', '${layout}', false, false)`;
+      }', '${layout}', ${isStatComponent}, false)`;
     })
     .join(",\n");
 

@@ -33,7 +33,7 @@ const COLORS = {
   warning: "#f59e0b",
 };
 
-export default function TotalTAs() {
+export default function TotalTas() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Fetch data

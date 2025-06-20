@@ -26,8 +26,8 @@ CREATE TABLE models (
 
 -- Insert providers with properly encrypted API keys
 INSERT INTO providers (id, name, description, api_key) VALUES 
-('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', 'dUUc7bqCMA1KDlo1hTt2aetbbTlcInroYIui+1PzM+d69/sJhOS3t0QDhn99PjdL0dKSZT94GYKd1D8ofLEdhJS2bSR0wj4DzUEpm/4HoKo16wDwbSv9RAs/B4GkKf9iJcqWfHaN8NYZz5H2tKZH/riVnPJOZ6LmQyMOYXGAaASyncVMCd70QB+hEGFGPfexU6QAkcQbeU6cGrt8CVv8in4M1WxlthFEr6qGdFiwp5zPZ8clRv0uf4iRvjo8qDYDlkGSaJs4onJSBsqlBjSMxD/1NRnEtzH4pGCLpHBT2BA='),
-('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', 'qivhWlZxxIXrp+RcUnTwfL687GNnOo3+/WaY0OkfPSx3jQbF792vHOg/LoHdGzxItE2XoeS9osviZyd0UBVhjwH5mHqYqhTR5LVEBy5IO9omfBNg2XfzBfTm+slp7YPD');
+('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', 'GFYAw6+3B4dWZ6/Zed0Z5cX2xBXjbZFh/c2ePG2QV8KB1koDfDGObr3wWyai7gP5x7yfyUbVGyfNwzJ9JqpnMDP6Sc5twTmpdY8dqjBBC9xIGr256XoLilifgq2XBlQoCpmtzRbl+xWJJwhP0qbFyTu8g/ftc/5i+PME+cwg+NJ/YUz8w79X7WMyyLYZjRPa6nYHK4niQVXUqlYD25RMSNfphc0YCfezklOqVYnZbd5LbX/10cMnmWAg/D5dFI3zYjEY7mcmLGVGxo5putiyF6o7sQWK5isUiIXVbWECPeE='),
+('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', 'g6endUnpBM91j7VvPQqACwHDJXYt55vyF3H3VxeobEP7ItvD7zHryyQgTHtjxxwi0Xq1KcOdZh1fJGjUxAHFJsheQlnbbHxdqBz9ELXEVL7YqwiIZW8BuPeV9pMB8mga');
 
 INSERT INTO models (id, name, description, provider_id) VALUES
 ('11111111-aaaa-aaaa-aaaa-111111111111', 'gpt-4o', 'GPT-4o is a language model that can be used to generate text, images, and audio.', '11111111-aaaa-aaaa-aaaa-111111111111'),

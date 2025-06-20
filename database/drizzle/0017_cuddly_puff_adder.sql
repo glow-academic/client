@@ -1,0 +1,1 @@
+ALTER TABLE "components" ADD COLUMN "stat" boolean DEFAULT false NOT NULL;

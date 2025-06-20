@@ -4,6 +4,7 @@
 
 import React from "react";
 
+import DashboardEdit from "./DashboardEdit";
 import CohortCompletion from "./footer/CohortCompletion";
 import ScenarioData from "./footer/ScenarioData";
 import SimulationPerformance from "./footer/SimulationPerformance";
@@ -14,7 +15,7 @@ import CompletionRate from "./header/CompletionRate";
 import NeedSupport from "./header/NeedSupport";
 import PassRate from "./header/PassRate";
 import TotalSessions from "./header/TotalSessions";
-import TotalTAs from "./header/TotalTas";
+import TotalTas from "./header/TotalTas";
 import TrainingHours from "./header/TrainingHours";
 import TrainingSessions from "./header/TrainingSessions";
 import PerformanceByPersonality from "./primary/PerformanceByPersonality";
@@ -30,6 +31,18 @@ export interface ComponentConfig {
 }
 
 export const registry: Record<string, ComponentConfig> = {
+  "11e78493-b470-f05a-82d6-ef98de429181": {
+    component: DashboardEdit,
+    props: {
+      id: "",
+      name: "",
+      fileName: "",
+      components: "",
+      key: "",
+      section: "",
+      title: "",
+    },
+  },
   "49990ffa-5698-bd91-b379-6703a8cf4835": {
     component: CohortCompletion,
     props: {
@@ -60,7 +73,7 @@ export const registry: Record<string, ComponentConfig> = {
   "7b058d9e-2968-3e69-4ff7-8bc7a13e5cfc": { component: NeedSupport },
   "32aae137-f974-5b45-60eb-6b9b2eca6433": { component: PassRate },
   "c3bebe15-6231-0b14-704a-67545389be60": { component: TotalSessions },
-  "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTAs },
+  "e412e43b-468c-489c-f262-1607bc64dc43": { component: TotalTas },
   "71724c23-ef68-189d-94b3-8ed2c8ffded3": { component: TrainingHours },
   "654ffdaa-be1f-8f87-c2ac-5a11b7076c8f": { component: TrainingSessions },
   "bab2e342-c823-2e94-a85a-816d9cb78bd2": {

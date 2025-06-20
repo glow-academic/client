@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-19T22:30:57.709Z
+Generated on: 2025-06-20T15:46:10.945Z
 
 ## Summary
-- **Total Components**: 85
-- **Tests Created**: 0
+- **Total Components**: 86
+- **Tests Created**: 1
 - **Tests Updated**: 27
 - **Tests Skipped** (already implemented): 58
 
@@ -16,6 +16,7 @@ Generated on: 2025-06-19T22:30:57.709Z
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
+| DashboardEdit | common/analytics/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
 | Registry | common/analytics/Registry.tsx | Registry.test.tsx | ❌ Needs Implementation |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ❌ Needs Implementation |
@@ -27,7 +28,7 @@ Generated on: 2025-06-19T22:30:57.709Z
 | NeedSupport | common/analytics/header/NeedSupport.tsx | NeedSupport.test.tsx | ❌ Needs Implementation |
 | PassRate | common/analytics/header/PassRate.tsx | PassRate.test.tsx | ❌ Needs Implementation |
 | TotalSessions | common/analytics/header/TotalSessions.tsx | TotalSessions.test.tsx | ❌ Needs Implementation |
-| TotalTAs | common/analytics/header/TotalTAs.tsx | TotalTAs.test.tsx | ❌ Needs Implementation |
+| TotalTas | common/analytics/header/TotalTas.tsx | TotalTas.test.tsx | ❌ Needs Implementation |
 | TrainingHours | common/analytics/header/TrainingHours.tsx | TrainingHours.test.tsx | ❌ Needs Implementation |
 | TrainingSessions | common/analytics/header/TrainingSessions.tsx | TrainingSessions.test.tsx | ❌ Needs Implementation |
 | PerformanceByPersonality | common/analytics/primary/PerformanceByPersonality.tsx | PerformanceByPersonality.test.tsx | ❌ Needs Implementation |
@@ -110,6 +111,7 @@ __tests__/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
 │   ├── analytics/
+│   │   ├── DashboardEdit.test.tsx
 │   │   ├── Registry.test.tsx
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx
@@ -123,7 +125,7 @@ __tests__/
 │   │   │   ├── NeedSupport.test.tsx
 │   │   │   ├── PassRate.test.tsx
 │   │   │   ├── TotalSessions.test.tsx
-│   │   │   ├── TotalTAs.test.tsx
+│   │   │   ├── TotalTas.test.tsx
 │   │   │   ├── TrainingHours.test.tsx
 │   │   │   ├── TrainingSessions.test.tsx
 │   │   ├── primary/

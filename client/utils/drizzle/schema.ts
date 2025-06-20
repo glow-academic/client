@@ -198,6 +198,7 @@ export const components = pgTable("components", {
 	description: text().notNull(),
 	fileName: text("file_name").notNull(),
 	layout: jsonb().default({}).notNull(),
+	stat: boolean().default(false).notNull(),
 	defaultComponent: boolean("default_component").default(false).notNull()});
 
 export const dashboards = pgTable("dashboards", {
