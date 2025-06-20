@@ -33,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDashboard } from "@/contexts/dashboard-context";
+import { cn } from "@/lib/utils";
 import { Dashboard } from "@/types";
 import { logError } from "@/utils/logger";
 import { updateComponent } from "@/utils/mutations/components/update-component";
@@ -639,26 +640,68 @@ export default function DashboardEdit() {
     componentIds: string[];
   }) => {
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+    const [insertPosition, setInsertPosition] = useState<
+      "before" | "after" | null
+    >(null);
 
     const handleDragStart = (e: React.DragEvent, index: number) => {
       setDraggedIndex(index);
       e.dataTransfer.effectAllowed = "move";
     };
 
-    const handleDragOver = (e: React.DragEvent) => {
+    const handleDragEnd = () => {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      setInsertPosition(null);
+    };
+
+    const handleDragOver = (e: React.DragEvent, index: number) => {
       e.preventDefault();
+      if (draggedIndex === null || draggedIndex === index) return;
+
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const midPoint = rect.top + rect.height / 2;
+      const position = e.clientY < midPoint ? "before" : "after";
+
+      setDragOverIndex(index);
+      setInsertPosition(position);
+    };
+
+    const handleDragLeave = (e: React.DragEvent) => {
+      // Only clear if we're leaving the entire item, not just moving between child elements
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const x = e.clientX;
+      const y = e.clientY;
+
+      if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+        setDragOverIndex(null);
+        setInsertPosition(null);
+      }
     };
 
     const handleDrop = (e: React.DragEvent, dropIndex: number) => {
       e.preventDefault();
       if (draggedIndex !== null && draggedIndex !== dropIndex) {
-        reorderComponentsInSection(sectionKey, draggedIndex, dropIndex);
+        let newIndex = dropIndex;
+
+        // Calculate the correct insertion index based on position
+        if (insertPosition === "after") {
+          newIndex = dropIndex + 1;
+        }
+
+        // Adjust for moving within the same array
+        if (draggedIndex < newIndex) {
+          newIndex -= 1;
+        }
+
+        reorderComponentsInSection(sectionKey, draggedIndex, newIndex);
       }
-      setDraggedIndex(null);
+      handleDragEnd();
     };
 
     return (
-      <div className="w-80 max-h-96 overflow-y-auto">
+      <div className="w-96 max-h-96 overflow-y-auto">
         <div className="space-y-3">
           <h4 className="font-medium text-sm">{sectionTitle} Components</h4>
           {componentIds.length === 0 ? (
@@ -666,28 +709,51 @@ export default function DashboardEdit() {
               No components in this section
             </p>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1">
               {componentIds.map((componentId, index) => {
                 const component = allComponentsLookup[componentId];
                 if (!component) return null;
 
+                const isDragging = draggedIndex === index;
+                const isDropTarget = dragOverIndex === index;
+                const showInsertBefore =
+                  isDropTarget && insertPosition === "before";
+                const showInsertAfter =
+                  isDropTarget && insertPosition === "after";
+
                 return (
-                  <div
-                    key={componentId}
-                    draggable
-                    onDragStart={(e) => handleDragStart(e, index)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, index)}
-                    className={`transition-colors ${
-                      draggedIndex === index ? "opacity-50" : ""
-                    }`}
-                  >
-                    <DraggableComponent
-                      component={component}
-                      isInSidebar={true}
-                      hideRemoveButton={true}
-                      onUpdateLayout={handleUpdateLayout}
-                    />
+                  <div key={componentId} className="relative">
+                    {/* Insert indicator before */}
+                    {showInsertBefore && (
+                      <div className="h-0.5 bg-primary rounded-full mb-1 mx-2" />
+                    )}
+
+                    <div
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      className={cn(
+                        "transition-all duration-200 cursor-move",
+                        isDragging && "opacity-50 scale-95",
+                        isDropTarget && "ring-2 ring-primary/20"
+                      )}
+                    >
+                      <DraggableComponent
+                        component={component}
+                        isInSidebar={true}
+                        isManagementView={true}
+                        onRemove={() => handleRemove(componentId, sectionKey)}
+                        onUpdateLayout={handleUpdateLayout}
+                      />
+                    </div>
+
+                    {/* Insert indicator after */}
+                    {showInsertAfter && (
+                      <div className="h-0.5 bg-primary rounded-full mt-1 mx-2" />
+                    )}
                   </div>
                 );
               })}
@@ -881,7 +947,7 @@ export default function DashboardEdit() {
                               <p>Manage</p>
                             </TooltipContent>
                           </Tooltip>
-                          <PopoverContent className="w-80">
+                          <PopoverContent className="w-auto">
                             <ComponentManagementPopover
                               sectionKey="headerComponentIds"
                               sectionTitle="Header"
@@ -989,7 +1055,7 @@ export default function DashboardEdit() {
                               <p>Manage</p>
                             </TooltipContent>
                           </Tooltip>
-                          <PopoverContent className="w-80">
+                          <PopoverContent className="w-auto">
                             <div className="space-y-4">
                               <ComponentManagementPopover
                                 sectionKey="primaryComponentIds"
@@ -1167,7 +1233,7 @@ export default function DashboardEdit() {
                               <p>Manage</p>
                             </TooltipContent>
                           </Tooltip>
-                          <PopoverContent className="w-80">
+                          <PopoverContent className="w-auto">
                             <ComponentManagementPopover
                               sectionKey="footerComponentIds"
                               sectionTitle="Footer"

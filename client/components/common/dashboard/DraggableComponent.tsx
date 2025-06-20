@@ -49,6 +49,7 @@ interface DraggableComponentProps {
     layout?: Record<string, unknown>;
   };
   isInSidebar?: boolean;
+  isManagementView?: boolean;
   hideRemoveButton?: boolean;
   onRemove?: () => void;
   section?: string;
@@ -63,6 +64,7 @@ interface DraggableComponentProps {
 export default function DraggableComponent({
   component,
   isInSidebar = false,
+  isManagementView = false,
   hideRemoveButton = false,
   onRemove,
   section,
@@ -322,7 +324,7 @@ export default function DraggableComponent({
       )}
     >
       {/* Remove button - improved positioning with close icon */}
-      {!hideRemoveButton && !isInSidebar && onRemove && (
+      {!(isInSidebar && !isManagementView) && !hideRemoveButton && onRemove && (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -351,7 +353,7 @@ export default function DraggableComponent({
                   variant="ghost"
                   className={cn(
                     "absolute h-6 w-6 p-0 transition-opacity bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-full z-10",
-                    isInSidebar
+                    isInSidebar || isManagementView
                       ? "top-2.5 right-2.5 opacity-100"
                       : "top-1 right-8 opacity-0 group-hover:opacity-100"
                   )}
