@@ -1,41 +1,33 @@
 /**
  * DashboardEdit.tsx
- * Used to edit the dashboard for the analytics page.
+ * This component is used to display the dashboard edit page.
  * @AshokSaravanan222 & @siladiea
- * 06/07/2025
+ * 06/20/2025
  */
-"use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogClose,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-
-import registry from "@/components/common/analytics/Registry";
-import { Slider } from "@/components/ui/slider";
-import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDashboard } from "@/contexts/dashboard-context";
-import { cn } from "@/lib/utils";
 import { Dashboard } from "@/types";
 import { logError } from "@/utils/logger";
 import { updateComponent } from "@/utils/mutations/components/update-component";
@@ -44,19 +36,17 @@ import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { DialogDescription } from "@radix-ui/react-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import {
-  Edit,
-  Minus,
-  PanelRightClose,
-  PanelRightOpen,
-  RotateCcw,
-  Settings,
-} from "lucide-react";
+import { PanelRightClose, PanelRightOpen, RotateCcw } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import CarouselSection from "./CarouselSection";
+import DraggableComponent from "./DraggableComponent";
+import DropZone from "./DropZone";
+import FooterPreview from "./FooterPreview";
+import HeaderPreview from "./HeaderPreview";
+import SettingsDialog from "./SettingsDialog";
 
 interface DashboardComponent {
   id: string;
@@ -64,954 +54,6 @@ interface DashboardComponent {
   fileName: string;
   layout: Record<string, unknown>;
   stat?: boolean;
-}
-
-// Mock data generators for different chart types
-const mockCharts = {
-  bar: () => (
-    <div className="w-full h-24 flex items-end justify-center gap-1">
-      {[65, 59, 80, 81, 56, 55, 40].map((height, i) => (
-        <div
-          key={i}
-          className="bg-primary/60 w-4 rounded-t-sm"
-          style={{ height: `${height}%` }}
-        />
-      ))}
-    </div>
-  ),
-  pie: () => (
-    <div className="w-24 h-24 rounded-full border-8 border-primary/20 border-l-primary border-t-primary/60 mx-auto" />
-  ),
-  line: () => (
-    <div className="w-full h-24 flex items-center justify-center">
-      <svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 200 100"
-        className="text-primary"
-      >
-        <path
-          d="M 10 90 Q 50 20 100 50 T 190 30"
-          stroke="currentColor"
-          strokeWidth="2"
-          fill="none"
-        />
-      </svg>
-    </div>
-  ),
-  activity: () => (
-    <div className="w-full h-24 flex items-end justify-center gap-0.5">
-      {Array.from({ length: 20 }, (_, i) => (
-        <div
-          key={i}
-          className="bg-primary/40 w-2 rounded-t-sm"
-          style={{ height: `${Math.random() * 80 + 20}%` }}
-        />
-      ))}
-    </div>
-  ),
-  stat: (componentId: string, componentName?: string) => {
-    // Generate a consistent number based on component ID
-    const hash = componentId.split("").reduce((a, b) => {
-      a = (a << 5) - a + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    const number = (Math.abs(hash) % 1000) + 100; // Number between 100-1099
-    const formatted = number.toLocaleString();
-
-    // Generate realistic stat names based on component name
-    const getStatLabel = (name: string) => {
-      const nameLower = name.toLowerCase();
-      if (nameLower.includes("session")) return "Total Sessions";
-      if (nameLower.includes("score") || nameLower.includes("average"))
-        return "Avg Score";
-      if (nameLower.includes("completion")) return "Completion %";
-      if (nameLower.includes("pass")) return "Pass Rate %";
-      if (nameLower.includes("active")) return "Active Count";
-      if (nameLower.includes("total")) return "Total Count";
-      if (nameLower.includes("training") && nameLower.includes("hour"))
-        return "Training Hrs";
-      if (nameLower.includes("support") || nameLower.includes("need"))
-        return "Need Support";
-      if (nameLower.includes("ta")) return "Active TAs";
-      // Default fallback
-      return `${name} Metric`;
-    };
-
-    return (
-      <div className="w-full h-24 flex flex-col items-center justify-center">
-        <div className="text-2xl font-bold text-primary">{formatted}</div>
-        <div className="text-xs text-muted-foreground mt-1 text-center">
-          {getStatLabel(componentName || "Stat")}
-        </div>
-      </div>
-    );
-  },
-};
-
-// Assign consistent chart types to components
-const getConsistentMockChart = (
-  componentId: string,
-  component?: { stat?: boolean; name?: string }
-) => {
-  // Check if component has stat property
-  const isStat = component?.stat === true;
-
-  if (isStat) {
-    return (
-      mockCharts.stat as (id: string, name?: string) => React.JSX.Element
-    )(componentId, component?.name);
-  }
-
-  const chartTypes = ["bar", "pie", "line", "activity"] as const;
-  const hash = componentId.split("").reduce((a, b) => {
-    a = (a << 5) - a + b.charCodeAt(0);
-    return a & a;
-  }, 0);
-  const chartType = chartTypes[Math.abs(hash) % chartTypes.length]!;
-  return mockCharts[chartType]();
-};
-
-interface DraggableComponentProps {
-  component: {
-    id: string;
-    name: string;
-    fileName: string;
-    stat?: boolean;
-    layout?: Record<string, unknown>;
-  };
-  isInSidebar?: boolean;
-  onRemove?: () => void;
-  section?: string;
-  index?: number;
-  onReorder?: (dragIndex: number, hoverIndex: number) => void;
-  onUpdateLayout?: (
-    componentId: string,
-    layout: Record<string, unknown>
-  ) => void;
-}
-
-function DraggableComponent({
-  component,
-  isInSidebar = false,
-  onRemove,
-  section,
-  index,
-  onReorder,
-  onUpdateLayout,
-}: DraggableComponentProps) {
-  const dragRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragOver, setDragOver] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [layoutForm, setLayoutForm] = useState<Record<string, unknown>>(
-    component.layout || {}
-  );
-
-  // Check if component has props in registry
-  const registryEntry = registry[component.id];
-  const hasProps =
-    registryEntry?.props && Object.keys(registryEntry.props).length > 0;
-
-  const handleDragStart = useCallback(
-    (e: React.DragEvent) => {
-      setIsDragging(true);
-      e.dataTransfer.setData(
-        "text/plain",
-        JSON.stringify({
-          componentId: component.id,
-          fromSection: section || "sidebar",
-          componentName: component.name,
-          fromIndex: index,
-        })
-      );
-      e.dataTransfer.effectAllowed = "move";
-    },
-    [component.id, component.name, section, index]
-  );
-
-  const handleDragEnd = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setDragOver(false);
-
-      if (!onReorder || index === undefined) return;
-
-      try {
-        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-        if (
-          data.componentId !== component.id &&
-          data.fromSection === section &&
-          data.fromIndex !== undefined
-        ) {
-          onReorder(data.fromIndex, index);
-        }
-      } catch (error) {
-        logError("Failed to parse drop data:", error);
-      }
-    },
-    [component.id, section, index, onReorder]
-  );
-
-  const handleSaveLayout = useCallback(() => {
-    if (onUpdateLayout) {
-      onUpdateLayout(component.id, layoutForm);
-      setIsEditDialogOpen(false);
-      toast.success("Component layout updated");
-    }
-  }, [component.id, layoutForm, onUpdateLayout]);
-
-  const renderFormField = (key: string, value: unknown) => {
-    if (typeof value === "string") {
-      return (
-        <div key={key} className="space-y-2">
-          <Label htmlFor={key}>{key}</Label>
-          <Input
-            id={key}
-            value={(layoutForm[key] as string) || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setLayoutForm((prev) => ({ ...prev, [key]: e.target.value }))
-            }
-            placeholder={`Enter ${key}`}
-          />
-        </div>
-      );
-    }
-
-    if (typeof value === "boolean") {
-      return (
-        <div key={key} className="flex items-center space-x-2">
-          <Switch
-            id={key}
-            checked={(layoutForm[key] as boolean) || false}
-            onCheckedChange={(checked) =>
-              setLayoutForm((prev) => ({ ...prev, [key]: checked }))
-            }
-          />
-          <Label htmlFor={key}>{key}</Label>
-        </div>
-      );
-    }
-
-    if (typeof value === "number") {
-      return (
-        <div key={key} className="space-y-2">
-          <Label htmlFor={key}>{key}</Label>
-          <Input
-            id={key}
-            type="number"
-            value={(layoutForm[key] as number) || 0}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setLayoutForm((prev) => ({
-                ...prev,
-                [key]: Number(e.target.value),
-              }))
-            }
-            placeholder={`Enter ${key}`}
-          />
-        </div>
-      );
-    }
-
-    return null;
-  };
-
-  return (
-    <div
-      ref={dragRef}
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={!isInSidebar ? handleDragOver : undefined}
-      onDragLeave={!isInSidebar ? handleDragLeave : undefined}
-      onDrop={!isInSidebar ? handleDrop : undefined}
-      className={cn(
-        "relative group cursor-move border rounded-lg p-3 transition-all min-w-0 overflow-hidden",
-        isDragging ? "opacity-50" : "hover:shadow-md",
-        dragOver && !isInSidebar ? "border-primary bg-primary/5" : "",
-        isInSidebar
-          ? "bg-card hover:bg-muted/50 border-border"
-          : "bg-background border-border shadow-sm"
-      )}
-    >
-      {!isInSidebar && onRemove && (
-        <Button
-          size="sm"
-          variant="ghost"
-          className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10"
-          onClick={onRemove}
-        >
-          <Minus className="h-3 w-3" />
-        </Button>
-      )}
-
-      <div className="space-y-2 min-w-0 flex flex-col justify-between">
-        <div className="flex items-center gap-2 min-w-0 justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="outline" className="text-xs truncate max-w-full">
-              {component.name}
-            </Badge>
-            {isInSidebar && (
-              <Badge
-                variant={component.stat ? "default" : "secondary"}
-                className="text-xs"
-              >
-                {component.stat ? "Stat" : "Graph"}
-              </Badge>
-            )}
-          </div>
-          
-          {isInSidebar && hasProps && (
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="sm"
-                      className="h-6 w-6 p-0 text-white rounded-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setLayoutForm(
-                          component.layout || registryEntry?.props || {}
-                        );
-                        setIsEditDialogOpen(true);
-                      }}
-                    >
-                      <Edit className="h-3 w-3" />
-                    </Button>
-                  </DialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Edit</p>
-                </TooltipContent>
-              </Tooltip>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>Edit {component.name}</DialogTitle>
-                  <DialogDescription>
-                    Configure the properties for this component.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {registryEntry?.props &&
-                    Object.entries(registryEntry.props).map(([key, value]) =>
-                      renderFormField(key, value)
-                    )}
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button onClick={handleSaveLayout}>Save Changes</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          )}
-        </div>
-
-        {!isInSidebar && (
-          <div className="bg-muted/50 rounded-md p-2">
-            {getConsistentMockChart(component.id, component)}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-interface HeaderPreviewProps {
-  components: string[];
-  allComponents: {
-    [key: string]: {
-      id: string;
-      name: string;
-      fileName: string;
-      stat?: boolean;
-    };
-  };
-  headerComponents: number;
-  showIndicators: boolean;
-  autoScroll: boolean;
-  onRemove: (componentId: string) => void;
-  onReorder: (fromIndex: number, toIndex: number) => void;
-}
-
-function HeaderPreview({
-  components,
-  allComponents,
-  headerComponents,
-  showIndicators,
-  autoScroll,
-  onRemove,
-  onReorder,
-}: HeaderPreviewProps) {
-  const [currentPage, setCurrentPage] = useState(0);
-
-  // Create pages based on headerComponents setting
-  const pages = useMemo(() => {
-    const result = [];
-    const totalPages = Math.ceil(components.length / headerComponents);
-
-    for (let i = 0; i < totalPages; i++) {
-      const start = i * headerComponents;
-      const end = start + headerComponents;
-      result.push(components.slice(start, end));
-    }
-
-    return result;
-  }, [components, headerComponents]);
-
-  // Auto-scroll effect
-  useEffect(() => {
-    if (!autoScroll || pages.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentPage((prev) => (prev + 1) % pages.length);
-    }, 4000);
-
-    return () => clearInterval(interval);
-  }, [autoScroll, pages.length]);
-
-  const currentPageComponents = pages[currentPage] || [];
-  const pageStartIndex = currentPage * headerComponents;
-
-  return (
-    <div className="space-y-4">
-      <div className="overflow-hidden">
-        <div
-          className="grid gap-4 min-w-0"
-          style={{
-            gridTemplateColumns: `repeat(${headerComponents}, minmax(0, 1fr))`,
-          }}
-        >
-          {currentPageComponents.map((componentId, index) => {
-            const component = allComponents[componentId];
-            if (!component) return null;
-
-            const actualIndex = pageStartIndex + index;
-
-            return (
-              <div
-                key={`${componentId}-${currentPage}-${index}`}
-                className="transition-all duration-500 ease-in-out min-w-0"
-              >
-                <DraggableComponent
-                  component={component}
-                  section="headerComponentIds"
-                  index={actualIndex}
-                  onRemove={() => onRemove(componentId)}
-                  onReorder={onReorder}
-                />
-              </div>
-            );
-          })}
-
-          {/* Fill remaining slots with empty divs for consistent spacing */}
-          {Array.from({
-            length: Math.max(
-              0,
-              headerComponents - currentPageComponents.length
-            ),
-          }).map((_, index) => (
-            <div key={`empty-${index}`} className="invisible min-w-0" />
-          ))}
-        </div>
-      </div>
-
-      {/* Carousel indicators */}
-      {showIndicators && pages.length > 1 && (
-        <div className="flex justify-center gap-2">
-          {pages.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentPage(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentPage ? "bg-primary" : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface FooterPreviewProps {
-  components: string[];
-  allComponents: {
-    [key: string]: {
-      id: string;
-      name: string;
-      fileName: string;
-      stat?: boolean;
-    };
-  };
-  showIndicators: boolean;
-  autoScroll: boolean;
-  footerSplit: number;
-  onRemove: (componentId: string) => void;
-  onResizeEnd: (sizes: number[]) => void;
-}
-
-function FooterPreview({
-  components,
-  allComponents,
-  showIndicators,
-  autoScroll,
-  footerSplit,
-  onRemove,
-  onResizeEnd,
-}: FooterPreviewProps) {
-  const [leftIndex, setLeftIndex] = useState(0);
-  const [rightIndex, setRightIndex] = useState(0);
-
-  // Split components for left/right sections (interleaved)
-  const leftComponents = components.filter((_, index) => index % 2 === 0);
-  const rightComponents = components.filter((_, index) => index % 2 === 1);
-
-  // Auto-scroll effects
-  useEffect(() => {
-    if (!autoScroll || leftComponents.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setLeftIndex((prev) => (prev + 1) % leftComponents.length);
-    }, 6000);
-
-    return () => clearInterval(interval);
-  }, [autoScroll, leftComponents.length]);
-
-  useEffect(() => {
-    if (!autoScroll || rightComponents.length <= 1) return;
-
-    const interval = setInterval(() => {
-      setRightIndex((prev) => (prev + 1) % rightComponents.length);
-    }, 7000);
-
-    return () => clearInterval(interval);
-  }, [autoScroll, rightComponents.length]);
-
-  if (components.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-        Drop components here
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <ResizablePanelGroup
-        direction="horizontal"
-        onLayout={onResizeEnd}
-        className="min-h-64"
-      >
-        {/* Left Footer Section */}
-        <ResizablePanel defaultSize={footerSplit * 100} minSize={30}>
-          <div className="h-full mr-3">
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">
-              Left Footer
-            </h4>
-            {leftComponents.length > 0 ? (
-              <div className="space-y-4">
-                <DraggableComponent
-                  key={`left-${leftComponents[leftIndex % leftComponents.length]}-${leftIndex}`}
-                  component={
-                    allComponents[
-                      leftComponents[leftIndex % leftComponents.length]!
-                    ]!
-                  }
-                  section="footerComponentIds"
-                  onRemove={() =>
-                    onRemove(leftComponents[leftIndex % leftComponents.length]!)
-                  }
-                />
-
-                {/* Left indicators */}
-                {showIndicators && leftComponents.length > 1 && (
-                  <div className="flex justify-center gap-2">
-                    {leftComponents.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setLeftIndex(index)}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          index === leftIndex % leftComponents.length
-                            ? "bg-primary"
-                            : "bg-muted"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-                Drop components here
-              </div>
-            )}
-          </div>
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
-
-        {/* Right Footer Section */}
-        <ResizablePanel defaultSize={(1 - footerSplit) * 100} minSize={20}>
-          <div className="h-full ml-3">
-            <h4 className="font-medium text-sm text-muted-foreground mb-3">
-              Right Footer
-            </h4>
-            {rightComponents.length > 0 ? (
-              <div className="space-y-4">
-                <DraggableComponent
-                  key={`right-${rightComponents[rightIndex % rightComponents.length]}-${rightIndex}`}
-                  component={
-                    allComponents[
-                      rightComponents[rightIndex % rightComponents.length]!
-                    ]!
-                  }
-                  section="footerComponentIds"
-                  onRemove={() =>
-                    onRemove(
-                      rightComponents[rightIndex % rightComponents.length]!
-                    )
-                  }
-                />
-
-                {/* Right indicators */}
-                {showIndicators && rightComponents.length > 1 && (
-                  <div className="flex justify-center gap-2">
-                    {rightComponents.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setRightIndex(index)}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          index === rightIndex % rightComponents.length
-                            ? "bg-primary"
-                            : "bg-muted"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-                Drop components here
-              </div>
-            )}
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-    </div>
-  );
-}
-
-interface CarouselSectionProps {
-  components: string[];
-  allComponents: {
-    [key: string]: {
-      id: string;
-      name: string;
-      fileName: string;
-      stat?: boolean;
-    };
-  };
-  showIndicators: boolean;
-  autoScroll: boolean;
-  onRemove: (componentId: string) => void;
-  interval?: number;
-}
-
-function CarouselSection({
-  components,
-  allComponents,
-  showIndicators,
-  autoScroll,
-  onRemove,
-  interval = 5000,
-}: CarouselSectionProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    if (!autoScroll || components.length <= 1) return;
-
-    const intervalId = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % components.length);
-    }, interval);
-
-    return () => clearInterval(intervalId);
-  }, [autoScroll, components.length, interval]);
-
-  if (components.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm border-2 border-dashed rounded-lg">
-        Drop components here
-      </div>
-    );
-  }
-
-  const currentComponentId =
-    components.length > 0 ? components[currentIndex % components.length] : null;
-  const currentComponent = currentComponentId
-    ? allComponents[currentComponentId]
-    : undefined;
-
-  return (
-    <div className="space-y-4">
-      {currentComponent && (
-        <DraggableComponent
-          key={`${currentComponent.id}-${currentIndex}`}
-          component={currentComponent}
-          onRemove={() => onRemove(currentComponent.id)}
-        />
-      )}
-
-      {/* Carousel indicators */}
-      {showIndicators && components.length > 1 && (
-        <div className="flex justify-center gap-2">
-          {components.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              className={`w-2 h-2 rounded-full transition-colors ${
-                index === currentIndex % components.length
-                  ? "bg-primary"
-                  : "bg-muted"
-              }`}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-interface DropZoneProps {
-  section: string;
-  title: string;
-  components: string[];
-  allComponents: {
-    [key: string]: {
-      id: string;
-      name: string;
-      fileName: string;
-      stat?: boolean;
-    };
-  };
-  onDrop: (componentId: string, section: string) => void;
-  onRemove: (componentId: string, section: string) => void;
-  className?: string;
-}
-
-function DropZone({
-  section,
-  title,
-  components,
-  allComponents,
-  onDrop,
-  onRemove,
-  className,
-}: DropZoneProps) {
-  const [isOver, setIsOver] = useState(false);
-
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-    setIsOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback(() => {
-    setIsOver(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsOver(false);
-
-      try {
-        const data = JSON.parse(e.dataTransfer.getData("text/plain"));
-        if (data.componentId && data.fromSection !== section) {
-          onDrop(data.componentId, section);
-        }
-      } catch (error) {
-        logError("Failed to parse drop data:", error);
-      }
-    },
-    [section, onDrop]
-  );
-
-  return (
-    <div
-      className={cn(
-        "min-h-32 border-2 border-dashed rounded-lg p-4 transition-all",
-        isOver
-          ? "border-primary bg-primary/5"
-          : "border-muted-foreground/25 hover:border-muted-foreground/50",
-        className
-      )}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      <h3 className="font-medium text-sm text-muted-foreground mb-3">
-        {title}
-      </h3>
-
-      {components.length === 0 ? (
-        <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">
-          Drop components here
-        </div>
-      ) : (
-        <div className="grid gap-3 grid-cols-1 lg:grid-cols-2">
-          {components.map((componentId) => {
-            const component = allComponents[componentId];
-            if (!component) return null;
-
-            return (
-              <DraggableComponent
-                key={componentId}
-                component={component}
-                section={section}
-                onRemove={() => onRemove(componentId, section)}
-              />
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SettingsDialog({
-  dashboardConfig,
-  updateSettings,
-}: {
-  dashboardConfig: Partial<Dashboard> | null;
-  updateSettings: (
-    settings: Partial<
-      Pick<
-        Partial<Dashboard>,
-        | "autoScroll"
-        | "showIndicators"
-        | "headerComponents"
-        | "mainSplit"
-        | "footerSplit"
-      >
-    >
-  ) => void;
-}) {
-  const [localSettings, setLocalSettings] = useState({
-    autoScroll: dashboardConfig?.autoScroll ?? true,
-    showIndicators: dashboardConfig?.showIndicators ?? true,
-    headerComponents: dashboardConfig?.headerComponents ?? 4,
-  });
-
-  useEffect(() => {
-    if (dashboardConfig) {
-      setLocalSettings({
-        autoScroll: dashboardConfig.autoScroll ?? false,
-        showIndicators: dashboardConfig.showIndicators ?? false,
-        headerComponents: dashboardConfig.headerComponents ?? 4,
-      });
-    }
-  }, [dashboardConfig]);
-
-  const handleApply = () => {
-    updateSettings(localSettings);
-    toast.success("Settings applied");
-  };
-
-  return (
-    <Dialog>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <DialogTrigger asChild>
-            <Button size="sm" variant="ghost">
-              <Settings className="h-4 w-4" />
-            </Button>
-          </DialogTrigger>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p> Settings</p>
-        </TooltipContent>
-      </Tooltip>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>Dashboard Settings</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="auto-scroll">Auto Scroll</Label>
-            <Switch
-              id="auto-scroll"
-              checked={localSettings.autoScroll}
-              onCheckedChange={(checked) =>
-                setLocalSettings((prev) => ({ ...prev, autoScroll: checked }))
-              }
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <Label htmlFor="show-indicators">Show Indicators</Label>
-            <Switch
-              id="show-indicators"
-              checked={localSettings.showIndicators}
-              onCheckedChange={(checked) =>
-                setLocalSettings((prev) => ({
-                  ...prev,
-                  showIndicators: checked,
-                }))
-              }
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="header-components">
-              Header Components per Page
-            </Label>
-            <div className="flex items-center gap-4">
-              <Slider
-                id="header-components"
-                min={1}
-                max={8}
-                step={1}
-                value={[localSettings.headerComponents]}
-                onValueChange={([value]) =>
-                  setLocalSettings((prev) => ({
-                    ...prev,
-                    headerComponents: value ?? 1,
-                  }))
-                }
-                className="flex-1"
-              />
-              <span className="w-8 text-sm text-muted-foreground">
-                {localSettings.headerComponents}
-              </span>
-            </div>
-          </div>
-
-          <Button onClick={handleApply} className="w-full">
-            Apply Settings
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
 }
 
 export default function DashboardEdit() {
@@ -1624,6 +666,7 @@ export default function DashboardEdit() {
                       onRemove={(componentId) =>
                         handleRemove(componentId, "headerComponentIds")
                       }
+                      onUpdateLayout={handleUpdateLayout}
                       onReorder={(fromIndex, toIndex) =>
                         handleReorder(fromIndex, toIndex, "headerComponentIds")
                       }
@@ -1638,6 +681,7 @@ export default function DashboardEdit() {
                         allComponents={allComponentsLookup}
                         onDrop={handleDrop}
                         onRemove={handleRemove}
+                        onUpdateLayout={handleUpdateLayout}
                         className="min-h-20"
                       />
                     </div>
@@ -1677,6 +721,7 @@ export default function DashboardEdit() {
                             onRemove={(componentId) =>
                               handleRemove(componentId, "primaryComponentIds")
                             }
+                            onUpdateLayout={handleUpdateLayout}
                             interval={5000}
                           />
 
@@ -1689,6 +734,7 @@ export default function DashboardEdit() {
                               allComponents={allComponentsLookup}
                               onDrop={handleDrop}
                               onRemove={handleRemove}
+                              onUpdateLayout={handleUpdateLayout}
                               className="min-h-16"
                             />
                           </div>
@@ -1719,6 +765,7 @@ export default function DashboardEdit() {
                             onRemove={(componentId) =>
                               handleRemove(componentId, "secondaryComponentIds")
                             }
+                            onUpdateLayout={handleUpdateLayout}
                             interval={4000}
                           />
 
@@ -1731,6 +778,7 @@ export default function DashboardEdit() {
                               allComponents={allComponentsLookup}
                               onDrop={handleDrop}
                               onRemove={handleRemove}
+                              onUpdateLayout={handleUpdateLayout}
                               className="min-h-16"
                             />
                           </div>
@@ -1757,6 +805,7 @@ export default function DashboardEdit() {
                       onRemove={(componentId) =>
                         handleRemove(componentId, "footerComponentIds")
                       }
+                      onUpdateLayout={handleUpdateLayout}
                       onResizeEnd={handleFooterResizeEnd}
                     />
 
@@ -1769,6 +818,7 @@ export default function DashboardEdit() {
                         allComponents={allComponentsLookup}
                         onDrop={handleDrop}
                         onRemove={handleRemove}
+                        onUpdateLayout={handleUpdateLayout}
                         className="min-h-20"
                       />
                     </div>

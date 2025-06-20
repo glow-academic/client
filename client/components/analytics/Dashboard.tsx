@@ -20,7 +20,7 @@ import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
-import DashboardEdit from "./DashboardEdit";
+import DashboardEdit from "../common/dashboard/DashboardEdit";
 
 interface DashboardConfig {
   id: string;
