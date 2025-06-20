@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-20T15:46:10.945Z
+Generated on: 2025-06-20T15:59:55.118Z
 
 ## Summary
 - **Total Components**: 86
-- **Tests Created**: 1
-- **Tests Updated**: 27
+- **Tests Created**: 0
+- **Tests Updated**: 28
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -13,10 +13,10 @@ Generated on: 2025-06-20T15:46:10.945Z
 | Component | Path | Test File | Status |
 |-----------|------|-----------|--------|
 | Dashboard | analytics/Dashboard.tsx | Dashboard.test.tsx | ❌ Needs Implementation |
+| DashboardEdit | analytics/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
 | History | analytics/History.tsx | History.test.tsx | ✅ Implemented |
 | Reports | analytics/Reports.tsx | Reports.test.tsx | ✅ Implemented |
 | Agent | common/agent/Agent.tsx | Agent.test.tsx | ✅ Implemented |
-| DashboardEdit | common/analytics/DashboardEdit.tsx | DashboardEdit.test.tsx | ❌ Needs Implementation |
 | Registry | common/analytics/Registry.tsx | Registry.test.tsx | ❌ Needs Implementation |
 | CohortCompletion | common/analytics/footer/CohortCompletion.tsx | CohortCompletion.test.tsx | ✅ Implemented |
 | ScenarioData | common/analytics/footer/ScenarioData.tsx | ScenarioData.test.tsx | ❌ Needs Implementation |
@@ -105,13 +105,13 @@ Generated on: 2025-06-20T15:46:10.945Z
 __tests__/
 ├── analytics/
 │   ├── Dashboard.test.tsx
+│   ├── DashboardEdit.test.tsx
 │   ├── History.test.tsx
 │   ├── Reports.test.tsx
 ├── common/
 │   ├── agent/
 │   │   ├── Agent.test.tsx
 │   ├── analytics/
-│   │   ├── DashboardEdit.test.tsx
 │   │   ├── Registry.test.tsx
 │   │   ├── footer/
 │   │   │   ├── CohortCompletion.test.tsx

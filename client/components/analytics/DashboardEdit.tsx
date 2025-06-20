@@ -18,12 +18,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
+
+import registry from "@/components/common/analytics/Registry";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -35,6 +38,7 @@ import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { Dashboard } from "@/types";
 import { logError } from "@/utils/logger";
+import { updateComponent } from "@/utils/mutations/components/update-component";
 import { createDashboard } from "@/utils/mutations/dashboards/create-dashboard";
 import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
@@ -43,6 +47,7 @@ import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user
 import { DialogDescription } from "@radix-ui/react-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Edit,
   Minus,
   PanelRightClose,
   PanelRightOpen,
@@ -105,7 +110,7 @@ const mockCharts = {
       ))}
     </div>
   ),
-  stat: (componentId: string) => {
+  stat: (componentId: string, componentName?: string) => {
     // Generate a consistent number based on component ID
     const hash = componentId.split("").reduce((a, b) => {
       a = (a << 5) - a + b.charCodeAt(0);
@@ -114,10 +119,31 @@ const mockCharts = {
     const number = (Math.abs(hash) % 1000) + 100; // Number between 100-1099
     const formatted = number.toLocaleString();
 
+    // Generate realistic stat names based on component name
+    const getStatLabel = (name: string) => {
+      const nameLower = name.toLowerCase();
+      if (nameLower.includes("session")) return "Total Sessions";
+      if (nameLower.includes("score") || nameLower.includes("average"))
+        return "Avg Score";
+      if (nameLower.includes("completion")) return "Completion %";
+      if (nameLower.includes("pass")) return "Pass Rate %";
+      if (nameLower.includes("active")) return "Active Count";
+      if (nameLower.includes("total")) return "Total Count";
+      if (nameLower.includes("training") && nameLower.includes("hour"))
+        return "Training Hrs";
+      if (nameLower.includes("support") || nameLower.includes("need"))
+        return "Need Support";
+      if (nameLower.includes("ta")) return "Active TAs";
+      // Default fallback
+      return `${name} Metric`;
+    };
+
     return (
       <div className="w-full h-24 flex flex-col items-center justify-center">
         <div className="text-2xl font-bold text-primary">{formatted}</div>
-        <div className="text-xs text-muted-foreground mt-1">Sample Stat</div>
+        <div className="text-xs text-muted-foreground mt-1 text-center">
+          {getStatLabel(componentName || "Stat")}
+        </div>
       </div>
     );
   },
@@ -126,13 +152,15 @@ const mockCharts = {
 // Assign consistent chart types to components
 const getConsistentMockChart = (
   componentId: string,
-  component?: { stat?: boolean }
+  component?: { stat?: boolean; name?: string }
 ) => {
   // Check if component has stat property
   const isStat = component?.stat === true;
 
   if (isStat) {
-    return (mockCharts.stat as (id: string) => React.JSX.Element)(componentId);
+    return (
+      mockCharts.stat as (id: string, name?: string) => React.JSX.Element
+    )(componentId, component?.name);
   }
 
   const chartTypes = ["bar", "pie", "line", "activity"] as const;
@@ -150,12 +178,17 @@ interface DraggableComponentProps {
     name: string;
     fileName: string;
     stat?: boolean;
+    layout?: Record<string, unknown>;
   };
   isInSidebar?: boolean;
   onRemove?: () => void;
   section?: string;
   index?: number;
   onReorder?: (dragIndex: number, hoverIndex: number) => void;
+  onUpdateLayout?: (
+    componentId: string,
+    layout: Record<string, unknown>
+  ) => void;
 }
 
 function DraggableComponent({
@@ -165,10 +198,20 @@ function DraggableComponent({
   section,
   index,
   onReorder,
+  onUpdateLayout,
 }: DraggableComponentProps) {
   const dragRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOver, setDragOver] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [layoutForm, setLayoutForm] = useState<Record<string, unknown>>(
+    component.layout || {}
+  );
+
+  // Check if component has props in registry
+  const registryEntry = registry[component.id];
+  const hasProps =
+    registryEntry?.props && Object.keys(registryEntry.props).length > 0;
 
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {
@@ -223,6 +266,69 @@ function DraggableComponent({
     [component.id, section, index, onReorder]
   );
 
+  const handleSaveLayout = useCallback(() => {
+    if (onUpdateLayout) {
+      onUpdateLayout(component.id, layoutForm);
+      setIsEditDialogOpen(false);
+      toast.success("Component layout updated");
+    }
+  }, [component.id, layoutForm, onUpdateLayout]);
+
+  const renderFormField = (key: string, value: unknown) => {
+    if (typeof value === "string") {
+      return (
+        <div key={key} className="space-y-2">
+          <Label htmlFor={key}>{key}</Label>
+          <Input
+            id={key}
+            value={(layoutForm[key] as string) || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setLayoutForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+            placeholder={`Enter ${key}`}
+          />
+        </div>
+      );
+    }
+
+    if (typeof value === "boolean") {
+      return (
+        <div key={key} className="flex items-center space-x-2">
+          <Switch
+            id={key}
+            checked={(layoutForm[key] as boolean) || false}
+            onCheckedChange={(checked) =>
+              setLayoutForm((prev) => ({ ...prev, [key]: checked }))
+            }
+          />
+          <Label htmlFor={key}>{key}</Label>
+        </div>
+      );
+    }
+
+    if (typeof value === "number") {
+      return (
+        <div key={key} className="space-y-2">
+          <Label htmlFor={key}>{key}</Label>
+          <Input
+            id={key}
+            type="number"
+            value={(layoutForm[key] as number) || 0}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setLayoutForm((prev) => ({
+                ...prev,
+                [key]: Number(e.target.value),
+              }))
+            }
+            placeholder={`Enter ${key}`}
+          />
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <div
       ref={dragRef}
@@ -252,11 +358,65 @@ function DraggableComponent({
         </Button>
       )}
 
+      {/* Edit button for components with props */}
+      {isInSidebar && hasProps && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogTrigger asChild>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500 text-white hover:bg-blue-600 rounded-full z-10"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setLayoutForm(component.layout || registryEntry?.props || {});
+                setIsEditDialogOpen(true);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit {component.name}</DialogTitle>
+              <DialogDescription>
+                Configure the properties for this component.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {registryEntry?.props &&
+                Object.entries(registryEntry.props).map(([key, value]) =>
+                  renderFormField(key, value)
+                )}
+            </div>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancel</Button>
+              </DialogClose>
+              <Button onClick={handleSaveLayout}>Save Changes</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <div className="space-y-2 min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <Badge variant="outline" className="text-xs truncate max-w-full">
             {component.name}
           </Badge>
+          {isInSidebar && (
+            <Badge
+              variant={component.stat ? "default" : "secondary"}
+              className="text-xs"
+            >
+              {component.stat ? "Stat" : "Graph"}
+            </Badge>
+          )}
+          {isInSidebar && hasProps && (
+            <Badge variant="outline" className="text-xs">
+              Props
+            </Badge>
+          )}
         </div>
 
         {!isInSidebar && (
@@ -1325,6 +1485,29 @@ export default function DashboardEdit() {
     toast.success("Applied default dashboard settings");
   }, [dashboards, components, dashboardConfig?.id]);
 
+  // Handle layout updates
+  const handleUpdateLayout = useCallback(
+    async (componentId: string, layout: Record<string, unknown>) => {
+      try {
+        await updateComponent(componentId, { layout });
+
+        // Update local state
+        setAvailableComponents((prev) =>
+          prev.map((comp) =>
+            comp.id === componentId ? { ...comp, layout } : comp
+          )
+        );
+
+        // Invalidate queries to refresh data
+        queryClient.invalidateQueries({ queryKey: ["components"] });
+      } catch (error) {
+        logError("Failed to update component layout", error);
+        toast.error("Failed to update component layout");
+      }
+    },
+    [queryClient]
+  );
+
   if (!dashboardConfig) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -1626,6 +1809,7 @@ export default function DashboardEdit() {
                           key={component.id}
                           component={component}
                           isInSidebar
+                          onUpdateLayout={handleUpdateLayout}
                         />
                       ))
                     ) : (

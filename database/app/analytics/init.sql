@@ -37,7 +37,6 @@ CREATE TABLE dashboards (
 -- ============================================================================
 
 INSERT INTO components (id, name, description, file_name, layout, stat, default_component) VALUES
-  ('11e78493-b470-f05a-82d6-ef98de429181', 'Dashboard Edit', 'Analytics component for dashboard edit', 'DashboardEdit.tsx', '{"id":"","name":"","fileName":"","components":"","key":"","section":"","title":""}', false, false),
   ('49990ffa-5698-bd91-b379-6703a8cf4835', 'Cohort Completion', 'Analytics component for cohort completion', 'CohortCompletion.tsx', '{"className":""}', false, false),
   ('d8e58a90-32e7-0b43-447c-fda790891cee', 'Scenario Data', 'Analytics component for scenario data', 'ScenarioData.tsx', '{"className":""}', false, false),
   ('6b8684a8-cd06-6f6a-9a53-d57ad527041b', 'Simulation Performance', 'Analytics component for simulation performance', 'SimulationPerformance.tsx', '{"className":""}', false, false),
