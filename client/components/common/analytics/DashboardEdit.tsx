@@ -42,7 +42,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   PanelRightClose,
   PanelRightOpen,
-  Save,
   Settings,
   X,
 } from "lucide-react";
@@ -719,7 +718,7 @@ function SettingsDialog({
 
   const handleApply = () => {
     updateSettings(localSettings);
-    toast.success("Settings updated - click Save Changes to persist");
+    toast.success("Settings applied");
   };
 
   return (
@@ -1240,21 +1239,14 @@ export default function DashboardEdit() {
             <div className="p-4 border-b bg-background flex items-center justify-between">
               <h1 className="font-semibold text-lg">Dashboard Editor</h1>
               <div className="flex items-center gap-2">
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Button
-                      onClick={saveChanges}
-                      disabled={!hasChanges || isSaving}
-                      variant={!hasChanges || isSaving ? "outline" : "default"}
-                      size="sm"
-                    >
-                      <Save className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>{isSaving ? "Saving..." : "Save"}</p>
-                  </TooltipContent>
-                </Tooltip>
+                <Button
+                  onClick={saveChanges}
+                  disabled={!hasChanges || isSaving}
+                  variant={!hasChanges || isSaving ? "outline" : "default"}
+                  size="sm"
+                >
+                  {isSaving ? "Saving..." : "Save Changes"}
+                </Button>
 
                 {/* Settings Button - always visible */}
                 <SettingsDialog
