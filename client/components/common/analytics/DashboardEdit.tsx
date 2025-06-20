@@ -197,7 +197,7 @@ function DraggableComponent({
       onDragLeave={!isInSidebar ? handleDragLeave : undefined}
       onDrop={!isInSidebar ? handleDrop : undefined}
       className={cn(
-        "relative group cursor-move border rounded-lg p-3 transition-all",
+        "relative group cursor-move border rounded-lg p-3 transition-all min-w-0 overflow-hidden",
         isDragging ? "opacity-50" : "hover:shadow-md",
         dragOver && !isInSidebar ? "border-primary bg-primary/5" : "",
         isInSidebar
@@ -216,9 +216,9 @@ function DraggableComponent({
         </Button>
       )}
 
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
+      <div className="space-y-2 min-w-0">
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge variant="outline" className="text-xs truncate max-w-full">
             {component.name}
           </Badge>
         </div>
@@ -286,40 +286,45 @@ function HeaderPreview({
 
   return (
     <div className="space-y-4">
-      <div
-        className="grid gap-4"
-        style={{
-          gridTemplateColumns: `repeat(${headerComponents}, 1fr)`,
-        }}
-      >
-        {currentPageComponents.map((componentId, index) => {
-          const component = allComponents[componentId];
-          if (!component) return null;
+      <div className="overflow-hidden">
+        <div
+          className="grid gap-4 min-w-0"
+          style={{
+            gridTemplateColumns: `repeat(${headerComponents}, minmax(0, 1fr))`,
+          }}
+        >
+          {currentPageComponents.map((componentId, index) => {
+            const component = allComponents[componentId];
+            if (!component) return null;
 
-          const actualIndex = pageStartIndex + index;
+            const actualIndex = pageStartIndex + index;
 
-          return (
-            <div
-              key={`${componentId}-${currentPage}-${index}`}
-              className="transition-all duration-500 ease-in-out"
-            >
-              <DraggableComponent
-                component={component}
-                section="headerComponentIds"
-                index={actualIndex}
-                onRemove={() => onRemove(componentId)}
-                onReorder={onReorder}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={`${componentId}-${currentPage}-${index}`}
+                className="transition-all duration-500 ease-in-out min-w-0"
+              >
+                <DraggableComponent
+                  component={component}
+                  section="headerComponentIds"
+                  index={actualIndex}
+                  onRemove={() => onRemove(componentId)}
+                  onReorder={onReorder}
+                />
+              </div>
+            );
+          })}
 
-        {/* Fill remaining slots with empty divs for consistent spacing */}
-        {Array.from({
-          length: Math.max(0, headerComponents - currentPageComponents.length),
-        }).map((_, index) => (
-          <div key={`empty-${index}`} className="invisible" />
-        ))}
+          {/* Fill remaining slots with empty divs for consistent spacing */}
+          {Array.from({
+            length: Math.max(
+              0,
+              headerComponents - currentPageComponents.length
+            ),
+          }).map((_, index) => (
+            <div key={`empty-${index}`} className="invisible min-w-0" />
+          ))}
+        </div>
       </div>
 
       {/* Carousel indicators */}

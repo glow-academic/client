@@ -237,7 +237,7 @@ export const DashboardProvider = ({
       toSection: string,
       toIndex?: number
     ) => {
-      if (!dashboardConfig) return;
+      if (!dashboardConfig || !isValidUUID(componentId)) return;
 
       setDashboardConfig((prev) => {
         if (!prev) return prev;
@@ -258,16 +258,17 @@ export const DashboardProvider = ({
           | "footerComponentIds"
         >;
 
-        // Remove from source
-        newConfig[fromKey] = newConfig[fromKey].filter(
-          (id) => id !== componentId
-        );
+        // Filter out invalid IDs and remove from source
+        const fromIds = filterValidComponentIds(newConfig[fromKey]);
+        newConfig[fromKey] = fromIds.filter((id) => id !== componentId);
 
         // Add to destination
+        const toIds = filterValidComponentIds(newConfig[toKey]);
         if (toIndex !== undefined) {
-          newConfig[toKey].splice(toIndex, 0, componentId);
+          toIds.splice(toIndex, 0, componentId);
+          newConfig[toKey] = toIds;
         } else {
-          newConfig[toKey].push(componentId);
+          newConfig[toKey] = [...toIds, componentId];
         }
 
         return newConfig;

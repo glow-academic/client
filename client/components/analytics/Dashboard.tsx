@@ -146,18 +146,45 @@ export default function Dashboard() {
   // Update available components for edit mode
   useEffect(() => {
     if (components && dashboardConfig) {
-      // Get all component IDs currently in use
+      // Helper function to validate UUID format
+      const isValidUUID = (uuid: string) => {
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(uuid);
+      };
+
+      // Get all component IDs currently in use, filtering out invalid ones like "RAY"
       const usedComponentIds = [
-        ...dashboardConfig.headerComponentIds,
-        ...dashboardConfig.primaryComponentIds,
-        ...dashboardConfig.secondaryComponentIds,
-        ...dashboardConfig.footerComponentIds,
+        ...dashboardConfig.headerComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.primaryComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.secondaryComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
+        ...dashboardConfig.footerComponentIds.filter(
+          (id) => id && isValidUUID(id)
+        ),
       ];
 
       // Filter available components to exclude those already in use
       const availableComponents = components.filter(
         (comp) => !usedComponentIds.includes(comp.id)
       );
+
+      console.log("Dashboard components debug:", {
+        totalComponents: components.length,
+        usedComponentIds,
+        availableComponentsCount: availableComponents.length,
+        dashboardConfig: {
+          headerIds: dashboardConfig.headerComponentIds,
+          primaryIds: dashboardConfig.primaryComponentIds,
+          secondaryIds: dashboardConfig.secondaryComponentIds,
+          footerIds: dashboardConfig.footerComponentIds,
+        },
+      });
 
       setAvailableComponents(availableComponents as DashboardComponent[]);
     }
