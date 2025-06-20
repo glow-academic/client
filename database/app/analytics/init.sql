@@ -12,6 +12,7 @@ CREATE TABLE components (
   description TEXT        NOT NULL,
   file_name   TEXT        NOT NULL,
   layout JSONB       NOT NULL DEFAULT '{}', -- extra props for the component
+  stat BOOLEAN NOT NULL DEFAULT FALSE, -- if this is a statistic
   default_component      BOOLEAN     NOT NULL DEFAULT FALSE
 );
 

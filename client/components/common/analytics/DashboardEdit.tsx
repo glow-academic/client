@@ -11,7 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -38,12 +40,14 @@ import { updateDashboard } from "@/utils/mutations/dashboards/update-dashboard";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
+import { DialogDescription } from "@radix-ui/react-dialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Minus,
   PanelRightClose,
   PanelRightOpen,
+  RotateCcw,
   Settings,
-  X,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -215,10 +219,10 @@ function DraggableComponent({
         <Button
           size="sm"
           variant="ghost"
-          className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full"
+          className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10"
           onClick={onRemove}
         >
-          <X className="h-3 w-3" />
+          <Minus className="h-3 w-3" />
         </Button>
       )}
 
@@ -835,7 +839,6 @@ export default function DashboardEdit() {
   });
 
   // Initialize dashboard config from loaded data
-  // Initialize dashboard config from loaded data
   useMemo(() => {
     if (!dashboards || !userProfile || dashboardConfig) return;
 
@@ -1218,6 +1221,53 @@ export default function DashboardEdit() {
     [updateSettings]
   );
 
+  // Reset to global settings function
+  const resetToGlobalSettings = useCallback(() => {
+    if (!dashboards || !components) return;
+
+    const globalDashboard = dashboards.find((d) => d.profileId === null);
+    if (!globalDashboard) {
+      toast.error("No global dashboard found");
+      return;
+    }
+
+    const globalConfig: Partial<Dashboard> = {
+      ...(dashboardConfig?.id && { id: dashboardConfig.id }), // Only include id if it exists
+      headerComponentIds: globalDashboard.headerComponentIds || [],
+      primaryComponentIds: globalDashboard.primaryComponentIds || [],
+      secondaryComponentIds: globalDashboard.secondaryComponentIds || [],
+      footerComponentIds: globalDashboard.footerComponentIds || [],
+      autoScroll: globalDashboard.autoScroll || false,
+      showIndicators: globalDashboard.showIndicators || false,
+      headerComponents: globalDashboard.headerComponents || 4,
+      mainSplit: globalDashboard.mainSplit || 0.75,
+      footerSplit: globalDashboard.footerSplit || 0.5,
+    };
+
+    setDashboardConfig(globalConfig);
+
+    // Update available components based on new config
+    const usedComponentIds = [
+      ...(globalConfig.headerComponentIds ?? []),
+      ...(globalConfig.primaryComponentIds ?? []),
+      ...(globalConfig.secondaryComponentIds ?? []),
+      ...(globalConfig.footerComponentIds ?? []),
+    ];
+
+    const newAvailableComponents = components
+      .filter((comp) => !usedComponentIds.includes(comp.id))
+      .map((comp) => ({
+        id: comp.id,
+        name: comp.name,
+        fileName: comp.fileName,
+        layout: (comp.layout as Record<string, unknown>) || {},
+      }));
+
+    setAvailableComponents(newAvailableComponents);
+
+    toast.success("Applied default dashboard settings");
+  }, [dashboards, components, dashboardConfig?.id]);
+
   if (!dashboardConfig) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -1253,6 +1303,44 @@ export default function DashboardEdit() {
                   dashboardConfig={dashboardConfig}
                   updateSettings={updateSettings}
                 />
+
+                {/* Reset to Global Button */}
+                <Dialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <DialogTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={!dashboards || isGlobalDashboard}
+                        >
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Reset</p>
+                    </TooltipContent>
+                  </Tooltip>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Reset to Default Settings</DialogTitle>
+                      <DialogDescription>
+                        Are you sure you want to apply the default dashboard settings?
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
+                      <DialogClose asChild>
+                        <Button onClick={resetToGlobalSettings}>
+                          Apply
+                        </Button>
+                      </DialogClose>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
 
                 {/* Panel Toggle Button - always visible */}
                 {!sidebarOpen && (

@@ -210,7 +210,7 @@ function generateSQL(components) {
         comp.titleCase
       }', 'Analytics component for ${comp.titleCase.toLowerCase()}', '${
         comp.fileName
-      }', '${layout}', false)`;
+      }', '${layout}', false, false)`;
     })
     .join(",\n");
 
@@ -246,6 +246,7 @@ CREATE TABLE components (
   description TEXT        NOT NULL,
   file_name   TEXT        NOT NULL,
   layout JSONB       NOT NULL DEFAULT '{}', -- extra props for the component
+  stat BOOLEAN NOT NULL DEFAULT FALSE, -- if this is a statistic
   default_component      BOOLEAN     NOT NULL DEFAULT FALSE
 );
 
@@ -269,7 +270,7 @@ CREATE TABLE dashboards (
 -- INSERT COMPONENTS
 -- ============================================================================
 
-INSERT INTO components (id, name, description, file_name, layout, default_component) VALUES
+INSERT INTO components (id, name, description, file_name, layout, stat, default_component) VALUES
 ${componentInserts};
 
 -- ============================================================================
