@@ -18,6 +18,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -37,7 +42,7 @@ import { getAllComponents } from "@/utils/queries/components/get-all-components"
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { PanelRightClose, PanelRightOpen, RotateCcw } from "lucide-react";
+import { List, PanelRightClose, PanelRightOpen, RotateCcw } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -484,7 +489,7 @@ export default function DashboardEdit() {
   );
 
   // Reset to global settings function
-  const resetToGlobalSettings = useCallback(() => {
+  const resetAllToGlobalSettings = useCallback(() => {
     if (!dashboards || !components) return;
 
     const globalDashboard = dashboards.find((d) => d.profileId === null);
@@ -530,6 +535,167 @@ export default function DashboardEdit() {
 
     toast.success("Applied default dashboard settings");
   }, [dashboards, components, dashboardConfig?.id]);
+
+  // Reset specific section to global settings
+  const resetSectionToGlobal = useCallback(
+    (section: "header" | "main" | "footer") => {
+      if (!dashboards || !components) return;
+
+      const globalDashboard = dashboards.find((d) => d.profileId === null);
+      if (!globalDashboard) {
+        toast.error("No global dashboard found");
+        return;
+      }
+
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+
+        let updates: Partial<Dashboard> = {};
+
+        switch (section) {
+          case "header":
+            updates = {
+              headerComponentIds: globalDashboard.headerComponentIds || [],
+              headerComponents: globalDashboard.headerComponents || 4,
+            };
+            break;
+          case "main":
+            updates = {
+              primaryComponentIds: globalDashboard.primaryComponentIds || [],
+              secondaryComponentIds:
+                globalDashboard.secondaryComponentIds || [],
+              mainSplit: globalDashboard.mainSplit || 0.75,
+            };
+            break;
+          case "footer":
+            updates = {
+              footerComponentIds: globalDashboard.footerComponentIds || [],
+              footerSplit: globalDashboard.footerSplit || 0.5,
+            };
+            break;
+        }
+
+        const newConfig = { ...prev, ...updates };
+
+        // Update available components
+        const usedComponentIds = [
+          ...(newConfig.headerComponentIds ?? []),
+          ...(newConfig.primaryComponentIds ?? []),
+          ...(newConfig.secondaryComponentIds ?? []),
+          ...(newConfig.footerComponentIds ?? []),
+        ];
+
+        const newAvailableComponents = components
+          .filter((comp) => !usedComponentIds.includes(comp.id))
+          .map((comp) => ({
+            id: comp.id,
+            name: comp.name,
+            fileName: comp.fileName,
+            layout: (comp.layout as Record<string, unknown>) || {},
+            stat: comp.stat,
+          }));
+
+        setAvailableComponents(newAvailableComponents);
+
+        return newConfig;
+      });
+
+      toast.success(
+        `${section.charAt(0).toUpperCase() + section.slice(1)} section reset to default`
+      );
+    },
+    [dashboards, components]
+  );
+
+  // Component reordering within a section
+  const reorderComponentsInSection = useCallback(
+    (sectionKey: string, fromIndex: number, toIndex: number) => {
+      setDashboardConfig((prev) => {
+        if (!prev) return prev;
+
+        const sectionArray = [
+          ...(prev[sectionKey as keyof Partial<Dashboard>] as string[]),
+        ];
+        const [movedItem] = sectionArray.splice(fromIndex, 1);
+        sectionArray.splice(toIndex, 0, movedItem!);
+
+        return {
+          ...prev,
+          [sectionKey]: sectionArray,
+        };
+      });
+    },
+    []
+  );
+
+  // Component management popover content
+  const ComponentManagementPopover = ({
+    sectionKey,
+    sectionTitle,
+    componentIds,
+  }: {
+    sectionKey: string;
+    sectionTitle: string;
+    componentIds: string[];
+  }) => {
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+      setDraggedIndex(index);
+      e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e: React.DragEvent) => {
+      e.preventDefault();
+    };
+
+    const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+      e.preventDefault();
+      if (draggedIndex !== null && draggedIndex !== dropIndex) {
+        reorderComponentsInSection(sectionKey, draggedIndex, dropIndex);
+      }
+      setDraggedIndex(null);
+    };
+
+    return (
+      <div className="w-80 max-h-96 overflow-y-auto">
+        <div className="space-y-3">
+          <h4 className="font-medium text-sm">{sectionTitle} Components</h4>
+          {componentIds.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              No components in this section
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {componentIds.map((componentId, index) => {
+                const component = allComponentsLookup[componentId];
+                if (!component) return null;
+
+                return (
+                  <div
+                    key={componentId}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, index)}
+                    className={`p-2 border rounded-lg bg-card hover:bg-muted/50 cursor-move transition-colors ${
+                      draggedIndex === index ? "opacity-50" : ""
+                    }`}
+                  >
+                    <DraggableComponent
+                      component={component}
+                      onRemove={() => handleRemove(componentId, sectionKey)}
+                      onUpdateLayout={handleUpdateLayout}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   // Handle layout updates
   const handleUpdateLayout = useCallback(
@@ -621,7 +787,9 @@ export default function DashboardEdit() {
                         <Button variant="outline">Cancel</Button>
                       </DialogClose>
                       <DialogClose asChild>
-                        <Button onClick={resetToGlobalSettings}>Apply</Button>
+                        <Button onClick={resetAllToGlobalSettings}>
+                          Apply
+                        </Button>
                       </DialogClose>
                     </DialogFooter>
                   </DialogContent>
@@ -652,9 +820,78 @@ export default function DashboardEdit() {
                 {/* Header Section with Reordering */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Header Metrics
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Header Metrics
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        {/* Reset Header Section Button */}
+                        <Dialog>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={!dashboards || isGlobalDashboard}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Reset Header Settings</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to apply the default header
+                                settings?
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button
+                                  onClick={() => resetSectionToGlobal("header")}
+                                >
+                                  Apply
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Header Components Management Popover */}
+                        <Popover>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button size="sm" variant="ghost">
+                                  <List className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Manage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-80">
+                            <ComponentManagementPopover
+                              sectionKey="headerComponentIds"
+                              sectionTitle="Header"
+                              componentIds={
+                                dashboardConfig.headerComponentIds ?? []
+                              }
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <HeaderPreview
@@ -691,9 +928,87 @@ export default function DashboardEdit() {
                 {/* Main Content Section with Resizable Panels */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Main Content
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Main Content
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        {/* Reset Main Section Button */}
+                        <Dialog>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={!dashboards || isGlobalDashboard}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Reset Main Settings</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to apply the default main
+                                settings?
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button
+                                  onClick={() => resetSectionToGlobal("main")}
+                                >
+                                  Apply
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Main Components Management Popover */}
+                        <Popover>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button size="sm" variant="ghost">
+                                  <List className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Manage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-80">
+                            <div className="space-y-4">
+                              <ComponentManagementPopover
+                                sectionKey="primaryComponentIds"
+                                sectionTitle="Primary"
+                                componentIds={
+                                  dashboardConfig.primaryComponentIds ?? []
+                                }
+                              />
+                              <ComponentManagementPopover
+                                sectionKey="secondaryComponentIds"
+                                sectionTitle="Secondary"
+                                componentIds={
+                                  dashboardConfig.secondaryComponentIds ?? []
+                                }
+                              />
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <ResizablePanelGroup
@@ -791,9 +1106,78 @@ export default function DashboardEdit() {
                 {/* Footer Section with Resizable Panels and Interleaved Components */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
-                      Footer Content
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">
+                        Footer Content
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        {/* Reset Footer Section Button */}
+                        <Dialog>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <DialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  disabled={!dashboards || isGlobalDashboard}
+                                >
+                                  <RotateCcw className="h-4 w-4" />
+                                </Button>
+                              </DialogTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Reset</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Reset Footer Settings</DialogTitle>
+                              <DialogDescription>
+                                Are you sure you want to apply the default footer
+                                settings?
+                              </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                              <DialogClose asChild>
+                                <Button variant="outline">Cancel</Button>
+                              </DialogClose>
+                              <DialogClose asChild>
+                                <Button
+                                  onClick={() => resetSectionToGlobal("footer")}
+                                >
+                                  Apply
+                                </Button>
+                              </DialogClose>
+                            </DialogFooter>
+                          </DialogContent>
+                        </Dialog>
+
+                        {/* Footer Components Management Popover */}
+                        <Popover>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <PopoverTrigger asChild>
+                                <Button size="sm" variant="ghost">
+                                  <List className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Manage</p>
+                            </TooltipContent>
+                          </Tooltip>
+                          <PopoverContent className="w-80">
+                            <ComponentManagementPopover
+                              sectionKey="footerComponentIds"
+                              sectionTitle="Footer"
+                              componentIds={
+                                dashboardConfig.footerComponentIds ?? []
+                              }
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <FooterPreview
