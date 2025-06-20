@@ -326,7 +326,7 @@ export default function DraggableComponent({
             <Button
               size="sm"
               variant="ghost"
-              className="absolute -top-2 -right-2 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10"
+              className="absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full z-10"
               onClick={onRemove}
             >
               <X className="h-3 w-3" />
@@ -348,8 +348,10 @@ export default function DraggableComponent({
                   size="sm"
                   variant="ghost"
                   className={cn(
-                    "absolute h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-full z-10",
-                    isInSidebar ? "top-2 right-2" : "top-2 right-6"
+                    "absolute h-6 w-6 p-0 transition-opacity bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-full z-10",
+                    isInSidebar 
+                      ? "top-2.5 right-2.5 opacity-100" 
+                      : "top-1 right-8 opacity-0 group-hover:opacity-100"
                   )}
                   onClick={(e) => {
                     e.preventDefault();
@@ -403,11 +405,6 @@ export default function DraggableComponent({
                 className="text-xs"
               >
                 {component.stat ? "Stat" : "Graph"}
-              </Badge>
-            )}
-            {isInSidebar && hasProps && (
-              <Badge variant="outline" className="text-xs">
-                Props
               </Badge>
             )}
           </div>
