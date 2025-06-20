@@ -19,8 +19,8 @@ export async function generateMetadata(
   const { classId } = await params;
   const classData = await getClass(classId);
   return {
-    title: `${classData?.name || "Class"}`,
-    description: `${classData?.name + " " + classData?.description || "Class"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
+    title: `${classData?.classCode || "Class"}`,
+    description: `${classData?.name + " " + classData?.classCode + " " + classData?.description || "Class"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
   };
 }
 

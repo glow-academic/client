@@ -47,7 +47,7 @@ def generate_sqlmodel_from_sql():
             "",
             "from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,",
             "                        Enum, ForeignKeyConstraint, Integer,",
-            "                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text, Double)",
+            "                        PrimaryKeyConstraint, String, Text, Uuid, text, Double)",
             "from sqlalchemy.dialects.postgresql import JSONB",
             "from sqlmodel import Field, Relationship, SQLModel",
             "from sqlalchemy.orm import Mapped",
@@ -159,26 +159,33 @@ def generate_sqlmodel_from_sql():
         
         # 8. Replace bare dict with Dict[str, Any]
         class_definitions = re.sub(
+            r"(\w+): dict = Field\(sa_column=Column\('(\w+)', JSONB",
+            r"\1: Dict[str, Any] = Field(sa_column=Column('\2', JSONB",
+            class_definitions
+        )
+        
+        # 9. Replace Optional[dict] with Optional[Dict[str, Any]]
+        class_definitions = re.sub(
             r"(\w+): Optional\[dict\] = Field\(default=None, sa_column=Column\('(\w+)', JSONB\)\)",
             r"\1: Optional[Dict[str, Any]] = Field(default=None, sa_column=Column('\2', JSONB))",
             class_definitions
         )
         
-        # 9. Fix any remaining Uuid() to Uuid(as_uuid=True) in ARRAY contexts
+        # 10. Fix any remaining Uuid() to Uuid(as_uuid=True) in ARRAY contexts
         class_definitions = re.sub(
             r"ARRAY\(Uuid\(\)\)",
             r"ARRAY(Uuid(as_uuid=True))",
             class_definitions
         )
         
-        # 10. Fix any remaining bare Uuid() to Uuid(as_uuid=True) in Column contexts
+        # 11. Fix any remaining bare Uuid() to Uuid(as_uuid=True) in Column contexts
         class_definitions = re.sub(
             r"Column\('(\w+)', Uuid\)",
             r"Column('\1', Uuid(as_uuid=True))",
             class_definitions
         )
         
-        # 7. Remove duplicate relationship definitions (fix the duplicate 'standard' issue)
+        # 12. Remove duplicate relationship definitions (fix the duplicate 'standard' issue)
         lines = class_definitions.split('\n')
         cleaned_lines = []
         seen_relationships = {}

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
                         Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, Sequence, String, Text, Uuid, text, Double)
+                        PrimaryKeyConstraint, String, Text, Uuid, text, Double)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
@@ -109,7 +109,7 @@ class Components(_Base, table=True):
     name: str = Field(sa_column=Column('name', Text))
     description: str = Field(sa_column=Column('description', Text))
     file_name: str = Field(sa_column=Column('file_name', Text))
-    layout: dict = Field(sa_column=Column('layout', JSONB, server_default=text("'{}'::jsonb")))
+    layout: Dict[str, Any] = Field(sa_column=Column('layout', JSONB, server_default=text("'{}'::jsonb")))
     stat: bool = Field(sa_column=Column('stat', Boolean, server_default=text('false')))
     default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
 

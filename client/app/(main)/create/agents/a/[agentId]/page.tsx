@@ -19,7 +19,7 @@ export async function generateMetadata(
   const { agentId } = await params;
   const agent = await getAgent(agentId);
   return {
-    title: `${agent?.name || "Agent"}`,
+    title: `${agent?.name || "Agent"} Agent`,
     description: `${agent?.name + " " + agent?.description || "Agent"} in GLOW (Graduate Learning Orientation Workshop) at Purdue University.`,
   };
 }
