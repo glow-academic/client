@@ -6,9 +6,10 @@
  */
 "use client";
 import Markdown from "@/components/common/chat/Markdown";
+import ToolCall from "@/components/common/chat/ToolCall";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useChat } from "@/contexts/chat-context";
+import { AssistantMessageWithTools, useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { AssistantMessage } from "@/types";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
@@ -113,6 +114,10 @@ export default function ChatMessages() {
           <p className="text-xs text-muted-foreground">
             Type a message below to start our conversation
           </p>
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+            💡 Try keywords like "search", "create", "calculate", or "database"
+            to see tool calls in action!
+          </div>
         </div>
       </div>
     );
@@ -146,35 +151,62 @@ export default function ChatMessages() {
           <ConnectionStatus isConnected={isConnected} />
         </div>
 
-        {sortedMessages.map((message: AssistantMessage) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.role === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
+        {sortedMessages.map((message: AssistantMessage) => {
+          const messageWithTools = message as AssistantMessageWithTools;
+          return (
             <div
-              className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted"
+              key={message.id}
+              className={`flex ${
+                message.role === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              {message.role === "assistant" &&
-              !message.completed &&
-              message.content === "" ? (
-                <div className="flex items-center">
-                  <span className="text-gray-500 mr-2 text-sm">Thinking</span>
-                  <LoadingDots />
-                </div>
-              ) : (
-                <div className="text-sm">
-                  <Markdown>{message.content}</Markdown>
-                </div>
-              )}
+              <div
+                className={`max-w-[80%] rounded-lg p-3 ${
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted"
+                }`}
+              >
+                {message.role === "assistant" &&
+                !message.completed &&
+                message.content === "" ? (
+                  <div className="flex items-center">
+                    <span className="text-gray-500 mr-2 text-sm">Thinking</span>
+                    <LoadingDots />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {/* Show tool calls for assistant messages */}
+                    {message.role === "assistant" &&
+                      messageWithTools.toolCalls &&
+                      messageWithTools.toolCalls.length > 0 && (
+                        <div className="space-y-2 mb-3">
+                          {messageWithTools.toolCalls.map((toolCall) => {
+                            const toolResult =
+                              messageWithTools.toolResults?.find(
+                                (tr) => tr.id === toolCall.id
+                              );
+                            return (
+                              <ToolCall
+                                key={toolCall.id}
+                                toolCall={toolCall}
+                                {...(toolResult && { toolResult })}
+                              />
+                            );
+                          })}
+                        </div>
+                      )}
+
+                    {/* Show message content */}
+                    <div className="text-sm">
+                      <Markdown>{message.content}</Markdown>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div ref={messagesEndRef} />
       </div>

@@ -9,7 +9,7 @@ from typing import Any, AsyncGenerator, Dict, Optional
 
 import socketio  # type: ignore
 from app.db import get_session
-from app.models import AssistantChats, AssistantMessages
+from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
 from app.utils.assistants import generate_assistant_response
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -209,20 +209,67 @@ async def process_message_websocket(chat_id: str, message: str, session: Optiona
         # 5. Stream the assistant response
         accumulated_content = ""
         async for token in generate_assistant_response(message):
-            accumulated_content += token
-            
-            # Update the database with accumulated content
-            assistant_message.content = accumulated_content
-            db_session.add(assistant_message)
-            db_session.commit()
-            
-            # Emit token update to connected clients
-            await sio.emit('message_token', {
-                'message_id': str(assistant_message.id),
-                'chat_id': chat_id,
-                'token': token,
-                'accumulated_content': accumulated_content
-            }, room=f"chat_{chat_id}")
+            # Check if this is a tool call token
+            if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
+                # Extract tool call data
+                tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
+                try:
+                    tool_call_data = json.loads(tool_call_json)
+                    
+                    # Save tool call to database
+                    tool_call = AssistantToolCalls(
+                        chat_id=chat_uuid,
+                        message_id=assistant_message.id,
+                        tool_name=tool_call_data.get('name', 'unknown'),
+                        tool_type=tool_call_data.get('type', 'read')
+                    )
+                    db_session.add(tool_call)
+                    db_session.commit()
+                    db_session.refresh(tool_call)
+                    
+                    # Emit tool call start to connected clients
+                    await sio.emit('tool_call_start', {
+                        'tool_call_id': str(tool_call.id),
+                        'message_id': str(assistant_message.id),
+                        'chat_id': chat_id,
+                        'tool_data': tool_call_data
+                    }, room=f"chat_{chat_id}")
+                    
+                except json.JSONDecodeError:
+                    logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
+                
+            elif token.startswith('<tool_call_result>') and token.endswith('</tool_call_result>'):
+                # Extract tool call result data
+                tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
+                try:
+                    tool_result_data = json.loads(tool_result_json)
+                    
+                    # Emit tool call result to connected clients
+                    await sio.emit('tool_call_result', {
+                        'message_id': str(assistant_message.id),
+                        'chat_id': chat_id,
+                        'tool_result': tool_result_data
+                    }, room=f"chat_{chat_id}")
+                    
+                except json.JSONDecodeError:
+                    logger.error(f"Failed to parse tool result JSON: {tool_result_json}")
+                
+            else:
+                # Regular content token
+                accumulated_content += token
+                
+                # Update the database with accumulated content
+                assistant_message.content = accumulated_content
+                db_session.add(assistant_message)
+                db_session.commit()
+                
+                # Emit token update to connected clients
+                await sio.emit('message_token', {
+                    'message_id': str(assistant_message.id),
+                    'chat_id': chat_id,
+                    'token': token,
+                    'accumulated_content': accumulated_content
+                }, room=f"chat_{chat_id}")
         
         # 6. Mark as completed
         assistant_message.completed = True

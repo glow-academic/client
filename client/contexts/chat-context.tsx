@@ -3,7 +3,7 @@
  * This provides a centralized way to manage chat UI states and real-time message handling
  */
 "use client";
-import { AssistantChat, AssistantMessage } from "@/types";
+import { AssistantChat, AssistantMessage, AssistantToolType } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
@@ -19,6 +19,28 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
+
+// Additional types for tool calls UI
+export interface ToolCallData {
+  id: string;
+  name: string;
+  type: AssistantToolType;
+  arguments: Record<string, unknown>;
+  status?: "pending" | "executing" | "completed" | "error";
+}
+
+export interface ToolCallResult {
+  id: string;
+  name: string;
+  status: "success" | "error";
+  result?: unknown;
+  error?: string;
+}
+
+export interface AssistantMessageWithTools extends AssistantMessage {
+  toolCalls?: ToolCallData[];
+  toolResults?: ToolCallResult[];
+}
 
 type ChatUIState = "closed" | "widget" | "expanded";
 
@@ -209,6 +231,77 @@ export function ChatProvider({ children }: ChatProviderProps) {
     socket.on("joined_chat", (data: { chat_id: string }) => {
       logInfo(`Joined chat: ${data.chat_id}`);
     });
+
+    socket.on(
+      "tool_call_start",
+      (data: {
+        tool_call_id: string;
+        message_id: string;
+        chat_id: string;
+        tool_data: ToolCallData;
+      }) => {
+        // Update the messages cache with tool call start
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            return old.map((msg) => {
+              if (msg.id === data.message_id) {
+                const messageWithTools = msg as AssistantMessageWithTools;
+                const toolCall: ToolCallData = {
+                  ...data.tool_data,
+                  status: "executing",
+                };
+                return {
+                  ...messageWithTools,
+                  toolCalls: [...(messageWithTools.toolCalls || []), toolCall],
+                };
+              }
+              return msg;
+            });
+          }
+        );
+      }
+    );
+
+    socket.on(
+      "tool_call_result",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        tool_result: ToolCallResult;
+      }) => {
+        // Update the messages cache with tool call result
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            return old.map((msg) => {
+              if (msg.id === data.message_id) {
+                const messageWithTools = msg as AssistantMessageWithTools;
+                return {
+                  ...messageWithTools,
+                  toolCalls: messageWithTools.toolCalls?.map((tc) =>
+                    tc.id === data.tool_result.id
+                      ? {
+                          ...tc,
+                          status:
+                            data.tool_result.status === "success"
+                              ? "completed"
+                              : "error",
+                        }
+                      : tc
+                  ),
+                  toolResults: [
+                    ...(messageWithTools.toolResults || []),
+                    data.tool_result,
+                  ],
+                };
+              }
+              return msg;
+            });
+          }
+        );
+      }
+    );
 
     return () => {
       socket.disconnect();
