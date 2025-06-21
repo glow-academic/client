@@ -121,7 +121,7 @@ describe('DashboardEdit', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: false
- * - Uses hooks: used, useDashboard, user, useQuery, useQueryClient, useSession, useCallback, useEffect, useMemo, useState, uselSection, userId, userProfile, usedComponentIds
+ * - Uses hooks: used, user, useQuery, useQueryClient, useSession, useCallback, useEffect, useMemo, useState, uselSection, userId, userProfile, usedComponentIds
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

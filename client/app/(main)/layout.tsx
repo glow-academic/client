@@ -12,13 +12,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { ArrowLeft, Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
-import { useDashboard } from "@/contexts/dashboard-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -32,7 +31,6 @@ export default function MainLayout({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { isEditMode, setIsEditMode } = useDashboard();
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
@@ -62,21 +60,15 @@ export default function MainLayout({
     }
 
     if (pathname === "/analytics/dashboard") {
-      if (isEditMode) {
-        return (
-          <Button onClick={() => setIsEditMode(false)} size="sm">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
-        );
-      } else {
-        return (
-          <Button onClick={() => setIsEditMode(true)} size="sm">
-            <Pencil className="h-4 w-4 mr-2" />
-            Edit Dashboard
-          </Button>
-        );
-      }
+      return (
+        <Button
+          onClick={() => router.push("/analytics/dashboard/edit")}
+          size="sm"
+        >
+          <Pencil className="h-4 w-4 mr-2" />
+          Edit Dashboard
+        </Button>
+      );
     }
 
     // Check for individual class page pattern: /classes/c/[classId]

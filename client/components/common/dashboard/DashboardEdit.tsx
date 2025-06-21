@@ -4,6 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 06/20/2025
  */
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,7 +33,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useDashboard } from "@/contexts/dashboard-context";
 import { cn } from "@/lib/utils";
 import { Dashboard } from "@/types";
 import { logError } from "@/utils/logger";
@@ -63,7 +63,6 @@ interface DashboardComponent {
 }
 
 export default function DashboardEdit() {
-  const { setIsEditMode } = useDashboard();
   const { data: session } = useSession();
   const userId = session?.user?.id;
   const queryClient = useQueryClient();
@@ -343,8 +342,6 @@ export default function DashboardEdit() {
       // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["dashboards"] });
 
-      // Exit edit mode
-      setIsEditMode(false);
     } catch (error) {
       logError("Failed to save dashboard", error);
       toast.error("Failed to save dashboard");
@@ -357,7 +354,6 @@ export default function DashboardEdit() {
     userProfile,
     isGlobalDashboard,
     queryClient,
-    setIsEditMode,
   ]);
 
   // Create lookup for all components

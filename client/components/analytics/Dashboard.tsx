@@ -8,7 +8,6 @@
 "use client";
 
 import registry from "@/components/common/analytics/Registry";
-import { useDashboard } from "@/contexts/dashboard-context";
 import { logError } from "@/utils/logger";
 import { getAllComponents } from "@/utils/queries/components/get-all-components";
 import { getAllDashboards } from "@/utils/queries/dashboards/get-all-dashboards";
@@ -20,7 +19,6 @@ import { getAllSimulationChats } from "@/utils/queries/simulation_chats/get-all-
 import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { useEffect, useMemo, useState } from "react";
-import DashboardEdit from "../common/dashboard/DashboardEdit";
 
 interface DashboardConfig {
   id: string;
@@ -36,8 +34,6 @@ interface DashboardConfig {
 }
 
 export default function Dashboard() {
-  // Get edit mode state from context
-  const { isEditMode } = useDashboard();
 
   // Session and user data
   const { data: session } = useSession();
@@ -275,11 +271,6 @@ export default function Dashboard() {
     dashboardConfig?.autoScroll,
     dashboardConfig?.footerComponentIds?.length,
   ]);
-
-  // Early return for edit mode
-  if (isEditMode) {
-    return <DashboardEdit />;
-  }
 
   // Loading state
   if (
