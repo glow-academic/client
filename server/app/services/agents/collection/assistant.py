@@ -50,8 +50,6 @@ async def run_assistant_agent(
 
 
 
-
-
 async def _handle_assistant_chat(
     chat: AssistantChats, input_text: str, session: Session
 ) -> AsyncGenerator[str, None]:
@@ -63,10 +61,6 @@ async def _handle_assistant_chat(
         raise ValueError("Assistant agent not found")
 
     input_items: list[TResponseInputItem] = []
-    
-    # Add a new message with an empty response
-    message = AssistantMessages(chat_id=chat.id, query=input_text, response="")
-    session.add(message)
 
     # Get all the messages for the chat_id, including the new one, order by created_at
     messages = session.exec(
@@ -80,6 +74,7 @@ async def _handle_assistant_chat(
 
     # Prepare conversation history from chat_id
     conversation_history = get_assistant_conversation_history(messages)
+    input_items.extend(conversation_history)
 
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
@@ -102,16 +97,9 @@ async def _handle_assistant_chat(
         session.commit()
 
     # Process streaming events
-    full_response = ""
     async for event in result.stream_events():
         if event.type == "raw_response_event":
             if isinstance(event.data, ResponseTextDeltaEvent):
                 chunk = event.data.delta
-                full_response += chunk
                 yield chunk
-
-    # Update the message with the full response
-    message.response = full_response
-    session.add(message)
-    session.commit()
 

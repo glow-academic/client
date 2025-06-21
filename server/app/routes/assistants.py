@@ -3,14 +3,20 @@
 import asyncio
 import json
 import logging
+import os
 import uuid
 from datetime import timezone
 from typing import Any, AsyncGenerator, Dict, Optional
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import socketio  # type: ignore
 from app.db import get_session
 from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
-from app.utils.assistants import generate_assistant_response
+from app.services.agents.collection.assistant import run_assistant_agent
+from app.services.agents.collection.title import run_title_agent
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
@@ -20,9 +26,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+client_url = os.getenv("CLIENT_URL")
+
 # Create Socket.IO server instance
 sio = socketio.AsyncServer(
-    cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    cors_allowed_origins=[client_url],
     cors_credentials=True,
     logger=False,
     engineio_logger=False,
@@ -78,21 +86,24 @@ async def start_chat(
     This endpoint creates a new chat based on a profile.
     """
     try:
-        # 1. Create a new chat, based off the first message
-        chat_title = (initial_message[:50] + "..." if len(initial_message) > 50 else initial_message) + " Chat"
-        
         # Create the chat record
         new_chat = AssistantChats(
-            title=chat_title,
+            title="New Chat",
             profile_id=profile_id
         )
+
+        # update the title with the title agent
+        chat_title = await run_title_agent(new_chat.id, initial_message, session)
+        logger.info(f"Chat title: {chat_title}")
+
+
         session.add(new_chat)
         session.commit()
         session.refresh(new_chat)
 
         # 2. Process the initial message via WebSocket
         asyncio.create_task(process_message_websocket(
-            chat_id=str(new_chat.id),
+            chat_id=new_chat.id,
             message=initial_message,
             session=None  # We create our own session in the function
         ))
@@ -133,7 +144,7 @@ async def message(
         
         # 2. Process the message via WebSocket
         asyncio.create_task(process_message_websocket(
-            chat_id=str(chat_id),
+            chat_id=chat_id,
             message=message,
             session=None  # We create our own session in the function
         ))
@@ -151,7 +162,7 @@ async def message(
             status_code=500, detail=f"Failed to process message: {str(e)}"
         )
 
-async def process_message_websocket(chat_id: str, message: str, session: Optional[Session] = None) -> None:
+async def process_message_websocket(chat_id: uuid.UUID, message: str, session: Optional[Session] = None) -> None:
     """
     Process a message and stream the response via WebSocket
     """
@@ -160,11 +171,10 @@ async def process_message_websocket(chat_id: str, message: str, session: Optiona
     db_session = next(get_session())
     
     try:
-        chat_uuid = uuid.UUID(chat_id)
         
         # 1. Add the user message to the chat
         user_message = AssistantMessages(
-            chat_id=chat_uuid,
+            chat_id=chat_id,
             role="user",
             content=message,
             completed=True
@@ -185,7 +195,7 @@ async def process_message_websocket(chat_id: str, message: str, session: Optiona
         
         # 3. Create placeholder assistant message
         assistant_message = AssistantMessages(
-            chat_id=chat_uuid,
+            chat_id=chat_id,
             role="assistant",
             content="",
             completed=False
@@ -208,7 +218,7 @@ async def process_message_websocket(chat_id: str, message: str, session: Optiona
 
         # 5. Stream the assistant response
         accumulated_content = ""
-        async for token in generate_assistant_response(message):
+        async for token in run_assistant_agent(chat_id, message, db_session):
             # Check if this is a tool call token
             if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
                 # Extract tool call data
@@ -218,7 +228,7 @@ async def process_message_websocket(chat_id: str, message: str, session: Optiona
                     
                     # Save tool call to database
                     tool_call = AssistantToolCalls(
-                        chat_id=chat_uuid,
+                        chat_id=chat_id,
                         message_id=assistant_message.id,
                         tool_name=tool_call_data.get('name', 'unknown'),
                         tool_type=tool_call_data.get('type', 'read')

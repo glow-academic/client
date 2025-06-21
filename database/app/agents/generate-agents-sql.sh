@@ -11,6 +11,7 @@ EVALUATE_PROMPT=$(cat "$(dirname "$0")/prompts/evaluate.md" | sed "s/'/''/g")
 SCENARIO_PROMPT=$(cat "$(dirname "$0")/prompts/scenario.md" | sed "s/'/''/g")
 CLASSIFY_PROMPT=$(cat "$(dirname "$0")/prompts/classify.md" | sed "s/'/''/g")
 COURSE_PROMPT=$(cat "$(dirname "$0")/prompts/course.md" | sed "s/'/''/g")
+TITLE_PROMPT=$(cat "$(dirname "$0")/prompts/title.md" | sed "s/'/''/g")
 
 # Generate the SQL file
 cat > "$(dirname "$0")/init.sql" << EOF
@@ -70,6 +71,10 @@ INSERT INTO agents (id, name, description, system_prompt, temperature, default_a
   -- Insert Course Agent
   INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id) VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Course', 'A helpful assistant that can help with a variety of tasks.', '$COURSE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333');
+
+  -- Insert Title Agent
+  INSERT INTO agents (id, name, description, system_prompt, temperature, default_agent, editable, model_id) VALUES
+  ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Title', 'A helpful assistant that can help with a variety of tasks.', '$TITLE_PROMPT', 0, true, false, '33333333-cccc-cccc-cccc-333333333333');
 
 EOF
 
