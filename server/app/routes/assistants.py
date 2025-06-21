@@ -33,7 +33,7 @@ async def start_chat(
     """
     try:
         # 1. Create a new chat, based off the first message
-        chat_title = (initial_message[:50] + "..." if len(initial_message) > 50 else initial_message) + "Chat"
+        chat_title = (initial_message[:50] + "..." if len(initial_message) > 50 else initial_message) + " Chat"
         
         # Create the chat record (adjust based on your actual model)
         new_chat = AssistantChats(
@@ -92,6 +92,7 @@ async def message(
             completed=True
         )
         session.add(user_message)
+        session.commit()
         
         # 3. Create placeholder assistant message
         assistant_message = AssistantMessages(
@@ -101,7 +102,8 @@ async def message(
             completed=False
         )
         session.add(assistant_message)
-        
+        session.commit()
+
         logger.info(f"Processing message for chat {chat_id}")
 
         async def stream_response() -> AsyncGenerator[str, None]:

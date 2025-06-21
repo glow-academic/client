@@ -46,6 +46,8 @@ export default function ChatInput() {
     ? "Type your message..."
     : "Start a conversation with the assistant...";
 
+  const statusText = currentChatId ? "Sending..." : "Starting chat...";
+
   return (
     <form onSubmit={handleSubmit} className="p-3">
       <div className="flex gap-2">
@@ -68,9 +70,7 @@ export default function ChatInput() {
         </Button>
       </div>
       {isSendingMessage && (
-        <p className="text-xs text-muted-foreground mt-1">
-          {currentChatId ? "Sending..." : "Starting chat..."}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{statusText}</p>
       )}
     </form>
   );

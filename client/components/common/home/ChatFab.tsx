@@ -11,7 +11,7 @@ import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
 
 export default function ChatFab() {
-  const { openWidget, uiState } = useChat();
+  const { openWidget, uiState, startBlankChat } = useChat();
   const { effectiveRole } = useRole();
 
   // Only show for instructor, instructional, or admin roles
@@ -23,9 +23,14 @@ export default function ChatFab() {
     return null;
   }
 
+  const handleClick = () => {
+    startBlankChat(); // Start with a blank chat
+    openWidget();
+  };
+
   return (
     <Button
-      onClick={openWidget}
+      onClick={handleClick}
       className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
       size="lg"
     >

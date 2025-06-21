@@ -3,8 +3,8 @@
  * This provides a centralized way to manage chat UI states and message handling
  */
 "use client";
-import { AssistantMessage } from "@/types";
-import { createAssistantMessage } from "@/utils/mutations/assistant_messages/create-assistant-message";
+import { AssistantChat } from "@/types";
+import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
@@ -22,9 +22,12 @@ interface ChatContextType {
 
   // Chat Management
   currentChatId: string | null;
+  pastChats: AssistantChat[] | undefined;
+  isLoadingChats: boolean;
 
   // Chat Operations
-  selectChat: (chatId: string) => void;
+  selectChat: (chatId: string | null) => void;
+  startBlankChat: () => void;
   sendMessage: (content: string) => Promise<void>;
 
   // Loading States
@@ -60,6 +63,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
     enabled: !!userId,
   });
 
+  // Fetch past chats for the current profile
+  const { data: pastChats, isLoading: isLoadingChats } = useQuery({
+    queryKey: ["assistantChats", profile?.id],
+    queryFn: () => getAssistantChatsByProfile(profile!.id),
+    enabled: !!profile?.id,
+  });
+
   // UI State Management
   const openWidget = useCallback(() => {
     setUiState("widget");
@@ -73,9 +83,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setUiState("closed");
   }, []);
 
-  // Select existing chat
-  const selectChat = useCallback((chatId: string) => {
+  // Select existing chat or null for blank chat
+  const selectChat = useCallback((chatId: string | null) => {
     setCurrentChatId(chatId);
+  }, []);
+
+  // Start a blank chat (sets currentChatId to null)
+  const startBlankChat = useCallback(() => {
+    setCurrentChatId(null);
   }, []);
 
   // Start new chat mutation
@@ -109,9 +124,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
       // Invalidate queries to refresh chat data
       queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
       queryClient.invalidateQueries({
+        queryKey: ["assistantChats", profile?.id],
+      });
+      queryClient.invalidateQueries({
         queryKey: ["assistantMessages", chatId],
       });
-      toast.success("Chat started successfully");
     },
     onError: (error) => {
       toast.error(`Failed to start chat: ${error}`);
@@ -127,27 +144,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       chatId: string;
       content: string;
     }) => {
-      // Create optimistic user message first
-      await createAssistantMessage({
-        chatId,
-        role: "user" as const,
-        content,
-        completed: true,
-      });
-
-      // Create placeholder assistant message
-      const assistantMessage = await createAssistantMessage({
-        chatId,
-        role: "assistant" as const,
-        content: "",
-        completed: false,
-      });
-
-      // Invalidate to show user message immediately
-      queryClient.invalidateQueries({
-        queryKey: ["assistantMessages", chatId],
-      });
-
       // Start streaming response
       const formData = new FormData();
       formData.append("chat_id", chatId);
@@ -190,30 +186,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
           if (data.text) {
             accumulated += data.text;
-
-            // Update assistant message with accumulated content
-            queryClient.setQueryData(
-              ["assistantMessages", chatId],
-              (old: AssistantMessage[] = []) =>
-                old.map((m) =>
-                  m.id === assistantMessage?.id
-                    ? { ...m, content: accumulated }
-                    : m
-                )
-            );
           }
 
           if (data.done || data.error) {
-            // Mark message as completed
-            queryClient.setQueryData(
-              ["assistantMessages", chatId],
-              (old: AssistantMessage[] = []) =>
-                old.map((m) =>
-                  m.id === assistantMessage?.id
-                    ? { ...m, content: accumulated, completed: true }
-                    : m
-                )
-            );
             break;
           }
         }
@@ -259,9 +234,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Chat Management
     currentChatId,
+    pastChats,
+    isLoadingChats,
 
     // Chat Operations
     selectChat,
+    startBlankChat,
     sendMessage,
 
     // Loading States

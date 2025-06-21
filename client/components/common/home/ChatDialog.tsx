@@ -12,16 +12,32 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
-import { Minimize2, X } from "lucide-react";
+import { Minimize2, Plus, X } from "lucide-react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
-  const { uiState, openWidget, close, currentChatId } = useChat();
+  const {
+    uiState,
+    openWidget,
+    close,
+    currentChatId,
+    pastChats,
+    isLoadingChats,
+    selectChat,
+    startBlankChat,
+  } = useChat();
   const { effectiveRole } = useRole();
 
   const { data: chat } = useQuery({
@@ -39,14 +55,63 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     return null;
   }
 
+  const handleChatSelect = (value: string) => {
+    if (value === "new") {
+      startBlankChat();
+    } else {
+      selectChat(value);
+    }
+  };
+
+  const getCurrentChatTitle = () => {
+    if (!currentChatId) return "New Chat";
+    return chat?.title || "GLOW Assistant";
+  };
+
   return (
     <Dialog open={true} onOpenChange={() => close()}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
+      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 [&>button]:hidden">
         <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <DialogTitle className="text-lg font-semibold">
-              {chat?.title || "GLOW Assistant"}
-            </DialogTitle>
+            <Select
+              value={currentChatId || "new"}
+              onValueChange={handleChatSelect}
+              disabled={isLoadingChats}
+            >
+              <SelectTrigger className="w-[250px]">
+                <SelectValue>
+                  <DialogTitle className="text-lg font-semibold truncate">
+                    {getCurrentChatTitle()}
+                  </DialogTitle>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="new">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    <span>New Chat</span>
+                  </div>
+                </SelectItem>
+                {pastChats && pastChats.length > 0 && (
+                  <>
+                    <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
+                      Past Chats
+                    </div>
+                    {pastChats
+                      .sort(
+                        (a, b) =>
+                          new Date(b.createdAt).getTime() -
+                          new Date(a.createdAt).getTime()
+                      )
+                      .map((pastChat) => (
+                        <SelectItem key={pastChat.id} value={pastChat.id}>
+                          <span className="truncate">{pastChat.title}</span>
+                        </SelectItem>
+                      ))}
+                  </>
+                )}
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button

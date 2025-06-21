@@ -58,7 +58,7 @@ export default function ChatMessages() {
     return null;
   }
 
-  if (isLoadingMessages) {
+  if (isLoadingMessages && currentChatId) {
     return (
       <div className="p-4 space-y-4">
         {[1, 2, 3].map((i) => (
