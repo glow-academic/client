@@ -16,8 +16,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 \i app/rubrics/init.sql
 \i app/logs/init.sql
 
--- 2. Chat tables
-\i app/chat/init.sql
+-- 2. Assistant tables
+\i app/assistants/init.sql
 
 -- 3. Analytics tables
 \i app/analytics/init.sql

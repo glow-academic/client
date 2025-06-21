@@ -2,17 +2,26 @@ import logging
 import uuid
 from typing import Any
 
-from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    trace)
+from agents import Runner, trace
 from app.db import get_session
-from app.extensions import get_gemini
-from app.models import Classes, Documents
+from app.models import Agents, Classes, Documents
+from app.services.agents.generic import GenericAgent
 from fastapi import Depends
-from openai.types import Reasoning
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
+
+
+class Classify(BaseModel):
+    homeworks: list[str] = []
+    projects: list[str] = []
+    quizzes: list[str] = []
+    midterms: list[str] = []
+    labs: list[str] = []
+    lectures: list[str] = []
+    syllabi: list[str] = []
+
 
 
 async def run_classify_agent(
@@ -28,6 +37,11 @@ async def run_classify_agent(
     Returns:
         A dictionary containing classification results and statistics.
     """
+
+    # find agent with name of "Classify"
+    agent = session.exec(select(Agents).where(Agents.name == "Classify")).one()
+    if not agent:
+        raise ValueError("Classify agent not found")
 
     # get the class from the class_id
     class_data = session.exec(select(Classes).where(Classes.id == class_id)).first()
@@ -60,7 +74,12 @@ async def run_classify_agent(
 
     logger.info(f"Classifying {len(documents)} documents for class {class_data.name}")
 
-    classify_agent = ClassifyAgent()
+    classify_agent = GenericAgent(
+        agent_name=agent.name,
+        agent_prompt=agent.system_prompt,
+        temperature=agent.temperature,
+        output_type=Classify,
+    )
 
     try:
         with trace(f"{class_data.name} Document Classification"):
@@ -119,60 +138,3 @@ async def run_classify_agent(
             "classified_count": 0,
             "total_count": len(documents),
         }
-
-
-class Classify(BaseModel):
-    homeworks: list[str] = []
-    projects: list[str] = []
-    quizzes: list[str] = []
-    midterms: list[str] = []
-    labs: list[str] = []
-    lectures: list[str] = []
-    syllabi: list[str] = []
-
-
-class ClassifyAgent:
-    def __init__(self) -> None:
-        self.gemini_client = get_gemini()
-        self.system_prompt = """Your purpose is to classify documents given for a class. You will receive a numbered list of document names and need to categorize each document by its number.
-
-Analyze each document name and classify it into one of these categories:
-- homework: Assignments, problem sets, exercises
-- project: Large assignments, final projects, group work
-- quiz: Short assessments, pop quizzes
-- midterm: Midterm exams, major tests
-- lab: Laboratory exercises, practical work
-- lecture: Lecture notes, slides, presentations
-- syllabus: Course syllabus, course outline
-
-Return a JSON object with arrays containing the document numbers (as strings) for each category:
-{
-  "homeworks": ["1", "3"],
-  "projects": ["2"],
-  "quizzes": ["4"],
-  "midterms": ["5"],
-  "labs": ["6"],
-  "lectures": ["7"],
-  "syllabi": ["8"]
-}
-
-Only include document numbers that actually exist in the input. Leave arrays empty if no documents match that category."""
-
-    def agent(self) -> Agent:
-        if self.gemini_client is None:
-            raise ValueError("Gemini client is not initialized")
-        
-        return Agent(
-            name="Classify Agent",
-            instructions=self.system_prompt,
-            model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-05-20",
-                openai_client=self.gemini_client,
-            ),
-            model_settings=ModelSettings(
-                temperature=0.0,
-                include_usage=True,
-                reasoning=Reasoning(effort="low"),
-            ),
-            output_type=Classify,
-        )

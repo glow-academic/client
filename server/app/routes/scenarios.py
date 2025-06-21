@@ -6,8 +6,8 @@ from typing import AsyncIterator, List
 
 from agents.items import TResponseInputItem
 from app.db import get_session
+from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.generic import run_generic_agent_bare
-from app.services.agents.scenario import run_scenario_agent
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlmodel import Session

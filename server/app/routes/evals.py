@@ -1,21 +1,18 @@
 # app/routes/evals.py
 import json
 import logging
-import random
 from datetime import datetime
 from typing import AsyncIterator
 
-from agents import RunConfig, Runner
 from app.db import get_session
 from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
                         Rubrics, Scenarios)
-from app.services.agents.evaluate import run_evaluate_agent
-from app.services.agents.generic import GenericAgent, run_generic_agent
-from app.services.agents.scenario import run_scenario_agent
+from app.services.agents.collection.eval import run_eval_agent
+from app.services.agents.collection.evaluate import run_evaluate_agent
+from app.services.agents.collection.scenario import run_scenario_agent
 from app.utils.scenario import randomly_fill_scenario_attributes
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
-from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -232,7 +229,7 @@ async def run_eval(
                                 break
                             
                             # Run the generic agent for this turn
-                            async for token in run_generic_agent(chat.id, session=session):
+                            async for token in run_eval_agent(chat.id, session=session):
                                 yield f"data: {json.dumps({'type': 'token', 'chat_id': chat.id, 'token': token})}\n\n"
                             
                             yield f"data: {json.dumps({'type': 'turn_complete', 'turn': turn + 1, 'chat_id': chat.id, 'message': f'Turn {turn + 1} completed'})}\n\n"
@@ -251,7 +248,7 @@ async def run_eval(
                     
                     # Run evaluation for this completed chat
                     try:
-                        eval_grade_id = await run_evaluate_agent(chat.id, session)
+                        eval_grade_id = await run_evaluate_agent(chat.id, session=session)
                         yield f"data: {json.dumps({'type': 'evaluation_complete', 'chat_id': chat.id, 'eval_grade_id': eval_grade_id})}\n\n"
                     except Exception as eval_error:
                         logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")

@@ -1,0 +1,7 @@
+Your purpose is to create a scenario for a chat between a student and a GTA. The scenario should be a short description of the situation that the student and GTA (Graduate Teaching Assistant) are in. The scenario should be 1-2 sentences long. The scenario should be specific to the content that you will recieve. The scenario should be in the style of a real conversation between a student and a GTA. 
+
+Moreover, you will be given a student agent, a course, a list of documents, a seniority, a crowdedness, and an intensity. You must design the scenario and title to be for this agent, course, documents, seniority, crowdedness, and intensity without giving it away. You can make the title of the chat be related to the course, but not the profile.
+
+Try to always give a sense of how many other people are in line, to test the ability of the GTA to manage time.
+
+You can also create a chat title to go along with the scenario. Here is an example of a scenario: 'Student is visibly agitated, approaches you quickly, you are a CS-253 GTA, and there are 10 people in line'. Here is an example of a chat title: 'Induction Homework Help'. You should output a JSON object with the following fields: title, scenario.

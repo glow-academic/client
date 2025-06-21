@@ -4,18 +4,16 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any, List
 
-from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    trace)
+from agents import Runner, trace
 from app.db import get_session
-from app.extensions import get_gemini
-from app.models import (Rubrics, SimulationAttempts, SimulationChatFeedbacks,
-                        SimulationChatGrades, SimulationChats,
-                        SimulationMessages, Simulations, StandardGroups,
-                        Standards)
-from app.utils.chat import get_conversation_history
+from app.models import (Agents, Rubrics, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
+                        StandardGroups, Standards)
+from app.services.agents.generic import GenericAgent
+from app.utils.chat import get_simulation_conversation_history
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
-from openai.types import Reasoning
 from pydantic import BaseModel, Field, create_model
 from sqlmodel import Session, select
 
@@ -91,6 +89,12 @@ async def run_grade_agent(
         A string of the simulation_chat_grade id.
     """
     try:
+
+        # find agent with name of "Grade"
+        agent = session.exec(select(Agents).where(Agents.name == "Grade")).one()
+        if not agent:
+            raise ValueError("Grade agent not found")
+        
         # get the chat from the simulation_chat_id
         chat = session.exec(
             select(SimulationChats).where(SimulationChats.id == simulation_chat_id)
@@ -106,7 +110,7 @@ async def run_grade_agent(
         messages = sorted(messages, key=lambda x: x.created_at)
 
         # prepare conversation history from chat_id
-        conversation_history = get_conversation_history(messages)
+        conversation_history = get_simulation_conversation_history(messages)
 
         # Get the simulation attempt to find the simulation
         attempt = session.exec(
@@ -159,9 +163,16 @@ async def run_grade_agent(
             expected_fields.extend([f"{safe_name}_score", f"{safe_name}_feedback"])
         logger.info(f"Expected model fields: {expected_fields}")
 
+
+
         # Create and run the grading agent
-        grading_agent = GradingAgent()
-        agent = grading_agent.agent(DynamicRubric)
+        grading_agent = GenericAgent(
+            agent_name=agent.name,
+            agent_prompt=agent.system_prompt,
+            temperature=agent.temperature,
+            output_type=DynamicRubric,
+        )
+        agent_instance = grading_agent.agent()
 
         # Prepare input with rubric and conversation history
         input_items = [rubric_input] + conversation_history
@@ -169,7 +180,7 @@ async def run_grade_agent(
         # Run the grading
         logger.info("Running grading agent...")
         with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)):
-            result = await Runner.run(agent, input=input_items)
+            result = await Runner.run(agent_instance, input=input_items)
 
         grading_result = result.final_output_as(DynamicRubric)
         logger.info("Grading agent completed successfully")
@@ -278,49 +289,3 @@ async def run_grade_agent(
         logger.error(f"Error in run_grade_agent: {str(e)}", exc_info=True)
         session.rollback()
         raise
-
-
-class GradingAgent:
-    def __init__(self) -> None:
-        self.gemini_client = get_gemini()
-        self.system_prompt = """You are an expert grader tasked with evaluating conversations between students and teaching assistants based on provided rubrics.
-
-Your role is to:
-1. Carefully analyze the conversation between the student and TA
-2. Apply the rubric criteria objectively and consistently
-3. Provide specific, actionable feedback for each criterion
-4. Assign appropriate scores based on the evidence in the conversation
-5. Determine if the overall performance meets the passing threshold
-
-For each criterion:
-- Review the conversation for evidence related to that criterion
-- Match the performance to the appropriate rating level (1-5)
-- Provide specific feedback citing examples from the conversation
-- Keep feedback concise but specific (1-2 sentences)
-
-Focus on evaluating the TA's performance in:
-- How well they facilitated student learning
-- Their demonstration of subject matter knowledge
-- Their time management and session structure
-- Their ability to adapt to the student's needs and learning style
-
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation."""
-
-    def agent(self, output_type: type[BaseModel]) -> Agent:
-        if self.gemini_client is None:
-            raise ValueError("Gemini client is not set")
-        
-        return Agent(
-            name="Grading Agent",
-            instructions=self.system_prompt,
-            model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-05-20",
-                openai_client=self.gemini_client,
-            ),
-            model_settings=ModelSettings(
-                temperature=0.0,
-                include_usage=True,
-                reasoning=Reasoning(effort="low"),
-            ),
-            output_type=output_type,
-        )

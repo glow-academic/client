@@ -7,11 +7,11 @@ from datetime import datetime, timezone
 from typing import AsyncIterator, Optional
 
 from app.db import get_session
-from app.models import (Agents, Scenarios, SimulationAttempts, SimulationChats,
+from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         Simulations)
-from app.services.agents.generic import run_generic_agent
-from app.services.agents.grade import run_grade_agent
-from app.services.agents.scenario import run_scenario_agent
+from app.services.agents.collection.grade import run_grade_agent
+from app.services.agents.collection.scenario import run_scenario_agent
+from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.scenario import randomly_fill_scenario_attributes
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -181,7 +181,7 @@ async def message(
             yield ":\n\n"
 
             try:
-                async for token in run_generic_agent(
+                async for token in run_simulation_agent(
                     chat_id=chat_id,
                     input_text=message,
                     session=session,

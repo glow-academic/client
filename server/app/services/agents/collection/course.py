@@ -6,17 +6,34 @@ from typing import Any
 
 import docx
 import PyPDF2
-from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    trace)
+from agents import Runner, trace
 from app.db import get_session
-from app.extensions import UPLOAD_FOLDER, get_gemini
-from app.models import Classes, Documents, Events, Schedules, Topics
+from app.extensions import UPLOAD_FOLDER
+from app.models import Agents, Classes, Documents, Events, Schedules, Topics
+from app.services.agents.generic import GenericAgent
 from fastapi import Depends
-from openai.types import Reasoning
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
+
+
+class Schedule(BaseModel):
+    name: str
+    description: str
+    events: list[str]
+
+
+class Course(BaseModel):
+    name: str = ""
+    code: str = ""
+    desc: str = ""
+    year: int = 0
+    term: str = "fall"
+    topics: list[str] = []
+    prereqs: list[str] = []
+    schedules: list[Schedule] = []
+    debug_info: str = ""
 
 
 def extract_text_from_file(file_path: str, mime_type: str) -> str:
@@ -118,6 +135,11 @@ async def run_course_agent(
         A dictionary containing course results and statistics.
     """
 
+    # find agent with name of "Course"
+    agent = session.exec(select(Agents).where(Agents.name == "Course")).one()
+    if not agent:
+        raise ValueError("Course agent not found")
+
     # get the class from the class_id
     class_data = session.exec(select(Classes).where(Classes.id == class_id)).first()
     if not class_data:
@@ -167,7 +189,12 @@ async def run_course_agent(
             f"Extracted content from {syllabus_content.count('=== SYLLABUS CONTENT FROM')} syllabus file(s)"
         )
 
-    course_agent = CourseAgent()
+    course_agent = GenericAgent(
+        agent_name=agent.name,
+        agent_prompt=agent.system_prompt,
+        temperature=agent.temperature,
+        output_type=Course,
+    )
 
     try:
         with trace(f"{class_data.name} ZIP File Analysis"):
@@ -302,97 +329,3 @@ async def run_course_agent(
             "message": f"Course analysis failed: {str(e)}",
             "documents_count": len(documents),
         }
-
-
-class Schedule(BaseModel):
-    name: str
-    description: str
-    events: list[str]
-
-
-class Course(BaseModel):
-    name: str = ""
-    code: str = ""
-    desc: str = ""
-    year: int = 0
-    term: str = "fall"
-    topics: list[str] = []
-    prereqs: list[str] = []
-    schedules: list[Schedule] = []
-    debug_info: str = ""
-
-
-class CourseAgent:
-    def __init__(self) -> None:
-        self.gemini_client = get_gemini()
-        self.system_prompt = """Your purpose is to analyze a class based on its file names, document information, and syllabus content when available. You should try to fill in as much information as possible about the class. Here are some guidelines to help you:
-
-        INPUT FORMAT:
-        You will receive a list of documents with their names and types, followed by extracted content from any syllabus files (marked with "=== SYLLABUS CONTENT FROM filename ===").
-
-        EXTRACTION GUIDELINES:
-
-        NAME & CODE: Extract the course name and code from syllabus content or infer from document names. Look for patterns like "CS 101", "MATH 240", "Introduction to Computer Science", etc.
-
-        DESCRIPTION: Use the course description from the syllabus if available, or create a brief description based on the course name and topics.
-
-        YEAR & TERM: Look for academic year (e.g., 2024, 2023-2024) and term information in syllabus content. The term should only be one of: spring, summer, fall.
-
-        TOPICS: Extract main subjects/topics covered in the class from:
-        - Course outline/schedule in syllabus
-        - Lecture titles in document names
-        - Learning objectives or course content sections
-        - Assignment and project names
-
-        PREREQUISITES: Look for prerequisite courses or knowledge mentioned in the syllabus. These should be specific course codes or topic areas that students need before taking this class.
-
-        SCHEDULES: Create structured schedules based on the information available:
-        - Exam Schedule: Extract exam dates, midterms, finals
-        - Assignment Schedule: Homework, projects, labs with due dates if available
-        - Lecture Schedule: Weekly topics, chapter coverage
-        - Assessment Schedule: Quizzes, presentations, etc.
-
-        Each schedule should have:
-        - name: descriptive name (e.g., "Exam Schedule", "Assignment Schedule")
-        - description: brief explanation of what this schedule covers
-        - events: list of specific event names (e.g., ["Midterm Exam", "Final Exam"])
-
-        DEBUG INFO: Use this field to note:
-        - What information was missing or unclear
-        - What assumptions you made
-        - Suggestions for better course analysis (e.g., "Would benefit from reading assignment descriptions", "Course calendar would help with scheduling")
-        - Any issues with the provided data
-
-        IMPORTANT: Base your analysis primarily on syllabus content when available, and use document names as supporting evidence. Be specific and accurate rather than making broad assumptions.
-        
-        Return a JSON object with the course information:
-        {
-            "name": "string",
-            "code": "string", 
-            "desc": "string",
-            "year": "int",
-            "term": "string",
-            "topics": "list[str]",
-            "prereqs": "list[str]",
-            "schedules": "list[Schedule]",
-            "debug_info": "string"
-        }"""
-
-    def agent(self) -> Agent:
-        if self.gemini_client is None:
-            raise ValueError("Gemini client is not initialized")
-        
-        return Agent(
-            name="Course Agent",
-            instructions=self.system_prompt,
-            model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-05-20",
-                openai_client=self.gemini_client,
-            ),
-            model_settings=ModelSettings(
-                temperature=0.0,
-                include_usage=True,
-                reasoning=Reasoning(effort="low"),
-            ),
-            output_type=Course,
-        )

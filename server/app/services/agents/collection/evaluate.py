@@ -4,17 +4,15 @@ import uuid
 from datetime import datetime
 from typing import Any, List
 
-from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
-                    trace)
+from agents import Runner, trace
 from app.db import get_session
-from app.extensions import get_gemini
-from app.models import (EvalChatFeedbacks, EvalChatGrades, EvalChats,
+from app.models import (Agents, EvalChatFeedbacks, EvalChatGrades, EvalChats,
                         EvalMessages, EvalRuns, Rubrics, StandardGroups,
                         Standards)
+from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_eval_conversation_history
 from app.utils.rubric import get_dynamic_rubric
 from fastapi import Depends
-from openai.types import Reasoning
 from pydantic import BaseModel, Field, create_model
 from sqlmodel import Session, select
 
@@ -90,6 +88,11 @@ async def run_evaluate_agent(
         A string of the eval_chat_grade id.
     """
     try:
+        # find agent with name of "Evaluate"
+        agent = session.exec(select(Agents).where(Agents.name == "Evaluate")).one()
+        if not agent:
+            raise ValueError("Evaluate agent not found")
+
         # get the chat from the chat_id
         chat = session.exec(select(EvalChats).where(EvalChats.id == eval_chat_id)).one()
 
@@ -150,8 +153,14 @@ async def run_evaluate_agent(
         logger.info(f"Expected model fields: {expected_fields}")
 
         # Create and run the evaluation agent
-        evaluate_agent = EvaluateAgent()
-        agent = evaluate_agent.agent(DynamicRubric)
+        evaluate_agent = GenericAgent(
+            agent_name=agent.name,
+            agent_prompt=agent.system_prompt,
+            temperature=agent.temperature,
+            output_type=DynamicRubric,
+        )
+
+        agent_instance = evaluate_agent.agent()
 
         # Prepare input with rubric and conversation history
         input_items = [rubric_input] + conversation_history
@@ -159,7 +168,7 @@ async def run_evaluate_agent(
         # Run the evaluation
         logger.info("Running evaluation agent...")
         with trace(chat.title, trace_id=chat.trace_id, group_id=str(eval_run_id)):
-            result = await Runner.run(agent, input=input_items)
+            result = await Runner.run(agent_instance, input=input_items)
         evaluation_result = result.final_output_as(DynamicRubric)
         logger.info("Evaluation agent completed successfully")
 
@@ -261,43 +270,3 @@ async def run_evaluate_agent(
         logger.error(f"Error in run_evaluate_agent: {str(e)}", exc_info=True)
         session.rollback()
         raise
-
-
-class EvaluateAgent:
-    def __init__(self) -> None:
-        self.gemini_client = get_gemini()
-        self.system_prompt = """You are an expert evaluator tasked with assessing conversations based on provided rubrics. 
-
-Your role is to:
-1. Carefully analyze the conversation between participants
-2. Apply the rubric criteria objectively and consistently
-3. Provide specific, actionable feedback for each criterion
-4. Assign appropriate scores based on the evidence in the conversation
-5. Determine if the overall performance meets the passing threshold
-
-For each criterion:
-- Review the conversation for evidence related to that criterion
-- Match the performance to the appropriate rating level (1-5)
-- Provide specific feedback citing examples from the conversation
-- Keep feedback concise but specific (1-2 sentences)
-
-Your evaluation should be fair, consistent, and based solely on observable evidence in the conversation."""
-
-    def agent(self, output_type: type[BaseModel]) -> Agent:
-        if self.gemini_client is None:
-            raise ValueError("Gemini client is not initialized")
-        
-        return Agent(
-            name="Evaluate Agent",
-            instructions=self.system_prompt,
-            model=OpenAIChatCompletionsModel(
-                model="gemini-2.5-flash-preview-05-20",
-                openai_client=self.gemini_client,
-            ),
-            model_settings=ModelSettings(
-                temperature=0.0,
-                include_usage=True,
-                reasoning=Reasoning(effort="low"),
-            ),
-            output_type=output_type,
-        )

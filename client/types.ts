@@ -1,47 +1,41 @@
-import {
+import { 
+  classes as Classes,
+  topics as Topics,
+  schedules as Schedules,
+  events as Events,
+  documents as Documents,
+  providers as Providers,
   accounts as Accounts,
-  agents as Agents,
+  sessions as Sessions,
+  models as Models,
+  users as Users,
+  profiles as Profiles,
+  rubrics as Rubrics,
+  standardGroups as StandardGroups,
+  standards as Standards,
   appLogs as AppLogs,
   assistantChats as AssistantChats,
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
-  classes as Classes,
-  cohorts as Cohorts,
   components as Components,
-  dashboards as Dashboards,
-  documents as Documents,
-  evalChatFeedbacks as EvalChatFeedbacks,
-  evalChatGrades as EvalChatGrades,
-  evalChats as EvalChats,
-  evalMessages as EvalMessages,
-  evalRuns as EvalRuns,
-  evals as Evals,
-  events as Events,
-  models as Models,
-  profiles as Profiles,
-  providers as Providers,
-  rubrics as Rubrics,
   scenarios as Scenarios,
-  schedules as Schedules,
-  sessions as Sessions,
+  dashboards as Dashboards,
+  agents as Agents,
+  cohorts as Cohorts,
+  simulations as Simulations,
   simulationAttempts as SimulationAttempts,
-  simulationChatFeedbacks as SimulationChatFeedbacks,
-  simulationChatGrades as SimulationChatGrades,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
-  simulations as Simulations,
-  standardGroups as StandardGroups,
-  standards as Standards,
-  topics as Topics,
-  users as Users,
+  simulationChatGrades as SimulationChatGrades,
+  simulationChatFeedbacks as SimulationChatFeedbacks,
+  evals as Evals,
+  evalRuns as EvalRuns,
+  evalChats as EvalChats,
+  evalMessages as EvalMessages,
+  evalChatGrades as EvalChatGrades,
+  evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
-  assistantMessageType,
-  assistantToolType,
-  classTerm,
-  documentType,
-  evalMessageType,
-  profileRole,
-  seniorityLevels,
+  assistantMessageType, assistantToolType, classTerm, documentType, evalMessageType, profileRole, seniorityLevels, simulationMessageType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -51,9 +45,9 @@ type Schedule = typeof Schedules.$inferSelect;
 type Event = typeof Events.$inferSelect;
 type Document = typeof Documents.$inferSelect;
 type Provider = typeof Providers.$inferSelect;
-type Model = typeof Models.$inferSelect;
 type Account = typeof Accounts.$inferSelect;
 type Session = typeof Sessions.$inferSelect;
+type Model = typeof Models.$inferSelect;
 type User = typeof Users.$inferSelect;
 type Profile = typeof Profiles.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
@@ -62,11 +56,11 @@ type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
 type AssistantChat = typeof AssistantChats.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
-type Agent = typeof Agents.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Component = typeof Components.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
 type Dashboard = typeof Dashboards.$inferSelect;
+type Agent = typeof Agents.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
@@ -89,49 +83,51 @@ type DocumentType = (typeof documentType.enumValues)[number];
 type EvalMessageType = (typeof evalMessageType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
 type SeniorityLevels = (typeof seniorityLevels.enumValues)[number];
+type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
-export type {
+export type { 
+  Class,
+  Topic,
+  Schedule,
+  Event,
+  Document,
+  Provider,
   Account,
-  Agent,
+  Session,
+  Model,
+  User,
+  Profile,
+  Rubric,
+  StandardGroup,
+  Standard,
   AppLog,
   AssistantChat,
   AssistantMessage,
-  AssistantMessageType,
   AssistantToolCall,
-  AssistantToolType,
-  Class,
-  ClassTerm,
-  Cohort,
   Component,
-  Dashboard,
-  Document,
-  DocumentType,
-  Eval,
-  EvalChat,
-  EvalChatFeedback,
-  EvalChatGrade,
-  EvalMessage,
-  EvalMessageType,
-  EvalRun,
-  Event,
-  Model,
-  Profile,
-  ProfileRole,
-  Provider,
-  Rubric,
   Scenario,
-  Schedule,
-  SeniorityLevels,
-  Session,
+  Dashboard,
+  Agent,
+  Cohort,
   Simulation,
   SimulationAttempt,
   SimulationChat,
-  SimulationChatFeedback,
-  SimulationChatGrade,
   SimulationMessage,
-  Standard,
-  StandardGroup,
-  Topic,
-  User,
+  SimulationChatGrade,
+  SimulationChatFeedback,
+  Eval,
+  EvalRun,
+  EvalChat,
+  EvalMessage,
+  EvalChatGrade,
+  EvalChatFeedback,
   VerificationToken,
+  AssistantMessageType,
+  AssistantToolType,
+  ClassTerm,
+  DocumentType,
+  EvalMessageType,
+  ProfileRole,
+  SeniorityLevels,
+  SimulationMessageType
 };

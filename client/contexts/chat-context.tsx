@@ -163,6 +163,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
               completed: data.completed,
               createdAt: data.created_at,
               updatedAt: data.created_at,
+              completedAt: data.created_at,
             };
 
             return [...old, newMessage].sort(

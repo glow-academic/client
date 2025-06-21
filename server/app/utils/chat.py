@@ -2,12 +2,12 @@ import random
 from typing import List
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, EvalChats, EvalMessages, Scenarios,
-                        SimulationChats, SimulationMessages)
+from app.models import (Agents, AssistantMessages, EvalChats, EvalMessages,
+                        Scenarios, SimulationChats, SimulationMessages)
 from sqlmodel import Session, select
 
 
-def get_conversation_history(
+def get_simulation_conversation_history(
     messages: List[SimulationMessages],
 ) -> list[TResponseInputItem]:
     """
@@ -22,11 +22,11 @@ def get_conversation_history(
     conversation_history: list[TResponseInputItem] = []
 
     for message in messages:
-        if message.query:
-            user_message_item: TResponseInputItem = {"role": "user", "content": message.query}
+        if message.type == "query":
+            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
             conversation_history.append(user_message_item)
-        if message.response:
-            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.response}
+        if message.type == "response":
+            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
             conversation_history.append(assistant_message_item)
 
     return conversation_history
@@ -50,6 +50,30 @@ def get_eval_conversation_history(
             user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
             conversation_history.append(user_message_item)
         if message.type == "response":
+            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
+            conversation_history.append(assistant_message_item)
+
+    return conversation_history
+
+def get_assistant_conversation_history(
+    messages: List[AssistantMessages],
+) -> list[TResponseInputItem]:
+    """
+    Get the conversation history for a given list of messages.
+
+    Args:
+        messages: List of Messages objects from the database
+
+    Returns:
+        List of message objects formatted for OpenAI API consumption
+    """
+    conversation_history: list[TResponseInputItem] = []
+    
+    for message in messages:
+        if message.role == "user":
+            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
+            conversation_history.append(user_message_item)
+        if message.role == "assistant":
             assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
             conversation_history.append(assistant_message_item)
 

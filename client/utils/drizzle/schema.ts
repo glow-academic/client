@@ -6,6 +6,7 @@ export const documentType = pgEnum("document_type", ['homework', 'project', 'qui
 export const evalMessageType = pgEnum("eval_message_type", ['query', 'response'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
+export const simulationMessageType = pgEnum("simulation_message_type", ['query', 'response'])
 
 export const classes = pgTable("classes", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
@@ -89,15 +90,6 @@ export const providers = pgTable("providers", {
 	description: text().notNull(),
 	apiKey: text("api_key").notNull()});
 
-export const models = pgTable("models", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	providerId: uuid("provider_id").notNull(),
-	active: boolean().default(true).notNull()});
-
 export const accounts = pgTable("accounts", {
 	id: serial().primaryKey().notNull(),
 	userId: integer().notNull(),
@@ -118,6 +110,15 @@ export const sessions = pgTable("sessions", {
 	userId: integer().notNull(),
 	expires: timestamp({ withTimezone: true, mode: 'string' }).notNull(),
 	sessionToken: varchar({ length: 255 }).notNull()});
+
+export const models = pgTable("models", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	providerId: uuid("provider_id").notNull(),
+	active: boolean().default(true).notNull()});
 
 export const users = pgTable("users", {
 	id: serial().primaryKey().notNull(),
@@ -197,7 +198,8 @@ export const assistantChats = pgTable("assistant_chats", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	title: text().notNull(),
-	profileId: uuid("profile_id").notNull()}, (table) => [
+	profileId: uuid("profile_id").notNull(),
+	traceId: text("trace_id")}, (table) => [
 	foreignKey({
 			columns: [table.profileId],
 			foreignColumns: [profiles.id],
@@ -209,6 +211,7 @@ export const assistantMessages = pgTable("assistant_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	chatId: uuid("chat_id").notNull(),
 	role: assistantMessageType().notNull(),
 	content: text().notNull(),
@@ -220,24 +223,18 @@ export const assistantMessages = pgTable("assistant_messages", {
 		}),
 ]);
 
-export const agents = pgTable("agents", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	systemPrompt: text("system_prompt").notNull(),
-	temperature: integer().notNull(),
-	defaultAgent: boolean("default_agent").default(false).notNull()});
-
 export const assistantToolCalls = pgTable("assistant_tool_calls", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	chatId: uuid("chat_id").notNull(),
 	messageId: uuid("message_id").notNull(),
 	toolName: text("tool_name").notNull(),
-	toolType: assistantToolType("tool_type").notNull()}, (table) => [
+	toolType: assistantToolType("tool_type").notNull(),
+	toolArguments: jsonb("tool_arguments").notNull(),
+	toolResult: jsonb("tool_result").notNull(),
+	completed: boolean().default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.chatId],
 			foreignColumns: [assistantChats.id],
@@ -305,6 +302,24 @@ export const dashboards = pgTable("dashboards", {
 			foreignColumns: [profiles.id],
 			name: "dashboards_profile_id_fkey"
 		}).onDelete("cascade"),
+]);
+
+export const agents = pgTable("agents", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	systemPrompt: text("system_prompt").notNull(),
+	temperature: integer().notNull(),
+	defaultAgent: boolean("default_agent").default(false).notNull(),
+	editable: boolean().default(false).notNull(),
+	modelId: uuid("model_id")}, (table) => [
+	foreignKey({
+			columns: [table.modelId],
+			foreignColumns: [models.id],
+			name: "agents_model_id_fkey"
+		}),
 ]);
 
 export const cohorts = pgTable("cohorts", {
@@ -377,8 +392,8 @@ export const simulationMessages = pgTable("simulation_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	chatId: uuid("chat_id").notNull(),
-	query: text().notNull(),
-	response: text().notNull(),
+	content: text().notNull(),
+	type: simulationMessageType().notNull(),
 	completed: boolean().default(false).notNull()}, (table) => [
 	foreignKey({
 			columns: [table.chatId],

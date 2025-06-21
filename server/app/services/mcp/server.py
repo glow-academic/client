@@ -1,47 +1,175 @@
-# server.py  – minimal FastMCP server
+# generic_server.py  — “Domain-API” MCP server
+from typing import Any, Dict, List
+
 from app.db import get_session
-from app.models import Cohorts, Profiles
 from mcp.server.fastmcp import FastMCP
-from sqlmodel import Session, select
+from sqlmodel import select
 
-mcp = FastMCP("Demo")               # name that shows up in the LLM UI
+# ─────────────────────────────────────────────────────────────────────────────
+generic = FastMCP("Domain-API")
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW ✱ Dashboard-editing helpers
+# ─────────────────────────────────────────────────────────────────────────────
 
-# what are some use cases for the model?
-# 1. CRUD of a class, and all info with it, like topics, schedules, events, e.t.c
-# 2. Read of an agent
-# 3. CRUD of a scenaio/simulation
+@generic.tool()
+def update_component_layout(component_id: str, layout: Dict[str, Any]) -> str:
+    """
+    Overwrite the JSONB `layout` of a single `Components` row.
 
+    Expected workflow
+    -----------------
+    1. `SELECT * FROM components WHERE id = :component_id FOR UPDATE`.
+    2. Merge/replace the layout field with the supplied `layout`.
+    3. `UPDATE components SET layout = :layout, updated_at = now()` …
+    4. Return the component UUID (or 'OK').
 
-# so I think we should either give full access to the model, or just allow read access in some cases
+    Security / validation
+    ---------------------
+    • Ensure caller is authorised to edit this component (join through `Dashboards` ➜ `Profiles`).  
+    • Validate the JSON shape (e.g. contains `x, y, w, h`).
 
-# To start small, lets just try general dashboard and asking questions. This seems like the most useful use case.
-
-@mcp.tool()
-def get_cohorts() -> list[Cohorts]:
-    """Gets the cohorts"""
-    session = next(get_session())
-    cohorts = session.exec(select(Cohorts)).all()
-    return list(cohorts)
-
-
-
-@mcp.tool()
-def get_tas(cohort_id: str | None = None) -> list[Profiles]:
-    """Gets the profile information of all the teaching assistants, given a cohort. If None, we will get all cohorts"""
-    session = next(get_session())
-    if cohort_id:
-        # find all the profiles in the cohort
-        cohort = session.exec(select(Cohorts).where(Cohorts.id == cohort_id)).one_or_none()
-        if not cohort:
-            return []
-        profiles = session.exec(select(Profiles).where(Profiles.id.in_(cohort.profile_ids))).all()
-    else:
-        profiles = session.exec(select(Profiles)).all()
-    return list(profiles)
+    Returns
+    -------
+    "OK" on success *or* the updated component UUID.
+    """
+    raise NotImplementedError  # ← implement here
 
 
+@generic.tool()
+def patch_dashboard_settings(
+    profile_id: str,
+    settings: Dict[str, Any]
+) -> str:
+    """
+    Partially update a `Dashboards` row (e.g. auto_scroll, main_split).
+
+    Steps
+    -----
+    1. Fetch dashboard for `profile_id`; create if missing.
+    2. Apply diff only to recognised columns.
+    3. Commit & return the dashboard UUID.
+
+    *Write-side changes live in generic_server, never in db_server.*
+    """
+    raise NotImplementedError
 
 
-if __name__ == "__main__":
-    mcp.run(transport="http")      # or "sse" / "http"
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW ✱ Student / chat analytics helpers
+# ─────────────────────────────────────────────────────────────────────────────
+
+@generic.tool()
+def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
+    """
+    Aggregate everything about one student across simulations.
+
+    Output schema (example)
+    -----------------------
+    {
+      "profile": { "id": "...", "name": "...", … },
+      "attempts": [
+        {
+          "simulation_id": "...",
+          "title": "Cardiac Arrest",
+          "scenario": { "id": "...", "name": "…" },
+          "chat": {
+            "messages": [ {"t": "...", "role": "user", "content": "..."}, … ],
+            "grade":    { "score": 87, "passed": true, … },
+            "feedback": [ {"standard": "Clarity", "pts": 2, "comment": "…"}, … ]
+          }
+        },
+        …
+      ]
+    }
+
+    Implementation notes
+    --------------------
+    • Join chain: `Profiles ➜ SimulationAttempts ➜ SimulationChats`  
+      → then LEFT JOIN grades & feedback tables.  
+    • Cap messages to latest *N* or summarise to avoid huge payloads.  
+    • Return JSON-serialisable primitives only.
+    """
+    raise NotImplementedError
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NEW ✱ Search helpers (read-only; heavy joins live here, ad-hoc SQL stays in db_server)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@generic.tool()
+def search_by_cohort(cohort_id: str) -> Dict[str, Any]:
+    """
+    Return high-level info scoped to one cohort:
+
+    • Cohort metadata + roster  
+    • Classes tied to those profiles (`class_ids`)  
+    • Active simulations / scenarios linked via the cohort → simulations.cohort_ids
+    """
+    raise NotImplementedError
+
+
+@generic.tool()
+def search_by_profile(profile_id: str) -> Dict[str, Any]:
+    """
+    Return a student-centric view:
+
+    • Profile & user info  
+    • Classes enrolled, dashboard settings  
+    • SimulationAttempts (+ latest grades)  
+    • AssistantChats history metadata (no full messages)
+    """
+    raise NotImplementedError
+
+
+@generic.tool()
+def search_by_class(class_id: str) -> Dict[str, Any]:
+    """
+    Summarise a class:
+
+    • Class record + schedules/events/topics  
+    • Roster (Profiles) ➜ include alias + role  
+    • Scenarios & simulations where class_id matches
+    """
+    raise NotImplementedError
+
+
+@generic.tool()
+def search_by_simulation(simulation_id: str) -> Dict[str, Any]:
+    """
+    Drill into one simulation:
+
+    • Simulation metadata, rubric summary  
+    • Cohorts / scenarios involved  
+    • Attempt counts, pass-rate, latest grades per profile (aggregate)
+    """
+    raise NotImplementedError
+
+
+@generic.tool()
+def search_by_scenario(scenario_id: str) -> Dict[str, Any]:
+    """
+    Detail a scenario:
+
+    • Scenario record + linked class & agent  
+    • SimulationChats + EvalChats counts  
+    • Recent feedback themes (group by Standard)
+    """
+    raise NotImplementedError
+
+
+@generic.tool()
+def search_by_agent(agent_id: str) -> Dict[str, Any]:
+    """
+    Agent dashboard:
+
+    • Agent config (system_prompt, temperature)  
+    • Scenarios powered by this agent  
+    • EvalRuns history & pass-rate statistics
+    """
+    raise NotImplementedError
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Utilities (optional): row-limit decorator, JSON serialiser helpers, etc.
+# ─────────────────────────────────────────────────────────────────────────────

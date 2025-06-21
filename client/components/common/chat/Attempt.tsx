@@ -653,8 +653,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     /* ---------------- optimistic user bubble ---------------- */
     const userMsg: SimulationMessage = {
       id: `temp-${Date.now()}`,
-      query: messageToSend,
-      response: "",
+      type: "query",
+      content: messageToSend,
       createdAt: new Date().toISOString(),
       chatId: currentChat.id,
       completed: false,
@@ -662,8 +662,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     const aiMsg: SimulationMessage = {
       id: `temp-ai-${Date.now()}`,
-      query: "",
-      response: "",
+      type: "response",
+      content: "",
       createdAt: new Date().toISOString(),
       chatId: currentChat.id,
       completed: false,
@@ -682,7 +682,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       /* --------------- kick off POST + SSE ------------------ */
       const formData = new FormData();
       formData.append("chat_id", currentChat.id);
-      formData.append("message", userMsg.query);
+      formData.append("message", userMsg.content);
 
       const res = await fetch(
         `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/message`,
@@ -1280,24 +1280,24 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             .map((message: SimulationMessage) => (
                               <div key={message.id} className="space-y-3">
                                 {/* User Message */}
-                                {message.query && (
+                                {message.type === "query" && (
                                   <div className="flex justify-end mb-3">
                                     <div className="max-w-[80%]">
                                       <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                        <Markdown>{message.query}</Markdown>
+                                        <Markdown>{message.content}</Markdown>
                                       </div>
                                     </div>
                                   </div>
                                 )}
 
                                 {/* Assistant Response */}
-                                {message.response !== undefined &&
-                                  message.query !== "" && (
+                                {message.type === "response" &&
+                                  message.content !== "" && (
                                     <div className="flex justify-start mb-3">
                                       <div className="max-w-[80%]">
                                         <div className="bg-muted rounded-lg p-3">
                                           <Markdown>
-                                            {message.response}
+                                            {message.content}
                                           </Markdown>
                                         </div>
                                       </div>
@@ -1576,23 +1576,23 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                             .map((message: SimulationMessage) => (
                               <div key={message.id} className="space-y-3">
                                 {/* User Message */}
-                                {message.query && (
+                                {message.type === "query" && (
                                   <div className="flex justify-end mb-3">
                                     <div className="max-w-[80%]">
                                       <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                        <Markdown>{message.query}</Markdown>
+                                        <Markdown>{message.content}</Markdown>
                                       </div>
                                     </div>
                                   </div>
                                 )}
 
                                 {/* Assistant Response */}
-                                {message.response !== undefined &&
-                                  message.query !== "" && (
+                                {message.type === "response" &&
+                                  message.content !== "" && (
                                     <div className="flex justify-start mb-3">
                                       <div className="max-w-[80%]">
                                         <div className="bg-muted rounded-lg p-3">
-                                          {message.response === "" ? (
+                                          {message.content === "" ? (
                                             <div className="flex items-center">
                                               <span className="text-gray-500 mr-2">
                                                 Analyzing
@@ -1601,7 +1601,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                             </div>
                                           ) : (
                                             <Markdown>
-                                              {message.response}
+                                              {message.content}
                                             </Markdown>
                                           )}
                                         </div>
