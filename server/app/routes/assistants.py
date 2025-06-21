@@ -22,23 +22,23 @@ router = APIRouter()
 
 # Create Socket.IO server instance
 sio = socketio.AsyncServer(
-    cors_allowed_origins="*",
+    cors_allowed_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     cors_credentials=True,
-    logger=True,
-    engineio_logger=True,
+    logger=False,
+    engineio_logger=False,
     async_mode='asgi'
 )
 
 # Store active chat connections
 active_connections: Dict[str, str] = {}
 
-@sio.event
+@sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
     """Handle WebSocket connection"""
     logger.info(f"Client connected: {sid}")
     return True
 
-@sio.event
+@sio.event  # type: ignore
 async def disconnect(sid: str) -> None:
     """Handle WebSocket disconnection"""
     logger.info(f"Client disconnected: {sid}")
@@ -48,7 +48,7 @@ async def disconnect(sid: str) -> None:
             del active_connections[chat_id]
             break
 
-@sio.event
+@sio.event  # type: ignore
 async def join_chat(sid: str, data: Dict[str, Any]) -> None:
     """Join a specific chat room for real-time updates"""
     chat_id = data.get('chat_id')
@@ -58,7 +58,7 @@ async def join_chat(sid: str, data: Dict[str, Any]) -> None:
         logger.info(f"Client {sid} joined chat {chat_id}")
         await sio.emit('joined_chat', {'chat_id': chat_id}, room=sid)
 
-@sio.event
+@sio.event  # type: ignore
 async def leave_chat(sid: str, data: Dict[str, Any]) -> None:
     """Leave a specific chat room"""
     chat_id = data.get('chat_id')

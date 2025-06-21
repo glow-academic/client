@@ -20,10 +20,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
-app = FastAPI(title="GLOW API", on_startup=[init_db])
+# Create FastAPI app
+fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db])
 
 # Add CORS middleware FIRST
-app.add_middleware(
+fastapi_app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, replace with your frontend URL
     allow_credentials=True,
@@ -32,16 +33,18 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(documents_router, prefix="/documents")
-app.include_router(simulations_router, prefix="/simulations")
-app.include_router(profiles_router, prefix="/profiles")
-app.include_router(evals_router, prefix="/evals")
-app.include_router(scenarios_router, prefix="/scenarios")
-app.include_router(assistants_router, prefix="/assistants")
+fastapi_app.include_router(documents_router, prefix="/documents")
+fastapi_app.include_router(simulations_router, prefix="/simulations")
+fastapi_app.include_router(profiles_router, prefix="/profiles")
+fastapi_app.include_router(evals_router, prefix="/evals")
+fastapi_app.include_router(scenarios_router, prefix="/scenarios")
+fastapi_app.include_router(assistants_router, prefix="/assistants")
 
 # Mount Socket.IO app AFTER everything else
 sio_app = get_socketio_app()
-sio_asgi_app = socketio.ASGIApp(sio_app, app, socketio_path="socket.io")
+
+# Create the combined ASGI app with Socket.IO
+app = socketio.ASGIApp(sio_app, fastapi_app, socketio_path="socket.io")
 
 # Configure logging - change this section
 logging.basicConfig(
@@ -55,7 +58,7 @@ eval_logger = logging.getLogger("app.agents.generic")
 eval_logger.setLevel(logging.INFO)
 
 
-@app.get("/")
+@fastapi_app.get("/")
 async def root_info() -> JSONResponse:
     """
     Return general server information.
@@ -71,7 +74,7 @@ async def root_info() -> JSONResponse:
     return JSONResponse(content={"server_info": info})
 
 
-@app.get("/health")
+@fastapi_app.get("/health")
 async def health_check() -> JSONResponse:
     """
     Simple health check endpoint.
@@ -92,7 +95,7 @@ def fake_chat_stream(user_message: str) -> Generator[bytes, None, None]:
     yield b""
 
 
-@app.get("/db-test")
+@fastapi_app.get("/db-test")
 async def test_db_connection(session: Session = Depends(get_session)) -> JSONResponse:
     """Test database connection"""
     try:
@@ -110,5 +113,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "app.main:sio_asgi_app", host="0.0.0.0", port=8000, reload=True, log_level="info"
+        "app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )
