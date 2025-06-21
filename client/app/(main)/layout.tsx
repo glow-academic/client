@@ -16,21 +16,24 @@ import { Pencil, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 
+import ChatDialog from "@/components/common/home/ChatDialog";
+import ChatFab from "@/components/common/home/ChatFab";
+import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
+import { ChatProvider } from "@/contexts/chat-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
+import { getCurrentProfileId } from "@/utils/chat-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Inner component that uses the role context
+function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
@@ -46,6 +49,9 @@ export default function MainLayout({
   }, [pathname]);
 
   const handleSectionChange = createSectionChangeHandler(router);
+
+  // Get profile info for the ChatProvider
+  const profileId = getCurrentProfileId();
 
   // Determine action button based on current path
   const getActionButton = () => {
@@ -212,29 +218,42 @@ export default function MainLayout({
 
   const actionButton = getActionButton();
 
-  const content = (
-    <SidebarProvider>
-      <UnifiedSidebar
-        activeSection={activeSection}
-        onSectionChange={handleSectionChange}
-      />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4 flex-1">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="mr-2 h-4" />
-            <NavigationBreadcrumbs
-              breadcrumbs={breadcrumbs}
-              onSectionChange={handleSectionChange}
-            />
-          </div>
+  return (
+    <ChatProvider profileId={profileId}>
+      <SidebarProvider>
+        <UnifiedSidebar
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
+        />
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4 flex-1">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+              <NavigationBreadcrumbs
+                breadcrumbs={breadcrumbs}
+                onSectionChange={handleSectionChange}
+              />
+            </div>
 
-          {actionButton && <div className="px-4">{actionButton}</div>}
-        </header>
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
-      </SidebarInset>
-    </SidebarProvider>
+            {actionButton && <div className="px-4">{actionButton}</div>}
+          </header>
+          <div className="flex flex-1 flex-col gap-4 p-4 pt-0">{children}</div>
+        </SidebarInset>
+      </SidebarProvider>
+
+      {/* Chat Components - Global across the app */}
+      <ChatFab />
+      <ChatWidget />
+      <ChatDialog />
+    </ChatProvider>
   );
+}
 
-  return content;
+export default function MainLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return <MainLayoutContent>{children}</MainLayoutContent>;
 }

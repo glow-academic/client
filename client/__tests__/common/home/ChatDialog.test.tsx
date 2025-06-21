@@ -61,8 +61,8 @@ describe('ChatDialog', () => {
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: user
+ * - Client component: true
+ * - Uses hooks: user, useChat, useRole
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

@@ -61,13 +61,13 @@ describe('ChatMessages', () => {
  * - Named exports: None
  * - Has props: false
  * - Props interface: None detected
- * - Client component: false
- * - Uses hooks: user
+ * - Client component: true
+ * - Uses hooks: user, useChat, useRole, useEffect, useRef
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
  * - Uses state: false
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
