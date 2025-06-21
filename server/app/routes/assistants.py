@@ -1,17 +1,18 @@
 # app/routes/assistants.py
-# Assistant chat endpoints with streaming response functionality
+# Assistant chat endpoints with WebSocket streaming functionality
 import asyncio
 import json
 import logging
 import uuid
 from datetime import timezone
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
+import socketio  # type: ignore
 from app.db import get_session
 from app.models import AssistantChats, AssistantMessages
 from app.utils.assistants import generate_assistant_response
 from fastapi import APIRouter, Depends, Form, HTTPException
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session
 
@@ -19,8 +20,53 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# Import your database models here - adjust these imports based on your actual models
-# from app.models import AssistantChat, AssistantMessage
+# Create Socket.IO server instance
+sio = socketio.AsyncServer(
+    cors_allowed_origins="*",
+    cors_credentials=True,
+    logger=True,
+    engineio_logger=True,
+    async_mode='asgi'
+)
+
+# Store active chat connections
+active_connections: Dict[str, str] = {}
+
+@sio.event
+async def connect(sid: str, environ: Any, auth: Any) -> bool:
+    """Handle WebSocket connection"""
+    logger.info(f"Client connected: {sid}")
+    return True
+
+@sio.event
+async def disconnect(sid: str) -> None:
+    """Handle WebSocket disconnection"""
+    logger.info(f"Client disconnected: {sid}")
+    # Remove from active connections
+    for chat_id, connection_sid in list(active_connections.items()):
+        if connection_sid == sid:
+            del active_connections[chat_id]
+            break
+
+@sio.event
+async def join_chat(sid: str, data: Dict[str, Any]) -> None:
+    """Join a specific chat room for real-time updates"""
+    chat_id = data.get('chat_id')
+    if chat_id:
+        await sio.enter_room(sid, f"chat_{chat_id}")
+        active_connections[chat_id] = sid
+        logger.info(f"Client {sid} joined chat {chat_id}")
+        await sio.emit('joined_chat', {'chat_id': chat_id}, room=sid)
+
+@sio.event
+async def leave_chat(sid: str, data: Dict[str, Any]) -> None:
+    """Leave a specific chat room"""
+    chat_id = data.get('chat_id')
+    if chat_id:
+        await sio.leave_room(sid, f"chat_{chat_id}")
+        if chat_id in active_connections:
+            del active_connections[chat_id]
+        logger.info(f"Client {sid} left chat {chat_id}")
 
 @router.post("/start")
 async def start_chat(
@@ -35,22 +81,23 @@ async def start_chat(
         # 1. Create a new chat, based off the first message
         chat_title = (initial_message[:50] + "..." if len(initial_message) > 50 else initial_message) + " Chat"
         
-        # Create the chat record (adjust based on your actual model)
+        # Create the chat record
         new_chat = AssistantChats(
             title=chat_title,
             profile_id=profile_id
         )
         session.add(new_chat)
         session.commit()
+        session.refresh(new_chat)
 
-        # call the message endpoint below, do not await it.
-        asyncio.create_task(message(
-            chat_id=new_chat.id,
+        # 2. Process the initial message via WebSocket
+        asyncio.create_task(process_message_websocket(
+            chat_id=str(new_chat.id),
             message=initial_message,
-            session=session
+            session=None  # We create our own session in the function
         ))
         
-        # 3. Return the chat id to the frontend to track websocket connection
+        # 3. Return the chat id to the frontend
         return JSONResponse({
             "chat_id": str(new_chat.id),
             "message": "Chat started successfully"
@@ -74,9 +121,9 @@ async def message(
     chat_id: uuid.UUID = Form(...),
     message: str = Form(...),
     session: Session = Depends(get_session),
-) -> StreamingResponse:
+) -> JSONResponse:
     """
-    Streams assistant tokens back to the frontend via Server-Sent Events.
+    Process a message and stream response via WebSocket.
     """
     try:
         # 1. Verify the chat exists
@@ -84,70 +131,17 @@ async def message(
         if not chat:
             raise HTTPException(status_code=404, detail="Chat not found")
         
-        # 2. Add the user message to the chat
-        user_message = AssistantMessages(
-            chat_id=chat_id,
-            role="user",
-            content=message,
-            completed=True
-        )
-        session.add(user_message)
-        session.commit()
+        # 2. Process the message via WebSocket
+        asyncio.create_task(process_message_websocket(
+            chat_id=str(chat_id),
+            message=message,
+            session=None  # We create our own session in the function
+        ))
         
-        # 3. Create placeholder assistant message
-        assistant_message = AssistantMessages(
-            chat_id=chat_id,
-            role="assistant",
-            content="",
-            completed=False
-        )
-        session.add(assistant_message)
-        session.commit()
-
-        logger.info(f"Processing message for chat {chat_id}")
-
-        async def stream_response() -> AsyncGenerator[str, None]:
-            """Generate Server-Sent Events stream"""
-            try:
-                # Send initial connection confirmation
-                yield f"data: {json.dumps({'type': 'start', 'message_id': assistant_message.id})}\n\n"
-                
-                # Stream the assistant response
-                accumulated_content = ""
-                async for token in generate_assistant_response(message):
-                    accumulated_content += token
-                    
-                    # Send each token as a streaming update
-                    yield f"data: {json.dumps({'text': token, 'accumulated': accumulated_content})}\n\n"
-                    
-                    # Update the database with accumulated content
-                    assistant_message.content = accumulated_content
-                    session.add(assistant_message)
-                    session.commit()
-                
-                # Mark as completed
-                assistant_message.completed = True
-                session.add(assistant_message)
-                session.commit()
-                
-                # Send completion signal
-                yield f"data: {json.dumps({'done': True, 'final_content': accumulated_content})}\n\n"
-                
-            except Exception as e:
-                logger.error(f"Error in stream_response: {str(e)}")
-                yield f"data: {json.dumps({'error': str(e)})}\n\n"
-
-        return StreamingResponse(
-            stream_response(),
-            media_type="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "Connection": "keep-alive",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type",
-            }
-        )
+        return JSONResponse({
+            "status": "processing",
+            "message": "Message is being processed"
+        })
         
     except HTTPException:
         raise
@@ -156,3 +150,101 @@ async def message(
         raise HTTPException(
             status_code=500, detail=f"Failed to process message: {str(e)}"
         )
+
+async def process_message_websocket(chat_id: str, message: str, session: Optional[Session] = None) -> None:
+    """
+    Process a message and stream the response via WebSocket
+    """
+    # Create a new session for this async operation
+    from app.db import get_session
+    db_session = next(get_session())
+    
+    try:
+        chat_uuid = uuid.UUID(chat_id)
+        
+        # 1. Add the user message to the chat
+        user_message = AssistantMessages(
+            chat_id=chat_uuid,
+            role="user",
+            content=message,
+            completed=True
+        )
+        db_session.add(user_message)
+        db_session.commit()
+        db_session.refresh(user_message)
+        
+        # 2. Emit user message to connected clients
+        await sio.emit('new_message', {
+            'message_id': str(user_message.id),
+            'chat_id': chat_id,
+            'role': 'user',
+            'content': message,
+            'completed': True,
+            'created_at': user_message.created_at.isoformat()
+        }, room=f"chat_{chat_id}")
+        
+        # 3. Create placeholder assistant message
+        assistant_message = AssistantMessages(
+            chat_id=chat_uuid,
+            role="assistant",
+            content="",
+            completed=False
+        )
+        db_session.add(assistant_message)
+        db_session.commit()
+        db_session.refresh(assistant_message)
+        
+        # 4. Emit placeholder assistant message
+        await sio.emit('new_message', {
+            'message_id': str(assistant_message.id),
+            'chat_id': chat_id,
+            'role': 'assistant',
+            'content': '',
+            'completed': False,
+            'created_at': assistant_message.created_at.isoformat()
+        }, room=f"chat_{chat_id}")
+
+        logger.info(f"Processing message for chat {chat_id}")
+
+        # 5. Stream the assistant response
+        accumulated_content = ""
+        async for token in generate_assistant_response(message):
+            accumulated_content += token
+            
+            # Update the database with accumulated content
+            assistant_message.content = accumulated_content
+            db_session.add(assistant_message)
+            db_session.commit()
+            
+            # Emit token update to connected clients
+            await sio.emit('message_token', {
+                'message_id': str(assistant_message.id),
+                'chat_id': chat_id,
+                'token': token,
+                'accumulated_content': accumulated_content
+            }, room=f"chat_{chat_id}")
+        
+        # 6. Mark as completed
+        assistant_message.completed = True
+        db_session.add(assistant_message)
+        db_session.commit()
+        
+        # 7. Emit completion signal
+        await sio.emit('message_complete', {
+            'message_id': str(assistant_message.id),
+            'chat_id': chat_id,
+            'final_content': accumulated_content
+        }, room=f"chat_{chat_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in process_message_websocket: {str(e)}")
+        await sio.emit('message_error', {
+            'chat_id': chat_id,
+            'error': str(e)
+        }, room=f"chat_{chat_id}")
+    finally:
+        db_session.close()
+
+# Export the Socket.IO app for mounting
+def get_socketio_app() -> socketio.AsyncServer:
+    return sio

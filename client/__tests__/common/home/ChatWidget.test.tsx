@@ -1,24 +1,43 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactNode } from 'react';
 import ChatWidget from '@/components/common/home/ChatWidget';
 
 // Mock external dependencies
 
 
-
+// Mock API calls
+global.fetch = vi.fn();
 
 describe('ChatWidget', () => {
+  let queryClient: QueryClient;
+  
   beforeEach(() => {
     vi.clearAllMocks();
-    
+    queryClient = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
   });
 
+  const renderWithProviders = (ui: React.ReactElement, options = {}) => {
+    const AllProviders = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+
+    return render(ui, { wrapper: AllProviders, ...options });
+  };
   
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
       // TODO: Implement basic rendering test for ChatWidget
-      render(<ChatWidget />);
+      renderWithProviders(<ChatWidget />);
       
       // This test should fail until implemented
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatWidget
@@ -36,7 +55,28 @@ describe('ChatWidget', () => {
 
   
 
-  
+  describe('API Integration', () => {
+    it('should handle API calls', async () => {
+      // TODO: Test API integration
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: API integration test for ChatWidget
+    });
+
+    it('should handle loading states', () => {
+      // TODO: Test loading states
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for ChatWidget
+    });
+
+    it('should handle error states', () => {
+      // TODO: Test error handling
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for ChatWidget
+    });
+  });
 
   
 
@@ -62,9 +102,9 @@ describe('ChatWidget', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useChat, useRole
+ * - Uses hooks: user, useChat, useRole, useQuery
  * - Uses router: false
- * - Has API calls: false
+ * - Has API calls: true
  * - Has form handling: false
  * - Uses state: false
  * - Uses effects: false

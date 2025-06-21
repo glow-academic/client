@@ -1,14 +1,23 @@
 /**
- * Chat Context for managing assistant chat functionality
- * This provides a centralized way to manage chat UI states and message handling
+ * Chat Context for managing assistant chat functionality with WebSocket streaming
+ * This provides a centralized way to manage chat UI states and real-time message handling
  */
 "use client";
-import { AssistantChat } from "@/types";
+import { AssistantChat, AssistantMessage } from "@/types";
+import { logInfo } from "@/utils/logger";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import React, { createContext, useCallback, useContext, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 type ChatUIState = "closed" | "widget" | "expanded";
@@ -33,6 +42,9 @@ interface ChatContextType {
   // Loading States
   isCreatingChat: boolean;
   isSendingMessage: boolean;
+
+  // WebSocket Connection
+  isConnected: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -52,6 +64,9 @@ interface ChatProviderProps {
 export function ChatProvider({ children }: ChatProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
 
   const userId = useSession().data?.user?.id;
@@ -69,6 +84,152 @@ export function ChatProvider({ children }: ChatProviderProps) {
     queryFn: () => getAssistantChatsByProfile(profile!.id),
     enabled: !!profile?.id,
   });
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    if (!profile?.id) return;
+
+    const socket = io(
+      process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000",
+      {
+        transports: ["websocket", "polling"],
+        autoConnect: true,
+        forceNew: true,
+        timeout: 5000,
+      }
+    );
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsConnected(true);
+      logInfo("WebSocket connected");
+    });
+
+    socket.on("disconnect", (reason) => {
+      setIsConnected(false);
+      logInfo(`WebSocket disconnected: ${reason}`);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.error("WebSocket connection error:", error);
+      setIsConnected(false);
+    });
+
+    socket.on(
+      "new_message",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        role: string;
+        content: string;
+        completed: boolean;
+        created_at: string;
+      }) => {
+        // Update the messages cache with new message
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            const exists = old.find((msg) => msg.id === data.message_id);
+            if (exists) return old;
+
+            const newMessage: AssistantMessage = {
+              id: data.message_id,
+              chatId: data.chat_id,
+              role: data.role as "user" | "assistant",
+              content: data.content,
+              completed: data.completed,
+              createdAt: data.created_at,
+              updatedAt: data.created_at,
+            };
+
+            return [...old, newMessage].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            );
+          }
+        );
+      }
+    );
+
+    socket.on(
+      "message_token",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        token: string;
+        accumulated_content: string;
+      }) => {
+        // Update the specific message with streaming content
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.accumulated_content }
+                : msg
+            );
+          }
+        );
+      }
+    );
+
+    socket.on(
+      "message_complete",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        final_content: string;
+      }) => {
+        // Mark message as completed and update final content
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.final_content, completed: true }
+                : msg
+            );
+          }
+        );
+
+        setIsSendingMessage(false);
+
+        // Refresh chat list to update with new messages
+        queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
+      }
+    );
+
+    socket.on("message_error", (data: { chat_id: string; error: string }) => {
+      toast.error(`Chat error: ${data.error}`);
+      setIsSendingMessage(false);
+    });
+
+    socket.on("joined_chat", (data: { chat_id: string }) => {
+      console.log(`Joined chat: ${data.chat_id}`);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [profile?.id, queryClient]);
+
+  // Join/leave chat rooms when currentChatId changes
+  useEffect(() => {
+    if (!socketRef.current || !isConnected) return;
+
+    if (currentChatId) {
+      socketRef.current.emit("join_chat", { chat_id: currentChatId });
+    }
+
+    return () => {
+      if (currentChatId && socketRef.current) {
+        socketRef.current.emit("leave_chat", { chat_id: currentChatId });
+      }
+    };
+  }, [currentChatId, isConnected]);
 
   // UI State Management
   const openWidget = useCallback(() => {
@@ -126,16 +287,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
       queryClient.invalidateQueries({
         queryKey: ["assistantChats", profile?.id],
       });
-      queryClient.invalidateQueries({
-        queryKey: ["assistantMessages", chatId],
-      });
     },
     onError: (error) => {
       toast.error(`Failed to start chat: ${error}`);
+      setIsSendingMessage(false);
     },
   });
 
-  // Send message with streaming response
+  // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({
       chatId,
@@ -144,7 +303,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
       chatId: string;
       content: string;
     }) => {
-      // Start streaming response
       const formData = new FormData();
       formData.append("chat_id", chatId);
       formData.append("message", content);
@@ -153,8 +311,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
         `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/message`,
         {
           method: "POST",
-          headers: { Accept: "text/event-stream" },
-          cache: "no-cache",
           body: formData,
         }
       );
@@ -163,46 +319,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
         throw new Error(`HTTP ${response.status}`);
       }
 
-      // Handle streaming response
-      const reader = response.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-      let accumulated = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        // Process complete SSE frames
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop()!; // Keep partial chunk
-
-        for (const part of parts) {
-          if (!part.startsWith("data:")) continue;
-
-          const data = JSON.parse(part.slice(5)); // strip "data: "
-
-          if (data.text) {
-            accumulated += data.text;
-          }
-
-          if (data.done || data.error) {
-            break;
-          }
-        }
-      }
-
-      return { chatId, content: accumulated };
-    },
-    onSuccess: ({ chatId }) => {
-      queryClient.invalidateQueries({
-        queryKey: ["assistantMessages", chatId],
-      });
+      return await response.json();
     },
     onError: (error) => {
       toast.error(`Failed to send message: ${error}`);
+      setIsSendingMessage(false);
     },
   });
 
@@ -210,6 +331,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim()) return;
+
+      setIsSendingMessage(true);
 
       if (!currentChatId) {
         // Start new chat with first message
@@ -244,8 +367,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Loading States
     isCreatingChat: startChatMutation.isPending,
-    isSendingMessage:
-      sendMessageMutation.isPending || startChatMutation.isPending,
+    isSendingMessage,
+
+    // WebSocket Connection
+    isConnected,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

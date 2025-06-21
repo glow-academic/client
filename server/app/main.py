@@ -5,8 +5,10 @@ import sys
 import time
 from typing import Generator
 
+import socketio  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
+from app.routes.assistants import get_socketio_app
 from app.routes.assistants import router as assistants_router
 from app.routes.documents import router as documents_router
 from app.routes.evals import router as evals_router
@@ -19,14 +21,8 @@ from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
 app = FastAPI(title="GLOW API", on_startup=[init_db])
-app.include_router(documents_router, prefix="/documents")
-app.include_router(simulations_router, prefix="/simulations")
-app.include_router(profiles_router, prefix="/profiles")
-app.include_router(evals_router, prefix="/evals")
-app.include_router(scenarios_router, prefix="/scenarios")
-app.include_router(assistants_router, prefix="/assistants")
 
-# Add CORS middleware
+# Add CORS middleware FIRST
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # In production, replace with your frontend URL
@@ -34,6 +30,18 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(documents_router, prefix="/documents")
+app.include_router(simulations_router, prefix="/simulations")
+app.include_router(profiles_router, prefix="/profiles")
+app.include_router(evals_router, prefix="/evals")
+app.include_router(scenarios_router, prefix="/scenarios")
+app.include_router(assistants_router, prefix="/assistants")
+
+# Mount Socket.IO app AFTER everything else
+sio_app = get_socketio_app()
+sio_asgi_app = socketio.ASGIApp(sio_app, app, socketio_path="socket.io")
 
 # Configure logging - change this section
 logging.basicConfig(
@@ -102,5 +110,5 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info"
+        "app.main:sio_asgi_app", host="0.0.0.0", port=8000, reload=True, log_level="info"
     )

@@ -1,6 +1,6 @@
 /**
  * ChatMessages.tsx
- * Chat messages component for the user.
+ * Chat messages component with WebSocket streaming support
  * @AshokSaravanan222 & @siladiea
  * 06/20/2025
  */
@@ -13,6 +13,7 @@ import { useRole } from "@/contexts/role-context";
 import { AssistantMessage } from "@/types";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { useQuery } from "@tanstack/react-query";
+import { Wifi, WifiOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 const LoadingDots = () => (
@@ -27,8 +28,28 @@ const LoadingDots = () => (
   </div>
 );
 
+const ConnectionStatus = ({ isConnected }: { isConnected: boolean }) => (
+  <div
+    className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
+      isConnected ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
+    }`}
+  >
+    {isConnected ? (
+      <>
+        <Wifi className="h-3 w-3" />
+        <span>Connected</span>
+      </>
+    ) : (
+      <>
+        <WifiOff className="h-3 w-3" />
+        <span>Disconnected</span>
+      </>
+    )}
+  </div>
+);
+
 export default function ChatMessages() {
-  const { currentChatId } = useChat();
+  const { currentChatId, isConnected, isSendingMessage } = useChat();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -36,6 +57,7 @@ export default function ChatMessages() {
     queryKey: ["assistantMessages", currentChatId],
     queryFn: () => getAssistantMessagesByChat(currentChatId!),
     enabled: !!currentChatId,
+    refetchInterval: isConnected ? false : 5000, // Poll when disconnected
   });
 
   // Only show for instructor, instructional, or admin roles
@@ -61,6 +83,10 @@ export default function ChatMessages() {
   if (isLoadingMessages && currentChatId) {
     return (
       <div className="p-4 space-y-4">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-32" />
+          <ConnectionStatus isConnected={isConnected} />
+        </div>
         {[1, 2, 3].map((i) => (
           <div key={i} className="space-y-2">
             <Skeleton className="h-4 w-20" />
@@ -75,6 +101,9 @@ export default function ChatMessages() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-3 max-w-md">
+          <div className="flex justify-center mb-4">
+            <ConnectionStatus isConnected={isConnected} />
+          </div>
           <div className="text-4xl mb-4">🤖</div>
           <h3 className="text-lg font-semibold">GLOW Assistant</h3>
           <p className="text-sm text-muted-foreground">
@@ -93,6 +122,9 @@ export default function ChatMessages() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-2">
+          <div className="flex justify-center mb-2">
+            <ConnectionStatus isConnected={isConnected} />
+          </div>
           <p className="text-sm text-muted-foreground">
             Chat started! Send a message to begin the conversation.
           </p>
@@ -110,6 +142,10 @@ export default function ChatMessages() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
+        <div className="flex justify-end">
+          <ConnectionStatus isConnected={isConnected} />
+        </div>
+
         {sortedMessages.map((message: AssistantMessage) => (
           <div
             key={message.id}
@@ -124,7 +160,9 @@ export default function ChatMessages() {
                   : "bg-muted"
               }`}
             >
-              {message.content === "" && !message.completed ? (
+              {message.role === "assistant" &&
+              !message.completed &&
+              message.content === "" ? (
                 <div className="flex items-center">
                   <span className="text-gray-500 mr-2 text-sm">Thinking</span>
                   <LoadingDots />
@@ -132,11 +170,29 @@ export default function ChatMessages() {
               ) : (
                 <div className="text-sm">
                   <Markdown>{message.content}</Markdown>
+                  {message.role === "assistant" &&
+                    !message.completed &&
+                    message.content !== "" && (
+                      <div className="flex items-center mt-2 opacity-60">
+                        <span className="text-xs mr-2">Streaming</span>
+                        <LoadingDots />
+                      </div>
+                    )}
                 </div>
               )}
             </div>
           </div>
         ))}
+
+        {isSendingMessage && (
+          <div className="flex justify-center">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <LoadingDots />
+              <span>Processing message...</span>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
     </ScrollArea>
