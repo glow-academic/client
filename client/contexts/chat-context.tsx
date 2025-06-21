@@ -3,12 +3,9 @@
  * This provides a centralized way to manage chat UI states and message handling
  */
 "use client";
-import { AssistantChat, AssistantMessage, AssistantToolCall } from "@/types";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { createAssistantMessage } from "@/utils/mutations/assistant_messages/create-assistant-message";
-import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
-import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import React, { createContext, useCallback, useContext, useState } from "react";
 import { toast } from "sonner";
 
@@ -23,9 +20,6 @@ interface ChatContextType {
 
   // Chat Management
   currentChatId: string | null;
-  chats: AssistantChat[];
-  messages: AssistantMessage[];
-  toolCalls: AssistantToolCall[];
 
   // Chat Operations
   createNewChat: () => Promise<void>;
@@ -33,16 +27,9 @@ interface ChatContextType {
   sendMessage: (content: string) => Promise<void>;
 
   // Loading States
-  isLoadingChats: boolean;
-  isLoadingMessages: boolean;
+  isCreatingChat: boolean;
+  isSelectingChat: boolean;
   isSendingMessage: boolean;
-
-  // Debug
-  debug: {
-    currentChatId: string | null;
-    uiState: ChatUIState;
-    messagesCount: number;
-  };
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -64,27 +51,6 @@ export function ChatProvider({ children, profileId }: ChatProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const queryClient = useQueryClient();
-
-  // Fetch user's chats
-  const { data: chats = [], isLoading: isLoadingChats } = useQuery({
-    queryKey: ["assistantChats", profileId],
-    queryFn: () =>
-      profileId ? getAssistantChatsByProfile(profileId) : Promise.resolve([]),
-    enabled: !!profileId,
-  });
-
-  // Fetch messages for current chat
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ["assistantMessages", currentChatId],
-    queryFn: () =>
-      currentChatId
-        ? getAssistantMessagesByChat(currentChatId)
-        : Promise.resolve([]),
-    enabled: !!currentChatId,
-  });
-
-  // For now, tool calls will be empty - we'll implement this later
-  const toolCalls: AssistantToolCall[] = [];
 
   // UI State Management
   const openWidget = useCallback(() => {
@@ -167,29 +133,18 @@ export function ChatProvider({ children, profileId }: ChatProviderProps) {
     setCurrentChatId(chatId);
   }, []);
 
+  const selectChatMutation = useMutation({
+    mutationFn: async (chatId: string) => {
+      setCurrentChatId(chatId);
+    },
+  });
+
   const sendMessage = useCallback(
     async (content: string) => {
       if (!content.trim()) return;
       await sendMessageMutation.mutateAsync(content);
     },
     [sendMessageMutation]
-  );
-
-  // Auto-select first chat if none selected
-  React.useEffect(() => {
-    if (chats.length > 0 && !currentChatId && chats[0]) {
-      setCurrentChatId(chats[0].id);
-    }
-  }, [chats, currentChatId]);
-
-  // Debug information
-  const debug = React.useMemo(
-    () => ({
-      currentChatId,
-      uiState,
-      messagesCount: messages.length,
-    }),
-    [currentChatId, uiState, messages.length]
   );
 
   const value: ChatContextType = {
@@ -201,9 +156,6 @@ export function ChatProvider({ children, profileId }: ChatProviderProps) {
 
     // Chat Management
     currentChatId,
-    chats,
-    messages,
-    toolCalls,
 
     // Chat Operations
     createNewChat,
@@ -211,26 +163,10 @@ export function ChatProvider({ children, profileId }: ChatProviderProps) {
     sendMessage,
 
     // Loading States
-    isLoadingChats,
-    isLoadingMessages,
+    isCreatingChat: createChatMutation.isPending,
+    isSelectingChat: selectChatMutation.isPending,
     isSendingMessage: sendMessageMutation.isPending,
-
-    // Debug
-    debug,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 }
-
-// Debug hook for development
-export const useChatDebug = () => {
-  const { debug } = useChat();
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      console.log("Chat Debug:", debug);
-    }
-  }, [debug]);
-
-  return debug;
-};

@@ -18,18 +18,25 @@ import { useRole } from "@/contexts/role-context";
 import { Minimize2, Plus, X } from "lucide-react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
+import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const {
     uiState,
     openWidget,
     close,
-    chats,
     currentChatId,
     createNewChat,
     selectChat,
   } = useChat();
   const { effectiveRole } = useRole();
+
+  const { data: chat } = useQuery({
+    queryKey: ["assistantChat", currentChatId],
+    queryFn: () => getAssistantChat(currentChatId!),
+    enabled: !!currentChatId,
+  });
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(
@@ -40,8 +47,6 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     return null;
   }
 
-  const currentChat = chats.find((chat) => chat.id === currentChatId);
-
   return (
     <Dialog open={true} onOpenChange={() => close()}>
       <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0">
@@ -51,26 +56,24 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
               Assistant Chat
             </DialogTitle>
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              {chats.length > 1 && (
+              {chat && (
                 <select
                   value={currentChatId || ""}
                   onChange={(e) => selectChat(e.target.value)}
                   className="text-sm bg-transparent border border-border rounded px-2 py-1 cursor-pointer flex-1 min-w-0 max-w-xs"
                 >
-                  {chats.map((chat) => (
-                    <option key={chat.id} value={chat.id}>
-                      {chat.title}
-                    </option>
-                  ))}
+                  <option key={chat.id} value={chat.id}>
+                    {chat.title}
+                  </option>
                 </select>
               )}
-              {chats.length <= 1 && currentChat && (
+              {chat && (
                 <span className="text-sm text-muted-foreground truncate">
-                  {currentChat.title}
+                  {chat.title}
                 </span>
               )}
               <Badge variant="secondary" className="text-xs shrink-0">
-                {chats.length} {chats.length === 1 ? "chat" : "chats"}
+                {chat ? "1" : "0"} {chat ? "chat" : "chats"}
               </Badge>
             </div>
           </div>

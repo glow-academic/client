@@ -11,6 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { AssistantMessage } from "@/types";
+import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 
 const LoadingDots = () => (
@@ -26,9 +28,15 @@ const LoadingDots = () => (
 );
 
 export default function ChatMessages() {
-  const { messages, isLoadingMessages, currentChatId } = useChat();
+  const { currentChatId } = useChat();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const { data: messages, isLoading: isLoadingMessages } = useQuery({
+    queryKey: ["assistantMessages", currentChatId],
+    queryFn: () => getAssistantMessagesByChat(currentChatId!),
+    enabled: !!currentChatId,
+  });
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(
@@ -37,14 +45,14 @@ export default function ChatMessages() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (messages.length > 0) {
+    if (messages && messages.length > 0) {
       const timer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
       return () => clearTimeout(timer);
     }
     return () => {};
-  }, [messages.length]);
+  }, [messages, messages?.length]);
 
   if (!shouldShow) {
     return null;
@@ -73,7 +81,7 @@ export default function ChatMessages() {
     );
   }
 
-  if (messages.length === 0) {
+  if (messages && messages.length === 0) {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-2">
@@ -89,7 +97,7 @@ export default function ChatMessages() {
   }
 
   // Sort messages by creation time
-  const sortedMessages = [...messages].sort(
+  const sortedMessages = [...(messages || [])].sort(
     (a: AssistantMessage, b: AssistantMessage) =>
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
