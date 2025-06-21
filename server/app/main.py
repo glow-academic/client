@@ -7,6 +7,7 @@ from typing import Generator
 
 from app.db import get_session, init_db
 from app.models import SimulationChats
+from app.routes.assistants import router as assistants_router
 from app.routes.documents import router as documents_router
 from app.routes.evals import router as evals_router
 from app.routes.profiles import router as profiles_router
@@ -23,6 +24,7 @@ app.include_router(simulations_router, prefix="/simulations")
 app.include_router(profiles_router, prefix="/profiles")
 app.include_router(evals_router, prefix="/evals")
 app.include_router(scenarios_router, prefix="/scenarios")
+app.include_router(assistants_router, prefix="/assistants")
 
 # Add CORS middleware
 app.add_middleware(

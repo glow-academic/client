@@ -269,6 +269,7 @@ class Profiles(_Base, table=True):
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
+    assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
     dashboards: List['Dashboards'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
 
@@ -374,6 +375,24 @@ class Topics(_Base, table=True):
     class_: Optional['Classes'] = Relationship(back_populates='topics')
 
 
+class AssistantChats(_Base, table=True):
+    __tablename__ = 'assistant_chats'
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], name='assistant_chats_profile_id_fkey'),
+        PrimaryKeyConstraint('id', name='assistant_chats_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    title: str = Field(sa_column=Column('title', Text))
+    profile_id: Mapped[uuid.UUID] = Field(sa_column=Column('profile_id', Uuid(as_uuid=True)))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='assistant_chats')
+    assistant_messages: List['AssistantMessages'] = Relationship(back_populates='chat')
+    assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='chat')
+
+
 class Dashboards(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='dashboards_profile_id_fkey'),
@@ -472,6 +491,25 @@ class Standards(_Base, table=True):
     simulation_chat_feedbacks: List['SimulationChatFeedbacks'] = Relationship(back_populates='standard')
 
 
+class AssistantMessages(_Base, table=True):
+    __tablename__ = 'assistant_messages'
+    __table_args__ = (
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], name='assistant_messages_chat_id_fkey'),
+        PrimaryKeyConstraint('id', name='assistant_messages_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
+    role: str = Field(sa_column=Column('role', Enum('user', 'assistant', name='assistant_message_type')))
+    content: str = Field(sa_column=Column('content', Text))
+    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+
+    chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_messages')
+    assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='message')
+
+
 class EvalChats(_Base, table=True):
     __tablename__ = 'eval_chats'
     __table_args__ = (
@@ -518,6 +556,26 @@ class SimulationChats(_Base, table=True):
     scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_chats')
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='simulation_chat')
     simulation_messages: List['SimulationMessages'] = Relationship(back_populates='chat')
+
+
+class AssistantToolCalls(_Base, table=True):
+    __tablename__ = 'assistant_tool_calls'
+    __table_args__ = (
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], name='assistant_tool_calls_chat_id_fkey'),
+        ForeignKeyConstraint(['message_id'], ['assistant_messages.id'], name='assistant_tool_calls_message_id_fkey'),
+        PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
+    message_id: Mapped[uuid.UUID] = Field(sa_column=Column('message_id', Uuid(as_uuid=True)))
+    tool_name: str = Field(sa_column=Column('tool_name', Text))
+    tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
+
+    chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
+    message: Optional['AssistantMessages'] = Relationship(back_populates='assistant_tool_calls')
 
 
 class EvalChatGrades(_Base, table=True):

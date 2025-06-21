@@ -24,7 +24,7 @@ export default function ChatInput() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim() || !currentChatId) return;
+    if (!message.trim()) return;
 
     const messageToSend = message.trim();
     setMessage("");
@@ -42,6 +42,10 @@ export default function ChatInput() {
     return null;
   }
 
+  const placeholder = currentChatId
+    ? "Type your message..."
+    : "Start a conversation with the assistant...";
+
   return (
     <form onSubmit={handleSubmit} className="p-3">
       <div className="flex gap-2">
@@ -49,18 +53,14 @@ export default function ChatInput() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={
-            currentChatId
-              ? "Type your message..."
-              : "Create a chat to start messaging"
-          }
-          disabled={isSendingMessage || !currentChatId}
+          placeholder={placeholder}
+          disabled={isSendingMessage}
           className="flex-1 resize-none min-h-[40px] max-h-[120px]"
           rows={1}
         />
         <Button
           type="submit"
-          disabled={!message.trim() || isSendingMessage || !currentChatId}
+          disabled={!message.trim() || isSendingMessage}
           size="sm"
           className="shrink-0"
         >
@@ -68,7 +68,9 @@ export default function ChatInput() {
         </Button>
       </div>
       {isSendingMessage && (
-        <p className="text-xs text-muted-foreground mt-1">Sending...</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {currentChatId ? "Sending..." : "Starting chat..."}
+        </p>
       )}
     </form>
   );

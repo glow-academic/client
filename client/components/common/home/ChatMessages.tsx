@@ -74,9 +74,17 @@ export default function ChatMessages() {
   if (!currentChatId) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <p className="text-muted-foreground text-sm text-center">
-          Create a new chat to get started
-        </p>
+        <div className="text-center space-y-3 max-w-md">
+          <div className="text-4xl mb-4">🤖</div>
+          <h3 className="text-lg font-semibold">GLOW Assistant</h3>
+          <p className="text-sm text-muted-foreground">
+            I'm here to help you with questions about your courses, assignments,
+            and academic planning.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Type a message below to start our conversation
+          </p>
+        </div>
       </div>
     );
   }
@@ -86,10 +94,7 @@ export default function ChatMessages() {
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-2">
           <p className="text-sm text-muted-foreground">
-            Start a conversation with the assistant
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Type a message below to begin
+            Chat started! Send a message to begin the conversation.
           </p>
         </div>
       </div>

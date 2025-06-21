@@ -26,7 +26,6 @@ import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
-import { getCurrentProfileId } from "@/utils/chat-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
 
 // Inner component that uses the role context
@@ -49,9 +48,6 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   const handleSectionChange = createSectionChangeHandler(router);
-
-  // Get profile info for the ChatProvider
-  const profileId = getCurrentProfileId();
 
   // Determine action button based on current path
   const getActionButton = () => {
@@ -219,7 +215,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const actionButton = getActionButton();
 
   return (
-    <ChatProvider profileId={profileId}>
+    <ChatProvider>
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
