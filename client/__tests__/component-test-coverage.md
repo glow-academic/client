@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-21T01:26:42.262Z
+Generated on: 2025-06-21T01:53:26.042Z
 
 ## Summary
-- **Total Components**: 92
-- **Tests Created**: 0
+- **Total Components**: 96
+- **Tests Created**: 5
 - **Tests Updated**: 34
-- **Tests Skipped** (already implemented): 58
+- **Tests Skipped** (already implemented): 57
 
 ## Component Coverage
 
@@ -37,7 +37,6 @@ Generated on: 2025-06-21T01:26:42.262Z
 | SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
 | TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
-| Chat | common/chat/Chat.tsx | Chat.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | EvaluationRun | common/chat/EvaluationRun.tsx | EvaluationRun.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
@@ -62,6 +61,11 @@ Generated on: 2025-06-21T01:26:42.262Z
 | data-table-view-options | common/history/data-table-view-options.tsx | data-table-view-options.test.tsx | ✅ Implemented |
 | data-table | common/history/data-table.tsx | data-table.test.tsx | ✅ Implemented |
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
+| ChatDialog | common/home/ChatDialog.tsx | ChatDialog.test.tsx | ❌ Needs Implementation |
+| ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ❌ Needs Implementation |
+| ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ❌ Needs Implementation |
+| ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ❌ Needs Implementation |
+| ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ❌ Needs Implementation |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ❌ Needs Implementation |
@@ -143,7 +147,6 @@ __tests__/
 │   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
 │   │   ├── Attempt.test.tsx
-│   │   ├── Chat.test.tsx
 │   │   ├── DocumentViewer.test.tsx
 │   │   ├── EvaluationRun.test.tsx
 │   │   ├── Markdown.test.tsx
@@ -173,6 +176,12 @@ __tests__/
 │   │   ├── data-table-view-options.test.tsx
 │   │   ├── data-table.test.tsx
 │   │   ├── export-button.test.tsx
+│   ├── home/
+│   │   ├── ChatDialog.test.tsx
+│   │   ├── ChatFab.test.tsx
+│   │   ├── ChatInput.test.tsx
+│   │   ├── ChatMessages.test.tsx
+│   │   ├── ChatWidget.test.tsx
 │   ├── layout/
 │   │   ├── navigation-breadcrumbs.test.tsx
 │   │   ├── unified-sidebar.test.tsx

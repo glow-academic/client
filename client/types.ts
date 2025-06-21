@@ -14,15 +14,18 @@ import {
   standardGroups as StandardGroups,
   standards as Standards,
   appLogs as AppLogs,
-  components as Components,
-  dashboards as Dashboards,
-  simulationMessages as SimulationMessages,
+  assistantChats as AssistantChats,
+  assistantMessages as AssistantMessages,
   agents as Agents,
+  assistantToolCalls as AssistantToolCalls,
+  components as Components,
   scenarios as Scenarios,
+  dashboards as Dashboards,
   cohorts as Cohorts,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
+  simulationMessages as SimulationMessages,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
   evals as Evals,
@@ -32,7 +35,7 @@ import {
   evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
-  classTerm, documentType, evalMessageType, profileRole, seniorityLevels
+  assistantMessageType, assistantToolType, classTerm, documentType, evalMessageType, profileRole, seniorityLevels
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -51,15 +54,18 @@ type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
-type Component = typeof Components.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
-type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type AssistantChat = typeof AssistantChats.$inferSelect;
+type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
+type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
+type Component = typeof Components.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
+type SimulationMessage = typeof SimulationMessages.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type Eval = typeof Evals.$inferSelect;
@@ -70,6 +76,8 @@ type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
 type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
 
+type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
+type AssistantToolType = (typeof assistantToolType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type EvalMessageType = (typeof evalMessageType.enumValues)[number];
@@ -92,15 +100,18 @@ export type {
   StandardGroup,
   Standard,
   AppLog,
-  Component,
-  Dashboard,
-  SimulationMessage,
+  AssistantChat,
+  AssistantMessage,
   Agent,
+  AssistantToolCall,
+  Component,
   Scenario,
+  Dashboard,
   Cohort,
   Simulation,
   SimulationAttempt,
   SimulationChat,
+  SimulationMessage,
   SimulationChatGrade,
   SimulationChatFeedback,
   Eval,
@@ -110,6 +121,8 @@ export type {
   EvalChatGrade,
   EvalChatFeedback,
   VerificationToken,
+  AssistantMessageType,
+  AssistantToolType,
   ClassTerm,
   DocumentType,
   EvalMessageType,
