@@ -218,7 +218,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
 
         # 5. Stream the assistant response
         accumulated_content = ""
-        async for token in run_assistant_agent(chat_id, message, db_session):
+        async for token in run_assistant_agent(chat_id, db_session):
             # Check if this is a tool call token
             if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
                 # Extract tool call data

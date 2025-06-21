@@ -2,21 +2,22 @@ import os
 import uuid
 from typing import AsyncGenerator, Optional
 
-import PyPDF2
 from agents import Runner, trace
 from agents.items import TResponseInputItem
+from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import Agents, AssistantChats, AssistantMessages
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
+from dotenv import load_dotenv
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
 from sqlmodel import Session, select
 
+load_dotenv()
 
 async def run_assistant_agent(
     chat_id: uuid.UUID,
-    input_text: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -39,10 +40,10 @@ async def run_assistant_agent(
         select(AssistantChats).where(AssistantChats.id == chat_id)
     ).one_or_none()
     
-    if assistant_chat and input_text:
+    if assistant_chat:
         # Handle assistant chat
         async for token in _handle_assistant_chat(
-            assistant_chat, input_text, session
+            assistant_chat, session
         ):
             yield token
     else:
@@ -51,7 +52,7 @@ async def run_assistant_agent(
 
 
 async def _handle_assistant_chat(
-    chat: AssistantChats, input_text: str, session: Session
+    chat: AssistantChats, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
@@ -76,11 +77,32 @@ async def _handle_assistant_chat(
     conversation_history = get_assistant_conversation_history(messages)
     input_items.extend(conversation_history)
 
+
+    # creating the mcp servers
+    base_url = os.getenv("NEXT_PUBLIC_API_URL")
+    mcp_servers: list[MCPServer] = [
+        MCPServerStreamableHttp(
+            name="Postgres-DB",
+            params={
+                "url": f"{base_url}/mcp/db",
+            },
+        ),
+        MCPServerStreamableHttp(
+            name="Domain-API",
+            params={
+                "url": f"{base_url}/mcp/domain",
+            },
+        ),
+    ]
+
+
+
     # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
         agent_name=agent.name,
         agent_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        mcp_servers=mcp_servers,
     )
 
     with trace(chat.title, trace_id=chat.trace_id) as chat_trace:

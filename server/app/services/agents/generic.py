@@ -4,6 +4,7 @@ from typing import AsyncGenerator
 from agents import (Agent, ModelSettings, OpenAIChatCompletionsModel, Runner,
                     trace)
 from agents.items import TResponseInputItem
+from agents.mcp.server import MCPServer
 from app.db import get_session
 from app.extensions import get_gemini
 from app.models import Agents
@@ -60,6 +61,7 @@ class GenericAgent:
         agent_prompt: str,
         temperature: float = 0.0,
         output_type: type[BaseModel] | None = None,
+        mcp_servers: list[MCPServer] | None = None,
     ):
         self.gemini_client = get_gemini()
         self.agent_name = agent_name
@@ -67,7 +69,8 @@ class GenericAgent:
         self.system_prompt = agent_prompt
         self.temperature = temperature
         self.output_type = output_type
-
+        self.mcp_servers = mcp_servers
+    
     def agent(self) -> Agent:
         if self.gemini_client is None:
             raise ValueError("Gemini client is not set")
@@ -85,4 +88,5 @@ class GenericAgent:
                 reasoning=Reasoning(effort="low"),
             ),
             output_type=self.output_type,
+            mcp_servers=self.mcp_servers or [],
         )
