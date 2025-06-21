@@ -4,7 +4,7 @@
  */
 "use client";
 import { AssistantChat, AssistantMessage } from "@/types";
-import { logInfo } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -112,7 +112,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     });
 
     socket.on("connect_error", (error) => {
-      console.error("WebSocket connection error:", error);
+      logError("WebSocket connection error:", error);
       setIsConnected(false);
     });
 
@@ -207,7 +207,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     });
 
     socket.on("joined_chat", (data: { chat_id: string }) => {
-      console.log(`Joined chat: ${data.chat_id}`);
+      logInfo(`Joined chat: ${data.chat_id}`);
     });
 
     return () => {
