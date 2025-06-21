@@ -23,4 +23,4 @@ async def generate_assistant_response(message: str) -> AsyncGenerator[str, None]
     
     for part in response_parts:
         yield part
-        await asyncio.sleep(0.1)  # Simulate processing time
+        await asyncio.sleep(0.5)  # Simulate processing time

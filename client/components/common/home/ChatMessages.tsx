@@ -49,7 +49,7 @@ const ConnectionStatus = ({ isConnected }: { isConnected: boolean }) => (
 );
 
 export default function ChatMessages() {
-  const { currentChatId, isConnected, isSendingMessage } = useChat();
+  const { currentChatId, isConnected } = useChat();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -170,28 +170,11 @@ export default function ChatMessages() {
               ) : (
                 <div className="text-sm">
                   <Markdown>{message.content}</Markdown>
-                  {message.role === "assistant" &&
-                    !message.completed &&
-                    message.content !== "" && (
-                      <div className="flex items-center mt-2 opacity-60">
-                        <span className="text-xs mr-2">Streaming</span>
-                        <LoadingDots />
-                      </div>
-                    )}
                 </div>
               )}
             </div>
           </div>
         ))}
-
-        {isSendingMessage && (
-          <div className="flex justify-center">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <LoadingDots />
-              <span>Processing message...</span>
-            </div>
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>
