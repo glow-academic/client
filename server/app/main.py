@@ -1,9 +1,10 @@
 # server/app/main.py
+import contextlib
 import logging
 import platform
 import sys
 import time
-from typing import Generator
+from typing import Any, AsyncIterator, Generator
 
 import socketio  # type: ignore
 from app.db import get_session, init_db
@@ -22,8 +23,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
-# Create FastAPI app
-fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db])
+
+# Create a combined lifespan to manage both session managers
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
+    async with contextlib.AsyncExitStack() as stack:
+        await stack.enter_async_context(db_server.session_manager.run())
+        await stack.enter_async_context(generic.session_manager.run())
+        yield
+
+
+# Create FastAPI app with lifespan
+fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db], lifespan=lifespan)
 
 # Add CORS middleware FIRST
 fastapi_app.add_middleware(
@@ -42,7 +53,7 @@ fastapi_app.include_router(evals_router, prefix="/evals")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 fastapi_app.include_router(assistants_router, prefix="/assistants")
 
-# mounting the mcp servers
+# mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/mcp/db", db_server.streamable_http_app(), name="db_server")
 fastapi_app.mount("/mcp/domain", generic.streamable_http_app(), name="domain_api")
 

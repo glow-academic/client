@@ -49,12 +49,12 @@ async def run_assistant_agent(
         async with (
             MCPServerStreamableHttp(
                 name="Postgres-DB",
-                params={"url": f"{base_url}/mcp/db"},
+                params={"url": f"{base_url}/mcp/db/mcp"},
                 cache_tools_list=True,
             ) as db_server,
             MCPServerStreamableHttp(
                 name="Domain-API",
-                params={"url": f"{base_url}/mcp/domain"},
+                params={"url": f"{base_url}/mcp/domain/mcp"},
                 cache_tools_list=True,
             ) as domain_server
         ):

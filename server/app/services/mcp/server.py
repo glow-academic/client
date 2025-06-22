@@ -17,7 +17,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import and_, or_, select
 
 # ─────────────────────────────────────────────────────────────────────────────
-generic = FastMCP("Domain-API")
+# Configure for stateless HTTP transport
+generic = FastMCP("Domain-API", stateless_http=True)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NEW ✱ Dashboard-editing helpers

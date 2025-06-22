@@ -4,7 +4,8 @@ from mcp.server.fastmcp import FastMCP
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
-db_server = FastMCP("Postgres-DB")
+# Configure for stateless HTTP transport
+db_server = FastMCP("Postgres-DB", stateless_http=True)
 
 
 @db_server.resource("schema://public")
