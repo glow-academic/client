@@ -82,7 +82,7 @@ async def _handle_assistant_chat(
 
     # creating the mcp servers
     base_url = os.getenv("NEXT_PUBLIC_API_URL")
-    mcp_servers: list[MCPServer] = [
+    old_mcp_servers: list[MCPServer] = [
         MCPServerStreamableHttp(
             name="Postgres-DB",
             params={
@@ -96,6 +96,7 @@ async def _handle_assistant_chat(
             },
         ),
     ]
+    mcp_servers: list[MCPServer] = [] # for now, we're not using MCP servers
 
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
