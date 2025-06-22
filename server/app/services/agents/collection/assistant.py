@@ -43,18 +43,33 @@ async def run_assistant_agent(
     ).one_or_none()
     
     if assistant_chat:
-        # Handle assistant chat
-        async for token in _handle_assistant_chat(
-            assistant_chat, session
+        # creating the mcp servers
+        base_url = os.getenv("NEXT_PUBLIC_API_URL")
+        
+        async with (
+            MCPServerStreamableHttp(
+                name="Postgres-DB",
+                params={"url": f"{base_url}/mcp/db"},
+                cache_tools_list=True,
+            ) as db_server,
+            MCPServerStreamableHttp(
+                name="Domain-API",
+                params={"url": f"{base_url}/mcp/domain"},
+                cache_tools_list=True,
+            ) as domain_server
         ):
-            yield token
+            mcp_servers = [db_server, domain_server]
+            async for token in _handle_assistant_chat(
+                assistant_chat, mcp_servers, session
+            ):
+                yield token
     else:
         raise ValueError(f"Chat not found with ID: {chat_id}")
 
 
 
 async def _handle_assistant_chat(
-    chat: AssistantChats, session: Session
+    chat: AssistantChats, mcp_servers: list[MCPServer], session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 
@@ -78,25 +93,6 @@ async def _handle_assistant_chat(
     # Prepare conversation history from chat_id
     conversation_history = get_assistant_conversation_history(messages)
     input_items.extend(conversation_history)
-
-
-    # creating the mcp servers
-    base_url = os.getenv("NEXT_PUBLIC_API_URL")
-    old_mcp_servers: list[MCPServer] = [
-        MCPServerStreamableHttp(
-            name="Postgres-DB",
-            params={
-                "url": f"{base_url}/mcp/db",
-            },
-        ),
-        MCPServerStreamableHttp(
-            name="Domain-API",
-            params={
-                "url": f"{base_url}/mcp/domain",
-            },
-        ),
-    ]
-    mcp_servers: list[MCPServer] = [] # for now, we're not using MCP servers
 
     # getting the model from the agent's model_id
     model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
