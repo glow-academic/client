@@ -20,12 +20,13 @@ warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 import socketio  # type: ignore
 from app.db import get_session
 from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
-from app.services.agents.collection.assistant import run_assistant_agent
+from app.services.agents.collection.assistant import (cancel_assistant_run,
+                                                      run_assistant_agent)
 from app.services.agents.collection.title import run_title_agent
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,54 @@ def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
     return get_socketio_instance()
+
+@router.post("/stop")
+async def stop_assistant_run(
+    chat_id: uuid.UUID = Form(...),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Stop an active assistant run.
+    """
+    try:
+        # Verify the chat exists
+        chat = session.exec(
+            select(AssistantChats).where(AssistantChats.id == chat_id)
+        ).one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        
+        # Attempt to cancel the assistant run
+        success = cancel_assistant_run(chat_id)
+        
+        if success:
+            logger.info(f"Successfully cancelled assistant run for chat {chat_id}")
+            
+            # Emit stop signal via WebSocket using unified function
+            from app.main import emit_chat_stopped
+            await emit_chat_stopped(str(chat_id), "assistant", "Assistant run cancelled successfully")
+            
+            return JSONResponse({
+                "success": True,
+                "message": "Assistant run cancelled successfully"
+            })
+        else:
+            logger.warning(f"No active assistant run found for chat {chat_id}")
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "success": False,
+                    "message": "No active assistant run found"
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping assistant: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to stop assistant: {str(e)}"
+        )
 
 @router.post("/start")
 async def start_chat(
@@ -235,82 +284,101 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
 
         # 5. Stream the assistant response
         accumulated_content = ""
-        async for token in run_assistant_agent(chat_id, db_session):
-            # Check if this is a tool call token
-            if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
-                # Extract tool call data
-                tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
-                try:
-                    tool_call_data = json.loads(tool_call_json)
+        cancelled = False
+        
+        try:
+            async for token in run_assistant_agent(chat_id, db_session):
+                # Check if this is a tool call token
+                if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
+                    # Extract tool call data
+                    tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
+                    try:
+                        tool_call_data = json.loads(tool_call_json)
+                        
+                        # Save tool call to database
+                        tool_call = AssistantToolCalls(
+                            chat_id=chat_id,
+                            message_id=assistant_message.id,
+                            tool_name=tool_call_data.get('name', 'unknown'),
+                            tool_type=tool_call_data.get('type', 'read'),
+                            tool_arguments=tool_call_data.get('arguments', {}),
+                            tool_result={}
+                        )
+                        db_session.add(tool_call)
+                        db_session.commit()
+                        db_session.refresh(tool_call)
+                        
+                        # Emit tool call start to connected clients
+                        await sio_instance.emit('tool_call_start', {
+                            'tool_call_id': str(tool_call.id),
+                            'message_id': str(assistant_message.id),
+                            'chat_id': str(chat_id),
+                            'tool_data': tool_call_data
+                        }, room=f"assistant_{chat_id}")
+                        
+                    except json.JSONDecodeError:
+                        logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
                     
-                    # Save tool call to database
-                    tool_call = AssistantToolCalls(
-                        chat_id=chat_id,
-                        message_id=assistant_message.id,
-                        tool_name=tool_call_data.get('name', 'unknown'),
-                        tool_type=tool_call_data.get('type', 'read'),
-                        tool_arguments=tool_call_data.get('arguments', {}),
-                        tool_result={}
-                    )
-                    db_session.add(tool_call)
+                elif token.startswith('<tool_call_result>') and token.endswith('</tool_call_result>'):
+                    # Extract tool call result data
+                    tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
+                    try:
+                        tool_result_data = json.loads(tool_result_json)
+                        
+                        # Emit tool call result to connected clients
+                        await sio_instance.emit('tool_call_result', {
+                            'message_id': str(assistant_message.id),
+                            'chat_id': str(chat_id),
+                            'tool_result': tool_result_data
+                        }, room=f"assistant_{chat_id}")
+                        
+                    except json.JSONDecodeError:
+                        logger.error(f"Failed to parse tool result JSON: {tool_result_json}")
+                    
+                else:
+                    # Regular content token
+                    accumulated_content += token
+                    
+                    # Update the database with accumulated content
+                    assistant_message.content = accumulated_content
+                    db_session.add(assistant_message)
                     db_session.commit()
-                    db_session.refresh(tool_call)
                     
-                    # Emit tool call start to connected clients
-                    await sio_instance.emit('tool_call_start', {
-                        'tool_call_id': str(tool_call.id),
+                    # Emit token update to connected clients
+                    await sio_instance.emit('message_token', {
                         'message_id': str(assistant_message.id),
                         'chat_id': str(chat_id),
-                        'tool_data': tool_call_data
+                        'token': token,
+                        'accumulated_content': accumulated_content
                     }, room=f"assistant_{chat_id}")
-                    
-                except json.JSONDecodeError:
-                    logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
+        except Exception as e:
+            if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                # Handle cancellation gracefully
+                cancelled = True
+                logger.info(f"Assistant run for chat {chat_id} was cancelled")
                 
-            elif token.startswith('<tool_call_result>') and token.endswith('</tool_call_result>'):
-                # Extract tool call result data
-                tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
-                try:
-                    tool_result_data = json.loads(tool_result_json)
-                    
-                    # Emit tool call result to connected clients
-                    await sio_instance.emit('tool_call_result', {
-                        'message_id': str(assistant_message.id),
-                        'chat_id': str(chat_id),
-                        'tool_result': tool_result_data
-                    }, room=f"assistant_{chat_id}")
-                    
-                except json.JSONDecodeError:
-                    logger.error(f"Failed to parse tool result JSON: {tool_result_json}")
-                
-            else:
-                # Regular content token
-                accumulated_content += token
-                
-                # Update the database with accumulated content
-                assistant_message.content = accumulated_content
-                db_session.add(assistant_message)
-                db_session.commit()
-                
-                # Emit token update to connected clients
-                await sio_instance.emit('message_token', {
+                # Emit cancellation signal
+                await sio_instance.emit('message_cancelled', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
-                    'token': token,
-                    'accumulated_content': accumulated_content
+                    'final_content': accumulated_content
                 }, room=f"assistant_{chat_id}")
+            else:
+                # Re-raise other exceptions
+                raise e
         
         # 6. Mark as completed
         assistant_message.completed = True
         db_session.add(assistant_message)
         db_session.commit()
         
-        # 7. Emit completion signal
-        await sio_instance.emit('message_complete', {
-            'message_id': str(assistant_message.id),
-            'chat_id': str(chat_id),
-            'final_content': accumulated_content
-        }, room=f"assistant_{chat_id}")
+        # 7. Emit completion signal (only if not cancelled)
+        if not cancelled:
+            await sio_instance.emit('message_complete', {
+                'message_id': str(assistant_message.id),
+                'chat_id': str(chat_id),
+                'final_content': accumulated_content
+            }, room=f"assistant_{chat_id}")
         
     except Exception as e:
         logger.error(f"Error in process_message_websocket: {str(e)}")

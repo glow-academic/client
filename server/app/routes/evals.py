@@ -9,7 +9,7 @@ import socketio  # type: ignore
 from app.db import get_session
 from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
                         Rubrics, Scenarios)
-from app.services.agents.collection.eval import run_eval_agent
+from app.services.agents.collection.eval import cancel_eval_run, run_eval_agent
 from app.services.agents.collection.evaluate import run_evaluate_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.utils.scenario import randomly_fill_scenario_attributes
@@ -26,6 +26,106 @@ def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
     return get_socketio_instance()
+
+
+@router.post("/stop")
+async def stop_eval_run(
+    chat_id: str = Form(...),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Stop an active evaluation run for a specific chat.
+    """
+    try:
+        # Verify the chat exists
+        chat = session.exec(
+            select(EvalChats).where(EvalChats.id == chat_id)
+        ).one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        
+        # Attempt to cancel the eval run
+        import uuid
+        success = cancel_eval_run(uuid.UUID(chat_id))
+        
+        if success:
+            logger.info(f"Successfully cancelled eval run for chat {chat_id}")
+            
+            # Emit stop signal via WebSocket using unified function
+            from app.main import emit_chat_stopped
+            await emit_chat_stopped(chat_id, "eval", "Evaluation run cancelled successfully")
+            
+            return JSONResponse({
+                "success": True,
+                "message": "Evaluation run cancelled successfully"
+            })
+        else:
+            logger.warning(f"No active eval run found for chat {chat_id}")
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "success": False,
+                    "message": "No active evaluation run found"
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping evaluation: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to stop evaluation: {str(e)}"
+        )
+
+
+@router.post("/stop/all")
+async def stop_all_eval_runs(
+    eval_run_id: str = Form(...),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Stop all active evaluation runs for a specific eval run.
+    """
+    try:
+        # Verify the eval run exists
+        eval_run = session.exec(
+            select(EvalRuns).where(EvalRuns.id == eval_run_id)
+        ).one_or_none()
+        if not eval_run:
+            raise HTTPException(status_code=404, detail="Eval run not found")
+        
+        # Get all chats for this eval run
+        eval_chats = session.exec(
+            select(EvalChats).where(EvalChats.eval_run_id == eval_run_id)
+        ).all()
+        
+        # Cancel all active chats
+        cancelled_count = 0
+        for chat in eval_chats:
+            success = cancel_eval_run(chat.id)
+            if success:
+                cancelled_count += 1
+                
+                # Emit stop signal for each cancelled chat
+                from app.main import emit_chat_stopped
+                await emit_chat_stopped(str(chat.id), "eval", "Evaluation run cancelled successfully")
+        
+        logger.info(f"Successfully cancelled {cancelled_count} eval runs for eval run {eval_run_id}")
+        
+        return JSONResponse({
+            "success": True,
+            "message": f"Cancelled {cancelled_count} evaluation runs",
+            "cancelled_count": cancelled_count,
+            "total_chats": len(eval_chats)
+        })
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping all evaluations: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to stop all evaluations: {str(e)}"
+        )
 
 
 @router.post("/start")

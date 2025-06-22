@@ -7,7 +7,6 @@ from agents.extensions.models.litellm_model import LitellmModel
 from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer
 from app.db import get_session
-from app.extensions import get_gemini
 from app.models import Agents, Models, Providers
 from app.utils.auth import decrypt_api_key
 from fastapi import Depends
@@ -83,7 +82,6 @@ class GenericAgent:
         output_type: type[BaseModel] | None = None,
         mcp_servers: list[MCPServer] | None = None,
     ):
-        self.gemini_client = get_gemini()
         self.agent_name = agent_name
         self.system_prompt = system_prompt
         self.temperature = temperature
@@ -106,9 +104,6 @@ class GenericAgent:
         self.api_key = decrypt_api_key(api_key)
     
     def agent(self) -> Agent:
-        if self.gemini_client is None:
-            raise ValueError("Gemini client is not set")
-        
         return Agent(
             name=f"{self.agent_name} Agent",
             instructions=self.system_prompt,

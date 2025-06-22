@@ -60,10 +60,12 @@ interface ChatContextType {
   selectChat: (chatId: string | null) => void;
   startBlankChat: () => void;
   sendMessage: (content: string) => Promise<void>;
+  stopMessage: () => Promise<void>;
 
   // Loading States
   isCreatingChat: boolean;
   isSendingMessage: boolean;
+  isStoppingMessage: boolean;
 
   // WebSocket Connection
   isConnected: boolean;
@@ -88,6 +90,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
 
@@ -229,6 +232,41 @@ export function ChatProvider({ children }: ChatProviderProps) {
       setIsSendingMessage(false);
     });
 
+    socket.on(
+      "chat_stopped",
+      (data: { chat_id: string; chat_type: string; message: string }) => {
+        if (data.chat_id === currentChatId) {
+          setIsSendingMessage(false);
+          setIsStoppingMessage(false);
+          toast.success(data.message || "Chat stopped successfully");
+        }
+      }
+    );
+
+    socket.on(
+      "message_cancelled",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        final_content: string;
+      }) => {
+        // Update the cancelled message with its final content
+        queryClient.setQueryData(
+          ["assistantMessages", data.chat_id],
+          (old: AssistantMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.final_content, completed: true }
+                : msg
+            );
+          }
+        );
+
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
+    );
+
     socket.on("joined_chat", (data: { chat_id: string }) => {
       logInfo(`Joined chat: ${data.chat_id}`);
     });
@@ -308,7 +346,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [profile?.id, queryClient]);
+  }, [profile?.id, queryClient, currentChatId]);
 
   // Join/leave chat rooms when currentChatId changes
   useEffect(() => {
@@ -442,6 +480,35 @@ export function ChatProvider({ children }: ChatProviderProps) {
     [currentChatId, startChatMutation, sendMessageMutation]
   );
 
+  // Stop message function
+  const stopMessage = useCallback(async () => {
+    if (!currentChatId || !socketRef.current || isStoppingMessage) return;
+
+    setIsStoppingMessage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("chat_id", currentChatId);
+
+      const response = await fetch(
+        `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/stop`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // The WebSocket event will handle state updates
+    } catch (error) {
+      toast.error(`Failed to stop message: ${error}`);
+      setIsStoppingMessage(false);
+    }
+  }, [currentChatId, isStoppingMessage]);
+
   const value: ChatContextType = {
     // UI State
     uiState,
@@ -458,10 +525,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     selectChat,
     startBlankChat,
     sendMessage,
+    stopMessage,
 
     // Loading States
     isCreatingChat: startChatMutation.isPending,
     isSendingMessage,
+    isStoppingMessage,
 
     // WebSocket Connection
     isConnected,

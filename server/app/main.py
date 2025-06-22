@@ -31,6 +31,9 @@ client_url = os.getenv("CLIENT_URL")
 # Store active chat connections
 active_connections: dict[str, str] = {}
 
+# Global store for all active runs (unified tracking)
+active_runs: dict[str, Any] = {}
+
 # Create Socket.IO server instance globally
 sio = socketio.AsyncServer(
     cors_allowed_origins=[client_url],
@@ -78,6 +81,49 @@ async def leave_chat(sid: str, data: dict[str, Any]) -> None:
     if chat_id:
         room_name = f"{chat_type}_{chat_id}"
         await sio.leave_room(sid, room_name)
+        if chat_id in active_connections:
+            del active_connections[chat_id]
+        logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
+
+def store_active_run(chat_id: str, run_result: Any) -> None:
+    """Store an active run for potential cancellation"""
+    active_runs[chat_id] = run_result
+
+def cancel_active_run(chat_id: str) -> bool:
+    """Cancel an active run and clean up"""
+    if chat_id in active_runs:
+        result = active_runs[chat_id]
+        try:
+            result.cancel()
+            del active_runs[chat_id]
+            logger.info(f"Successfully cancelled active run for chat {chat_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error cancelling active run {chat_id}: {e}")
+            del active_runs[chat_id]
+            return False
+    return False
+
+async def emit_chat_stopped(chat_id: str, chat_type: str, message: str = "Chat stopped successfully") -> None:
+    """Emit chat_stopped event to the appropriate room"""
+    await sio.emit('chat_stopped', {
+        'chat_id': chat_id,
+        'chat_type': chat_type,
+        'message': message
+    }, room=f"{chat_type}_{chat_id}")
+
+@sio.event  # type: ignore
+async def stop_chat(sid: str, data: dict[str, Any]) -> None:
+    """Handle chat stop requests via WebSocket. TODO: Fix this to work and be generic."""
+    chat_id = data.get('chat_id')
+    chat_type = data.get('chat_type', 'assistant')  # Default to assistant for backward compatibility
+    
+    if chat_id:
+        room_name = f"{chat_type}_{chat_id}"
+        await sio.emit('chat_stopped', {
+            'chat_id': str(chat_id),
+            'chat_type': chat_type
+        }, room=sid)
         if chat_id in active_connections:
             del active_connections[chat_id]
         logger.info(f"Client {sid} left {chat_type} chat {chat_id}")

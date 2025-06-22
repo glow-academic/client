@@ -60,6 +60,7 @@ import {
   PanelRightClose,
   PanelRightOpen,
   Send,
+  Square,
   Table,
   Users,
 } from "lucide-react";
@@ -132,6 +133,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // WebSocket state
   const [isConnected, setIsConnected] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -760,6 +762,41 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       setIsSendingMessage(false);
     });
 
+    socket.on(
+      "chat_stopped",
+      (data: { chat_id: string; chat_type: string; message: string }) => {
+        if (data.chat_id === currentChat?.id) {
+          setIsSendingMessage(false);
+          setIsStoppingMessage(false);
+          toast.success(data.message || "Chat stopped successfully");
+        }
+      }
+    );
+
+    socket.on(
+      "message_cancelled",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        final_content: string;
+      }) => {
+        // Update the cancelled message with its final content
+        queryClient.setQueryData(
+          ["simulationMessages", data.chat_id],
+          (old: SimulationMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.final_content, completed: true }
+                : msg
+            );
+          }
+        );
+
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
+    );
+
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
       logInfo(`Joined ${data.chat_type} chat: ${data.chat_id}`);
     });
@@ -768,7 +805,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [queryClient]);
+  }, [queryClient, currentChat?.id]);
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
@@ -824,6 +861,35 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     } catch (err) {
       toast.error(`Failed to send message: ${err}`);
       setIsSendingMessage(false);
+    }
+  };
+
+  // Stop message function
+  const handleStopMessage = async () => {
+    if (!currentChat || !socketRef.current || isStoppingMessage) return;
+
+    setIsStoppingMessage(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("chat_id", currentChat.id);
+
+      const response = await fetch(
+        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/stop`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // The WebSocket event will handle state updates
+    } catch (error) {
+      toast.error(`Failed to stop message: ${error}`);
+      setIsStoppingMessage(false);
     }
   };
 
@@ -1749,15 +1815,33 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               <Button
                                 type="submit"
                                 disabled={
-                                  !newMessage.trim() ||
-                                  isSendingMessage ||
-                                  (simulation?.timeLimit ? !isActive : false)
+                                  isSendingMessage
+                                    ? isStoppingMessage
+                                    : !newMessage.trim() ||
+                                      (simulation?.timeLimit
+                                        ? !isActive
+                                        : false)
                                 }
                                 data-testid="send-button"
                                 className="min-h-[40px] h-[40px] px-4"
+                                variant={
+                                  isSendingMessage ? "destructive" : "default"
+                                }
+                                onClick={
+                                  isSendingMessage
+                                    ? handleStopMessage
+                                    : undefined
+                                }
                               >
                                 {isSendingMessage ? (
-                                  <LoadingDots />
+                                  isStoppingMessage ? (
+                                    <LoadingDots />
+                                  ) : (
+                                    <>
+                                      <Square className="h-4 w-4 mr-2" />
+                                      Stop
+                                    </>
+                                  )
                                 ) : (
                                   <>
                                     <Send className="h-4 w-4 mr-2" />
@@ -1812,15 +1896,30 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               <Button
                                 type="submit"
                                 disabled={
-                                  !newMessage.trim() ||
-                                  isSendingMessage ||
-                                  (simulation?.timeLimit ? !isActive : false)
+                                  isSendingMessage
+                                    ? isStoppingMessage
+                                    : !newMessage.trim() ||
+                                      (simulation?.timeLimit
+                                        ? !isActive
+                                        : false)
                                 }
                                 data-testid="send-button"
                                 className="min-h-[40px] h-[40px] px-3"
+                                variant={
+                                  isSendingMessage ? "destructive" : "default"
+                                }
+                                onClick={
+                                  isSendingMessage
+                                    ? handleStopMessage
+                                    : undefined
+                                }
                               >
                                 {isSendingMessage ? (
-                                  <LoadingDots />
+                                  isStoppingMessage ? (
+                                    <LoadingDots />
+                                  ) : (
+                                    <Square className="h-4 w-4" />
+                                  )
                                 ) : (
                                   <Send className="h-4 w-4" />
                                 )}

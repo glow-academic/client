@@ -13,7 +13,8 @@ from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.collection.simulation import run_simulation_agent
+from app.services.agents.collection.simulation import (cancel_simulation_run,
+                                                       run_simulation_agent)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse
@@ -27,6 +28,55 @@ def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
     return get_socketio_instance()
+
+
+@router.post("/stop")
+async def stop_simulation_run(
+    chat_id: uuid.UUID = Form(...),
+    session: Session = Depends(get_session),
+) -> JSONResponse:
+    """
+    Stop an active simulation run.
+    """
+    try:
+        # Verify the chat exists
+        chat = session.exec(
+            select(SimulationChats).where(SimulationChats.id == chat_id)
+        ).one_or_none()
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        
+        # Attempt to cancel the simulation run
+        success = cancel_simulation_run(chat_id)
+        
+        if success:
+            logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
+            
+            # Emit stop signal via WebSocket using unified function
+            from app.main import emit_chat_stopped
+            await emit_chat_stopped(str(chat_id), "simulation", "Simulation run cancelled successfully")
+            
+            return JSONResponse({
+                "success": True,
+                "message": "Simulation run cancelled successfully"
+            })
+        else:
+            logger.warning(f"No active simulation run found for chat {chat_id}")
+            return JSONResponse(
+                status_code=404,
+                content={
+                    "success": False,
+                    "message": "No active simulation run found"
+                }
+            )
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error stopping simulation: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to stop simulation: {str(e)}"
+        )
 
 @router.post("/start")
 async def start_attempt(
@@ -263,34 +313,63 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
 
         # 5. Stream the assistant response
         accumulated_content = ""
-        async for token in run_simulation_agent(chat_id, message, db_session):
-            # Regular content token (simulations don't support tool calls)
-            accumulated_content += token
-            
-            # Update the database with accumulated content
-            assistant_message.content = accumulated_content
-            db_session.add(assistant_message)
-            db_session.commit()
-            
-            # Emit token update to connected clients
-            await sio_instance.emit('message_token', {
-                'message_id': str(assistant_message.id),
-                'chat_id': str(chat_id),
-                'token': token,
-                'accumulated_content': accumulated_content
-            }, room=f"simulation_{chat_id}")
+        cancelled = False
+        
+        try:
+            async for token in run_simulation_agent(chat_id, message, db_session):
+                # Regular content token (simulations don't support tool calls)
+                accumulated_content += token
+                
+                # Update the database with accumulated content
+                assistant_message.content = accumulated_content
+                db_session.add(assistant_message)
+                db_session.commit()
+                
+                # Emit token update to connected clients
+                await sio_instance.emit('message_token', {
+                    'message_id': str(assistant_message.id),
+                    'chat_id': str(chat_id),
+                    'token': token,
+                    'accumulated_content': accumulated_content
+                }, room=f"simulation_{chat_id}")
+        except Exception as e:
+            if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                # Handle cancellation gracefully
+                cancelled = True
+                logger.info(f"Simulation run for chat {chat_id} was cancelled")
+                
+                # Update message content with cancellation notice
+                if not accumulated_content.strip():
+                    accumulated_content = "[Simulation cancelled by user]"
+                else:
+                    accumulated_content += "\n\n[Simulation cancelled by user]"
+                
+                assistant_message.content = accumulated_content
+                db_session.add(assistant_message)
+                db_session.commit()
+                
+                # Emit cancellation signal
+                await sio_instance.emit('message_cancelled', {
+                    'message_id': str(assistant_message.id),
+                    'chat_id': str(chat_id),
+                    'final_content': accumulated_content
+                }, room=f"simulation_{chat_id}")
+            else:
+                # Re-raise other exceptions
+                raise e
         
         # 6. Mark as completed
         assistant_message.completed = True
         db_session.add(assistant_message)
         db_session.commit()
         
-        # 7. Emit completion signal
-        await sio_instance.emit('message_complete', {
-            'message_id': str(assistant_message.id),
-            'chat_id': str(chat_id),
-            'final_content': accumulated_content
-        }, room=f"simulation_{chat_id}")
+        # 7. Emit completion signal (only if not cancelled)
+        if not cancelled:
+            await sio_instance.emit('message_complete', {
+                'message_id': str(assistant_message.id),
+                'chat_id': str(chat_id),
+                'final_content': accumulated_content
+            }, room=f"simulation_{chat_id}")
         
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")

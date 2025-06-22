@@ -1,6 +1,6 @@
 import os
 import uuid
-from typing import AsyncGenerator, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
 import PyPDF2
 from agents import Runner, trace
@@ -54,7 +54,18 @@ async def run_simulation_agent(
         raise ValueError(f"Chat not found with ID: {chat_id}")
 
 
-
+def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
+    """
+    Cancel an active simulation run using unified tracking.
+    
+    Args:
+        chat_id: The ID of the chat session to cancel
+        
+    Returns:
+        bool: True if the run was found and cancelled, False otherwise
+    """
+    from app.main import cancel_active_run
+    return cancel_active_run(str(chat_id))
 
 
 async def _handle_simulation_chat(
@@ -150,16 +161,35 @@ async def _handle_simulation_chat(
         )
         trace_id = chat_trace.trace_id
 
+    # Store the result in active runs for potential cancellation using unified tracking
+    from app.main import store_active_run
+    chat_id_str = str(chat.id)
+    store_active_run(chat_id_str, result)
+
     # update the trace id to the chat for future reference, if it was orginally None
     if chat.trace_id is None:
         chat.trace_id = trace_id
         session.add(chat)
         session.commit()
 
-    # Process streaming events
-    async for event in result.stream_events():
-        if event.type == "raw_response_event":
-            if isinstance(event.data, ResponseTextDeltaEvent):
-                chunk = event.data.delta
-                yield chunk
+    try:
+        # Process streaming events
+        async for event in result.stream_events():
+            if event.type == "raw_response_event":
+                if isinstance(event.data, ResponseTextDeltaEvent):
+                    chunk = event.data.delta
+                    yield chunk
+    except Exception as e:
+        # Handle cancellation or other errors
+        if "cancelled" in str(e).lower():
+            # This is expected when the run is cancelled
+            pass
+        else:
+            # Re-raise other exceptions
+            raise e
+    finally:
+        # Clean up the active run using unified tracking
+        from app.main import active_runs
+        if chat_id_str in active_runs:
+            del active_runs[chat_id_str]
 

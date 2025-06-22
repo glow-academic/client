@@ -7,7 +7,7 @@ from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import (Agents, AssistantChats, AssistantMessages, Models,
-                        Providers)
+                        Profiles, Providers)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
@@ -62,6 +62,19 @@ async def run_assistant_agent(
         raise ValueError(f"Chat not found with ID: {chat_id}")
 
 
+def cancel_assistant_run(chat_id: uuid.UUID) -> bool:
+    """
+    Cancel an active assistant run using unified tracking.
+    
+    Args:
+        chat_id: The ID of the chat session to cancel
+        
+    Returns:
+        bool: True if the run was found and cancelled, False otherwise
+    """
+    from app.main import cancel_active_run
+    return cancel_active_run(str(chat_id))
+
 
 async def _handle_assistant_chat(
     chat: AssistantChats, mcp_servers: list[MCPServer], session: Session
@@ -74,6 +87,12 @@ async def _handle_assistant_chat(
         raise ValueError("Assistant agent not found")
 
     input_items: list[TResponseInputItem] = []
+
+    # add the user profile to the input items
+    input_items.append({
+        "role": "user",
+        "content": f"The following is the user's profile ID: {chat.profile_id}"
+    })
 
     # Get all the messages for the chat_id, including the new one, order by created_at
     messages = session.exec(
@@ -117,16 +136,35 @@ async def _handle_assistant_chat(
         )
         trace_id = chat_trace.trace_id
 
+    # Store the result in active runs for potential cancellation using unified tracking
+    from app.main import store_active_run
+    chat_id_str = str(chat.id)
+    store_active_run(chat_id_str, result)
+
     # update the trace id to the chat for future reference, if it was orginally None
     if chat.trace_id is None:
         chat.trace_id = trace_id
         session.add(chat)
         session.commit()
 
-    # Process streaming events
-    async for event in result.stream_events():
-        if event.type == "raw_response_event":
-            if isinstance(event.data, ResponseTextDeltaEvent):
-                chunk = event.data.delta
-                yield chunk
+    try:
+        # Process streaming events
+        async for event in result.stream_events():
+            if event.type == "raw_response_event":
+                if isinstance(event.data, ResponseTextDeltaEvent):
+                    chunk = event.data.delta
+                    yield chunk
+    except Exception as e:
+        # Handle cancellation or other errors
+        if "cancelled" in str(e).lower():
+            # This is expected when the run is cancelled
+            pass
+        else:
+            # Re-raise other exceptions
+            raise e
+    finally:
+        # Clean up the active run using unified tracking
+        from app.main import active_runs
+        if chat_id_str in active_runs:
+            del active_runs[chat_id_str]
 

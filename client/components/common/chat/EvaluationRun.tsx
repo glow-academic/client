@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 
 // Icons
-import { ChevronDown, Clock, Play } from "lucide-react";
+import { ChevronDown, Clock, Play, Square } from "lucide-react";
 
 // Tooltip
 import {
@@ -92,6 +92,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [isRunningEval, setIsRunningEval] = useState(false);
+  const [isStoppingEval, setIsStoppingEval] = useState(false);
   const [aiConversationData, setAiConversationData] = useState<
     ConversationData[]
   >([]);
@@ -347,6 +348,17 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
       logInfo(`Joined ${data.chat_type} chat: ${data.chat_id}`);
     });
+
+    socket.on(
+      "chat_stopped",
+      (data: { chat_id: string; chat_type: string; message: string }) => {
+        if (data.chat_type === "eval") {
+          setIsRunningEval(false);
+          setIsStoppingEval(false);
+          toast.success(data.message || "Evaluation stopped successfully");
+        }
+      }
+    );
 
     return () => {
       socket.disconnect();
@@ -647,20 +659,53 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      await response.json();
-      toast.success("Evaluation started successfully");
+      // Join the WebSocket room for this eval run
+      if (socketRef.current && isConnected) {
+        socketRef.current.emit("join_chat", {
+          chat_id: evalRun.id,
+          chat_type: "eval",
+        });
+      }
 
       // The response will be handled via WebSocket events
-      // so we don't need to process the response here
     } catch (error) {
       toast.error(
         `Failed to run evaluation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       logError("Error running evaluation:", error as Error);
       setIsRunningEval(false);
+    }
+  };
+
+  // Stop all evaluation chats in this run
+  const stopAllEvaluationChats = async () => {
+    if (!evalRun?.id || isStoppingEval) return;
+
+    setIsStoppingEval(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("eval_run_id", evalRun.id);
+
+      const response = await fetch(
+        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/stop/all`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // The WebSocket event will handle state updates
+    } catch (error) {
+      toast.error(`Failed to stop all evaluations: ${error}`);
+      setIsStoppingEval(false);
     }
   };
 
@@ -728,7 +773,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                   {/* Show Rubric Toggle */}
 
                   <div className="flex items-center gap-4">
-                    {/* Run Evaluation Button */}
+                    {/* Run/Stop Evaluation Button */}
                     {!isRunningEval && !selectedChat?.completed && (
                       <Button
                         onClick={startEvaluationRun}
@@ -741,8 +786,26 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                       </Button>
                     )}
 
-                    {/* Running Status */}
+                    {/* Stop Evaluation Button */}
                     {isRunningEval && (
+                      <Button
+                        onClick={stopAllEvaluationChats}
+                        variant="destructive"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        disabled={isStoppingEval}
+                      >
+                        {isStoppingEval ? (
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          <Square className="h-4 w-4" />
+                        )}
+                        {isStoppingEval ? "Stopping..." : "Stop Evaluation"}
+                      </Button>
+                    )}
+
+                    {/* Running Status */}
+                    {isRunningEval && !isStoppingEval && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         Running evaluation...

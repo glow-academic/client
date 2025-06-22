@@ -9,12 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
-import { Send } from "lucide-react";
+import { Send, Square } from "lucide-react";
 import { useState } from "react";
 
 export default function ChatInput() {
   const [message, setMessage] = useState("");
-  const { sendMessage, isSendingMessage, currentChatId } = useChat();
+  const {
+    sendMessage,
+    stopMessage,
+    isSendingMessage,
+    isStoppingMessage,
+    currentChatId,
+  } = useChat();
   const { effectiveRole } = useRole();
 
   // Only show for instructor, instructional, or admin roles
@@ -29,6 +35,11 @@ export default function ChatInput() {
     const messageToSend = message.trim();
     setMessage("");
     await sendMessage(messageToSend);
+  };
+
+  const handleStop = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await stopMessage();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -47,7 +58,10 @@ export default function ChatInput() {
     : "Start a conversation with the assistant...";
 
   return (
-    <form onSubmit={handleSubmit} className="p-3">
+    <form
+      onSubmit={isSendingMessage ? handleStop : handleSubmit}
+      className="p-3"
+    >
       <div className="flex gap-2">
         <Textarea
           value={message}
@@ -58,14 +72,26 @@ export default function ChatInput() {
           className="flex-1 resize-none min-h-[30px] max-h-[100px]"
           rows={1}
         />
-        <Button
-          type="submit"
-          disabled={!message.trim() || isSendingMessage}
-          size="default"
-          className="shrink-0"
-        >
-          <Send className="h-4 w-4" />
-        </Button>
+        {isSendingMessage ? (
+          <Button
+            type="submit"
+            disabled={isStoppingMessage}
+            size="default"
+            className="shrink-0"
+            variant="destructive"
+          >
+            <Square className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button
+            type="submit"
+            disabled={!message.trim()}
+            size="default"
+            className="shrink-0"
+          >
+            <Send className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </form>
   );

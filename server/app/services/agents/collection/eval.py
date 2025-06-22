@@ -1,4 +1,3 @@
-
 import uuid
 from typing import AsyncGenerator, Optional
 
@@ -49,7 +48,18 @@ async def run_eval_agent(
         raise ValueError(f"Chat not found with ID: {chat_id}")
 
 
-
+def cancel_eval_run(chat_id: uuid.UUID) -> bool:
+    """
+    Cancel an active eval run using unified tracking.
+    
+    Args:
+        chat_id: The ID of the chat session to cancel
+        
+    Returns:
+        bool: True if the run was found and cancelled, False otherwise
+    """
+    from app.main import cancel_active_run
+    return cancel_active_run(str(chat_id))
 
 
 async def _handle_eval_chat(
@@ -166,23 +176,41 @@ async def _handle_eval_chat(
             )
         trace_id = chat_trace.trace_id
     
+    # Store the result in active runs for potential cancellation using unified tracking
+    from app.main import store_active_run
+    chat_id_str = str(chat.id)
+    store_active_run(chat_id_str, result)
+    
     # update the trace id to the chat for future reference, if it was orginally None
     if chat.trace_id is None:
         chat.trace_id = trace_id
         session.add(chat)
         session.commit()
 
+    try:
+        # Process streaming events
+        full_response = ""
+        async for event in result.stream_events():
+            if event.type == "raw_response_event":
+                if isinstance(event.data, ResponseTextDeltaEvent):
+                    chunk = event.data.delta
+                    full_response += chunk
+                    yield chunk
 
-    # Process streaming events
-    full_response = ""
-    async for event in result.stream_events():
-        if event.type == "raw_response_event":
-            if isinstance(event.data, ResponseTextDeltaEvent):
-                chunk = event.data.delta
-                full_response += chunk
-                yield chunk
-
-    # Update the message with the full response
-    message.content = full_response
-    session.add(message)
-    session.commit()
+        # Update the message with the full response
+        message.content = full_response
+        session.add(message)
+        session.commit()
+    except Exception as e:
+        # Handle cancellation or other errors
+        if "cancelled" in str(e).lower():
+            # This is expected when the run is cancelled
+            pass
+        else:
+            # Re-raise other exceptions
+            raise e
+    finally:
+        # Clean up the active run using unified tracking
+        from app.main import active_runs
+        if chat_id_str in active_runs:
+            del active_runs[chat_id_str]
