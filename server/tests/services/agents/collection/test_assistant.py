@@ -31,3 +31,17 @@ class TestRun_Assistant_Agent:
         # TODO: Implement error test for run_assistant_agent
         assert False, "IMPLEMENT: Error test for run_assistant_agent"
 
+
+class TestCancel_Assistant_Run:
+    """Tests for cancel_assistant_run function."""
+    
+    def test_cancel_assistant_run_success(self):
+        """Test successful cancel_assistant_run execution."""
+        # TODO: Implement test for cancel_assistant_run
+        assert False, "IMPLEMENT: Test for cancel_assistant_run"
+    
+    def test_cancel_assistant_run_error(self):
+        """Test cancel_assistant_run error handling."""
+        # TODO: Implement error test for cancel_assistant_run
+        assert False, "IMPLEMENT: Error test for cancel_assistant_run"
+

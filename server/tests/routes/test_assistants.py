@@ -25,6 +25,20 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
+class TestStop_Assistant_Run:
+    """Tests for stop_assistant_run endpoint."""
+    
+    def test_stop_assistant_run_success(self, client):
+        """Test successful stop_assistant_run request."""
+        # TODO: Implement test for stop_assistant_run
+        assert False, "IMPLEMENT: Test for stop_assistant_run"
+    
+    def test_stop_assistant_run_error(self, client):
+        """Test stop_assistant_run error handling."""
+        # TODO: Implement error test for stop_assistant_run
+        assert False, "IMPLEMENT: Error test for stop_assistant_run"
+
+
 class TestStart_Chat:
     """Tests for start_chat endpoint."""
     

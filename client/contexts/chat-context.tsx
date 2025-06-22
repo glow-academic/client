@@ -152,6 +152,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
         completed: boolean;
         created_at: string;
       }) => {
+        logInfo(
+          `Received new_message event: ${data.role} message for chat ${data.chat_id}`
+        );
         // Update the messages cache with new message
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
@@ -181,6 +184,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
     );
 
     socket.on("title_updated", (data: { chat_id: string; title: string }) => {
+      logInfo(
+        `Received title_updated event: ${data.title} for chat ${data.chat_id}`
+      );
       // Update the chat title in the cache
       queryClient.setQueryData(
         ["assistantChat", data.chat_id],
@@ -211,6 +217,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
         token: string;
         accumulated_content: string;
       }) => {
+        logInfo(
+          `Received message_token: "${data.token}" for message ${data.message_id}`
+        );
         // Update the specific message with streaming content
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
@@ -291,8 +300,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }
     );
 
-    socket.on("joined_chat", (data: { chat_id: string }) => {
-      logInfo(`Joined chat: ${data.chat_id}`);
+    socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
+      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`);
     });
 
     socket.on(
@@ -377,12 +386,18 @@ export function ChatProvider({ children }: ChatProviderProps) {
     if (!socketRef.current || !isConnected) return;
 
     if (currentChatId) {
-      socketRef.current.emit("join_chat", { chat_id: currentChatId });
+      socketRef.current.emit("join_chat", {
+        chat_id: currentChatId,
+        chat_type: "assistant",
+      });
     }
 
     return () => {
       if (currentChatId && socketRef.current) {
-        socketRef.current.emit("leave_chat", { chat_id: currentChatId });
+        socketRef.current.emit("leave_chat", {
+          chat_id: currentChatId,
+          chat_type: "assistant",
+        });
       }
     };
   }, [currentChatId, isConnected]);

@@ -31,3 +31,17 @@ class TestRun_Simulation_Agent:
         # TODO: Implement error test for run_simulation_agent
         assert False, "IMPLEMENT: Error test for run_simulation_agent"
 
+
+class TestCancel_Simulation_Run:
+    """Tests for cancel_simulation_run function."""
+    
+    def test_cancel_simulation_run_success(self):
+        """Test successful cancel_simulation_run execution."""
+        # TODO: Implement test for cancel_simulation_run
+        assert False, "IMPLEMENT: Test for cancel_simulation_run"
+    
+    def test_cancel_simulation_run_error(self):
+        """Test cancel_simulation_run error handling."""
+        # TODO: Implement error test for cancel_simulation_run
+        assert False, "IMPLEMENT: Error test for cancel_simulation_run"
+

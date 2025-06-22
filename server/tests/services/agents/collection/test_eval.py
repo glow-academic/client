@@ -31,3 +31,17 @@ class TestRun_Eval_Agent:
         # TODO: Implement error test for run_eval_agent
         assert False, "IMPLEMENT: Error test for run_eval_agent"
 
+
+class TestCancel_Eval_Run:
+    """Tests for cancel_eval_run function."""
+    
+    def test_cancel_eval_run_success(self):
+        """Test successful cancel_eval_run execution."""
+        # TODO: Implement test for cancel_eval_run
+        assert False, "IMPLEMENT: Test for cancel_eval_run"
+    
+    def test_cancel_eval_run_error(self):
+        """Test cancel_eval_run error handling."""
+        # TODO: Implement error test for cancel_eval_run
+        assert False, "IMPLEMENT: Error test for cancel_eval_run"
+

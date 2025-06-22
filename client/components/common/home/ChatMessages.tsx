@@ -111,21 +111,6 @@ export default function ChatMessages() {
     );
   }
 
-  if (messages && messages.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="text-center space-y-2">
-          {/* <div className="flex justify-center mb-2">
-            <ConnectionStatus isConnected={isConnected} />
-          </div> */}
-          <p className="text-sm text-muted-foreground">
-            Chat started! Send a message to begin the conversation.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // Sort messages by creation time
   const sortedMessages = [...(messages || [])].sort(
     (a: AssistantMessage, b: AssistantMessage) =>

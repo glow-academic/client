@@ -37,57 +37,6 @@ client_url = os.getenv("CLIENT_URL")
 # Store active chat connections
 active_connections: Dict[str, str] = {}
 
-# Create Socket.IO server instance immediately
-sio = socketio.AsyncServer(
-    cors_allowed_origins=[client_url],
-    cors_credentials=True,
-    logger=False,
-    engineio_logger=False,
-    async_mode='asgi'
-)
-
-
-
-@sio.event  # type: ignore
-async def connect(sid: str, environ: Any, auth: Any) -> bool:
-    """Handle WebSocket connection"""
-    logger.info(f"Client connected: {sid}")
-    return True
-
-@sio.event  # type: ignore
-async def disconnect(sid: str) -> None:
-    """Handle WebSocket disconnection"""
-    logger.info(f"Client disconnected: {sid}")
-    # Remove from active connections
-    for chat_id, connection_sid in list(active_connections.items()):
-        if connection_sid == sid:
-            del active_connections[chat_id]
-            break
-
-@sio.event  # type: ignore
-async def join_chat(sid: str, data: Dict[str, Any]) -> None:
-    """Join a specific chat room for real-time updates"""
-    chat_id = data.get('chat_id')
-    if chat_id:
-        await sio.enter_room(sid, f"assistant_{chat_id}")
-        active_connections[chat_id] = sid
-        logger.info(f"Client {sid} joined assistant chat {chat_id}")
-        await sio.emit('joined_chat', {'chat_id': chat_id}, room=sid)
-
-@sio.event  # type: ignore
-async def leave_chat(sid: str, data: Dict[str, Any]) -> None:
-    """Leave a specific chat room"""
-    chat_id = data.get('chat_id')
-    if chat_id:
-        await sio.leave_room(sid, f"assistant_{chat_id}")
-        if chat_id in active_connections:
-            del active_connections[chat_id]
-        logger.info(f"Client {sid} left assistant chat {chat_id}")
-
-def get_socketio_app() -> socketio.AsyncServer:
-    """Get the Socket.IO server instance"""
-    return sio
-
 def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
