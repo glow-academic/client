@@ -19,19 +19,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
-import { Minimize2, Plus, X } from "lucide-react";
+import { Edit, Minimize2, X } from "lucide-react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
-import {
-  TooltipProvider,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const {
@@ -62,9 +62,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   }
 
   const handleChatSelect = (value: string) => {
-    if (value === "new") {
-      startBlankChat();
-    } else {
+    if (value !== "new") {
       selectChat(value);
     }
   };
@@ -92,12 +90,6 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">
-                  <div className="flex items-center gap-2">
-                    <Plus className="h-4 w-4" />
-                    <span>New Chat</span>
-                  </div>
-                </SelectItem>
                 {pastChats && pastChats.length > 0 && (
                   <>
                     <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
@@ -121,6 +113,21 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={startBlankChat}
+                    className="h-8"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>New Chat</p>
+                </TooltipContent>
+              </Tooltip>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

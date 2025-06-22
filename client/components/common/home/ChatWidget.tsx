@@ -18,7 +18,7 @@ import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
-import { Maximize2, Plus, X } from "lucide-react";
+import { Edit, Maximize2, X } from "lucide-react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
@@ -51,9 +51,7 @@ export default function ChatWidget() {
   }
 
   const handleChatSelect = (value: string) => {
-    if (value === "new") {
-      startBlankChat();
-    } else {
+    if (value !== "new") {
       selectChat(value);
     }
   };
@@ -80,12 +78,6 @@ export default function ChatWidget() {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="new">
-                <div className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  <span>New Chat</span>
-                </div>
-              </SelectItem>
               {pastChats && pastChats.length > 0 && (
                 <>
                   <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
@@ -108,6 +100,14 @@ export default function ChatWidget() {
           </Select>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={startBlankChat}
+            className="h-6 w-6 p-0"
+          >
+            <Edit className="h-3 w-3" />
+          </Button>
           <Button
             variant="ghost"
             size="sm"

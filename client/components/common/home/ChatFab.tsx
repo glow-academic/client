@@ -12,7 +12,7 @@ import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function ChatFab() {
-  const { openWidget, uiState, startBlankChat } = useChat();
+  const { openWidget, uiState } = useChat();
   const { effectiveRole } = useRole();
 
   // Only show for instructor, instructional, or admin roles
@@ -29,7 +29,6 @@ export default function ChatFab() {
   }
 
   const handleClick = () => {
-    startBlankChat(); // Start with a blank chat
     openWidget();
   };
 
