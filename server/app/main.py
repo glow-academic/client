@@ -16,8 +16,7 @@ from app.routes.evals import router as evals_router
 from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
 from app.routes.simulations import router as simulations_router
-from app.services.mcp.database import db_server
-from app.services.mcp.server import generic
+from app.services.mcp.server import server
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -28,8 +27,7 @@ from sqlmodel import Session, select
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
-        await stack.enter_async_context(db_server.session_manager.run())
-        await stack.enter_async_context(generic.session_manager.run())
+        await stack.enter_async_context(server.session_manager.run())
         yield
 
 
@@ -54,8 +52,7 @@ fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 fastapi_app.include_router(assistants_router, prefix="/assistants")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
-fastapi_app.mount("/mcp/db", db_server.streamable_http_app(), name="db_server")
-fastapi_app.mount("/mcp/domain", generic.streamable_http_app(), name="domain_api")
+fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
 # Mount Socket.IO app AFTER everything else
 sio_app = get_socketio_app()

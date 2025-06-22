@@ -48,17 +48,12 @@ async def run_assistant_agent(
         
         async with (
             MCPServerStreamableHttp(
-                name="Postgres-DB",
-                params={"url": f"{base_url}/mcp/db/mcp"},
-                cache_tools_list=True,
-            ) as db_server,
-            MCPServerStreamableHttp(
-                name="Domain-API",
-                params={"url": f"{base_url}/mcp/domain/mcp"},
+                name="MCP Server",
+                params={"url": f"{base_url}/domain/mcp"},
                 cache_tools_list=True,
             ) as domain_server
         ):
-            mcp_servers = [db_server, domain_server]
+            mcp_servers = [domain_server]
             async for token in _handle_assistant_chat(
                 assistant_chat, mcp_servers, session
             ):

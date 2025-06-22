@@ -1,9 +1,9 @@
-# generic_server.py  — "Domain-API" MCP server
+# server_server.py  — "Domain-API" MCP server
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
-from app.db import get_session
+from app.db import engine, get_session
 from app.models import (Agents, Classes, Cohorts, Components, Dashboards,
                         EvalChatFeedbacks, EvalChatGrades, EvalChats,
                         EvalMessages, EvalRuns, Profiles, Rubrics, Scenarios,
@@ -12,19 +12,56 @@ from app.models import (Agents, Classes, Cohorts, Components, Dashboards,
                         SimulationMessages, Simulations, StandardGroups,
                         Standards)
 from mcp.server.fastmcp import FastMCP
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import and_, or_, select
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Configure for stateless HTTP transport
-generic = FastMCP("Domain-API", stateless_http=True)
+server = FastMCP("Domain-API", stateless_http=True)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ✱ Database general changes
+# ─────────────────────────────────────────────────────────────────────────────
+
+@server.resource("schema://public")
+def list_schema() -> str:
+    """Return every table + column in the public schema."""
+    sql = """
+        SELECT table_name, column_name, data_type
+        FROM information_schema.columns
+        WHERE table_schema = 'public'
+        ORDER BY table_name, ordinal_position
+    """
+    with engine.connect() as conn:
+        rows = conn.execute(text(sql))
+        return "\n".join(f"{t}.{c} {d}" for t, c, d in rows)
+
+@server.tool()
+def query_data(sql: str) -> str:
+    """
+    Run *read-only* queries.  Reject anything that isn't SELECT/EXPLAIN.
+    Usage limits (e.g. row cap) keep the response small enough for the LLM.
+    """
+    lowered = sql.lstrip().lower()
+    if not lowered.startswith(("select", "explain")):
+        return "Error: only read-only queries are allowed."
+
+    try:
+        with engine.connect() as conn:
+            result = conn.execute(text(sql))
+            rows   = result.fetchmany(200)          # cap output
+            return "\n".join(str(r) for r in rows) or "↩️ (0 rows)"
+    except SQLAlchemyError as e:
+        return f"Error: {e}"
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NEW ✱ Dashboard-editing helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-@generic.tool()
+@server.tool()
 def update_component_layout(component_id: str, layout: Dict[str, Any]) -> str:
     """
     Overwrite the JSONB `layout` of a single `Components` row.
@@ -76,7 +113,7 @@ def update_component_layout(component_id: str, layout: Dict[str, Any]) -> str:
         raise Exception(f"Database error updating component layout: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def patch_dashboard_settings(
     profile_id: str,
     settings: Dict[str, Any]
@@ -90,7 +127,7 @@ def patch_dashboard_settings(
     2. Apply diff only to recognised columns.
     3. Commit & return the dashboard UUID.
 
-    *Write-side changes live in generic_server, never in db_server.*
+    *Write-side changes live in server_server, never in db_server.*
     """
     try:
         profile_uuid = uuid.UUID(profile_id)
@@ -162,7 +199,7 @@ def patch_dashboard_settings(
 # NEW ✱ Student / chat analytics helpers
 # ─────────────────────────────────────────────────────────────────────────────
 
-@generic.tool()
+@server.tool()
 def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
     """
     Aggregate everything about one student across simulations.
@@ -335,7 +372,7 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
 # NEW ✱ Search helpers (read-only; heavy joins live here, ad-hoc SQL stays in db_server)
 # ─────────────────────────────────────────────────────────────────────────────
 
-@generic.tool()
+@server.tool()
 def search_by_cohort(cohort_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Return high-level info scoped to one cohort:
@@ -441,7 +478,7 @@ def search_by_cohort(cohort_id: str, limit: int = 100) -> Dict[str, Any]:
         raise Exception(f"Database error searching by cohort: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def search_by_profile(profile_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Return a student-centric view:
@@ -578,7 +615,7 @@ def search_by_profile(profile_id: str, limit: int = 100) -> Dict[str, Any]:
         raise Exception(f"Database error searching by profile: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def search_by_class(class_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Summarise a class:
@@ -652,7 +689,7 @@ def search_by_class(class_id: str, limit: int = 100) -> Dict[str, Any]:
         raise Exception(f"Database error searching by class: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def search_by_simulation(simulation_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Drill into one simulation:
@@ -772,7 +809,7 @@ def search_by_simulation(simulation_id: str, limit: int = 100) -> Dict[str, Any]
         raise Exception(f"Database error searching by simulation: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def search_by_scenario(scenario_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Detail a scenario:
@@ -852,7 +889,7 @@ def search_by_scenario(scenario_id: str, limit: int = 100) -> Dict[str, Any]:
         raise Exception(f"Database error searching by scenario: {str(e)}")
 
 
-@generic.tool()
+@server.tool()
 def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Agent dashboard:
