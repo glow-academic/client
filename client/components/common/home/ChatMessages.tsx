@@ -115,9 +115,9 @@ export default function ChatMessages() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-2">
-          <div className="flex justify-center mb-2">
+          {/* <div className="flex justify-center mb-2">
             <ConnectionStatus isConnected={isConnected} />
-          </div>
+          </div> */}
           <p className="text-sm text-muted-foreground">
             Chat started! Send a message to begin the conversation.
           </p>
@@ -135,9 +135,9 @@ export default function ChatMessages() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
-        <div className="flex justify-end">
+        {/* <div className="flex justify-end">
           <ConnectionStatus isConnected={isConnected} />
-        </div>
+        </div> */}
 
         {sortedMessages.map((message: AssistantMessage) => {
           const messageWithTools = message as AssistantMessageWithTools;
