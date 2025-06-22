@@ -88,8 +88,9 @@ def get_socketio_app() -> socketio.AsyncServer:
     return sio
 
 def get_sio_instance() -> socketio.AsyncServer:
-    """Get the Socket.IO server instance for internal use"""
-    return sio
+    """Get the Socket.IO server instance from main.py"""
+    from app.main import get_socketio_instance
+    return get_socketio_instance()
 
 @router.post("/start")
 async def start_chat(
@@ -207,7 +208,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
             'content': message,
             'completed': True,
             'created_at': user_message.created_at.isoformat()
-        }, room=f"chat_{chat_id}")
+        }, room=f"assistant_{chat_id}")
         
         # 3. Create placeholder assistant message
         assistant_message = AssistantMessages(
@@ -228,7 +229,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
             'content': '',
             'completed': False,
             'created_at': assistant_message.created_at.isoformat()
-        }, room=f"chat_{chat_id}")
+        }, room=f"assistant_{chat_id}")
 
         logger.info(f"Processing message for chat {chat_id}")
 
@@ -261,7 +262,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         'message_id': str(assistant_message.id),
                         'chat_id': str(chat_id),
                         'tool_data': tool_call_data
-                    }, room=f"chat_{chat_id}")
+                    }, room=f"assistant_{chat_id}")
                     
                 except json.JSONDecodeError:
                     logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
@@ -277,7 +278,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         'message_id': str(assistant_message.id),
                         'chat_id': str(chat_id),
                         'tool_result': tool_result_data
-                    }, room=f"chat_{chat_id}")
+                    }, room=f"assistant_{chat_id}")
                     
                 except json.JSONDecodeError:
                     logger.error(f"Failed to parse tool result JSON: {tool_result_json}")
@@ -297,7 +298,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     'chat_id': str(chat_id),
                     'token': token,
                     'accumulated_content': accumulated_content
-                }, room=f"chat_{chat_id}")
+                }, room=f"assistant_{chat_id}")
         
         # 6. Mark as completed
         assistant_message.completed = True
@@ -309,7 +310,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
             'message_id': str(assistant_message.id),
             'chat_id': str(chat_id),
             'final_content': accumulated_content
-        }, room=f"chat_{chat_id}")
+        }, room=f"assistant_{chat_id}")
         
     except Exception as e:
         logger.error(f"Error in process_message_websocket: {str(e)}")
@@ -317,6 +318,6 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         await sio_instance.emit('message_error', {
             'chat_id': str(chat_id),
             'error': str(e)
-        }, room=f"chat_{chat_id}")
+        }, room=f"assistant_{chat_id}")
     finally:
         db_session.close()

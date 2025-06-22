@@ -103,11 +103,7 @@ async def _handle_simulation_chat(
                 input_items.append({"role": "user", "content": content})
 
     
-    # Add a new message with an empty response
-    message = SimulationMessages(chat_id=chat.id, type="query", content=input_text)
-    session.add(message)
-
-    # Get all the messages for the chat_id, including the new one, order by created_at
+    # Get all the messages for the chat_id, order by created_at
     messages = session.exec(
         select(SimulationMessages)
         .where(SimulationMessages.chat_id == chat.id)
@@ -161,17 +157,9 @@ async def _handle_simulation_chat(
         session.commit()
 
     # Process streaming events
-    full_response = ""
     async for event in result.stream_events():
         if event.type == "raw_response_event":
             if isinstance(event.data, ResponseTextDeltaEvent):
                 chunk = event.data.delta
-                full_response += chunk
                 yield chunk
-
-    # Update the message with the full response
-    message.type = "response"
-    message.content = full_response
-    session.add(message)
-    session.commit()
 

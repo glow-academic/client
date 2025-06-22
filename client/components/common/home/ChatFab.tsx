@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 export default function ChatFab() {
   const { openWidget, uiState, startBlankChat } = useChat();
@@ -19,7 +20,11 @@ export default function ChatFab() {
     effectiveRole
   );
 
-  if (!shouldShow || uiState !== "closed") {
+  // or if the currrent route is home/a/...
+  const pathname = usePathname();
+  const isHomeAssistant = pathname.startsWith("/home/a/");
+
+  if (!shouldShow || uiState !== "closed" || isHomeAssistant) {
     return null;
   }
 

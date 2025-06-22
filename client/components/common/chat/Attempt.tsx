@@ -14,6 +14,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 // UI Components
@@ -75,6 +76,7 @@ import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
+import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -126,6 +128,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     null
   );
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
+
+  // WebSocket state
+  const [isConnected, setIsConnected] = useState(false);
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -638,7 +645,151 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  // Updated streaming message handler from chat page
+  // WebSocket connection setup
+  useEffect(() => {
+    const socket = io(
+      process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000",
+      {
+        transports: ["websocket", "polling"],
+        autoConnect: true,
+        forceNew: true,
+        timeout: 5000,
+      }
+    );
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsConnected(true);
+      logInfo("WebSocket connected for simulation");
+    });
+
+    socket.on("disconnect", (reason: string) => {
+      setIsConnected(false);
+      logInfo(`WebSocket disconnected: ${reason}`);
+    });
+
+    socket.on("connect_error", (error: Error) => {
+      logError("WebSocket connection error:", error);
+      setIsConnected(false);
+    });
+
+    socket.on(
+      "new_message",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        role: string;
+        content: string;
+        completed: boolean;
+        created_at: string;
+      }) => {
+        // Update the messages cache with new message
+        queryClient.setQueryData(
+          ["messages", data.chat_id],
+          (old: SimulationMessage[] = []) => {
+            const exists = old.find((msg) => msg.id === data.message_id);
+            if (exists) return old;
+
+            const newMessage: SimulationMessage = {
+              id: data.message_id,
+              chatId: data.chat_id,
+              type: data.role === "user" ? "query" : "response",
+              content: data.content,
+              completed: data.completed,
+              createdAt: data.created_at,
+            };
+
+            return [...old, newMessage].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            );
+          }
+        );
+      }
+    );
+
+    socket.on(
+      "message_token",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        token: string;
+        accumulated_content: string;
+      }) => {
+        // Update the specific message with streaming content
+        queryClient.setQueryData(
+          ["messages", data.chat_id],
+          (old: SimulationMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.accumulated_content }
+                : msg
+            );
+          }
+        );
+      }
+    );
+
+    socket.on(
+      "message_complete",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        final_content: string;
+      }) => {
+        // Mark message as completed and update final content
+        queryClient.setQueryData(
+          ["messages", data.chat_id],
+          (old: SimulationMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.final_content, completed: true }
+                : msg
+            );
+          }
+        );
+
+        setIsSendingMessage(false);
+      }
+    );
+
+    socket.on("message_error", (data: { chat_id: string; error: string }) => {
+      toast.error(`Chat error: ${data.error}`);
+      setIsSendingMessage(false);
+    });
+
+    socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
+      logInfo(`Joined ${data.chat_type} chat: ${data.chat_id}`);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [queryClient]);
+
+  // Join/leave chat rooms when currentChat changes
+  useEffect(() => {
+    if (!socketRef.current || !isConnected || !currentChat?.id) return;
+
+    socketRef.current.emit("join_chat", {
+      chat_id: currentChat.id,
+      chat_type: "simulation",
+    });
+
+    return () => {
+      if (currentChat?.id && socketRef.current) {
+        socketRef.current.emit("leave_chat", {
+          chat_id: currentChat.id,
+          chat_type: "simulation",
+        });
+      }
+    };
+  }, [currentChat?.id, isConnected]);
+
+  // WebSocket-based message handler
   const handleSendMessage = async (
     e: React.FormEvent<HTMLFormElement> | null,
     initialMessage?: string
@@ -646,113 +797,33 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     if (e) e.preventDefault();
 
     const messageToSend = initialMessage || newMessage.trim();
-    if (!messageToSend || !currentChat) return;
+    if (!messageToSend || !currentChat || isSendingMessage) return;
 
     setNewMessage("");
-
-    /* ---------------- optimistic user bubble ---------------- */
-    const userMsg: SimulationMessage = {
-      id: `temp-${Date.now()}`,
-      type: "query",
-      content: messageToSend,
-      createdAt: new Date().toISOString(),
-      chatId: currentChat.id,
-      completed: false,
-    };
-
-    const aiMsg: SimulationMessage = {
-      id: `temp-ai-${Date.now()}`,
-      type: "response",
-      content: "",
-      createdAt: new Date().toISOString(),
-      chatId: currentChat.id,
-      completed: false,
-    };
-
-    queryClient.setQueryData(
-      ["messages", currentChat.id],
-      (old: SimulationMessage[] = []) => [...old, userMsg, aiMsg]
-    );
-
-    let accumulated = ""; // running buffer
-    let streaming = true; // gate for re-entry
-    const ctrl = new AbortController();
+    setIsSendingMessage(true);
 
     try {
-      /* --------------- kick off POST + SSE ------------------ */
       const formData = new FormData();
       formData.append("chat_id", currentChat.id);
-      formData.append("message", userMsg.content);
+      formData.append("message", messageToSend);
 
-      const res = await fetch(
+      const response = await fetch(
         `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/message`,
         {
           method: "POST",
-          headers: { Accept: "text/event-stream" },
-          cache: "no-cache",
           body: formData,
-          signal: ctrl.signal,
         }
       );
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const reader = res.body!.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-
-        /* consume complete SSE frames */
-        const parts = buffer.split("\n\n");
-        buffer = parts.pop()!; // keep partial chunk
-
-        for (const part of parts) {
-          if (!part.startsWith("data:")) continue;
-
-          const data = JSON.parse(part.slice(5)); // strip "data: "
-
-          if (data.text) {
-            accumulated += data.text;
-
-            /* immutable cache update */
-            queryClient.setQueryData(
-              ["messages", currentChat.id],
-              (old: SimulationMessage[] = []) =>
-                old.map((m) =>
-                  m.id === aiMsg.id ? { ...m, response: accumulated } : m
-                )
-            );
-          }
-
-          if (data.done || data.error) {
-            streaming = false;
-            await queryClient.invalidateQueries({
-              queryKey: ["messages", currentChat.id],
-            });
-          }
-        }
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
+
+      // The response will be handled via WebSocket events
+      // so we don't need to process the response here
     } catch (err) {
       toast.error(`Failed to send message: ${err}`);
-      queryClient.setQueryData(
-        ["messages", currentChat.id],
-        (old: SimulationMessage[] = []) =>
-          old.map((m) =>
-            m.id === aiMsg.id
-              ? {
-                  ...m,
-                  response: "⚠️ Error - please try again.",
-                }
-              : m
-          )
-      );
-    } finally {
-      if (streaming) ctrl.abort(); // ensure closure if unmount during stream
+      setIsSendingMessage(false);
     }
   };
 
@@ -1296,9 +1367,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     <div className="flex justify-start mb-3">
                                       <div className="max-w-[80%]">
                                         <div className="bg-muted rounded-lg p-3">
-                                          <Markdown>
-                                            {message.content}
-                                          </Markdown>
+                                          <Markdown>{message.content}</Markdown>
                                         </div>
                                       </div>
                                     </div>
@@ -1558,6 +1627,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   }
                                   disabled={
                                     currentChat?.completed ||
+                                    isSendingMessage ||
                                     (simulation?.timeLimit ? !isActive : false)
                                   }
                                 >
@@ -1680,13 +1750,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 type="submit"
                                 disabled={
                                   !newMessage.trim() ||
+                                  isSendingMessage ||
                                   (simulation?.timeLimit ? !isActive : false)
                                 }
                                 data-testid="send-button"
                                 className="min-h-[40px] h-[40px] px-4"
                               >
-                                <Send className="h-4 w-4 mr-2" />
-                                Send
+                                {isSendingMessage ? (
+                                  <LoadingDots />
+                                ) : (
+                                  <>
+                                    <Send className="h-4 w-4 mr-2" />
+                                    Send
+                                  </>
+                                )}
                               </Button>
                               <Button
                                 type="button"
@@ -1736,12 +1813,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 type="submit"
                                 disabled={
                                   !newMessage.trim() ||
+                                  isSendingMessage ||
                                   (simulation?.timeLimit ? !isActive : false)
                                 }
                                 data-testid="send-button"
                                 className="min-h-[40px] h-[40px] px-3"
                               >
-                                <Send className="h-4 w-4" />
+                                {isSendingMessage ? (
+                                  <LoadingDots />
+                                ) : (
+                                  <Send className="h-4 w-4" />
+                                )}
                               </Button>
                               <Button
                                 type="button"

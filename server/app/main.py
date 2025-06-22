@@ -1,6 +1,7 @@
 # server/app/main.py
 import contextlib
 import logging
+import os
 import platform
 import sys
 import time
@@ -9,7 +10,6 @@ from typing import Any, AsyncIterator, Generator
 import socketio  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
-from app.routes.assistants import get_socketio_app
 from app.routes.assistants import router as assistants_router
 from app.routes.documents import router as documents_router
 from app.routes.evals import router as evals_router
@@ -17,11 +17,74 @@ from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
 from app.routes.simulations import router as simulations_router
 from app.services.mcp.server import server
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlmodel import Session, select
 
+load_dotenv()
+
+# Get client URL from environment
+client_url = os.getenv("CLIENT_URL")
+
+# Store active chat connections
+active_connections: dict[str, str] = {}
+
+# Create Socket.IO server instance globally
+sio = socketio.AsyncServer(
+    cors_allowed_origins=[client_url],
+    cors_credentials=True,
+    logger=False,
+    engineio_logger=False,
+    async_mode='asgi'
+)
+
+@sio.event  # type: ignore
+async def connect(sid: str, environ: Any, auth: Any) -> bool:
+    """Handle WebSocket connection"""
+    logger.info(f"Client connected: {sid}")
+    return True
+
+@sio.event  # type: ignore
+async def disconnect(sid: str) -> None:
+    """Handle WebSocket disconnection"""
+    logger.info(f"Client disconnected: {sid}")
+    # Remove from active connections
+    for chat_id, connection_sid in list(active_connections.items()):
+        if connection_sid == sid:
+            del active_connections[chat_id]
+            break
+
+@sio.event  # type: ignore
+async def join_chat(sid: str, data: dict[str, Any]) -> None:
+    """Join a specific chat room for real-time updates"""
+    chat_id = data.get('chat_id')
+    chat_type = data.get('chat_type', 'assistant')  # Default to assistant for backward compatibility
+    
+    if chat_id:
+        room_name = f"{chat_type}_{chat_id}"
+        await sio.enter_room(sid, room_name)
+        active_connections[chat_id] = sid
+        logger.info(f"Client {sid} joined {chat_type} chat {chat_id}")
+        await sio.emit('joined_chat', {'chat_id': chat_id, 'chat_type': chat_type}, room=sid)
+
+@sio.event  # type: ignore
+async def leave_chat(sid: str, data: dict[str, Any]) -> None:
+    """Leave a specific chat room"""
+    chat_id = data.get('chat_id')
+    chat_type = data.get('chat_type', 'assistant')  # Default to assistant for backward compatibility
+    
+    if chat_id:
+        room_name = f"{chat_type}_{chat_id}"
+        await sio.leave_room(sid, room_name)
+        if chat_id in active_connections:
+            del active_connections[chat_id]
+        logger.info(f"Client {sid} left {chat_type} chat {chat_id}")
+
+def get_socketio_instance() -> socketio.AsyncServer:
+    """Get the global Socket.IO server instance"""
+    return sio
 
 # Create a combined lifespan to manage both session managers
 @contextlib.asynccontextmanager
@@ -29,7 +92,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         await stack.enter_async_context(server.session_manager.run())
         yield
-
 
 # Create FastAPI app with lifespan
 fastapi_app = FastAPI(title="GLOW API", on_startup=[init_db], lifespan=lifespan)
@@ -54,11 +116,8 @@ fastapi_app.include_router(assistants_router, prefix="/assistants")
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
 
-# Mount Socket.IO app AFTER everything else
-sio_app = get_socketio_app()
-
 # Create the combined ASGI app with Socket.IO
-app = socketio.ASGIApp(sio_app, fastapi_app, socketio_path="socket.io")
+app = socketio.ASGIApp(sio, fastapi_app, socketio_path="socket.io")
 
 # Configure logging - change this section
 logging.basicConfig(
