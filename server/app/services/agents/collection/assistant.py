@@ -13,6 +13,7 @@ from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
 from fastapi import Depends
 from openai.types.responses import ResponseTextDeltaEvent
+from sqlalchemy import desc
 from sqlmodel import Session, select
 
 load_dotenv()

@@ -216,9 +216,13 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
         # Get all simulation attempts for this profile
         attempts_stmt = select(SimulationAttempts).where(
             SimulationAttempts.profile_id == profile_uuid
-        ).order_by(desc(SimulationAttempts.created_at.isoformat()))
-        
+        )
+
+        # sort attempts by created_at
         attempts = session.exec(attempts_stmt).all()
+        attempts = list(attempts)
+        attempts = sorted(attempts, key=lambda x: x.created_at)
+
         attempts_data = []
         
         for attempt in attempts:
@@ -230,9 +234,12 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
             # Get simulation chats for this attempt
             chats_stmt = select(SimulationChats).where(
                 SimulationChats.attempt_id == attempt.id
-            ).order_by(desc(SimulationChats.created_at.isoformat()))
-            
+            )
+
+            # sort chats by created_at
             chats = session.exec(chats_stmt).all()
+            chats = list(chats)
+            chats = sorted(chats, key=lambda x: x.created_at)
             
             for chat in chats:
                 # Get scenario details
@@ -246,9 +253,13 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
                 # Get messages (limit to 50 most recent)
                 messages_stmt = select(SimulationMessages).where(
                     SimulationMessages.chat_id == chat.id
-                ).order_by(desc(SimulationMessages.created_at.isoformat())).limit(50)
+                )
                 
+                # sort messages by created_at
                 messages = session.exec(messages_stmt).all()
+                messages = list(messages)
+                messages = sorted(messages, key=lambda x: x.created_at)
+                
                 messages_data = [
                     {
                         "created_at": msg.created_at.isoformat() if msg.created_at else None,
@@ -507,9 +518,13 @@ def search_by_profile(profile_id: str, limit: int = 100) -> Dict[str, Any]:
         # Get simulation attempts with latest grades
         attempts_stmt = select(SimulationAttempts).where(
             SimulationAttempts.profile_id == profile_uuid
-        ).order_by(desc(SimulationAttempts.created_at.isoformat())).limit(limit)
-        
+        ).limit(limit)
+
+        # sort attempts by created_at
         attempts = session.exec(attempts_stmt).all()
+        attempts = list(attempts)
+        attempts = sorted(attempts, key=lambda x: x.created_at)
+        
         attempts_data = []
         
         for attempt in attempts:
@@ -520,9 +535,14 @@ def search_by_profile(profile_id: str, limit: int = 100) -> Dict[str, Any]:
             # Get latest chat and grade for this attempt
             chat_stmt = select(SimulationChats).where(
                 SimulationChats.attempt_id == attempt.id
-            ).order_by(desc(SimulationChats.created_at.isoformat()))
+            )
             
-            latest_chat = session.exec(chat_stmt).first()
+            # sort chats by created_at
+            chats = session.exec(chat_stmt).all()
+            chats = list(chats)
+            chats = sorted(chats, key=lambda x: x.created_at)
+            
+            latest_chat = chats[0]
             grade_data = {}
             
             if latest_chat:
@@ -890,8 +910,12 @@ def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
         # Get eval runs statistics
         eval_runs_stmt = select(EvalRuns).where(
             EvalRuns.agent_id == agent_uuid
-        ).order_by(desc(EvalRuns.created_at.isoformat())).limit(limit)
+        ).limit(limit)
+
+        # sort eval runs by created_at
         eval_runs = session.exec(eval_runs_stmt).all()
+        eval_runs = list(eval_runs)
+        eval_runs = sorted(eval_runs, key=lambda x: x.created_at)
         
         eval_runs_data = []
         total_evals = 0
@@ -902,8 +926,12 @@ def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
             eval_chats_stmt = select(EvalChats).where(
                 EvalChats.eval_run_id == eval_run.id
             )
+
+            # sort eval chats by created_at
             eval_chats = session.exec(eval_chats_stmt).all()
-            
+            eval_chats = list(eval_chats)
+            eval_chats = sorted(eval_chats, key=lambda x: x.created_at)
+
             run_total = 0
             run_passed = 0
             

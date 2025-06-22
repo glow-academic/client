@@ -1,3 +1,4 @@
+import logging
 import random
 from typing import List
 
@@ -5,6 +6,8 @@ from agents.items import TResponseInputItem
 from app.models import (Agents, AssistantMessages, EvalChats, EvalMessages,
                         Scenarios, SimulationChats, SimulationMessages)
 from sqlmodel import Session, select
+
+logger = logging.getLogger(__name__)
 
 
 def get_simulation_conversation_history(
@@ -70,12 +73,13 @@ def get_assistant_conversation_history(
     conversation_history: list[TResponseInputItem] = []
     
     for message in messages:
-        if message.role == "user":
+        if message.role == "user" and message.content:
             user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
             conversation_history.append(user_message_item)
-        if message.role == "assistant":
+        if message.role == "assistant" and message.content:
             assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
             conversation_history.append(assistant_message_item)
+    logger.info(f"Conversation history: {conversation_history}")
 
     return conversation_history
 

@@ -5,12 +5,17 @@ import json
 import logging
 import os
 import uuid
+import warnings
 from datetime import timezone
 from typing import Any, AsyncGenerator, Dict, Optional
 
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Suppress Pydantic serialization warnings from OpenAI SDK
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic")
 
 import socketio  # type: ignore
 from app.db import get_session
@@ -28,7 +33,10 @@ router = APIRouter()
 
 client_url = os.getenv("CLIENT_URL")
 
-# Create Socket.IO server instance
+# Store active chat connections
+active_connections: Dict[str, str] = {}
+
+# Create Socket.IO server instance immediately
 sio = socketio.AsyncServer(
     cors_allowed_origins=[client_url],
     cors_credentials=True,
@@ -37,8 +45,7 @@ sio = socketio.AsyncServer(
     async_mode='asgi'
 )
 
-# Store active chat connections
-active_connections: Dict[str, str] = {}
+
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
@@ -75,6 +82,14 @@ async def leave_chat(sid: str, data: Dict[str, Any]) -> None:
         if chat_id in active_connections:
             del active_connections[chat_id]
         logger.info(f"Client {sid} left chat {chat_id}")
+
+def get_socketio_app() -> socketio.AsyncServer:
+    """Get the Socket.IO server instance"""
+    return sio
+
+def get_sio_instance() -> socketio.AsyncServer:
+    """Get the Socket.IO server instance for internal use"""
+    return sio
 
 @router.post("/start")
 async def start_chat(
@@ -165,6 +180,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
     """
     Process a message and stream the response via WebSocket
     """
+    
     # Create a new session for this async operation
     from app.db import get_session
     db_session = next(get_session())
@@ -183,7 +199,8 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         db_session.refresh(user_message)
         
         # 2. Emit user message to connected clients
-        await sio.emit('new_message', {
+        sio_instance = get_sio_instance()
+        await sio_instance.emit('new_message', {
             'message_id': str(user_message.id),
             'chat_id': str(chat_id),
             'role': 'user',
@@ -204,7 +221,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         db_session.refresh(assistant_message)
         
         # 4. Emit placeholder assistant message
-        await sio.emit('new_message', {
+        await sio_instance.emit('new_message', {
             'message_id': str(assistant_message.id),
             'chat_id': str(chat_id),
             'role': 'assistant',
@@ -230,14 +247,16 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         chat_id=chat_id,
                         message_id=assistant_message.id,
                         tool_name=tool_call_data.get('name', 'unknown'),
-                        tool_type=tool_call_data.get('type', 'read')
+                        tool_type=tool_call_data.get('type', 'read'),
+                        tool_arguments=tool_call_data.get('arguments', {}),
+                        tool_result={}
                     )
                     db_session.add(tool_call)
                     db_session.commit()
                     db_session.refresh(tool_call)
                     
                     # Emit tool call start to connected clients
-                    await sio.emit('tool_call_start', {
+                    await sio_instance.emit('tool_call_start', {
                         'tool_call_id': str(tool_call.id),
                         'message_id': str(assistant_message.id),
                         'chat_id': str(chat_id),
@@ -254,7 +273,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     tool_result_data = json.loads(tool_result_json)
                     
                     # Emit tool call result to connected clients
-                    await sio.emit('tool_call_result', {
+                    await sio_instance.emit('tool_call_result', {
                         'message_id': str(assistant_message.id),
                         'chat_id': str(chat_id),
                         'tool_result': tool_result_data
@@ -273,7 +292,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                 db_session.commit()
                 
                 # Emit token update to connected clients
-                await sio.emit('message_token', {
+                await sio_instance.emit('message_token', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
                     'token': token,
@@ -286,7 +305,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         db_session.commit()
         
         # 7. Emit completion signal
-        await sio.emit('message_complete', {
+        await sio_instance.emit('message_complete', {
             'message_id': str(assistant_message.id),
             'chat_id': str(chat_id),
             'final_content': accumulated_content
@@ -294,13 +313,10 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         
     except Exception as e:
         logger.error(f"Error in process_message_websocket: {str(e)}")
-        await sio.emit('message_error', {
+        sio_instance = get_sio_instance()
+        await sio_instance.emit('message_error', {
             'chat_id': str(chat_id),
             'error': str(e)
         }, room=f"chat_{chat_id}")
     finally:
         db_session.close()
-
-# Export the Socket.IO app for mounting
-def get_socketio_app() -> socketio.AsyncServer:
-    return sio
