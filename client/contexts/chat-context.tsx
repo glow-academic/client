@@ -180,6 +180,29 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }
     );
 
+    socket.on("title_updated", (data: { chat_id: string; title: string }) => {
+      // Update the chat title in the cache
+      queryClient.setQueryData(
+        ["assistantChat", data.chat_id],
+        (old: AssistantChat | undefined) => {
+          if (old) {
+            return { ...old, title: data.title };
+          }
+          return old;
+        }
+      );
+
+      // Also update the chats list
+      queryClient.setQueryData(
+        ["assistantChats", profile?.id],
+        (old: AssistantChat[] = []) => {
+          return old.map((chat) =>
+            chat.id === data.chat_id ? { ...chat, title: data.title } : chat
+          );
+        }
+      );
+    });
+
     socket.on(
       "message_token",
       (data: {
@@ -404,23 +427,30 @@ export function ChatProvider({ children }: ChatProviderProps) {
         throw new Error("Failed to create chat");
       }
 
+      // Set the current chat ID immediately so WebSocket connection is established
+      setCurrentChatId(chat.id);
+
       const formData = new FormData();
       formData.append("initial_message", initialMessage);
       formData.append("chat_id", chat.id);
 
-      // don't await response
-      fetch(
+      // Wait for the API response to ensure proper error handling
+      const response = await fetch(
         `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/start`,
         {
           method: "POST",
           body: formData,
         }
       );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
       return chat.id;
     },
-    onSuccess: (chatId) => {
-      setCurrentChatId(chatId);
-      // Invalidate queries to refresh chat data
+    onSuccess: (_chatId) => {
+      // Chat ID is already set above, just invalidate queries
       queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
       queryClient.invalidateQueries({
         queryKey: ["assistantChats", profile?.id],
@@ -429,6 +459,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
     onError: (error) => {
       toast.error(`Failed to start chat: ${error}`);
       setIsSendingMessage(false);
+      // Reset chat ID on error
+      setCurrentChatId(null);
     },
   });
 

@@ -69,9 +69,9 @@ async def join_chat(sid: str, data: Dict[str, Any]) -> None:
     """Join a specific chat room for real-time updates"""
     chat_id = data.get('chat_id')
     if chat_id:
-        await sio.enter_room(sid, f"chat_{chat_id}")
+        await sio.enter_room(sid, f"assistant_{chat_id}")
         active_connections[chat_id] = sid
-        logger.info(f"Client {sid} joined chat {chat_id}")
+        logger.info(f"Client {sid} joined assistant chat {chat_id}")
         await sio.emit('joined_chat', {'chat_id': chat_id}, room=sid)
 
 @sio.event  # type: ignore
@@ -79,10 +79,10 @@ async def leave_chat(sid: str, data: Dict[str, Any]) -> None:
     """Leave a specific chat room"""
     chat_id = data.get('chat_id')
     if chat_id:
-        await sio.leave_room(sid, f"chat_{chat_id}")
+        await sio.leave_room(sid, f"assistant_{chat_id}")
         if chat_id in active_connections:
             del active_connections[chat_id]
-        logger.info(f"Client {sid} left chat {chat_id}")
+        logger.info(f"Client {sid} left assistant chat {chat_id}")
 
 def get_socketio_app() -> socketio.AsyncServer:
     """Get the Socket.IO server instance"""
@@ -151,18 +151,25 @@ async def start_chat(
     This endpoint creates a new chat based on a profile.
     """
     try:
-        # update the title with the title agent
-        chat_title = await run_title_agent(chat_id, initial_message, session)
-        logger.info(f"Chat title: {chat_title}")
-
-        # 2. Process the initial message via WebSocket
+        # 1. Process the initial message via WebSocket
         asyncio.create_task(process_message_websocket(
             chat_id=chat_id,
             message=initial_message,
             session=None  # We create our own session in the function
         ))
+
+        # 2. Update the title with the title agent
+        chat_title = await run_title_agent(chat_id, initial_message, session)
+        logger.info(f"Chat title: {chat_title}")
+
+        # 3. Emit title update to connected clients
+        sio_instance = get_sio_instance()
+        await sio_instance.emit('title_updated', {
+            'chat_id': str(chat_id),
+            'title': chat_title
+        }, room=f"assistant_{chat_id}")
         
-        # 3. Return the chat id to the frontend
+        # 4. Return the chat id to the frontend
         return JSONResponse({
             "chat_id": str(chat_id),
             "message": "Chat started successfully"
