@@ -7,8 +7,8 @@ from typing import Any, List
 from agents import Runner, trace
 from app.db import get_session
 from app.models import (Agents, EvalChatFeedbacks, EvalChatGrades, EvalChats,
-                        EvalMessages, EvalRuns, Rubrics, StandardGroups,
-                        Standards)
+                        EvalMessages, EvalRuns, Models, Providers, Rubrics,
+                        StandardGroups, Standards)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_eval_conversation_history
 from app.utils.rubric import get_dynamic_rubric
@@ -152,11 +152,24 @@ async def run_evaluate_agent(
             expected_fields.extend([f"{safe_name}_score", f"{safe_name}_feedback"])
         logger.info(f"Expected model fields: {expected_fields}")
 
-        # Create and run the evaluation agent
+        # getting the model from the agent's model_id
+        model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+        if not model:
+            raise ValueError(f"Model with ID {agent.model_id} not found")
+        
+        # getting the provider from the model's provider_id
+        provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+        if not provider:
+            raise ValueError(f"Provider with ID {model.provider_id} not found")
+
         evaluate_agent = GenericAgent(
             agent_name=agent.name,
-            agent_prompt=agent.system_prompt,
+            system_prompt=agent.system_prompt,
             temperature=agent.temperature,
+            model_name=model.name,
+            model_provider=provider.name,
+            api_key=provider.api_key,
+            reasoning=agent.reasoning,
             output_type=DynamicRubric,
         )
 

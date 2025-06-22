@@ -6,7 +6,8 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
-from app.models import Agents, AssistantChats, AssistantMessages
+from app.models import (Agents, AssistantChats, AssistantMessages, Models,
+                        Providers)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
@@ -95,13 +96,24 @@ async def _handle_assistant_chat(
         ),
     ]
 
+    # getting the model from the agent's model_id
+    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    if not model:
+        raise ValueError(f"Model with ID {agent.model_id} not found")
+    
+    # getting the provider from the model's provider_id
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    if not provider:
+        raise ValueError(f"Provider with ID {model.provider_id} not found")
 
-
-    # Define the agent with agent-specific behavior
     agent_instance = GenericAgent(
         agent_name=agent.name,
-        agent_prompt=agent.system_prompt,
+        system_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        model_name=model.name,
+        model_provider=provider.name,
+        api_key=provider.api_key,
+        reasoning=agent.reasoning,
         mcp_servers=mcp_servers,
     )
 

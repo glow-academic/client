@@ -2,7 +2,7 @@ import uuid
 
 from agents import Runner, trace
 from app.db import get_session
-from app.models import Agents, AssistantChats
+from app.models import Agents, AssistantChats, Models, Providers
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from sqlmodel import Session, select
@@ -26,14 +26,28 @@ async def run_title_agent(
     if not chat:
         raise ValueError("Chat not found")
 
+    # getting the model from the agent's model_id
+    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    if not model:
+        raise ValueError(f"Model with ID {agent.model_id} not found")
+    
+    # getting the provider from the model's provider_id
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    if not provider:
+        raise ValueError(f"Provider with ID {model.provider_id} not found")
+    
     agent_instance = GenericAgent(
         agent_name=agent.name,
-        agent_prompt=agent.system_prompt,
+        system_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        model_name=model.name,
+        model_provider=provider.name,
+        reasoning=agent.reasoning,
+        api_key=provider.api_key,
     )
 
     with trace(chat.title, trace_id=chat.trace_id) as chat_trace:
-        result = Runner.run_streamed(
+        result = await Runner.run(
             agent_instance.agent(),
             input=[{"role": "user", "content": initial_message}],
         )

@@ -92,14 +92,13 @@ async def start_chat(
             profile_id=profile_id
         )
 
-        # update the title with the title agent
-        chat_title = await run_title_agent(new_chat.id, initial_message, session)
-        logger.info(f"Chat title: {chat_title}")
-
-
         session.add(new_chat)
         session.commit()
         session.refresh(new_chat)
+
+        # update the title with the title agent
+        chat_title = await run_title_agent(new_chat.id, initial_message, session)
+        logger.info(f"Chat title: {chat_title}")
 
         # 2. Process the initial message via WebSocket
         asyncio.create_task(process_message_websocket(

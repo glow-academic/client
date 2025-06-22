@@ -5,7 +5,7 @@ from typing import List, Tuple
 from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
-from app.models import Agents, Classes
+from app.models import Agents, Classes, Models, Providers
 from app.services.agents.generic import GenericAgent
 from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
@@ -92,13 +92,28 @@ async def run_scenario_agent(
     agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
     if not agent:
         raise ValueError("Scenario agent not found")
-
+    
+    # getting the model from the agent's model_id
+    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    if not model:
+        raise ValueError(f"Model with ID {agent.model_id} not found")
+    
+    # getting the provider from the model's provider_id
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    if not provider:
+        raise ValueError(f"Provider with ID {model.provider_id} not found")
+    
     scenario_agent = GenericAgent(
         agent_name=agent.name,
-        agent_prompt=agent.system_prompt,
+        system_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        model_name=model.name,
+        model_provider=provider.name,
+        api_key=provider.api_key,
+        reasoning=agent.reasoning,
         output_type=Scenario,
     )
+
 
     agent_instance = scenario_agent.agent()
 

@@ -7,8 +7,9 @@ from agents import Runner, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import (Agents, Documents, Scenarios, SimulationAttempts,
-                        SimulationChats, SimulationMessages)
+from app.models import (Agents, Documents, Models, Providers, Scenarios,
+                        SimulationAttempts, SimulationChats,
+                        SimulationMessages)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import (get_chat_scenario,
                             get_simulation_conversation_history)
@@ -126,11 +127,24 @@ async def _handle_simulation_chat(
         input_items.append(class_info)
     input_items.extend(conversation_history)
 
-    # Define the agent with agent-specific behavior
+    # getting the model from the agent's model_id
+    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    if not model:
+        raise ValueError(f"Model with ID {agent.model_id} not found")
+    
+    # getting the provider from the model's provider_id
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    if not provider:
+        raise ValueError(f"Provider with ID {model.provider_id} not found")
+    
     agent_instance = GenericAgent(
         agent_name=agent.name,
-        agent_prompt=agent.system_prompt,
+        system_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        model_name=model.name,
+        model_provider=provider.name,
+        reasoning=agent.reasoning,
+        api_key=provider.api_key,
     )
 
     with trace(chat.title, trace_id=chat.trace_id, group_id=str(attempt.id)) as chat_trace:

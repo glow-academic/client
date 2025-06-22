@@ -7,6 +7,7 @@ export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
 export const evalMessageType = pgEnum("eval_message_type", ['query', 'response'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
+export const reasoningEffort = pgEnum("reasoning_effort", ['low', 'medium', 'high'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
 export const simulationMessageType = pgEnum("simulation_message_type", ['query', 'response'])
 
@@ -244,6 +245,7 @@ export const agents = pgTable("agents", {
 	defaultAgent: boolean("default_agent").default(false).notNull(),
 	editable: boolean().default(false).notNull(),
 	modelId: uuid("model_id"),
+	reasoning: reasoningEffort(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],

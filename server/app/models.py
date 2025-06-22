@@ -207,6 +207,7 @@ class Agents(_Base, table=True):
     default_agent: bool = Field(sa_column=Column('default_agent', Boolean, server_default=text('false')))
     editable: bool = Field(sa_column=Column('editable', Boolean, server_default=text('false')))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
     evals: List['Evals'] = Relationship(back_populates='base_agent')

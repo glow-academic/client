@@ -9,7 +9,8 @@ import PyPDF2
 from agents import Runner, trace
 from app.db import get_session
 from app.extensions import UPLOAD_FOLDER
-from app.models import Agents, Classes, Documents, Events, Schedules, Topics
+from app.models import (Agents, Classes, Documents, Events, Models, Providers,
+                        Schedules, Topics)
 from app.services.agents.generic import GenericAgent
 from fastapi import Depends
 from pydantic import BaseModel
@@ -189,10 +190,24 @@ async def run_course_agent(
             f"Extracted content from {syllabus_content.count('=== SYLLABUS CONTENT FROM')} syllabus file(s)"
         )
 
+    # getting the model from the agent's model_id
+    model = session.exec(select(Models).where(Models.id == agent.model_id)).one()
+    if not model:
+        raise ValueError(f"Model with ID {agent.model_id} not found")
+    
+    # getting the provider from the model's provider_id
+    provider = session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+    if not provider:
+        raise ValueError(f"Provider with ID {model.provider_id} not found")
+
     course_agent = GenericAgent(
         agent_name=agent.name,
-        agent_prompt=agent.system_prompt,
+        system_prompt=agent.system_prompt,
         temperature=agent.temperature,
+        model_name=model.name,
+        model_provider=provider.name,
+        api_key=provider.api_key,
+        reasoning=agent.reasoning,
         output_type=Course,
     )
 

@@ -35,7 +35,7 @@ import {
   evalChatGrades as EvalChatGrades,
   evalChatFeedbacks as EvalChatFeedbacks,
   verificationToken as VerificationToken,
-  assistantMessageType, assistantToolType, classTerm, documentType, evalMessageType, profileRole, seniorityLevels, simulationMessageType
+  assistantMessageType, assistantToolType, classTerm, documentType, evalMessageType, profileRole, reasoningEffort, seniorityLevels, simulationMessageType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -82,6 +82,7 @@ type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
 type EvalMessageType = (typeof evalMessageType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
+type ReasoningEffort = (typeof reasoningEffort.enumValues)[number];
 type SeniorityLevels = (typeof seniorityLevels.enumValues)[number];
 type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
@@ -128,6 +129,7 @@ export type {
   DocumentType,
   EvalMessageType,
   ProfileRole,
+  ReasoningEffort,
   SeniorityLevels,
   SimulationMessageType
 };

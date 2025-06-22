@@ -7,7 +7,7 @@ from typing import AsyncIterator, List
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.services.agents.collection.scenario import run_scenario_agent
-from app.services.agents.generic import run_generic_agent_bare
+from app.services.agents.generic import run_generic_agent
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from sqlmodel import Session
@@ -117,7 +117,7 @@ async def test_scenario(
                     }
                 )
 
-                async for token in run_generic_agent_bare(
+                async for token in run_generic_agent(
                     agent_id=agent_id,
                     input_items=input_items,
                     session=session,

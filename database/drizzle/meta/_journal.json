@@ -141,6 +141,13 @@
       "when": 1750533622176,
       "tag": "0019_rich_wildside",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1750555768290,
+      "tag": "0020_white_loki",
+      "breakpoints": true
     }
   ]
 }
