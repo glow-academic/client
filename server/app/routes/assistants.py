@@ -144,37 +144,27 @@ async def stop_assistant_run(
 @router.post("/start")
 async def start_chat(
     initial_message: str = Form(...),
-    profile_id: uuid.UUID = Form(...),
+    chat_id: uuid.UUID = Form(...),
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
     This endpoint creates a new chat based on a profile.
     """
     try:
-        # Create the chat record
-        new_chat = AssistantChats(
-            title="New Chat",
-            profile_id=profile_id
-        )
-
-        session.add(new_chat)
-        session.commit()
-        session.refresh(new_chat)
-
         # update the title with the title agent
-        chat_title = await run_title_agent(new_chat.id, initial_message, session)
+        chat_title = await run_title_agent(chat_id, initial_message, session)
         logger.info(f"Chat title: {chat_title}")
 
         # 2. Process the initial message via WebSocket
         asyncio.create_task(process_message_websocket(
-            chat_id=new_chat.id,
+            chat_id=chat_id,
             message=initial_message,
             session=None  # We create our own session in the function
         ))
         
         # 3. Return the chat id to the frontend
         return JSONResponse({
-            "chat_id": str(new_chat.id),
+            "chat_id": str(chat_id),
             "message": "Chat started successfully"
         })
 

@@ -5,6 +5,7 @@
 "use client";
 import { AssistantChat, AssistantMessage, AssistantToolType } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
+import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -393,24 +394,29 @@ export function ChatProvider({ children }: ChatProviderProps) {
         throw new Error("Profile ID is required");
       }
 
+      // Create new chat before calling the API
+      const chat = await createAssistantChat({
+        title: "New Chat",
+        profileId: profile.id,
+      });
+
+      if (!chat) {
+        throw new Error("Failed to create chat");
+      }
+
       const formData = new FormData();
       formData.append("initial_message", initialMessage);
-      formData.append("profile_id", profile.id);
+      formData.append("chat_id", chat.id);
 
-      const response = await fetch(
+      // don't await response
+      fetch(
         `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/start`,
         {
           method: "POST",
           body: formData,
         }
       );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const result = await response.json();
-      return result.chat_id;
+      return chat.id;
     },
     onSuccess: (chatId) => {
       setCurrentChatId(chatId);
