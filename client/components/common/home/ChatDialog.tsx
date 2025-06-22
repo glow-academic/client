@@ -26,6 +26,12 @@ import { useQuery } from "@tanstack/react-query";
 import { Minimize2, Plus, X } from "lucide-react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
+import {
+  TooltipProvider,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const {
@@ -114,18 +120,38 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
             </Select>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={openWidget}
-              className="h-8"
-            >
-              <Minimize2 className="h-4 w-4 mr-1" />
-              Minimize
-            </Button>
-            <Button variant="outline" size="sm" onClick={close} className="h-8">
-              <X className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={openWidget}
+                    className="h-8"
+                  >
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Minimize</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={close}
+                    className="h-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Close</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">

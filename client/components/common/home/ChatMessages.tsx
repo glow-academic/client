@@ -102,22 +102,10 @@ export default function ChatMessages() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-3 max-w-md">
-          <div className="flex justify-center mb-4">
+          {/* <div className="flex justify-center mb-4">
             <ConnectionStatus isConnected={isConnected} />
-          </div>
-          <div className="text-4xl mb-4">🤖</div>
+          </div> */}
           <h3 className="text-lg font-semibold">GLOW Assistant</h3>
-          <p className="text-sm text-muted-foreground">
-            I'm here to help you with questions about your courses, assignments,
-            and academic planning.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Type a message below to start our conversation
-          </p>
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
-            💡 Try keywords like "search", "create", "calculate", or "database"
-            to see tool calls in action!
-          </div>
         </div>
       </div>
     );
