@@ -185,7 +185,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         # 2. Emit user message to connected clients
         await sio.emit('new_message', {
             'message_id': str(user_message.id),
-            'chat_id': chat_id,
+            'chat_id': str(chat_id),
             'role': 'user',
             'content': message,
             'completed': True,
@@ -206,7 +206,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         # 4. Emit placeholder assistant message
         await sio.emit('new_message', {
             'message_id': str(assistant_message.id),
-            'chat_id': chat_id,
+            'chat_id': str(chat_id),
             'role': 'assistant',
             'content': '',
             'completed': False,
@@ -240,7 +240,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     await sio.emit('tool_call_start', {
                         'tool_call_id': str(tool_call.id),
                         'message_id': str(assistant_message.id),
-                        'chat_id': chat_id,
+                        'chat_id': str(chat_id),
                         'tool_data': tool_call_data
                     }, room=f"chat_{chat_id}")
                     
@@ -256,7 +256,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     # Emit tool call result to connected clients
                     await sio.emit('tool_call_result', {
                         'message_id': str(assistant_message.id),
-                        'chat_id': chat_id,
+                        'chat_id': str(chat_id),
                         'tool_result': tool_result_data
                     }, room=f"chat_{chat_id}")
                     
@@ -275,7 +275,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                 # Emit token update to connected clients
                 await sio.emit('message_token', {
                     'message_id': str(assistant_message.id),
-                    'chat_id': chat_id,
+                    'chat_id': str(chat_id),
                     'token': token,
                     'accumulated_content': accumulated_content
                 }, room=f"chat_{chat_id}")
@@ -288,14 +288,14 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         # 7. Emit completion signal
         await sio.emit('message_complete', {
             'message_id': str(assistant_message.id),
-            'chat_id': chat_id,
+            'chat_id': str(chat_id),
             'final_content': accumulated_content
         }, room=f"chat_{chat_id}")
         
     except Exception as e:
         logger.error(f"Error in process_message_websocket: {str(e)}")
         await sio.emit('message_error', {
-            'chat_id': chat_id,
+            'chat_id': str(chat_id),
             'error': str(e)
         }, room=f"chat_{chat_id}")
     finally:
