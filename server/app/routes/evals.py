@@ -1,9 +1,11 @@
 # app/routes/evals.py
+import asyncio
 import json
 import logging
 from datetime import datetime
-from typing import AsyncIterator
+from typing import AsyncIterator, Optional
 
+import socketio  # type: ignore
 from app.db import get_session
 from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
                         Rubrics, Scenarios)
@@ -18,6 +20,12 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+
+def get_sio_instance() -> socketio.AsyncServer:
+    """Get the Socket.IO server instance from main.py"""
+    from app.main import get_socketio_instance
+    return get_socketio_instance()
 
 
 @router.post("/start")
@@ -154,10 +162,10 @@ async def start_eval(
 async def run_eval(
     eval_run_id: str = Form(...),
     session: Session = Depends(get_session),
-) -> StreamingResponse:
+) -> JSONResponse:
     """
     Execute a specific eval run by running an agent-to-agent conversation
-    followed by evaluation. Streams the conversation progress back to the client.
+    followed by evaluation. Streams the conversation progress back to the client via WebSocket.
     """
     try:
         # Get the eval run
@@ -195,89 +203,142 @@ async def run_eval(
         eval_chats_not_completed = [chat for chat in eval_chats if not chat.completed]
 
         if not eval_chats_not_completed:
-            return StreamingResponse(
-                content="All chats in this eval run are already completed",
-                media_type="text/event-stream; charset=utf-8",
-                headers={
-                    "Cache-Control": "no-store",
-                    "Connection": "keep-alive",
-                    "X-Accel-Buffering": "no"  # Disable nginx buffering
-                },
-            )
+            return JSONResponse({
+                "status": "completed",
+                "message": "All chats in this eval run are already completed"
+            })
 
-        async def eval_stream() -> AsyncIterator[str]:
-            """Stream the evaluation process"""
-            # initial heartbeat so proxies flush headers
-            yield ":\n\n"
-            
-            try:
-                # Process chats sequentially
-                for i, chat in enumerate(eval_chats_not_completed):
-                    yield f"data: {json.dumps({'type': 'chat_start', 'chat_id': chat.id, 'chat_index': i + 1, 'total_chats': len(eval_chats_not_completed), 'message': f'Starting chat {i + 1} of {len(eval_chats_not_completed)}: {chat.title}'})}\n\n"
-                    
-                    try:
-                        # Process multiple turns until max_turns is reached
-                        for turn in range(eval_obj.max_turns):
-                            yield f"data: {json.dumps({'type': 'turn_start', 'turn': turn + 1, 'max_turns': eval_obj.max_turns, 'chat_id': chat.id, 'message': f'Starting turn {turn + 1} of {eval_obj.max_turns}'})}\n\n"
-                            
-                            # Check if we have reached max turns by checking existing messages
-                            existing_messages = session.exec(
-                                select(EvalMessages).where(EvalMessages.chat_id == chat.id)
-                            ).all()
-                            
-                            if len(existing_messages) >= eval_obj.max_turns:
-                                break
-                            
-                            # Run the generic agent for this turn
-                            async for token in run_eval_agent(chat.id, session=session):
-                                yield f"data: {json.dumps({'type': 'token', 'chat_id': chat.id, 'token': token})}\n\n"
-                            
-                            yield f"data: {json.dumps({'type': 'turn_complete', 'turn': turn + 1, 'chat_id': chat.id, 'message': f'Turn {turn + 1} completed'})}\n\n"
-                        
-                        yield f"data: {json.dumps({'type': 'chat_complete', 'chat_id': chat.id, 'message': f'Completed chat: {chat.title}'})}\n\n"
-                        
-                        # Mark chat as completed
-                        chat.completed = True
-                        chat.completed_at = datetime.now()
-                        session.add(chat)
-                        session.commit()
-                        
-                    except Exception as chat_error:
-                        logger.error(f"Error processing chat {chat.id}: {str(chat_error)}")
-                        yield f"data: {json.dumps({'type': 'chat_error', 'chat_id': chat.id, 'error': str(chat_error)})}\n\n"
-                    
-                    # Run evaluation for this completed chat
-                    try:
-                        eval_grade_id = await run_evaluate_agent(chat.id, session=session)
-                        yield f"data: {json.dumps({'type': 'evaluation_complete', 'chat_id': chat.id, 'eval_grade_id': eval_grade_id})}\n\n"
-                    except Exception as eval_error:
-                        logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")
-                        yield f"data: {json.dumps({'type': 'evaluation_error', 'chat_id': chat.id, 'error': str(eval_error)})}\n\n"
-                
-                yield f"data: {json.dumps({'type': 'run_complete', 'message': 'Eval run completed successfully'})}\n\n"
-                yield 'data: {"done": true}\n\n'
-                
-            except Exception as exc:
-                err_msg = str(exc)
-                logger.exception("Streaming error: %s", err_msg)
-                yield f"data: {json.dumps({'type': 'error', 'error': err_msg})}\n\n"
-                raise
-
-        return StreamingResponse(
-            eval_stream(),
-            media_type="text/event-stream; charset=utf-8",
-            headers={
-                "Cache-Control": "no-store",
-                "Connection": "keep-alive",
-                "X-Accel-Buffering": "no"  # Disable nginx buffering
-            },
-        )
+        # Process the evaluation via WebSocket
+        asyncio.create_task(process_eval_run_websocket(
+            eval_run_id=eval_run_id,
+            eval_chats_not_completed=eval_chats_not_completed,
+            eval_obj=eval_obj,
+            session=None  # We create our own session in the function
+        ))
+        
+        return JSONResponse({
+            "status": "processing",
+            "message": "Evaluation is being processed"
+        })
         
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error in run eval endpoint: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to run eval: {str(e)}")
+
+
+async def process_eval_run_websocket(
+    eval_run_id: str,
+    eval_chats_not_completed: list[EvalChats],
+    eval_obj: Evals,
+    session: Optional[Session] = None
+) -> None:
+    """
+    Process an evaluation run and stream the response via WebSocket
+    """
+    
+    # Create a new session for this async operation
+    from app.db import get_session
+    db_session = next(get_session())
+    
+    try:
+        sio_instance = get_sio_instance()
+        
+        # Process chats sequentially
+        for i, chat in enumerate(eval_chats_not_completed):
+            await sio_instance.emit('eval_chat_start', {
+                'eval_run_id': eval_run_id,
+                'chat_id': chat.id,
+                'chat_index': i + 1,
+                'total_chats': len(eval_chats_not_completed),
+                'message': f'Starting chat {i + 1} of {len(eval_chats_not_completed)}: {chat.title}'
+            }, room=f"eval_{eval_run_id}")
+            
+            try:
+                # Process multiple turns until max_turns is reached
+                for turn in range(eval_obj.max_turns):
+                    await sio_instance.emit('eval_turn_start', {
+                        'eval_run_id': eval_run_id,
+                        'chat_id': chat.id,
+                        'turn': turn + 1,
+                        'max_turns': eval_obj.max_turns,
+                        'message': f'Starting turn {turn + 1} of {eval_obj.max_turns}'
+                    }, room=f"eval_{eval_run_id}")
+                    
+                    # Check if we have reached max turns by checking existing messages
+                    existing_messages = db_session.exec(
+                        select(EvalMessages).where(EvalMessages.chat_id == chat.id)
+                    ).all()
+                    
+                    if len(existing_messages) >= eval_obj.max_turns:
+                        break
+                    
+                    # Run the generic agent for this turn
+                    async for token in run_eval_agent(chat.id, session=db_session):
+                        await sio_instance.emit('eval_token', {
+                            'eval_run_id': eval_run_id,
+                            'chat_id': chat.id,
+                            'token': token
+                        }, room=f"eval_{eval_run_id}")
+                    
+                    await sio_instance.emit('eval_turn_complete', {
+                        'eval_run_id': eval_run_id,
+                        'chat_id': chat.id,
+                        'turn': turn + 1,
+                        'message': f'Turn {turn + 1} completed'
+                    }, room=f"eval_{eval_run_id}")
+                
+                await sio_instance.emit('eval_chat_complete', {
+                    'eval_run_id': eval_run_id,
+                    'chat_id': chat.id,
+                    'message': f'Completed chat: {chat.title}'
+                }, room=f"eval_{eval_run_id}")
+                
+                # Mark chat as completed
+                chat.completed = True
+                chat.completed_at = datetime.now()
+                db_session.add(chat)
+                db_session.commit()
+                
+            except Exception as chat_error:
+                logger.error(f"Error processing chat {chat.id}: {str(chat_error)}")
+                await sio_instance.emit('eval_chat_error', {
+                    'eval_run_id': eval_run_id,
+                    'chat_id': chat.id,
+                    'error': str(chat_error)
+                }, room=f"eval_{eval_run_id}")
+            
+            # Run evaluation for this completed chat
+            try:
+                eval_grade_id = await run_evaluate_agent(chat.id, session=db_session)
+                await sio_instance.emit('eval_evaluation_complete', {
+                    'eval_run_id': eval_run_id,
+                    'chat_id': chat.id,
+                    'eval_grade_id': eval_grade_id
+                }, room=f"eval_{eval_run_id}")
+            except Exception as eval_error:
+                logger.error(f"Error evaluating chat {chat.id}: {str(eval_error)}")
+                await sio_instance.emit('eval_evaluation_error', {
+                    'eval_run_id': eval_run_id,
+                    'chat_id': chat.id,
+                    'error': str(eval_error)
+                }, room=f"eval_{eval_run_id}")
+        
+        await sio_instance.emit('eval_run_complete', {
+            'eval_run_id': eval_run_id,
+            'message': 'Eval run completed successfully'
+        }, room=f"eval_{eval_run_id}")
+        
+    except Exception as e:
+        logger.error(f"Error in process_eval_run_websocket: {str(e)}")
+        sio_instance = get_sio_instance()
+        await sio_instance.emit('eval_run_error', {
+            'eval_run_id': eval_run_id,
+            'error': str(e)
+        }, room=f"eval_{eval_run_id}")
+    finally:
+        db_session.close()
 
 @router.get("/run/{eval_run_id}/status")
 async def get_eval_run_status(
