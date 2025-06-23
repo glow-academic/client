@@ -485,7 +485,27 @@ class AssistantMessages(_Base, table=True):
     completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
 
     chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_messages')
-    assistant_tool_calls: List['AssistantToolCalls'] = Relationship(back_populates='message')
+
+
+class AssistantToolCalls(_Base, table=True):
+    __tablename__ = 'assistant_tool_calls'
+    __table_args__ = (
+        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], name='assistant_tool_calls_chat_id_fkey'),
+        PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
+    tool_name: str = Field(sa_column=Column('tool_name', Text))
+    tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
+    tool_arguments: Dict[str, Any] = Field(sa_column=Column('tool_arguments', JSONB))
+    tool_result: Dict[str, Any] = Field(sa_column=Column('tool_result', JSONB))
+    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
+
+    chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
 
 
 class EvalRuns(_Base, table=True):
@@ -531,30 +551,6 @@ class SimulationChats(_Base, table=True):
     scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_chats')
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='simulation_chat')
     simulation_messages: List['SimulationMessages'] = Relationship(back_populates='chat')
-
-
-class AssistantToolCalls(_Base, table=True):
-    __tablename__ = 'assistant_tool_calls'
-    __table_args__ = (
-        ForeignKeyConstraint(['chat_id'], ['assistant_chats.id'], name='assistant_tool_calls_chat_id_fkey'),
-        ForeignKeyConstraint(['message_id'], ['assistant_messages.id'], name='assistant_tool_calls_message_id_fkey'),
-        PrimaryKeyConstraint('id', name='assistant_tool_calls_pkey')
-    )
-
-    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
-    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
-    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
-    message_id: Mapped[uuid.UUID] = Field(sa_column=Column('message_id', Uuid(as_uuid=True)))
-    tool_name: str = Field(sa_column=Column('tool_name', Text))
-    tool_type: str = Field(sa_column=Column('tool_type', Enum('create', 'read', 'update', 'delete', name='assistant_tool_type')))
-    tool_arguments: Dict[str, Any] = Field(sa_column=Column('tool_arguments', JSONB))
-    tool_result: Dict[str, Any] = Field(sa_column=Column('tool_result', JSONB))
-    completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
-    completed_at: Optional[datetime] = Field(default=None, sa_column=Column('completed_at', DateTime(True)))
-
-    chat: Optional['AssistantChats'] = Relationship(back_populates='assistant_tool_calls')
-    message: Optional['AssistantMessages'] = Relationship(back_populates='assistant_tool_calls')
 
 
 class EvalChats(_Base, table=True):

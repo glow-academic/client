@@ -148,6 +148,13 @@
       "when": 1750555768290,
       "tag": "0020_white_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1750707428332,
+      "tag": "0021_nice_firestar",
+      "breakpoints": true
     }
   ]
 }

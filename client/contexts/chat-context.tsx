@@ -4,7 +4,7 @@
  */
 "use client";
 import { getWebSocketUrl } from "@/lib/utils";
-import { AssistantChat, AssistantMessage, AssistantToolType } from "@/types";
+import { AssistantChat, AssistantMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
@@ -21,28 +21,6 @@ import React, {
 } from "react";
 import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
-
-// Additional types for tool calls UI
-export interface ToolCallData {
-  id: string;
-  name: string;
-  type: AssistantToolType;
-  arguments: Record<string, unknown>;
-  status?: "pending" | "executing" | "completed" | "error";
-}
-
-export interface ToolCallResult {
-  id: string;
-  name: string;
-  status: "success" | "error";
-  result?: unknown;
-  error?: string;
-}
-
-export interface AssistantMessageWithTools extends AssistantMessage {
-  toolCalls?: ToolCallData[];
-  toolResults?: ToolCallResult[];
-}
 
 type ChatUIState = "closed" | "widget" | "expanded";
 
@@ -374,112 +352,41 @@ export function ChatProvider({ children }: ChatProviderProps) {
       });
     });
 
+    // Tool call events - simply invalidate tool calls cache when they change
     socket.on(
-      "tool_call_start",
+      "tool_call_created",
       (data: {
         tool_call_id: string;
-        message_id: string;
         chat_id: string;
-        tool_data: ToolCallData;
+        tool_name: string;
+        tool_type: string;
       }) => {
-        logInfo(`Received tool_call_start for message ${data.message_id}`, {
-          toolCallId: data.tool_call_id,
-          toolName: data.tool_data.name,
-          chatId: data.chat_id,
-        });
-
-        // Update the messages cache with tool call start
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            const updated = old.map((msg) => {
-              if (msg.id === data.message_id) {
-                const messageWithTools = msg as AssistantMessageWithTools;
-                const toolCall: ToolCallData = {
-                  ...data.tool_data,
-                  status: "executing",
-                };
-                return {
-                  ...messageWithTools,
-                  toolCalls: [...(messageWithTools.toolCalls || []), toolCall],
-                };
-              }
-              return msg;
-            });
-
-            return updated;
-          }
+        logInfo(
+          `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
         );
 
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-        }, 0);
+        // Invalidate tool calls cache to refetch
+        queryClient.invalidateQueries({
+          queryKey: ["assistantToolCalls", data.chat_id],
+        });
       }
     );
 
     socket.on(
-      "tool_call_result",
+      "tool_call_completed",
       (data: {
         tool_call_id: string | null;
-        message_id: string;
         chat_id: string;
-        tool_result: unknown;
         tool_name: string;
       }) => {
-        logInfo(`Received tool_call_result for message ${data.message_id}`, {
-          toolCallId: data.tool_call_id,
-          toolName: data.tool_name,
-          chatId: data.chat_id,
-        });
-
-        // Update the messages cache with tool call result
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            const updated = old.map((msg) => {
-              if (msg.id === data.message_id) {
-                const messageWithTools = msg as AssistantMessageWithTools;
-
-                // Create tool result object
-                const toolResult: ToolCallResult = {
-                  id: data.tool_call_id || "",
-                  name: data.tool_name,
-                  status: "success",
-                  result: data.tool_result,
-                };
-
-                return {
-                  ...messageWithTools,
-                  toolCalls: messageWithTools.toolCalls?.map((tc) =>
-                    tc.id === data.tool_call_id
-                      ? {
-                          ...tc,
-                          status: "completed",
-                        }
-                      : tc
-                  ),
-                  toolResults: [
-                    ...(messageWithTools.toolResults || []),
-                    toolResult,
-                  ],
-                };
-              }
-              return msg;
-            });
-
-            return updated;
-          }
+        logInfo(
+          `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
         );
 
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-        }, 0);
+        // Invalidate tool calls cache to refetch
+        queryClient.invalidateQueries({
+          queryKey: ["assistantToolCalls", data.chat_id],
+        });
       }
     );
 

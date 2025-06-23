@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-23T19:22:27.735Z
+Generated on: 2025-06-23T19:47:06.789Z
 
 ## Summary
-- **Total Components**: 98
+- **Total Components**: 97
 - **Tests Created**: 0
-- **Tests Updated**: 40
+- **Tests Updated**: 39
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -41,7 +41,6 @@ Generated on: 2025-06-23T19:22:27.735Z
 | EvaluationRun | common/chat/EvaluationRun.tsx | EvaluationRun.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
-| ToolCall | common/chat/ToolCall.tsx | ToolCall.test.tsx | ❌ Needs Implementation |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ❌ Needs Implementation |
@@ -153,7 +152,6 @@ __tests__/
 │   │   ├── EvaluationRun.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx
-│   │   ├── ToolCall.test.tsx
 │   ├── class/
 │   │   ├── ClassForm.test.tsx
 │   ├── cohort/

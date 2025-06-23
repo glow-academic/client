@@ -85,22 +85,17 @@ export const assistantChatsRelations = relations(assistantChats, ({one, many}) =
 	assistantToolCalls: many(assistantToolCalls),
 }));
 
-export const assistantMessagesRelations = relations(assistantMessages, ({one, many}) => ({
+export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
 	assistantChat: one(assistantChats, {
 		fields: [assistantMessages.chatId],
 		references: [assistantChats.id]
 	}),
-	assistantToolCalls: many(assistantToolCalls),
 }));
 
 export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({
 	assistantChat: one(assistantChats, {
 		fields: [assistantToolCalls.chatId],
 		references: [assistantChats.id]
-	}),
-	assistantMessage: one(assistantMessages, {
-		fields: [assistantToolCalls.messageId],
-		references: [assistantMessages.id]
 	}),
 }));
 

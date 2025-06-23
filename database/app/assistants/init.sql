@@ -34,7 +34,6 @@ CREATE TABLE assistant_tool_calls (
   updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   completed_at TIMESTAMPTZ  NULL,
   chat_id    UUID        NOT NULL REFERENCES assistant_chats(id),
-  message_id UUID        NOT NULL REFERENCES assistant_messages(id),
   tool_name  TEXT        NOT NULL,
   tool_type  assistant_tool_type NOT NULL,
   tool_arguments JSONB        NOT NULL,

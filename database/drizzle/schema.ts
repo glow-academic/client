@@ -250,7 +250,6 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	completedAt: timestamp("completed_at", { withTimezone: true, mode: 'string' }),
 	chatId: uuid("chat_id").notNull(),
-	messageId: uuid("message_id").notNull(),
 	toolName: text("tool_name").notNull(),
 	toolType: assistantToolType("tool_type").notNull(),
 	toolArguments: jsonb("tool_arguments").notNull(),
@@ -261,11 +260,6 @@ export const assistantToolCalls = pgTable("assistant_tool_calls", {
 			columns: [table.chatId],
 			foreignColumns: [assistantChats.id],
 			name: "assistant_tool_calls_chat_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.messageId],
-			foreignColumns: [assistantMessages.id],
-			name: "assistant_tool_calls_message_id_fkey"
 		}),
 ]);
 
