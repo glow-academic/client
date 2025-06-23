@@ -88,6 +88,20 @@ class TestGet_Student_Simulation_Report:
         assert False, "IMPLEMENT: Error test for get_student_simulation_report"
 
 
+class TestFind_Profiles_By_Name:
+    """Tests for find_profiles_by_name function."""
+    
+    def test_find_profiles_by_name_success(self):
+        """Test successful find_profiles_by_name execution."""
+        # TODO: Implement test for find_profiles_by_name
+        assert False, "IMPLEMENT: Test for find_profiles_by_name"
+    
+    def test_find_profiles_by_name_error(self):
+        """Test find_profiles_by_name error handling."""
+        # TODO: Implement error test for find_profiles_by_name
+        assert False, "IMPLEMENT: Error test for find_profiles_by_name"
+
+
 class TestSearch_By_Cohort:
     """Tests for search_by_cohort function."""
     

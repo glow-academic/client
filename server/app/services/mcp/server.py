@@ -375,16 +375,18 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
 @server.tool()
 def find_profiles_by_name(name: str, limit: int = 10) -> List[Dict[str, Any]]:
     """
-    Search for profiles by first name, last name, or alias using partial matching.
+    Search for profiles by first name, last name, or alias using intelligent matching.
     
     This function helps users find profile IDs when they only know the person's name.
-    It searches across first_name, last_name, and alias fields using case-insensitive
-    partial matching.
+    It handles both single names and full names with smart matching logic:
+    
+    - Single name: searches across first_name, last_name, and alias fields
+    - Full name: prioritizes exact first+last name combinations, with fallback to partial matches
     
     Parameters
     ----------
     name : str
-        The name to search for (can be partial)
+        The name to search for (can be partial, single name, or full name)
     limit : int, optional
         Maximum number of results to return (default: 10)
     
@@ -402,22 +404,49 @@ def find_profiles_by_name(name: str, limit: int = 10) -> List[Dict[str, Any]]:
     Examples
     --------
     find_profiles_by_name("jordan") -> finds "Jordan Lee", "Jordan Smith", etc.
+    find_profiles_by_name("Nina Park") -> prioritizes exact "Nina Park" match, includes partial matches
     find_profiles_by_name("lee") -> finds "Jordan Lee", "Sarah Lee", etc.
     find_profiles_by_name("jlee") -> finds alias "jlee"
     """
     session = next(get_session())
     try:
-        # Create case-insensitive search pattern
-        search_pattern = f"%{name.lower()}%"
+        # Split the name to handle full names like "Nina Park"
+        name_parts = name.strip().split()
         
-        # Search across first_name, last_name, and alias
-        stmt = select(Profiles).where(
-            or_(
-                func.lower(Profiles.first_name).like(search_pattern),
-                func.lower(Profiles.last_name).like(search_pattern),
-                func.lower(Profiles.alias).like(search_pattern)
+        if len(name_parts) >= 2:
+            # Handle full name: search for first_name AND last_name combination
+            first_name_pattern = f"%{name_parts[0].lower()}%"
+            last_name_pattern = f"%{name_parts[-1].lower()}%"
+            
+            # Primary search: exact first + last name match
+            primary_conditions = and_(
+                func.lower(Profiles.first_name).like(first_name_pattern),
+                func.lower(Profiles.last_name).like(last_name_pattern)
             )
-        ).limit(limit)
+            
+            # Fallback search: either part matches any field, or alias matches full name
+            full_name_pattern = f"%{name.lower()}%"
+            fallback_conditions = or_(
+                func.lower(Profiles.first_name).like(first_name_pattern),
+                func.lower(Profiles.last_name).like(last_name_pattern),
+                func.lower(Profiles.alias).like(full_name_pattern)
+            )
+            
+            # Combine with OR to get both exact matches and partial matches
+            stmt = select(Profiles).where(
+                or_(primary_conditions, fallback_conditions)
+            ).limit(limit)
+            
+        else:
+            # Single name: search across all fields as before
+            search_pattern = f"%{name.lower()}%"
+            stmt = select(Profiles).where(
+                or_(
+                    func.lower(Profiles.first_name).like(search_pattern),
+                    func.lower(Profiles.last_name).like(search_pattern),
+                    func.lower(Profiles.alias).like(search_pattern)
+                )
+            ).limit(limit)
         
         profiles = session.exec(stmt).all()
         
