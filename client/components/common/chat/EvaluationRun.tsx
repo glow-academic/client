@@ -300,6 +300,110 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       }
     );
 
+    // Add standard message event handlers for eval messages
+    socket.on(
+      "new_message",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        role: string;
+        content: string;
+        completed: boolean;
+        created_at: string;
+      }) => {
+        logInfo("Eval received new_message", data);
+        // Update the messages cache with new message
+        queryClient.setQueryData(
+          ["evalMessages", data.chat_id],
+          (old: EvalMessage[] = []) => {
+            const exists = old.find((msg) => msg.id === data.message_id);
+            if (exists) return old;
+
+            const newMessage: EvalMessage = {
+              id: data.message_id,
+              chatId: data.chat_id,
+              type: data.role === "user" ? "query" : "response",
+              content: data.content,
+              completed: data.completed,
+              createdAt: data.created_at,
+            };
+
+            return [...old, newMessage].sort(
+              (a, b) =>
+                new Date(a.createdAt).getTime() -
+                new Date(b.createdAt).getTime()
+            );
+          }
+        );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["evalMessages", data.chat_id],
+          });
+        }, 0);
+      }
+    );
+
+    socket.on(
+      "message_token",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        token: string;
+        accumulated_content: string;
+      }) => {
+        logInfo("Eval received message_token", { token: data.token });
+        // Update the specific message with streaming content
+        queryClient.setQueryData(
+          ["evalMessages", data.chat_id],
+          (old: EvalMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.accumulated_content }
+                : msg
+            );
+          }
+        );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["evalMessages", data.chat_id],
+          });
+        }, 0);
+      }
+    );
+
+    socket.on(
+      "message_complete",
+      (data: {
+        message_id: string;
+        chat_id: string;
+        final_content: string;
+      }) => {
+        logInfo("Eval received message_complete", data);
+        // Mark message as completed and update final content
+        queryClient.setQueryData(
+          ["evalMessages", data.chat_id],
+          (old: EvalMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === data.message_id
+                ? { ...msg, content: data.final_content, completed: true }
+                : msg
+            );
+          }
+        );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["evalMessages", data.chat_id],
+          });
+        }, 0);
+      }
+    );
+
     socket.on(
       "eval_chat_error",
       (data: { eval_run_id: string; chat_id: string; error: string }) => {
@@ -387,6 +491,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       }
     };
   }, [evalRun?.id, isConnected]);
+
+
 
   // Poll for run status when evaluation is running
   useEffect(() => {
@@ -528,6 +634,25 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       chats.find((chat: EvalChat) => chat.id === selectedChatId) || currentChat
     );
   }, [selectedChatId, chats, currentChat]);
+
+  // Join/leave individual chat rooms for real-time message updates
+  useEffect(() => {
+    if (!socketRef.current || !isConnected || !selectedChat?.id) return;
+
+    socketRef.current.emit("join_chat", {
+      chat_id: selectedChat.id,
+      chat_type: "eval",
+    });
+
+    return () => {
+      if (selectedChat?.id && socketRef.current) {
+        socketRef.current.emit("leave_chat", {
+          chat_id: selectedChat.id,
+          chat_type: "eval",
+        });
+      }
+    };
+  }, [selectedChat?.id, isConnected]);
 
   // Get basic rubric info for timer tooltip
   const selectedChatGrade = useMemo(() => {

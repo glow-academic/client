@@ -374,13 +374,65 @@ async def process_eval_run_websocket(
                     if len(existing_messages) >= eval_obj.max_turns:
                         break
                     
+                    # Before running the agent, create a placeholder message and emit new_message event
+                    turn_number = len(existing_messages)
+                    message_type = "response" if turn_number % 2 == 0 else "query"
+                    
+                    # Create placeholder message
+                    placeholder_message = EvalMessages(
+                        chat_id=chat.id,
+                        content="",
+                        type=message_type,
+                        completed=False
+                    )
+                    db_session.add(placeholder_message)
+                    db_session.commit()
+                    db_session.refresh(placeholder_message)
+                    
+                    # Emit new_message event for the placeholder
+                    await sio_instance.emit('new_message', {
+                        'message_id': str(placeholder_message.id),
+                        'chat_id': str(chat.id),
+                        'role': 'assistant' if message_type == "response" else 'user',
+                        'content': '',
+                        'completed': False,
+                        'created_at': placeholder_message.created_at.isoformat()
+                    }, room=f"eval_{eval_run_id}")
+                    
                     # Run the generic agent for this turn
+                    accumulated_content = ""
                     async for token in run_eval_agent(chat.id, session=db_session):
+                        accumulated_content += token
+                        
+                        # Update the message in database
+                        placeholder_message.content = accumulated_content
+                        db_session.add(placeholder_message)
+                        db_session.commit()
+                        
+                        # Emit both eval_token and message_token events
                         await sio_instance.emit('eval_token', {
                             'eval_run_id': eval_run_id,
                             'chat_id': chat.id,
                             'token': token
                         }, room=f"eval_{eval_run_id}")
+                        
+                        await sio_instance.emit('message_token', {
+                            'message_id': str(placeholder_message.id),
+                            'chat_id': str(chat.id),
+                            'token': token,
+                            'accumulated_content': accumulated_content
+                        }, room=f"eval_{eval_run_id}")
+                    
+                    # Mark message as completed and emit message_complete event
+                    placeholder_message.completed = True
+                    db_session.add(placeholder_message)
+                    db_session.commit()
+                    
+                    await sio_instance.emit('message_complete', {
+                        'message_id': str(placeholder_message.id),
+                        'chat_id': str(chat.id),
+                        'final_content': accumulated_content
+                    }, room=f"eval_{eval_run_id}")
                     
                     await sio_instance.emit('eval_turn_complete', {
                         'eval_run_id': eval_run_id,

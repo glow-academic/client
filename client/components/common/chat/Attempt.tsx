@@ -309,7 +309,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Fetch messages for current chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["messages", currentChat?.id],
+    queryKey: ["simulationMessages", currentChat?.id],
     queryFn: () => getSimulationMessagesByChat(currentChat!.id),
     enabled: !!currentChat,
   });
@@ -527,7 +527,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Fetch messages for selected chat in results
   const { data: resultsMessages = [], isLoading: resultsMessagesLoading } =
     useQuery({
-      queryKey: ["resultsMessages", selectedChat?.id],
+      queryKey: ["simulationMessages", selectedChat?.id],
       queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
       enabled: !!selectedChat?.id && showResults,
     });
@@ -782,9 +782,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         completed: boolean;
         created_at: string;
       }) => {
+        logInfo("Simulation received new_message", data);
         // Update the messages cache with new message
         queryClient.setQueryData(
-          ["messages", data.chat_id],
+          ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
             const exists = old.find((msg) => msg.id === data.message_id);
             if (exists) return old;
@@ -809,7 +810,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         // Force re-render by invalidating the query after the update
         setTimeout(() => {
           queryClient.invalidateQueries({
-            queryKey: ["messages", data.chat_id],
+            queryKey: ["simulationMessages", data.chat_id],
           });
         }, 0);
       }
@@ -823,9 +824,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         token: string;
         accumulated_content: string;
       }) => {
+        logInfo("Simulation received message_token", { token: data.token });
         // Update the specific message with streaming content
         queryClient.setQueryData(
-          ["messages", data.chat_id],
+          ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
@@ -838,7 +840,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         // Force re-render by invalidating the query after the update
         setTimeout(() => {
           queryClient.invalidateQueries({
-            queryKey: ["messages", data.chat_id],
+            queryKey: ["simulationMessages", data.chat_id],
           });
         }, 0);
       }
@@ -851,9 +853,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         chat_id: string;
         final_content: string;
       }) => {
+        logInfo("Simulation received message_complete", data);
         // Mark message as completed and update final content
         queryClient.setQueryData(
-          ["messages", data.chat_id],
+          ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
@@ -868,7 +871,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         // Force re-render by invalidating the query after the update
         setTimeout(() => {
           queryClient.invalidateQueries({
-            queryKey: ["messages", data.chat_id],
+            queryKey: ["simulationMessages", data.chat_id],
           });
         }, 0);
       }
@@ -899,7 +902,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       }) => {
         // Update the cancelled message with its final content
         queryClient.setQueryData(
-          ["messages", data.chat_id],
+          ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
@@ -915,7 +918,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         // Force re-render by invalidating the query after the update
         setTimeout(() => {
           queryClient.invalidateQueries({
-            queryKey: ["messages", data.chat_id],
+            queryKey: ["simulationMessages", data.chat_id],
           });
         }, 0);
       }

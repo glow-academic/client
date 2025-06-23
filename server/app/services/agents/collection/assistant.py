@@ -49,7 +49,7 @@ async def run_assistant_agent(
         async with (
             MCPServerStreamableHttp(
                 name="MCP Server",
-                params={"url": f"{base_url}/domain/mcp"},
+                params={"url": f"{base_url}/domain"},
                 cache_tools_list=True,
             ) as domain_server
         ):
