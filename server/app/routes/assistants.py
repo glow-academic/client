@@ -243,6 +243,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         accumulated_content = ""
         cancelled = False
         active_tool_calls = {}  # Track tool calls by ID
+        current_message = assistant_message  # Track current message for splitting
         
         try:
             async for token in run_assistant_agent(chat_id, db_session):
@@ -251,6 +252,46 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                 # Check if this is a tool call token
                 if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
                     logger.info(f"Received tool call start token: {token}")
+                    
+                    # If we have accumulated content, complete the current message and create a new one
+                    if accumulated_content.strip():
+                        # Complete current message
+                        current_message.content = accumulated_content
+                        current_message.completed = True
+                        db_session.add(current_message)
+                        db_session.commit()
+                        
+                        # Emit completion for current message
+                        await sio_instance.emit('message_complete', {
+                            'message_id': str(current_message.id),
+                            'chat_id': str(chat_id),
+                            'final_content': accumulated_content
+                        }, room=f"assistant_{chat_id}")
+                        
+                        # Create new assistant message for content after tool calls
+                        current_message = AssistantMessages(
+                            chat_id=chat_id,
+                            role="assistant",
+                            content="",
+                            completed=False
+                        )
+                        db_session.add(current_message)
+                        db_session.commit()
+                        db_session.refresh(current_message)
+                        
+                        # Emit new placeholder message
+                        await sio_instance.emit('new_message', {
+                            'message_id': str(current_message.id),
+                            'chat_id': str(chat_id),
+                            'role': 'assistant',
+                            'content': '',
+                            'completed': False,
+                            'created_at': current_message.created_at.isoformat()
+                        }, room=f"assistant_{chat_id}")
+                        
+                        # Reset accumulated content
+                        accumulated_content = ""
+                    
                     # Extract tool call data
                     tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
                     try:
@@ -272,11 +313,12 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         # Save tool call to database
                         tool_call = AssistantToolCalls(
                             chat_id=chat_id,
-                            message_id=assistant_message.id,
+                            message_id=current_message.id,
                             tool_name=tool_name,
                             tool_type=tool_type,
                             tool_arguments=tool_call_data.get('arguments', {}),
-                            tool_result={}  # Will be updated when result comes in
+                            tool_result={},  # Will be updated when result comes in
+                            completed=False  # Mark as incomplete initially
                         )
                         
                         try:
@@ -294,17 +336,13 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         if tool_call_id:
                             active_tool_calls[tool_call_id] = tool_call
                         
-                        # Emit tool call start to connected clients
-                        await sio_instance.emit('tool_call_start', {
+                        # Emit tool call created event (frontend will refetch tool calls)
+                        await sio_instance.emit('tool_call_created', {
                             'tool_call_id': str(tool_call.id),
-                            'message_id': str(assistant_message.id),
+                            'message_id': str(current_message.id),
                             'chat_id': str(chat_id),
-                            'tool_data': {
-                                'id': tool_call_data.get('id'),
-                                'name': tool_name,
-                                'arguments': tool_call_data.get('arguments'),
-                                'type': tool_type
-                            }
+                            'tool_name': tool_name,
+                            'tool_type': tool_type
                         }, room=f"assistant_{chat_id}")
                         
                     except json.JSONDecodeError:
@@ -323,6 +361,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         if tool_call_id and tool_call_id in active_tool_calls:
                             tool_call_record = active_tool_calls[tool_call_id]
                             tool_call_record.tool_result = tool_result_data.get('result', {})
+                            tool_call_record.completed = True
                             
                             try:
                                 db_session.add(tool_call_record)
@@ -335,12 +374,11 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                             # Remove from active tracking
                             del active_tool_calls[tool_call_id]
                         
-                        # Emit tool call result to connected clients
-                        await sio_instance.emit('tool_call_result', {
+                        # Emit tool call completed event (frontend will refetch tool calls)
+                        await sio_instance.emit('tool_call_completed', {
                             'tool_call_id': str(tool_call_record.id) if tool_call_record else None,
-                            'message_id': str(assistant_message.id),
+                            'message_id': str(current_message.id),
                             'chat_id': str(chat_id),
-                            'tool_result': tool_result_data.get('result', {}),
                             'tool_name': tool_result_data.get('name')
                         }, room=f"assistant_{chat_id}")
                         
@@ -352,13 +390,13 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     accumulated_content += token
                     
                     # Update the database with accumulated content
-                    assistant_message.content = accumulated_content
-                    db_session.add(assistant_message)
+                    current_message.content = accumulated_content
+                    db_session.add(current_message)
                     db_session.commit()
                     
                     # Emit token update to connected clients
                     await sio_instance.emit('message_token', {
-                        'message_id': str(assistant_message.id),
+                        'message_id': str(current_message.id),
                         'chat_id': str(chat_id),
                         'token': token,
                         'accumulated_content': accumulated_content
@@ -371,7 +409,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                 
                 # Emit cancellation signal
                 await sio_instance.emit('message_cancelled', {
-                    'message_id': str(assistant_message.id),
+                    'message_id': str(current_message.id),
                     'chat_id': str(chat_id),
                     'final_content': accumulated_content
                 }, room=f"assistant_{chat_id}")
@@ -379,15 +417,15 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                 # Re-raise other exceptions
                 raise e
         
-        # 6. Mark as completed
-        assistant_message.completed = True
-        db_session.add(assistant_message)
+        # 6. Mark current message as completed
+        current_message.completed = True
+        db_session.add(current_message)
         db_session.commit()
         
         # 7. Emit completion signal (only if not cancelled)
         if not cancelled:
             await sio_instance.emit('message_complete', {
-                'message_id': str(assistant_message.id),
+                'message_id': str(current_message.id),
                 'chat_id': str(chat_id),
                 'final_content': accumulated_content
             }, room=f"assistant_{chat_id}")
