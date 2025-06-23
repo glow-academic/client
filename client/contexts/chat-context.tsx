@@ -3,6 +3,7 @@
  * This provides a centralized way to manage chat UI states and real-time message handling
  */
 "use client";
+import { getWebSocketUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage, AssistantToolType } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
@@ -115,15 +116,17 @@ export function ChatProvider({ children }: ChatProviderProps) {
   useEffect(() => {
     if (!profile?.id) return;
 
-    const socket = io(
-      process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000",
-      {
-        transports: ["websocket", "polling"],
-        autoConnect: true,
-        forceNew: true,
-        timeout: 5000,
-      }
-    );
+    const socket = io(getWebSocketUrl(), {
+      transports: ["websocket", "polling"],
+      autoConnect: true,
+      forceNew: true,
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      path: "/socket.io/",
+    });
 
     socketRef.current = socket;
 
@@ -132,12 +135,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
       logInfo("WebSocket connected");
     });
 
-    socket.on("disconnect", (reason) => {
+    socket.on("disconnect", (reason: string) => {
       setIsConnected(false);
       logInfo(`WebSocket disconnected: ${reason}`);
     });
 
-    socket.on("connect_error", (error) => {
+    socket.on("connect_error", (error: Error) => {
       logError("WebSocket connection error:", error);
       setIsConnected(false);
     });

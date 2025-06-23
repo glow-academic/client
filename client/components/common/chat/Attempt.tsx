@@ -84,6 +84,7 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
+import { getWebSocketUrl } from "@/lib/utils";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
@@ -735,15 +736,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // WebSocket connection setup
   useEffect(() => {
-    const socket = io(
-      process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000",
-      {
-        transports: ["websocket", "polling"],
-        autoConnect: true,
-        forceNew: true,
-        timeout: 5000,
-      }
-    );
+    // Determine WebSocket URL based on environment
+    const socket = io(getWebSocketUrl(), {
+      transports: ["websocket", "polling"],
+      autoConnect: true,
+      forceNew: true,
+      timeout: 10000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      path: "/socket.io/",
+    });
 
     socketRef.current = socket;
 

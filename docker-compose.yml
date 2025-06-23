@@ -77,6 +77,14 @@ services:
       # Strip prefix middleware - only strip /server, not /documents
       - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.prefixes=/server"
       - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.forceSlash=false"
+
+      # WebSocket support for Socket.IO
+      - "traefik.http.routers.${SUBDOMAIN}-websocket.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/socket.io`)"
+      - "traefik.http.routers.${SUBDOMAIN}-websocket.entrypoints=websecure"
+      - "traefik.http.routers.${SUBDOMAIN}-websocket.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${SUBDOMAIN}-websocket.service=${SUBDOMAIN}-server"
+      - "traefik.http.routers.${SUBDOMAIN}-websocket.priority=20"
+
       - "traefik.http.routers.${SUBDOMAIN}-server.middlewares=${SUBDOMAIN}-strip-server@docker"
     profiles:
       - prod
@@ -119,10 +127,11 @@ services:
       - "traefik.enable=${PROD:-false}"
       - "traefik.docker.network=web"
 
-      # Main site (everything except /server)
-      - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`)"
+      # Main site (everything except /server and /socket.io)
+      - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && !PathPrefix(`/socket.io`) && !PathPrefix(`/server`)"
       - "traefik.http.routers.${SUBDOMAIN}-app.entrypoints=websecure"
       - "traefik.http.routers.${SUBDOMAIN}-app.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${SUBDOMAIN}-app.priority=10"
       - "traefik.http.services.${SUBDOMAIN}-app.loadbalancer.server.port=3000"
 
       # Higher-priority router just for Next.js static assets
