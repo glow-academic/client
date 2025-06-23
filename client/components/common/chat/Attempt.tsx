@@ -232,6 +232,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const currentChatIdRef = useRef<string | null>(null);
 
   // Fetch attempt data
   const {
@@ -735,7 +736,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  // WebSocket connection setup
+  // WebSocket connection setup - should only run once
   useEffect(() => {
     // Don't create multiple connections
     if (socketRef.current?.connected) {
@@ -885,7 +886,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     socket.on(
       "chat_stopped",
       (data: { chat_id: string; chat_type: string; message: string }) => {
-        if (data.chat_id === currentChat?.id) {
+        if (data.chat_id === currentChatIdRef.current) {
           setIsSendingMessage(false);
           setIsStoppingMessage(false);
           toast.success(data.message || "Chat stopped successfully");
@@ -932,7 +933,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [queryClient, currentChat?.id]);
+  }, [queryClient]); // Only depend on queryClient, not currentChat?.id
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
@@ -1300,6 +1301,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       clearTimeout(measureTimer);
     };
   }); // No dependencies - run on every render until it succeeds
+
+  // Update the ref whenever currentChat changes
+  useEffect(() => {
+    currentChatIdRef.current = currentChat?.id || null;
+  }, [currentChat?.id]);
 
   if (
     attemptLoading ||

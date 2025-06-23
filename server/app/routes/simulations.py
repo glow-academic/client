@@ -279,6 +279,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
         
         # 2. Emit user message to connected clients
         sio_instance = get_sio_instance()
+        logger.info(f"Emitting user message to room simulation_{chat_id}")
         await sio_instance.emit('new_message', {
             'message_id': str(user_message.id),
             'chat_id': str(chat_id),
@@ -300,6 +301,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
         db_session.refresh(assistant_message)
         
         # 4. Emit placeholder assistant message
+        logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
         await sio_instance.emit('new_message', {
             'message_id': str(assistant_message.id),
             'chat_id': str(chat_id),
@@ -326,6 +328,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
                 db_session.commit()
                 
                 # Emit token update to connected clients
+                logger.info(f"Emitting token to room simulation_{chat_id}: {token[:20]}...")
                 await sio_instance.emit('message_token', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
@@ -349,6 +352,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
                 db_session.commit()
                 
                 # Emit cancellation signal
+                logger.info(f"Emitting cancellation to room simulation_{chat_id}")
                 await sio_instance.emit('message_cancelled', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
@@ -365,6 +369,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
         
         # 7. Emit completion signal (only if not cancelled)
         if not cancelled:
+            logger.info(f"Emitting completion to room simulation_{chat_id}")
             await sio_instance.emit('message_complete', {
                 'message_id': str(assistant_message.id),
                 'chat_id': str(chat_id),
@@ -374,6 +379,7 @@ async def process_simulation_message_websocket(chat_id: uuid.UUID, message: str,
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
         sio_instance = get_sio_instance()
+        logger.info(f"Emitting error to room simulation_{chat_id}")
         await sio_instance.emit('message_error', {
             'chat_id': str(chat_id),
             'error': str(e)

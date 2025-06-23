@@ -105,7 +105,7 @@ async def join_chat(sid: str, data: dict[str, Any]) -> None:
         room_name = f"{chat_type}_{chat_id}"
         await sio.enter_room(sid, room_name)
         active_connections[chat_id] = sid
-        logger.info(f"Client {sid} joined {chat_type} chat {chat_id}")
+        logger.info(f"Client {sid} joined {chat_type} chat {chat_id} (room: {room_name})")
         await sio.emit('joined_chat', {'chat_id': chat_id, 'chat_type': chat_type}, room=sid)
 
 @sio.event  # type: ignore
