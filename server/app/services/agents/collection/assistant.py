@@ -91,7 +91,7 @@ async def _handle_assistant_chat(
     # add the user profile to the input items
     input_items.append({
         "role": "user",
-        "content": f"The following is the user's profile ID: {chat.profile_id}"
+        "content": f"The following is the user's profile ID: {chat.profile_id}. However, they may ask questions about other profiles, so you should be able to answer questions about other profiles as well."
     })
 
     # Get all the messages for the chat_id, including the new one, order by created_at

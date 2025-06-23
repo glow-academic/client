@@ -373,6 +373,80 @@ def get_student_simulation_report(profile_id: str) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.tool()
+def find_profiles_by_name(name: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    Search for profiles by first name, last name, or alias using partial matching.
+    
+    This function helps users find profile IDs when they only know the person's name.
+    It searches across first_name, last_name, and alias fields using case-insensitive
+    partial matching.
+    
+    Parameters
+    ----------
+    name : str
+        The name to search for (can be partial)
+    limit : int, optional
+        Maximum number of results to return (default: 10)
+    
+    Returns
+    -------
+    List[Dict[str, Any]]
+        List of matching profiles with basic info:
+        - id: Profile UUID
+        - first_name: First name
+        - last_name: Last name  
+        - alias: Alias/username
+        - role: User role
+        - full_name: Computed full name for display
+    
+    Examples
+    --------
+    find_profiles_by_name("jordan") -> finds "Jordan Lee", "Jordan Smith", etc.
+    find_profiles_by_name("lee") -> finds "Jordan Lee", "Sarah Lee", etc.
+    find_profiles_by_name("jlee") -> finds alias "jlee"
+    """
+    session = next(get_session())
+    try:
+        # Create case-insensitive search pattern
+        search_pattern = f"%{name.lower()}%"
+        
+        # Search across first_name, last_name, and alias
+        stmt = select(Profiles).where(
+            or_(
+                func.lower(Profiles.first_name).like(search_pattern),
+                func.lower(Profiles.last_name).like(search_pattern),
+                func.lower(Profiles.alias).like(search_pattern)
+            )
+        ).limit(limit)
+        
+        profiles = session.exec(stmt).all()
+        
+        results = []
+        for profile in profiles:
+            # Compute full name for display
+            full_name_parts = []
+            if profile.first_name:
+                full_name_parts.append(profile.first_name)
+            if profile.last_name:
+                full_name_parts.append(profile.last_name)
+            full_name = " ".join(full_name_parts) if full_name_parts else profile.alias or "Unknown"
+            
+            results.append({
+                "id": str(profile.id),
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "alias": profile.alias,
+                "role": profile.role,
+                "full_name": full_name
+            })
+        
+        return results
+        
+    except SQLAlchemyError as e:
+        raise Exception(f"Database error searching profiles by name: {str(e)}")
+
+
+@server.tool()
 def search_by_cohort(cohort_id: str, limit: int = 100) -> Dict[str, Any]:
     """
     Return high-level info scoped to one cohort:
