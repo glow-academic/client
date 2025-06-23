@@ -105,7 +105,7 @@ async def test_scenario(
                 if description:
                     input_items.append(
                         {
-                            "role": "assistant",
+                            "role": "user",
                             "content": f"The following is the scenario description for the chat: {description}",
                         }
                     )

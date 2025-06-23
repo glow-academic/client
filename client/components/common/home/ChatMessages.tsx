@@ -12,9 +12,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { AssistantMessageWithTools, useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { AssistantMessage } from "@/types";
+import { logInfo } from "@/utils/logger";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { useQuery } from "@tanstack/react-query";
-import { Wifi, WifiOff } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 const LoadingDots = () => (
@@ -29,26 +29,6 @@ const LoadingDots = () => (
   </div>
 );
 
-const ConnectionStatus = ({ isConnected }: { isConnected: boolean }) => (
-  <div
-    className={`flex items-center gap-1 text-xs px-2 py-1 rounded ${
-      isConnected ? "text-green-600 bg-green-50" : "text-red-600 bg-red-50"
-    }`}
-  >
-    {isConnected ? (
-      <>
-        <Wifi className="h-3 w-3" />
-        <span>Connected</span>
-      </>
-    ) : (
-      <>
-        <WifiOff className="h-3 w-3" />
-        <span>Disconnected</span>
-      </>
-    )}
-  </div>
-);
-
 export default function ChatMessages() {
   const { currentChatId, isConnected } = useChat();
   const { effectiveRole } = useRole();
@@ -59,7 +39,16 @@ export default function ChatMessages() {
     queryFn: () => getAssistantMessagesByChat(currentChatId!),
     enabled: !!currentChatId,
     refetchInterval: isConnected ? false : 5000, // Poll when disconnected
+    staleTime: 0, // Always consider data stale to ensure fresh fetches
+    gcTime: 0, // Don't cache for long
   });
+
+  // Debug logging
+  useEffect(() => {
+    logInfo("ChatMessages - currentChatId", { currentChatId });
+    logInfo("ChatMessages - messages", { messages });
+    logInfo("ChatMessages - isConnected", { isConnected });
+  }, [currentChatId, messages, isConnected]);
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(
@@ -86,7 +75,6 @@ export default function ChatMessages() {
       <div className="p-4 space-y-4">
         <div className="flex justify-between items-center">
           <Skeleton className="h-4 w-32" />
-          <ConnectionStatus isConnected={isConnected} />
         </div>
         {[1, 2, 3].map((i) => (
           <div key={i} className="space-y-2">
@@ -102,9 +90,6 @@ export default function ChatMessages() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="text-center space-y-3 max-w-md">
-          {/* <div className="flex justify-center mb-4">
-            <ConnectionStatus isConnected={isConnected} />
-          </div> */}
           <h3 className="text-lg font-semibold">GLOW Assistant</h3>
         </div>
       </div>
@@ -120,10 +105,6 @@ export default function ChatMessages() {
   return (
     <ScrollArea className="h-full">
       <div className="p-4 space-y-4">
-        {/* <div className="flex justify-end">
-          <ConnectionStatus isConnected={isConnected} />
-        </div> */}
-
         {sortedMessages.map((message: AssistantMessage) => {
           const messageWithTools = message as AssistantMessageWithTools;
           return (

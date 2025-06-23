@@ -96,7 +96,7 @@ def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> TR
         raise ValueError(f"Scenario not found for chat {chat.id}")
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the scenario for the chat: {scenario.description}",
     }
 

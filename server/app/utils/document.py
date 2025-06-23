@@ -25,7 +25,7 @@ def get_document_info(document_ids: List[uuid.UUID], session: Session) -> TRespo
     )
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the document information: {document_info_string}",
     }
     

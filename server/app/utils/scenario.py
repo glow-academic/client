@@ -18,7 +18,7 @@ def get_seniority_info(seniority: str) -> TResponseInputItem:
     seniority_info_string = f"The student is a {seniority}."
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the seniority information: {seniority_info_string}",
     }
 
@@ -31,7 +31,7 @@ def get_crowdedness_info(crowdedness: int) -> TResponseInputItem:
     crowdedness_info_string = f"The scenario has a {crowdedness} level of crowdedness."
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the crowdedness information, on a scale of 1 to 10 (1 being the least crowded and 10 being the most crowded): {crowdedness_info_string}",
     }
 
@@ -44,7 +44,7 @@ def get_intensity_info(intensity: int) -> TResponseInputItem:
     intensity_info_string = f"The scenario has a {intensity} level of intensity."
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the intensity information, on a scale of 1 to 10 (1 being the least intense and 10 being the most intense): {intensity_info_string}",
     }
 

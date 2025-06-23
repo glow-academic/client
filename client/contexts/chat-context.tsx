@@ -155,12 +155,15 @@ export function ChatProvider({ children }: ChatProviderProps) {
         logInfo(
           `Received new_message event: ${data.role} message for chat ${data.chat_id}`
         );
+
         // Update the messages cache with new message
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
             const exists = old.find((msg) => msg.id === data.message_id);
-            if (exists) return old;
+            if (exists) {
+              return old;
+            }
 
             const newMessage: AssistantMessage = {
               id: data.message_id,
@@ -173,13 +176,22 @@ export function ChatProvider({ children }: ChatProviderProps) {
               completedAt: data.created_at,
             };
 
-            return [...old, newMessage].sort(
+            const updated = [...old, newMessage].sort(
               (a, b) =>
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
             );
+
+            return updated;
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -220,17 +232,27 @@ export function ChatProvider({ children }: ChatProviderProps) {
         logInfo(
           `Received message_token: "${data.token}" for message ${data.message_id}`
         );
+
         // Update the specific message with streaming content
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.accumulated_content }
                 : msg
             );
+
+            return updated;
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -245,11 +267,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
                 : msg
             );
+
+            return updated;
           }
         );
 
@@ -257,6 +281,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
         // Refresh chat list to update with new messages
         queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -287,16 +318,25 @@ export function ChatProvider({ children }: ChatProviderProps) {
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
                 : msg
             );
+
+            return updated;
           }
         );
 
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -316,7 +356,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            return old.map((msg) => {
+            const updated = old.map((msg) => {
               if (msg.id === data.message_id) {
                 const messageWithTools = msg as AssistantMessageWithTools;
                 const toolCall: ToolCallData = {
@@ -330,8 +370,17 @@ export function ChatProvider({ children }: ChatProviderProps) {
               }
               return msg;
             });
+
+            return updated;
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -346,7 +395,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            return old.map((msg) => {
+            const updated = old.map((msg) => {
               if (msg.id === data.message_id) {
                 const messageWithTools = msg as AssistantMessageWithTools;
                 return {
@@ -370,8 +419,17 @@ export function ChatProvider({ children }: ChatProviderProps) {
               }
               return msg;
             });
+
+            return updated;
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["assistantMessages", data.chat_id],
+          });
+        }, 0);
       }
     );
 

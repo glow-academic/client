@@ -21,7 +21,7 @@ def get_rubric() -> TResponseInputItem:
         Static rubric formatted for agent consumption
     """
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the rubric for the evaluation: {rubric}",
     }
 

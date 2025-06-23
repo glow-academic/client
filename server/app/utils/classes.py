@@ -20,6 +20,6 @@ def get_class_info(class_id: uuid.UUID, session: Session) -> TResponseInputItem:
     class_info_string = f"Class Name: {class_name}\nClass Code: {class_code}\nClass Description: {class_description}"
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"The following is the class information: {class_info_string}",
     }

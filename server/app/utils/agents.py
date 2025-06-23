@@ -15,6 +15,6 @@ def get_agent_info(agent_id: uuid.UUID, session: Session) -> TResponseInputItem:
         raise ValueError(f"Agent with ID {agent_id} not found")
 
     return {
-        "role": "assistant",
+        "role": "user",
         "content": f"This is the profile of the student: Name: {agent.name} Description: {agent.description}",
     }

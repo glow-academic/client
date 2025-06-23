@@ -138,7 +138,7 @@ async def _handle_eval_chat(
     if scenario.class_id:
         class_info = get_class_info(scenario.class_id, session)
 
-    input_items: list[TResponseInputItem] = [{"role": "assistant", "content": scenario_context}]
+    input_items: list[TResponseInputItem] = [{"role": "user", "content": scenario_context}]
     if class_info:
         input_items.append(class_info)
     input_items.extend(conversation_history)
