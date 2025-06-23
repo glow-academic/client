@@ -7,8 +7,8 @@ from agents import Runner, trace
 from agents.items import ToolCallItem, ToolCallOutputItem, TResponseInputItem
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
-from app.models import (Agents, AssistantChats, AssistantMessages, Models,
-                        Profiles, Providers)
+from app.models import (Agents, AssistantChats, AssistantMessages,
+                        AssistantToolCalls, Models, Profiles, Providers)
 from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
@@ -110,8 +110,18 @@ async def _handle_assistant_chat(
     messages = list(messages)
     messages = sorted(messages, key=lambda x: x.created_at)
 
+    # get all the tool calls for the chat_id
+    tool_calls = session.exec(
+        select(AssistantToolCalls)
+        .where(AssistantToolCalls.chat_id == chat.id)
+    ).all()
+
+    # sort tool calls by created_at
+    tool_calls = list(tool_calls)
+    tool_calls = sorted(tool_calls, key=lambda x: x.created_at)
+
     # Prepare conversation history from chat_id
-    conversation_history = get_assistant_conversation_history(messages)
+    conversation_history = get_assistant_conversation_history(messages, tool_calls)
     input_items.extend(conversation_history)
 
     # getting the model from the agent's model_id

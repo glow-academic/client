@@ -1,10 +1,14 @@
+import json
 import logging
 import random
-from typing import List
+from datetime import datetime
+from typing import Any, Dict, List, Union
 
 from agents.items import TResponseInputItem
-from app.models import (Agents, AssistantMessages, EvalChats, EvalMessages,
-                        Scenarios, SimulationChats, SimulationMessages)
+from app.models import (Agents, AssistantMessages, AssistantToolCalls,
+                        EvalChats, EvalMessages, Scenarios, SimulationChats,
+                        SimulationMessages)
+from openai.types.responses import ResponseFunctionToolCallParam
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -60,26 +64,82 @@ def get_eval_conversation_history(
 
 def get_assistant_conversation_history(
     messages: List[AssistantMessages],
+    tool_calls: List[AssistantToolCalls],
 ) -> list[TResponseInputItem]:
     """
-    Get the conversation history for a given list of messages.
+    Get the conversation history for a given list of messages and tool calls,
+    organized chronologically by creation time.
 
     Args:
-        messages: List of Messages objects from the database
+        messages: List of AssistantMessages objects from the database
+        tool_calls: List of AssistantToolCalls objects from the database
 
     Returns:
-        List of message objects formatted for OpenAI API consumption
+        List of message objects formatted for OpenAI API consumption, 
+        chronologically ordered
     """
-    conversation_history: list[TResponseInputItem] = []
+    # Create a list of all conversation items with their timestamps
+    conversation_items: List[Dict[str, Any]] = []
     
+    # Add messages to the list
     for message in messages:
         if message.role == "user" and message.content:
-            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
-            conversation_history.append(user_message_item)
-        if message.role == "assistant" and message.content:
-            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
-            conversation_history.append(assistant_message_item)
-    logger.info(f"Conversation history: {conversation_history}")
+            user_item: TResponseInputItem = {"role": "user", "content": message.content}
+            conversation_items.append({
+                "timestamp": message.created_at,
+                "type": "message",
+                "item": user_item
+            })
+        elif message.role == "assistant" and message.content:
+            assistant_item: TResponseInputItem = {"role": "assistant", "content": message.content}
+            conversation_items.append({
+                "timestamp": message.created_at,
+                "type": "message", 
+                "item": assistant_item
+            })
+    
+    # Add tool calls to the list
+    for tool_call in tool_calls:
+        # Add the tool call itself
+        logger.info(f"Tool call arguments: {tool_call.tool_arguments}")
+        tool_call_item: ResponseFunctionToolCallParam = {
+            "arguments": str(tool_call.tool_arguments) if tool_call.tool_arguments else json.dumps({}),
+            "call_id": "call_" + str(tool_call.id),
+            "name": tool_call.tool_name,
+            "type": "function_call",
+            "id": str(tool_call.id),
+            "status": "completed",
+        }
+        conversation_items.append({
+            "timestamp": tool_call.created_at,
+            "type": "tool_call",
+            "item": tool_call_item
+        })
+        
+        # Add the tool call output immediately after the tool call
+        logger.info(f"Tool call result: {tool_call.tool_result}")
+        tool_call_output_item: TResponseInputItem = {
+            "call_id": "call_" + str(tool_call.id),
+            "output": str(tool_call.tool_result) if tool_call.tool_result else json.dumps({}),
+            "type": "function_call_output",
+            "id": str(tool_call.id),
+            "status": "completed",
+        }
+        conversation_items.append({
+            "timestamp": tool_call.created_at,
+            "type": "tool_output",
+            "item": tool_call_output_item
+        })
+    
+    # Sort all items by timestamp
+    conversation_items.sort(key=lambda x: x["timestamp"] or datetime.min)
+    
+    # Extract the conversation history in chronological order
+    conversation_history: list[TResponseInputItem] = []
+    for item in conversation_items:
+        conversation_history.append(item["item"])
+
+    logger.info(f"Chronologically ordered conversation history with {len(conversation_history)} items")
 
     return conversation_history
 
