@@ -783,13 +783,35 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         completed: boolean;
         created_at: string;
       }) => {
-        logInfo("Simulation received new_message", data);
+        logInfo("Simulation received new_message", {
+          messageId: data.message_id,
+          chatId: data.chat_id,
+          role: data.role,
+          currentChatId: currentChatIdRef.current,
+          content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
+          completed: data.completed
+        });
+
+        // Check if this message is for the current chat
+        if (data.chat_id !== currentChatIdRef.current) {
+          logInfo(`Ignoring message for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          return;
+        }
+
         // Update the messages cache with new message
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
+            logInfo(`Updating simulation message cache for chat ${data.chat_id}`, { 
+              oldMessagesCount: old.length,
+              newMessageId: data.message_id
+            });
+
             const exists = old.find((msg) => msg.id === data.message_id);
-            if (exists) return old;
+            if (exists) {
+              logInfo(`Message ${data.message_id} already exists, skipping`);
+              return old;
+            }
 
             const newMessage: SimulationMessage = {
               id: data.message_id,
@@ -800,11 +822,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               createdAt: data.created_at,
             };
 
-            return [...old, newMessage].sort(
+            const updated = [...old, newMessage].sort(
               (a, b) =>
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
             );
+
+            logInfo(`Updated simulation message cache`, { 
+              newMessagesCount: updated.length,
+              addedMessage: { id: newMessage.id, type: newMessage.type, content: newMessage.content.substring(0, 50) }
+            });
+
+            return updated;
           }
         );
 
@@ -825,16 +854,30 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         token: string;
         accumulated_content: string;
       }) => {
-        logInfo("Simulation received message_token", { token: data.token });
+        logInfo("Simulation received message_token", { 
+          token: data.token,
+          messageId: data.message_id,
+          chatId: data.chat_id,
+          currentChatId: currentChatIdRef.current
+        });
+
+        // Check if this message is for the current chat
+        if (data.chat_id !== currentChatIdRef.current) {
+          logInfo(`Ignoring token for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          return;
+        }
+
         // Update the specific message with streaming content
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.accumulated_content }
                 : msg
             );
+
+            return updated;
           }
         );
 
@@ -854,16 +897,30 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         chat_id: string;
         final_content: string;
       }) => {
-        logInfo("Simulation received message_complete", data);
+        logInfo("Simulation received message_complete", {
+          messageId: data.message_id,
+          chatId: data.chat_id,
+          currentChatId: currentChatIdRef.current,
+          finalContentLength: data.final_content.length
+        });
+
+        // Check if this message is for the current chat
+        if (data.chat_id !== currentChatIdRef.current) {
+          logInfo(`Ignoring completion for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          return;
+        }
+
         // Mark message as completed and update final content
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
                 : msg
             );
+
+            return updated;
           }
         );
 
@@ -879,6 +936,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     );
 
     socket.on("message_error", (data: { chat_id: string; error: string }) => {
+      logInfo("Simulation received message_error", {
+        chatId: data.chat_id,
+        currentChatId: currentChatIdRef.current,
+        error: data.error
+      });
+
+      // Check if this error is for the current chat
+      if (data.chat_id !== currentChatIdRef.current) {
+        logInfo(`Ignoring error for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+        return;
+      }
+
       toast.error(`Chat error: ${data.error}`);
       setIsSendingMessage(false);
     });
@@ -901,15 +970,29 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         chat_id: string;
         final_content: string;
       }) => {
+        logInfo("Simulation received message_cancelled", {
+          messageId: data.message_id,
+          chatId: data.chat_id,
+          currentChatId: currentChatIdRef.current
+        });
+
+        // Check if this message is for the current chat
+        if (data.chat_id !== currentChatIdRef.current) {
+          logInfo(`Ignoring cancellation for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          return;
+        }
+
         // Update the cancelled message with its final content
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
+            const updated = old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
                 : msg
             );
+
+            return updated;
           }
         );
 
@@ -926,7 +1009,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     );
 
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
-      logInfo(`Joined ${data.chat_type} chat: ${data.chat_id}`);
+      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
+        currentChatId: currentChatIdRef.current,
+        isCurrentChat: data.chat_id === currentChatIdRef.current
+      });
     });
 
     return () => {
