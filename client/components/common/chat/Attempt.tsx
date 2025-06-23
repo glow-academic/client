@@ -74,7 +74,12 @@ import {
 
 // Add RadialBarChart imports
 import { ChartContainer } from "@/components/ui/chart";
-import { PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
+import {
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+} from "recharts";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
@@ -157,15 +162,25 @@ const CircularProgress = ({
           data={chartData}
           startAngle={90}
           endAngle={-270}
-          innerRadius={size * 0.3}
-          outerRadius={size * 0.45}
+          innerRadius="75%"
+          outerRadius="100%"
         >
+          {/* Map progress (0-100) to the sweep angle */}
+          <PolarAngleAxis
+            type="number"
+            domain={[0, 100]}
+            dataKey="progress"
+            angleAxisId={0}
+            tick={false}
+            tickLine={false}
+            axisLine={false}
+          />
           <PolarRadiusAxis tick={false} tickLine={false} axisLine={false} />
           <RadialBar
             dataKey="progress"
-            background={{ fill: "rgba(0,0,0,0.1)" }}
             cornerRadius={strokeWidth / 2}
             fill={progressColor}
+            background={{ fill: "rgba(0,0,0,0.1)" }}
           />
         </RadialBarChart>
       </ChartContainer>
@@ -1649,7 +1664,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                                       <CircularProgress
                                         progress={
-                                          (chats.length /
+                                          ((chats.length - 1) /
                                             (simulation?.scenarioIds?.length ||
                                               1)) *
                                           100
@@ -1660,8 +1675,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>
-                                      {chats.length} of{" "}
-                                      {simulation?.scenarioIds?.length} chats
+                                      Chat {chats.length} of{" "}
+                                      {simulation?.scenarioIds?.length}
                                     </p>
                                   </TooltipContent>
                                 </Tooltip>
