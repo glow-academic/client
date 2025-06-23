@@ -28,6 +28,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./database/history:/database/history
+      - ./client/components:/client/components  # Mount client components with write access for analytics generation
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -105,8 +106,10 @@ services:
     environment:
       - DB_HOST=database
     depends_on:
-      - server
-      - database
+      database:
+        condition: service_healthy
+      server:
+        condition: service_started
     networks:
       - internal
       - web
