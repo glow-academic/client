@@ -86,6 +86,12 @@ CREATE TABLE simulation_chat_grades (
 INSERT INTO cohorts (id, title, description, active) VALUES
   ('11111111-aaaa-aaaa-aaaa-111111111111', 'August TA Training (Fall 2025)', 'Students enrolled in August TA Training (Fall 2025)', true);
 
+-- Insert TA Training Cohorts
+INSERT INTO cohorts (id, title, description, active, profile_ids) VALUES
+  ('22222222-aaaa-aaaa-aaaa-111111111111', 'TA Training Week 1 - Fundamentals', 'New TAs learning basic tutoring skills and student interaction techniques', true, ARRAY['1a001111-1111-1111-1111-111111111111', '1a001111-2222-2222-2222-222222222222', '1a001111-3333-3333-3333-333333333333', '1a001111-4444-4444-4444-444444444444', '1a001111-5555-5555-5555-555555555555']::UUID[]),
+  ('33333333-aaaa-aaaa-aaaa-111111111111', 'TA Training Week 2 - Advanced Techniques', 'TAs developing advanced pedagogical skills and handling difficult scenarios', true, ARRAY['1a002222-1111-1111-1111-111111111111', '1a002222-2222-2222-2222-222222222222', '1a002222-3333-3333-3333-333333333333', '1a002222-4444-4444-4444-444444444444', '1a002222-5555-5555-5555-555555555555']::UUID[]),
+  ('44444444-aaaa-aaaa-aaaa-111111111111', 'TA Training Week 3 - Specialization', 'Experienced TAs mastering specialized topics and complex problem-solving', true, ARRAY['1a003333-1111-1111-1111-111111111111', '1a003333-2222-2222-2222-222222222222', '1a003333-3333-3333-3333-333333333333', '1a003333-4444-4444-4444-444444444444', '1a003333-5555-5555-5555-555555555555']::UUID[]);
+
 -- Insert Default Simulations (3 for the main agents)
 INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation) VALUES
   ('aaaaaaaa-1111-2222-3333-444444444444', 'Aggressive Student Practice', NULL, true, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333', true),
@@ -102,6 +108,24 @@ INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id,
 INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation) VALUES
   ('aaaaaaaa-bbbb-cccc-dddd-111111111111', 'General Coding Practice', 15, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222', '33333333-cccc-cccc-cccc-333333333333']::UUID[], '33333333-3333-3333-3333-333333333333', true)
 ON CONFLICT (id) DO NOTHING;
+
+-- TA Training Week 1 Simulations (Fundamentals)
+INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation, cohort_ids) VALUES
+  ('1a15ba01-aaaa-bbbb-cccc-111111111111', 'Basic Student Interaction - Arrays', 30, true, ARRAY['11111111-aaaa-aaaa-aaaa-111111111111', '22222222-bbbb-bbbb-bbbb-222222222222']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['22222222-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a15ba02-aaaa-bbbb-cccc-111111111111', 'Handling Confused Students - Loops', 25, true, ARRAY['33333333-cccc-cccc-cccc-333333333333', '44444444-dddd-dddd-dddd-444444444444']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['22222222-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a15ba03-aaaa-bbbb-cccc-111111111111', 'Time Management Practice - File I/O', 20, true, ARRAY['22222222-bbbb-bbbb-bbbb-222222222222', '55555555-eeee-eeee-eeee-555555555555']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['22222222-aaaa-aaaa-aaaa-111111111111']::UUID[]);
+
+-- TA Training Week 2 Simulations (Advanced Techniques)
+INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation, cohort_ids) VALUES
+  ('1a25ba01-aaaa-bbbb-cccc-111111111111', 'Graph Theory Tutoring - DFS/BFS', 45, true, ARRAY['77777777-aaaa-bbbb-cccc-777777777777', '88888888-bbbb-cccc-dddd-888888888888']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['33333333-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a25ba02-aaaa-bbbb-cccc-111111111111', 'Mathematical Induction Practice', 40, true, ARRAY['44444444-dddd-dddd-dddd-444444444444', '66666666-ffff-ffff-ffff-666666666666']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['33333333-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a25ba03-aaaa-bbbb-cccc-111111111111', 'Advanced Data Structures - Trees', 50, true, ARRAY['99999999-cccc-dddd-eeee-999999999999', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['33333333-aaaa-aaaa-aaaa-111111111111']::UUID[]);
+
+-- TA Training Week 3 Simulations (Specialization)
+INSERT INTO simulations (id, title, time_limit, active, scenario_ids, rubric_id, default_simulation, cohort_ids) VALUES
+  ('1a35ba01-aaaa-bbbb-cccc-111111111111', 'Algorithm Analysis - Big O Notation', 60, true, ARRAY['aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['44444444-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a35ba02-aaaa-bbbb-cccc-111111111111', 'Complex Problem Solving - Dynamic Programming', 75, true, ARRAY['cccccccc-ffff-aaaa-bbbb-cccccccccccc', '88888888-bbbb-cccc-dddd-888888888888']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['44444444-aaaa-aaaa-aaaa-111111111111']::UUID[]),
+  ('1a35ba03-aaaa-bbbb-cccc-111111111111', 'Advanced Graph Algorithms - Network Flow', 90, true, ARRAY['77777777-aaaa-bbbb-cccc-777777777777', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb']::UUID[], '33333333-3333-3333-3333-333333333333', false, ARRAY['44444444-aaaa-aaaa-aaaa-111111111111']::UUID[]);
 
 -- Insert Simulation Attempts (Essential for linking chats to simulations and profiles)
 INSERT INTO simulation_attempts (id, created_at, profile_id, simulation_id) VALUES
@@ -148,7 +172,29 @@ INSERT INTO simulation_attempts (id, created_at, profile_id, simulation_id) VALU
   -- Custom simulation guest attempts
   ('a5e5b001-1111-2222-3333-444444444444', NOW() - INTERVAL '1 hour', NULL, 'c5a0b001-aaaa-bbbb-cccc-dddddddddddd'),
   ('a5e5b002-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', NULL, 'c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee'),
-  ('a5e5b003-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NULL, 'c5a0b003-cccc-dddd-eeee-ffffffffffff');
+  ('a5e5b003-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', NULL, 'c5a0b003-cccc-dddd-eeee-ffffffffffff'),
+
+  -- TA Training Week 1 attempts
+  ('1a1a1101-1111-2222-3333-444444444444', NOW() - INTERVAL '2 days', '1a001111-1111-1111-1111-111111111111', '1a15ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a1a1102-1111-2222-3333-444444444444', NOW() - INTERVAL '1 day', '1a001111-1111-1111-1111-111111111111', '1a15ba02-aaaa-bbbb-cccc-111111111111'),
+  ('1a1a1103-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', '1a001111-2222-2222-2222-222222222222', '1a15ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a1a1104-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', '1a001111-3333-3333-3333-333333333333', '1a15ba03-aaaa-bbbb-cccc-111111111111'),
+  ('1a1a1105-1111-2222-3333-444444444444', NOW() - INTERVAL '4 hours', '1a001111-4444-4444-4444-444444444444', '1a15ba02-aaaa-bbbb-cccc-111111111111'),
+  ('1a1a1106-1111-2222-3333-444444444444', NOW() - INTERVAL '6 hours', '1a001111-5555-5555-5555-555555555555', '1a15ba01-aaaa-bbbb-cccc-111111111111'),
+
+  -- TA Training Week 2 attempts
+  ('1a2a1101-1111-2222-3333-444444444444', NOW() - INTERVAL '1 day', '1a002222-1111-1111-1111-111111111111', '1a25ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a2a1102-1111-2222-3333-444444444444', NOW() - INTERVAL '2 hours', '1a002222-2222-2222-2222-222222222222', '1a25ba02-aaaa-bbbb-cccc-111111111111'),
+  ('1a2a1103-1111-2222-3333-444444444444', NOW() - INTERVAL '4 hours', '1a002222-3333-3333-3333-333333333333', '1a25ba03-aaaa-bbbb-cccc-111111111111'),
+  ('1a2a1104-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', '1a002222-4444-4444-4444-444444444444', '1a25ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a2a1105-1111-2222-3333-444444444444', NOW() - INTERVAL '7 hours', '1a002222-5555-5555-5555-555555555555', '1a25ba02-aaaa-bbbb-cccc-111111111111'),
+
+  -- TA Training Week 3 attempts
+  ('1a3a1101-1111-2222-3333-444444444444', NOW() - INTERVAL '3 hours', '1a003333-1111-1111-1111-111111111111', '1a35ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a3a1102-1111-2222-3333-444444444444', NOW() - INTERVAL '1 hour', '1a003333-2222-2222-2222-222222222222', '1a35ba02-aaaa-bbbb-cccc-111111111111'),
+  ('1a3a1103-1111-2222-3333-444444444444', NOW() - INTERVAL '5 hours', '1a003333-3333-3333-3333-333333333333', '1a35ba03-aaaa-bbbb-cccc-111111111111'),
+  ('1a3a1104-1111-2222-3333-444444444444', NOW() - INTERVAL '2 hours', '1a003333-4444-4444-4444-444444444444', '1a35ba01-aaaa-bbbb-cccc-111111111111'),
+  ('1a3a1105-1111-2222-3333-444444444444', NOW() - INTERVAL '6 hours', '1a003333-5555-5555-5555-555555555555', '1a35ba02-aaaa-bbbb-cccc-111111111111');
 
 -- Insert Comprehensive Chat Data
 INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, completed, attempt_id) VALUES
@@ -191,7 +237,29 @@ INSERT INTO simulation_chats (id, created_at, completed_at, title, scenario_id, 
   -- Guest simulation chats
   ('a5e5b001-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 hour', NULL, 'Guest Programming Challenge', '11111111-aaaa-aaaa-aaaa-111111111111', false, 'a5e5b001-1111-2222-3333-444444444444'),
   ('a5e5b002-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours', 'Guest Multi-Course Test', '44444444-dddd-dddd-dddd-444444444444', true, 'a5e5b002-1111-2222-3333-444444444444'),
-  ('a5e5b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NULL, 'Guest Theory Challenge', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'a5e5b003-1111-2222-3333-444444444444');
+  ('a5e5b003-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NULL, 'Guest Theory Challenge', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, 'a5e5b003-1111-2222-3333-444444444444'),
+
+  -- TA Training Week 1 chats
+  ('1a1c4a01-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', 'Array Indexing Help', '11111111-aaaa-aaaa-aaaa-111111111111', true, '1a1a1101-1111-2222-3333-444444444444'),
+  ('1a1c4a02-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '1 day', NULL, 'Loop Logic Confusion', '33333333-cccc-cccc-cccc-333333333333', false, '1a1a1102-1111-2222-3333-444444444444'),
+  ('1a1c4a03-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours', 'Happy Student Arrays', '22222222-bbbb-bbbb-bbbb-222222222222', true, '1a1a1103-1111-2222-3333-444444444444'),
+  ('1a1c4a04-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '5 hours', NULL, 'File Reading Issues', '55555555-eeee-eeee-eeee-555555555555', false, '1a1a1104-1111-2222-3333-444444444444'),
+  ('1a1c4a05-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours', 'While Loop Practice', '44444444-dddd-dddd-dddd-444444444444', true, '1a1a1105-1111-2222-3333-444444444444'),
+  ('1a1c4a06-aaaa-bbbb-cccc-666666666666', NOW() - INTERVAL '6 hours', NULL, 'Basic Array Operations', '11111111-aaaa-aaaa-aaaa-111111111111', false, '1a1a1106-1111-2222-3333-444444444444'),
+
+  -- TA Training Week 2 chats
+  ('1a2c4a01-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '1 day', NOW() - INTERVAL '23 hours', 'Graph Traversal DFS', '77777777-aaaa-bbbb-cccc-777777777777', true, '1a2a1101-1111-2222-3333-444444444444'),
+  ('1a2c4a02-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '2 hours', NULL, 'Induction Base Case', '44444444-dddd-dddd-dddd-444444444444', false, '1a2a1102-1111-2222-3333-444444444444'),
+  ('1a2c4a03-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours', 'Binary Tree Traversal', '99999999-cccc-dddd-eeee-999999999999', true, '1a2a1103-1111-2222-3333-444444444444'),
+  ('1a2c4a04-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '3 hours', NULL, 'BFS Implementation', '88888888-bbbb-cccc-dddd-888888888888', false, '1a2a1104-1111-2222-3333-444444444444'),
+  ('1a2c4a05-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '7 hours', NOW() - INTERVAL '6 hours', 'Mathematical Proof Structure', '66666666-ffff-ffff-ffff-666666666666', true, '1a2a1105-1111-2222-3333-444444444444'),
+
+  -- TA Training Week 3 chats
+  ('1a3c4a01-aaaa-bbbb-cccc-111111111111', NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours', 'Big O Analysis', 'aaaaaaaa-dddd-eeee-ffff-aaaaaaaaaaaa', true, '1a3a1101-1111-2222-3333-444444444444'),
+  ('1a3c4a02-aaaa-bbbb-cccc-222222222222', NOW() - INTERVAL '1 hour', NULL, 'Dynamic Programming Approach', 'cccccccc-ffff-aaaa-bbbb-cccccccccccc', false, '1a3a1102-1111-2222-3333-444444444444'),
+  ('1a3c4a03-aaaa-bbbb-cccc-333333333333', NOW() - INTERVAL '5 hours', NOW() - INTERVAL '4 hours', 'Network Flow Algorithms', '77777777-aaaa-bbbb-cccc-777777777777', true, '1a3a1103-1111-2222-3333-444444444444'),
+  ('1a3c4a04-aaaa-bbbb-cccc-444444444444', NOW() - INTERVAL '2 hours', NULL, 'Complexity Analysis', 'bbbbbbbb-eeee-ffff-aaaa-bbbbbbbbbbbb', false, '1a3a1104-1111-2222-3333-444444444444'),
+  ('1a3c4a05-aaaa-bbbb-cccc-555555555555', NOW() - INTERVAL '6 hours', NOW() - INTERVAL '5 hours', 'Advanced DP Problems', '88888888-bbbb-cccc-dddd-888888888888', true, '1a3a1105-1111-2222-3333-444444444444');
 
 -- Insert Simulation Chat Rubrics (Custom rubric grades for each simulation chat)
 INSERT INTO simulation_chat_grades (id, passed, score, time_taken, rubric_id, simulation_chat_id) VALUES
@@ -233,7 +301,22 @@ INSERT INTO simulation_chat_grades (id, passed, score, time_taken, rubric_id, si
   -- Guest simulation chats
   ('bbbb0024-1111-2222-3333-444444444444', true, 83, 1400, '33333333-3333-3333-3333-333333333333', 'a5e5b001-aaaa-bbbb-cccc-111111111111'),
   ('bbbb0025-1111-2222-3333-444444444444', true, 72, 1150, '33333333-3333-3333-3333-333333333333', 'a5e5b002-aaaa-bbbb-cccc-222222222222'),
-  ('bbbb0026-1111-2222-3333-444444444444', false, 67, 1050, '33333333-3333-3333-3333-333333333333', 'a5e5b003-aaaa-bbbb-cccc-333333333333');
+  ('bbbb0026-1111-2222-3333-444444444444', false, 67, 1050, '33333333-3333-3333-3333-333333333333', 'a5e5b003-aaaa-bbbb-cccc-333333333333'),
+
+  -- TA Training Week 1 chats (completed ones only)
+  ('1a19da01-1111-2222-3333-444444444444', true, 78, 1800, '33333333-3333-3333-3333-333333333333', '1a1c4a01-aaaa-bbbb-cccc-111111111111'),
+  ('1a19da03-1111-2222-3333-444444444444', true, 74, 1200, '33333333-3333-3333-3333-333333333333', '1a1c4a03-aaaa-bbbb-cccc-333333333333'),
+  ('1a19da05-1111-2222-3333-444444444444', true, 81, 1500, '33333333-3333-3333-3333-333333333333', '1a1c4a05-aaaa-bbbb-cccc-555555555555'),
+
+  -- TA Training Week 2 chats (completed ones only)
+  ('1a29da01-1111-2222-3333-444444444444', true, 85, 2700, '33333333-3333-3333-3333-333333333333', '1a2c4a01-aaaa-bbbb-cccc-111111111111'),
+  ('1a29da03-1111-2222-3333-444444444444', true, 82, 3000, '33333333-3333-3333-3333-333333333333', '1a2c4a03-aaaa-bbbb-cccc-333333333333'),
+  ('1a29da05-1111-2222-3333-444444444444', true, 88, 2400, '33333333-3333-3333-3333-333333333333', '1a2c4a05-aaaa-bbbb-cccc-555555555555'),
+
+  -- TA Training Week 3 chats (completed ones only)
+  ('1a39da01-1111-2222-3333-444444444444', true, 91, 3600, '33333333-3333-3333-3333-333333333333', '1a3c4a01-aaaa-bbbb-cccc-111111111111'),
+  ('1a39da03-1111-2222-3333-444444444444', true, 87, 5400, '33333333-3333-3333-3333-333333333333', '1a3c4a03-aaaa-bbbb-cccc-333333333333'),
+  ('1a39da05-1111-2222-3333-444444444444', true, 89, 4500, '33333333-3333-3333-3333-333333333333', '1a3c4a05-aaaa-bbbb-cccc-555555555555');
 
 -- Insert Sample Simulation Chat Feedbacks (showing detailed grading breakdown)
 INSERT INTO simulation_chat_feedbacks (id, standard_id, simulation_chat_grade_id, total, feedback) VALUES
@@ -265,7 +348,25 @@ INSERT INTO simulation_chat_feedbacks (id, standard_id, simulation_chat_grade_id
   ('cccc0017-1111-2222-3333-444444444444', '11111111-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Directly provided answers without guiding student discovery'),
   ('cccc0018-1111-2222-3333-444444444444', '22222222-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Clear demonstration of not knowing the course material'),
   ('cccc0019-1111-2222-3333-444444444444', '33333333-4444-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 2, 'Frequently mismanaged time leading to rushed explanations'),
-  ('cccc0020-1111-2222-3333-444444444444', '44444444-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Failed to adapt to different student types, uniform responses');
+  ('cccc0020-1111-2222-3333-444444444444', '44444444-5555-aaaa-bbbb-333333333333', 'bbbb0011-1111-2222-3333-444444444444', 1, 'Failed to adapt to different student types, uniform responses'),
+
+  -- TA Training Week 1 Feedback Examples
+  ('1a1fee01-1111-2222-3333-444444444444', '11111111-2222-aaaa-bbbb-333333333333', '1a19da01-1111-2222-3333-444444444444', 4, 'Good use of questioning to help student understand array indexing'),
+  ('1a1fee02-1111-2222-3333-444444444444', '22222222-2222-aaaa-bbbb-333333333333', '1a19da01-1111-2222-3333-444444444444', 4, 'Demonstrated solid understanding of basic programming concepts'),
+  ('1a1fee03-1111-2222-3333-444444444444', '33333333-2222-aaaa-bbbb-333333333333', '1a19da01-1111-2222-3333-444444444444', 4, 'Managed session time well for a beginner TA'),
+  ('1a1fee04-1111-2222-3333-444444444444', '44444444-2222-aaaa-bbbb-333333333333', '1a19da01-1111-2222-3333-444444444444', 4, 'Adapted approach appropriately to happy student personality'),
+
+  -- TA Training Week 2 Feedback Examples  
+  ('1a2fee01-1111-2222-3333-444444444444', '11111111-1111-aaaa-bbbb-333333333333', '1a29da01-1111-2222-3333-444444444444', 5, 'Excellent scaffolding approach for graph traversal concepts'),
+  ('1a2fee02-1111-2222-3333-444444444444', '22222222-1111-aaaa-bbbb-333333333333', '1a29da01-1111-2222-3333-444444444444', 5, 'Clear understanding of DFS algorithms and implementation'),
+  ('1a2fee03-1111-2222-3333-444444444444', '33333333-2222-aaaa-bbbb-333333333333', '1a29da01-1111-2222-3333-444444444444', 4, 'Good time management for complex topic'),
+  ('1a2fee04-1111-2222-3333-444444444444', '44444444-1111-aaaa-bbbb-333333333333', '1a29da01-1111-2222-3333-444444444444', 5, 'Perfectly adapted to student learning style'),
+
+  -- TA Training Week 3 Feedback Examples
+  ('1a3fee01-1111-2222-3333-444444444444', '11111111-1111-aaaa-bbbb-333333333333', '1a39da01-1111-2222-3333-444444444444', 5, 'Masterful use of Socratic questioning for Big O analysis'),
+  ('1a3fee02-1111-2222-3333-444444444444', '22222222-1111-aaaa-bbbb-333333333333', '1a39da01-1111-2222-3333-444444444444', 5, 'Exceptional knowledge of algorithm complexity theory'),
+  ('1a3fee03-1111-2222-3333-444444444444', '33333333-1111-aaaa-bbbb-333333333333', '1a39da01-1111-2222-3333-444444444444', 5, 'Perfect time management for advanced concepts'),
+  ('1a3fee04-1111-2222-3333-444444444444', '44444444-1111-aaaa-bbbb-333333333333', '1a39da01-1111-2222-3333-444444444444', 5, 'Excellent adaptation to advanced student needs');
 
 
 

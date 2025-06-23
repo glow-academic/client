@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,6 +36,7 @@ import { type Agent } from "@/types";
 import { createAgent } from "@/utils/mutations/agents/create-agent";
 import { updateAgent } from "@/utils/mutations/agents/update-agent";
 import { getAgent } from "@/utils/queries/agents/get-agent";
+import { getAllModels } from "@/utils/queries/models/get-all-models";
 
 interface AgentProps {
   agentId?: string;
@@ -52,12 +60,18 @@ export default function Agent({
     description: "",
     systemPrompt: "",
     temperature: 0,
+    modelId: null,
   });
 
   const { data: agent, isLoading } = useQuery({
     queryKey: ["agent", agentId],
     queryFn: () => getAgent(agentId!),
     enabled: isEditMode,
+  });
+
+  const { data: models, isLoading: isModelsLoading } = useQuery({
+    queryKey: ["models"],
+    queryFn: () => getAllModels(),
   });
 
   useEffect(() => {
@@ -67,6 +81,7 @@ export default function Agent({
         description: agent.description || "",
         systemPrompt: agent.systemPrompt || "",
         temperature: agent.temperature || 0,
+        modelId: agent.modelId || null,
       });
     }
   }, [agent, isEditMode]);
@@ -103,6 +118,11 @@ export default function Agent({
 
     if (!formData.systemPrompt?.trim()) {
       toast.error("System prompt is required");
+      return;
+    }
+
+    if (!formData.modelId) {
+      toast.error("Model selection is required");
       return;
     }
 
@@ -156,6 +176,7 @@ export default function Agent({
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-20 w-full" />
               <Skeleton className="h-32 w-full" />
+              <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
               <Skeleton className="h-10 w-full" />
             </CardContent>
@@ -216,24 +237,35 @@ export default function Agent({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="systemPrompt">System Prompt *</Label>
-            <Textarea
-              id="systemPrompt"
-              value={formData.systemPrompt || ""}
-              onChange={(e) =>
+            <Label htmlFor="modelId">Model *</Label>
+            <Select
+              value={formData.modelId || ""}
+              onValueChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,
-                  systemPrompt: e.target.value,
+                  modelId: value || null,
                 }))
               }
-              placeholder="System prompt that defines how the agent should behave and respond"
-              rows={6}
               required
-            />
-            <p className="text-sm text-muted-foreground">
-              This prompt defines the agent's behavior and personality in
-              conversations.
-            </p>
+              disabled={isModelsLoading}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    isModelsLoading ? "Loading models..." : "Select a model"
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {models
+                  ?.filter((model) => model.active)
+                  ?.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
@@ -259,9 +291,26 @@ export default function Agent({
               <span>0 (Deterministic)</span>
               <span>100 (Creative)</span>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="systemPrompt">System Prompt *</Label>
+            <Textarea
+              id="systemPrompt"
+              value={formData.systemPrompt || ""}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  systemPrompt: e.target.value,
+                }))
+              }
+              placeholder="System prompt that defines how the agent should behave and respond"
+              rows={20}
+              required
+            />
             <p className="text-sm text-muted-foreground">
-              Temperature value for response randomness (0-100). Lower values
-              are more deterministic.
+              This prompt defines the agent's behavior and personality in
+              conversations.
             </p>
           </div>
 

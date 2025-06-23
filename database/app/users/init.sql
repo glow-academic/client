@@ -149,3 +149,28 @@ INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role, clas
 -- multi-class ---------------------------------------------------------------
   ('99b90118-7b9e-4e12-8e81-d7ccc2916609', 'Ava', 'Petrova', 'ava.petrova', true , 'ta', ARRAY['44444444-1111-1111-1111-111111111111','55555555-2222-2222-2222-222222222222']::UUID[]),
   ('99b90118-7b9e-4e12-8e81-d7ccc2916610', 'Leo', 'Müller', 'leo.muller', false, 'ta', ARRAY['66666666-3333-3333-3333-333333333333','77777777-4444-4444-4444-444444444444']::UUID[]);
+
+-- TA TRAINING COHORT MEMBERS
+-- Week 1 - Fundamentals TAs (New TAs just starting)
+INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
+  ('1a001111-1111-1111-1111-111111111111', 'Amanda', 'Roberts', 'amanda.roberts', false, 'ta', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+  ('1a001111-2222-2222-2222-222222222222', 'Brandon', 'Taylor', 'brandon.taylor', false, 'ta', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+  ('1a001111-3333-3333-3333-333333333333', 'Chloe', 'Mitchell', 'chloe.mitchell', false, 'ta', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('1a001111-4444-4444-4444-444444444444', 'Derek', 'Campbell', 'derek.campbell', false, 'ta', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('1a001111-5555-5555-5555-555555555555', 'Emma', 'Foster', 'emma.foster', false, 'ta', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]);
+
+-- Week 2 - Advanced Techniques TAs (Developing skills)
+INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
+  ('1a002222-1111-1111-1111-111111111111', 'Felix', 'Garcia', 'felix.garcia', true, 'ta', ARRAY['44444444-1111-1111-1111-111111111111']::UUID[]),
+  ('1a002222-2222-2222-2222-222222222222', 'Grace', 'Henderson', 'grace.henderson', true, 'ta', ARRAY['55555555-2222-2222-2222-222222222222']::UUID[]),
+  ('1a002222-3333-3333-3333-333333333333', 'Henry', 'Jackson', 'henry.jackson', true, 'ta', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('1a002222-4444-4444-4444-444444444444', 'Ivy', 'Martinez', 'ivy.martinez', true, 'ta', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('1a002222-5555-5555-5555-555555555555', 'Jake', 'Nelson', 'jake.nelson', true, 'ta', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222']::UUID[]);
+
+-- Week 3 - Specialization TAs (Advanced/experienced)
+INSERT INTO profiles (id, first_name, last_name, alias, viewed_intro, role, class_ids) VALUES
+  ('1a003333-1111-1111-1111-111111111111', 'Kara', 'Phillips', 'kara.phillips', true, 'ta', ARRAY['66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('1a003333-2222-2222-2222-222222222222', 'Liam', 'Rodriguez', 'liam.rodriguez', true, 'ta', ARRAY['77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('1a003333-3333-3333-3333-333333333333', 'Maya', 'Stewart', 'maya.stewart', true, 'ta', ARRAY['55555555-2222-2222-2222-222222222222', '66666666-3333-3333-3333-333333333333']::UUID[]),
+  ('1a003333-4444-4444-4444-444444444444', 'Noah', 'Turner', 'noah.turner', true, 'ta', ARRAY['66666666-3333-3333-3333-333333333333', '77777777-4444-4444-4444-444444444444']::UUID[]),
+  ('1a003333-5555-5555-5555-555555555555', 'Olivia', 'Walker', 'olivia.walker', true, 'ta', ARRAY['44444444-1111-1111-1111-111111111111', '55555555-2222-2222-2222-222222222222', '77777777-4444-4444-4444-444444444444']::UUID[]);
