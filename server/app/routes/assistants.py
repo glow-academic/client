@@ -246,8 +246,11 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         
         try:
             async for token in run_assistant_agent(chat_id, db_session):
+                logger.info(f"Received token: '{token}' (type: {type(token)}, length: {len(token) if isinstance(token, str) else 'N/A'})")
+                
                 # Check if this is a tool call token
                 if token.startswith('<tool_call_start>') and token.endswith('</tool_call_start>'):
+                    logger.info(f"Received tool call start token: {token}")
                     # Extract tool call data
                     tool_call_json = token.replace('<tool_call_start>', '').replace('</tool_call_start>', '')
                     try:
@@ -275,9 +278,16 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                             tool_arguments=tool_call_data.get('arguments', {}),
                             tool_result={}  # Will be updated when result comes in
                         )
-                        db_session.add(tool_call)
-                        db_session.commit()
-                        db_session.refresh(tool_call)
+                        
+                        try:
+                            db_session.add(tool_call)
+                            db_session.commit()
+                            db_session.refresh(tool_call)
+                            logger.info(f"Successfully created tool call record: {tool_call.id}")
+                        except Exception as db_error:
+                            logger.error(f"Failed to create tool call record: {db_error}")
+                            db_session.rollback()
+                            continue
                         
                         # Store the tool call for later result matching
                         tool_call_id = tool_call_data.get('id')
@@ -301,6 +311,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         logger.error(f"Failed to parse tool call JSON: {tool_call_json}")
                     
                 elif token.startswith('<tool_call_result>') and token.endswith('</tool_call_result>'):
+                    logger.info(f"Received tool call result token: {token}")
                     # Extract tool call result data
                     tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
                     try:
@@ -312,8 +323,14 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                         if tool_call_id and tool_call_id in active_tool_calls:
                             tool_call_record = active_tool_calls[tool_call_id]
                             tool_call_record.tool_result = tool_result_data.get('result', {})
-                            db_session.add(tool_call_record)
-                            db_session.commit()
+                            
+                            try:
+                                db_session.add(tool_call_record)
+                                db_session.commit()
+                                logger.info(f"Successfully updated tool call record {tool_call_record.id} with result")
+                            except Exception as db_error:
+                                logger.error(f"Failed to update tool call record: {db_error}")
+                                db_session.rollback()
                             
                             # Remove from active tracking
                             del active_tool_calls[tool_call_id]

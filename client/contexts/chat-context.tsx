@@ -382,6 +382,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
         chat_id: string;
         tool_data: ToolCallData;
       }) => {
+        logInfo(`Received tool_call_start for message ${data.message_id}`, {
+          toolCallId: data.tool_call_id,
+          toolName: data.tool_data.name,
+          chatId: data.chat_id,
+        });
+
         // Update the messages cache with tool call start
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
@@ -417,10 +423,18 @@ export function ChatProvider({ children }: ChatProviderProps) {
     socket.on(
       "tool_call_result",
       (data: {
+        tool_call_id: string | null;
         message_id: string;
         chat_id: string;
-        tool_result: ToolCallResult;
+        tool_result: unknown;
+        tool_name: string;
       }) => {
+        logInfo(`Received tool_call_result for message ${data.message_id}`, {
+          toolCallId: data.tool_call_id,
+          toolName: data.tool_name,
+          chatId: data.chat_id,
+        });
+
         // Update the messages cache with tool call result
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
@@ -428,22 +442,28 @@ export function ChatProvider({ children }: ChatProviderProps) {
             const updated = old.map((msg) => {
               if (msg.id === data.message_id) {
                 const messageWithTools = msg as AssistantMessageWithTools;
+
+                // Create tool result object
+                const toolResult: ToolCallResult = {
+                  id: data.tool_call_id || "",
+                  name: data.tool_name,
+                  status: "success",
+                  result: data.tool_result,
+                };
+
                 return {
                   ...messageWithTools,
                   toolCalls: messageWithTools.toolCalls?.map((tc) =>
-                    tc.id === data.tool_result.id
+                    tc.id === data.tool_call_id
                       ? {
                           ...tc,
-                          status:
-                            data.tool_result.status === "success"
-                              ? "completed"
-                              : "error",
+                          status: "completed",
                         }
                       : tc
                   ),
                   toolResults: [
                     ...(messageWithTools.toolResults || []),
-                    data.tool_result,
+                    toolResult,
                   ],
                 };
               }
