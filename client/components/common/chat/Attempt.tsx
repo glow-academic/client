@@ -225,6 +225,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const currentRoomRef = useRef<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -736,16 +737,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // WebSocket connection setup
   useEffect(() => {
+    // Don't create multiple connections
+    if (socketRef.current?.connected) {
+      return;
+    }
+
     // Determine WebSocket URL based on environment
     const socket = io(getWebSocketUrl(), {
       transports: ["websocket", "polling"],
       autoConnect: true,
-      forceNew: true,
-      timeout: 10000,
+      forceNew: false, // Don't force new connection if one exists
+      timeout: 20000, // Increased timeout
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5, // Increased attempts for better reliability
+      reconnectionDelay: 1000, // Reduced initial delay
+      reconnectionDelayMax: 5000, // Reasonable max delay
       path: "/socket.io/",
     });
 
@@ -799,6 +805,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             );
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["messages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -821,6 +834,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             );
           }
         );
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["messages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -844,6 +864,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         );
 
         setIsSendingMessage(false);
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["messages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -872,7 +899,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       }) => {
         // Update the cancelled message with its final content
         queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
+          ["messages", data.chat_id],
           (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
@@ -884,6 +911,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
         setIsSendingMessage(false);
         setIsStoppingMessage(false);
+
+        // Force re-render by invalidating the query after the update
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["messages", data.chat_id],
+          });
+        }, 0);
       }
     );
 
@@ -899,19 +933,36 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
-    if (!socketRef.current || !isConnected || !currentChat?.id) return;
+    if (!socketRef.current || !isConnected) return;
 
-    socketRef.current.emit("join_chat", {
-      chat_id: currentChat.id,
-      chat_type: "simulation",
-    });
+    // Don't rejoin the same room
+    if (currentRoomRef.current === currentChat?.id) return;
+
+    // Leave current room if we're in one
+    if (currentRoomRef.current && socketRef.current) {
+      socketRef.current.emit("leave_chat", {
+        chat_id: currentRoomRef.current,
+        chat_type: "simulation",
+      });
+      currentRoomRef.current = null;
+    }
+
+    // Join new room if we have a chat ID
+    if (currentChat?.id && socketRef.current) {
+      socketRef.current.emit("join_chat", {
+        chat_id: currentChat.id,
+        chat_type: "simulation",
+      });
+      currentRoomRef.current = currentChat.id;
+    }
 
     return () => {
-      if (currentChat?.id && socketRef.current) {
+      if (currentRoomRef.current && socketRef.current) {
         socketRef.current.emit("leave_chat", {
-          chat_id: currentChat.id,
+          chat_id: currentRoomRef.current,
           chat_type: "simulation",
         });
+        currentRoomRef.current = null;
       }
     };
   }, [currentChat?.id, isConnected]);

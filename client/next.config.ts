@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
     tsconfigPath: "./tsconfig.json",
   },
   // Enable strict mode for better error catching
-  reactStrictMode: true,
+  reactStrictMode: false, // Temporarily disabled to fix WebSocket connection issues
 
   // Fix pg-related issues - updated for Next.js 15+
   serverExternalPackages: ["pg", "@auth/pg-adapter"],

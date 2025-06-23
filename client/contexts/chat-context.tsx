@@ -94,6 +94,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const socketRef = useRef<Socket | null>(null);
+  const currentRoomRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   const userId = useSession().data?.user?.id;
@@ -119,12 +120,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     const socket = io(getWebSocketUrl(), {
       transports: ["websocket", "polling"],
       autoConnect: true,
-      forceNew: true,
-      timeout: 10000,
+      forceNew: false, // Don't force new connection if one exists
+      timeout: 20000, // Increased timeout
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3, // Reduced attempts to avoid spam
+      reconnectionDelay: 2000, // Increased delay
+      reconnectionDelayMax: 10000, // Increased max delay
       path: "/socket.io/",
     });
 
@@ -440,25 +441,37 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [profile?.id, queryClient, currentChatId]);
+  }, [profile?.id, queryClient]);
 
   // Join/leave chat rooms when currentChatId changes
   useEffect(() => {
     if (!socketRef.current || !isConnected) return;
 
-    if (currentChatId) {
+    // Leave current room if we're in one
+    if (currentRoomRef.current && socketRef.current) {
+      socketRef.current.emit("leave_chat", {
+        chat_id: currentRoomRef.current,
+        chat_type: "assistant",
+      });
+      currentRoomRef.current = null;
+    }
+
+    // Join new room if we have a chat ID
+    if (currentChatId && socketRef.current) {
       socketRef.current.emit("join_chat", {
         chat_id: currentChatId,
         chat_type: "assistant",
       });
+      currentRoomRef.current = currentChatId;
     }
 
     return () => {
-      if (currentChatId && socketRef.current) {
+      if (currentRoomRef.current && socketRef.current) {
         socketRef.current.emit("leave_chat", {
-          chat_id: currentChatId,
+          chat_id: currentRoomRef.current,
           chat_type: "assistant",
         });
+        currentRoomRef.current = null;
       }
     };
   }, [currentChatId, isConnected]);

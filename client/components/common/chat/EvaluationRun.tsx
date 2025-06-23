@@ -140,12 +140,12 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     const socket = io(getWebSocketUrl(), {
       transports: ["websocket", "polling"],
       autoConnect: true,
-      forceNew: true,
-      timeout: 10000,
+      forceNew: false, // Don't force new connection if one exists
+      timeout: 20000, // Increased timeout
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3, // Reduced attempts to avoid spam
+      reconnectionDelay: 2000, // Increased delay
+      reconnectionDelayMax: 10000, // Increased max delay
       path: "/socket.io/",
     });
 
