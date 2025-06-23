@@ -158,29 +158,25 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }) => {
         logInfo(
           `Received new_message event: ${data.role} message for chat ${data.chat_id}`,
-          { 
-            messageId: data.message_id, 
-            currentChatId, 
-            content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
-            completed: data.completed
+          {
+            messageId: data.message_id,
+            currentChatId,
+            content:
+              data.content.substring(0, 50) +
+              (data.content.length > 50 ? "..." : ""),
+            completed: data.completed,
           }
         );
-
-        // Check if this message is for the current chat
-        if (data.chat_id !== currentChatId) {
-          logInfo(`Ignoring message for different chat: ${data.chat_id} vs ${currentChatId}`);
-          return;
-        }
 
         // Update the messages cache with new message
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
-            logInfo(`Updating message cache for chat ${data.chat_id}`, { 
+            logInfo(`Updating message cache for chat ${data.chat_id}`, {
               oldMessagesCount: old.length,
-              newMessageId: data.message_id
+              newMessageId: data.message_id,
             });
-            
+
             const exists = old.find((msg) => msg.id === data.message_id);
             if (exists) {
               logInfo(`Message ${data.message_id} already exists, skipping`);
@@ -204,9 +200,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
                 new Date(b.createdAt).getTime()
             );
 
-            logInfo(`Updated message cache`, { 
+            logInfo(`Updated message cache`, {
               newMessagesCount: updated.length,
-              addedMessage: { id: newMessage.id, role: newMessage.role, content: newMessage.content.substring(0, 50) }
+              addedMessage: {
+                id: newMessage.id,
+                role: newMessage.role,
+                content: newMessage.content.substring(0, 50),
+              },
             });
 
             return updated;
@@ -370,7 +370,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
       logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
         currentChatId,
-        isCurrentChat: data.chat_id === currentChatId
+        isCurrentChat: data.chat_id === currentChatId,
       });
     });
 
@@ -547,6 +547,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
       // Set the current chat ID immediately so WebSocket connection is established
       setCurrentChatId(chat.id);
+
+      // Wait a brief moment for state to update and WebSocket room to be joined
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       const formData = new FormData();
       formData.append("initial_message", initialMessage);
