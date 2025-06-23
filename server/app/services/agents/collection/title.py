@@ -46,20 +46,17 @@ async def run_title_agent(
         api_key=provider.api_key,
     )
 
-    with trace(chat.title, trace_id=chat.trace_id) as chat_trace:
+    with trace(chat.title, trace_id=chat.trace_id):
         result = await Runner.run(
             agent_instance.agent(),
             input=[{"role": "user", "content": initial_message}],
         )
-        trace_id = chat_trace.trace_id
-
-    # update the trace id to the chat for future reference, if it was orginally None
-    if chat.trace_id is None:
-        chat.trace_id = trace_id
-        session.add(chat)
-        session.commit()
 
     title = result.final_output
+
+    # add the title to the trace by making an empty call
+    with trace(title, trace_id=chat.trace_id):
+        pass
 
     # update the title to the chat
     chat.title = title

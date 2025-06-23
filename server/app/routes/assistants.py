@@ -9,6 +9,7 @@ import warnings
 from datetime import timezone
 from typing import Any, AsyncGenerator, Dict, Optional
 
+from agents import gen_trace_id
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -100,6 +101,16 @@ async def start_chat(
     This endpoint creates a new chat based on a profile.
     """
     try:
+        # 0. Generate a trace id for the chat and refresh the chat
+        trace_id = gen_trace_id()
+        chat = session.get(AssistantChats, chat_id)
+        if not chat:
+            raise HTTPException(status_code=404, detail="Chat not found")
+        chat.trace_id = trace_id
+        session.add(chat)
+        session.commit()
+        session.refresh(chat)
+
         # 1. Process the initial message via WebSocket
         asyncio.create_task(process_message_websocket(
             chat_id=chat_id,

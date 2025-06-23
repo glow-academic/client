@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Optional
 
 import socketio  # type: ignore
+from agents import gen_trace_id
 from app.db import get_session
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
@@ -167,7 +168,7 @@ async def start_attempt(
             chat_title = scenario.name
         else:
             chat_title = scenario.name
-            trace_id = None
+            trace_id = gen_trace_id()
 
         session.add(scenario)
         session.commit()
@@ -475,7 +476,7 @@ async def continue_attempt(
                     chat_title = next_scenario.name
                 else:
                     chat_title = next_scenario.name
-                    trace_id = None
+                    trace_id = gen_trace_id()
 
                 session.add(next_scenario)
                 session.commit()

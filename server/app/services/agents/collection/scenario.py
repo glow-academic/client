@@ -2,7 +2,7 @@ import logging
 import uuid
 from typing import List, Tuple
 
-from agents import Runner, trace
+from agents import Runner, gen_trace_id, trace
 from agents.items import TResponseInputItem
 from app.db import get_session
 from app.models import Agents, Classes, Models, Providers
@@ -128,15 +128,13 @@ async def run_scenario_agent(
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")
 
-    with trace("Scenario Agent", group_id=str(group_id)) as scenario_trace:
+    # generate a trace id for the scenario
+    trace_id = gen_trace_id()
+
+    with trace("Scenario Agent", group_id=str(group_id), trace_id=trace_id) :
         result = await Runner.run(agent_instance, input=clean_input_items)
-        trace_id = scenario_trace.trace_id
 
     # call the agents sdk to come up with a scenario description
     scenario_result = result.final_output_as(Scenario)
-
-    # Create a new trace, but with updated workflow name
-    with trace(scenario_result.title, trace_id=trace_id):
-        pass
 
     return scenario_result.title, scenario_result.scenario, trace_id

@@ -12,6 +12,7 @@ from app.models import (Agents, EvalChats, EvalMessages, EvalRuns, Evals,
 from app.services.agents.collection.eval import cancel_eval_run, run_eval_agent
 from app.services.agents.collection.evaluate import run_evaluate_agent
 from app.services.agents.collection.scenario import run_scenario_agent
+from agents import gen_trace_id
 from app.utils.scenario import randomly_fill_scenario_attributes
 from fastapi import APIRouter, Depends, Form, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
@@ -225,7 +226,7 @@ async def start_eval(
                     chat_title = scenario.name
                 else:
                     chat_title = scenario.name
-                    trace_id = None
+                    trace_id = gen_trace_id()
 
                 eval_chat = EvalChats(
                     title=chat_title,

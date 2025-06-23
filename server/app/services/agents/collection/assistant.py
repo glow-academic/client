@@ -131,24 +131,16 @@ async def _handle_assistant_chat(
         mcp_servers=mcp_servers,
     )
 
-    with trace(chat.title, trace_id=chat.trace_id) as chat_trace:
+    with trace(chat.title, trace_id=chat.trace_id):
         result = Runner.run_streamed(
             agent_instance.agent(),
             input=input_items,
         )
-        trace_id = chat_trace.trace_id
 
     # Store the result in active runs for potential cancellation using unified tracking
     from app.main import store_active_run
     chat_id_str = str(chat.id)
     store_active_run(chat_id_str, result)
-
-    # update the trace id to the chat for future reference, if it was orginally None
-    if chat.trace_id is None:
-        chat.trace_id = trace_id
-        session.add(chat)
-        session.commit()
-
     try:
         # Process streaming events
         async for event in result.stream_events():
