@@ -73,6 +73,10 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+// Add RadialBarChart imports
+import { ChartContainer } from "@/components/ui/chart";
+import { PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts";
+
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
@@ -103,6 +107,81 @@ interface DynamicRubric {
   skillFeedbacks: Record<string, string>;
   totalPossiblePoints: number;
 }
+
+// Add circular progress component
+const CircularProgress = ({
+  progress,
+  size = 40,
+  strokeWidth = 4,
+  current,
+  total,
+}: {
+  progress: number;
+  size?: number;
+  strokeWidth?: number;
+  current: number;
+  total: number;
+}) => {
+  // Calculate color based on progress (red to yellow to green)
+  const getProgressColor = (progress: number) => {
+    if (progress < 50) {
+      // Red to yellow (0-50%)
+      const ratio = progress / 50;
+      return `hsl(${ratio * 60}, 70%, 50%)`; // 0 = red, 60 = yellow
+    } else {
+      // Yellow to green (50-100%)
+      const ratio = (progress - 50) / 50;
+      return `hsl(${60 + ratio * 60}, 70%, 50%)`; // 60 = yellow, 120 = green
+    }
+  };
+
+  const progressColor = getProgressColor(progress);
+
+  const chartData = [
+    {
+      progress: progress,
+      fill: progressColor,
+    },
+  ];
+
+  const chartConfig = {
+    progress: {
+      label: "Progress",
+      color: progressColor,
+    },
+  };
+
+  return (
+    <div className="relative flex items-center justify-center">
+      <ChartContainer
+        config={chartConfig}
+        className={`aspect-square`}
+        style={{ width: size, height: size }}
+      >
+        <RadialBarChart
+          data={chartData}
+          startAngle={90}
+          endAngle={-270}
+          innerRadius={size * 0.3}
+          outerRadius={size * 0.45}
+        >
+          <PolarRadiusAxis tick={false} tickLine={false} axisLine={false} />
+          <RadialBar
+            dataKey="progress"
+            background={{ fill: "rgba(0,0,0,0.1)" }}
+            cornerRadius={strokeWidth / 2}
+            fill={progressColor}
+          />
+        </RadialBarChart>
+      </ChartContainer>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-xs font-medium text-foreground">
+          {current}/{total}
+        </span>
+      </div>
+    </div>
+  );
+};
 
 export default function Attempt({ attemptId }: { attemptId: string }) {
   const queryClient = useQueryClient();
@@ -202,17 +281,19 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     enabled: !!grades,
   });
 
-  // Determine current chat based on chat simulation ID position in simulation
+  // Determine current chat based on actual chats for this attempt
   const currentChat = React.useMemo(() => {
-    if (!chats || !chats.length || !simulation?.scenarioIds) return chats?.[0];
+    if (!chats || !chats.length) return null;
 
-    // Find the chat that matches the current chat simulation ID
-    const currentChatSimulationId = simulation.scenarioIds[currentChatIndex];
-    const chat = chats.find(
-      (chat) => chat.scenarioId === currentChatSimulationId
+    // Sort chats by creation date to ensure consistent ordering
+    const sortedChats = [...chats].sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
     );
-    return chat || chats[0];
-  }, [chats, simulation?.scenarioIds, currentChatIndex]);
+
+    // Return the chat at the current index, or the first chat if index is out of bounds
+    return sortedChats[currentChatIndex] || sortedChats[0];
+  }, [chats, currentChatIndex]);
 
   // Fetch messages for current chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
@@ -397,7 +478,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }, [documents, scenario]);
 
   // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
-  const isSingleChatAttempt = simulation?.scenarioIds?.length === 1;
+  const isSingleChatAttempt = chats?.length === 1;
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
@@ -513,20 +594,16 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Initialize to first incomplete chat when data loads
   useEffect(() => {
-    if (
-      chats &&
-      chats.length > 0 &&
-      simulation?.scenarioIds &&
-      currentChatIndex === 0
-    ) {
+    if (chats && chats.length > 0 && currentChatIndex === 0) {
+      // Sort chats by creation date to ensure consistent ordering
+      const sortedChats = [...chats].sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      );
+
       // Find the first incomplete chat
-      const firstIncompleteIndex = simulation.scenarioIds.findIndex(
-        (scenarioId: string) => {
-          const chat = chats.find(
-            (c: SimulationChat) => c.scenarioId === scenarioId
-          );
-          return chat && !chat.completed;
-        }
+      const firstIncompleteIndex = sortedChats.findIndex(
+        (chat: SimulationChat) => !chat.completed
       );
 
       // If we found an incomplete chat, set the index to it
@@ -537,7 +614,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         setCurrentChatIndex(firstIncompleteIndex);
       }
     }
-  }, [chats, simulation?.scenarioIds, currentChatIndex]);
+  }, [chats, currentChatIndex]);
 
   // Check if current chat is completed and move to next or show results
   useEffect(() => {
@@ -548,14 +625,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       if (isFreshlyCompleted) {
         if (
           !isSingleChatAttempt &&
-          currentChatIndex < (simulation?.scenarioIds?.length || 0) - 1
+          currentChatIndex < (chats?.length || 0) - 1
         ) {
           // Move to next chat after a short delay (only for multi-chat attempts)
           const timer = setTimeout(() => {
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
-                `Moving to chat ${nextIndex + 1} of ${simulation?.scenarioIds?.length || 0}`
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
               );
               return nextIndex;
             });
@@ -574,7 +651,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     currentChat?.completed,
     currentChat?.id,
     currentChatIndex,
-    simulation?.scenarioIds?.length,
+    chats?.length,
     showResults,
     isSingleChatAttempt,
     freshlyCompletedChats,
@@ -582,8 +659,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Check if all chats are completed and show results (regardless of freshly completed status)
   useEffect(() => {
-    if (chats && chats.length > 0 && simulation?.scenarioIds && !showResults) {
-      const totalExpectedChats = simulation.scenarioIds.length;
+    if (chats && chats.length > 0 && !showResults) {
+      const totalExpectedChats = chats.length;
       const completedChats = chats.filter(
         (chat: SimulationChat) => chat.completed
       ).length;
@@ -607,19 +684,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         }
       }
     }
-  }, [chats, simulation?.scenarioIds, showResults, grades, feedbacks]);
+  }, [chats, showResults, grades, feedbacks]);
 
   // Handle case where grading data becomes available after chats are already loaded as completed (refresh scenario)
   useEffect(() => {
     if (
       chats &&
       chats.length > 0 &&
-      simulation?.scenarioIds &&
       !showResults &&
       grades &&
       grades.length > 0
     ) {
-      const totalExpectedChats = simulation.scenarioIds.length;
+      const totalExpectedChats = chats.length;
       const completedChats = chats.filter(
         (chat: SimulationChat) => chat.completed
       ).length;
@@ -639,7 +715,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         }
       }
     }
-  }, [grades, feedbacks, chats, simulation?.scenarioIds, showResults]);
+  }, [grades, feedbacks, chats, showResults]);
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -1180,7 +1256,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     );
   }
 
-  if (attemptError || !attempt || simulation?.scenarioIds?.length === 0) {
+  if (attemptError || !attempt || !chats || chats.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Card>
@@ -1188,7 +1264,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
             <h2 className="text-xl font-semibold mb-2">Attempt Not Found</h2>
             <p className="text-muted-foreground mb-4">
               The attempt you're looking for doesn't exist or has no chats
-              configured.
+              available.
             </p>
             <Button onClick={() => router.push("/home")}>
               Return To Dashboard
@@ -1560,15 +1636,22 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                           <span className="font-medium">
                             {scenario?.description || currentChat?.title}
                           </span>
-                          {!isSingleChatAttempt && (
-                            <div className="text-sm text-muted-foreground flex items-center gap-2">
-                              <Users className="h-4 w-4" />
-                              <span data-testid="chat-counter">
-                                Chat {currentChatIndex + 1} of{" "}
-                                {simulation?.scenarioIds?.length || 0}
-                              </span>
-                            </div>
-                          )}
+                          {simulation?.scenarioIds?.length &&
+                            simulation?.scenarioIds?.length > 1 && (
+                              <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Users className="h-4 w-4" />
+                                <CircularProgress
+                                  progress={
+                                    ((currentChatIndex + 1) /
+                                      (simulation?.scenarioIds?.length || 1)) *
+                                    100
+                                  }
+                                  current={currentChatIndex + 1}
+                                  total={simulation?.scenarioIds?.length || 0}
+                                  size={32}
+                                />
+                              </div>
+                            )}
                         </div>
                       </div>
                       <div className="flex items-start justify-end gap-2">

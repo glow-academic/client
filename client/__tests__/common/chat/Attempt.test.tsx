@@ -140,7 +140,7 @@ import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-stan
 // Mock data
 const mockAttempt = {
   id: "attempt1",
-  createdAt: "2024-01-01T00:00:00Z",
+  createdAt: new Date().toISOString(), // Use current time to avoid immediate expiration
   profileId: "profile1",
   simulationId: "sim-1",
 };
