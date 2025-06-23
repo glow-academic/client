@@ -4,25 +4,25 @@
 
 import React from "react";
 
+import CohortCompletion from "./footer/CohortCompletion";
+import ScenarioData from "./footer/ScenarioData";
+import SimulationPerformance from "./footer/SimulationPerformance";
+import SkillGrowth from "./footer/SkillGrowth";
 import ActiveCohorts from "./header/ActiveCohorts";
 import AverageScore from "./header/AverageScore";
-import ClassPerformance from "./secondary/ClassPerformance";
-import CohortCompletion from "./footer/CohortCompletion";
 import CompletionRate from "./header/CompletionRate";
 import NeedSupport from "./header/NeedSupport";
 import PassRate from "./header/PassRate";
+import TotalSessions from "./header/TotalSessions";
+import TrainingHours from "./header/TrainingHours";
+import TrainingSessions from "./header/TrainingSessions";
 import PerformanceByPersonality from "./primary/PerformanceByPersonality";
 import PerformanceTrends from "./primary/PerformanceTrends";
-import ScenarioData from "./footer/ScenarioData";
 import SessionActivity from "./primary/SessionActivity";
-import SimulationPerformance from "./footer/SimulationPerformance";
+import ClassPerformance from "./secondary/ClassPerformance";
 import SkillBreakdown from "./secondary/SkillBreakdown";
-import SkillGrowth from "./footer/SkillGrowth";
-import TotalSessions from "./header/TotalSessions";
-import TotalTas from "./header/TotalTas";
-import TrainingHours from "./header/TrainingHours";
 import TrainingInsights from "./secondary/TrainingInsights";
-import TrainingSessions from "./header/TrainingSessions";
+import TotalTas from "./header/TotalTas";
 
 export interface ComponentConfig {
   component: React.ComponentType<Record<string, unknown>>;
