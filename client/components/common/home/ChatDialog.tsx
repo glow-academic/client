@@ -30,6 +30,7 @@ import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Minimize2, X } from "lucide-react";
+import { useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
@@ -45,6 +46,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     startBlankChat,
   } = useChat();
   const { effectiveRole } = useRole();
+  const [promptToSet, setPromptToSet] = useState<string>("");
 
   const { data: chat } = useQuery({
     queryKey: ["assistantChat", currentChatId],
@@ -70,6 +72,14 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const getCurrentChatTitle = () => {
     if (!currentChatId) return "New Chat";
     return chat?.title || "GLOW Assistant";
+  };
+
+  const handlePromptClick = (prompt: string) => {
+    setPromptToSet(prompt);
+  };
+
+  const handlePromptSet = () => {
+    setPromptToSet("");
   };
 
   return (
@@ -163,10 +173,13 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 min-h-0">
-            <ChatMessages />
+            <ChatMessages onPromptClick={handlePromptClick} />
           </div>
           <div className="border-t">
-            <ChatInput />
+            <ChatInput
+              promptToSet={promptToSet}
+              onPromptSet={handlePromptSet}
+            />
           </div>
         </div>
       </DialogContent>

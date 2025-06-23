@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-23T12:23:32.955Z
+Generated on: 2025-06-23T13:12:54.495Z
 
 ## Summary
-- **Total Components**: 97
+- **Total Components**: 98
 - **Tests Created**: 0
-- **Tests Updated**: 40
+- **Tests Updated**: 41
 - **Tests Skipped** (already implemented): 57
 
 ## Component Coverage
@@ -66,6 +66,7 @@ Generated on: 2025-06-23T12:23:32.955Z
 | ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ❌ Needs Implementation |
 | ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ❌ Needs Implementation |
 | ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ❌ Needs Implementation |
+| ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ❌ Needs Implementation |
 | ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ❌ Needs Implementation |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
@@ -183,6 +184,7 @@ __tests__/
 │   │   ├── ChatFab.test.tsx
 │   │   ├── ChatInput.test.tsx
 │   │   ├── ChatMessages.test.tsx
+│   │   ├── ChatStarterPrompts.test.tsx
 │   │   ├── ChatWidget.test.tsx
 │   ├── layout/
 │   │   ├── navigation-breadcrumbs.test.tsx

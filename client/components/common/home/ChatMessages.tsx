@@ -16,6 +16,7 @@ import { logInfo } from "@/utils/logger";
 import { getAssistantMessagesByChat } from "@/utils/queries/assistant_messages/get-assistant-messages-by-chat";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
+import ChatStarterPrompts from "./ChatStarterPrompts";
 
 const LoadingDots = () => (
   <div className="flex space-x-1">
@@ -29,7 +30,13 @@ const LoadingDots = () => (
   </div>
 );
 
-export default function ChatMessages() {
+interface ChatMessagesProps {
+  onPromptClick?: (prompt: string) => void;
+}
+
+export default function ChatMessages({
+  onPromptClick,
+}: ChatMessagesProps = {}) {
   const { currentChatId, isConnected } = useChat();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -87,13 +94,7 @@ export default function ChatMessages() {
   }
 
   if (!currentChatId) {
-    return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="text-center space-y-3 max-w-md">
-          <h3 className="text-lg font-semibold">GLOW Assistant</h3>
-        </div>
-      </div>
-    );
+    return <ChatStarterPrompts onPromptClick={onPromptClick || (() => {})} />;
   }
 
   // Sort messages by creation time

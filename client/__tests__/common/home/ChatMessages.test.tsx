@@ -43,7 +43,13 @@ describe('ChatMessages', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatMessages
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ChatMessagesProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for ChatMessages
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -88,7 +94,12 @@ describe('ChatMessages', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ChatMessages
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ChatMessages
+    });
   });
 });
 
@@ -99,8 +110,8 @@ describe('ChatMessages', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ChatMessagesProps
  * - Client component: true
  * - Uses hooks: useChat, useRole, useQuery, useEffect, useRef, user
  * - Uses router: false
@@ -115,7 +126,7 @@ describe('ChatMessages', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatMessages />);
+ * render(<ChatMessages {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:

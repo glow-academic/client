@@ -10,9 +10,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useChat } from "@/contexts/chat-context";
 import { useRole } from "@/contexts/role-context";
 import { Send, Square } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function ChatInput() {
+interface ChatInputProps {
+  promptToSet?: string;
+  onPromptSet?: () => void;
+}
+
+export default function ChatInput({
+  promptToSet,
+  onPromptSet,
+}: ChatInputProps = {}) {
   const [message, setMessage] = useState("");
   const {
     sendMessage,
@@ -22,6 +30,14 @@ export default function ChatInput() {
     currentChatId,
   } = useChat();
   const { effectiveRole } = useRole();
+
+  // Set message when promptToSet changes
+  useEffect(() => {
+    if (promptToSet) {
+      setMessage(promptToSet);
+      onPromptSet?.();
+    }
+  }, [promptToSet, onPromptSet]);
 
   // Only show for instructor, instructional, or admin roles
   const shouldShow = ["instructor", "instructional", "admin"].includes(

@@ -25,7 +25,13 @@ describe('ChatInput', () => {
       expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatInput
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: ChatInputProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for ChatInput
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
@@ -73,7 +79,12 @@ describe('ChatInput', () => {
       expect(true).toBe(false); // IMPLEMENT: Edge cases test for ChatInput
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ChatInput
+    });
   });
 });
 
@@ -84,15 +95,15 @@ describe('ChatInput', () => {
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: ChatInputProps
  * - Client component: true
- * - Uses hooks: user, useChat, useRole, useState
+ * - Uses hooks: user, useChat, useRole, useEffect, useState
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: true
  * - Uses state: true
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -100,7 +111,7 @@ describe('ChatInput', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatInput />);
+ * render(<ChatInput {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
