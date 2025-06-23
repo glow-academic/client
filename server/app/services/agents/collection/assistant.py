@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 from typing import AsyncGenerator
@@ -144,6 +145,10 @@ async def _handle_assistant_chat(
     from app.main import store_active_run
     chat_id_str = str(chat.id)
     store_active_run(chat_id_str, result)
+    
+    # Track active tool calls to match with their results
+    active_tool_calls = {}
+    
     try:
         # Process streaming events
         async for event in result.stream_events():
@@ -157,10 +162,45 @@ async def _handle_assistant_chat(
                         tool_call = event.item.raw_item
                         name = tool_call.name
                         arguments = tool_call.arguments
+                        tool_call_id = tool_call.id if hasattr(tool_call, 'id') else str(uuid.uuid4())
+                        
+                        # Store the tool call for later matching with results
+                        active_tool_calls[tool_call_id] = {
+                            'name': name,
+                            'arguments': arguments
+                        }
+                        
                         logger.info(f"Tool called: {name} with arguments: {arguments}")
+                        
+                        # Yield structured tool call data
+                        tool_call_data = {
+                            'id': tool_call_id,
+                            'name': name,
+                            'arguments': arguments
+                        }
+                        yield f"<tool_call_start>{json.dumps(tool_call_data)}</tool_call_start>"
+                        
                 elif event.name == "tool_output" and isinstance(event.item, ToolCallOutputItem):
                     output = event.item.output
                     logger.info(f"Tool output: {output}")
+                    
+                    # Try to match this output with a tool call
+                    # Since we don't have a direct ID mapping, we'll use the most recent tool call
+                    if active_tool_calls:
+                        # Get the most recent tool call (assuming FIFO processing)
+                        tool_call_id = list(active_tool_calls.keys())[-1]
+                        tool_call_info = active_tool_calls[tool_call_id]
+                        
+                        # Yield structured tool result data
+                        tool_result_data = {
+                            'id': tool_call_id,
+                            'name': tool_call_info['name'],
+                            'result': output
+                        }
+                        yield f"<tool_call_result>{json.dumps(tool_result_data)}</tool_call_result>"
+                        
+                        # Remove the processed tool call
+                        del active_tool_calls[tool_call_id]
 
     except Exception as e:
         # Handle cancellation or other errors

@@ -242,6 +242,7 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
         # 5. Stream the assistant response
         accumulated_content = ""
         cancelled = False
+        active_tool_calls = {}  # Track tool calls by ID
         
         try:
             async for token in run_assistant_agent(chat_id, db_session):
@@ -252,25 +253,48 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     try:
                         tool_call_data = json.loads(tool_call_json)
                         
+                        # Determine tool type based on tool name
+                        tool_name = tool_call_data.get('name', 'unknown')
+                        tool_type = 'read'  # Default to read
+                        
+                        # Map tool names to types based on their operation
+                        if any(keyword in tool_name.lower() for keyword in ['create', 'add', 'insert', 'new']):
+                            tool_type = 'create'
+                        elif any(keyword in tool_name.lower() for keyword in ['update', 'edit', 'modify', 'change']):
+                            tool_type = 'update'
+                        elif any(keyword in tool_name.lower() for keyword in ['delete', 'remove', 'drop']):
+                            tool_type = 'delete'
+                        # Otherwise defaults to 'read' for find, get, list, etc.
+                        
                         # Save tool call to database
                         tool_call = AssistantToolCalls(
                             chat_id=chat_id,
                             message_id=assistant_message.id,
-                            tool_name=tool_call_data.get('name', 'unknown'),
-                            tool_type=tool_call_data.get('type', 'read'),
+                            tool_name=tool_name,
+                            tool_type=tool_type,
                             tool_arguments=tool_call_data.get('arguments', {}),
-                            tool_result={}
+                            tool_result={}  # Will be updated when result comes in
                         )
                         db_session.add(tool_call)
                         db_session.commit()
                         db_session.refresh(tool_call)
+                        
+                        # Store the tool call for later result matching
+                        tool_call_id = tool_call_data.get('id')
+                        if tool_call_id:
+                            active_tool_calls[tool_call_id] = tool_call
                         
                         # Emit tool call start to connected clients
                         await sio_instance.emit('tool_call_start', {
                             'tool_call_id': str(tool_call.id),
                             'message_id': str(assistant_message.id),
                             'chat_id': str(chat_id),
-                            'tool_data': tool_call_data
+                            'tool_data': {
+                                'id': tool_call_data.get('id'),
+                                'name': tool_name,
+                                'arguments': tool_call_data.get('arguments'),
+                                'type': tool_type
+                            }
                         }, room=f"assistant_{chat_id}")
                         
                     except json.JSONDecodeError:
@@ -281,12 +305,26 @@ async def process_message_websocket(chat_id: uuid.UUID, message: str, session: O
                     tool_result_json = token.replace('<tool_call_result>', '').replace('</tool_call_result>', '')
                     try:
                         tool_result_data = json.loads(tool_result_json)
+                        tool_call_id = tool_result_data.get('id')
+                        
+                        # Update the corresponding tool call record with the result
+                        tool_call_record = None
+                        if tool_call_id and tool_call_id in active_tool_calls:
+                            tool_call_record = active_tool_calls[tool_call_id]
+                            tool_call_record.tool_result = tool_result_data.get('result', {})
+                            db_session.add(tool_call_record)
+                            db_session.commit()
+                            
+                            # Remove from active tracking
+                            del active_tool_calls[tool_call_id]
                         
                         # Emit tool call result to connected clients
                         await sio_instance.emit('tool_call_result', {
+                            'tool_call_id': str(tool_call_record.id) if tool_call_record else None,
                             'message_id': str(assistant_message.id),
                             'chat_id': str(chat_id),
-                            'tool_result': tool_result_data
+                            'tool_result': tool_result_data.get('result', {}),
+                            'tool_name': tool_result_data.get('name')
                         }, room=f"assistant_{chat_id}")
                         
                     except json.JSONDecodeError:
