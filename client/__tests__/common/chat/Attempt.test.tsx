@@ -368,7 +368,8 @@ describe("Attempt Component", () => {
       expect(screen.getByText("A test scenario for TAs")).toBeInTheDocument();
     });
 
-    expect(screen.getByTestId("chat-counter")).toHaveTextContent("Chat 1 of 2");
+    // The circular progress component should show percentage for multi-chat attempts
+    expect(screen.getByText("50%")).toBeInTheDocument();
   });
 
   it("displays timer correctly", async () => {
@@ -639,8 +640,8 @@ describe("Attempt Component", () => {
       expect(screen.getByText("End Session")).toBeInTheDocument();
     });
 
-    // Should not show chat counter for single chat
-    expect(screen.queryByTestId("chat-counter")).not.toBeInTheDocument();
+    // Should not show progress indicator for single chat
+    expect(screen.queryByText("100%")).not.toBeInTheDocument();
   });
 });
 

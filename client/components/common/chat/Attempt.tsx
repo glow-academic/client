@@ -62,7 +62,6 @@ import {
   Send,
   Square,
   Table,
-  Users,
 } from "lucide-react";
 
 // Tooltip
@@ -113,14 +112,10 @@ const CircularProgress = ({
   progress,
   size = 40,
   strokeWidth = 4,
-  current,
-  total,
 }: {
   progress: number;
   size?: number;
   strokeWidth?: number;
-  current: number;
-  total: number;
 }) => {
   // Calculate color based on progress (red to yellow to green)
   const getProgressColor = (progress: number) => {
@@ -139,7 +134,7 @@ const CircularProgress = ({
 
   const chartData = [
     {
-      progress: progress,
+      progress: Math.max(0, Math.min(100, progress)), // Ensure progress is between 0-100
       fill: progressColor,
     },
   ];
@@ -176,7 +171,7 @@ const CircularProgress = ({
       </ChartContainer>
       <div className="absolute inset-0 flex items-center justify-center">
         <span className="text-xs font-medium text-foreground">
-          {current}/{total}
+          {Math.round(progress)}%
         </span>
       </div>
     </div>
@@ -1624,46 +1619,55 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
         >
           <Card className="h-full flex flex-col py-4">
-            <ResizablePanelGroup direction="vertical" className="h-full">
-              <ResizablePanel defaultSize={88} minSize={60}>
-                <div className="h-full flex flex-col">
-                  {/* Timer and Controls Header - consistent with results layout */}
-                  <div className="p-4 pt-0 border-b flex flex-col gap-2">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-4">
-                        {/* Show scenario information */}
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">
-                            {scenario?.description || currentChat?.title}
-                          </span>
-                          {simulation?.scenarioIds?.length &&
-                            simulation?.scenarioIds?.length > 1 && (
-                              <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                <Users className="h-4 w-4" />
-                                <CircularProgress
-                                  progress={
-                                    ((currentChatIndex + 1) /
-                                      (simulation?.scenarioIds?.length || 1)) *
-                                    100
-                                  }
-                                  current={currentChatIndex + 1}
-                                  total={simulation?.scenarioIds?.length || 0}
-                                  size={32}
-                                />
-                              </div>
-                            )}
-                        </div>
-                      </div>
-                      <div className="flex items-start justify-end gap-2">
+            <TooltipProvider>
+              <ResizablePanelGroup direction="vertical" className="h-full">
+                <ResizablePanel defaultSize={88} minSize={60}>
+                  <div className="h-full flex flex-col">
+                    {/* Timer and Controls Header - consistent with results layout */}
+                    <div className="p-4 pt-0 border-b flex flex-col gap-2">
+                      <div className="flex items-start justify-between">
                         <div className="flex items-center gap-4">
-                          {currentChat?.completed && (
-                            <Badge variant="default">Completed</Badge>
-                          )}
+                          {/* Show scenario information */}
+                          <div className="flex items-start gap-2">
+                            <span className="font-medium">
+                              {scenario?.description || currentChat?.title}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          {/* Documents Toggle */}
-                          {scenarioDocuments.length > 0 && (
-                            <TooltipProvider>
+                        <div className="flex items-start justify-end gap-2">
+                          <div className="flex items-center gap-4">
+                            {currentChat?.completed && (
+                              <Badge variant="default">Completed</Badge>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {simulation?.scenarioIds?.length &&
+                              simulation?.scenarioIds?.length > 1 && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                      <CircularProgress
+                                        progress={
+                                          (chats.length /
+                                            (simulation?.scenarioIds?.length ||
+                                              1)) *
+                                          100
+                                        }
+                                        size={64}
+                                      />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>
+                                      {chats.length} of{" "}
+                                      {simulation?.scenarioIds?.length} chats
+                                    </p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            {/* Documents Toggle */}
+                            {scenarioDocuments.length > 0 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -1689,10 +1693,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
-                            </TooltipProvider>
-                          )}
+                            )}
 
-                          <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <div
@@ -1736,307 +1738,309 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                   </TooltipContent>
                                 )}
                             </Tooltip>
-                          </TooltipProvider>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
-                    <ScrollArea
-                      className="flex-1 px-4 min-h-0"
-                      ref={scrollAreaRef}
-                    >
-                      <div className="space-y-4 py-4">
-                        {messagesLoading ? (
-                          <div className="space-y-4">
-                            {[1, 2, 3].map((i) => (
-                              <div key={i} className="space-y-2">
-                                <Skeleton className="h-4 w-20" />
-                                <Skeleton className="h-16 w-full" />
-                              </div>
-                            ))}
-                          </div>
-                        ) : messages.length === 0 ? (
-                          /* Starter Prompts - shown when no messages */
-                          <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
-                            <div className="text-center space-y-2">
-                              <p className="text-sm text-muted-foreground">
-                                Choose a prompt below or type your own message
-                              </p>
-                            </div>
-                            <div className="flex flex-col gap-3 w-full max-w-md">
-                              {starterPrompts.map((prompt, index) => (
-                                <Button
-                                  key={index}
-                                  variant="outline"
-                                  className="h-auto p-4 text-left justify-start whitespace-normal"
-                                  onClick={() =>
-                                    handleStarterPromptClick(prompt)
-                                  }
-                                  disabled={
-                                    currentChat?.completed ||
-                                    isSendingMessage ||
-                                    (simulation?.timeLimit ? !isActive : false)
-                                  }
-                                >
-                                  <span className="text-sm">{prompt}</span>
-                                </Button>
+                    <CardContent className="flex-1 flex flex-col p-0 min-h-0 relative">
+                      <ScrollArea
+                        className="flex-1 px-4 min-h-0"
+                        ref={scrollAreaRef}
+                      >
+                        <div className="space-y-4 py-4">
+                          {messagesLoading ? (
+                            <div className="space-y-4">
+                              {[1, 2, 3].map((i) => (
+                                <div key={i} className="space-y-2">
+                                  <Skeleton className="h-4 w-20" />
+                                  <Skeleton className="h-16 w-full" />
+                                </div>
                               ))}
                             </div>
-                          </div>
-                        ) : (
-                          messages
-                            .sort(
-                              (a: SimulationMessage, b: SimulationMessage) =>
-                                new Date(a.createdAt).getTime() -
-                                new Date(b.createdAt).getTime()
-                            )
-                            .map((message: SimulationMessage) => (
-                              <div key={message.id} className="space-y-3">
-                                {/* User Message */}
-                                {message.type === "query" && (
-                                  <div className="flex justify-end mb-3">
-                                    <div className="max-w-[80%]">
-                                      <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                                        <Markdown>{message.content}</Markdown>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-
-                                {/* Assistant Response */}
-                                {message.type === "response" &&
-                                  message.content !== "" && (
-                                    <div className="flex justify-start mb-3">
+                          ) : messages.length === 0 ? (
+                            /* Starter Prompts - shown when no messages */
+                            <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                              <div className="text-center space-y-2">
+                                <p className="text-sm text-muted-foreground">
+                                  Choose a prompt below or type your own message
+                                </p>
+                              </div>
+                              <div className="flex flex-col gap-3 w-full max-w-md">
+                                {starterPrompts.map((prompt, index) => (
+                                  <Button
+                                    key={index}
+                                    variant="outline"
+                                    className="h-auto p-4 text-left justify-start whitespace-normal"
+                                    onClick={() =>
+                                      handleStarterPromptClick(prompt)
+                                    }
+                                    disabled={
+                                      currentChat?.completed ||
+                                      isSendingMessage ||
+                                      (simulation?.timeLimit
+                                        ? !isActive
+                                        : false)
+                                    }
+                                  >
+                                    <span className="text-sm">{prompt}</span>
+                                  </Button>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            messages
+                              .sort(
+                                (a: SimulationMessage, b: SimulationMessage) =>
+                                  new Date(a.createdAt).getTime() -
+                                  new Date(b.createdAt).getTime()
+                              )
+                              .map((message: SimulationMessage) => (
+                                <div key={message.id} className="space-y-3">
+                                  {/* User Message */}
+                                  {message.type === "query" && (
+                                    <div className="flex justify-end mb-3">
                                       <div className="max-w-[80%]">
-                                        <div className="bg-muted rounded-lg p-3">
-                                          {message.content === "" ? (
-                                            <div className="flex items-center">
-                                              <span className="text-gray-500 mr-2">
-                                                Analyzing
-                                              </span>
-                                              <LoadingDots />
-                                            </div>
-                                          ) : (
-                                            <Markdown>
-                                              {message.content}
-                                            </Markdown>
-                                          )}
+                                        <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                          <Markdown>{message.content}</Markdown>
                                         </div>
                                       </div>
                                     </div>
                                   )}
-                              </div>
-                            ))
-                        )}
-                        <div ref={messagesEndRef} />
+
+                                  {/* Assistant Response */}
+                                  {message.type === "response" &&
+                                    message.content !== "" && (
+                                      <div className="flex justify-start mb-3">
+                                        <div className="max-w-[80%]">
+                                          <div className="bg-muted rounded-lg p-3">
+                                            {message.content === "" ? (
+                                              <div className="flex items-center">
+                                                <span className="text-gray-500 mr-2">
+                                                  Analyzing
+                                                </span>
+                                                <LoadingDots />
+                                              </div>
+                                            ) : (
+                                              <Markdown>
+                                                {message.content}
+                                              </Markdown>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                </div>
+                              ))
+                          )}
+                          <div ref={messagesEndRef} />
+                        </div>
+                      </ScrollArea>
+
+                      {/* Scroll to bottom button with smooth fade transition */}
+                      <div
+                        className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
+                          showScrollButton
+                            ? "opacity-100 translate-y-0 pointer-events-auto"
+                            : "opacity-0 translate-y-2 pointer-events-none"
+                        }`}
+                      >
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={scrollToBottom}
+                          className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+                          data-testid="scroll-to-bottom-button"
+                        >
+                          <ArrowDown className="h-4 w-4" />
+                        </Button>
                       </div>
-                    </ScrollArea>
+                    </CardContent>
+                  </div>
+                </ResizablePanel>
 
-                    {/* Scroll to bottom button with smooth fade transition */}
-                    <div
-                      className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
-                        showScrollButton
-                          ? "opacity-100 translate-y-0 pointer-events-auto"
-                          : "opacity-0 translate-y-2 pointer-events-none"
-                      }`}
+                <ResizableHandle />
+                {currentChat?.completed ? (
+                  <></>
+                ) : (
+                  <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
+                    <CardFooter
+                      ref={inputPanelRef}
+                      className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0"
                     >
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={scrollToBottom}
-                        className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
-                        data-testid="scroll-to-bottom-button"
-                      >
-                        <ArrowDown className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </div>
-              </ResizablePanel>
-
-              <ResizableHandle />
-              {currentChat?.completed ? (
-                <></>
-              ) : (
-                <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                  <CardFooter
-                    ref={inputPanelRef}
-                    className="h-full p-4 pt-3 pb-3 border-t flex flex-col justify-center min-h-0"
-                  >
-                    <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2 p-1">
-                      <form
-                        onSubmit={handleSendMessage}
-                        className={`flex flex-col gap-2 h-full ${isTall ? "" : "max-h-full overflow-hidden"}`}
-                      >
-                        {isTall ? (
-                          /* Vertical layout for larger panels with expanded textarea */
-                          <div className="flex flex-col gap-3 flex-1 p-1">
-                            <Textarea
-                              ref={textareaRef}
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              placeholder="Type your message..."
-                              disabled={
-                                simulation?.timeLimit ? !isActive : false
-                              }
-                              className="flex-1 resize-y overflow-y-auto text-md"
-                              data-testid="message-input"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSendMessage(null);
-                                }
-                              }}
-                              style={{
-                                minHeight: "80px",
-                                maxHeight: "300px",
-                              }}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                type="submit"
+                      <div className="w-full h-full flex flex-col gap-2 min-h-[60px] pt-2 p-1">
+                        <form
+                          onSubmit={handleSendMessage}
+                          className={`flex flex-col gap-2 h-full ${isTall ? "" : "max-h-full overflow-hidden"}`}
+                        >
+                          {isTall ? (
+                            /* Vertical layout for larger panels with expanded textarea */
+                            <div className="flex flex-col gap-3 flex-1 p-1">
+                              <Textarea
+                                ref={textareaRef}
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Type your message..."
                                 disabled={
-                                  isSendingMessage
-                                    ? isStoppingMessage
-                                    : !newMessage.trim() ||
-                                      (simulation?.timeLimit
-                                        ? !isActive
-                                        : false)
+                                  simulation?.timeLimit ? !isActive : false
                                 }
-                                data-testid="send-button"
-                                className="min-h-[40px] h-[40px] px-4"
-                                variant={
-                                  isSendingMessage ? "destructive" : "default"
-                                }
-                                onClick={
-                                  isSendingMessage
-                                    ? handleStopMessage
-                                    : undefined
-                                }
-                              >
-                                {isSendingMessage ? (
-                                  isStoppingMessage ? (
-                                    <LoadingDots />
+                                className="flex-1 resize-y overflow-y-auto text-md"
+                                data-testid="message-input"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage(null);
+                                  }
+                                }}
+                                style={{
+                                  minHeight: "80px",
+                                  maxHeight: "300px",
+                                }}
+                              />
+                              <div className="flex gap-2 justify-end">
+                                <Button
+                                  type="submit"
+                                  disabled={
+                                    isSendingMessage
+                                      ? isStoppingMessage
+                                      : !newMessage.trim() ||
+                                        (simulation?.timeLimit
+                                          ? !isActive
+                                          : false)
+                                  }
+                                  data-testid="send-button"
+                                  className="min-h-[40px] h-[40px] px-4"
+                                  variant={
+                                    isSendingMessage ? "destructive" : "default"
+                                  }
+                                  onClick={
+                                    isSendingMessage
+                                      ? handleStopMessage
+                                      : undefined
+                                  }
+                                >
+                                  {isSendingMessage ? (
+                                    isStoppingMessage ? (
+                                      <LoadingDots />
+                                    ) : (
+                                      <>
+                                        <Square className="h-4 w-4 mr-2" />
+                                        Stop
+                                      </>
+                                    )
                                   ) : (
                                     <>
-                                      <Square className="h-4 w-4 mr-2" />
-                                      Stop
+                                      <Send className="h-4 w-4 mr-2" />
+                                      Send
                                     </>
-                                  )
-                                ) : (
-                                  <>
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send
-                                  </>
-                                )}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleEndChat}
-                                disabled={
-                                  endChatLoading ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
-                              >
-                                {endChatLoading
-                                  ? "Ending..."
-                                  : isSingleChatAttempt
-                                    ? "End Session"
-                                    : "End Chat"}
-                              </Button>
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleEndChat}
+                                  disabled={
+                                    endChatLoading ||
+                                    (simulation?.timeLimit ? !isActive : false)
+                                  }
+                                  className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+                                >
+                                  {endChatLoading
+                                    ? "Ending..."
+                                    : isSingleChatAttempt
+                                      ? "End Session"
+                                      : "End Chat"}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        ) : (
-                          /* Horizontal layout for smaller panels - original compact view */
-                          <div className="flex gap-2 flex-1 min-h-[40px] items-center p-2">
-                            <Textarea
-                              ref={textareaRef}
-                              value={newMessage}
-                              onChange={(e) => setNewMessage(e.target.value)}
-                              placeholder="Type your message..."
-                              disabled={
-                                simulation?.timeLimit ? !isActive : false
-                              }
-                              className="flex-1 resize-none overflow-hidden text-md"
-                              data-testid="message-input"
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter" && !e.shiftKey) {
-                                  e.preventDefault();
-                                  handleSendMessage(null);
-                                }
-                              }}
-                              style={{
-                                height: "40px",
-                                minHeight: "40px",
-                                maxHeight: "40px",
-                              }}
-                            />
-                            <div className="flex gap-2 shrink-0">
-                              <Button
-                                type="submit"
+                          ) : (
+                            /* Horizontal layout for smaller panels - original compact view */
+                            <div className="flex gap-2 flex-1 min-h-[40px] items-center p-2">
+                              <Textarea
+                                ref={textareaRef}
+                                value={newMessage}
+                                onChange={(e) => setNewMessage(e.target.value)}
+                                placeholder="Type your message..."
                                 disabled={
-                                  isSendingMessage
-                                    ? isStoppingMessage
-                                    : !newMessage.trim() ||
-                                      (simulation?.timeLimit
-                                        ? !isActive
-                                        : false)
+                                  simulation?.timeLimit ? !isActive : false
                                 }
-                                data-testid="send-button"
-                                className="min-h-[40px] h-[40px] px-3"
-                                variant={
-                                  isSendingMessage ? "destructive" : "default"
-                                }
-                                onClick={
-                                  isSendingMessage
-                                    ? handleStopMessage
-                                    : undefined
-                                }
-                              >
-                                {isSendingMessage ? (
-                                  isStoppingMessage ? (
-                                    <LoadingDots />
+                                className="flex-1 resize-none overflow-hidden text-md"
+                                data-testid="message-input"
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSendMessage(null);
+                                  }
+                                }}
+                                style={{
+                                  height: "40px",
+                                  minHeight: "40px",
+                                  maxHeight: "40px",
+                                }}
+                              />
+                              <div className="flex gap-2 shrink-0">
+                                <Button
+                                  type="submit"
+                                  disabled={
+                                    isSendingMessage
+                                      ? isStoppingMessage
+                                      : !newMessage.trim() ||
+                                        (simulation?.timeLimit
+                                          ? !isActive
+                                          : false)
+                                  }
+                                  data-testid="send-button"
+                                  className="min-h-[40px] h-[40px] px-3"
+                                  variant={
+                                    isSendingMessage ? "destructive" : "default"
+                                  }
+                                  onClick={
+                                    isSendingMessage
+                                      ? handleStopMessage
+                                      : undefined
+                                  }
+                                >
+                                  {isSendingMessage ? (
+                                    isStoppingMessage ? (
+                                      <LoadingDots />
+                                    ) : (
+                                      <Square className="h-4 w-4" />
+                                    )
                                   ) : (
-                                    <Square className="h-4 w-4" />
-                                  )
-                                ) : (
-                                  <Send className="h-4 w-4" />
-                                )}
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={handleEndChat}
-                                disabled={
-                                  endChatLoading ||
-                                  (simulation?.timeLimit ? !isActive : false)
-                                }
-                                className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
-                              >
-                                {endChatLoading
-                                  ? "Ending..."
-                                  : isSingleChatAttempt
-                                    ? "End Session"
-                                    : "End Chat"}
-                              </Button>
+                                    <Send className="h-4 w-4" />
+                                  )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={handleEndChat}
+                                  disabled={
+                                    endChatLoading ||
+                                    (simulation?.timeLimit ? !isActive : false)
+                                  }
+                                  className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
+                                >
+                                  {endChatLoading
+                                    ? "Ending..."
+                                    : isSingleChatAttempt
+                                      ? "End Session"
+                                      : "End Chat"}
+                                </Button>
+                              </div>
                             </div>
-                          </div>
+                          )}
+                        </form>
+                        {simulation?.timeLimit && !isActive && (
+                          <p className="text-sm text-muted-foreground text-center">
+                            Time's up! The session has ended.
+                          </p>
                         )}
-                      </form>
-                      {simulation?.timeLimit && !isActive && (
-                        <p className="text-sm text-muted-foreground text-center">
-                          Time's up! The session has ended.
-                        </p>
-                      )}
-                    </div>
-                  </CardFooter>
-                </ResizablePanel>
-              )}
-            </ResizablePanelGroup>
+                      </div>
+                    </CardFooter>
+                  </ResizablePanel>
+                )}
+              </ResizablePanelGroup>
+            </TooltipProvider>
           </Card>
         </ResizablePanel>
 
