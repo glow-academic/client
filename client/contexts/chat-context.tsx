@@ -467,7 +467,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [profile?.id, queryClient]);
+  }, [profile?.id, queryClient, currentChatId]);
 
   // Join/leave chat rooms when currentChatId changes
   useEffect(() => {
