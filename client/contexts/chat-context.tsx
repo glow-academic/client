@@ -157,15 +157,33 @@ export function ChatProvider({ children }: ChatProviderProps) {
         created_at: string;
       }) => {
         logInfo(
-          `Received new_message event: ${data.role} message for chat ${data.chat_id}`
+          `Received new_message event: ${data.role} message for chat ${data.chat_id}`,
+          { 
+            messageId: data.message_id, 
+            currentChatId, 
+            content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
+            completed: data.completed
+          }
         );
+
+        // Check if this message is for the current chat
+        if (data.chat_id !== currentChatId) {
+          logInfo(`Ignoring message for different chat: ${data.chat_id} vs ${currentChatId}`);
+          return;
+        }
 
         // Update the messages cache with new message
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
           (old: AssistantMessage[] = []) => {
+            logInfo(`Updating message cache for chat ${data.chat_id}`, { 
+              oldMessagesCount: old.length,
+              newMessageId: data.message_id
+            });
+            
             const exists = old.find((msg) => msg.id === data.message_id);
             if (exists) {
+              logInfo(`Message ${data.message_id} already exists, skipping`);
               return old;
             }
 
@@ -185,6 +203,11 @@ export function ChatProvider({ children }: ChatProviderProps) {
                 new Date(a.createdAt).getTime() -
                 new Date(b.createdAt).getTime()
             );
+
+            logInfo(`Updated message cache`, { 
+              newMessagesCount: updated.length,
+              addedMessage: { id: newMessage.id, role: newMessage.role, content: newMessage.content.substring(0, 50) }
+            });
 
             return updated;
           }
@@ -345,7 +368,10 @@ export function ChatProvider({ children }: ChatProviderProps) {
     );
 
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
-      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`);
+      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
+        currentChatId,
+        isCurrentChat: data.chat_id === currentChatId
+      });
     });
 
     socket.on(
@@ -449,6 +475,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Leave current room if we're in one
     if (currentRoomRef.current && socketRef.current) {
+      logInfo(`Leaving previous chat room: ${currentRoomRef.current}`);
       socketRef.current.emit("leave_chat", {
         chat_id: currentRoomRef.current,
         chat_type: "assistant",
@@ -458,6 +485,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     // Join new room if we have a chat ID
     if (currentChatId && socketRef.current) {
+      logInfo(`Joining new chat room: ${currentChatId}`);
       socketRef.current.emit("join_chat", {
         chat_id: currentChatId,
         chat_type: "assistant",
@@ -467,6 +495,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
     return () => {
       if (currentRoomRef.current && socketRef.current) {
+        logInfo(`Cleanup: Leaving chat room: ${currentRoomRef.current}`);
         socketRef.current.emit("leave_chat", {
           chat_id: currentRoomRef.current,
           chat_type: "assistant",

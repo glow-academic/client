@@ -43,13 +43,15 @@ async def run_assistant_agent(
     ).one_or_none()
     
     if assistant_chat:
-        # creating the mcp servers
-        base_url = os.getenv("NEXT_PUBLIC_API_URL")
+        # Use internal server URL for MCP server connection
+        # In Docker, the server is accessible at http://localhost:8000
+        # This avoids Traefik routing issues and uses internal networking
+        mcp_server_url = "http://localhost:8000/domain/mcp"
         
         async with (
             MCPServerStreamableHttp(
                 name="MCP Server",
-                params={"url": f"{base_url}/domain"},
+                params={"url": mcp_server_url},
                 cache_tools_list=True,
             ) as domain_server
         ):
