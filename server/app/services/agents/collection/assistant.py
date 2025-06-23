@@ -1,9 +1,9 @@
-import os
+import logging
 import uuid
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
 from agents import Runner, trace
-from agents.items import TResponseInputItem
+from agents.items import ToolCallItem, ToolCallOutputItem, TResponseInputItem
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import (Agents, AssistantChats, AssistantMessages, Models,
@@ -12,11 +12,14 @@ from app.services.agents.generic import GenericAgent
 from app.utils.chat import get_assistant_conversation_history
 from dotenv import load_dotenv
 from fastapi import Depends
-from openai.types.responses import ResponseTextDeltaEvent
+from openai.types.responses import (ResponseFunctionToolCall,
+                                    ResponseTextDeltaEvent)
 from sqlalchemy import desc
 from sqlmodel import Session, select
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 async def run_assistant_agent(
     chat_id: uuid.UUID,
@@ -134,7 +137,7 @@ async def _handle_assistant_chat(
     with trace(chat.title, trace_id=chat.trace_id):
         result = Runner.run_streamed(
             agent_instance.agent(),
-            input=input_items,
+            input=input_items
         )
 
     # Store the result in active runs for potential cancellation using unified tracking
@@ -148,6 +151,17 @@ async def _handle_assistant_chat(
                 if isinstance(event.data, ResponseTextDeltaEvent):
                     chunk = event.data.delta
                     yield chunk
+            elif event.type == "run_item_stream_event":
+                if event.name == "tool_called" and isinstance(event.item, ToolCallItem):
+                    if isinstance(event.item.raw_item, ResponseFunctionToolCall):
+                        tool_call = event.item.raw_item
+                        name = tool_call.name
+                        arguments = tool_call.arguments
+                        logger.info(f"Tool called: {name} with arguments: {arguments}")
+                elif event.name == "tool_output" and isinstance(event.item, ToolCallOutputItem):
+                    output = event.item.output
+                    logger.info(f"Tool output: {output}")
+
     except Exception as e:
         # Handle cancellation or other errors
         if "cancelled" in str(e).lower():

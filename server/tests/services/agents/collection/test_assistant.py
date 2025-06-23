@@ -45,3 +45,17 @@ class TestCancel_Assistant_Run:
         # TODO: Implement error test for cancel_assistant_run
         assert False, "IMPLEMENT: Error test for cancel_assistant_run"
 
+
+class TestOn_Tool_End:
+    """Tests for on_tool_end function."""
+    
+    def test_on_tool_end_success(self):
+        """Test successful on_tool_end execution."""
+        # TODO: Implement test for on_tool_end
+        assert False, "IMPLEMENT: Test for on_tool_end"
+    
+    def test_on_tool_end_error(self):
+        """Test on_tool_end error handling."""
+        # TODO: Implement error test for on_tool_end
+        assert False, "IMPLEMENT: Error test for on_tool_end"
+
