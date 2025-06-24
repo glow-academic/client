@@ -35,7 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { downloadReport } from "@/utils/api/profiles/download-report";
+// Removed downloadReport import - now calling API directly
 import { logError } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -376,29 +376,80 @@ export default function Reports() {
     setDownloadingReports((prev) => new Set(prev).add(profileId));
 
     try {
-      const result = await downloadReport(profileId, {
-        includeStudentTypeChart: options.includeStudentTypeChart,
-        includePerformanceChart: options.includePerformanceChart,
-        includeRadarChart: options.includeRadarChart,
-        includeTimeChart: options.includeTimeChart,
-        includeDetailedScores: options.includeDetailedScores,
-        includeFeedback: options.includeFeedback,
-      });
-
-      if (!result.success) {
-        throw new Error(result.message);
+      // Build query parameters
+      const queryParams = new URLSearchParams();
+      if (options.includeStudentTypeChart !== undefined) {
+        queryParams.set(
+          "includeStudentTypeChart",
+          options.includeStudentTypeChart.toString()
+        );
+      }
+      if (options.includePerformanceChart !== undefined) {
+        queryParams.set(
+          "includePerformanceChart",
+          options.includePerformanceChart.toString()
+        );
+      }
+      if (options.includeRadarChart !== undefined) {
+        queryParams.set(
+          "includeRadarChart",
+          options.includeRadarChart.toString()
+        );
+      }
+      if (options.includeTimeChart !== undefined) {
+        queryParams.set(
+          "includeTimeChart",
+          options.includeTimeChart.toString()
+        );
+      }
+      if (options.includeDetailedScores !== undefined) {
+        queryParams.set(
+          "includeDetailedScores",
+          options.includeDetailedScores.toString()
+        );
+      }
+      if (options.includeFeedback !== undefined) {
+        queryParams.set("includeFeedback", options.includeFeedback.toString());
       }
 
+      // Call the API route directly
+      const url = `/api/download/report/${profileId}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+      const response = await fetch(url, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        // Try to get error details from JSON response
+        let errorMessage = `Failed to download report: ${response.status} ${response.statusText}`;
+        try {
+          const errorData = await response.json();
+          if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch {
+          // If not JSON, use the default error message
+        }
+        throw new Error(errorMessage);
+      }
+
+      // Extract filename from Content-Disposition header
+      const contentDisposition = response.headers.get("content-disposition");
+      const filename = contentDisposition
+        ? contentDisposition.split("filename=")[1]?.replace(/"/g, "") ||
+          `TA_Report_${profileId}.pdf`
+        : `TA_Report_${profileId}.pdf`;
+
       // Create blob and download
-      const blob = await result.blob!();
-      const url = window.URL.createObjectURL(blob);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = result.filename || "report.pdf";
+      a.href = blobUrl;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
 
       toast.success("Report downloaded successfully");
     } catch (error) {

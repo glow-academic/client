@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Document } from "@/types";
-import { downloadDocument } from "@/utils/api/documents/download-document";
+// Removed downloadDocument import - now calling API directly
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileText } from "lucide-react";
@@ -84,20 +84,34 @@ export default function DocumentViewer({
       try {
         setLoading(true);
         setError(null);
-        const res = await downloadDocument(docId);
-        if (!res.success) throw new Error(res.message);
 
-        if (!res.headers || !res.text || !res.blob) {
-          throw new Error("Invalid response format");
+        // Call the API route directly
+        const response = await fetch(`/api/download/document/${docId}`, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!response.ok) {
+          // Try to get error details from JSON response
+          let errorMessage = `Failed to load document: ${response.status} ${response.statusText}`;
+          try {
+            const errorData = await response.json();
+            if (errorData.message) {
+              errorMessage = errorData.message;
+            }
+          } catch {
+            // If not JSON, use the default error message
+          }
+          throw new Error(errorMessage);
         }
 
-        const contentType = res.headers.get("content-type") ?? "";
+        const contentType = response.headers.get("content-type") ?? "";
         setType(contentType);
 
         if (contentType.includes("text/")) {
-          setContent(await res.text());
+          setContent(await response.text());
         } else {
-          const blob = await res.blob();
+          const blob = await response.blob();
           setContent(URL.createObjectURL(blob));
         }
       } catch (e) {
@@ -231,17 +245,10 @@ export default function DocumentViewer({
               {document.name}
             </span>
           </div>
-          <Button
-            size="sm"
-            variant="ghost"
-            className="shrink-0"
-            onClick={() => {
-              if (document?.id) {
-                window.open(`/api/download/document/${document.id}`, "_blank");
-              }
-            }}
-          >
-            <Download className="h-4 w-4" />
+          <Button size="sm" variant="ghost" asChild className="shrink-0">
+            <a href={content ?? ""} download={document.name ?? ""}>
+              <Download className="h-4 w-4" />
+            </a>
           </Button>
         </div>
         <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
@@ -273,17 +280,10 @@ export default function DocumentViewer({
                 })}
               </SelectContent>
             </Select>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => {
-                if (current?.id) {
-                  window.open(`/api/download/document/${current.id}`, "_blank");
-                }
-              }}
-            >
-              <Download className="h-4 w-4" />
+            <Button size="sm" variant="ghost" asChild className="shrink-0">
+              <a href={content ?? ""} download={current.name ?? ""}>
+                <Download className="h-4 w-4" />
+              </a>
             </Button>
           </div>
         </CardHeader>
