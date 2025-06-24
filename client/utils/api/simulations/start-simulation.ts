@@ -30,13 +30,13 @@ export async function startSimulation(
       profileId: params.profileId,
     });
 
+    const formData = new FormData();
+    formData.append("simulation_id", params.simulationId);
+    formData.append("profile_id", params.profileId || "");
+
     const response = await fetch(`${getApiUrl()}/simulations/start`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-      body: JSON.stringify(params),
+      body: formData,
     });
 
     if (!response.ok) {
