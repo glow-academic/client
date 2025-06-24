@@ -53,7 +53,6 @@ import {
 import { useRole } from "@/contexts/role-context";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
-import { logInfo } from "@/utils/logger";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -69,6 +68,7 @@ import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import SimulationHistory from "../common/history/SimulationHistory";
 import { useSession } from "next-auth/react";
+import { startSimulation } from "@/utils/api/simulations/start-simulation";
 
 // Type for attempt data
 interface AttemptData {
@@ -707,38 +707,18 @@ export default function Home() {
         setLoadingSimulation(simulationId);
         toast.loading("Starting simulation...");
 
-        const formData = new FormData();
-        formData.append("simulation_id", simulationId);
+        const result = await startSimulation({
+          simulationId,
+          profileId: profile?.id ?? undefined,
+        });
 
-        // Handle profile_id for guest mode
-        if (effectiveRole === "guest" || !profile) {
-          // pass
-          logInfo("Guest mode, no profile");
-        } else {
-          formData.append("profile_id", profile.id);
+        if (!result.success) {
+          throw new Error(result.message);
         }
 
-        const response = await fetch(
-          `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/start`,
-          {
-            method: "POST",
-            body: formData,
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          toast.dismiss();
-          toast.success("Simulation started");
-          router.push(`/home/a/${data.attempt_id}`);
-        } else {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.detail ||
-              response.statusText ||
-              "Failed to start simulation"
-          );
-        }
+        toast.dismiss();
+        toast.success("Simulation started");
+        router.push(`/home/a/${result.attempt_id}`);
       } catch (error) {
         logError("Error starting simulation:", error);
         toast.dismiss();
@@ -747,7 +727,7 @@ export default function Home() {
         setLoadingSimulation(null);
       }
     },
-    [classes, effectiveRole, profile, router]
+    [profile, router, classes]
   );
 
   // Separate simulations into default and cohort-based

@@ -23,7 +23,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { deleteEval } from "@/utils/mutations/evals/delete-eval";
-import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
 import { logError } from "@/utils/logger";
 
@@ -47,6 +46,7 @@ import {
 } from "@/components/ui/card";
 import { Eval } from "@/types";
 import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
+import { startEval } from "@/utils/api/evals/start-eval";
 
 export default function Evals() {
   const router = useRouter();
@@ -67,11 +67,6 @@ export default function Evals() {
   const { data: evalRuns } = useQuery({
     queryKey: ["evalRuns"],
     queryFn: () => getAllEvalRuns(),
-  });
-
-  const { data: classes } = useQuery({
-    queryKey: ["classes"],
-    queryFn: () => getAllClasses(),
   });
 
   const handleDelete = async () => {
@@ -103,47 +98,21 @@ export default function Evals() {
   };
 
   const handleRun = async (id: string) => {
-    if (!classes) {
-      toast.error("No classes found. Please contact an administrator.");
-      return;
-    }
 
     setStartingEvalId(id);
     try {
       toast.loading("Starting evaluation...");
 
-      // Use the first available class for now
-      const firstClass = classes[0];
-      if (!firstClass) {
-        throw new Error("No classes available");
+      const result = await startEval(id);
+
+      if (!result.success) {
+        throw new Error(result.message);
       }
-      const classId = firstClass.id;
 
-      const formData = new FormData();
-      formData.append("eval_id", id);
-      formData.append("class_id", classId);
+      toast.success("Evaluation started successfully");
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/start`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        toast.success("Evaluation started successfully");
-
-        // Navigate to the evaluation page
-        router.push(`/management/evals/e/${id}`);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.detail ||
-            response.statusText ||
-            "Failed to start evaluation"
-        );
-      }
+      // Navigate to the evaluation page
+      router.push(`/management/evals/e/${id}`);
     } catch (error) {
       logError("Error starting evaluation:", error);
       toast.error("Failed to start evaluation. Please try again.");

@@ -18,6 +18,8 @@ import { logError } from "@/utils/logger";
 
 import ClassForm from "@/components/common/class/ClassForm";
 import { createClass } from "@/utils/mutations/classes/create-class";
+import { getClientApiUrl } from "@/lib/utils";
+import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 
 type ProcessingStep =
   | "idle"
@@ -80,9 +82,6 @@ export default function NewClass() {
       // Show loading toast
       const toastId = toast.loading(`Uploading ${file.name}...`);
 
-      // Get the API URL from environment
-      const apiUrl = process.env["NEXT_PUBLIC_API_URL"] || "";
-
       // Upload the ZIP file using tus
       await new Promise<void>((resolve, reject) => {
         const tusMetadata = {
@@ -96,7 +95,7 @@ export default function NewClass() {
         };
 
         const upload = new tus.Upload(file, {
-          endpoint: `${apiUrl}/documents/tus`,
+          endpoint: `${getClientApiUrl()}/documents/tus`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: tusMetadata,
           onError: (error) => {
@@ -141,19 +140,17 @@ export default function NewClass() {
                 autoCourseProcess: true,
               };
 
-              const response = await fetch(`${apiUrl}/documents/tus/finalize`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                credentials: "include",
-                body: JSON.stringify(finalizePayload),
-              });
+              const response = await finalizeDocumentUpload(
+                finalizePayload.fileId,
+                tempClassId,
+                true,
+                true,
+                true
+              );
 
-              if (!response.ok) {
-                const errorData = await response.json();
+              if (!response.success) {
                 throw new Error(
-                  errorData.message || "Failed to finalize upload"
+                  response.message || "Failed to finalize upload"
                 );
               }
 

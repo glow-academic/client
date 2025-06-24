@@ -5,6 +5,8 @@
 "use client";
 import { getWebSocketUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage } from "@/types";
+import { messageAssistant } from "@/utils/api/assistants/message-assistant";
+import { stopAssistant } from "@/utils/api/assistants/stop-assistant";
 import { logError, logInfo } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
 import { getAssistantChatsByProfile } from "@/utils/queries/assistant_chats/get-assistant-chats-by-profile";
@@ -521,23 +523,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
       chatId: string;
       content: string;
     }) => {
-      const formData = new FormData();
-      formData.append("chat_id", chatId);
-      formData.append("message", content);
+      const response = await messageAssistant({
+        chat_id: chatId,
+        message: content,
+      });
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/message`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!response.success) {
+        throw new Error(response.message);
       }
 
-      return await response.json();
+      return response;
     },
     onError: (error) => {
       toast.error(`Failed to send message: ${error}`);
@@ -573,19 +568,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setIsStoppingMessage(true);
 
     try {
-      const formData = new FormData();
-      formData.append("chat_id", currentChatId);
+      const response = await stopAssistant({
+        chat_id: currentChatId,
+      });
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/stop`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!response.success) {
+        throw new Error(response.message);
       }
 
       // The WebSocket event will handle state updates
