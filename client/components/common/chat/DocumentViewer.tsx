@@ -231,10 +231,17 @@ export default function DocumentViewer({
               {document.name}
             </span>
           </div>
-          <Button size="sm" variant="ghost" asChild className="shrink-0">
-            <a href={content ?? ""} download={document.name ?? ""}>
-              <Download className="h-4 w-4" />
-            </a>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="shrink-0"
+            onClick={() => {
+              if (document?.id) {
+                window.open(`/api/download/document/${document.id}`, "_blank");
+              }
+            }}
+          >
+            <Download className="h-4 w-4" />
           </Button>
         </div>
         <ScrollArea className="flex-1 min-h-0">{renderContent()}</ScrollArea>
@@ -266,10 +273,17 @@ export default function DocumentViewer({
                 })}
               </SelectContent>
             </Select>
-            <Button size="sm" variant="ghost" asChild className="shrink-0">
-              <a href={content ?? ""} download={current.name ?? ""}>
-                <Download className="h-4 w-4" />
-              </a>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => {
+                if (current?.id) {
+                  window.open(`/api/download/document/${current.id}`, "_blank");
+                }
+              }}
+            >
+              <Download className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>

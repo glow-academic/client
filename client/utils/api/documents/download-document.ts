@@ -6,7 +6,6 @@
  */
 "use server";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
 
 export interface DownloadDocumentParams {
   documentId: string;
@@ -25,12 +24,24 @@ export async function downloadDocument(
   documentId: string
 ): Promise<DownloadDocumentResponse> {
   try {
-    const response = await fetch(`${getApiUrl()}/documents/id/${documentId}`, {
+    // Use the Next.js API route instead of calling FastAPI directly
+    const response = await fetch(`/api/download/document/${documentId}`, {
       method: "GET",
+      credentials: "include", // Include cookies for authentication
     });
 
     if (!response.ok) {
-      const errorMessage = `Failed to download document ${documentId}: ${response.status} ${response.statusText}`;
+      // Try to get error details from JSON response
+      let errorMessage = `Failed to download document ${documentId}: ${response.status} ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+      } catch {
+        // If not JSON, use the default error message
+      }
+
       logError(errorMessage);
       return {
         success: false,

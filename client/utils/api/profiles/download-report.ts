@@ -6,7 +6,7 @@
  */
 "use server";
 import { logError, logInfo } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
+// Note: No longer importing getApiUrl since we're using Next.js API routes
 
 export interface DownloadReportParams {
   profileId: string;
@@ -78,7 +78,8 @@ export async function downloadReport(
       queryParams.set("includeFeedback", options.includeFeedback.toString());
     }
 
-    const url = `${getApiUrl()}/profiles/${profileId}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
+    // Use the Next.js API route instead of calling FastAPI directly
+    const url = `/api/download/report/${profileId}${queryParams.toString() ? `?${queryParams.toString()}` : ""}`;
 
     const response = await fetch(url, {
       method: "GET",
@@ -86,7 +87,14 @@ export async function downloadReport(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      // Try to get error details from JSON response
+      let errorData;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = {};
+      }
+
       const errorMessage =
         errorData.message ||
         `Failed to download report: ${response.status} ${response.statusText}`;
@@ -136,10 +144,12 @@ export async function downloadReportLegacy(
   profileId: string,
   queryParams: string
 ): Promise<Response> {
+  // Use the Next.js API route for legacy compatibility
   const response = await fetch(
-    `${getApiUrl()}/profiles/${profileId}?${queryParams}`,
+    `/api/download/report/${profileId}?${queryParams}`,
     {
       method: "GET",
+      credentials: "include",
     }
   );
   return response;
