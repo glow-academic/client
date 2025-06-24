@@ -55,6 +55,12 @@ sio = socketio.AsyncServer(
     # Increase timeouts for better stability
     ping_timeout=60,
     ping_interval=25,
+    # Try to support Engine.IO protocol v4
+    engineio_options={
+        'max_http_buffer_size': 1000000,
+        'ping_timeout': 60,
+        'ping_interval': 25,
+    }
 )
 
 @sio.event  # type: ignore

@@ -21,13 +21,32 @@ export default async function handler(
 ) {
   const originalUrl = req.url || "";
 
-  // Rewrite URL: /api/ws/... -> /socket.io/...
-  const targetPath = originalUrl.replace(/^\/api\/ws/, "/socket.io");
+  // Socket.IO client automatically appends /socket.io/ to the base URL
+  // So /api/ws becomes /api/ws/socket.io/
+  // We need to rewrite this to just /socket.io/
+  let targetPath: string;
+
+  if (originalUrl.startsWith("/api/ws/socket.io/")) {
+    // Socket.IO client request: /api/ws/socket.io/... -> /socket.io/...
+    targetPath = originalUrl.replace("/api/ws", "");
+  } else if (originalUrl.startsWith("/api/ws")) {
+    // Direct proxy request: /api/ws -> /socket.io/
+    targetPath = originalUrl.replace("/api/ws", "/socket.io");
+    // Ensure trailing slash for Socket.IO
+    if (targetPath === "/socket.io") {
+      targetPath = "/socket.io/";
+    }
+  } else {
+    // Fallback
+    targetPath = "/socket.io/";
+  }
+
   const targetUrl = `${getProxyTargetUrl()}${targetPath}`;
 
   logInfo("[SocketIO-proxy] Proxying request", {
     method: req.method,
     originalUrl,
+    targetPath,
     targetUrl,
     headers: {
       upgrade: req.headers.upgrade,

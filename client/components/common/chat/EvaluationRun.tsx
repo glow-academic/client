@@ -8,7 +8,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { io } from "socket.io-client";
 import { toast } from "sonner";
 
 // UI Components
@@ -40,7 +40,6 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
-import { getWebSocketUrl } from "@/lib/utils";
 import { Document, EvalChat, EvalMessage } from "@/types";
 import {
   EvalRunStatus,
@@ -144,18 +143,12 @@ export default function EvaluationRun({ runId }: { runId: string }) {
      *    (Because FastAPI's Socket.IO server still lives at /socket.io.
      *     The proxy just lives one level higher and forwards the request.)
      * ----------------------------------------------------------------- */
-    const socket = io(getWebSocketUrl(), {
-      transports: ["polling", "websocket"], // Start with polling, then upgrade
-      autoConnect: true,
-      forceNew: false, // Don't force new connection if one exists
-      timeout: 15000, // Increased timeout
-      reconnection: true,
-      reconnectionAttempts: 3, // Reduced attempts to avoid spam
-      reconnectionDelay: 2000, // Increased delay
-      reconnectionDelayMax: 10000, // Increased max delay
-      upgrade: true,
-      rememberUpgrade: true,
-    });
+    const socket = io({
+      transports: ["polling", "websocket"],
+      query: {
+        EIO: "4", // Force Engine.IO protocol version 4
+      },
+    }) as any;
 
     socketRef.current = socket;
 

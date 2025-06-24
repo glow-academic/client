@@ -84,7 +84,6 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
-import { getWebSocketUrl } from "@/lib/utils";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
 import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
 import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
@@ -753,18 +752,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
      *    (Because FastAPI's Socket.IO server still lives at /socket.io.
      *     The proxy just lives one level higher and forwards the request.)
      * ----------------------------------------------------------------- */
-    const socket = io(getWebSocketUrl(), {
-      transports: ["polling", "websocket"], // Start with polling, then upgrade
-      autoConnect: true,
-      forceNew: false, // Don't force new connection if one exists
-      timeout: 15000, // Increased timeout
-      reconnection: true,
-      reconnectionAttempts: 5, // Increased attempts for better reliability
-      reconnectionDelay: 1000, // Reduced initial delay
-      reconnectionDelayMax: 5000, // Reasonable max delay
-      upgrade: true,
-      rememberUpgrade: true,
-    });
+    const socket = io({
+      transports: ["polling", "websocket"],
+      query: {
+        EIO: "4", // Force Engine.IO protocol version 4
+      },
+    }) as any;
 
     socketRef.current = socket;
 
