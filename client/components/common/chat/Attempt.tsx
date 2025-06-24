@@ -101,6 +101,7 @@ import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
 
 // Timer is now integrated directly into the component layout
 
@@ -1135,7 +1136,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setEndChatLoading(true);
 
     try {
-      const response = await stopSimulation(currentChat.id);
+      const response = await continueSimulation(
+        currentChat.id,
+        currentChat.attemptId
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
