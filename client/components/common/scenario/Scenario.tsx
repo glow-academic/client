@@ -35,6 +35,8 @@ import { ScenarioSlider } from "./ScenarioSlider";
 
 // Types and API functions
 import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
+import { newScenario } from "@/utils/api/scenarios/new-scenario";
+import { testScenario } from "@/utils/api/scenarios/test-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
@@ -324,58 +326,34 @@ export default function Scenario({
       setIsSubmitting(false);
     }
   };
+
   const handleGenerateScenario = async () => {
     // Allow generation with incomplete data - the AI can work with what's available
     setIsGeneratingScenario(true);
 
     try {
-      const formDataToSend = new FormData();
-
-      // Only append non-null values
-      if (formData.agentId) {
-        formDataToSend.append("agent_id", formData.agentId);
-      }
-      if (formData.classId) {
-        formDataToSend.append("class_id", formData.classId);
-      }
-      formData.documents.forEach((docId) => {
-        if (docId) {
-          formDataToSend.append("document_ids", docId);
-        }
+      const result = await newScenario({
+        agentId: formData.agentId,
+        classId: formData.classId,
+        documentIds: formData.documents,
+        seniority: formData.seniority,
+        crowdedness: formData.crowdedness,
+        intensity: formData.intensity,
       });
-      if (formData.seniority) {
-        formDataToSend.append("seniority", formData.seniority);
-      }
-      if (formData.crowdedness) {
-        formDataToSend.append("crowdedness", formData.crowdedness.toString());
-      }
-      if (formData.intensity) {
-        formDataToSend.append("intensity", formData.intensity.toString());
+
+      if (!result.success) {
+        throw new Error(result.message || "Failed to generate scenario");
       }
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/scenarios/new`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const result = await response.json();
-
-      if (result.success) {
+      if (result.title || result.description) {
         setFormData((prev) => ({
           ...prev,
-          name: result.title,
-          description: result.description,
+          name: result.title || prev.name,
+          description: result.description || prev.description,
         }));
         toast.success("Scenario generated successfully!");
       } else {
-        throw new Error(result.message || "Failed to generate scenario");
+        throw new Error("No scenario content was generated");
       }
     } catch (error) {
       logError("Error generating scenario:", error);
@@ -402,26 +380,19 @@ export default function Scenario({
     setResponse("");
 
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append("agent_id", formData.agentId);
-      formDataToSend.append("description", formData.description || "");
-      formDataToSend.append("query", query);
+      const result = await testScenario({
+        agentId: formData.agentId,
+        description: formData.description || "",
+        query: query,
+      });
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/scenarios/test`,
-        {
-          method: "POST",
-          body: formDataToSend,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
-      const reader = response.body?.getReader();
+      const reader = result.reader;
       if (!reader) {
-        throw new Error("No response body");
+        throw new Error("No response reader available");
       }
 
       let fullResponse = "";
