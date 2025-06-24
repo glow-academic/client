@@ -85,7 +85,11 @@ export default function DocumentViewer({
         setLoading(true);
         setError(null);
         const res = await downloadDocument(docId);
-        if (!res.ok) throw new Error("Failed to load document");
+        if (!res.success) throw new Error(res.message);
+
+        if (!res.headers || !res.text || !res.blob) {
+          throw new Error("Invalid response format");
+        }
 
         const contentType = res.headers.get("content-type") ?? "";
         setType(contentType);

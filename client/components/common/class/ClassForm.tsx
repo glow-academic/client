@@ -28,6 +28,9 @@ import { Textarea } from "@/components/ui/textarea";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { cn, getClientApiUrl } from "@/lib/utils";
 import { Class, Document, DocumentType } from "@/types";
+import { deleteDocument } from "@/utils/api/documents/delete-document";
+import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
+import { processCourse } from "@/utils/api/documents/process-course";
 import { logError, logInfo } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
 import { updateClass } from "@/utils/mutations/classes/update-class";
@@ -49,8 +52,6 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
-import { processCourse } from "@/utils/api/documents/process-course";
-import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 
 interface FormErrors {
   name?: string;
@@ -82,11 +83,11 @@ export default function ClassForm({
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("list");
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(
-    null,
+    null
   );
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
-    null,
+    null
   );
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeletingDoc, setIsDeletingDoc] = useState(false);
@@ -103,7 +104,7 @@ export default function ClassForm({
   const handleCourseProcessing = async () => {
     if (!classId) {
       toast.error(
-        "Please save the class first before processing course information",
+        "Please save the class first before processing course information"
       );
       return;
     }
@@ -114,16 +115,13 @@ export default function ClassForm({
 
       const toastId = toast.loading("Processing course information...");
 
-      const response = await processCourse(classId);
+      const result = await processCourse(classId);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+      if (!result.success) {
         throw new Error(
-          errorData.message || "Failed to process course information",
+          result.message || "Failed to process course information"
         );
       }
-
-      const result = await response.json();
 
       toast.dismiss(toastId);
 
@@ -141,14 +139,16 @@ export default function ClassForm({
 
         // If there's debug info, log it
         if (result.debug_info) {
-          logInfo("Course processing debug info:", result.debug_info);
+          logInfo("Course processing debug info:", {
+            debug_info: result.debug_info,
+          });
         }
       } else {
         throw new Error(result.message || "Course processing failed");
       }
     } catch (error) {
       toast.error(
-        `Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to process course: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       logError("Course processing error:", error);
     } finally {
@@ -248,7 +248,7 @@ export default function ClassForm({
       }
     } catch (error) {
       toast.error(
-        `Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`,
+        `Failed to ${mode} class: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       logError(`Error ${mode}ing class:`, error);
     } finally {
@@ -263,7 +263,7 @@ export default function ClassForm({
       if (!classId) {
         if (mode === "create") {
           toast.error(
-            "Please create the class first before uploading documents",
+            "Please create the class first before uploading documents"
           );
         } else {
           toast.error("Please save the class first before uploading documents");
@@ -322,24 +322,31 @@ export default function ClassForm({
                 logError(`Failed to upload ${file.name}: `, error);
 
                 toast.error(
-                  `Failed to upload ${file.name}: ${error.message || "Unknown error"}`,
+                  `Failed to upload ${file.name}: ${error.message || "Unknown error"}`
                 );
 
                 reject(error);
               },
               onProgress: (bytesUploaded, bytesTotal) => {
                 const percentage = Math.round(
-                  (bytesUploaded / bytesTotal) * 100,
+                  (bytesUploaded / bytesTotal) * 100
                 );
                 logInfo(`${file.name} uploaded ${percentage}%`);
               },
               onSuccess: async () => {
                 // Finalize the upload
                 try {
-                  const response = await finalizeDocumentUpload(fileId, classId, file.type === "application/zip", true);
+                  const response = await finalizeDocumentUpload(
+                    fileId,
+                    classId,
+                    file.type === "application/zip",
+                    true
+                  );
 
                   if (!response.success) {
-                    throw new Error(response.message || "Failed to finalize upload");
+                    throw new Error(
+                      response.message || "Failed to finalize upload"
+                    );
                   }
 
                   toast.success(`${file.name} uploaded successfully!`);
@@ -348,7 +355,7 @@ export default function ClassForm({
                   logError(`Finalization error for ${file.name}:`, error);
 
                   toast.error(
-                    `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`,
+                    `Failed to process ${file.name}: ${error instanceof Error ? error.message : "Unknown error"}`
                   );
 
                   reject(error);
@@ -385,12 +392,12 @@ export default function ClassForm({
       } catch (error) {
         logError("Upload initialization error:", error);
         toast.error(
-          `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          `Upload error: ${error instanceof Error ? error.message : "Unknown error"}`
         );
         setIsUploading(false);
       }
     },
-    [classId, queryClient, mode],
+    [classId, queryClient, mode]
   );
 
   // Drag and drop handlers
@@ -414,7 +421,7 @@ export default function ClassForm({
         handleFiles(files);
       }
     },
-    [handleFiles],
+    [handleFiles]
   );
 
   const handleFileInputChange = useCallback(
@@ -423,7 +430,7 @@ export default function ClassForm({
         handleFiles(e.target.files);
       }
     },
-    [handleFiles],
+    [handleFiles]
   );
 
   const handleClick = useCallback(() => {
@@ -436,23 +443,10 @@ export default function ClassForm({
     try {
       setIsDeletingDoc(true);
 
-      const response = await fetch(
-        `${process.env['NEXT_PUBLIC_API_URL']}/documents/id/${documentId}?force=true`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        },
-      );
+      const result = await deleteDocument(documentId);
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message ||
-            `Failed to delete document: ${response.status} ${response.statusText}`,
-        );
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       queryClient.invalidateQueries({ queryKey: ["documents", classId] });
@@ -464,7 +458,7 @@ export default function ClassForm({
       toast.error(
         `Failed to delete document: ${
           error instanceof Error ? error.message : "Unknown error"
-        }`,
+        }`
       );
     } finally {
       setIsDeletingDoc(false);
@@ -473,7 +467,7 @@ export default function ClassForm({
 
   const handleDocumentTypeChange = async (
     documentId: string,
-    newType: string,
+    newType: string
   ) => {
     try {
       await updateDocument(documentId, { type: newType as DocumentType });
@@ -519,7 +513,7 @@ export default function ClassForm({
       return <File className="h-6 w-6 text-green-500" />;
     } else if (
       ["js", "ts", "py", "java", "c", "cpp", "html", "css"].includes(
-        extension || "",
+        extension || ""
       )
     ) {
       return <FileCode className="h-6 w-6 text-yellow-500" />;
@@ -753,7 +747,7 @@ export default function ClassForm({
               <div
                 className={cn(
                   "min-h-[200px] rounded-lg",
-                  documents.length === 0 ? "border-2 border-dashed" : "",
+                  documents.length === 0 ? "border-2 border-dashed" : ""
                 )}
               >
                 {documentsLoading ? (

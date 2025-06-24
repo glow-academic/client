@@ -8,35 +8,120 @@
 import { logError } from "@/utils/logger";
 import { getApiUrl } from "../../../lib/utils";
 
-interface FinalizeDocumentUploadResponse {
+export interface FinalizeDocumentUploadParams {
+  fileId: string;
+  classId: string;
+  zip?: boolean;
+  autoClassify?: boolean;
+  autoCourseProcess?: boolean;
+  csv?: boolean;
+  profile?: string;
+}
+
+export interface ExtractedDocument {
+  id: string;
+  name: string;
+  mime_type: string;
+}
+
+export interface ClassificationResult {
   success: boolean;
   message: string;
+  classified_count?: number;
+  total_count?: number;
+  classification_results?: Record<string, unknown>;
+}
+
+export interface CourseResult {
+  success: boolean;
+  message: string;
+  updates_made?: string[];
+  documents_count?: number;
+  course_info?: Record<string, unknown>;
+  debug_info?: string;
+}
+
+export interface FinalizeDocumentUploadResponse {
+  success: boolean;
+  message: string;
+  status?: "success" | "error";
+  document_id?: string;
+  extracted_count?: number;
+  documents?: ExtractedDocument[];
+  classification_result?: ClassificationResult;
+  course_result?: CourseResult;
+  users_created?: number;
+  users_skipped?: number;
+  errors?: string[];
+  created_users?: unknown[];
+  skipped_users?: unknown[];
 }
 
 export async function finalizeDocumentUpload(
   fileId: string,
   classId: string,
   zip?: boolean,
-  autoClassify?: boolean
+  autoClassify?: boolean,
+  autoCourseProcess?: boolean,
+  csv?: boolean,
+  profile?: string
 ): Promise<FinalizeDocumentUploadResponse> {
-  const payload = {
-    fileId,
-    classId,
-    zip,
-    autoClassify,
-  };
-  const response = await fetch(`${getApiUrl()}/documents/tus/finalize`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) {
-    const errorMessage = `Failed to finalize document upload: ${response.statusText}`;
-    logError(errorMessage);
-    throw new Error(errorMessage);
+  try {
+    const payload: FinalizeDocumentUploadParams = {
+      fileId,
+      classId,
+      ...(zip !== undefined && { zip }),
+      ...(autoClassify !== undefined && { autoClassify }),
+      ...(autoCourseProcess !== undefined && { autoCourseProcess }),
+      ...(csv !== undefined && { csv }),
+      ...(profile !== undefined && { profile }),
+    };
+
+    const response = await fetch(`${getApiUrl()}/documents/tus/finalize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage =
+        errorData.message ||
+        `Failed to finalize document upload: ${response.status} ${response.statusText}`;
+      logError(errorMessage);
+      return {
+        success: false,
+        message: errorMessage,
+        status: "error",
+      };
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      message: result.message || "Document upload finalized successfully",
+      status: result.status || "success",
+      document_id: result.document_id,
+      extracted_count: result.extracted_count,
+      documents: result.documents,
+      classification_result: result.classification_result,
+      course_result: result.course_result,
+      users_created: result.users_created,
+      users_skipped: result.users_skipped,
+      errors: result.errors,
+      created_users: result.created_users,
+      skipped_users: result.skipped_users,
+    };
+  } catch (error) {
+    const errorMessage = `Error finalizing document upload: ${error instanceof Error ? error.message : "Unknown error"}`;
+    logError(errorMessage, error);
+    return {
+      success: false,
+      message: errorMessage,
+      status: "error",
+    };
   }
-  return response.json();
 }
