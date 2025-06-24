@@ -137,7 +137,15 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
   // WebSocket connection setup
   useEffect(() => {
+    /** -----------------------------------------------------------------
+     *  IMPORTANT bit:
+     *  • url   = same-origin proxy   → "wss://<site>/api/ws"
+     *  • path  = upstream socket.io → "/socket.io"
+     *    (Because FastAPI's Socket.IO server still lives at /socket.io.
+     *     The proxy just lives one level higher and forwards the request.)
+     * ----------------------------------------------------------------- */
     const socket = io(getWebSocketUrl(), {
+      path: "/socket.io", // tell client to append this to /api/ws
       transports: ["websocket", "polling"],
       autoConnect: true,
       forceNew: false, // Don't force new connection if one exists
@@ -146,14 +154,13 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       reconnectionAttempts: 3, // Reduced attempts to avoid spam
       reconnectionDelay: 2000, // Increased delay
       reconnectionDelayMax: 10000, // Increased max delay
-      path: "/socket.io/",
     });
 
     socketRef.current = socket;
 
     socket.on("connect", () => {
       setIsConnected(true);
-      logInfo("WebSocket connected for evaluation");
+      logInfo("WebSocket connected (via proxy)");
     });
 
     socket.on("disconnect", (reason: string) => {

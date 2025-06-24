@@ -30,7 +30,6 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # ——— build-args for environment variables ———
-ARG NEXT_PUBLIC_API_URL
 ARG DB_USER
 ARG DB_PASSWORD
 ARG DB_NAME
@@ -41,7 +40,6 @@ ARG AUTH_MICROSOFT_ENTRA_ID_ID
 ARG AUTH_MICROSOFT_ENTRA_ID_SECRET
 
 # Set environment variables for build
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV DB_USER=$DB_USER
 ENV DB_PASSWORD=$DB_PASSWORD
 ENV DB_NAME=$DB_NAME
