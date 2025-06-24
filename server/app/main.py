@@ -32,37 +32,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Get client URL from environment
-client_url = os.getenv("CLIENT_URL")
-domain = os.getenv("DOMAIN")
-subdomain = os.getenv("SUBDOMAIN")
-
-# Build allowed origins for CORS
-allowed_origins = []
-
-# Always include localhost for development
-allowed_origins.extend([
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:3001",  # In case of port conflicts
-])
-
-# Add client URL if specified
-if client_url:
-    if client_url not in allowed_origins:
-        allowed_origins.append(client_url)
-
-# Add production URL if specified
-if domain and subdomain:
-    production_url = f"https://{subdomain}.{domain}"
-    if production_url not in allowed_origins:
-        allowed_origins.append(production_url)
-
-# If no specific origins are configured, allow all (fallback for development)
-if not client_url and not (domain and subdomain):
-    allowed_origins = ["*"]
-
-logger.info(f"Configured CORS allowed origins: {allowed_origins}")
+# Allow all origins
+allowed_origins = ["*"]
 
 # Store active chat connections
 active_connections: dict[str, str] = {}

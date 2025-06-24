@@ -57,8 +57,9 @@ COPY . .
 RUN groupadd --system --gid 1001 appuser && \
     useradd --system --uid 1001 --gid appuser --create-home appuser
 
-# Change ownership of the app directory
-RUN chown -R appuser:appuser /app
+# Create uploads directory and set permissions
+RUN mkdir -p /app/uploads/tus_uploads && \
+    chown -R appuser:appuser /app
 USER appuser
 
 # Set environment variables

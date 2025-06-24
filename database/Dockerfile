@@ -34,7 +34,9 @@ COPY scripts/custom-entrypoint.sh   /usr/local/bin/custom-entrypoint.sh
 # Make scripts executable in a single layer
 RUN chmod +x /usr/local/bin/custom-entrypoint.sh && \
     chmod +x /docker-entrypoint-initdb.d/sql-helpers.sh && \
-    find /docker-entrypoint-initdb.d/app -name "*.sh" -exec chmod +x {} \;
+    find /docker-entrypoint-initdb.d/app -name "*.sh" -exec chmod +x {} \; && \
+    chown -R postgres:postgres /docker-entrypoint-initdb.d/ && \
+    chown -R postgres:postgres /database/
 
 # Set default environment variables for development
 # (These can be overridden at runtime via docker run -e or docker-compose)
