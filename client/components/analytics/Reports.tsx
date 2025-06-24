@@ -376,29 +376,25 @@ export default function Reports() {
     setDownloadingReports((prev) => new Set(prev).add(profileId));
 
     try {
-      const queryParams = new URLSearchParams({
-        includeStudentTypeChart: options.includeStudentTypeChart.toString(),
-        includePerformanceChart: options.includePerformanceChart.toString(),
-        includeRadarChart: options.includeRadarChart.toString(),
-        includeTimeChart: options.includeTimeChart.toString(),
-        includeDetailedScores: options.includeDetailedScores.toString(),
-        includeFeedback: options.includeFeedback.toString(),
+      const result = await downloadReport(profileId, {
+        includeStudentTypeChart: options.includeStudentTypeChart,
+        includePerformanceChart: options.includePerformanceChart,
+        includeRadarChart: options.includeRadarChart,
+        includeTimeChart: options.includeTimeChart,
+        includeDetailedScores: options.includeDetailedScores,
+        includeFeedback: options.includeFeedback,
       });
 
-      const response = await downloadReport(profileId, queryParams.toString());
-
-      // Get the filename from the response headers
-      const contentDisposition = response.headers.get("content-disposition");
-      const filename = contentDisposition
-        ? contentDisposition.split("filename=")[1]?.replace(/"/g, "")
-        : `TA_Report_${profileId}.pdf`;
+      if (!result.success) {
+        throw new Error(result.message);
+      }
 
       // Create blob and download
-      const blob = await response.blob();
+      const blob = await result.blob!();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename || "report.pdf";
+      a.download = result.filename || "report.pdf";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
