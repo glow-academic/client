@@ -10,8 +10,8 @@ import {
   ArrowRight,
   Bot,
   Clock,
-  Info,
   FileCheck,
+  Info,
   MessageSquare,
   Plus,
   RefreshCcw,
@@ -22,9 +22,9 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { logError } from "@/utils/logger";
 import { deleteEval } from "@/utils/mutations/evals/delete-eval";
 import { getAllEvals } from "@/utils/queries/evals/get-all-evals";
-import { logError } from "@/utils/logger";
 
 import {
   AlertDialog,
@@ -45,8 +45,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Eval } from "@/types";
-import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
 import { startEval } from "@/utils/api/evals/start-eval";
+import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
 
 export default function Evals() {
   const router = useRouter();
@@ -98,7 +98,6 @@ export default function Evals() {
   };
 
   const handleRun = async (id: string) => {
-
     setStartingEvalId(id);
     try {
       toast.loading("Starting evaluation...");

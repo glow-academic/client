@@ -7,9 +7,20 @@
 "use server";
 import { getApiUrl } from "../../../lib/utils";
 
-export async function stopAllEvalRuns(evalRunId: string): Promise<Response> {
+export interface StopAllEvalRunsResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface StopAllEvalRunsParams {
+  eval_run_id: string;
+}
+
+export async function stopAllEvalRuns(
+  params: StopAllEvalRunsParams
+): Promise<StopAllEvalRunsResponse> {
   const formData = new FormData();
-  formData.append("eval_run_id", evalRunId);
+  formData.append("eval_run_id", params.eval_run_id);
 
   const response = await fetch(`${getApiUrl()}/evals/stop/all`, {
     method: "POST",
@@ -20,5 +31,5 @@ export async function stopAllEvalRuns(evalRunId: string): Promise<Response> {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
-  return response;
+  return response.json();
 }

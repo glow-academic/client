@@ -22,10 +22,16 @@ export interface EvalRunStatus {
   }>;
 }
 
+export interface GetEvalRunStatusParams {
+  eval_run_id: string;
+}
+
 export async function getEvalRunStatus(
-  evalRunId: string
+  params: GetEvalRunStatusParams
 ): Promise<EvalRunStatus> {
-  const response = await fetch(`${getApiUrl()}/evals/run/${evalRunId}/status`);
+  const response = await fetch(
+    `${getApiUrl()}/evals/run/${params.eval_run_id}/status`
+  );
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

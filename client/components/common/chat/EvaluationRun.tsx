@@ -42,6 +42,12 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { getWebSocketUrl } from "@/lib/utils";
 import { Document, EvalChat, EvalMessage } from "@/types";
+import {
+  EvalRunStatus,
+  getEvalRunStatus,
+} from "@/utils/api/evals/get-eval-run-status";
+import { runEval } from "@/utils/api/evals/run-eval";
+import { stopAllEvalRuns } from "@/utils/api/evals/stop-all-evals";
 import { logError, logInfo } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -54,12 +60,6 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import {
-  EvalRunStatus,
-  getEvalRunStatus,
-} from "@/utils/api/evals/get-eval-run-status";
-import { runEval } from "@/utils/api/evals/run-eval";
-import { stopAllEvalRuns } from "@/utils/api/evals/stop-all-evals";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {
