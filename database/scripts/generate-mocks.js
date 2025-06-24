@@ -769,13 +769,14 @@ const mockSuccessResponse = {
   status: "success" as const,
 };
 
-const mockErrorResponse = {
+// Available for use in specific test scenarios
+export const mockErrorResponse = {
   success: false,
   message: "Operation failed",
   status: "error" as const,
 };
 
-const mockProcessingResponse = {
+export const mockProcessingResponse = {
   success: true,
   message: "Operation is being processed",
   status: "processing" as const,
@@ -917,11 +918,11 @@ export const resetAllApiMocks = () => {
 
   content += `};
 
-export const setApiMockResponse = (mockFn: any, response: any) => {
+export const setApiMockResponse = (mockFn: ReturnType<typeof vi.fn>, response: unknown) => {
   mockFn.mockResolvedValue(response);
 };
 
-export const setApiMockError = (mockFn: any, error: any) => {
+export const setApiMockError = (mockFn: ReturnType<typeof vi.fn>, error: unknown) => {
   mockFn.mockRejectedValue(error);
 };
 
