@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
-import { cn } from "@/lib/utils";
+import { cn, getClientApiUrl } from "@/lib/utils";
 import { Class, Document, DocumentType } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { createClass } from "@/utils/mutations/classes/create-class";
@@ -50,6 +50,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { processCourse } from "@/utils/api/documents/process-course";
+import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 
 interface FormErrors {
   name?: string;
@@ -291,9 +292,6 @@ export default function ClassForm({
           toastId = toast.loading(`Uploading ${fileArray[0].name}...`);
         }
 
-        // Get the API URL from environment
-        const apiUrl = process.env['NEXT_PUBLIC_API_URL']
-
         const uploadPromises = fileArray.map((file, index) => {
           return new Promise<void>((resolve, reject) => {
             // Generate a unique file ID
@@ -317,7 +315,7 @@ export default function ClassForm({
 
             // Create a new tus upload
             const upload = new tus.Upload(file, {
-              endpoint: `${apiUrl}/documents/tus`,
+              endpoint: `${getClientApiUrl()}/documents/tus`,
               retryDelays: [0, 3000, 5000, 10000, 20000],
               metadata: tusMetadata,
               onError: (error) => {
@@ -338,33 +336,10 @@ export default function ClassForm({
               onSuccess: async () => {
                 // Finalize the upload
                 try {
-                  const finalizePayload = {
-                    fileId,
-                    classId: classId,
-                    // Add ZIP support with auto-classification
-                    ...(file.type === "application/zip" && {
-                      zip: true,
-                      autoClassify: true,
-                    }),
-                  };
+                  const response = await finalizeDocumentUpload(fileId, classId, file.type === "application/zip", true);
 
-                  const response = await fetch(
-                    `${apiUrl}/documents/tus/finalize`,
-                    {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      credentials: "include",
-                      body: JSON.stringify(finalizePayload),
-                    },
-                  );
-
-                  if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(
-                      errorData.message || "Failed to finalize upload",
-                    );
+                  if (!response.success) {
+                    throw new Error(response.message || "Failed to finalize upload");
                   }
 
                   toast.success(`${file.name} uploaded successfully!`);
