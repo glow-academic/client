@@ -6,25 +6,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Returns the correct WebSocket endpoint for the current runtime.
+ * Returns the correct Socket.IO endpoint for the current runtime.
  *
- * • In the browser  → wss://<site>/api/ws
- * • In SSR / Node  → ws://fastapi:8000   (Docker-internal DNS)
+ * • In the browser  → /api/ws (Socket.IO proxy endpoint)
+ * • In SSR / Node  → http://localhost:8000 (Direct server connection)
  */
 export function getWebSocketUrl(): string {
   // Detect "server" vs "browser"
   const isBrowser = typeof window !== "undefined";
 
   if (isBrowser) {
-    // Browser can't resolve container hostnames – keep it same-origin.
-    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return `${proto}//${window.location.host}/api/ws`; // proxy route we created
+    // Browser uses the Next.js API proxy at /api/ws
+    return "/api/ws";
   }
 
+  // Server-side connections go directly to FastAPI
   if (process.env["NODE_ENV"] === "development") {
-    return "ws://localhost:8000";
+    return "http://localhost:8000";
   } else {
-    return "ws://server:8000";
+    return "http://server:8000";
   }
 }
 

@@ -101,18 +101,22 @@ export default function ChatMessages({
     queryKey: ["assistantMessages", currentChatId],
     queryFn: () => getAssistantMessagesByChat(currentChatId!),
     enabled: !!currentChatId,
-    refetchInterval: isConnected ? false : 5000, // Poll when disconnected
-    staleTime: 0, // Always consider data stale to ensure fresh fetches
-    gcTime: 0, // Don't cache for long
+    refetchInterval: isConnected ? false : 2000, // Faster polling when disconnected
+    staleTime: isConnected ? 30000 : 0, // Keep data fresh when connected, always refetch when disconnected
+    gcTime: isConnected ? 300000 : 0, // Cache longer when connected
+    refetchOnWindowFocus: !isConnected, // Only refetch on focus when disconnected
+    refetchOnReconnect: true, // Always refetch when network reconnects
   });
 
   const { data: toolCalls, isLoading: isLoadingToolCalls } = useQuery({
     queryKey: ["assistantToolCalls", currentChatId],
     queryFn: () => getAssistantToolCallsByChat(currentChatId!),
     enabled: !!currentChatId,
-    refetchInterval: isConnected ? false : 5000, // Poll when disconnected
-    staleTime: 0, // Always consider data stale to ensure fresh fetches
-    gcTime: 0, // Don't cache for long
+    refetchInterval: isConnected ? false : 2000, // Faster polling when disconnected
+    staleTime: isConnected ? 30000 : 0, // Keep data fresh when connected, always refetch when disconnected
+    gcTime: isConnected ? 300000 : 0, // Cache longer when connected
+    refetchOnWindowFocus: !isConnected, // Only refetch on focus when disconnected
+    refetchOnReconnect: true, // Always refetch when network reconnects
   });
 
   // Debug logging

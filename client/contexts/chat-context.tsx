@@ -3,7 +3,6 @@
  * This provides a centralized way to manage chat UI states and real-time message handling
  */
 "use client";
-import { getWebSocketUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage } from "@/types";
 import { messageAssistant } from "@/utils/api/assistants/message-assistant";
 import { startAssistant } from "@/utils/api/assistants/start-assistant";
@@ -77,6 +76,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const socketRef = useRef<Socket | null>(null);
   const currentRoomRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
+  const connectionAttempts = useRef(0);
+  const maxConnectionAttempts = 5;
 
   const userId = useSession().data?.user?.id;
 
@@ -94,321 +95,363 @@ export function ChatProvider({ children }: ChatProviderProps) {
     enabled: !!profile?.id,
   });
 
-  // Initialize WebSocket connection
+  // Initialize WebSocket connection with better error handling
   useEffect(() => {
     if (!profile?.id) return;
 
-    /** -----------------------------------------------------------------
-     *  IMPORTANT bit:
-     *  • url   = same-origin proxy   → "wss://<site>/api/ws"
-     *  • path  = upstream socket.io → "/socket.io"
-     *    (Because FastAPI's Socket.IO server still lives at /socket.io.
-     *     The proxy just lives one level higher and forwards the request.)
-     * ----------------------------------------------------------------- */
-    const socket = io(getWebSocketUrl(), {
-      path: "/socket.io", // tell client to append this to /api/ws
-      transports: ["websocket", "polling"],
-      autoConnect: true,
-      forceNew: false, // Don't force new connection if one exists
-      timeout: 20000, // Increased timeout
-      reconnection: true,
-      reconnectionAttempts: 3, // Reduced attempts to avoid spam
-      reconnectionDelay: 2000, // Increased delay
-      reconnectionDelayMax: 10000, // Increased max delay
-    });
+    // Don't create multiple connections
+    if (socketRef.current?.connected) {
+      logInfo("WebSocket already connected, skipping initialization");
+      return;
+    }
 
-    socketRef.current = socket;
+    const connectWebSocket = () => {
+      logInfo("Initializing WebSocket connection", {
+        profileId: profile.id,
+        attempt: connectionAttempts.current + 1,
+      });
 
-    socket.on("connect", () => {
-      setIsConnected(true);
-      logInfo("WebSocket connected (via proxy)");
-    });
+      const socket = io("/api/ws", {
+        transports: ["polling", "websocket"],
+        autoConnect: true,
+        forceNew: false,
+        timeout: 15000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        upgrade: true,
+        rememberUpgrade: true,
+        query: {
+          profileId: profile.id,
+          timestamp: Date.now(),
+        },
+      });
 
-    socket.on("disconnect", (reason: string) => {
-      setIsConnected(false);
-      logInfo(`WebSocket disconnected: ${reason}`);
-    });
+      socketRef.current = socket;
 
-    socket.on("connect_error", (error: Error) => {
-      logError("WebSocket connection error:", error);
-      setIsConnected(false);
-    });
+      socket.on("connect", () => {
+        setIsConnected(true);
+        connectionAttempts.current = 0; // Reset on successful connection
+        logInfo("WebSocket connected successfully", {
+          socketId: socket.id,
+          profileId: profile.id,
+        });
+      });
 
-    socket.on(
-      "new_message",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        role: string;
-        content: string;
-        completed: boolean;
-        created_at: string;
-      }) => {
-        logInfo(
-          `Received new_message event: ${data.role} message for chat ${data.chat_id}`,
-          {
-            messageId: data.message_id,
-            currentChatId,
-            content:
-              data.content.substring(0, 50) +
-              (data.content.length > 50 ? "..." : ""),
-            completed: data.completed,
-          }
-        );
+      socket.on("disconnect", (reason: string) => {
+        setIsConnected(false);
+        logInfo(`WebSocket disconnected: ${reason}`, {
+          socketId: socket.id,
+          profileId: profile.id,
+        });
+      });
 
-        // Update the messages cache with new message
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            logInfo(`Updating message cache for chat ${data.chat_id}`, {
-              oldMessagesCount: old.length,
-              newMessageId: data.message_id,
-            });
+      socket.on("connect_error", (error: Error) => {
+        connectionAttempts.current++;
+        logError("WebSocket connection error:", error.message, {
+          attempt: connectionAttempts.current,
+          maxAttempts: maxConnectionAttempts,
+          profileId: profile.id,
+        });
+        setIsConnected(false);
 
-            const exists = old.find((msg) => msg.id === data.message_id);
-            if (exists) {
-              logInfo(`Message ${data.message_id} already exists, skipping`);
-              return old;
-            }
-
-            const newMessage: AssistantMessage = {
-              id: data.message_id,
-              chatId: data.chat_id,
-              role: data.role as "user" | "assistant",
-              content: data.content,
-              completed: data.completed,
-              createdAt: data.created_at,
-              updatedAt: data.created_at,
-              completedAt: data.created_at,
-            };
-
-            const updated = [...old, newMessage].sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
-            );
-
-            logInfo(`Updated message cache`, {
-              newMessagesCount: updated.length,
-              addedMessage: {
-                id: newMessage.id,
-                role: newMessage.role,
-                content: newMessage.content.substring(0, 50),
-              },
-            });
-
-            return updated;
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on("title_updated", (data: { chat_id: string; title: string }) => {
-      logInfo(
-        `Received title_updated event: ${data.title} for chat ${data.chat_id}`
-      );
-      // Update the chat title in the cache
-      queryClient.setQueryData(
-        ["assistantChat", data.chat_id],
-        (old: AssistantChat | undefined) => {
-          if (old) {
-            return { ...old, title: data.title };
-          }
-          return old;
-        }
-      );
-
-      // Also update the chats list
-      queryClient.setQueryData(
-        ["assistantChats", profile?.id],
-        (old: AssistantChat[] = []) => {
-          return old.map((chat) =>
-            chat.id === data.chat_id ? { ...chat, title: data.title } : chat
+        // If we've exceeded max attempts, show user-friendly error
+        if (connectionAttempts.current >= maxConnectionAttempts) {
+          toast.error(
+            "Unable to connect to real-time updates. Some features may be limited."
           );
         }
+      });
+
+      socket.on(
+        "new_message",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          role: string;
+          content: string;
+          completed: boolean;
+          created_at: string;
+        }) => {
+          logInfo(
+            `Received new_message event: ${data.role} message for chat ${data.chat_id}`,
+            {
+              messageId: data.message_id,
+              content:
+                data.content.substring(0, 50) +
+                (data.content.length > 50 ? "..." : ""),
+              completed: data.completed,
+            }
+          );
+
+          // Update the messages cache with new message
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              logInfo(`Updating message cache for chat ${data.chat_id}`, {
+                oldMessagesCount: old.length,
+                newMessageId: data.message_id,
+              });
+
+              const exists = old.find((msg) => msg.id === data.message_id);
+              if (exists) {
+                logInfo(`Message ${data.message_id} already exists, skipping`);
+                return old;
+              }
+
+              const newMessage: AssistantMessage = {
+                id: data.message_id,
+                chatId: data.chat_id,
+                role: data.role as "user" | "assistant",
+                content: data.content,
+                completed: data.completed,
+                createdAt: data.created_at,
+                updatedAt: data.created_at,
+                completedAt: data.created_at,
+              };
+
+              const updated = [...old, newMessage].sort(
+                (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+              );
+
+              logInfo(`Updated message cache`, {
+                newMessagesCount: updated.length,
+                addedMessage: {
+                  id: newMessage.id,
+                  role: newMessage.role,
+                  content: newMessage.content.substring(0, 50),
+                },
+              });
+
+              return updated;
+            }
+          );
+
+          // Force re-render by invalidating the query after the update
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
       );
-    });
 
-    socket.on(
-      "message_token",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        token: string;
-        accumulated_content: string;
-      }) => {
+      socket.on("title_updated", (data: { chat_id: string; title: string }) => {
         logInfo(
-          `Received message_token: "${data.token}" for message ${data.message_id}`
+          `Received title_updated event: ${data.title} for chat ${data.chat_id}`
         );
-
-        // Update the specific message with streaming content
+        // Update the chat title in the cache
         queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.accumulated_content }
-                : msg
-            );
-
-            return updated;
+          ["assistantChat", data.chat_id],
+          (old: AssistantChat | undefined) => {
+            if (old) {
+              return { ...old, title: data.title };
+            }
+            return old;
           }
         );
 
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on(
-      "message_complete",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        final_content: string;
-      }) => {
-        // Mark message as completed and update final content
+        // Also update the chats list
         queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
+          ["assistantChats", profile?.id],
+          (old: AssistantChat[] = []) => {
+            return old.map((chat) =>
+              chat.id === data.chat_id ? { ...chat, title: data.title } : chat
             );
-
-            return updated;
           }
         );
+      });
 
+      socket.on(
+        "message_token",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          token: string;
+          accumulated_content: string;
+        }) => {
+          logInfo(
+            `Received message_token: "${data.token}" for message ${data.message_id}`
+          );
+
+          // Update the specific message with streaming content
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              const updated = old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.accumulated_content }
+                  : msg
+              );
+
+              return updated;
+            }
+          );
+
+          // Force re-render by invalidating the query after the update
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      socket.on(
+        "message_complete",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+        }) => {
+          // Mark message as completed and update final content
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              const updated = old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+
+              return updated;
+            }
+          );
+
+          setIsSendingMessage(false);
+
+          // Refresh chat list to update with new messages
+          queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
+
+          // Force re-render by invalidating the query after the update
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      socket.on("message_error", (data: { chat_id: string; error: string }) => {
+        toast.error(`Chat error: ${data.error}`);
         setIsSendingMessage(false);
+      });
 
-        // Refresh chat list to update with new messages
-        queryClient.invalidateQueries({ queryKey: ["assistantChats"] });
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on("message_error", (data: { chat_id: string; error: string }) => {
-      toast.error(`Chat error: ${data.error}`);
-      setIsSendingMessage(false);
-    });
-
-    socket.on(
-      "chat_stopped",
-      (data: { chat_id: string; chat_type: string; message: string }) => {
-        if (data.chat_id === currentChatId) {
+      socket.on(
+        "chat_stopped",
+        (data: { chat_id: string; chat_type: string; message: string }) => {
+          // Always handle chat stopped events since we're in the right room
           setIsSendingMessage(false);
           setIsStoppingMessage(false);
           toast.success(data.message || "Chat stopped successfully");
         }
-      }
-    );
+      );
 
-    socket.on(
-      "message_cancelled",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        final_content: string;
-      }) => {
-        // Update the cancelled message with its final content
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
+      socket.on(
+        "message_cancelled",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+        }) => {
+          // Update the cancelled message with its final content
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              const updated = old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
 
-            return updated;
-          }
-        );
+              return updated;
+            }
+          );
 
-        setIsSendingMessage(false);
-        setIsStoppingMessage(false);
+          setIsSendingMessage(false);
+          setIsStoppingMessage(false);
 
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
+          // Force re-render by invalidating the query after the update
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      socket.on(
+        "joined_chat",
+        (data: { chat_id: string; chat_type: string }) => {
+          logInfo(
+            `Successfully joined ${data.chat_type} chat: ${data.chat_id}`
+          );
+        }
+      );
+
+      // Tool call events - simply invalidate tool calls cache when they change
+      socket.on(
+        "tool_call_created",
+        (data: {
+          tool_call_id: string;
+          chat_id: string;
+          tool_name: string;
+          tool_type: string;
+        }) => {
+          logInfo(
+            `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
+          );
+
+          // Invalidate tool calls cache to refetch
           queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
+            queryKey: ["assistantToolCalls", data.chat_id],
           });
-        }, 0);
-      }
-    );
+        }
+      );
 
-    socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
-      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
-        currentChatId,
-        isCurrentChat: data.chat_id === currentChatId,
-      });
-    });
+      socket.on(
+        "tool_call_completed",
+        (data: {
+          tool_call_id: string | null;
+          chat_id: string;
+          tool_name: string;
+        }) => {
+          logInfo(
+            `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
+          );
 
-    // Tool call events - simply invalidate tool calls cache when they change
-    socket.on(
-      "tool_call_created",
-      (data: {
-        tool_call_id: string;
-        chat_id: string;
-        tool_name: string;
-        tool_type: string;
-      }) => {
-        logInfo(
-          `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
-        );
+          // Invalidate tool calls cache to refetch
+          queryClient.invalidateQueries({
+            queryKey: ["assistantToolCalls", data.chat_id],
+          });
+        }
+      );
+    };
 
-        // Invalidate tool calls cache to refetch
-        queryClient.invalidateQueries({
-          queryKey: ["assistantToolCalls", data.chat_id],
-        });
-      }
-    );
-
-    socket.on(
-      "tool_call_completed",
-      (data: {
-        tool_call_id: string | null;
-        chat_id: string;
-        tool_name: string;
-      }) => {
-        logInfo(
-          `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
-        );
-
-        // Invalidate tool calls cache to refetch
-        queryClient.invalidateQueries({
-          queryKey: ["assistantToolCalls", data.chat_id],
-        });
-      }
-    );
+    connectWebSocket();
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      if (socketRef.current) {
+        logInfo("Cleaning up WebSocket connection");
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
-  }, [profile?.id, queryClient, currentChatId]);
+  }, [profile?.id, queryClient]);
 
-  // Join/leave chat rooms when currentChatId changes
+  // Join/leave chat rooms when currentChatId changes - with connection check
   useEffect(() => {
-    if (!socketRef.current || !isConnected) return;
+    if (!socketRef.current || !isConnected) {
+      logInfo("Skipping room join - WebSocket not connected", {
+        hasSocket: !!socketRef.current,
+        isConnected,
+        currentChatId,
+      });
+      return;
+    }
 
     // Leave current room if we're in one
     if (currentRoomRef.current && socketRef.current) {
@@ -465,7 +508,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     setCurrentChatId(null);
   }, []);
 
-  // Start new chat mutation
+  // Start new chat mutation with better WebSocket handling
   const startChatMutation = useMutation({
     mutationFn: async (initialMessage: string) => {
       if (!profile?.id) {
@@ -482,11 +525,26 @@ export function ChatProvider({ children }: ChatProviderProps) {
         throw new Error("Failed to create chat");
       }
 
-      // Set the current chat ID immediately so WebSocket connection is established
+      // Set the current chat ID immediately
       setCurrentChatId(chat.id);
 
-      // Wait a brief moment for state to update and WebSocket room to be joined
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Wait for WebSocket connection and room join with timeout
+      const waitForConnection = async (maxWait = 3000) => {
+        const startTime = Date.now();
+        while (Date.now() - startTime < maxWait) {
+          if (isConnected && currentRoomRef.current === chat.id) {
+            logInfo("WebSocket room joined successfully", { chatId: chat.id });
+            return true;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+        logInfo("WebSocket room join timeout, proceeding anyway", {
+          chatId: chat.id,
+        });
+        return false;
+      };
+
+      await waitForConnection();
 
       // Use the startAssistant API function
       const response = await startAssistant({

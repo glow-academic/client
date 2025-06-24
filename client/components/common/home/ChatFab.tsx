@@ -21,7 +21,7 @@ export default function ChatFab() {
   );
 
   // or if the currrent route is home/a/...
-  const pathname = usePathname();
+  const pathname = usePathname() || "/";
   const isHomeAssistant = pathname.startsWith("/home/a/");
 
   if (!shouldShow || uiState !== "closed" || isHomeAssistant) {

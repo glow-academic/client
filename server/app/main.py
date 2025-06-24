@@ -45,9 +45,16 @@ active_runs: dict[str, Any] = {}
 sio = socketio.AsyncServer(
     cors_allowed_origins=allowed_origins,
     cors_credentials=True,
-    logger=False,
-    engineio_logger=False,
-    async_mode='asgi'
+    logger=True,  # Enable logging for debugging
+    engineio_logger=True,  # Enable engine.io logging
+    async_mode='asgi',
+    # Explicitly set compatible protocol versions
+    transports=['polling', 'websocket'],
+    # Allow upgrades from polling to websocket
+    allow_upgrades=True,
+    # Increase timeouts for better stability
+    ping_timeout=60,
+    ping_interval=25,
 )
 
 @sio.event  # type: ignore

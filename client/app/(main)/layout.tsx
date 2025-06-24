@@ -30,7 +30,7 @@ import { createSectionChangeHandler } from "@/utils/navigation-utils";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const pathname = usePathname() || "/";
   const router = useRouter();
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);

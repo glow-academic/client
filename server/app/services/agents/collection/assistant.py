@@ -162,32 +162,23 @@ async def _handle_assistant_chat(
     try:
         # Process streaming events
         async for event in result.stream_events():
-            logger.info(f"Processing event: type={event.type}, name={getattr(event, 'name', 'N/A')}")
-            
             if event.type == "raw_response_event":
                 if isinstance(event.data, ResponseTextDeltaEvent):
                     chunk = event.data.delta
                     yield chunk
             elif event.type == "run_item_stream_event":
-                logger.info(f"Run item stream event: name={event.name}, item_type={type(event.item)}")
-                
                 if event.name == "tool_called" and isinstance(event.item, ToolCallItem):
-                    logger.info(f"Processing tool_called event with item: {event.item}")
                     if isinstance(event.item.raw_item, ResponseFunctionToolCall):
                         tool_call = event.item.raw_item
                         name = tool_call.name
                         arguments = tool_call.arguments
                         tool_call_id = str(uuid.uuid4())  # Always generate our own UUID
                         
-                        logger.info(f"Tool call details: name={name}, id={tool_call_id}, arguments={arguments}")
-                        
                         # Store the tool call for later matching with results
                         active_tool_calls[tool_call_id] = {
                             'name': name,
                             'arguments': arguments
                         }
-                        
-                        logger.info(f"Tool called: {name} with arguments: {arguments}")
                         
                         # Yield structured tool call data
                         tool_call_data = {
@@ -196,13 +187,10 @@ async def _handle_assistant_chat(
                             'arguments': arguments
                         }
                         tool_call_token = f"<tool_call_start>{json.dumps(tool_call_data)}</tool_call_start>"
-                        logger.info(f"Yielding tool call token: {tool_call_token}")
                         yield tool_call_token
                         
                 elif event.name == "tool_output" and isinstance(event.item, ToolCallOutputItem):
-                    logger.info(f"Processing tool_output event with item: {event.item}")
                     output = event.item.output
-                    logger.info(f"Tool output: {output}")
                     
                     # Try to match this output with a tool call
                     # Since we don't have a direct ID mapping, we'll use the most recent tool call
@@ -211,8 +199,6 @@ async def _handle_assistant_chat(
                         tool_call_id = list(active_tool_calls.keys())[-1]
                         tool_call_info = active_tool_calls[tool_call_id]
                         
-                        logger.info(f"Matching tool output to call ID: {tool_call_id}")
-                        
                         # Yield structured tool result data
                         tool_result_data = {
                             'id': tool_call_id,
@@ -220,7 +206,6 @@ async def _handle_assistant_chat(
                             'result': output
                         }
                         tool_result_token = f"<tool_call_result>{json.dumps(tool_result_data)}</tool_call_result>"
-                        logger.info(f"Yielding tool result token: {tool_result_token}")
                         yield tool_result_token
                         
                         # Remove the processed tool call
@@ -228,9 +213,9 @@ async def _handle_assistant_chat(
                     else:
                         logger.warning("Received tool output but no active tool calls to match")
                 else:
-                    logger.info(f"Unhandled run_item_stream_event: {event.name}")
+                    pass
             else:
-                logger.info(f"Unhandled event type: {event.type}")
+                pass
 
     except Exception as e:
         # Handle cancellation or other errors

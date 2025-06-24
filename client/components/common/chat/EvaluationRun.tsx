@@ -145,15 +145,16 @@ export default function EvaluationRun({ runId }: { runId: string }) {
      *     The proxy just lives one level higher and forwards the request.)
      * ----------------------------------------------------------------- */
     const socket = io(getWebSocketUrl(), {
-      path: "/socket.io", // tell client to append this to /api/ws
-      transports: ["websocket", "polling"],
+      transports: ["polling", "websocket"], // Start with polling, then upgrade
       autoConnect: true,
       forceNew: false, // Don't force new connection if one exists
-      timeout: 20000, // Increased timeout
+      timeout: 15000, // Increased timeout
       reconnection: true,
       reconnectionAttempts: 3, // Reduced attempts to avoid spam
       reconnectionDelay: 2000, // Increased delay
       reconnectionDelayMax: 10000, // Increased max delay
+      upgrade: true,
+      rememberUpgrade: true,
     });
 
     socketRef.current = socket;
