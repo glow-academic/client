@@ -14,11 +14,17 @@
  * Next.js upgrades the request → pipes it to FastAPI → streams frames unchanged.
  */
 
-import { getWebSocketUrl } from "@/lib/utils";
 import { logError } from "@/utils/logger";
 import { createProxyServer } from "http-proxy";
 import type { NextApiRequest, NextApiResponse } from "next";
-import { parse } from "url";
+
+function getWebSocketUrl(): string {
+  if (process.env["NODE_ENV"] === "development") {
+    return "ws://localhost:8000";
+  } else {
+    return "ws://server:8000";
+  }
+}
 
 /* ─── Singleton proxy (reuse across hot-reloads) ───────────────────────────── */
 const proxy = createProxyServer({
@@ -33,7 +39,8 @@ proxy.on("error", (err: Error) => logError("[WS-proxy] error:", err.message));
 
 /* ─── Unified handler for all HTTP methods ─────────────────────────────────── */
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
-  const { pathname } = parse(req.url || "");
+  const url = new URL(req.url || "", `http://${req.headers.host}`);
+  const pathname = url.pathname;
 
   /* 1️⃣ Accept ONLY the WebSocket handshake (GET + Upgrade: websocket). */
   if (
