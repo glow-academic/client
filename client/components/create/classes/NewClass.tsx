@@ -18,7 +18,6 @@ import { logError } from "@/utils/logger";
 
 import ClassForm from "@/components/common/class/ClassForm";
 import { createClass } from "@/utils/mutations/classes/create-class";
-import { getClientApiUrl } from "@/lib/utils";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
 
 type ProcessingStep =
@@ -95,7 +94,7 @@ export default function NewClass() {
         };
 
         const upload = new tus.Upload(file, {
-          endpoint: `${getClientApiUrl()}/documents/tus`,
+          endpoint: `/api/upload`,
           retryDelays: [0, 3000, 5000, 10000, 20000],
           metadata: tusMetadata,
           onError: (error) => {

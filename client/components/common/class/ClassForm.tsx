@@ -26,7 +26,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
-import { cn, getClientApiUrl } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Class, Document, DocumentType } from "@/types";
 import { deleteDocument } from "@/utils/api/documents/delete-document";
 import { finalizeDocumentUpload } from "@/utils/api/documents/finalize-document-upload";
@@ -315,7 +315,7 @@ export default function ClassForm({
 
             // Create a new tus upload
             const upload = new tus.Upload(file, {
-              endpoint: `${getClientApiUrl()}/documents/tus`,
+              endpoint: `/api/upload`,
               retryDelays: [0, 3000, 5000, 10000, 20000],
               metadata: tusMetadata,
               onError: (error) => {

@@ -6,29 +6,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Generate WebSocket URL based on environment
- * For browser connections, must use external URLs in production
- * Uses localhost in development mode
+ * Returns the correct WebSocket endpoint for the current runtime.
+ *
+ * • In the browser  → wss://<site>/api/ws
+ * • In SSR / Node  → ws://fastapi:8000   (Docker-internal DNS)
  */
 export function getWebSocketUrl(): string {
-  const isDevelopment = process.env.NODE_ENV === "development";
+  // Detect "server" vs "browser"
+  const isBrowser = typeof window !== "undefined";
 
-  if (isDevelopment) {
-    // Development mode: use localhost with WebSocket protocol
+  if (isBrowser) {
+    // Browser can't resolve container hostnames – keep it same-origin.
+    const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return `${proto}//${window.location.host}/api/ws`; // proxy route we created
+  }
+
+  if (process.env["NODE_ENV"] === "development") {
     return "ws://localhost:8000";
   } else {
-    // Production mode: derive WebSocket URL from the public API URL
-    const apiUrl =
-      process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000";
-
-    // Convert HTTP/HTTPS to WS/WSS for WebSocket connections
-    if (apiUrl.startsWith("https://")) {
-      return apiUrl.replace("https://", "wss://").replace("/server", "");
-    } else if (apiUrl.startsWith("http://")) {
-      return apiUrl.replace("http://", "ws://").replace("/server", "");
-    } else {
-      return "ws://localhost:8000";
-    }
+    return "ws://server:8000";
   }
 }
 
@@ -52,16 +48,4 @@ export function getApiUrl(): string {
     // Production/Docker mode: use Docker internal network
     return "http://server:8000";
   }
-}
-
-/**
- * Generate client-side API URL based on environment
- * Uses the public API URL for browser-based requests
- * In production, browsers must use external URLs (via Traefik/load balancer)
- * Falls back to development localhost if not set
- */
-export function getClientApiUrl(): string {
-  // For browser-based requests, always use the public API URL
-  // This ensures browsers can reach the API from outside the Docker network
-  return process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000";
 }

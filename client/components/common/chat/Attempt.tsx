@@ -746,8 +746,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       return;
     }
 
-    // Determine WebSocket URL based on environment
+    /** -----------------------------------------------------------------
+     *  IMPORTANT bit:
+     *  • url   = same-origin proxy   → "wss://<site>/api/ws"
+     *  • path  = upstream socket.io → "/socket.io"
+     *    (Because FastAPI's Socket.IO server still lives at /socket.io.
+     *     The proxy just lives one level higher and forwards the request.)
+     * ----------------------------------------------------------------- */
     const socket = io(getWebSocketUrl(), {
+      path: "/socket.io", // tell client to append this to /api/ws
       transports: ["websocket", "polling"],
       autoConnect: true,
       forceNew: false, // Don't force new connection if one exists
@@ -756,14 +763,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       reconnectionAttempts: 5, // Increased attempts for better reliability
       reconnectionDelay: 1000, // Reduced initial delay
       reconnectionDelayMax: 5000, // Reasonable max delay
-      path: "/socket.io/",
     });
 
     socketRef.current = socket;
 
     socket.on("connect", () => {
       setIsConnected(true);
-      logInfo("WebSocket connected for simulation");
+      logInfo("WebSocket connected (via proxy)");
     });
 
     socket.on("disconnect", (reason: string) => {
