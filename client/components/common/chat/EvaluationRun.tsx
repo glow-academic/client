@@ -500,15 +500,30 @@ export default function EvaluationRun({ runId }: { runId: string }) {
           const response = await getEvalRunStatus({
             eval_run_id: evalRun.id,
           });
-          setRunStatus(response as EvalRunStatus);
 
-          // Check if all chats are completed
-          if (
-            response.completed_chats === response.total_chats &&
-            response.total_chats > 0
-          ) {
-            setIsRunningEval(false);
-            toast.success("All evaluations completed!");
+          // Handle the new response format and convert to legacy format for compatibility
+          if (response.success && response.eval_run_id) {
+            const legacyStatus: EvalRunStatus = {
+              eval_run_id: response.eval_run_id,
+              total_chats: response.total_chats || 0,
+              completed_chats: response.completed_chats || 0,
+              progress_percentage: response.progress_percentage || 0,
+              chat_statuses: response.chat_statuses || [],
+            };
+            setRunStatus(legacyStatus);
+
+            // Check if all chats are completed
+            if (
+              legacyStatus.completed_chats === legacyStatus.total_chats &&
+              legacyStatus.total_chats > 0
+            ) {
+              setIsRunningEval(false);
+              toast.success("All evaluations completed!");
+            }
+          } else {
+            throw new Error(
+              response.message || "Failed to get eval run status"
+            );
           }
         } catch (error) {
           toast.error("Error polling status: " + (error as Error).message);

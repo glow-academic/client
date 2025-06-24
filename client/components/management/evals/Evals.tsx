@@ -110,7 +110,11 @@ export default function Evals() {
         throw new Error(result.message);
       }
 
-      toast.success("Evaluation started successfully");
+      const successMessage = result.total_runs
+        ? `Evaluation started successfully! Created ${result.total_runs} eval runs.`
+        : "Evaluation started successfully!";
+
+      toast.success(successMessage);
 
       // Navigate to the evaluation page
       router.push(`/management/evals/e/${id}`);
