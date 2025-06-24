@@ -86,6 +86,8 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { getWebSocketUrl } from "@/lib/utils";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
+import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
+import { stopSimulation } from "@/utils/api/simulations/stop-simulation";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -788,13 +790,17 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           chatId: data.chat_id,
           role: data.role,
           currentChatId: currentChatIdRef.current,
-          content: data.content.substring(0, 50) + (data.content.length > 50 ? "..." : ""),
-          completed: data.completed
+          content:
+            data.content.substring(0, 50) +
+            (data.content.length > 50 ? "..." : ""),
+          completed: data.completed,
         });
 
         // Check if this message is for the current chat
         if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(`Ignoring message for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          logInfo(
+            `Ignoring message for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
+          );
           return;
         }
 
@@ -802,10 +808,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
           (old: SimulationMessage[] = []) => {
-            logInfo(`Updating simulation message cache for chat ${data.chat_id}`, { 
-              oldMessagesCount: old.length,
-              newMessageId: data.message_id
-            });
+            logInfo(
+              `Updating simulation message cache for chat ${data.chat_id}`,
+              {
+                oldMessagesCount: old.length,
+                newMessageId: data.message_id,
+              }
+            );
 
             const exists = old.find((msg) => msg.id === data.message_id);
             if (exists) {
@@ -828,9 +837,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                 new Date(b.createdAt).getTime()
             );
 
-            logInfo(`Updated simulation message cache`, { 
+            logInfo(`Updated simulation message cache`, {
               newMessagesCount: updated.length,
-              addedMessage: { id: newMessage.id, type: newMessage.type, content: newMessage.content.substring(0, 50) }
+              addedMessage: {
+                id: newMessage.id,
+                type: newMessage.type,
+                content: newMessage.content.substring(0, 50),
+              },
             });
 
             return updated;
@@ -854,16 +867,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         token: string;
         accumulated_content: string;
       }) => {
-        logInfo("Simulation received message_token", { 
+        logInfo("Simulation received message_token", {
           token: data.token,
           messageId: data.message_id,
           chatId: data.chat_id,
-          currentChatId: currentChatIdRef.current
+          currentChatId: currentChatIdRef.current,
         });
 
         // Check if this message is for the current chat
         if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(`Ignoring token for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          logInfo(
+            `Ignoring token for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
+          );
           return;
         }
 
@@ -901,12 +916,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
           messageId: data.message_id,
           chatId: data.chat_id,
           currentChatId: currentChatIdRef.current,
-          finalContentLength: data.final_content.length
+          finalContentLength: data.final_content.length,
         });
 
         // Check if this message is for the current chat
         if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(`Ignoring completion for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          logInfo(
+            `Ignoring completion for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
+          );
           return;
         }
 
@@ -939,12 +956,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       logInfo("Simulation received message_error", {
         chatId: data.chat_id,
         currentChatId: currentChatIdRef.current,
-        error: data.error
+        error: data.error,
       });
 
       // Check if this error is for the current chat
       if (data.chat_id !== currentChatIdRef.current) {
-        logInfo(`Ignoring error for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+        logInfo(
+          `Ignoring error for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
+        );
         return;
       }
 
@@ -973,12 +992,14 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         logInfo("Simulation received message_cancelled", {
           messageId: data.message_id,
           chatId: data.chat_id,
-          currentChatId: currentChatIdRef.current
+          currentChatId: currentChatIdRef.current,
         });
 
         // Check if this message is for the current chat
         if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(`Ignoring cancellation for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`);
+          logInfo(
+            `Ignoring cancellation for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
+          );
           return;
         }
 
@@ -1011,7 +1032,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
       logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
         currentChatId: currentChatIdRef.current,
-        isCurrentChat: data.chat_id === currentChatIdRef.current
+        isCurrentChat: data.chat_id === currentChatIdRef.current,
       });
     });
 
@@ -1071,16 +1092,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsSendingMessage(true);
 
     try {
-      const formData = new FormData();
-      formData.append("chat_id", currentChat.id);
-      formData.append("message", messageToSend);
-
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/message`,
-        {
-          method: "POST",
-          body: formData,
-        }
+      const response = await createSimulationMessage(
+        currentChat.id,
+        messageToSend
       );
 
       if (!response.ok) {
@@ -1102,16 +1116,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsStoppingMessage(true);
 
     try {
-      const formData = new FormData();
-      formData.append("chat_id", currentChat.id);
-
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/stop`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await stopSimulation(currentChat.id);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
@@ -1130,24 +1135,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setEndChatLoading(true);
 
     try {
-      const formData = new FormData();
-      formData.append("chat_id", currentChat.id);
-      formData.append("attempt_id", attemptId);
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/simulations/continue`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await stopSimulation(currentChat.id);
 
       if (!response.ok) {
-        throw new Error("Failed to end chat");
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.ok) {
         // Mark this chat as freshly completed
         setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
 
@@ -1159,7 +1153,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
         toast.success("Chat ended successfully");
       } else {
-        throw new Error(result.error || "Failed to end chat");
+        throw new Error("Failed to end chat");
       }
     } catch (error) {
       toast.error(`Failed to end chat: ${error}`);

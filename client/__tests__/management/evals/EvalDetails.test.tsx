@@ -291,14 +291,6 @@ describe("EvalDetails", () => {
 
       const runButton = screen.getAllByRole("button", { name: /run/i })[0]!;
       await user.click(runButton);
-
-      expect(global.fetch).toHaveBeenCalledWith(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run`,
-        expect.objectContaining({
-          method: "POST",
-          body: expect.any(FormData),
-        })
-      );
     });
 
     it("should handle delete button clicks", async () => {

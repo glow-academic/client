@@ -3,16 +3,12 @@
 import asyncio
 import json
 import logging
-import os
 import uuid
 import warnings
 from datetime import timezone
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Dict, Optional
 
 from agents import gen_trace_id
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Suppress Pydantic serialization warnings from OpenAI SDK
 warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
@@ -32,8 +28,6 @@ from sqlmodel import Session, select
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
-
-client_url = os.getenv("CLIENT_URL")
 
 # Store active chat connections
 active_connections: Dict[str, str] = {}

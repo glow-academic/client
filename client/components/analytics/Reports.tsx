@@ -35,6 +35,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { downloadReport } from "@/utils/api/profiles/download-report";
 import { logError } from "@/utils/logger";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -57,7 +58,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-interface ReportOptions {
+export interface ReportOptions {
   includeStudentTypeChart: boolean;
   includePerformanceChart: boolean;
   includeRadarChart: boolean;
@@ -384,16 +385,7 @@ export default function Reports() {
         includeFeedback: options.includeFeedback.toString(),
       });
 
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/profiles/${profileId}?${queryParams}`,
-        {
-          method: "GET",
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to generate report");
-      }
+      const response = await downloadReport(profileId, queryParams.toString());
 
       // Get the filename from the response headers
       const contentDisposition = response.headers.get("content-disposition");

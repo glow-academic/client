@@ -54,6 +54,12 @@ import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import {
+  EvalRunStatus,
+  getEvalRunStatus,
+} from "@/utils/api/evals/get-eval-run-status";
+import { runEval } from "@/utils/api/evals/run-eval";
+import { stopAllEvalRuns } from "@/utils/api/evals/stop-all-evals";
 
 // Simple rubric interface for timer tooltip
 interface SimpleRubric {
@@ -80,12 +86,6 @@ interface ConversationData {
   [key: string]: unknown;
 }
 
-interface RunStatus {
-  completed_chats: number;
-  total_chats: number;
-  [key: string]: unknown;
-}
-
 export default function EvaluationRun({ runId }: { runId: string }) {
   const queryClient = useQueryClient();
 
@@ -99,7 +99,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   >([]);
   const [showGrades, setShowGrades] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [runStatus, setRunStatus] = useState<RunStatus | null>(null);
+  const [runStatus, setRunStatus] = useState<EvalRunStatus | null>(null);
 
   // WebSocket state
   const [isConnected, setIsConnected] = useState(false);
@@ -492,28 +492,21 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     };
   }, [evalRun?.id, isConnected]);
 
-
-
   // Poll for run status when evaluation is running
   useEffect(() => {
     if (isRunningEval && evalRun?.id) {
       const pollStatus = async () => {
         try {
-          const response = await fetch(
-            `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run/${evalRun.id}/status`
-          );
-          if (response.ok) {
-            const status = await response.json();
-            setRunStatus(status);
+          const response = await getEvalRunStatus(evalRun.id);
+          setRunStatus(response as EvalRunStatus);
 
-            // Check if all chats are completed
-            if (
-              status.completed_chats === status.total_chats &&
-              status.total_chats > 0
-            ) {
-              setIsRunningEval(false);
-              toast.success("All evaluations completed!");
-            }
+          // Check if all chats are completed
+          if (
+            response.completed_chats === response.total_chats &&
+            response.total_chats > 0
+          ) {
+            setIsRunningEval(false);
+            toast.success("All evaluations completed!");
           }
         } catch (error) {
           toast.error("Error polling status: " + (error as Error).message);
@@ -775,17 +768,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     setAiConversationData([]);
 
     try {
-      const formData = new FormData();
-      formData.append("eval_run_id", evalRun.id);
-
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/run`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
+      const response = await runEval(evalRun.id);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
@@ -815,16 +798,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     setIsStoppingEval(true);
 
     try {
-      const formData = new FormData();
-      formData.append("eval_run_id", evalRun.id);
-
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/evals/stop/all`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
+      const response = await stopAllEvalRuns(evalRun.id);
 
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);

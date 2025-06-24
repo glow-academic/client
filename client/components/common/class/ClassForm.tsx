@@ -49,6 +49,7 @@ import {
   Upload,
   UploadCloud,
 } from "lucide-react";
+import { processCourse } from "@/utils/api/documents/process-course";
 
 interface FormErrors {
   name?: string;
@@ -112,17 +113,7 @@ export default function ClassForm({
 
       const toastId = toast.loading("Processing course information...");
 
-      const apiUrl = process.env['NEXT_PUBLIC_API_URL'] || "";
-      const response = await fetch(
-        `${apiUrl}/documents/course?class_id=${encodeURIComponent(classId)}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        },
-      );
+      const response = await processCourse(classId);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

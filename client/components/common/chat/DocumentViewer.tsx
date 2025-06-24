@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Document } from "@/types";
+import { downloadDocument } from "@/utils/api/documents/download-document";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { useQuery } from "@tanstack/react-query";
 import { Download, FileText } from "lucide-react";
@@ -83,9 +84,7 @@ export default function DocumentViewer({
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch(
-          `${process.env["NEXT_PUBLIC_API_URL"]}/documents/id/${docId}`
-        );
+        const res = await downloadDocument(docId);
         if (!res.ok) throw new Error("Failed to load document");
 
         const contentType = res.headers.get("content-type") ?? "";
