@@ -86,6 +86,7 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { getWebSocketUrl } from "@/lib/utils";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
+import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
 import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
 import { stopSimulation } from "@/utils/api/simulations/stop-simulation";
 import { logError, logInfo } from "@/utils/logger";
@@ -101,7 +102,6 @@ import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
 
 // Timer is now integrated directly into the component layout
 
@@ -1093,13 +1093,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsSendingMessage(true);
 
     try {
-      const response = await createSimulationMessage(
+      const result = await createSimulationMessage(
         currentChat.id,
         messageToSend
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       // The response will be handled via WebSocket events
@@ -1117,10 +1117,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsStoppingMessage(true);
 
     try {
-      const response = await stopSimulation(currentChat.id);
+      const result = await stopSimulation(currentChat.id);
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       // The WebSocket event will handle state updates
@@ -1136,29 +1136,25 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setEndChatLoading(true);
 
     try {
-      const response = await continueSimulation(
+      const result = await continueSimulation(
         currentChat.id,
         currentChat.attemptId
       );
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
-      if (response.ok) {
-        // Mark this chat as freshly completed
-        setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
+      // Mark this chat as freshly completed
+      setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
 
-        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-        queryClient.invalidateQueries({
-          queryKey: ["simulationChats", attemptId],
-        });
-        queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-        queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-        toast.success("Chat ended successfully");
-      } else {
-        throw new Error("Failed to end chat");
-      }
+      queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+      queryClient.invalidateQueries({
+        queryKey: ["simulationChats", attemptId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+      toast.success("Chat ended successfully");
     } catch (error) {
       toast.error(`Failed to end chat: ${error}`);
     } finally {

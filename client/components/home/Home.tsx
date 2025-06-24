@@ -53,6 +53,7 @@ import {
 import { useRole } from "@/contexts/role-context";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
+import { startSimulation } from "@/utils/api/simulations/start-simulation";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -66,9 +67,8 @@ import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/g
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import SimulationHistory from "../common/history/SimulationHistory";
 import { useSession } from "next-auth/react";
-import { startSimulation } from "@/utils/api/simulations/start-simulation";
+import SimulationHistory from "../common/history/SimulationHistory";
 
 // Type for attempt data
 interface AttemptData {
@@ -709,7 +709,7 @@ export default function Home() {
 
         const result = await startSimulation({
           simulationId,
-          profileId: profile?.id ?? undefined,
+          ...(profile?.id && { profileId: profile.id }),
         });
 
         if (!result.success) {
