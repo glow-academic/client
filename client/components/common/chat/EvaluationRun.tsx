@@ -497,7 +497,9 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     if (isRunningEval && evalRun?.id) {
       const pollStatus = async () => {
         try {
-          const response = await getEvalRunStatus(evalRun.id);
+          const response = await getEvalRunStatus({
+            eval_run_id: evalRun.id,
+          });
           setRunStatus(response as EvalRunStatus);
 
           // Check if all chats are completed
@@ -768,9 +770,11 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     setAiConversationData([]);
 
     try {
-      const response = await runEval(evalRun.id);
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      const response = await runEval({
+        eval_run_id: evalRun.id,
+      });
+      if (!response.success) {
+        throw new Error(response.message);
       }
 
       // Join the WebSocket room for this eval run
@@ -798,10 +802,12 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     setIsStoppingEval(true);
 
     try {
-      const response = await stopAllEvalRuns(evalRun.id);
+      const response = await stopAllEvalRuns({
+        eval_run_id: evalRun.id,
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!response.success) {
+        throw new Error(response.message);
       }
 
       // The WebSocket event will handle state updates

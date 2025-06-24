@@ -102,7 +102,9 @@ export default function Evals() {
     try {
       toast.loading("Starting evaluation...");
 
-      const result = await startEval(id);
+      const result = await startEval({
+        eval_id: id,
+      });
 
       if (!result.success) {
         throw new Error(result.message);
