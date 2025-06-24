@@ -21,6 +21,9 @@ Contains mock data for all database entities with meaningful relationships:
 ### `queries.ts` & `mutations.ts`
 Auto-generated mocks for all database query and mutation functions.
 
+### `api.ts`
+Auto-generated mocks for all API functions in `utils/api` with proper response types and utility functions.
+
 ### `utils.tsx`
 Testing utilities and providers for easy role-based testing.
 
@@ -125,6 +128,63 @@ it('should work with all roles', () => {
 });
 ```
 
+### Testing API Functions
+
+```tsx
+import { 
+  startEvalMock, 
+  getEvalRunStatusMock, 
+  apiMocks,
+  setApiMockResponse,
+  setApiMockError,
+  resetAllApiMocks 
+} from '@/mocks/api';
+import { startEval } from '@/utils/api/evals/start-eval';
+
+it('should handle successful eval start', async () => {
+  // The mock is automatically applied, just call the function
+  const result = await startEval({ eval_id: 'test-eval' });
+  
+  expect(result.success).toBe(true);
+  expect(result.eval_run_ids).toEqual(['eval-run-1', 'eval-run-2']);
+  expect(startEvalMock).toHaveBeenCalledWith({ eval_id: 'test-eval' });
+});
+
+it('should handle API errors', async () => {
+  // Override the mock to return an error
+  setApiMockError(startEvalMock, new Error('API Error'));
+  
+  await expect(startEval({ eval_id: 'test-eval' })).rejects.toThrow('API Error');
+});
+
+it('should handle custom responses', async () => {
+  // Override the mock with custom response
+  setApiMockResponse(startEvalMock, {
+    success: false,
+    message: 'Custom error message',
+    status: 'error'
+  });
+  
+  const result = await startEval({ eval_id: 'test-eval' });
+  expect(result.success).toBe(false);
+  expect(result.message).toBe('Custom error message');
+});
+
+// Clean up mocks between tests
+afterEach(() => {
+  resetAllApiMocks();
+});
+```
+
+### Available API Mock Categories
+
+- **Assistants**: `messageAssistant`, `startAssistant`, `stopAssistant`
+- **Documents**: `deleteDocument`, `downloadDocument`, `finalizeDocumentUpload`, `processCourse`
+- **Evaluations**: `getEvalRunStatus`, `runEval`, `startEval`, `stopAllEvalRuns`
+- **Profiles**: `downloadReport`, `downloadReportLegacy`
+- **Scenarios**: `newScenario`, `testScenario`
+- **Simulations**: `continueSimulation`, `createSimulationMessage`, `startSimulation`, `stopSimulation`
+
 ## Available Utilities
 
 ### `renderWithProviders(ui, role?, options?)`
@@ -152,6 +212,12 @@ Returns properly formatted mock session object for manual mocking.
 ### Constants
 - `TEST_ROLES`: Array of all available roles
 - `TEST_USERS`: Object with session data for each role
+
+### API Mock Utilities
+- `apiMocks`: Object containing all API mock functions
+- `resetAllApiMocks()`: Clears all API mock call history
+- `setApiMockResponse(mockFn, response)`: Override mock to return specific response
+- `setApiMockError(mockFn, error)`: Override mock to throw specific error
 
 ## Mock Data Structure
 
@@ -222,9 +288,10 @@ cd database && node scripts/generate-mocks.js
 
 This will:
 - Read the latest database schema
+- Scan all API functions in `utils/api`
 - Generate 4 users and 4 profiles with proper relationships
-- Update all query and mutation mocks
-- Maintain meaningful test data
+- Update all query, mutation, and API mocks
+- Maintain meaningful test data with proper response types
 
 ## Integration with Role Context
 

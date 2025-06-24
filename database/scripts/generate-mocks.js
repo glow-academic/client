@@ -16,6 +16,7 @@ const CLIENT_MUTATIONS_DIR = path.join(
   __dirname,
   "../../client/utils/mutations"
 );
+const CLIENT_API_DIR = path.join(__dirname, "../../client/utils/api");
 
 /**
  * Extract table and enum information from schema file
@@ -680,6 +681,267 @@ import * as mockSchema from '@/mocks/schema';
 }
 
 /**
+ * Extract API function information from utils/api directory
+ */
+function extractApiInfo() {
+  const apiInfo = {};
+
+  function scanDirectory(dirPath, relativePath = "") {
+    const items = fs.readdirSync(dirPath, { withFileTypes: true });
+
+    for (const item of items) {
+      const fullPath = path.join(dirPath, item.name);
+      const currentRelativePath = relativePath
+        ? `${relativePath}/${item.name}`
+        : item.name;
+
+      if (item.isDirectory()) {
+        scanDirectory(fullPath, currentRelativePath);
+      } else if (item.isFile() && item.name.endsWith(".ts")) {
+        const content = fs.readFileSync(fullPath, "utf8");
+        const functions = extractFunctionsFromFile(
+          content,
+          currentRelativePath
+        );
+        if (functions.length > 0) {
+          const category = relativePath || "general";
+          if (!apiInfo[category]) {
+            apiInfo[category] = [];
+          }
+          apiInfo[category].push(...functions);
+        }
+      }
+    }
+  }
+
+  scanDirectory(CLIENT_API_DIR);
+  return apiInfo;
+}
+
+/**
+ * Extract function information from a single API file
+ */
+function extractFunctionsFromFile(content, filePath) {
+  const functions = [];
+
+  // Extract export async function declarations
+  const functionRegex =
+    /export async function (\w+)\s*\([^)]*\):\s*Promise<(\w+)>/g;
+  let match;
+
+  while ((match = functionRegex.exec(content)) !== null) {
+    const [, functionName, responseType] = match;
+
+    // Extract parameter interface name
+    const paramsRegex = new RegExp(
+      `export interface (\\w+)\\s*{[^}]*}(?=.*export async function ${functionName})`
+    );
+    const paramsMatch = content.match(paramsRegex);
+    const paramsType = paramsMatch ? paramsMatch[1] : null;
+
+    functions.push({
+      name: functionName,
+      paramsType,
+      responseType,
+      filePath: filePath.replace(".ts", ""),
+    });
+  }
+
+  return functions;
+}
+
+/**
+ * Generate the api.ts mock file
+ */
+function generateApiMockFile(apiInfo) {
+  let content = `import { vi } from 'vitest';
+
+// Generated automatically by generate-mocks.js
+// API mocks for all functions in client/utils/api
+
+`;
+
+  // Generate mock data for common response patterns
+  content += `// Common mock response data
+const mockSuccessResponse = {
+  success: true,
+  message: "Operation completed successfully",
+  status: "success" as const,
+};
+
+const mockErrorResponse = {
+  success: false,
+  message: "Operation failed",
+  status: "error" as const,
+};
+
+const mockProcessingResponse = {
+  success: true,
+  message: "Operation is being processed",
+  status: "processing" as const,
+};
+
+// Extended mock responses for specific API types
+const mockEvalResponse = {
+  ...mockSuccessResponse,
+  eval_run_ids: ["eval-run-1", "eval-run-2"],
+  total_runs: 2,
+};
+
+const mockEvalStatusResponse = {
+  ...mockSuccessResponse,
+  eval_run_id: "eval-run-1",
+  total_chats: 10,
+  completed_chats: 5,
+  progress_percentage: 50,
+  chat_statuses: [
+    { chat_id: "chat-1", status: "completed" },
+    { chat_id: "chat-2", status: "running" },
+  ],
+};
+
+const mockSimulationResponse = {
+  ...mockSuccessResponse,
+  attempt_id: "attempt-123",
+  chat_id: "chat-456",
+};
+
+const mockDocumentResponse = {
+  ...mockSuccessResponse,
+  document_id: "doc-123",
+  extracted_count: 1,
+  documents: [{ id: "doc-123", name: "Test Document" }],
+};
+
+const mockAssistantResponse = {
+  ...mockSuccessResponse,
+  chat_id: "chat-789",
+};
+
+const mockScenarioResponse = {
+  ...mockSuccessResponse,
+  title: "Test Scenario",
+  description: "A test scenario for evaluation",
+};
+
+const mockReportResponse = {
+  ...mockSuccessResponse,
+  data: new Response("mock-pdf-data"),
+  headers: new Headers({ "content-type": "application/pdf" }),
+  text: () => Promise.resolve("mock-text-data"),
+  blob: () => Promise.resolve(new Blob(["mock-blob-data"])),
+};
+
+const mockStreamResponse = {
+  ...mockSuccessResponse,
+  response: new Response("mock-stream-data"),
+  reader: {
+    read: () => Promise.resolve({ done: false, value: new Uint8Array([1, 2, 3]) }),
+  },
+};
+
+`;
+
+  // Generate mocks for each API category
+  Object.entries(apiInfo).forEach(([category, functions]) => {
+    content += `// ${category.toUpperCase()} API MOCKS\n`;
+
+    functions.forEach((func) => {
+      const mockName = `${func.name}Mock`;
+
+      // Determine appropriate mock response based on function name and type
+      let mockResponse = "mockSuccessResponse";
+
+      if (func.name.includes("eval") || func.name.includes("Eval")) {
+        if (func.name.includes("status") || func.name.includes("Status")) {
+          mockResponse = "mockEvalStatusResponse";
+        } else {
+          mockResponse = "mockEvalResponse";
+        }
+      } else if (
+        func.name.includes("simulation") ||
+        func.name.includes("Simulation")
+      ) {
+        mockResponse = "mockSimulationResponse";
+      } else if (
+        func.name.includes("document") ||
+        func.name.includes("Document")
+      ) {
+        if (func.name.includes("download") || func.name.includes("Download")) {
+          mockResponse = "mockReportResponse";
+        } else {
+          mockResponse = "mockDocumentResponse";
+        }
+      } else if (
+        func.name.includes("assistant") ||
+        func.name.includes("Assistant")
+      ) {
+        mockResponse = "mockAssistantResponse";
+      } else if (
+        func.name.includes("scenario") ||
+        func.name.includes("Scenario")
+      ) {
+        if (func.name.includes("test") || func.name.includes("Test")) {
+          mockResponse = "mockStreamResponse";
+        } else {
+          mockResponse = "mockScenarioResponse";
+        }
+      } else if (func.name.includes("report") || func.name.includes("Report")) {
+        mockResponse = "mockReportResponse";
+      }
+
+      content += `export const ${mockName} = vi.fn(() => Promise.resolve(${mockResponse}));\n`;
+    });
+
+    content += "\n";
+
+    // Generate vi.mock statements
+    functions.forEach((func) => {
+      const mockName = `${func.name}Mock`;
+      content += `vi.mock('@/utils/api/${func.filePath}', () => ({ ${func.name}: ${mockName} }));\n`;
+    });
+
+    content += "\n";
+  });
+
+  // Add utility functions for testing
+  content += `// Utility functions for testing
+export const resetAllApiMocks = () => {
+`;
+
+  Object.values(apiInfo)
+    .flat()
+    .forEach((func) => {
+      content += `  ${func.name}Mock.mockClear();\n`;
+    });
+
+  content += `};
+
+export const setApiMockResponse = (mockFn: any, response: any) => {
+  mockFn.mockResolvedValue(response);
+};
+
+export const setApiMockError = (mockFn: any, error: any) => {
+  mockFn.mockRejectedValue(error);
+};
+
+// Export all mocks for easy access
+export const apiMocks = {
+`;
+
+  Object.values(apiInfo)
+    .flat()
+    .forEach((func) => {
+      content += `  ${func.name}: ${func.name}Mock,\n`;
+    });
+
+  content += `};
+`;
+
+  return content;
+}
+
+/**
  * Write mock files
  */
 function writeMockFiles(mockData) {
@@ -705,6 +967,12 @@ function writeMockFiles(mockData) {
     mutationsContent
   );
   console.log("📝 Generated client/mocks/mutations.ts");
+
+  // Generate and write api.ts
+  const apiInfo = extractApiInfo();
+  const apiContent = generateApiMockFile(apiInfo);
+  fs.writeFileSync(path.join(CLIENT_MOCKS_DIR, "api.ts"), apiContent);
+  console.log("📝 Generated client/mocks/api.ts");
 }
 
 /**
@@ -723,6 +991,16 @@ function generateMocks() {
       } enums\n`
     );
 
+    // Extract API information
+    console.log("🔍 Scanning API functions...");
+    const apiInfo = extractApiInfo();
+    const totalApiFunctions = Object.values(apiInfo).flat().length;
+    console.log(
+      `🚀 Found ${totalApiFunctions} API functions across ${
+        Object.keys(apiInfo).length
+      } categories\n`
+    );
+
     // Generate mock data
     console.log("🎲 Generating mock data with relationships...");
     const mockData = generateMockData(tables, enums);
@@ -734,7 +1012,7 @@ function generateMocks() {
     console.log("\n✅ Mock generation complete!");
     console.log("📁 Check client/mocks/ directory for generated files");
     console.log(
-      "🧪 Mock data includes proper relationships and meaningful content"
+      "🧪 Mock data includes proper relationships, meaningful content, and API function mocks"
     );
   } catch (error) {
     console.error("❌ Error generating mocks:", error);

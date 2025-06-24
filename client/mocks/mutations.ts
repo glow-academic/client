@@ -48,6 +48,51 @@ vi.mock('@/utils/mutations/app_logs/delete-app-logs', () => ({ deleteAppLogs: de
 vi.mock('@/utils/mutations/app_logs/update-app-log', () => ({ updateAppLog: updateAppLogMock }));
 vi.mock('@/utils/mutations/app_logs/update-app-logs', () => ({ updateAppLogs: updateAppLogsMock }));
 
+// ASSISTANT_CHATS MUTATIONS
+export const createAssistantChatMock = vi.fn(() => mockSchema.assistantChats?.[0] || {});
+export const createAssistantChatsMock = vi.fn(() => mockSchema.assistantChats || []);
+export const deleteAssistantChatMock = vi.fn(() => mockSchema.assistantChats?.[0] || {});
+export const deleteAssistantChatsMock = vi.fn(() => mockSchema.assistantChats || []);
+export const updateAssistantChatMock = vi.fn(() => mockSchema.assistantChats?.[0] || {});
+export const updateAssistantChatsMock = vi.fn(() => mockSchema.assistantChats || []);
+
+vi.mock('@/utils/mutations/assistant_chats/create-assistant-chat', () => ({ createAssistantChat: createAssistantChatMock }));
+vi.mock('@/utils/mutations/assistant_chats/create-assistant-chats', () => ({ createAssistantChats: createAssistantChatsMock }));
+vi.mock('@/utils/mutations/assistant_chats/delete-assistant-chat', () => ({ deleteAssistantChat: deleteAssistantChatMock }));
+vi.mock('@/utils/mutations/assistant_chats/delete-assistant-chats', () => ({ deleteAssistantChats: deleteAssistantChatsMock }));
+vi.mock('@/utils/mutations/assistant_chats/update-assistant-chat', () => ({ updateAssistantChat: updateAssistantChatMock }));
+vi.mock('@/utils/mutations/assistant_chats/update-assistant-chats', () => ({ updateAssistantChats: updateAssistantChatsMock }));
+
+// ASSISTANT_MESSAGES MUTATIONS
+export const createAssistantMessageMock = vi.fn(() => mockSchema.assistantMessages?.[0] || {});
+export const createAssistantMessagesMock = vi.fn(() => mockSchema.assistantMessages || []);
+export const deleteAssistantMessageMock = vi.fn(() => mockSchema.assistantMessages?.[0] || {});
+export const deleteAssistantMessagesMock = vi.fn(() => mockSchema.assistantMessages || []);
+export const updateAssistantMessageMock = vi.fn(() => mockSchema.assistantMessages?.[0] || {});
+export const updateAssistantMessagesMock = vi.fn(() => mockSchema.assistantMessages || []);
+
+vi.mock('@/utils/mutations/assistant_messages/create-assistant-message', () => ({ createAssistantMessage: createAssistantMessageMock }));
+vi.mock('@/utils/mutations/assistant_messages/create-assistant-messages', () => ({ createAssistantMessages: createAssistantMessagesMock }));
+vi.mock('@/utils/mutations/assistant_messages/delete-assistant-message', () => ({ deleteAssistantMessage: deleteAssistantMessageMock }));
+vi.mock('@/utils/mutations/assistant_messages/delete-assistant-messages', () => ({ deleteAssistantMessages: deleteAssistantMessagesMock }));
+vi.mock('@/utils/mutations/assistant_messages/update-assistant-message', () => ({ updateAssistantMessage: updateAssistantMessageMock }));
+vi.mock('@/utils/mutations/assistant_messages/update-assistant-messages', () => ({ updateAssistantMessages: updateAssistantMessagesMock }));
+
+// ASSISTANT_TOOL_CALLS MUTATIONS
+export const createAssistantToolCallMock = vi.fn(() => mockSchema.assistantToolCalls?.[0] || {});
+export const createAssistantToolCallsMock = vi.fn(() => mockSchema.assistantToolCalls || []);
+export const deleteAssistantToolCallMock = vi.fn(() => mockSchema.assistantToolCalls?.[0] || {});
+export const deleteAssistantToolCallsMock = vi.fn(() => mockSchema.assistantToolCalls || []);
+export const updateAssistantToolCallMock = vi.fn(() => mockSchema.assistantToolCalls?.[0] || {});
+export const updateAssistantToolCallsMock = vi.fn(() => mockSchema.assistantToolCalls || []);
+
+vi.mock('@/utils/mutations/assistant_tool_calls/create-assistant-tool-call', () => ({ createAssistantToolCall: createAssistantToolCallMock }));
+vi.mock('@/utils/mutations/assistant_tool_calls/create-assistant-tool-calls', () => ({ createAssistantToolCalls: createAssistantToolCallsMock }));
+vi.mock('@/utils/mutations/assistant_tool_calls/delete-assistant-tool-call', () => ({ deleteAssistantToolCall: deleteAssistantToolCallMock }));
+vi.mock('@/utils/mutations/assistant_tool_calls/delete-assistant-tool-calls', () => ({ deleteAssistantToolCalls: deleteAssistantToolCallsMock }));
+vi.mock('@/utils/mutations/assistant_tool_calls/update-assistant-tool-call', () => ({ updateAssistantToolCall: updateAssistantToolCallMock }));
+vi.mock('@/utils/mutations/assistant_tool_calls/update-assistant-tool-calls', () => ({ updateAssistantToolCalls: updateAssistantToolCallsMock }));
+
 // CLASSES MUTATIONS
 export const createClassMock = vi.fn(() => mockSchema.classes || []);
 export const createClassesMock = vi.fn(() => mockSchema.classes || []);
@@ -77,6 +122,36 @@ vi.mock('@/utils/mutations/cohorts/delete-cohort', () => ({ deleteCohort: delete
 vi.mock('@/utils/mutations/cohorts/delete-cohorts', () => ({ deleteCohorts: deleteCohortsMock }));
 vi.mock('@/utils/mutations/cohorts/update-cohort', () => ({ updateCohort: updateCohortMock }));
 vi.mock('@/utils/mutations/cohorts/update-cohorts', () => ({ updateCohorts: updateCohortsMock }));
+
+// COMPONENTS MUTATIONS
+export const createComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const createComponentsMock = vi.fn(() => mockSchema.components || []);
+export const deleteComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const deleteComponentsMock = vi.fn(() => mockSchema.components || []);
+export const updateComponentMock = vi.fn(() => mockSchema.components?.[0] || {});
+export const updateComponentsMock = vi.fn(() => mockSchema.components || []);
+
+vi.mock('@/utils/mutations/components/create-component', () => ({ createComponent: createComponentMock }));
+vi.mock('@/utils/mutations/components/create-components', () => ({ createComponents: createComponentsMock }));
+vi.mock('@/utils/mutations/components/delete-component', () => ({ deleteComponent: deleteComponentMock }));
+vi.mock('@/utils/mutations/components/delete-components', () => ({ deleteComponents: deleteComponentsMock }));
+vi.mock('@/utils/mutations/components/update-component', () => ({ updateComponent: updateComponentMock }));
+vi.mock('@/utils/mutations/components/update-components', () => ({ updateComponents: updateComponentsMock }));
+
+// DASHBOARDS MUTATIONS
+export const createDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const createDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+export const deleteDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const deleteDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+export const updateDashboardMock = vi.fn(() => mockSchema.dashboards?.[0] || {});
+export const updateDashboardsMock = vi.fn(() => mockSchema.dashboards || []);
+
+vi.mock('@/utils/mutations/dashboards/create-dashboard', () => ({ createDashboard: createDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/create-dashboards', () => ({ createDashboards: createDashboardsMock }));
+vi.mock('@/utils/mutations/dashboards/delete-dashboard', () => ({ deleteDashboard: deleteDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/delete-dashboards', () => ({ deleteDashboards: deleteDashboardsMock }));
+vi.mock('@/utils/mutations/dashboards/update-dashboard', () => ({ updateDashboard: updateDashboardMock }));
+vi.mock('@/utils/mutations/dashboards/update-dashboards', () => ({ updateDashboards: updateDashboardsMock }));
 
 // DOCUMENTS MUTATIONS
 export const createDocumentMock = vi.fn(() => mockSchema.documents?.[0] || {});

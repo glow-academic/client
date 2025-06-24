@@ -15,6 +15,12 @@ vi.mock('@/utils/queries/accounts/get-all-accounts', () => ({
 vi.mock('@/utils/queries/agents/get-agent', () => ({
   getAgent: vi.fn(() => mockSchema.agents?.[0] || null),
 }));
+vi.mock('@/utils/queries/agents/get-agents-by-model', () => ({
+  getAgentsByModel: vi.fn(() => mockSchema.agents || []),
+}));
+vi.mock('@/utils/queries/agents/get-agents-by-models', () => ({
+  getAgentsByModels: vi.fn(() => mockSchema.agents || []),
+}));
 vi.mock('@/utils/queries/agents/get-all-agents', () => ({
   getAllAgents: vi.fn(() => mockSchema.agents || []),
 }));
@@ -25,6 +31,48 @@ vi.mock('@/utils/queries/app_logs/get-all-app-logs', () => ({
 }));
 vi.mock('@/utils/queries/app_logs/get-app-log', () => ({
   getAppLog: vi.fn(() => mockSchema.appLogs?.[0] || null),
+}));
+
+// ASSISTANT_CHATS QUERIES
+vi.mock('@/utils/queries/assistant_chats/get-all-assistant-chats', () => ({
+  getAllAssistantChats: vi.fn(() => mockSchema.assistantChats || []),
+}));
+vi.mock('@/utils/queries/assistant_chats/get-assistant-chat', () => ({
+  getAssistantChat: vi.fn(() => mockSchema.assistantChats?.[0] || null),
+}));
+vi.mock('@/utils/queries/assistant_chats/get-assistant-chats-by-profile', () => ({
+  getAssistantChatsByProfile: vi.fn(() => mockSchema.assistantChats || []),
+}));
+vi.mock('@/utils/queries/assistant_chats/get-assistant-chats-by-profiles', () => ({
+  getAssistantChatsByProfiles: vi.fn(() => mockSchema.assistantChats || []),
+}));
+
+// ASSISTANT_MESSAGES QUERIES
+vi.mock('@/utils/queries/assistant_messages/get-all-assistant-messages', () => ({
+  getAllAssistantMessages: vi.fn(() => mockSchema.assistantMessages || []),
+}));
+vi.mock('@/utils/queries/assistant_messages/get-assistant-message', () => ({
+  getAssistantMessage: vi.fn(() => mockSchema.assistantMessages?.[0] || null),
+}));
+vi.mock('@/utils/queries/assistant_messages/get-assistant-messages-by-chat', () => ({
+  getAssistantMessagesByChat: vi.fn(() => mockSchema.assistantMessages || []),
+}));
+vi.mock('@/utils/queries/assistant_messages/get-assistant-messages-by-chats', () => ({
+  getAssistantMessagesByChats: vi.fn(() => mockSchema.assistantMessages || []),
+}));
+
+// ASSISTANT_TOOL_CALLS QUERIES
+vi.mock('@/utils/queries/assistant_tool_calls/get-all-assistant-tool-calls', () => ({
+  getAllAssistantToolCalls: vi.fn(() => mockSchema.assistantToolCalls || []),
+}));
+vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-call', () => ({
+  getAssistantToolCall: vi.fn(() => mockSchema.assistantToolCalls?.[0] || null),
+}));
+vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chat', () => ({
+  getAssistantToolCallsByChat: vi.fn(() => mockSchema.assistantToolCalls || []),
+}));
+vi.mock('@/utils/queries/assistant_tool_calls/get-assistant-tool-calls-by-chats', () => ({
+  getAssistantToolCallsByChats: vi.fn(() => mockSchema.assistantToolCalls || []),
 }));
 
 // CLASSES QUERIES
@@ -41,6 +89,28 @@ vi.mock('@/utils/queries/cohorts/get-all-cohorts', () => ({
 }));
 vi.mock('@/utils/queries/cohorts/get-cohort', () => ({
   getCohort: vi.fn(() => mockSchema.cohorts?.[0] || null),
+}));
+
+// COMPONENTS QUERIES
+vi.mock('@/utils/queries/components/get-all-components', () => ({
+  getAllComponents: vi.fn(() => mockSchema.components || []),
+}));
+vi.mock('@/utils/queries/components/get-component', () => ({
+  getComponent: vi.fn(() => mockSchema.components?.[0] || null),
+}));
+
+// DASHBOARDS QUERIES
+vi.mock('@/utils/queries/dashboards/get-all-dashboards', () => ({
+  getAllDashboards: vi.fn(() => mockSchema.dashboards || []),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboard', () => ({
+  getDashboard: vi.fn(() => mockSchema.dashboards?.[0] || null),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboards-by-profile', () => ({
+  getDashboardsByProfile: vi.fn(() => mockSchema.dashboards || []),
+}));
+vi.mock('@/utils/queries/dashboards/get-dashboards-by-profiles', () => ({
+  getDashboardsByProfiles: vi.fn(() => mockSchema.dashboards || []),
 }));
 
 // DOCUMENTS QUERIES
