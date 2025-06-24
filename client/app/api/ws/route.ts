@@ -29,9 +29,7 @@ const proxy = createProxyServer({
 });
 
 /* Optional: log proxy errors so they’re not swallowed silently */
-proxy.on("error", (err: Error, _req: NextApiRequest, _res: NextApiResponse) =>
-  logError("[WS-proxy] error:", err.message)
-);
+proxy.on("error", (err: Error) => logError("[WS-proxy] error:", err.message));
 
 /* ─── Unified handler for all HTTP methods ─────────────────────────────────── */
 export default function handler(req: NextApiRequest, res: NextApiResponse) {

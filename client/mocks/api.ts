@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 // Generated automatically by generate-mocks.js
 // API mocks for all functions in client/utils/api
 
-// Common mock response data
+// Base mock response data
 const mockSuccessResponse = {
   success: true,
   message: "Operation completed successfully",
@@ -55,11 +55,6 @@ const mockDocumentResponse = {
   documents: [{ id: "doc-123", name: "Test Document" }],
 };
 
-const mockAssistantResponse = {
-  ...mockSuccessResponse,
-  chat_id: "chat-789",
-};
-
 const mockScenarioResponse = {
   ...mockSuccessResponse,
   title: "Test Scenario",
@@ -74,65 +69,53 @@ const mockReportResponse = {
   blob: () => Promise.resolve(new Blob(["mock-blob-data"])),
 };
 
-const mockStreamResponse = {
-  ...mockSuccessResponse,
-  response: new Response("mock-stream-data"),
-  reader: {
-    read: () => Promise.resolve({ done: false, value: new Uint8Array([1, 2, 3]) }),
-  },
-};
+
 
 // ASSISTANTS API MOCKS
-export const messageAssistantMock = vi.fn(() => Promise.resolve(mockAssistantResponse));
-export const startAssistantMock = vi.fn(() => Promise.resolve(mockAssistantResponse));
-export const stopAssistantMock = vi.fn(() => Promise.resolve(mockAssistantResponse));
+export const messageAssistantMock = vi.fn(() => Promise.resolve(mockProcessingResponse));
+export const startAssistantMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
+export const stopAssistantMock = vi.fn(() => Promise.resolve(mockErrorResponse));
+
+// DOCUMENTS API MOCKS
+export const deleteDocumentMock = vi.fn(() => Promise.resolve(mockErrorResponse));
+export const downloadDocumentMock = vi.fn(() => Promise.resolve(mockReportResponse));
+export const finalizeDocumentUploadMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
+export const processCourseMock = vi.fn(() => Promise.resolve(mockProcessingResponse));
+
+// EVALS API MOCKS
+export const getEvalRunStatusMock = vi.fn(() => Promise.resolve(mockEvalStatusResponse));
+export const runEvalMock = vi.fn(() => Promise.resolve(mockProcessingResponse));
+export const startEvalMock = vi.fn(() => Promise.resolve(mockEvalResponse));
+export const stopAllEvalRunsMock = vi.fn(() => Promise.resolve(mockErrorResponse));
+
+// PROFILES API MOCKS
+export const downloadReportMock = vi.fn(() => Promise.resolve(mockReportResponse));
+export const downloadReportLegacyMock = vi.fn(() => Promise.resolve(mockSuccessResponse));
+
+// SCENARIOS API MOCKS
+export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
+export const testScenarioMock = vi.fn(() => Promise.resolve(mockReportResponse));
+
+// SIMULATIONS API MOCKS
+export const continueSimulationMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
+export const createSimulationMessageMock = vi.fn(() => Promise.resolve(mockProcessingResponse));
+export const startSimulationMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
+export const stopSimulationMock = vi.fn(() => Promise.resolve(mockErrorResponse));
 
 vi.mock('@/utils/api/assistants/message-assistant', () => ({ messageAssistant: messageAssistantMock }));
 vi.mock('@/utils/api/assistants/start-assistant', () => ({ startAssistant: startAssistantMock }));
 vi.mock('@/utils/api/assistants/stop-assistant', () => ({ stopAssistant: stopAssistantMock }));
-
-// DOCUMENTS API MOCKS
-export const deleteDocumentMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
-export const downloadDocumentMock = vi.fn(() => Promise.resolve(mockReportResponse));
-export const finalizeDocumentUploadMock = vi.fn(() => Promise.resolve(mockDocumentResponse));
-export const processCourseMock = vi.fn(() => Promise.resolve(mockSuccessResponse));
-
 vi.mock('@/utils/api/documents/delete-document', () => ({ deleteDocument: deleteDocumentMock }));
 vi.mock('@/utils/api/documents/download-document', () => ({ downloadDocument: downloadDocumentMock }));
 vi.mock('@/utils/api/documents/finalize-document-upload', () => ({ finalizeDocumentUpload: finalizeDocumentUploadMock }));
 vi.mock('@/utils/api/documents/process-course', () => ({ processCourse: processCourseMock }));
-
-// EVALS API MOCKS
-export const getEvalRunStatusMock = vi.fn(() => Promise.resolve(mockEvalStatusResponse));
-export const runEvalMock = vi.fn(() => Promise.resolve(mockEvalResponse));
-export const startEvalMock = vi.fn(() => Promise.resolve(mockEvalResponse));
-export const stopAllEvalRunsMock = vi.fn(() => Promise.resolve(mockEvalResponse));
-
 vi.mock('@/utils/api/evals/get-eval-run-status', () => ({ getEvalRunStatus: getEvalRunStatusMock }));
 vi.mock('@/utils/api/evals/run-eval', () => ({ runEval: runEvalMock }));
 vi.mock('@/utils/api/evals/start-eval', () => ({ startEval: startEvalMock }));
 vi.mock('@/utils/api/evals/stop-all-evals', () => ({ stopAllEvalRuns: stopAllEvalRunsMock }));
-
-// PROFILES API MOCKS
-export const downloadReportMock = vi.fn(() => Promise.resolve(mockReportResponse));
-export const downloadReportLegacyMock = vi.fn(() => Promise.resolve(mockReportResponse));
-
-vi.mock('@/utils/api/profiles/download-report', () => ({ downloadReport: downloadReportMock }));
-vi.mock('@/utils/api/profiles/download-report', () => ({ downloadReportLegacy: downloadReportLegacyMock }));
-
-// SCENARIOS API MOCKS
-export const newScenarioMock = vi.fn(() => Promise.resolve(mockScenarioResponse));
-export const testScenarioMock = vi.fn(() => Promise.resolve(mockStreamResponse));
-
+vi.mock('@/utils/api/profiles/download-report', () => ({ downloadReport: downloadReportMock, downloadReportLegacy: downloadReportLegacyMock }));
 vi.mock('@/utils/api/scenarios/new-scenario', () => ({ newScenario: newScenarioMock }));
 vi.mock('@/utils/api/scenarios/test-scenario', () => ({ testScenario: testScenarioMock }));
-
-// SIMULATIONS API MOCKS
-export const continueSimulationMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
-export const createSimulationMessageMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
-export const startSimulationMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
-export const stopSimulationMock = vi.fn(() => Promise.resolve(mockSimulationResponse));
-
 vi.mock('@/utils/api/simulations/continue-simulation', () => ({ continueSimulation: continueSimulationMock }));
 vi.mock('@/utils/api/simulations/create-simulation-message', () => ({ createSimulationMessage: createSimulationMessageMock }));
 vi.mock('@/utils/api/simulations/start-simulation', () => ({ startSimulation: startSimulationMock }));

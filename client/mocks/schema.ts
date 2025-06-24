@@ -4,9 +4,9 @@
 // CLASSES MOCK DATA
 export const classes = [
   {
-    "id": "xgx4on74-ep7i-else-4l2x-shtpsem3jcf",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "ebubdyql-dgcl-jxtn-o46b-oqz3o5cieyn",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Algebra I",
     "classCode": "MATH101",
     "year": 2024,
@@ -15,9 +15,9 @@ export const classes = [
     "defaultClass": "defaultClass_1"
   },
   {
-    "id": "7wfpxljs-ft0j-qvjz-g6to-wf71r8jumf",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "d6df9v5a-6g2e-b6pd-a13u-1rf2pcw1rcp",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "General Chemistry",
     "classCode": "CHEM101",
     "year": 2024,
@@ -30,9 +30,9 @@ export const classes = [
 // TOPICS MOCK DATA
 export const topics = [
   {
-    "id": "75nijsem-m79g-mp9a-yk7q-pbnmyx1in2b",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "qtqsuih3-k6ta-b9gr-xio6-en7fllvdpv4",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Topics 1",
     "description": "Description for topics 1",
     "prerequisite": true,
@@ -43,9 +43,9 @@ export const topics = [
 // SCHEDULES MOCK DATA
 export const schedules = [
   {
-    "id": "u418czbp-y828-zeuc-d05m-8b2yarnpwxn",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "81v9eya4-smla-88vf-z1mn-bcxn9lbpxyr",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Schedules 1",
     "description": "Description for schedules 1",
     "classId": "classId_1"
@@ -55,12 +55,12 @@ export const schedules = [
 // EVENTS MOCK DATA
 export const events = [
   {
-    "id": "u60v7ls6-8jgj-1olf-vf3x-s0zg9z9z5t",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "citj5y2b-n7zi-qewj-suog-e9gq5st75k",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Events 1",
     "description": "Description for events 1",
-    "time": "2025-06-24T16:41:18.784Z",
+    "time": "2025-06-24T16:51:28.755Z",
     "scheduleId": "scheduleId_1"
   }
 ];
@@ -68,9 +68,9 @@ export const events = [
 // DOCUMENTS MOCK DATA
 export const documents = [
   {
-    "id": "sl2ue2ay-84i0-ytxz-pxr1-x3n1zeavy8",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "v1znhi0m-9d0m-a4kg-a4rb-dmsz3kiyqbl",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Documents 1",
     "filePath": "filePath_1",
     "mimeType": "mimeType_1",
@@ -84,9 +84,9 @@ export const documents = [
 // PROVIDERS MOCK DATA
 export const providers = [
   {
-    "id": "dekqhec6-rjun-6m4n-z0oj-vjh4ll1tstl",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "u4ywrpah-7j3s-ffcd-amrl-c79eroq83i8",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Providers 1",
     "description": "Description for providers 1",
     "apiKey": "apiKey_1"
@@ -96,23 +96,28 @@ export const providers = [
 // ACCOUNTS MOCK DATA
 export const accounts = [
   {
-    "id": 5,
-    "userId": 37,
+    "id": 42,
+    "userId": 69,
     "type": "type_1",
     "provider": "provider_1",
     "providerAccountId": "providerAccountId_1",
+    "refreshToken": "refreshToken_1",
     "accessToken": "accessToken_1",
     "mode": "mode_1",
-    "scope": "scope_1"
+    "expiresAt": 44,
+    "idToken": "idToken_1",
+    "scope": "scope_1",
+    "sessionState": "sessionState_1",
+    "tokenType": "tokenType_1"
   }
 ];
 
 // SESSIONS MOCK DATA
 export const sessions = [
   {
-    "id": 90,
-    "userId": 16,
-    "expires": "2025-06-24T16:41:18.784Z",
+    "id": 31,
+    "userId": 8,
+    "expires": "2025-06-24T16:51:28.755Z",
     "sessionToken": "sessionToken_1"
   }
 ];
@@ -120,9 +125,9 @@ export const sessions = [
 // MODELS MOCK DATA
 export const models = [
   {
-    "id": "d2iphn4q-dn6l-y92i-n55l-v4gobjy439b",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "6cwtanex-pjlw-7fl6-2n2t-13ev8jtujh9",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Models 1",
     "description": "Description for models 1",
     "providerId": "providerId_1",
@@ -133,28 +138,25 @@ export const models = [
 // USERS MOCK DATA
 export const users = [
   {
-    "id": 17,
-    "name": "Admin User",
-    "emailVerified": "2025-06-24T16:41:18.784Z",
+    "id": 37,
+    "emailVerified": "2025-06-24T16:51:28.755Z",
     "image": "image_1"
   },
   {
-    "id": 73,
-    "name": "Instructional User",
+    "id": 79,
     "email": "instructional@example.com",
-    "image": "image_2"
+    "emailVerified": "2025-06-24T16:51:28.755Z"
   },
   {
-    "id": 46,
+    "id": 60,
+    "name": "Instructor User",
     "email": "instructor@example.com",
-    "emailVerified": "2025-06-24T16:41:18.784Z",
-    "image": "image_3"
+    "emailVerified": "2025-06-24T16:51:28.755Z"
   },
   {
-    "id": 46,
+    "id": 79,
     "name": "TA User",
     "email": "ta@example.com",
-    "emailVerified": "2025-06-24T16:41:18.784Z",
     "image": "image_4"
   }
 ];
@@ -162,90 +164,90 @@ export const users = [
 // PROFILES MOCK DATA
 export const profiles = [
   {
-    "id": "4cd2bdu9-eq0r-yctd-qyrg-pms2ngno1t",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "userId": 17,
-    "lastLogin": "2025-06-24T16:41:18.784Z",
+    "id": "igpcnol4-fwbg-ubun-ccn1-jaslt3hn0tc",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "userId": 37,
+    "lastLogin": "2025-06-24T16:51:28.755Z",
     "firstName": "Admin",
     "lastName": "User",
     "alias": "admin-user",
     "viewedIntro": "viewedIntro_1",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "role": "admin",
     "classIds": [
-      "xgx4on74-ep7i-else-4l2x-shtpsem3jcf",
-      "7wfpxljs-ft0j-qvjz-g6to-wf71r8jumf"
+      "ebubdyql-dgcl-jxtn-o46b-oqz3o5cieyn",
+      "d6df9v5a-6g2e-b6pd-a13u-1rf2pcw1rcp"
     ]
   },
   {
-    "id": "zyy7wnrv-gljf-mewa-05om-lcnts610y9",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "userId": 73,
-    "lastLogin": "2025-06-24T16:41:18.784Z",
+    "id": "0hmxstq7-vut7-i8ra-r58q-oapjz0zntqc",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "userId": 79,
+    "lastLogin": "2025-06-24T16:51:28.755Z",
     "firstName": "Instructional",
     "lastName": "User",
     "alias": "instructional-user",
     "viewedIntro": "viewedIntro_2",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "role": "instructional",
     "classIds": [
-      "xgx4on74-ep7i-else-4l2x-shtpsem3jcf",
-      "7wfpxljs-ft0j-qvjz-g6to-wf71r8jumf"
+      "ebubdyql-dgcl-jxtn-o46b-oqz3o5cieyn",
+      "d6df9v5a-6g2e-b6pd-a13u-1rf2pcw1rcp"
     ]
   },
   {
-    "id": "ea2dqhcl-tibh-cz4p-i7yf-jlmwbdiohk",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "userId": 46,
-    "lastLogin": "2025-06-24T16:41:18.784Z",
+    "id": "tsyvhb6u-klk7-nfzc-q34v-wh6ctak8a7",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "userId": 60,
+    "lastLogin": "2025-06-24T16:51:28.755Z",
     "firstName": "Instructor",
     "lastName": "User",
     "alias": "instructor-user",
     "viewedIntro": "viewedIntro_3",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "role": "instructor",
     "classIds": [
-      "xgx4on74-ep7i-else-4l2x-shtpsem3jcf",
-      "7wfpxljs-ft0j-qvjz-g6to-wf71r8jumf"
+      "ebubdyql-dgcl-jxtn-o46b-oqz3o5cieyn",
+      "d6df9v5a-6g2e-b6pd-a13u-1rf2pcw1rcp"
     ]
   },
   {
-    "id": "2rz5fvzy-7xic-met3-1f5e-gsy5nb9n0yn",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "lastLogin": "2025-06-24T16:41:18.784Z",
+    "id": "2q40q8qg-0lhy-v5mx-isp1-2tt8hbmaszm",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "userId": 79,
+    "lastLogin": "2025-06-24T16:51:28.755Z",
     "firstName": "TA",
     "lastName": "User",
     "alias": "ta-user",
     "viewedIntro": "viewedIntro_4",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "role": "ta",
     "classIds": [
-      "xgx4on74-ep7i-else-4l2x-shtpsem3jcf",
-      "7wfpxljs-ft0j-qvjz-g6to-wf71r8jumf"
-    ],
-    "userId": 46
+      "ebubdyql-dgcl-jxtn-o46b-oqz3o5cieyn",
+      "d6df9v5a-6g2e-b6pd-a13u-1rf2pcw1rcp"
+    ]
   }
 ];
 
 // RUBRICS MOCK DATA
 export const rubrics = [
   {
-    "id": "xc7gty4l-fi88-afyn-ktug-t51p8hiwjg",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "a2fhyzf5-3htr-c1q2-16sx-rbjves3hhg",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Math Problem Solving Rubric",
     "description": "Evaluates mathematical reasoning and problem-solving skills",
-    "points": 31,
+    "points": 17,
     "passPoints": "passPoints_1",
     "defaultRubric": "defaultRubric_1"
   },
   {
-    "id": "r6mn53pz-xn4n-2kuv-mz0u-wixfg38pczk",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "5q7g66c2-21v2-1ag9-v2lm-vz1prf39r1",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Science Lab Rubric",
     "description": "Assesses lab technique and safety knowledge",
-    "points": 36,
+    "points": 28,
     "passPoints": "passPoints_2",
     "defaultRubric": "defaultRubric_2"
   }
@@ -254,12 +256,12 @@ export const rubrics = [
 // STANDARDGROUPS MOCK DATA
 export const standardGroups = [
   {
-    "id": "dxepwbyr-o70m-633i-8uf8-2k2mzpp5t2p",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "722foyxz-qhmm-hx6n-ha1m-gcrb3dxa56g",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "name": "Standard_groups 1",
     "shortName": "shortName_1",
     "description": "Description for standard_groups 1",
-    "points": 45,
+    "points": 39,
     "passPoints": "passPoints_1",
     "rubricId": "rubricId_1"
   }
@@ -268,11 +270,11 @@ export const standardGroups = [
 // STANDARDS MOCK DATA
 export const standards = [
   {
-    "id": "xkw0dlo3-ltjl-hv7y-g31x-ro0kv21c75g",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "h95efqj2-9dz8-gwfq-yqki-i9tqkoq1z1",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "name": "Standards 1",
     "description": "Description for standards 1",
-    "points": 99,
+    "points": 66,
     "standardGroupId": "standardGroupId_1"
   }
 ];
@@ -280,20 +282,20 @@ export const standards = [
 // APPLOGS MOCK DATA
 export const appLogs = [
   {
-    "id": 77,
+    "id": 18,
     "level": "level_1",
     "message": "message_1",
     "context": {},
-    "createdAt": "2025-06-24T16:41:18.784Z"
+    "createdAt": "2025-06-24T16:51:28.755Z"
   }
 ];
 
 // ASSISTANTCHATS MOCK DATA
 export const assistantChats = [
   {
-    "id": "wtkoxhko-3xwu-vkfp-2zmw-xzftqn1duo",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "t4qsjeho-2jgu-0t9p-gzlo-uro68ur8ro",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Assistant_chats 1",
     "profileId": "profileId_1",
     "traceId": "traceId_1"
@@ -303,10 +305,10 @@ export const assistantChats = [
 // ASSISTANTMESSAGES MOCK DATA
 export const assistantMessages = [
   {
-    "id": "t9tnw581-mbe9-ca54-v35z-2pxooau9361",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "completedAt": "2025-06-24T16:41:18.784Z",
+    "id": "1tecn8c1-2u6s-gz8w-k986-k6mn0j2bnpn",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "completedAt": "2025-06-24T16:51:28.755Z",
     "chatId": "chatId_1",
     "role": "user",
     "content": "content_1",
@@ -317,29 +319,30 @@ export const assistantMessages = [
 // ASSISTANTTOOLCALLS MOCK DATA
 export const assistantToolCalls = [
   {
-    "id": "a6l2b09q-i01u-yg0a-x1rm-yxdp4o6r9fh",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "9fyar95e-0t2v-o82y-y4yu-i9k155w302h",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "completedAt": "2025-06-24T16:51:28.755Z",
     "chatId": "chatId_1",
     "toolName": "toolName_1",
     "toolType": "toolType_1",
     "toolArguments": "toolArguments_1",
     "toolResult": "toolResult_1",
-    "completed": false
+    "completed": true
   }
 ];
 
 // COMPONENTS MOCK DATA
 export const components = [
   {
-    "id": "2e5qhnxl-8v1t-3oha-h4sx-gs2d729zbiq",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "ye7xmlwl-i22s-herc-3fdp-f7felprjgwa",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Components 1",
     "description": "Description for components 1",
     "fileName": "fileName_1",
     "layout": {},
-    "stat": true,
+    "stat": false,
     "defaultComponent": "defaultComponent_1"
   }
 ];
@@ -347,27 +350,26 @@ export const components = [
 // SCENARIOS MOCK DATA
 export const scenarios = [
   {
-    "id": "lv9etrfs-traq-wdzy-7iav-ws5lwutszep",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "dfey2gyt-0kmz-n2zl-e5ok-x8aoan2kccs",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Algebra Problem Solving",
     "description": "Students work through complex algebra problems with AI assistance",
-    "crowdedness": 23,
-    "intensity": 63,
+    "agentId": "agentId_1",
+    "classId": "classId_1",
+    "crowdedness": 93,
+    "intensity": 61,
     "seniority": "freshman",
     "defaultScenario": "defaultScenario_1"
   },
   {
-    "id": "yd27e5ei-8br3-bmq8-hl4p-vy4tcch4kcc",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "tydjnicl-spw5-z2af-qoz9-lsbbmmmr73n",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Chemistry Lab Safety",
     "description": "Students learn lab safety protocols through interactive scenarios",
-    "agentId": "agentId_2",
-    "classId": "classId_2",
-    "crowdedness": 97,
-    "intensity": 50,
-    "seniority": "sophomore",
+    "crowdedness": 100,
+    "intensity": 10,
     "defaultScenario": "defaultScenario_2"
   }
 ];
@@ -375,10 +377,9 @@ export const scenarios = [
 // DASHBOARDS MOCK DATA
 export const dashboards = [
   {
-    "id": "1dpq0db6-7dpj-gxic-e5rh-jdsf3f5m6hd",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "profileId": "profileId_1",
+    "id": "pop6rooi-ksgt-p9tp-x7qf-rcd2e7j2foo",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "headerComponentIds": [
       "headerComponentIds_1"
     ],
@@ -402,26 +403,25 @@ export const dashboards = [
 // AGENTS MOCK DATA
 export const agents = [
   {
-    "id": "nn0o3ot5-2y1q-ls2w-tk7a-u850vyxxb2e",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "9lbwoc51-vm7a-jprc-y2xa-d73si3o2fgp",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Math Tutor Agent",
     "description": "Helps students with mathematical concepts and problem-solving",
     "systemPrompt": "You are a helpful math tutor. Guide students through problems step by step.",
-    "temperature": 0.26,
+    "temperature": 0.88,
     "defaultAgent": "defaultAgent_1",
     "editable": false,
-    "modelId": "modelId_1",
     "reasoning": "low"
   },
   {
-    "id": "d28g47l5-nq5c-j5sd-ok0k-8sfgcp40hpu",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "xr7lnec1-nz73-oxfk-lxqi-1hfgivpib6b",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Science Helper Bot",
     "description": "Assists with scientific inquiries and experiments",
     "systemPrompt": "You are a science assistant. Help students understand scientific concepts.",
-    "temperature": 0.81,
+    "temperature": 0.61,
     "defaultAgent": "defaultAgent_2",
     "editable": true,
     "modelId": "modelId_2",
@@ -432,31 +432,29 @@ export const agents = [
 // COHORTS MOCK DATA
 export const cohorts = [
   {
-    "id": "bcclah0s-zq0d-tsm6-tyru-mqgaaah0xg",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "cpi3vgbj-nnma-leuo-vbal-7ccywuqzu72",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Fall 2024 Cohort",
-    "description": "Students enrolled in fall semester courses",
     "active": true,
     "profileIds": [
-      "4cd2bdu9-eq0r-yctd-qyrg-pms2ngno1t",
-      "zyy7wnrv-gljf-mewa-05om-lcnts610y9",
-      "ea2dqhcl-tibh-cz4p-i7yf-jlmwbdiohk",
-      "2rz5fvzy-7xic-met3-1f5e-gsy5nb9n0yn"
+      "igpcnol4-fwbg-ubun-ccn1-jaslt3hn0tc",
+      "0hmxstq7-vut7-i8ra-r58q-oapjz0zntqc",
+      "tsyvhb6u-klk7-nfzc-q34v-wh6ctak8a7",
+      "2q40q8qg-0lhy-v5mx-isp1-2tt8hbmaszm"
     ]
   },
   {
-    "id": "x89jnw52-i11g-psjb-htb2-9ruotls7yfd",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "ftsru927-3old-51kj-g8ln-ea8lpw71025",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Spring 2024 Advanced",
-    "description": "Advanced students in spring programs",
     "active": false,
     "profileIds": [
-      "4cd2bdu9-eq0r-yctd-qyrg-pms2ngno1t",
-      "zyy7wnrv-gljf-mewa-05om-lcnts610y9",
-      "ea2dqhcl-tibh-cz4p-i7yf-jlmwbdiohk",
-      "2rz5fvzy-7xic-met3-1f5e-gsy5nb9n0yn"
+      "igpcnol4-fwbg-ubun-ccn1-jaslt3hn0tc",
+      "0hmxstq7-vut7-i8ra-r58q-oapjz0zntqc",
+      "tsyvhb6u-klk7-nfzc-q34v-wh6ctak8a7",
+      "2q40q8qg-0lhy-v5mx-isp1-2tt8hbmaszm"
     ]
   }
 ];
@@ -464,37 +462,37 @@ export const cohorts = [
 // SIMULATIONS MOCK DATA
 export const simulations = [
   {
-    "id": "7fpsbc4k-zqxp-lihf-ae5f-55xe616w6t3",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "0wicajpp-qst7-pzbr-owou-pyrrx5b8grf",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Math Practice Simulation",
     "timeLimit": "timeLimit_1",
     "active": true,
     "scenarioIds": [
-      "lv9etrfs-traq-wdzy-7iav-ws5lwutszep",
-      "yd27e5ei-8br3-bmq8-hl4p-vy4tcch4kcc"
+      "dfey2gyt-0kmz-n2zl-e5ok-x8aoan2kccs",
+      "tydjnicl-spw5-z2af-qoz9-lsbbmmmr73n"
     ],
     "cohortIds": [
-      "bcclah0s-zq0d-tsm6-tyru-mqgaaah0xg",
-      "x89jnw52-i11g-psjb-htb2-9ruotls7yfd"
+      "cpi3vgbj-nnma-leuo-vbal-7ccywuqzu72",
+      "ftsru927-3old-51kj-g8ln-ea8lpw71025"
     ],
     "rubricId": "rubricId_1",
     "defaultSimulation": "defaultSimulation_1"
   },
   {
-    "id": "fr9v0rcv-852t-bpxt-lwd9-7wma0ulqxa4",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "33z3lhtg-qshu-lyd7-uioe-x82b1wv4dsb",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Lab Safety Training",
     "timeLimit": "timeLimit_2",
     "active": false,
     "scenarioIds": [
-      "lv9etrfs-traq-wdzy-7iav-ws5lwutszep",
-      "yd27e5ei-8br3-bmq8-hl4p-vy4tcch4kcc"
+      "dfey2gyt-0kmz-n2zl-e5ok-x8aoan2kccs",
+      "tydjnicl-spw5-z2af-qoz9-lsbbmmmr73n"
     ],
     "cohortIds": [
-      "bcclah0s-zq0d-tsm6-tyru-mqgaaah0xg",
-      "x89jnw52-i11g-psjb-htb2-9ruotls7yfd"
+      "cpi3vgbj-nnma-leuo-vbal-7ccywuqzu72",
+      "ftsru927-3old-51kj-g8ln-ea8lpw71025"
     ],
     "rubricId": "rubricId_2",
     "defaultSimulation": "defaultSimulation_2"
@@ -504,8 +502,8 @@ export const simulations = [
 // SIMULATIONATTEMPTS MOCK DATA
 export const simulationAttempts = [
   {
-    "id": "cxknqjrj-66wa-qa45-l7fm-1hyx4az79xa",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "mlh1pem5-j7ns-s3o6-y022-6vf52esei6w",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "profileId": "profileId_1",
     "simulationId": "simulationId_1"
   }
@@ -514,10 +512,10 @@ export const simulationAttempts = [
 // SIMULATIONCHATS MOCK DATA
 export const simulationChats = [
   {
-    "id": "sgbou87f-kgqv-fyk6-7kaz-dh525y070tf",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "completedAt": "2025-06-24T16:41:18.784Z",
+    "id": "ca1h6393-b4i0-td8s-jh1y-nhsyqgb93yd",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
+    "completedAt": "2025-06-24T16:51:28.755Z",
     "title": "Simulation_chats 1",
     "scenarioId": "scenarioId_1",
     "attemptId": "attemptId_1",
@@ -528,8 +526,8 @@ export const simulationChats = [
 // SIMULATIONMESSAGES MOCK DATA
 export const simulationMessages = [
   {
-    "id": "q8slwr0i-46yo-j6vn-k1gh-p6wzent3a7b",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "bj0175h8-3439-568p-0ub0-zx5j7o8tch",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "chatId": "chatId_1",
     "content": "content_1",
     "type": "query",
@@ -540,10 +538,10 @@ export const simulationMessages = [
 // SIMULATIONCHATGRADES MOCK DATA
 export const simulationChatGrades = [
   {
-    "id": "0idb758q-cygf-vjys-ty3w-v48ngwvmf9",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "y96surqg-96r4-v974-3ekp-bpn61m92m8r",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "passed": false,
-    "score": 23,
+    "score": 54,
     "timeTaken": "timeTaken_1",
     "rubricId": "rubricId_1",
     "simulationChatId": "simulationChatId_1"
@@ -553,34 +551,35 @@ export const simulationChatGrades = [
 // SIMULATIONCHATFEEDBACKS MOCK DATA
 export const simulationChatFeedbacks = [
   {
-    "id": "thn1dwx3-z56c-oyt1-7492-qbp3ipk1t0q",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "jnkoqfwx-ypei-t69u-rorc-vq3rfgj69fm",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "standardId": "standardId_1",
     "simulationChatGradeId": "simulationChatGradeId_1",
-    "total": 17
+    "total": 61,
+    "feedback": "feedback_1"
   }
 ];
 
 // EVALS MOCK DATA
 export const evals = [
   {
-    "id": "edwpjxwo-ds9r-u7v5-30ym-zbha030boa",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
+    "id": "39j26b2y-og41-xldl-3os1-jv8ql2xebhb",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "name": "Math Skills Evaluation",
     "description": "Comprehensive evaluation of mathematical problem-solving abilities",
     "baseAgentId": "baseAgentId_1",
     "scenarioIds": [
-      "lv9etrfs-traq-wdzy-7iav-ws5lwutszep",
-      "yd27e5ei-8br3-bmq8-hl4p-vy4tcch4kcc"
+      "dfey2gyt-0kmz-n2zl-e5ok-x8aoan2kccs",
+      "tydjnicl-spw5-z2af-qoz9-lsbbmmmr73n"
     ],
     "agentIds": [
-      "nn0o3ot5-2y1q-ls2w-tk7a-u850vyxxb2e",
-      "d28g47l5-nq5c-j5sd-ok0k-8sfgcp40hpu"
+      "9lbwoc51-vm7a-jprc-y2xa-d73si3o2fgp",
+      "xr7lnec1-nz73-oxfk-lxqi-1hfgivpib6b"
     ],
     "rubricIds": [
-      "xc7gty4l-fi88-afyn-ktug-t51p8hiwjg",
-      "r6mn53pz-xn4n-2kuv-mz0u-wixfg38pczk"
+      "a2fhyzf5-3htr-c1q2-16sx-rbjves3hhg",
+      "5q7g66c2-21v2-1ag9-v2lm-vz1prf39r1"
     ],
     "maxTurns": "maxTurns_1",
     "startOnCreation": "startOnCreation_1"
@@ -590,8 +589,8 @@ export const evals = [
 // EVALRUNS MOCK DATA
 export const evalRuns = [
   {
-    "id": "nr1ray3v-hom2-gvuw-bauq-qll4ncqm1c",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "g3iwhje6-l5o1-j2xw-2ibl-hw7j1h1w0gd",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "evalId": "evalId_1",
     "agentId": "agentId_1",
     "rubricId": "rubricId_1"
@@ -601,14 +600,13 @@ export const evalRuns = [
 // EVALCHATS MOCK DATA
 export const evalChats = [
   {
-    "id": "c4aqan4o-8lh3-qmq4-vh5d-c42u2ig60es",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "updatedAt": "2025-06-24T16:41:18.784Z",
-    "completedAt": "2025-06-24T16:41:18.784Z",
+    "id": "atc1xfk1-5gbu-4gqz-sbjg-mi695a25xy",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "updatedAt": "2025-06-24T16:51:28.755Z",
     "title": "Eval_chats 1",
     "scenarioId": "scenarioId_1",
     "evalRunId": "evalRunId_1",
-    "completed": false,
+    "completed": true,
     "traceId": "traceId_1"
   }
 ];
@@ -616,8 +614,8 @@ export const evalChats = [
 // EVALMESSAGES MOCK DATA
 export const evalMessages = [
   {
-    "id": "8ssvy10d-ftna-xjfo-ks51-mbimavfzwe",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "148a0p79-x2ca-lulw-5o60-ehmefovnao9",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "chatId": "chatId_1",
     "content": "content_1",
     "type": "query",
@@ -628,10 +626,10 @@ export const evalMessages = [
 // EVALCHATGRADES MOCK DATA
 export const evalChatGrades = [
   {
-    "id": "42aipgkl-yd2j-iijl-kazh-3d26k71183s",
-    "createdAt": "2025-06-24T16:41:18.784Z",
-    "passed": true,
-    "score": 33,
+    "id": "g3uzea91-pwod-lloi-x660-g2s8mj0b9av",
+    "createdAt": "2025-06-24T16:51:28.755Z",
+    "passed": false,
+    "score": 86,
     "timeTaken": "timeTaken_1",
     "rubricId": "rubricId_1",
     "evalChatId": "evalChatId_1"
@@ -641,11 +639,11 @@ export const evalChatGrades = [
 // EVALCHATFEEDBACKS MOCK DATA
 export const evalChatFeedbacks = [
   {
-    "id": "mivqqvgz-phxj-ywy9-80u9-zhoh2gzxif",
-    "createdAt": "2025-06-24T16:41:18.784Z",
+    "id": "h0em5q0w-qpsp-7cr9-f2yh-5fmamy0jvyl",
+    "createdAt": "2025-06-24T16:51:28.755Z",
     "standardId": "standardId_1",
     "evalChatGradeId": "evalChatGradeId_1",
-    "total": 56,
+    "total": 16,
     "feedback": "feedback_1"
   }
 ];
@@ -654,7 +652,7 @@ export const evalChatFeedbacks = [
 export const verificationToken = [
   {
     "identifier": "identifier_1",
-    "expires": "2025-06-24T16:41:18.784Z",
+    "expires": "2025-06-24T16:51:28.755Z",
     "token": "token_1"
   }
 ];

@@ -739,15 +739,212 @@ function extractFunctionsFromFile(content, filePath) {
     const paramsMatch = content.match(paramsRegex);
     const paramsType = paramsMatch ? paramsMatch[1] : null;
 
+    // Extract response interface to analyze its structure
+    const responseInterface = extractInterfaceStructure(content, responseType);
+
     functions.push({
       name: functionName,
       paramsType,
       responseType,
+      responseInterface,
       filePath: filePath.replace(".ts", ""),
     });
   }
 
   return functions;
+}
+
+/**
+ * Extract interface structure to understand response types
+ */
+function extractInterfaceStructure(content, interfaceName) {
+  const interfaceRegex = new RegExp(
+    `export interface ${interfaceName}\\s*{([^}]+)}`,
+    "s"
+  );
+  const match = content.match(interfaceRegex);
+
+  if (!match) return null;
+
+  const interfaceBody = match[1];
+  const fields = {};
+
+  // Extract field definitions
+  const fieldRegex = /(\w+)\??\s*:\s*([^;,\n]+)/g;
+  let fieldMatch;
+
+  while ((fieldMatch = fieldRegex.exec(interfaceBody)) !== null) {
+    const [, fieldName, fieldType] = fieldMatch;
+    fields[fieldName] = fieldType.trim();
+  }
+
+  return fields;
+}
+
+/**
+ * Determine appropriate mock response based on interface structure
+ */
+function determineMockResponse(func) {
+  const { responseInterface, name } = func;
+
+  if (!responseInterface) {
+    return "mockSuccessResponse";
+  }
+
+  // Check for specific field patterns in the response interface
+  const fields = Object.keys(responseInterface);
+  const fieldTypes = Object.values(responseInterface);
+
+  // Eval-specific responses
+  if (fields.includes("eval_run_ids") || fields.includes("total_runs")) {
+    return "mockEvalResponse";
+  }
+
+  if (
+    fields.includes("eval_run_id") ||
+    fields.includes("progress_percentage") ||
+    fields.includes("chat_statuses")
+  ) {
+    return "mockEvalStatusResponse";
+  }
+
+  // Simulation-specific responses
+  if (
+    fields.includes("attempt_id") ||
+    fields.includes("chat_id") ||
+    fields.includes("simulation_grade_id")
+  ) {
+    return "mockSimulationResponse";
+  }
+
+  // Document-specific responses
+  if (
+    fields.includes("document_id") ||
+    fields.includes("extracted_count") ||
+    fields.includes("documents")
+  ) {
+    return "mockDocumentResponse";
+  }
+
+  // Report/download responses (check for Response type or blob/text methods)
+  if (
+    fieldTypes.some((type) => type.includes("Response")) ||
+    fields.includes("data") ||
+    fields.includes("blob") ||
+    fields.includes("text")
+  ) {
+    return "mockReportResponse";
+  }
+
+  // Assistant responses (chat_id without simulation-specific fields)
+  if (
+    fields.includes("chat_id") &&
+    !fields.includes("attempt_id") &&
+    !fields.includes("simulation_grade_id")
+  ) {
+    return "mockAssistantResponse";
+  }
+
+  // Scenario responses
+  if (
+    fields.includes("title") &&
+    fields.includes("description") &&
+    !fields.includes("chat_id")
+  ) {
+    return "mockScenarioResponse";
+  }
+
+  // Processing responses
+  if (
+    fieldTypes.some((type) => type.includes('"processing"')) ||
+    name.includes("run") ||
+    name.includes("process")
+  ) {
+    return "mockProcessingResponse";
+  }
+
+  // Error responses
+  if (
+    fieldTypes.some((type) => type.includes('"error"')) ||
+    name.includes("stop") ||
+    name.includes("delete")
+  ) {
+    return "mockErrorResponse";
+  }
+
+  // Default to success response
+  return "mockSuccessResponse";
+}
+
+/**
+ * Generate mock data for a specific interface
+ */
+function generateMockDataForInterface(interfaceFields) {
+  const mockData = {};
+
+  if (!interfaceFields) return mockData;
+
+  Object.entries(interfaceFields).forEach(([fieldName, fieldType]) => {
+    // Generate appropriate mock data based on field type
+    if (fieldType.includes("string")) {
+      if (fieldName.includes("id") || fieldName.includes("Id")) {
+        mockData[fieldName] = `mock-${fieldName.toLowerCase()}-123`;
+      } else if (fieldName === "message") {
+        mockData[fieldName] = "Operation completed successfully";
+      } else if (fieldName === "title") {
+        mockData[fieldName] = "Mock Title";
+      } else if (fieldName === "description") {
+        mockData[fieldName] = "Mock description for testing";
+      } else {
+        mockData[fieldName] = `mock-${fieldName}`;
+      }
+    } else if (fieldType.includes("number")) {
+      if (fieldName.includes("percentage")) {
+        mockData[fieldName] = 75;
+      } else if (fieldName.includes("count") || fieldName.includes("total")) {
+        mockData[fieldName] = 5;
+      } else {
+        mockData[fieldName] = 123;
+      }
+    } else if (fieldType.includes("boolean")) {
+      mockData[fieldName] = fieldName === "success" ? true : false;
+    } else if (fieldType.includes("Array") || fieldType.includes("[]")) {
+      if (fieldName.includes("id") || fieldName.includes("Id")) {
+        mockData[fieldName] = ["mock-id-1", "mock-id-2"];
+      } else if (fieldName === "chat_statuses") {
+        mockData[fieldName] = [
+          { chat_id: "chat-1", status: "completed" },
+          { chat_id: "chat-2", status: "running" },
+        ];
+      } else if (fieldName === "documents") {
+        mockData[fieldName] = [{ id: "doc-123", name: "Test Document" }];
+      } else {
+        mockData[fieldName] = ["mock-item-1", "mock-item-2"];
+      }
+    } else if (fieldType.includes("Response")) {
+      mockData[fieldName] = 'new Response("mock-data")';
+    } else if (fieldType.includes("Headers")) {
+      mockData[fieldName] =
+        'new Headers({ "content-type": "application/pdf" })';
+    } else if (
+      fieldType.includes('"success"') ||
+      fieldType.includes('"error"') ||
+      fieldType.includes('"processing"')
+    ) {
+      if (fieldType.includes('"success"')) {
+        mockData[fieldName] = "success";
+      } else if (fieldType.includes('"processing"')) {
+        mockData[fieldName] = "processing";
+      } else {
+        mockData[fieldName] = "error";
+      }
+    } else {
+      // Default handling for complex types
+      mockData[fieldName] = `mock-${fieldName}`;
+    }
+  });
+
+  return mockData;
 }
 
 /**
@@ -761,8 +958,8 @@ function generateApiMockFile(apiInfo) {
 
 `;
 
-  // Generate mock data for common response patterns
-  content += `// Common mock response data
+  // Generate base mock responses
+  content += `// Base mock response data
 const mockSuccessResponse = {
   success: true,
   message: "Operation completed successfully",
@@ -833,15 +1030,12 @@ const mockReportResponse = {
   blob: () => Promise.resolve(new Blob(["mock-blob-data"])),
 };
 
-const mockStreamResponse = {
-  ...mockSuccessResponse,
-  response: new Response("mock-stream-data"),
-  reader: {
-    read: () => Promise.resolve({ done: false, value: new Uint8Array([1, 2, 3]) }),
-  },
-};
+
 
 `;
+
+  // Track which mock responses are actually used
+  const usedMockResponses = new Set();
 
   // Generate mocks for each API category
   Object.entries(apiInfo).forEach(([category, functions]) => {
@@ -850,59 +1044,65 @@ const mockStreamResponse = {
     functions.forEach((func) => {
       const mockName = `${func.name}Mock`;
 
-      // Determine appropriate mock response based on function name and type
-      let mockResponse = "mockSuccessResponse";
-
-      if (func.name.includes("eval") || func.name.includes("Eval")) {
-        if (func.name.includes("status") || func.name.includes("Status")) {
-          mockResponse = "mockEvalStatusResponse";
-        } else {
-          mockResponse = "mockEvalResponse";
-        }
-      } else if (
-        func.name.includes("simulation") ||
-        func.name.includes("Simulation")
-      ) {
-        mockResponse = "mockSimulationResponse";
-      } else if (
-        func.name.includes("document") ||
-        func.name.includes("Document")
-      ) {
-        if (func.name.includes("download") || func.name.includes("Download")) {
-          mockResponse = "mockReportResponse";
-        } else {
-          mockResponse = "mockDocumentResponse";
-        }
-      } else if (
-        func.name.includes("assistant") ||
-        func.name.includes("Assistant")
-      ) {
-        mockResponse = "mockAssistantResponse";
-      } else if (
-        func.name.includes("scenario") ||
-        func.name.includes("Scenario")
-      ) {
-        if (func.name.includes("test") || func.name.includes("Test")) {
-          mockResponse = "mockStreamResponse";
-        } else {
-          mockResponse = "mockScenarioResponse";
-        }
-      } else if (func.name.includes("report") || func.name.includes("Report")) {
-        mockResponse = "mockReportResponse";
-      }
+      // Dynamically determine appropriate mock response based on interface structure
+      const mockResponse = determineMockResponse(func);
+      usedMockResponses.add(mockResponse);
 
       content += `export const ${mockName} = vi.fn(() => Promise.resolve(${mockResponse}));\n`;
     });
 
     content += "\n";
+  });
 
-    // Generate vi.mock statements
-    functions.forEach((func) => {
-      const mockName = `${func.name}Mock`;
-      content += `vi.mock('@/utils/api/${func.filePath}', () => ({ ${func.name}: ${mockName} }));\n`;
+  // Group functions by file path to avoid duplicate vi.mock statements
+  const fileGroups = {};
+  Object.values(apiInfo)
+    .flat()
+    .forEach((func) => {
+      const filePath = `@/utils/api/${func.filePath}`;
+      if (!fileGroups[filePath]) {
+        fileGroups[filePath] = [];
+      }
+      fileGroups[filePath].push(func);
     });
 
-    content += "\n";
+  // Generate vi.mock statements grouped by file
+  Object.entries(fileGroups).forEach(([filePath, functions]) => {
+    if (functions.length === 1) {
+      const func = functions[0];
+      const mockName = `${func.name}Mock`;
+      content += `vi.mock('${filePath}', () => ({ ${func.name}: ${mockName} }));\n`;
+    } else {
+      // Multiple functions in the same file
+      const mockExports = functions
+        .map((func) => `${func.name}: ${func.name}Mock`)
+        .join(", ");
+      content += `vi.mock('${filePath}', () => ({ ${mockExports} }));\n`;
+    }
+  });
+
+  content += "\n";
+
+  // Remove unused mock response variables entirely
+  const allMockResponses = [
+    "mockSuccessResponse",
+    "mockErrorResponse",
+    "mockProcessingResponse",
+    "mockEvalResponse",
+    "mockEvalStatusResponse",
+    "mockSimulationResponse",
+    "mockDocumentResponse",
+    "mockAssistantResponse",
+    "mockScenarioResponse",
+    "mockReportResponse",
+  ];
+
+  allMockResponses.forEach((mockResponse) => {
+    if (!usedMockResponses.has(mockResponse)) {
+      // Remove unused mock response definitions entirely
+      const regex = new RegExp(`const ${mockResponse} = \\{[^}]+\\};\n\n`, "s");
+      content = content.replace(regex, "");
+    }
   });
 
   // Add utility functions for testing
