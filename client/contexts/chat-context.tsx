@@ -6,6 +6,7 @@
 import { getWebSocketUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage } from "@/types";
 import { messageAssistant } from "@/utils/api/assistants/message-assistant";
+import { startAssistant } from "@/utils/api/assistants/start-assistant";
 import { stopAssistant } from "@/utils/api/assistants/stop-assistant";
 import { logError, logInfo } from "@/utils/logger";
 import { createAssistantChat } from "@/utils/mutations/assistant_chats/create-assistant-chat";
@@ -480,21 +481,14 @@ export function ChatProvider({ children }: ChatProviderProps) {
       // Wait a brief moment for state to update and WebSocket room to be joined
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      const formData = new FormData();
-      formData.append("initial_message", initialMessage);
-      formData.append("chat_id", chat.id);
+      // Use the startAssistant API function
+      const response = await startAssistant({
+        initial_message: initialMessage,
+        chat_id: chat.id,
+      });
 
-      // Wait for the API response to ensure proper error handling
-      const response = await fetch(
-        `${process.env["NEXT_PUBLIC_API_URL"]}/assistants/start`,
-        {
-          method: "POST",
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+      if (!response.success) {
+        throw new Error(response.message);
       }
 
       return chat.id;
