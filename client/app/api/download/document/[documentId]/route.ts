@@ -1,0 +1,1 @@
+// app/api/download/document/[documentId]/route.ts

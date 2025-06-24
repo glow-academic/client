@@ -1,20 +1,29 @@
 /**
- * app/api/upload/route.ts
+ * app/api/upload/[upload_id]/route.ts
  *
- * Streams every TUS request (POST / PATCH / HEAD / OPTIONS)
- * to the internal FastAPI service running at ws://fastapi:8000/documents/tus
- * without exposing that host to the public internet.
+ * Handles TUS requests with specific upload IDs
+ * Proxies to FastAPI backend at /documents/tus/{upload_id}
  */
 
 import { getApiUrl } from "@/lib/utils";
-import { logError } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch
-async function handleProxyRequest(req: NextRequest) {
+async function handleProxyRequest(
+  req: NextRequest,
+  {
+    params,
+  }: {
+    params: Promise<{ upload_id: string }>;
+  }
+) {
   try {
+    const { upload_id } = await params;
     const url = new URL(req.url);
-    const targetUrl = `${getApiUrl()}/documents/tus${url.pathname.replace("/api/upload", "")}${url.search}`;
+    const targetUrl = `${getApiUrl()}/documents/tus/${upload_id}${url.search}`;
+
+    logInfo(`[TUS proxy] ${req.method} ${url.pathname} -> ${targetUrl}`);
 
     // Prepare fetch options
     const fetchOptions: RequestInit = {
@@ -52,20 +61,32 @@ async function handleProxyRequest(req: NextRequest) {
   }
 }
 
-export async function POST(req: NextRequest) {
-  return handleProxyRequest(req);
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ upload_id: string }> }
+) {
+  return handleProxyRequest(req, { params });
 }
 
-export async function PATCH(req: NextRequest) {
-  return handleProxyRequest(req);
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ upload_id: string }> }
+) {
+  return handleProxyRequest(req, { params });
 }
 
-export async function HEAD(req: NextRequest) {
-  return handleProxyRequest(req);
+export async function HEAD(
+  req: NextRequest,
+  { params }: { params: Promise<{ upload_id: string }> }
+) {
+  return handleProxyRequest(req, { params });
 }
 
-export async function OPTIONS(req: NextRequest) {
-  return handleProxyRequest(req);
+export async function OPTIONS(
+  req: NextRequest,
+  { params }: { params: Promise<{ upload_id: string }> }
+) {
+  return handleProxyRequest(req, { params });
 }
 
 /* App-router specific tweaks */

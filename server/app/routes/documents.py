@@ -275,11 +275,12 @@ async def tus_creation(request: Request) -> Response:
     # Get base URL from request
     forwarded_proto = request.headers.get("X-Forwarded-Proto", "http")
     forwarded_host = request.headers.get(
-        "X-Forwarded-Host", request.headers.get("Host", "localhost:8000")
+        "X-Forwarded-Host", request.headers.get("Host", "localhost:3000")
     )
     base_url = f"{forwarded_proto}://{forwarded_host}"
 
-    location = f"{base_url}/documents/tus/{upload_id}"
+    # Use the Next.js proxy endpoint for TUS uploads
+    location = f"{base_url}/api/upload/{upload_id}"
 
     # Handle creation-with-upload if Content-Length > 0
     if request.headers.get("Content-Length", "0") != "0":
