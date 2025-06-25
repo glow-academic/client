@@ -77,10 +77,10 @@ export const simulationMessages = pgTable("simulation_messages", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	chatId: uuid("chat_id").notNull(),
 	content: text().notNull(),
-	type: simulationMessageType().notNull(),
-	completed: boolean().default(false).notNull(),
 	audio: boolean().default(false).notNull(),
 	filePath: text("file_path"),
+	type: simulationMessageType().notNull(),
+	completed: boolean().default(false).notNull(),
 }, (table) => [
 	foreignKey({
 			columns: [table.chatId],
