@@ -48,16 +48,21 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
     Replaces /simulations/start endpoint
     """
     try:
+        logger.info(f"Received start_simulation request from {sid} with data: {data}")
+        
         simulation_id = data.get('simulation_id')
         profile_id = data.get('profile_id')
         
         if not simulation_id:
+            logger.error(f"Missing simulation_id in request from {sid}")
             await emit_error(sid, "Missing simulation_id")
             return
 
         # Handle empty string profile_id as None for guest mode
         if profile_id == "" or profile_id == "null":
             profile_id = None
+            
+        logger.info(f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, sid={sid}")
 
         # Create a new session for this operation
         db_session = next(get_session())
@@ -682,9 +687,12 @@ async def emit_error(sid: str, message: str) -> None:
 def register_simulation_events(sio: socketio.AsyncServer) -> None:
     """Register all simulation WebSocket event handlers"""
     
+    logger.info("Starting registration of simulation WebSocket event handlers")
+    
     @sio.event  # type: ignore
     async def start_simulation(sid: str, data: Dict[str, Any]) -> None:
         """Start a new simulation attempt"""
+        logger.info(f"start_simulation event triggered for sid={sid}")
         await handle_start_simulation(sid, data)
     
     @sio.event  # type: ignore
@@ -707,4 +715,4 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
         """Continue to next chat in simulation"""
         await handle_continue_simulation(sid, data)
     
-    logger.info("Registered simulation WebSocket event handlers")
+    logger.info("Successfully registered simulation WebSocket event handlers")

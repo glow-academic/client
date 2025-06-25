@@ -66,6 +66,11 @@ sio = socketio.AsyncServer(
     }
 )
 
+# Register simulation WebSocket events IMMEDIATELY after sio creation
+from app.web.simulations import register_simulation_events
+
+register_simulation_events(sio)
+
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
     """Handle WebSocket connection"""
@@ -195,11 +200,6 @@ fastapi_app.include_router(assistants_router, prefix="/assistants")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
-
-# Register simulation WebSocket events
-from app.web.simulations import register_simulation_events
-
-register_simulation_events(sio)
 
 # Create the combined ASGI app with Socket.IO
 app = socketio.ASGIApp(sio, fastapi_app, socketio_path="socket.io")

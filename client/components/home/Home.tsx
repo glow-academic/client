@@ -708,8 +708,15 @@ export default function Home() {
 
   // WebSocket connection setup
   useEffect(() => {
+    // Only create connection if we have a profile ID
+    if (!profile?.id) {
+      logInfo("Waiting for profile ID before connecting WebSocket");
+      return;
+    }
+
     // Don't create multiple connections
     if (socketRef.current?.connected) {
+      logInfo("WebSocket already connected, skipping initialization");
       return;
     }
 
@@ -730,7 +737,7 @@ export default function Home() {
       upgrade: true,
       rememberUpgrade: true,
       query: {
-        profileId: profile?.id, // Include profileId in query
+        profileId: profile.id, // Ensure we always have a valid profile ID
         timestamp: Date.now(),
         EIO: "4", // Force Engine.IO protocol version 4
       },
@@ -742,7 +749,7 @@ export default function Home() {
       setIsConnected(true);
       logInfo("WebSocket connected (via proxy)", {
         socketId: socket.id,
-        profileId: profile?.id,
+        profileId: profile.id,
       });
     });
 
@@ -750,13 +757,13 @@ export default function Home() {
       setIsConnected(false);
       logInfo(`WebSocket disconnected: ${reason}`, {
         socketId: socket.id,
-        profileId: profile?.id,
+        profileId: profile.id,
       });
     });
 
     socket.on("connect_error", (error: Error) => {
       logError("WebSocket connection error:", error.message, {
-        profileId: profile?.id,
+        profileId: profile.id,
       });
       setIsConnected(false);
     });
@@ -770,6 +777,20 @@ export default function Home() {
         attempt_id: string;
         chat_id: string;
       }) => {
+        // Clear any pending timeout
+        if (
+          socket &&
+          (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+            ._startSimulationTimeout
+        ) {
+          clearTimeout(
+            (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+              ._startSimulationTimeout
+          );
+          delete (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+            ._startSimulationTimeout;
+        }
+
         if (data.success) {
           logInfo("Simulation started successfully", data);
           toast.dismiss();
@@ -785,6 +806,20 @@ export default function Home() {
     );
 
     socket.on("error", (data: { success: boolean; message: string }) => {
+      // Clear any pending timeout
+      if (
+        socket &&
+        (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+          ._startSimulationTimeout
+      ) {
+        clearTimeout(
+          (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+            ._startSimulationTimeout
+        );
+        delete (socket as { _startSimulationTimeout?: NodeJS.Timeout })
+          ._startSimulationTimeout;
+      }
+
       logError("WebSocket error:", data.message);
       toast.dismiss();
       toast.error(data.message);
@@ -792,8 +827,11 @@ export default function Home() {
     });
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
+      if (socketRef.current) {
+        logInfo("Cleaning up WebSocket connection");
+        socketRef.current.disconnect();
+        socketRef.current = null;
+      }
     };
   }, [profile?.id, router]); // Depend on profile ID and router
 
@@ -805,7 +843,12 @@ export default function Home() {
           return;
         }
 
-        if (!socketRef.current) {
+        if (!profile?.id) {
+          toast.error("Profile not loaded. Please refresh the page.");
+          return;
+        }
+
+        if (!socketRef.current || !socketRef.current.connected) {
           toast.error("WebSocket not connected. Please refresh the page.");
           return;
         }
@@ -815,14 +858,31 @@ export default function Home() {
 
         logInfo("Starting simulation via WebSocket", {
           simulationId,
-          profileId: profile?.id,
+          profileId: profile.id,
+          socketConnected: socketRef.current.connected,
+          socketId: socketRef.current.id,
         });
 
         // Send start simulation request via WebSocket
         socketRef.current.emit("start_simulation", {
           simulation_id: simulationId,
-          profile_id: profile?.id || null,
+          profile_id: profile.id,
         });
+
+        // Set a timeout to handle cases where the server doesn't respond
+        const timeoutId = setTimeout(() => {
+          logError("Simulation start timeout - no response from server");
+          toast.dismiss();
+          toast.error("Simulation start timed out. Please try again.");
+          setLoadingSimulation(null);
+        }, 30000); // 30 second timeout
+
+        // Store timeout ID for cleanup on the socket instance
+        if (socketRef.current) {
+          (
+            socketRef.current as { _startSimulationTimeout?: NodeJS.Timeout }
+          )._startSimulationTimeout = timeoutId;
+        }
 
         // The response will be handled via WebSocket events
         // so we don't need to process the response here
