@@ -616,7 +616,7 @@ export default function Home() {
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
   // WebSocket state
-  const [_isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   const socketRef = useRef<Socket | null>(null);
 
   // Use the role context instead of local state
@@ -710,32 +710,44 @@ export default function Home() {
   useEffect(() => {
     // Only create connection if we have a profile ID
     if (!profile?.id) {
-      logInfo("Waiting for profile ID before connecting WebSocket");
+      logInfo("Waiting for profile ID before connecting WebSocket", {
+        profileId: profile?.id,
+      });
       return;
     }
 
-    // Don't create multiple connections
-    if (socketRef.current?.connected) {
-      logInfo("WebSocket already connected, skipping initialization");
-      return;
+    // Clean up any existing connection first
+    if (socketRef.current) {
+      logInfo(
+        "Cleaning up existing WebSocket connection before creating new one"
+      );
+      socketRef.current.disconnect();
+      socketRef.current = null;
+      setIsConnected(false);
     }
 
     // Use the Next.js proxy route for Socket.IO connections (same as Attempt.tsx)
     const socketUrl = window.location.origin; // Always use same origin with proxy
     const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
 
+    logInfo("Creating new WebSocket connection", {
+      profileId: profile.id,
+      socketUrl,
+      socketPath,
+    });
+
     const socket = io(socketUrl, {
       path: socketPath,
       transports: ["polling", "websocket"],
       autoConnect: true,
-      forceNew: false,
-      timeout: 15000,
+      forceNew: true, // Force new connection to avoid conflicts
+      timeout: 10000, // Shorter timeout for faster failure detection
       reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 3, // Fewer attempts to avoid spam
+      reconnectionDelay: 2000, // Longer delay between attempts
+      reconnectionDelayMax: 10000,
       upgrade: true,
-      rememberUpgrade: true,
+      rememberUpgrade: false, // Don't remember upgrades to avoid issues
       query: {
         profileId: profile.id, // Ensure we always have a valid profile ID
         timestamp: Date.now(),
@@ -747,9 +759,10 @@ export default function Home() {
 
     socket.on("connect", () => {
       setIsConnected(true);
-      logInfo("WebSocket connected (via proxy)", {
+      logInfo("WebSocket connected successfully", {
         socketId: socket.id,
         profileId: profile.id,
+        transport: socket.io.engine.transport.name,
       });
     });
 
@@ -759,13 +772,49 @@ export default function Home() {
         socketId: socket.id,
         profileId: profile.id,
       });
+
+      // Clear any loading states on disconnect
+      setLoadingSimulation(null);
     });
 
     socket.on("connect_error", (error: Error) => {
+      setIsConnected(false);
       logError("WebSocket connection error:", error.message, {
         profileId: profile.id,
+        errorType: error.constructor.name,
       });
+
+      // Clear any loading states on error
+      setLoadingSimulation(null);
+
+      // Show user-friendly error after multiple failures
+      if (!socket.connected) {
+        toast.error("Connection lost. Please refresh the page to reconnect.");
+      }
+    });
+
+    socket.on("reconnect", (attemptNumber: number) => {
+      setIsConnected(true);
+      logInfo("WebSocket reconnected", {
+        socketId: socket.id,
+        profileId: profile.id,
+        attemptNumber,
+      });
+      toast.success("Connection restored!");
+    });
+
+    socket.on("reconnect_error", (error: Error) => {
+      logError("WebSocket reconnection failed:", error.message, {
+        profileId: profile.id,
+      });
+    });
+
+    socket.on("reconnect_failed", () => {
       setIsConnected(false);
+      logError("WebSocket reconnection failed permanently", {
+        profileId: profile.id,
+      });
+      toast.error("Connection lost. Please refresh the page to reconnect.");
     });
 
     // Simulation-specific WebSocket event listeners
@@ -828,9 +877,10 @@ export default function Home() {
 
     return () => {
       if (socketRef.current) {
-        logInfo("Cleaning up WebSocket connection");
+        logInfo("Cleaning up WebSocket connection on unmount");
         socketRef.current.disconnect();
         socketRef.current = null;
+        setIsConnected(false);
       }
     };
   }, [profile?.id, router]); // Depend on profile ID and router
@@ -848,8 +898,28 @@ export default function Home() {
           return;
         }
 
-        if (!socketRef.current || !socketRef.current.connected) {
-          toast.error("WebSocket not connected. Please refresh the page.");
+        if (!socketRef.current) {
+          toast.error("WebSocket not initialized. Please refresh the page.");
+          logError(
+            "WebSocket not initialized when trying to start simulation",
+            {
+              simulationId,
+              profileId: profile.id,
+            }
+          );
+          return;
+        }
+
+        if (!socketRef.current.connected) {
+          toast.error(
+            "WebSocket not connected. Please wait for connection or refresh the page."
+          );
+          logError("WebSocket not connected when trying to start simulation", {
+            simulationId,
+            profileId: profile.id,
+            socketId: socketRef.current.id,
+            readyState: socketRef.current.connected,
+          });
           return;
         }
 
@@ -1266,6 +1336,30 @@ export default function Home() {
   return (
     <TooltipProvider>
       <div className="space-y-8">
+        {/* Connection Status Indicator */}
+        {profile && (
+          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
+            <div className="flex items-center space-x-2">
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  isConnected ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+              <span className="text-sm text-gray-600 dark:text-gray-400">
+                {isConnected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
+            {!isConnected && (
+              <button
+                onClick={() => window.location.reload()}
+                className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors"
+              >
+                Refresh Page
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Cohort Simulations Carousel */}
         {cohortSimulations.length > 0 &&
           renderCarousel(cohortSimulations, "cohort")}
