@@ -60,6 +60,8 @@ sio = socketio.AsyncServer(
         'max_http_buffer_size': 1000000,
         'ping_timeout': 60,
         'ping_interval': 25,
+        'compression': False,  # Disable compression for better performance
+        'cookie': False,  # Disable cookies for stateless operation
     }
 )
 
@@ -84,7 +86,15 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         except IndexError:
             pass
     
-    logger.info(f"Client connected: sid={sid}, profile_id={profile_id}")
+    logger.info(f"Client connected: sid={sid}, profile_id={profile_id}, transport={environ.get('HTTP_UPGRADE', 'polling')}")
+    
+    # Send immediate confirmation to client
+    await sio.emit('connection_confirmed', {
+        'sid': sid,
+        'profile_id': profile_id,
+        'server_time': time.time()
+    }, room=sid)
+    
     return True
 
 @sio.event  # type: ignore

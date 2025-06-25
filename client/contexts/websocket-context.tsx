@@ -889,14 +889,14 @@ export function WebSocketProvider({
         path: socketPath,
         transports: ["polling", "websocket"],
         autoConnect: true,
-        forceNew: false,
-        timeout: 15000,
+        forceNew: true, // Force new connection to avoid stale connections
+        timeout: 30000, // Increase timeout
         reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 3, // Reduce attempts to avoid spam
+        reconnectionDelay: 2000,
+        reconnectionDelayMax: 10000,
         upgrade: true,
-        rememberUpgrade: true,
+        rememberUpgrade: false, // Don't remember upgrade to allow fallback
         query: {
           profileId,
           timestamp: Date.now(),
@@ -916,6 +916,19 @@ export function WebSocketProvider({
         });
       });
 
+      // Handle connection confirmation from server
+      socket.on(
+        "connection_confirmed",
+        (data: { sid: string; profile_id: string; server_time: number }) => {
+          logInfo("Server confirmed WebSocket connection", {
+            serverSid: data.sid,
+            profileId: data.profile_id,
+            serverTime: data.server_time,
+            clientTime: Date.now(),
+          });
+        }
+      );
+
       socket.on("disconnect", (reason: string) => {
         setIsConnected(false);
         logInfo(`Global WebSocket disconnected: ${reason}`, {
@@ -930,6 +943,9 @@ export function WebSocketProvider({
           attempt: connectionAttempts.current,
           maxAttempts: maxConnectionAttempts,
           profileId,
+          errorType: error.name,
+          errorStack: error.stack,
+          fullError: JSON.stringify(error, Object.getOwnPropertyNames(error)),
         });
         setIsConnected(false);
 

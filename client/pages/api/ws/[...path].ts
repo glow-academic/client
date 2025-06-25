@@ -72,15 +72,29 @@ export default async function handler(
       }
     });
 
-    const requestBody =
-      req.method !== "GET" && req.method !== "HEAD" && req.body
-        ? JSON.stringify(req.body)
-        : null;
+    // Ensure proper content-type for Socket.IO requests
+    if (!requestHeaders["content-type"] && req.method === "POST") {
+      requestHeaders["content-type"] = "text/plain";
+    }
+
+    // Handle request body properly
+    let requestBody = null;
+    if (req.method === "POST" && req.body) {
+      if (typeof req.body === "string") {
+        requestBody = req.body;
+      } else if (Buffer.isBuffer(req.body)) {
+        requestBody = req.body;
+      } else {
+        requestBody = JSON.stringify(req.body);
+      }
+    }
 
     const response = await fetch(targetUrl, {
       method: req.method || "GET",
       headers: requestHeaders,
       body: requestBody,
+      // Increase timeout for Socket.IO connections
+      signal: AbortSignal.timeout(30000),
     });
 
     // Copy response headers, excluding problematic ones
@@ -120,7 +134,10 @@ export default async function handler(
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: {
+      sizeLimit: "1mb",
+    },
     externalResolver: true,
+    responseLimit: false,
   },
 };
