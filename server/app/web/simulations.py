@@ -689,16 +689,8 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
     
     logger.info("Starting registration of simulation WebSocket event handlers")
     
-    @sio.event  # type: ignore
-    async def connect(sid: str, environ: Dict[str, Any], auth: Optional[Dict[str, Any]] = None) -> None:
-        """Handle client connection"""
-        profile_id = environ.get('QUERY_STRING', '').split('profileId=')[1].split('&')[0] if 'profileId=' in environ.get('QUERY_STRING', '') else None
-        logger.info(f"Client connected: sid={sid}, profile_id={profile_id}")
-    
-    @sio.event  # type: ignore
-    async def disconnect(sid: str) -> None:
-        """Handle client disconnection"""
-        logger.info(f"Client disconnected: sid={sid}")
+    # Don't register connect/disconnect here as they're already handled in main.py
+    # Just register simulation-specific events
     
     @sio.event  # type: ignore
     async def start_simulation(sid: str, data: Dict[str, Any]) -> None:

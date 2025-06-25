@@ -74,7 +74,16 @@ register_simulation_events(sio)
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
     """Handle WebSocket connection"""
-    logger.info(f"Client connected: {sid}")
+    # Extract profile ID from query string for better logging
+    query_string = environ.get('QUERY_STRING', '')
+    profile_id = None
+    if 'profileId=' in query_string:
+        try:
+            profile_id = query_string.split('profileId=')[1].split('&')[0]
+        except IndexError:
+            pass
+    
+    logger.info(f"Client connected: sid={sid}, profile_id={profile_id}")
     return True
 
 @sio.event  # type: ignore

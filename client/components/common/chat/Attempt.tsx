@@ -741,8 +741,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // WebSocket connection setup - should only run once
   useEffect(() => {
+    // Only create connection if we have a profile ID
+    if (!attempt?.profileId) {
+      logInfo("Waiting for attempt profile ID before connecting WebSocket", {
+        attemptId,
+        profileId: attempt?.profileId,
+      });
+      return;
+    }
+
     // Don't create multiple connections
     if (socketRef.current?.connected) {
+      logInfo("WebSocket already connected, skipping initialization");
       return;
     }
 
