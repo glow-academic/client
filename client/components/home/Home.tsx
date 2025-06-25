@@ -1160,29 +1160,6 @@ export default function Home() {
   return (
     <TooltipProvider>
       <div className="space-y-8">
-        {/* Connection Status Indicator */}
-        {profile && (
-          <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-2 h-2 rounded-full ${
-                  isConnected ? "bg-green-500" : "bg-red-500"
-                }`}
-              />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                {isConnected ? "Connected" : "Disconnected"}
-              </span>
-            </div>
-            {!isConnected && (
-              <button
-                onClick={() => window.location.reload()}
-                className="text-sm bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded transition-colors"
-              >
-                Refresh Page
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Cohort Simulations Carousel */}
         {cohortSimulations.length > 0 &&
