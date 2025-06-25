@@ -111,13 +111,12 @@ export function ChatProvider({ children }: ChatProviderProps) {
         attempt: connectionAttempts.current + 1,
       });
 
-      // Determine the Socket.IO server URL based on environment
-      const socketUrl =
-        process.env.NODE_ENV === "production"
-          ? window.location.origin // In production, use same origin
-          : "http://localhost:8000"; // In development, connect directly to FastAPI server
+      // Use the Next.js proxy route for Socket.IO connections
+      const socketUrl = window.location.origin; // Always use same origin with proxy
+      const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
 
       const socket = io(socketUrl, {
+        path: socketPath,
         transports: ["polling", "websocket"],
         autoConnect: true,
         forceNew: false,

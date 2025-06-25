@@ -1,6 +1,6 @@
 /**
- * pages/api/ws.ts
- * Socket.IO proxy for Pages Router in hybrid Next.js setup
+ * pages/api/ws/[...path].ts
+ * Catch-all Socket.IO proxy for Pages Router in hybrid Next.js setup
  * Proxies Socket.IO connections to FastAPI backend
  */
 
@@ -19,25 +19,27 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  const { path } = req.query;
+  const pathSegments = Array.isArray(path) ? path : [path];
   const originalUrl = req.url || "";
 
-  // Socket.IO client automatically appends /socket.io/ to the base URL
-  // So /api/ws becomes /api/ws/socket.io/
-  // We need to rewrite this to just /socket.io/
+  // Reconstruct the Socket.IO path
+  // /api/ws/socket.io/... -> /socket.io/...
   let targetPath: string;
 
-  if (originalUrl.startsWith("/api/ws/socket.io/")) {
-    // Socket.IO client request: /api/ws/socket.io/... -> /socket.io/...
-    targetPath = originalUrl.replace("/api/ws", "");
-  } else if (originalUrl.startsWith("/api/ws")) {
-    // Direct proxy request: /api/ws -> /socket.io/
-    targetPath = originalUrl.replace("/api/ws", "/socket.io");
-    // Ensure trailing slash for Socket.IO
-    if (targetPath === "/socket.io") {
-      targetPath = "/socket.io/";
+  if (pathSegments[0] === "socket.io") {
+    // This is a Socket.IO request
+    targetPath = "/" + pathSegments.join("/");
+
+    // Preserve query parameters
+    const queryString = originalUrl.includes("?")
+      ? originalUrl.split("?")[1]
+      : "";
+    if (queryString) {
+      targetPath += "?" + queryString;
     }
   } else {
-    // Fallback
+    // Fallback to root Socket.IO path
     targetPath = "/socket.io/";
   }
 
@@ -46,6 +48,7 @@ export default async function handler(
   logInfo("[SocketIO-proxy] Proxying request", {
     method: req.method,
     originalUrl,
+    pathSegments,
     targetPath,
     targetUrl,
     headers: {
@@ -87,21 +90,27 @@ export default async function handler(
       body: requestBody,
     });
 
-    // Copy response headers
+    // Copy response headers, excluding problematic ones
     response.headers.forEach((value, key) => {
-      res.setHeader(key, value);
+      // Skip headers that can cause conflicts
+      if (
+        key.toLowerCase() !== "content-length" &&
+        key.toLowerCase() !== "transfer-encoding" &&
+        key.toLowerCase() !== "connection"
+      ) {
+        res.setHeader(key, value);
+      }
     });
 
     // Set status and send response
     res.status(response.status);
 
-    if (response.headers.get("content-type")?.includes("application/json")) {
-      const data = await response.json();
-      res.json(data);
-    } else {
-      const text = await response.text();
-      res.send(text);
-    }
+    // Get response body as buffer to handle binary data properly
+    const responseData = await response.arrayBuffer();
+    const buffer = Buffer.from(responseData);
+
+    // Send the raw response data
+    res.send(buffer);
 
     logInfo("[SocketIO-proxy] Request proxied successfully", {
       status: response.status,

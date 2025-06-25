@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Enable standalone output for optimized Docker builds
   output: "standalone",
   devIndicators: false,
+  // Disable trailing slash redirects to fix Socket.IO proxy
+  trailingSlash: false,
+  skipTrailingSlashRedirect: true,
   eslint: {
     // Fail the build on ESLint errors
     ignoreDuringBuilds: false,
