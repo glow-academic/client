@@ -61,6 +61,33 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         self.sample_rate = 16000
         self.channels = 1
         self.last_process_time = 0.0
+        self._processing = False
+
+    async def _start_processing(self) -> None:
+        """Start processing audio frames from the source track"""
+        if self._processing:
+            return
+        
+        self._processing = True
+        logger.info(f"Starting audio processing for chat {self.chat_id}")
+        
+        try:
+            while self._processing:
+                try:
+                    frame = await self.recv()
+                    # Frame processing happens in recv() method
+                except Exception as e:
+                    logger.error(f"Error in audio processing loop: {e}")
+                    break
+        except Exception as e:
+            logger.error(f"Audio processing stopped for chat {self.chat_id}: {e}")
+        finally:
+            self._processing = False
+            logger.info(f"Audio processing ended for chat {self.chat_id}")
+
+    def stop_processing(self) -> None:
+        """Stop processing audio frames"""
+        self._processing = False
 
     async def recv(self) -> Any:  # type: ignore
         """
@@ -222,13 +249,19 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
         # Set up peer connection event handlers
         @pc.on("track")  # type: ignore
         def on_track(track: MediaStreamTrack) -> None:
-            logger.info(f"Received {track.kind} track for chat {offer.chat_id}")
+            logger.info(f"Received {track.kind} track for chat {offer.chat_id} - Track ID: {getattr(track, 'id', 'unknown')}")
             
             if track.kind == "audio":
-                # Create audio processor
-                processor = AudioProcessor(offer.chat_id, track)
-                # Don't add the processor as a track - it's just for processing
-                logger.info(f"Created audio processor for chat {offer.chat_id}")
+                try:
+                    # Create audio processor
+                    processor = AudioProcessor(offer.chat_id, track)
+                    # Start processing the track
+                    asyncio.create_task(processor._start_processing())
+                    logger.info(f"Created and started audio processor for chat {offer.chat_id}")
+                except Exception as e:
+                    logger.error(f"Error creating audio processor for chat {offer.chat_id}: {e}")
+            else:
+                logger.warning(f"Received non-audio track ({track.kind}) for chat {offer.chat_id}, ignoring")
         
         @pc.on("connectionstatechange")  # type: ignore
         async def on_connectionstatechange() -> None:
@@ -284,15 +317,18 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
         async def on_icecandidate(candidate: RTCIceCandidate) -> None:
             if candidate and websocket.client_state.name == "CONNECTED":
                 try:
+                    # Convert RTCIceCandidate to proper format for browser
+                    candidate_dict = {
+                        "candidate": str(candidate),  # This gives the full candidate string
+                        "sdpMid": candidate.sdpMid,
+                        "sdpMLineIndex": candidate.sdpMLineIndex,
+                    }
+                    
                     await websocket.send_text(json.dumps({
                         "type": "ice-candidate",
-                        "candidate": {
-                            "candidate": candidate.candidate,
-                            "sdpMid": candidate.sdpMid,
-                            "sdpMLineIndex": candidate.sdpMLineIndex,
-                        },
+                        "candidate": candidate_dict,
                     }))
-                    logger.info(f"Sent ICE candidate to client for chat {chat_id}")
+                    logger.info(f"Sent ICE candidate to client for chat {chat_id}: {candidate_dict['candidate'][:50]}...")
                 except Exception as e:
                     logger.error(f"Error sending ICE candidate: {e}")
         
@@ -304,15 +340,23 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
                 
                 if message.get("type") == "ice-candidate":
                     candidate_data = message.get("candidate")
-                    if candidate_data:
-                        # Fix RTCIceCandidate constructor - aiortc expects positional args
-                        candidate = RTCIceCandidate(
-                            candidate_data.get("candidate"),
-                            candidate_data.get("sdpMid"),
-                            candidate_data.get("sdpMLineIndex")
-                        )
-                        await pc.addIceCandidate(candidate)
-                        logger.info(f"Added ICE candidate for chat {chat_id}")
+                    if candidate_data and candidate_data.get("candidate"):
+                        try:
+                            # Parse the candidate string to extract required fields
+                            candidate_str = candidate_data.get("candidate")
+                            logger.debug(f"Processing ICE candidate: {candidate_str}")
+                            
+                            # Create RTCIceCandidate from the candidate string
+                            # aiortc can parse the full candidate string
+                            candidate = RTCIceCandidate.from_sdp(candidate_str)
+                            candidate.sdpMid = candidate_data.get("sdpMid")
+                            candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
+                            
+                            await pc.addIceCandidate(candidate)
+                            logger.info(f"Added ICE candidate for chat {chat_id}")
+                        except Exception as e:
+                            logger.error(f"Failed to add ICE candidate: {e}")
+                            logger.debug(f"Candidate data: {candidate_data}")
                         
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for chat {chat_id}")

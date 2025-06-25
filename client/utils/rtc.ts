@@ -75,9 +75,21 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       const msg = JSON.parse(ev.data);
 
       if (msg.type === "ice-candidate" && msg.candidate) {
-        pc.addIceCandidate(msg.candidate).catch((e) =>
-          logError("Failed to add remote ICE", e)
-        );
+        logInfo(`Received ICE candidate from server for chat ${chatId}`, {
+          candidate: msg.candidate.candidate?.substring(0, 50) + "...",
+          sdpMid: msg.candidate.sdpMid,
+          sdpMLineIndex: msg.candidate.sdpMLineIndex,
+        });
+
+        pc.addIceCandidate(msg.candidate)
+          .then(() => {
+            logInfo(
+              `Successfully added remote ICE candidate for chat ${chatId}`
+            );
+          })
+          .catch((e) => {
+            logError("Failed to add remote ICE candidate", e);
+          });
       } else if (msg.type === "error") {
         logError("WebSocket signaling error:", msg.message);
       }
@@ -96,6 +108,12 @@ export async function startRtcAudio(chatId: string): Promise<void> {
     // Handle ICE candidates
     pc.onicecandidate = (event) => {
       if (event.candidate && signalingWs.readyState === WebSocket.OPEN) {
+        logInfo(`Sending ICE candidate for chat ${chatId}`, {
+          candidate: event.candidate.candidate.substring(0, 50) + "...",
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex,
+        });
+
         signalingWs.send(
           JSON.stringify({
             type: "ice-candidate",
@@ -105,6 +123,10 @@ export async function startRtcAudio(chatId: string): Promise<void> {
               sdpMid: event.candidate.sdpMid,
             },
           })
+        );
+      } else if (event.candidate) {
+        logError(
+          `Cannot send ICE candidate - WebSocket not ready. State: ${signalingWs.readyState}`
         );
       }
     };
@@ -128,6 +150,8 @@ export async function startRtcAudio(chatId: string): Promise<void> {
         window.dispatchEvent(
           new CustomEvent("webrtcConnectionFailed", { detail: { chatId } })
         );
+      } else if (pc.connectionState === "closed") {
+        logInfo(`WebRTC connection closed for chat ${chatId}`);
       }
     };
 
@@ -146,6 +170,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
     };
 
     // Get user media (audio only)
+    logInfo(`Requesting user media for chat ${chatId}`);
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
@@ -155,10 +180,36 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       },
     });
 
+    logInfo(`Got user media stream for chat ${chatId}`, {
+      audioTracks: stream.getAudioTracks().length,
+      videoTracks: stream.getVideoTracks().length,
+    });
+
     // Add audio track to peer connection
     const audioTrack = stream.getAudioTracks()[0];
     if (audioTrack) {
       pc.addTrack(audioTrack, stream);
+      logInfo(`Added audio track to peer connection for chat ${chatId}`, {
+        trackId: audioTrack.id,
+        trackLabel: audioTrack.label,
+        trackEnabled: audioTrack.enabled,
+        trackReadyState: audioTrack.readyState,
+      });
+
+      // Monitor track state
+      audioTrack.onended = () => {
+        logInfo(`Audio track ended for chat ${chatId}`);
+      };
+
+      audioTrack.onmute = () => {
+        logInfo(`Audio track muted for chat ${chatId}`);
+      };
+
+      audioTrack.onunmute = () => {
+        logInfo(`Audio track unmuted for chat ${chatId}`);
+      };
+    } else {
+      throw new Error("No audio track available");
     }
 
     // Create and send offer

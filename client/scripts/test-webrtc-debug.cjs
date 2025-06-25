@@ -6,7 +6,6 @@
  */
 
 const WebSocket = require("ws");
-const fetch = require("node-fetch");
 
 const API_BASE = process.env.API_URL || "http://localhost:8000";
 const CHAT_ID = process.env.CHAT_ID || "dd034172-0eb1-49c6-b9ba-9acd63def1b0";
@@ -16,6 +15,8 @@ console.log(`API Base: ${API_BASE}`);
 console.log(`Chat ID: ${CHAT_ID}`);
 
 async function testWebRTCFlow() {
+  // Import fetch dynamically
+  const { default: fetch } = await import("node-fetch");
   try {
     // Step 1: Test ICE server configuration
     console.log("\n1️⃣ Testing ICE server configuration...");
