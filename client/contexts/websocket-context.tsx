@@ -4,6 +4,7 @@
  * across all components based on the user's profile ID
  */
 "use client";
+import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
@@ -226,7 +227,7 @@ export function WebSocketProvider({
           // Assistant message
           queryClient.setQueryData(
             ["assistantMessages", data.chat_id],
-            (old: any[] = []) => {
+            (old: AssistantMessage[] = []) => {
               const exists = old.find((msg) => msg.id === data.message_id);
               if (exists) return old;
 
@@ -252,7 +253,7 @@ export function WebSocketProvider({
           // Simulation message
           queryClient.setQueryData(
             ["simulationMessages", data.chat_id],
-            (old: any[] = []) => {
+            (old: SimulationMessage[] = []) => {
               const exists = old.find((msg) => msg.id === data.message_id);
               if (exists) return old;
 
@@ -296,7 +297,7 @@ export function WebSocketProvider({
         // Update both assistant and simulation message caches
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: AssistantMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.accumulated_content }
@@ -307,7 +308,7 @@ export function WebSocketProvider({
 
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.accumulated_content }
@@ -335,7 +336,7 @@ export function WebSocketProvider({
         // Update both caches
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: AssistantMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
@@ -346,7 +347,7 @@ export function WebSocketProvider({
 
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
@@ -374,7 +375,7 @@ export function WebSocketProvider({
         // Update both caches
         queryClient.setQueryData(
           ["assistantMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: AssistantMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
@@ -385,7 +386,7 @@ export function WebSocketProvider({
 
         queryClient.setQueryData(
           ["simulationMessages", data.chat_id],
-          (old: any[] = []) => {
+          (old: SimulationMessage[] = []) => {
             return old.map((msg) =>
               msg.id === data.message_id
                 ? { ...msg, content: data.final_content, completed: true }
@@ -412,7 +413,7 @@ export function WebSocketProvider({
 
         queryClient.setQueryData(
           ["assistantChat", data.chat_id],
-          (old: any) => {
+          (old: AssistantChat) => {
             if (old) {
               return { ...old, title: data.title };
             }
@@ -422,7 +423,7 @@ export function WebSocketProvider({
 
         queryClient.setQueryData(
           ["assistantChats", profileId],
-          (old: any[] = []) => {
+          (old: AssistantChat[] = []) => {
             return old.map((chat) =>
               chat.id === data.chat_id ? { ...chat, title: data.title } : chat
             );
@@ -430,34 +431,48 @@ export function WebSocketProvider({
         );
       });
 
-      socket.on("joined_chat", (data: any) => {
-        logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`);
-      });
+      socket.on(
+        "joined_chat",
+        (data: { chat_type: string; chat_id: string }) => {
+          logInfo(
+            `Successfully joined ${data.chat_type} chat: ${data.chat_id}`
+          );
+        }
+      );
 
       // Tool call events
-      socket.on("tool_call_created", (data: any) => {
-        logInfo(
-          `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
-        );
-        queryClient.invalidateQueries({
-          queryKey: ["assistantToolCalls", data.chat_id],
-        });
-      });
+      socket.on(
+        "tool_call_created",
+        (data: { tool_name: string; chat_id: string }) => {
+          logInfo(
+            `Tool call created: ${data.tool_name} for chat ${data.chat_id}`
+          );
+          queryClient.invalidateQueries({
+            queryKey: ["assistantToolCalls", data.chat_id],
+          });
+        }
+      );
 
-      socket.on("tool_call_completed", (data: any) => {
-        logInfo(
-          `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
-        );
-        queryClient.invalidateQueries({
-          queryKey: ["assistantToolCalls", data.chat_id],
-        });
-      });
+      socket.on(
+        "tool_call_completed",
+        (data: { tool_name: string; chat_id: string }) => {
+          logInfo(
+            `Tool call completed: ${data.tool_name} for chat ${data.chat_id}`
+          );
+          queryClient.invalidateQueries({
+            queryKey: ["assistantToolCalls", data.chat_id],
+          });
+        }
+      );
 
       // Forward all events to registered listeners
       const originalEmit = socket.emit;
       const originalOn = socket.on;
 
-      socket.on = function (event: string, handler: (...args: any[]) => void) {
+      socket.on = function (
+        event: string,
+        handler: (...args: unknown[]) => void
+      ) {
         // Call the original on method
         const result = originalOn.call(this, event, handler);
 
@@ -573,7 +588,7 @@ export function WebSocketProvider({
 
   // Event listener management for component-specific handlers
   const addEventListener = useCallback(
-    (event: string, handler: (...args: any[]) => void) => {
+    (event: string, handler: (...args: unknown[]) => void) => {
       if (!socketRef.current) return;
 
       socketRef.current.on(event, handler);
@@ -587,7 +602,7 @@ export function WebSocketProvider({
   );
 
   const removeEventListener = useCallback(
-    (event: string, handler: (...args: any[]) => void) => {
+    (event: string, handler: (...args: unknown[]) => void) => {
       if (!socketRef.current) return;
 
       socketRef.current.off(event, handler);
