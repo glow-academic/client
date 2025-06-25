@@ -33,7 +33,7 @@ interface WebSocketContextType {
     roomType: "assistant" | "simulation" | "eval"
   ) => void;
 
-  // Event emitters for different types of operations
+  // Simulation event emitters
   emitStartSimulation: (data: {
     simulation_id: string;
     profile_id: string;
@@ -44,6 +44,23 @@ interface WebSocketContextType {
     chat_id: string;
     attempt_id: string;
   }) => void;
+
+  // Assistant event emitters
+  emitStartAssistant: (data: {
+    chat_id: string;
+    initial_message: string;
+  }) => void;
+  emitSendAssistantMessage: (data: {
+    chat_id: string;
+    message: string;
+  }) => void;
+  emitStopAssistant: (data: { chat_id: string }) => void;
+
+  // Eval event emitters
+  emitStartEval: (data: { eval_id: string }) => void;
+  emitRunEval: (data: { eval_run_id: string }) => void;
+  emitStopEval: (data: { chat_id: string }) => void;
+  emitStopAllEvals: (data: { eval_run_id: string }) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -349,6 +366,203 @@ export function WebSocketProvider({
           });
         }
       );
+
+      // Assistant-specific events
+      socket.on(
+        "assistant_started",
+        (data: { success: boolean; message: string; chat_id: string }) => {
+          logInfo("Assistant started", data);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "assistant_message_processing",
+        (data: { chat_id: string; status: string; message: string }) => {
+          logInfo("Assistant message processing", data);
+        }
+      );
+
+      socket.on(
+        "assistant_stopped",
+        (data: { chat_id: string; success: boolean; message: string }) => {
+          logInfo("Assistant stopped", data);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "assistant_error",
+        (data: { success: boolean; message: string }) => {
+          logError("Assistant error", data.message);
+          toast.error(data.message);
+        }
+      );
+
+      // Eval-specific events
+      socket.on(
+        "eval_started",
+        (data: {
+          success: boolean;
+          message: string;
+          eval_run_ids: string[];
+          total_runs: number;
+        }) => {
+          logInfo("Eval started", data);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "eval_run_processing",
+        (data: { eval_run_id: string; status: string; message: string }) => {
+          logInfo("Eval run processing", data);
+        }
+      );
+
+      socket.on(
+        "eval_stopped",
+        (data: { chat_id: string; success: boolean; message: string }) => {
+          logInfo("Eval stopped", data);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "eval_all_stopped",
+        (data: {
+          eval_run_id: string;
+          success: boolean;
+          message: string;
+          cancelled_count: number;
+          total_chats: number;
+        }) => {
+          logInfo("All evals stopped", data);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on("eval_error", (data: { success: boolean; message: string }) => {
+        logError("Eval error", data.message);
+        toast.error(data.message);
+      });
+
+      // Eval progress events
+      socket.on(
+        "eval_chat_start",
+        (data: {
+          eval_run_id: string;
+          chat_id: string;
+          chat_index: number;
+          total_chats: number;
+          message: string;
+        }) => {
+          logInfo("Eval chat started", data);
+        }
+      );
+
+      socket.on(
+        "eval_turn_start",
+        (data: {
+          eval_run_id: string;
+          chat_id: string;
+          turn: number;
+          max_turns: number;
+          message: string;
+        }) => {
+          logInfo("Eval turn started", data);
+        }
+      );
+
+      socket.on(
+        "eval_token",
+        (data: { eval_run_id: string; chat_id: string; token: string }) => {
+          logInfo("Eval token received", {
+            evalRunId: data.eval_run_id,
+            chatId: data.chat_id,
+          });
+        }
+      );
+
+      socket.on(
+        "eval_turn_complete",
+        (data: {
+          eval_run_id: string;
+          chat_id: string;
+          turn: number;
+          message: string;
+        }) => {
+          logInfo("Eval turn completed", data);
+        }
+      );
+
+      socket.on(
+        "eval_chat_complete",
+        (data: { eval_run_id: string; chat_id: string; message: string }) => {
+          logInfo("Eval chat completed", data);
+        }
+      );
+
+      socket.on(
+        "eval_run_complete",
+        (data: { eval_run_id: string; message: string }) => {
+          logInfo("Eval run completed", data);
+          toast.success(data.message);
+        }
+      );
+
+      socket.on(
+        "eval_chat_error",
+        (data: { eval_run_id: string; chat_id: string; error: string }) => {
+          logError("Eval chat error", data.error);
+        }
+      );
+
+      socket.on(
+        "eval_evaluation_complete",
+        (data: {
+          eval_run_id: string;
+          chat_id: string;
+          eval_grade_id: string;
+        }) => {
+          logInfo("Eval evaluation completed", data);
+        }
+      );
+
+      socket.on(
+        "eval_evaluation_error",
+        (data: { eval_run_id: string; chat_id: string; error: string }) => {
+          logError("Eval evaluation error", data.error);
+        }
+      );
+
+      socket.on(
+        "eval_run_error",
+        (data: { eval_run_id: string; error: string }) => {
+          logError("Eval run error", data.error);
+          toast.error(`Eval run error: ${data.error}`);
+        }
+      );
     },
     [queryClient, profileId]
   );
@@ -489,7 +703,7 @@ export function WebSocketProvider({
 
   // Room management
   const joinRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation") => {
+    (roomId: string, roomType: "assistant" | "simulation" | "eval") => {
       if (!socketRef.current || !isConnected) {
         logInfo("Cannot join room - WebSocket not connected", {
           roomId,
@@ -509,7 +723,7 @@ export function WebSocketProvider({
   );
 
   const leaveRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation") => {
+    (roomId: string, roomType: "assistant" | "simulation" | "eval") => {
       if (!socketRef.current) {
         logInfo("Cannot leave room - WebSocket not available", {
           roomId,
@@ -585,6 +799,106 @@ export function WebSocketProvider({
     [isConnected]
   );
 
+  // Assistant event emitters
+  const emitStartAssistant = useCallback(
+    (data: { chat_id: string; initial_message: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot start assistant - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting start_assistant", data);
+      socketRef.current.emit("start_assistant", data);
+    },
+    [isConnected]
+  );
+
+  const emitSendAssistantMessage = useCallback(
+    (data: { chat_id: string; message: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot send assistant message - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting send_assistant_message", { chatId: data.chat_id });
+      socketRef.current.emit("send_assistant_message", data);
+    },
+    [isConnected]
+  );
+
+  const emitStopAssistant = useCallback(
+    (data: { chat_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot stop assistant - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting stop_assistant", data);
+      socketRef.current.emit("stop_assistant", data);
+    },
+    [isConnected]
+  );
+
+  // Eval event emitters
+  const emitStartEval = useCallback(
+    (data: { eval_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot start eval - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting start_eval", data);
+      socketRef.current.emit("start_eval", data);
+    },
+    [isConnected]
+  );
+
+  const emitRunEval = useCallback(
+    (data: { eval_run_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot run eval - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting run_eval", data);
+      socketRef.current.emit("run_eval", data);
+    },
+    [isConnected]
+  );
+
+  const emitStopEval = useCallback(
+    (data: { chat_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot stop eval - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting stop_eval", data);
+      socketRef.current.emit("stop_eval", data);
+    },
+    [isConnected]
+  );
+
+  const emitStopAllEvals = useCallback(
+    (data: { eval_run_id: string }) => {
+      if (!socketRef.current || !isConnected) {
+        logError("Cannot stop all evals - WebSocket not connected");
+        toast.error("WebSocket not connected. Please refresh the page.");
+        return;
+      }
+
+      logInfo("Emitting stop_all_evals", data);
+      socketRef.current.emit("stop_all_evals", data);
+    },
+    [isConnected]
+  );
+
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
@@ -594,6 +908,13 @@ export function WebSocketProvider({
     emitSendMessage,
     emitStopSimulation,
     emitContinueSimulation,
+    emitStartAssistant,
+    emitSendAssistantMessage,
+    emitStopAssistant,
+    emitStartEval,
+    emitRunEval,
+    emitStopEval,
+    emitStopAllEvals,
   };
 
   return (

@@ -65,12 +65,14 @@ sio = socketio.AsyncServer(
     }
 )
 
-# Register simulation WebSocket events IMMEDIATELY after sio creation
-from app.web.simulations import register_simulation_events
 from app.web.assistants import register_assistant_events
 from app.web.evals import register_eval_events
+# Register simulation WebSocket events IMMEDIATELY after sio creation
+from app.web.simulations import register_simulation_events
 
 register_simulation_events(sio)
+register_assistant_events(sio)
+register_eval_events(sio)
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
@@ -202,7 +204,6 @@ fastapi_app.add_middleware(
 
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
-fastapi_app.include_router(simulations_router, prefix="/simulations")
 fastapi_app.include_router(profiles_router, prefix="/profiles")
 fastapi_app.include_router(evals_router, prefix="/evals")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
