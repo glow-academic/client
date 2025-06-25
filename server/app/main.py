@@ -12,6 +12,7 @@ from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.profiles import router as profiles_router
+from app.routes.rtc import router as rtc_router
 from app.routes.scenarios import router as scenarios_router
 from app.services.mcp.server import server
 from dotenv import load_dotenv
@@ -214,6 +215,7 @@ fastapi_app.add_middleware(
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(profiles_router, prefix="/profiles")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
+fastapi_app.include_router(rtc_router, prefix="/rtc")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")

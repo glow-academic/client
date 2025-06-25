@@ -59,3 +59,7 @@ fastmcp
 
 # openai whisper
 openai-whisper==20240930
+
+# RTC
+aiortc==1.6.*
+aiortc[av]          # if you want Opus decode/encode

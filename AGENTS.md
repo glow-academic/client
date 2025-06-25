@@ -185,5 +185,5 @@ docker compose --profile test run --rm database-test    # Database E2E tests
 ## Folder Structure
 
 ```bash
-tree -I node_modules -I uploads -I history -I screenshots
+tree -I node_modules -I uploads -I history -I screenshots -I queries -I mutations
 ```

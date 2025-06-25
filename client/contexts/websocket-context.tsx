@@ -883,11 +883,11 @@ export function WebSocketProvider({
 
       // Use the Next.js proxy route for Socket.IO connections
       const socketUrl = window.location.origin;
-      const socketPath = "/api/ws/socket.io";
+      const socketPath = "/socket.io";
 
       const socket = io(socketUrl, {
         path: socketPath,
-        transports: ["polling", "websocket"],
+        transports: ["websocket"],
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout

@@ -3,8 +3,6 @@ networks:
   internal:
     driver: bridge
     internal: true
-  web:
-    external: ${PROD:-false}
 
 services:
   # --------------------
@@ -38,9 +36,6 @@ services:
       retries: 5
     networks:
       - internal
-    profiles:
-      - dev
-      - prod
 
   # --------------------
   # API Server
@@ -60,35 +55,6 @@ services:
         condition: service_healthy
     networks:
       - internal
-      - web
-    # In prod, we let Traefik route /server → server
-    labels:
-      - "traefik.enable=${PROD:-false}"
-      - "traefik.docker.network=web"
-
-      # Public router → container
-      - "traefik.http.routers.${SUBDOMAIN}-server.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && (PathPrefix(`/server`) || PathPrefix(`/documents`))"
-      - "traefik.http.routers.${SUBDOMAIN}-server.entrypoints=websecure"
-      - "traefik.http.routers.${SUBDOMAIN}-server.tls.certresolver=letsencrypt"
-
-      # Back-end service
-      - "traefik.http.services.${SUBDOMAIN}-server.loadbalancer.server.port=8000"
-
-      # Strip prefix middleware - only strip /server, not /documents
-      - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.prefixes=/server"
-      - "traefik.http.middlewares.${SUBDOMAIN}-strip-server.stripprefix.forceSlash=false"
-
-      # WebSocket support for Socket.IO
-      - "traefik.http.routers.${SUBDOMAIN}-websocket.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/socket.io`)"
-      - "traefik.http.routers.${SUBDOMAIN}-websocket.entrypoints=websecure"
-      - "traefik.http.routers.${SUBDOMAIN}-websocket.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${SUBDOMAIN}-websocket.service=${SUBDOMAIN}-server"
-      - "traefik.http.routers.${SUBDOMAIN}-websocket.priority=20"
-
-      - "traefik.http.routers.${SUBDOMAIN}-server.middlewares=${SUBDOMAIN}-strip-server@docker"
-    profiles:
-      - prod
-      - dev
     ports:
       - "${SERVER_PORT:-8000}:8000"
 
@@ -119,29 +85,6 @@ services:
         condition: service_started
     networks:
       - internal
-      - web
-    # In prod, Traefik serves the client at root,
-    # ensuring /server goes to server instead of Next.js
-    labels:
-      - "traefik.enable=${PROD:-false}"
-      - "traefik.docker.network=web"
-
-      # Main site (everything except /server and /socket.io)
-      - "traefik.http.routers.${SUBDOMAIN}-app.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && !PathPrefix(`/socket.io`) && !PathPrefix(`/server`)"
-      - "traefik.http.routers.${SUBDOMAIN}-app.entrypoints=websecure"
-      - "traefik.http.routers.${SUBDOMAIN}-app.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${SUBDOMAIN}-app.priority=10"
-      - "traefik.http.services.${SUBDOMAIN}-app.loadbalancer.server.port=3000"
-
-      # Higher-priority router just for Next.js static assets
-      - "traefik.http.routers.${SUBDOMAIN}-static.rule=Host(`${SUBDOMAIN}.${DOMAIN}`) && PathPrefix(`/_next`)"
-      - "traefik.http.routers.${SUBDOMAIN}-static.priority=11"
-      - "traefik.http.routers.${SUBDOMAIN}-static.entrypoints=websecure"
-      - "traefik.http.routers.${SUBDOMAIN}-static.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.${SUBDOMAIN}-static.service=${SUBDOMAIN}-app"
-    profiles:
-      - prod
-      - dev
     ports:
       - "${CLIENT_PORT:-3000}:3000"
 
@@ -187,6 +130,44 @@ services:
       retries: 5
       start_period: 30s
 
+
+  # --------------------
+  # Nginx Service
+  # --------------------
+  nginx:
+    image: nginx:1.27-alpine
+    ports: ["80:80"]         # add 443 + certbot later
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on: [client, server]
+    networks:
+      - internal
+
+  # --------------------
+  # STUN / TURN
+  # --------------------
+  turn:
+    image: coturn/coturn:4.6
+    container_name: turn
+    command: >
+      --log-file=stdout                # log to docker logs
+      --no-dtls                        # (TLS later, keep simple for now)
+      --no-tls
+      --lt-cred-mech                   # long-term credentials
+      --realm=${TURN_REALM:-example.com}
+      --user webrtc:${TURN_PASS:-changeMe}
+      --permission-client-ip
+      --min-port 49160 --max-port 49200 # UDP relay range
+    ports:
+      # STUN / TURN discovery (UDP + TCP 3478)
+      - "3478:3478/udp"
+      - "3478:3478/tcp"
+
+      # Relay ports (UDP only is usually enough)
+      - "49160-49200:49160-49200/udp"
+    networks:
+      - internal
+    restart: unless-stopped
 
 volumes:
   pgdata:
