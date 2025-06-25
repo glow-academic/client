@@ -85,9 +85,10 @@ import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
-import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
-import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
-import { stopSimulation } from "@/utils/api/simulations/stop-simulation";
+// Removed REST API imports - now using WebSocket events
+// import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
+// import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
+// import { stopSimulation } from "@/utils/api/simulations/stop-simulation";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -810,6 +811,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
         content: string;
         completed: boolean;
         created_at: string;
+        audio?: boolean;
       }) => {
         logInfo("Simulation received new_message", {
           messageId: data.message_id,
@@ -855,6 +857,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
               content: data.content,
               completed: data.completed,
               createdAt: data.created_at,
+              audio: data.audio || false,
+              filePath: null,
             };
 
             const updated = [...old, newMessage].sort(
@@ -1062,11 +1066,95 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       });
     });
 
+    // Simulation-specific WebSocket event listeners
+    socket.on(
+      "simulation_started",
+      (data: {
+        success: boolean;
+        message: string;
+        attempt_id: string;
+        chat_id: string;
+      }) => {
+        if (data.success) {
+          logInfo("Simulation started successfully", data);
+          toast.success(data.message);
+        } else {
+          logError("Failed to start simulation", data.message);
+          toast.error(data.message);
+        }
+      }
+    );
+
+    socket.on(
+      "message_processing",
+      (data: { chat_id: string; status: string; message: string }) => {
+        logInfo("Message processing started", data);
+      }
+    );
+
+    socket.on(
+      "audio_transcribed",
+      (data: {
+        chat_id: string;
+        transcribed_text: string;
+        status: string;
+        message: string;
+      }) => {
+        logInfo("Audio transcribed", data);
+        toast.success(
+          `Audio transcribed: "${data.transcribed_text.substring(0, 50)}..."`
+        );
+      }
+    );
+
+    socket.on(
+      "simulation_stopped",
+      (data: { chat_id: string; success: boolean; message: string }) => {
+        if (data.chat_id === currentChatIdRef.current) {
+          setIsSendingMessage(false);
+          setIsStoppingMessage(false);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      }
+    );
+
+    socket.on(
+      "simulation_continued",
+      (data: {
+        success: boolean;
+        message: string;
+        chat_id: string;
+        simulation_grade_id: string;
+        completed: boolean;
+      }) => {
+        if (data.success) {
+          logInfo("Simulation continued successfully", data);
+          toast.success(data.message);
+
+          // Invalidate queries to refresh data
+          queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+          queryClient.invalidateQueries({
+            queryKey: ["simulationChats", attemptId],
+          });
+          queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+          queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+        } else {
+          logError("Failed to continue simulation", data.message);
+          toast.error(data.message);
+        }
+        setEndChatLoading(false);
+      }
+    );
+
     return () => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [queryClient, attempt?.profileId]); // Depend on queryClient and profileId for WebSocket connection
+  }, [queryClient, attempt?.profileId, attemptId]); // Depend on queryClient, profileId, and attemptId for WebSocket connection
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
@@ -1118,14 +1206,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsSendingMessage(true);
 
     try {
-      const result = await createSimulationMessage(
-        currentChat.id,
-        messageToSend
-      );
-
-      if (!result.success) {
-        throw new Error(result.message);
+      if (!socketRef.current) {
+        throw new Error("WebSocket not connected");
       }
+
+      // Send message via WebSocket
+      socketRef.current.emit("send_message", {
+        chat_id: currentChat.id,
+        message: messageToSend,
+      });
 
       // The response will be handled via WebSocket events
       // so we don't need to process the response here
@@ -1142,11 +1231,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsStoppingMessage(true);
 
     try {
-      const result = await stopSimulation(currentChat.id);
-
-      if (!result.success) {
-        throw new Error(result.message);
-      }
+      // Send stop request via WebSocket
+      socketRef.current.emit("stop_simulation", {
+        chat_id: currentChat.id,
+      });
 
       // The WebSocket event will handle state updates
     } catch (error) {
@@ -1161,14 +1249,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setEndChatLoading(true);
 
     try {
-      const result = await continueSimulation(
-        currentChat.id,
-        currentChat.attemptId
-      );
-
-      if (!result.success) {
-        throw new Error(result.message);
+      if (!socketRef.current) {
+        throw new Error("WebSocket not connected");
       }
+
+      // Send continue request via WebSocket
+      socketRef.current.emit("continue_simulation", {
+        chat_id: currentChat.id,
+        attempt_id: currentChat.attemptId,
+      });
 
       // Mark this chat as freshly completed
       setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));

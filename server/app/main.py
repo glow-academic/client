@@ -160,6 +160,17 @@ def get_socketio_instance() -> socketio.AsyncServer:
 async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         await stack.enter_async_context(server.session_manager.run())
+        
+        # Initialize Whisper model during startup
+        try:
+            from app.config import model_manager
+            logger.info("Initializing Whisper model...")
+            model_manager.initialize_whisper_model()
+            logger.info("Whisper model initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Whisper model: {e}")
+            # Continue without Whisper - audio features will be disabled
+        
         yield
 
 # Create FastAPI app with lifespan
@@ -184,6 +195,11 @@ fastapi_app.include_router(assistants_router, prefix="/assistants")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")
+
+# Register simulation WebSocket events
+from app.web.simulations import register_simulation_events
+
+register_simulation_events(sio)
 
 # Create the combined ASGI app with Socket.IO
 app = socketio.ASGIApp(sio, fastapi_app, socketio_path="socket.io")
