@@ -71,6 +71,17 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       }/rtc/signaling/${chatId}`
     );
 
+    // Listen for server ICE candidates
+    signalingWs.onmessage = (ev) => {
+      const msg = JSON.parse(ev.data);
+
+      if (msg.type === "ice-candidate" && msg.candidate) {
+        pc.addIceCandidate(msg.candidate).catch((e) =>
+          logError("Failed to add remote ICE", e)
+        );
+      }
+    };
+
     signalingWebSockets.set(chatId, signalingWs);
 
     // Handle ICE candidates

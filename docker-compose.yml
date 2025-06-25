@@ -155,7 +155,7 @@ services:
       --no-tls
       --lt-cred-mech                   # long-term credentials
       --realm=${TURN_REALM:-example.com}
-      --user webrtc:${TURN_PASS:-changeMe}
+      --user ${TURN_USERNAME:-webrtc}:${TURN_PASS:-changeMe}
       --permission-client-ip
       --min-port 49160 --max-port 49200 # UDP relay range
     ports:
