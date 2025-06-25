@@ -215,197 +215,225 @@ export function WebSocketProvider({
   const setupCommonEventHandlers = useCallback(
     (socket: Socket) => {
       // Assistant chat events
-      socket.on("new_message", (data: any) => {
-        logInfo("Received new_message event", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-          role: data.role,
-        });
+      socket.on(
+        "new_message",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          role: string;
+          content: string;
+          completed: boolean;
+          created_at: string;
+        }) => {
+          logInfo("Received new_message event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            role: data.role,
+          });
 
-        // Update appropriate cache based on message type
-        if (data.role === "assistant" || data.role === "user") {
-          // Assistant message
+          // Update appropriate cache based on message type
+          if (data.role === "assistant" || data.role === "user") {
+            // Assistant message
+            queryClient.setQueryData(
+              ["assistantMessages", data.chat_id],
+              (old: AssistantMessage[] = []) => {
+                const exists = old.find((msg) => msg.id === data.message_id);
+                if (exists) return old;
+
+                const newMessage = {
+                  id: data.message_id,
+                  chatId: data.chat_id,
+                  role: data.role,
+                  content: data.content,
+                  completed: data.completed,
+                  createdAt: data.created_at,
+                  updatedAt: data.created_at,
+                  completedAt: data.created_at,
+                };
+
+                return [...old, newMessage].sort(
+                  (a, b) =>
+                    new Date(a.createdAt).getTime() -
+                    new Date(b.createdAt).getTime()
+                );
+              }
+            );
+          } else {
+            // Simulation message
+            queryClient.setQueryData(
+              ["simulationMessages", data.chat_id],
+              (old: SimulationMessage[] = []) => {
+                const exists = old.find((msg) => msg.id === data.message_id);
+                if (exists) return old;
+
+                const newMessage = {
+                  id: data.message_id,
+                  chatId: data.chat_id,
+                  type: data.role === "user" ? "query" : "response",
+                  content: data.content,
+                  completed: data.completed,
+                  createdAt: data.created_at,
+                  audio: data.audio || false,
+                  filePath: null,
+                };
+
+                return [...old, newMessage].sort(
+                  (a, b) =>
+                    new Date(a.createdAt).getTime() -
+                    new Date(b.createdAt).getTime()
+                );
+              }
+            );
+          }
+
+          // Invalidate queries to trigger re-renders
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      socket.on(
+        "message_token",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          accumulated_content: string;
+        }) => {
+          logInfo("Received message_token event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+          });
+
+          // Update both assistant and simulation message caches
           queryClient.setQueryData(
             ["assistantMessages", data.chat_id],
             (old: AssistantMessage[] = []) => {
-              const exists = old.find((msg) => msg.id === data.message_id);
-              if (exists) return old;
-
-              const newMessage = {
-                id: data.message_id,
-                chatId: data.chat_id,
-                role: data.role,
-                content: data.content,
-                completed: data.completed,
-                createdAt: data.created_at,
-                updatedAt: data.created_at,
-                completedAt: data.created_at,
-              };
-
-              return [...old, newMessage].sort(
-                (a, b) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.accumulated_content }
+                  : msg
               );
             }
           );
-        } else {
-          // Simulation message
+
           queryClient.setQueryData(
             ["simulationMessages", data.chat_id],
             (old: SimulationMessage[] = []) => {
-              const exists = old.find((msg) => msg.id === data.message_id);
-              if (exists) return old;
-
-              const newMessage = {
-                id: data.message_id,
-                chatId: data.chat_id,
-                type: data.role === "user" ? "query" : "response",
-                content: data.content,
-                completed: data.completed,
-                createdAt: data.created_at,
-                audio: data.audio || false,
-                filePath: null,
-              };
-
-              return [...old, newMessage].sort(
-                (a, b) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.accumulated_content }
+                  : msg
               );
             }
           );
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", data.chat_id],
+            });
+          }, 0);
         }
+      );
 
-        // Invalidate queries to trigger re-renders
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
+      socket.on(
+        "message_complete",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+          completed: boolean;
+        }) => {
+          logInfo("Received message_complete event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
           });
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
+
+          // Update both caches
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
+
+          queryClient.setQueryData(
+            ["simulationMessages", data.chat_id],
+            (old: SimulationMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      socket.on(
+        "message_cancelled",
+        (data: { message_id: string; chat_id: string }) => {
+          logInfo("Received message_cancelled event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
           });
-        }, 0);
-      });
 
-      socket.on("message_token", (data: any) => {
-        logInfo("Received message_token event", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-        });
+          // Update both caches
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
 
-        // Update both assistant and simulation message caches
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.accumulated_content }
-                : msg
-            );
-          }
-        );
+          queryClient.setQueryData(
+            ["simulationMessages", data.chat_id],
+            (old: SimulationMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
 
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.accumulated_content }
-                : msg
-            );
-          }
-        );
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
 
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      });
-
-      socket.on("message_complete", (data: any) => {
-        logInfo("Received message_complete event", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-        });
-
-        // Update both caches
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-          }
-        );
-
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-          }
-        );
-
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      });
-
-      socket.on("message_cancelled", (data: any) => {
-        logInfo("Received message_cancelled event", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-        });
-
-        // Update both caches
-        queryClient.setQueryData(
-          ["assistantMessages", data.chat_id],
-          (old: AssistantMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-          }
-        );
-
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-          }
-        );
-
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["assistantMessages", data.chat_id],
-          });
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      });
-
-      socket.on("title_updated", (data: any) => {
+      socket.on("title_updated", (data: { chat_id: string; title: string }) => {
         logInfo("Received title_updated event", {
           chatId: data.chat_id,
           title: data.title,
