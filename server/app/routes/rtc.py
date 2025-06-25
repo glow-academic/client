@@ -265,12 +265,25 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
         
         @pc.on("connectionstatechange")  # type: ignore
         async def on_connectionstatechange() -> None:
-            logger.info(f"Connection state changed to {pc.connectionState}")
+            logger.info(f"Connection state changed to {pc.connectionState} for chat {offer.chat_id}")
             
-            if pc.connectionState in ["failed", "closed"]:
+            if pc.connectionState == "connected":
+                logger.info(f"WebRTC connection established successfully for chat {offer.chat_id}")
+            elif pc.connectionState in ["failed", "closed"]:
+                logger.warning(f"WebRTC connection {pc.connectionState} for chat {offer.chat_id}, cleaning up")
                 # Clean up peer connection
                 if offer.chat_id in peer_connections:
                     del peer_connections[offer.chat_id]
+            elif pc.connectionState == "disconnected":
+                logger.info(f"WebRTC connection disconnected for chat {offer.chat_id}")
+                
+        @pc.on("iceconnectionstatechange")  # type: ignore
+        async def on_iceconnectionstatechange() -> None:
+            logger.info(f"ICE connection state changed to {pc.iceConnectionState} for chat {offer.chat_id}")
+            
+        @pc.on("icegatheringstatechange")  # type: ignore  
+        async def on_icegatheringstatechange() -> None:
+            logger.info(f"ICE gathering state changed to {pc.iceGatheringState} for chat {offer.chat_id}")
         
         # Create answer
         answer = await pc.createAnswer()
@@ -346,17 +359,64 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
                             candidate_str = candidate_data.get("candidate")
                             logger.debug(f"Processing ICE candidate: {candidate_str}")
                             
-                            # Create RTCIceCandidate from the candidate string
-                            # aiortc can parse the full candidate string
-                            candidate = RTCIceCandidate.from_sdp(candidate_str)
-                            candidate.sdpMid = candidate_data.get("sdpMid")
-                            candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
+                            # Parse candidate string to extract required fields
+                            # Format: "candidate:foundation component protocol priority ip port typ type [raddr related_address] [rport related_port] [extension-att-name extension-att-value]*"
+                            parts = candidate_str.split()
+                            if len(parts) < 8:
+                                logger.error(f"Invalid candidate format: {candidate_str}")
+                                continue
+                                
+                            # Extract required fields from candidate string
+                            foundation = parts[0].split(':')[1]  # Remove "candidate:" prefix
+                            component = int(parts[1])
+                            protocol = parts[2]
+                            priority = int(parts[3])
+                            ip = parts[4]
+                            port = int(parts[5])
+                            
+                            # Find the "typ" keyword and get the candidate type
+                            if "typ" not in parts:
+                                logger.error(f"No 'typ' found in candidate: {candidate_str}")
+                                continue
+                            typ_index = parts.index("typ")
+                            candidate_type = parts[typ_index + 1]
+                            
+                            # Handle related address and port for relay candidates
+                            related_address = None
+                            related_port = None
+                            if "raddr" in parts:
+                                raddr_index = parts.index("raddr")
+                                if raddr_index + 1 < len(parts):
+                                    related_address = parts[raddr_index + 1]
+                            if "rport" in parts:
+                                rport_index = parts.index("rport")
+                                if rport_index + 1 < len(parts):
+                                    related_port = int(parts[rport_index + 1])
+                            
+                            # Create RTCIceCandidate with proper constructor
+                            candidate = RTCIceCandidate(
+                                component=component,
+                                foundation=foundation,
+                                ip=ip,
+                                port=port,
+                                priority=priority,
+                                protocol=protocol,
+                                type=candidate_type,
+                                relatedAddress=related_address,
+                                relatedPort=related_port,
+                                sdpMid=candidate_data.get("sdpMid"),
+                                sdpMLineIndex=candidate_data.get("sdpMLineIndex")
+                            )
                             
                             await pc.addIceCandidate(candidate)
-                            logger.info(f"Added ICE candidate for chat {chat_id}")
+                            logger.info(f"Added ICE candidate for chat {chat_id}: {candidate_type} {ip}:{port}")
+                        except ValueError as e:
+                            logger.error(f"Failed to parse ICE candidate values: {e}")
+                            logger.debug(f"Candidate string: {candidate_str}")
                         except Exception as e:
                             logger.error(f"Failed to add ICE candidate: {e}")
                             logger.debug(f"Candidate data: {candidate_data}")
+                            logger.debug(f"Candidate string: {candidate_str}")
                         
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for chat {chat_id}")

@@ -84,20 +84,33 @@ async function testWebRTCFlow() {
 
     // Step 4: Test ICE candidate exchange (mock)
     console.log("\n4️⃣ Testing ICE candidate exchange...");
-    const mockCandidate = {
-      type: "ice-candidate",
-      candidate: {
-        candidate: "candidate:1 1 UDP 2130706431 127.0.0.1 54400 typ host",
-        sdpMLineIndex: 0,
-        sdpMid: "0",
-      },
-    };
 
-    signalingWs.send(JSON.stringify(mockCandidate));
-    console.log("✅ Sent mock ICE candidate");
+    // Test with real ICE candidate formats
+    const realCandidates = [
+      "candidate:842163049 1 udp 1677721855 192.168.1.100 54400 typ srflx raddr 192.168.1.100 rport 54400 generation 0 ufrag EsAw network-cost 999",
+      "candidate:2999745851 1 udp 2113667327 192.168.1.100 54401 typ host generation 0 ufrag EsAw network-cost 999",
+      "candidate:1467250027 1 tcp 1518222847 192.168.1.100 9 typ host tcptype active generation 0 ufrag EsAw network-cost 999",
+    ];
 
-    // Wait a bit for any responses
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    for (let i = 0; i < realCandidates.length; i++) {
+      const candidate = realCandidates[i];
+      const message = {
+        type: "ice-candidate",
+        candidate: {
+          candidate: candidate,
+          sdpMLineIndex: 0,
+          sdpMid: "0",
+        },
+      };
+
+      signalingWs.send(JSON.stringify(message));
+      console.log(
+        `✅ Sent real ICE candidate ${i + 1}: ${candidate.substring(0, 50)}...`
+      );
+
+      // Small delay between candidates
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
 
     signalingWs.close();
     console.log("\n🎉 WebRTC debug test completed successfully!");
