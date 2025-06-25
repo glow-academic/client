@@ -8,7 +8,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 // UI Components
@@ -148,7 +148,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       query: {
         EIO: "4", // Force Engine.IO protocol version 4
       },
-    }) as any;
+    });
 
     socketRef.current = socket;
 

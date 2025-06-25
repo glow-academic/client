@@ -21,7 +21,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { io } from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 type ChatUIState = "closed" | "widget" | "expanded";
@@ -127,7 +127,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
           timestamp: Date.now(),
           EIO: "4",
         },
-      }) as any;
+      });
 
       socketRef.current = socket;
 

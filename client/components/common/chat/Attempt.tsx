@@ -757,7 +757,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       query: {
         EIO: "4", // Force Engine.IO protocol version 4
       },
-    }) as any;
+    });
 
     socketRef.current = socket;
 
