@@ -218,11 +218,6 @@ export function ChatProvider({ children }: ChatProviderProps) {
 
   const sendMessage = useCallback(
     async (message: string) => {
-      if (!currentChatId) {
-        toast.error("No chat selected");
-        return;
-      }
-
       if (!isConnected) {
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
@@ -236,26 +231,52 @@ export function ChatProvider({ children }: ChatProviderProps) {
       setIsSendingMessage(true);
 
       try {
+        let chatId = currentChatId;
+
+        // If no chat is selected, create a new one
+        if (!chatId) {
+          if (!profile?.id) {
+            toast.error("Profile not found");
+            setIsSendingMessage(false);
+            return;
+          }
+
+          logInfo("No chat selected, creating new chat for message");
+          const newChat = await createChatMutation.mutateAsync(profile.id);
+          if (!newChat?.id) {
+            toast.error("Failed to create new chat");
+            setIsSendingMessage(false);
+            return;
+          }
+
+          chatId = newChat.id;
+          setCurrentChatId(chatId);
+          logInfo("Created new chat for message", { chatId });
+        }
+
         // Check if this is the first message in the chat
+        // If we just created a new chat or if the existing chat has title "New Chat"
+        const isNewlyCreatedChat = !currentChatId; // We just created this chat
+        const existingChat = chats.find((chat) => chat.id === chatId);
         const isFirstMessage =
-          chats.find((chat) => chat.id === currentChatId)?.title === "New Chat";
+          isNewlyCreatedChat || existingChat?.title === "New Chat";
 
         if (isFirstMessage) {
           // Use start_assistant for first message
           emitStartAssistant({
-            chat_id: currentChatId,
+            chat_id: chatId,
             initial_message: message,
           });
         } else {
           // Use send_assistant_message for subsequent messages
           emitSendAssistantMessage({
-            chat_id: currentChatId,
+            chat_id: chatId,
             message: message,
           });
         }
 
         logInfo("Message sent via WebSocket", {
-          chatId: currentChatId,
+          chatId,
           isFirstMessage,
           messageLength: message.length,
         });
@@ -270,6 +291,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
       isConnected,
       isSendingMessage,
       chats,
+      profile?.id,
+      createChatMutation,
       emitStartAssistant,
       emitSendAssistantMessage,
     ]
