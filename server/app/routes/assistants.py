@@ -1,4 +1,4 @@
-# app/routes/assistants.py
+# app/routes/assistants.py (OLD)
 # Assistant chat endpoints with WebSocket streaming functionality
 import asyncio
 import json

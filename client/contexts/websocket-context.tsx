@@ -24,8 +24,14 @@ interface WebSocketContextType {
   socket: Socket | null;
 
   // Room management
-  joinRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
-  leaveRoom: (roomId: string, roomType: "assistant" | "simulation") => void;
+  joinRoom: (
+    roomId: string,
+    roomType: "assistant" | "simulation" | "eval"
+  ) => void;
+  leaveRoom: (
+    roomId: string,
+    roomType: "assistant" | "simulation" | "eval"
+  ) => void;
 
   // Event emitters for different types of operations
   emitStartSimulation: (data: {
@@ -38,16 +44,6 @@ interface WebSocketContextType {
     chat_id: string;
     attempt_id: string;
   }) => void;
-
-  // Event listener management
-  addEventListener: (
-    event: string,
-    handler: (...args: unknown[]) => void
-  ) => void;
-  removeEventListener: (
-    event: string,
-    handler: (...args: unknown[]) => void
-  ) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -75,141 +71,6 @@ export function WebSocketProvider({
   const connectionAttempts = useRef(0);
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
-  const eventListenersRef = useRef<
-    Map<string, Set<(...args: unknown[]) => void>>
-  >(new Map());
-
-  // Initialize WebSocket connection when profileId is available
-  useEffect(() => {
-    if (!profileId) {
-      logInfo("Waiting for profile ID before connecting WebSocket", {
-        profileId,
-      });
-      return;
-    }
-
-    // Don't create multiple connections
-    if (socketRef.current?.connected) {
-      logInfo("WebSocket already connected, skipping initialization", {
-        profileId,
-      });
-      return;
-    }
-
-    const connectWebSocket = () => {
-      logInfo("Initializing global WebSocket connection", {
-        profileId,
-        attempt: connectionAttempts.current + 1,
-      });
-
-      // Use the Next.js proxy route for Socket.IO connections
-      const socketUrl = window.location.origin;
-      const socketPath = "/api/ws/socket.io";
-
-      const socket = io(socketUrl, {
-        path: socketPath,
-        transports: ["polling", "websocket"],
-        autoConnect: true,
-        forceNew: false,
-        timeout: 15000,
-        reconnection: true,
-        reconnectionAttempts: 5,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        upgrade: true,
-        rememberUpgrade: true,
-        query: {
-          profileId,
-          timestamp: Date.now(),
-          EIO: "4",
-        },
-      });
-
-      socketRef.current = socket;
-
-      socket.on("connect", () => {
-        setIsConnected(true);
-        connectionAttempts.current = 0;
-        logInfo("Global WebSocket connected successfully", {
-          socketId: socket.id,
-          profileId,
-          transport: socket.io.engine.transport.name,
-        });
-      });
-
-      socket.on("disconnect", (reason: string) => {
-        setIsConnected(false);
-        logInfo(`Global WebSocket disconnected: ${reason}`, {
-          socketId: socket.id,
-          profileId,
-        });
-      });
-
-      socket.on("connect_error", (error: Error) => {
-        connectionAttempts.current++;
-        logError("Global WebSocket connection error:", error.message, {
-          attempt: connectionAttempts.current,
-          maxAttempts: maxConnectionAttempts,
-          profileId,
-        });
-        setIsConnected(false);
-
-        if (connectionAttempts.current >= maxConnectionAttempts) {
-          toast.error(
-            "Unable to connect to real-time updates. Some features may be limited."
-          );
-        }
-      });
-
-      socket.on("reconnect", (attemptNumber: number) => {
-        setIsConnected(true);
-        logInfo("Global WebSocket reconnected", {
-          socketId: socket.id,
-          profileId,
-          attemptNumber,
-        });
-        toast.success("Connection restored!");
-      });
-
-      socket.on("reconnect_error", (error: Error) => {
-        logError("Global WebSocket reconnection failed:", error.message, {
-          profileId,
-        });
-      });
-
-      socket.on("reconnect_failed", () => {
-        setIsConnected(false);
-        logError("Global WebSocket reconnection failed permanently", {
-          profileId,
-        });
-        toast.error("Connection lost. Please refresh the page to reconnect.");
-      });
-
-      // Set up common event handlers that update React Query cache
-      setupCommonEventHandlers(socket);
-    };
-
-    connectWebSocket();
-
-    return () => {
-      if (socketRef.current) {
-        logInfo("Cleaning up global WebSocket connection");
-        // Leave all rooms before disconnecting
-        const currentRooms = currentRoomsRef.current;
-        currentRooms.forEach((roomId) => {
-          socketRef.current?.emit("leave_chat", {
-            chat_id: roomId,
-            chat_type: "any",
-          });
-        });
-        currentRooms.clear();
-
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
-    };
-  }, [profileId]);
 
   // Set up common event handlers that all components might need
   const setupCommonEventHandlers = useCallback(
@@ -273,7 +134,7 @@ export function WebSocketProvider({
                   content: data.content,
                   completed: data.completed,
                   createdAt: data.created_at,
-                  audio: data.audio || false,
+                  audio: false,
                   filePath: null,
                 };
 
@@ -404,9 +265,7 @@ export function WebSocketProvider({
             ["assistantMessages", data.chat_id],
             (old: AssistantMessage[] = []) => {
               return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
+                msg.id === data.message_id ? { ...msg, completed: true } : msg
               );
             }
           );
@@ -415,9 +274,7 @@ export function WebSocketProvider({
             ["simulationMessages", data.chat_id],
             (old: SimulationMessage[] = []) => {
               return old.map((msg) =>
-                msg.id === data.message_id
-                  ? { ...msg, content: data.final_content, completed: true }
-                  : msg
+                msg.id === data.message_id ? { ...msg, completed: true } : msg
               );
             }
           );
@@ -492,29 +349,143 @@ export function WebSocketProvider({
           });
         }
       );
-
-      // Forward all events to registered listeners
-      const originalEmit = socket.emit;
-      const originalOn = socket.on;
-
-      socket.on = function (
-        event: string,
-        handler: (...args: unknown[]) => void
-      ) {
-        // Call the original on method
-        const result = originalOn.call(this, event, handler);
-
-        // Also register with our custom event system for component-specific handlers
-        if (!eventListenersRef.current.has(event)) {
-          eventListenersRef.current.set(event, new Set());
-        }
-        eventListenersRef.current.get(event)?.add(handler);
-
-        return result;
-      };
     },
     [queryClient, profileId]
   );
+
+  // Initialize WebSocket connection when profileId is available
+  useEffect(() => {
+    if (!profileId) {
+      logInfo("Waiting for profile ID before connecting WebSocket", {
+        profileId,
+      });
+      return;
+    }
+
+    // Don't create multiple connections
+    if (socketRef.current?.connected) {
+      logInfo("WebSocket already connected, skipping initialization", {
+        profileId,
+      });
+      return;
+    }
+
+    // Capture current rooms at effect creation time for cleanup
+    const roomsToCleanup = currentRoomsRef.current;
+
+    const connectWebSocket = () => {
+      logInfo("Initializing global WebSocket connection", {
+        profileId,
+        attempt: connectionAttempts.current + 1,
+      });
+
+      // Use the Next.js proxy route for Socket.IO connections
+      const socketUrl = window.location.origin;
+      const socketPath = "/api/ws/socket.io";
+
+      const socket = io(socketUrl, {
+        path: socketPath,
+        transports: ["polling", "websocket"],
+        autoConnect: true,
+        forceNew: false,
+        timeout: 15000,
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        upgrade: true,
+        rememberUpgrade: true,
+        query: {
+          profileId,
+          timestamp: Date.now(),
+          EIO: "4",
+        },
+      });
+
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        setIsConnected(true);
+        connectionAttempts.current = 0;
+        logInfo("Global WebSocket connected successfully", {
+          socketId: socket.id,
+          profileId,
+          transport: socket.io.engine.transport.name,
+        });
+      });
+
+      socket.on("disconnect", (reason: string) => {
+        setIsConnected(false);
+        logInfo(`Global WebSocket disconnected: ${reason}`, {
+          socketId: socket.id,
+          profileId,
+        });
+      });
+
+      socket.on("connect_error", (error: Error) => {
+        connectionAttempts.current++;
+        logError("Global WebSocket connection error:", error.message, {
+          attempt: connectionAttempts.current,
+          maxAttempts: maxConnectionAttempts,
+          profileId,
+        });
+        setIsConnected(false);
+
+        if (connectionAttempts.current >= maxConnectionAttempts) {
+          toast.error(
+            "Unable to connect to real-time updates. Some features may be limited."
+          );
+        }
+      });
+
+      socket.on("reconnect", (attemptNumber: number) => {
+        setIsConnected(true);
+        logInfo("Global WebSocket reconnected", {
+          socketId: socket.id,
+          profileId,
+          attemptNumber,
+        });
+        toast.success("Connection restored!");
+      });
+
+      socket.on("reconnect_error", (error: Error) => {
+        logError("Global WebSocket reconnection failed:", error.message, {
+          profileId,
+        });
+      });
+
+      socket.on("reconnect_failed", () => {
+        setIsConnected(false);
+        logError("Global WebSocket reconnection failed permanently", {
+          profileId,
+        });
+        toast.error("Connection lost. Please refresh the page to reconnect.");
+      });
+
+      // Set up common event handlers that update React Query cache
+      setupCommonEventHandlers(socket);
+    };
+
+    connectWebSocket();
+
+    return () => {
+      if (socketRef.current) {
+        logInfo("Cleaning up global WebSocket connection");
+        // Leave all rooms before disconnecting using captured rooms
+        roomsToCleanup.forEach((roomId) => {
+          socketRef.current?.emit("leave_chat", {
+            chat_id: roomId,
+            chat_type: "any",
+          });
+        });
+        roomsToCleanup.clear();
+
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+      }
+    };
+  }, [profileId, setupCommonEventHandlers]);
 
   // Room management
   const joinRoom = useCallback(
@@ -614,31 +585,6 @@ export function WebSocketProvider({
     [isConnected]
   );
 
-  // Event listener management for component-specific handlers
-  const addEventListener = useCallback(
-    (event: string, handler: (...args: unknown[]) => void) => {
-      if (!socketRef.current) return;
-
-      socketRef.current.on(event, handler);
-
-      if (!eventListenersRef.current.has(event)) {
-        eventListenersRef.current.set(event, new Set());
-      }
-      eventListenersRef.current.get(event)?.add(handler);
-    },
-    []
-  );
-
-  const removeEventListener = useCallback(
-    (event: string, handler: (...args: unknown[]) => void) => {
-      if (!socketRef.current) return;
-
-      socketRef.current.off(event, handler);
-      eventListenersRef.current.get(event)?.delete(handler);
-    },
-    []
-  );
-
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
@@ -648,8 +594,6 @@ export function WebSocketProvider({
     emitSendMessage,
     emitStopSimulation,
     emitContinueSimulation,
-    addEventListener,
-    removeEventListener,
   };
 
   return (

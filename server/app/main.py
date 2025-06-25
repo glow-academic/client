@@ -15,7 +15,6 @@ from app.routes.documents import router as documents_router
 from app.routes.evals import router as evals_router
 from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
-from app.routes.simulations import router as simulations_router
 from app.services.mcp.server import server
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
@@ -68,6 +67,8 @@ sio = socketio.AsyncServer(
 
 # Register simulation WebSocket events IMMEDIATELY after sio creation
 from app.web.simulations import register_simulation_events
+from app.web.assistants import register_assistant_events
+from app.web.evals import register_eval_events
 
 register_simulation_events(sio)
 
