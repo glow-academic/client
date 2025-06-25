@@ -35,6 +35,8 @@ const fetchIce = async (): Promise<IceConfig> => {
  */
 export async function startRtcAudio(chatId: string): Promise<void> {
   try {
+    logInfo("Starting WebRTC audio for chat", { chatId });
+
     // Clean up any existing connection for this chat
     await stopRtcAudio(chatId);
 
@@ -65,10 +67,8 @@ export async function startRtcAudio(chatId: string): Promise<void> {
     // Store the peer connection
     peerConnections.set(chatId, pc);
 
-    // Set up signaling WebSocket
-    const signalingWs = new WebSocket(
-      `${getApiUrl()}/rtc/signaling/${chatId}`
-    );
+    // Set up signaling WebSocket with proper timing
+    const signalingWs = new WebSocket(`${getApiUrl()}/rtc/signaling/${chatId}`);
 
     // Listen for server ICE candidates
     signalingWs.onmessage = (ev) => {
@@ -78,7 +78,17 @@ export async function startRtcAudio(chatId: string): Promise<void> {
         pc.addIceCandidate(msg.candidate).catch((e) =>
           logError("Failed to add remote ICE", e)
         );
+      } else if (msg.type === "error") {
+        logError("WebSocket signaling error:", msg.message);
       }
+    };
+
+    signalingWs.onopen = () => {
+      logInfo(`WebSocket signaling connected for chat ${chatId}`);
+    };
+
+    signalingWs.onerror = (error) => {
+      logError("WebSocket signaling error:", error);
     };
 
     signalingWebSockets.set(chatId, signalingWs);
@@ -101,18 +111,38 @@ export async function startRtcAudio(chatId: string): Promise<void> {
 
     // Handle connection state changes
     pc.onconnectionstatechange = () => {
-      logInfo(`WebRTC connection state: ${pc.connectionState}`);
+      logInfo(
+        `WebRTC connection state: ${pc.connectionState} for chat ${chatId}`
+      );
 
-      if (
+      if (pc.connectionState === "connected") {
+        logInfo(
+          `WebRTC connection established successfully for chat ${chatId}`
+        );
+      } else if (
         pc.connectionState === "failed" ||
         pc.connectionState === "disconnected"
       ) {
-        logError("WebRTC connection failed or disconnected");
+        logError(`WebRTC connection ${pc.connectionState} for chat ${chatId}`);
         // Optionally emit an event for the UI to handle
         window.dispatchEvent(
           new CustomEvent("webrtcConnectionFailed", { detail: { chatId } })
         );
       }
+    };
+
+    // Handle ICE connection state changes
+    pc.oniceconnectionstatechange = () => {
+      logInfo(
+        `WebRTC ICE connection state: ${pc.iceConnectionState} for chat ${chatId}`
+      );
+    };
+
+    // Handle ICE gathering state changes
+    pc.onicegatheringstatechange = () => {
+      logInfo(
+        `WebRTC ICE gathering state: ${pc.iceGatheringState} for chat ${chatId}`
+      );
     };
 
     // Get user media (audio only)
@@ -165,6 +195,27 @@ export async function startRtcAudio(chatId: string): Promise<void> {
         sdp: answer.sdp,
       })
     );
+
+    // Wait for signaling WebSocket to be ready before proceeding
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error("WebSocket signaling connection timeout"));
+      }, 5000);
+
+      if (signalingWs.readyState === WebSocket.OPEN) {
+        clearTimeout(timeout);
+        resolve();
+      } else {
+        signalingWs.onopen = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        signalingWs.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error("WebSocket signaling connection failed"));
+        };
+      }
+    });
 
     logInfo(`WebRTC audio streaming started for chat ${chatId}`);
 
