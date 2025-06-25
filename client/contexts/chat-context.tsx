@@ -21,7 +21,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 type ChatUIState = "closed" | "widget" | "expanded";

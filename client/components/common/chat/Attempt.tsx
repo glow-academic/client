@@ -14,7 +14,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 // UI Components
@@ -85,10 +84,6 @@ import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
-// Removed REST API imports - now using WebSocket events
-// import { continueSimulation } from "@/utils/api/simulations/continue-simulation";
-// import { createSimulationMessage } from "@/utils/api/simulations/create-simulation-message";
-// import { stopSimulation } from "@/utils/api/simulations/stop-simulation";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -223,11 +218,20 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   );
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
-  // WebSocket state
-  const [isConnected, setIsConnected] = useState(false);
+  // Use global WebSocket context instead of local connection
+  const {
+    isConnected,
+    joinRoom,
+    leaveRoom,
+    emitSendMessage,
+    emitStopSimulation,
+    emitContinueSimulation,
+    addEventListener,
+    removeEventListener,
+  } = useWebSocket();
+
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
   const currentRoomRef = useRef<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);

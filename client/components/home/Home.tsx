@@ -19,14 +19,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import { io, Socket } from "socket.io-client";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import {
@@ -58,6 +51,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useRole } from "@/contexts/role-context";
+import { useWebSocket } from "@/contexts/websocket-context";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
@@ -615,9 +609,13 @@ export default function Home() {
   const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
-  // WebSocket state
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  // Use global WebSocket context instead of local connection
+  const {
+    isConnected,
+    emitStartSimulation,
+    addEventListener,
+    removeEventListener,
+  } = useWebSocket();
 
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
@@ -706,184 +704,46 @@ export default function Home() {
     enabled: !!grades && grades.length > 0,
   });
 
-  // WebSocket connection setup
+  // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
-    // Only create connection if we have a profile ID
-    if (!profile?.id) {
-      logInfo("Waiting for profile ID before connecting WebSocket", {
-        profileId: profile?.id,
-      });
-      return;
-    }
-
-    // Clean up any existing connection first
-    if (socketRef.current) {
-      logInfo(
-        "Cleaning up existing WebSocket connection before creating new one"
-      );
-      socketRef.current.disconnect();
-      socketRef.current = null;
-      setIsConnected(false);
-    }
-
-    // Use the Next.js proxy route for Socket.IO connections (same as Attempt.tsx)
-    const socketUrl = window.location.origin; // Always use same origin with proxy
-    const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
-
-    logInfo("Creating new WebSocket connection", {
-      profileId: profile.id,
-      socketUrl,
-      socketPath,
-    });
-
-    const socket = io(socketUrl, {
-      path: socketPath,
-      transports: ["polling", "websocket"],
-      autoConnect: true,
-      forceNew: true, // Force new connection to avoid conflicts
-      timeout: 10000, // Shorter timeout for faster failure detection
-      reconnection: true,
-      reconnectionAttempts: 3, // Fewer attempts to avoid spam
-      reconnectionDelay: 2000, // Longer delay between attempts
-      reconnectionDelayMax: 10000,
-      upgrade: true,
-      rememberUpgrade: false, // Don't remember upgrades to avoid issues
-      query: {
-        profileId: profile.id, // Ensure we always have a valid profile ID
-        timestamp: Date.now(),
-        EIO: "4", // Force Engine.IO protocol version 4
-      },
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      setIsConnected(true);
-      logInfo("WebSocket connected successfully", {
-        socketId: socket.id,
-        profileId: profile.id,
-        transport: socket.io.engine.transport.name,
-      });
-    });
-
-    socket.on("disconnect", (reason: string) => {
-      setIsConnected(false);
-      logInfo(`WebSocket disconnected: ${reason}`, {
-        socketId: socket.id,
-        profileId: profile.id,
-      });
-
-      // Clear any loading states on disconnect
-      setLoadingSimulation(null);
-    });
-
-    socket.on("connect_error", (error: Error) => {
-      setIsConnected(false);
-      logError("WebSocket connection error:", error.message, {
-        profileId: profile.id,
-        errorType: error.constructor.name,
-      });
-
-      // Clear any loading states on error
-      setLoadingSimulation(null);
-
-      // Show user-friendly error after multiple failures
-      if (!socket.connected) {
-        toast.error("Connection lost. Please refresh the page to reconnect.");
-      }
-    });
-
-    socket.on("reconnect", (attemptNumber: number) => {
-      setIsConnected(true);
-      logInfo("WebSocket reconnected", {
-        socketId: socket.id,
-        profileId: profile.id,
-        attemptNumber,
-      });
-      toast.success("Connection restored!");
-    });
-
-    socket.on("reconnect_error", (error: Error) => {
-      logError("WebSocket reconnection failed:", error.message, {
-        profileId: profile.id,
-      });
-    });
-
-    socket.on("reconnect_failed", () => {
-      setIsConnected(false);
-      logError("WebSocket reconnection failed permanently", {
-        profileId: profile.id,
-      });
-      toast.error("Connection lost. Please refresh the page to reconnect.");
-    });
-
-    // Simulation-specific WebSocket event listeners
-    socket.on(
-      "simulation_started",
-      (data: {
+    const handleSimulationStarted = (...args: unknown[]) => {
+      const data = args[0] as {
         success: boolean;
         message: string;
         attempt_id: string;
         chat_id: string;
-      }) => {
-        // Clear any pending timeout
-        if (
-          socket &&
-          (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-            ._startSimulationTimeout
-        ) {
-          clearTimeout(
-            (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-              ._startSimulationTimeout
-          );
-          delete (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-            ._startSimulationTimeout;
-        }
-
-        if (data.success) {
-          logInfo("Simulation started successfully", data);
-          toast.dismiss();
-          toast.success(data.message);
-          router.push(`/home/a/${data.attempt_id}`);
-        } else {
-          logError("Failed to start simulation", data.message);
-          toast.dismiss();
-          toast.error(data.message);
-        }
-        setLoadingSimulation(null);
+      };
+      if (data.success) {
+        logInfo("Simulation started successfully", data);
+        toast.dismiss();
+        toast.success(data.message);
+        router.push(`/home/a/${data.attempt_id}`);
+      } else {
+        logError("Failed to start simulation", data.message);
+        toast.dismiss();
+        toast.error(data.message);
       }
-    );
+      setLoadingSimulation(null);
+    };
 
-    socket.on("error", (data: { success: boolean; message: string }) => {
-      // Clear any pending timeout
-      if (
-        socket &&
-        (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-          ._startSimulationTimeout
-      ) {
-        clearTimeout(
-          (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-            ._startSimulationTimeout
-        );
-        delete (socket as { _startSimulationTimeout?: NodeJS.Timeout })
-          ._startSimulationTimeout;
-      }
-
+    const handleError = (...args: unknown[]) => {
+      const data = args[0] as { success: boolean; message: string };
       logError("WebSocket error:", data.message);
       toast.dismiss();
       toast.error(data.message);
       setLoadingSimulation(null);
-    });
-
-    return () => {
-      if (socketRef.current) {
-        logInfo("Cleaning up WebSocket connection on unmount");
-        socketRef.current.disconnect();
-        socketRef.current = null;
-        setIsConnected(false);
-      }
     };
-  }, [profile?.id, router]); // Depend on profile ID and router
+
+    // Add event listeners
+    addEventListener("simulation_started", handleSimulationStarted);
+    addEventListener("error", handleError);
+
+    // Cleanup function
+    return () => {
+      removeEventListener("simulation_started", handleSimulationStarted);
+      removeEventListener("error", handleError);
+    };
+  }, [router, addEventListener, removeEventListener]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -898,27 +758,14 @@ export default function Home() {
           return;
         }
 
-        if (!socketRef.current) {
-          toast.error("WebSocket not initialized. Please refresh the page.");
-          logError(
-            "WebSocket not initialized when trying to start simulation",
-            {
-              simulationId,
-              profileId: profile.id,
-            }
-          );
-          return;
-        }
-
-        if (!socketRef.current.connected) {
+        if (!isConnected) {
           toast.error(
             "WebSocket not connected. Please wait for connection or refresh the page."
           );
           logError("WebSocket not connected when trying to start simulation", {
             simulationId,
             profileId: profile.id,
-            socketId: socketRef.current.id,
-            readyState: socketRef.current.connected,
+            isConnected,
           });
           return;
         }
@@ -926,15 +773,14 @@ export default function Home() {
         setLoadingSimulation(simulationId);
         toast.loading("Starting simulation...");
 
-        logInfo("Starting simulation via WebSocket", {
+        logInfo("Starting simulation via global WebSocket", {
           simulationId,
           profileId: profile.id,
-          socketConnected: socketRef.current.connected,
-          socketId: socketRef.current.id,
+          isConnected,
         });
 
-        // Send start simulation request via WebSocket
-        socketRef.current.emit("start_simulation", {
+        // Use global WebSocket to emit start simulation
+        emitStartSimulation({
           simulation_id: simulationId,
           profile_id: profile.id,
         });
@@ -947,15 +793,8 @@ export default function Home() {
           setLoadingSimulation(null);
         }, 30000); // 30 second timeout
 
-        // Store timeout ID for cleanup on the socket instance
-        if (socketRef.current) {
-          (
-            socketRef.current as { _startSimulationTimeout?: NodeJS.Timeout }
-          )._startSimulationTimeout = timeoutId;
-        }
-
-        // The response will be handled via WebSocket events
-        // so we don't need to process the response here
+        // Store timeout for potential cleanup (if needed)
+        return () => clearTimeout(timeoutId);
       } catch (error) {
         logError("Error starting simulation:", error);
         toast.dismiss();
@@ -963,7 +802,7 @@ export default function Home() {
         setLoadingSimulation(null);
       }
     },
-    [profile, classes]
+    [profile, classes, isConnected, emitStartSimulation]
   );
 
   // Separate simulations into default and cohort-based
