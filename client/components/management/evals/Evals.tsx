@@ -46,6 +46,7 @@ import {
 } from "@/components/ui/card";
 import { Eval } from "@/types";
 import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
+import { useWebSocket } from "@/contexts/websocket-context";
 
 export default function Evals() {
   const router = useRouter();

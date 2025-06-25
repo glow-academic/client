@@ -33,8 +33,8 @@ function runTest2() {
   }
 
   testStep = 2;
-  console.log("\n📡 Testing send_message...");
-  socket.emit("send_message", {
+  console.log("\n📡 Testing send_simulation_message...");
+  socket.emit("send_simulation_message", {
     chat_id: currentChatId,
     message: "Hello, this is a test message!",
   });
@@ -158,15 +158,15 @@ socket.on("audio_transcribed", (data) => {
   audioTranscribed = true;
 });
 
-socket.on("new_message", (data) => {
+socket.on("simulation_new_message", (data) => {
   console.log("💬 New message:", data);
 });
 
-socket.on("message_token", (data) => {
+socket.on("simulation_message_token", (data) => {
   console.log("🔤 Message token:", data.token);
 });
 
-socket.on("message_complete", (data) => {
+socket.on("simulation_message_complete", (data) => {
   console.log("✅ Message complete:", data);
 
   // If this is after the text message test, run audio test
@@ -209,10 +209,10 @@ socket.on("error", (data) => {
   }
 });
 
-socket.on("message_error", (data) => {
+socket.on("simulation_message_error", (data) => {
   console.error("❌ Message error:", data);
 });
 
-socket.on("message_cancelled", (data) => {
+socket.on("simulation_message_cancelled", (data) => {
   console.log("⏹️ Message cancelled:", data);
 });

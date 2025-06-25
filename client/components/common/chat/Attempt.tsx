@@ -771,93 +771,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
 
   // WebSocket events are now handled by the global WebSocket context
-
-    socket.on(
-      "new_message",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        role: string;
-        content: string;
-        completed: boolean;
-        created_at: string;
-        audio?: boolean;
-      }) => {
-        logInfo("Simulation received new_message", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-          role: data.role,
-          currentChatId: currentChatIdRef.current,
-          content:
-            data.content.substring(0, 50) +
-            (data.content.length > 50 ? "..." : ""),
-          completed: data.completed,
-        });
-
-        // Check if this message is for the current chat
-        if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(
-            `Ignoring message for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
-          );
-          return;
-        }
-
-        // Update the messages cache with new message
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            logInfo(
-              `Updating simulation message cache for chat ${data.chat_id}`,
-              {
-                oldMessagesCount: old.length,
-                newMessageId: data.message_id,
-              }
-            );
-
-            const exists = old.find((msg) => msg.id === data.message_id);
-            if (exists) {
-              logInfo(`Message ${data.message_id} already exists, skipping`);
-              return old;
-            }
-
-            const newMessage: SimulationMessage = {
-              id: data.message_id,
-              chatId: data.chat_id,
-              type: data.role === "user" ? "query" : "response",
-              content: data.content,
-              completed: data.completed,
-              createdAt: data.created_at,
-              audio: data.audio || false,
-              filePath: null,
-            };
-
-            const updated = [...old, newMessage].sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
-            );
-
-            logInfo(`Updated simulation message cache`, {
-              newMessagesCount: updated.length,
-              addedMessage: {
-                id: newMessage.id,
-                type: newMessage.type,
-                content: newMessage.content.substring(0, 50),
-              },
-            });
-
-            return updated;
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
+  // All simulation message events (simulation_new_message, simulation_message_token, etc.)
+  // are processed by the websocket-context.tsx and update the React Query cache automatically
 
     socket.on(
       "message_token",
@@ -1126,41 +1041,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [queryClient, attempt?.profileId, attemptId]); // Depend on queryClient, profileId, and attemptId for WebSocket connection
 
-  // Join/leave chat rooms when currentChat changes
-  useEffect(() => {
-    if (!socketRef.current || !isConnected) return;
-
-    // Don't rejoin the same room
-    if (currentRoomRef.current === currentChat?.id) return;
-
-    // Leave current room if we're in one
-    if (currentRoomRef.current && socketRef.current) {
-      socketRef.current.emit("leave_chat", {
-        chat_id: currentRoomRef.current,
-        chat_type: "simulation",
-      });
-      currentRoomRef.current = null;
-    }
-
-    // Join new room if we have a chat ID
-    if (currentChat?.id && socketRef.current) {
-      socketRef.current.emit("join_chat", {
-        chat_id: currentChat.id,
-        chat_type: "simulation",
-      });
-      currentRoomRef.current = currentChat.id;
-    }
-
-    return () => {
-      if (currentRoomRef.current && socketRef.current) {
-        socketRef.current.emit("leave_chat", {
-          chat_id: currentRoomRef.current,
-          chat_type: "simulation",
-        });
-        currentRoomRef.current = null;
-      }
-    };
-  }, [currentChat?.id, isConnected]);
+  // Room management is now handled by the global WebSocket context in the first useEffect
 
   // WebSocket-based message handler using global context
   const handleSendMessage = async (

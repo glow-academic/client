@@ -562,7 +562,7 @@ async def process_simulation_message_websocket(
         # 2. Emit user message to connected clients
         sio_instance = get_sio_instance()
         logger.info(f"Emitting user message to room simulation_{chat_id}")
-        await sio_instance.emit('new_message', {
+        await sio_instance.emit('simulation_new_message', {
             'message_id': str(user_message.id),
             'chat_id': str(chat_id),
             'role': 'user',
@@ -586,7 +586,7 @@ async def process_simulation_message_websocket(
         
         # 4. Emit placeholder assistant message
         logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
-        await sio_instance.emit('new_message', {
+        await sio_instance.emit('simulation_new_message', {
             'message_id': str(assistant_message.id),
             'chat_id': str(chat_id),
             'role': 'assistant',
@@ -614,7 +614,7 @@ async def process_simulation_message_websocket(
                 
                 # Emit token update to connected clients
                 logger.info(f"Emitting token to room simulation_{chat_id}: {token[:20]}...")
-                await sio_instance.emit('message_token', {
+                await sio_instance.emit('simulation_message_token', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
                     'token': token,
@@ -638,7 +638,7 @@ async def process_simulation_message_websocket(
                 
                 # Emit cancellation signal
                 logger.info(f"Emitting cancellation to room simulation_{chat_id}")
-                await sio_instance.emit('message_cancelled', {
+                await sio_instance.emit('simulation_message_cancelled', {
                     'message_id': str(assistant_message.id),
                     'chat_id': str(chat_id),
                     'final_content': accumulated_content
@@ -655,7 +655,7 @@ async def process_simulation_message_websocket(
         # 7. Emit completion signal (only if not cancelled)
         if not cancelled:
             logger.info(f"Emitting completion to room simulation_{chat_id}")
-            await sio_instance.emit('message_complete', {
+            await sio_instance.emit('simulation_message_complete', {
                 'message_id': str(assistant_message.id),
                 'chat_id': str(chat_id),
                 'final_content': accumulated_content,
@@ -666,7 +666,7 @@ async def process_simulation_message_websocket(
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
         sio_instance = get_sio_instance()
         logger.info(f"Emitting error to room simulation_{chat_id}")
-        await sio_instance.emit('message_error', {
+        await sio_instance.emit('simulation_message_error', {
             'chat_id': str(chat_id),
             'error': str(e)
         }, room=f"simulation_{chat_id}")
@@ -699,7 +699,7 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
         await handle_start_simulation(sid, data)
     
     @sio.event  # type: ignore
-    async def send_message(sid: str, data: Dict[str, Any]) -> None:
+    async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         """Send a text message in simulation"""
         await handle_send_message(sid, data)
     

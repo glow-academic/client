@@ -785,6 +785,7 @@ export default function Home() {
         toast.error("Failed to start simulation. Please try again.");
         setLoadingSimulation(null);
       }
+      return;
     },
     [profile, classes, isConnected, emitStartSimulation]
   );

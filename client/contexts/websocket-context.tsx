@@ -261,6 +261,7 @@ export function WebSocketProvider({
         (data: {
           message_id: string;
           chat_id: string;
+          token: string;
           accumulated_content: string;
         }) => {
           logInfo("Received simulation_message_token event", {
@@ -294,7 +295,7 @@ export function WebSocketProvider({
           message_id: string;
           chat_id: string;
           final_content: string;
-          completed: boolean;
+          completed?: boolean;
         }) => {
           logInfo("Received assistant_message_complete event", {
             messageId: data.message_id,
@@ -312,6 +313,45 @@ export function WebSocketProvider({
             }
           );
 
+          // Reset loading states
+          setIsSendingAssistantMessage(false);
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      // Assistant message cancellation
+      socket.on(
+        "assistant_message_cancelled",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+        }) => {
+          logInfo("Received assistant_message_cancelled event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+          });
+
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
+
+          // Reset loading states
+          setIsSendingAssistantMessage(false);
+          setIsStoppingAssistant(false);
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["assistantMessages", data.chat_id],
@@ -327,7 +367,7 @@ export function WebSocketProvider({
           message_id: string;
           chat_id: string;
           final_content: string;
-          completed: boolean;
+          completed?: boolean;
         }) => {
           logInfo("Received simulation_message_complete event", {
             messageId: data.message_id,
@@ -345,11 +385,67 @@ export function WebSocketProvider({
             }
           );
 
+          // Reset loading states
+          setIsSendingSimulationMessage(false);
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
             });
           }, 0);
+        }
+      );
+
+      // Simulation message cancellation
+      socket.on(
+        "simulation_message_cancelled",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+        }) => {
+          logInfo("Received simulation_message_cancelled event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+          });
+
+          queryClient.setQueryData(
+            ["simulationMessages", data.chat_id],
+            (old: SimulationMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === data.message_id
+                  ? { ...msg, content: data.final_content, completed: true }
+                  : msg
+              );
+            }
+          );
+
+          // Reset loading states
+          setIsSendingSimulationMessage(false);
+          setIsStoppingSimulation(false);
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      // Simulation message error
+      socket.on(
+        "simulation_message_error",
+        (data: { chat_id: string; error: string }) => {
+          logError("Received simulation_message_error event", {
+            chatId: data.chat_id,
+            error: data.error,
+          });
+
+          // Reset loading states
+          setIsSendingSimulationMessage(false);
+          setIsStoppingSimulation(false);
+
+          toast.error(`Simulation error: ${data.error}`);
         }
       );
 

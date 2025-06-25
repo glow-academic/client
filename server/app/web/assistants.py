@@ -395,7 +395,7 @@ async def process_assistant_message_websocket(
                         db_session.refresh(current_message)
                         
                         # Emit new placeholder message
-                        await sio_instance.emit('new_message', {
+                        await sio_instance.emit('assistant_new_message', {
                             'message_id': str(current_message.id),
                             'chat_id': str(chat_id),
                             'role': 'assistant',
@@ -410,7 +410,7 @@ async def process_assistant_message_websocket(
                     db_session.commit()
                     
                     # Emit token update to connected clients
-                    await sio_instance.emit('message_token', {
+                    await sio_instance.emit('assistant_message_token', {
                         'message_id': str(current_message.id),
                         'chat_id': str(chat_id),
                         'token': token,
@@ -424,7 +424,7 @@ async def process_assistant_message_websocket(
                 
                 # Emit cancellation signal (if we have a message)
                 if current_message:
-                    await sio_instance.emit('message_cancelled', {
+                    await sio_instance.emit('assistant_message_cancelled', {
                         'message_id': str(current_message.id),
                         'chat_id': str(chat_id),
                         'final_content': accumulated_content
@@ -441,7 +441,7 @@ async def process_assistant_message_websocket(
             
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
-                await sio_instance.emit('message_complete', {
+                await sio_instance.emit('assistant_message_complete', {
                     'message_id': str(current_message.id),
                     'chat_id': str(chat_id),
                     'final_content': accumulated_content
