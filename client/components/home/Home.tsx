@@ -755,7 +755,7 @@ export default function Home() {
         }
 
         setLoadingSimulation(simulationId);
-        toast.loading("Starting simulation...");
+        const loadingToast = toast.loading("Starting simulation...");
 
         logInfo("Starting simulation via global WebSocket", {
           simulationId,
@@ -772,7 +772,7 @@ export default function Home() {
         // Set a timeout to handle cases where the server doesn't respond
         const timeoutId = setTimeout(() => {
           logError("Simulation start timeout - no response from server");
-          toast.dismiss();
+          toast.dismiss(loadingToast);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingSimulation(null);
         }, 30000); // 30 second timeout

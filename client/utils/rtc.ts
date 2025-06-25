@@ -2,6 +2,7 @@
  * client/utils/rtc.ts
  */
 
+import { getApiUrl } from "@/lib/utils";
 import { logError, logInfo } from "./logger";
 
 interface IceConfig {
@@ -26,7 +27,7 @@ const peerConnections = new Map<string, RTCPeerConnection>();
 const signalingWebSockets = new Map<string, WebSocket>();
 
 const fetchIce = async (): Promise<IceConfig> => {
-  return fetch("/rtc/ice").then<IceConfig>((r) => r.json());
+  return fetch(`${getApiUrl()}/rtc/ice`).then<IceConfig>((r) => r.json());
 };
 
 /**
@@ -66,9 +67,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
 
     // Set up signaling WebSocket
     const signalingWs = new WebSocket(
-      `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${
-        window.location.host
-      }/rtc/signaling/${chatId}`
+      `${getApiUrl()}/rtc/signaling/${chatId}`
     );
 
     // Listen for server ICE candidates
@@ -141,7 +140,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
     await pc.setLocalDescription(offer);
 
     // Send offer to server
-    const response = await fetch("/rtc/offer", {
+    const response = await fetch(`${getApiUrl()}/rtc/offer`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -252,6 +251,8 @@ export function getRtcConnectionState(
  * Check if the browser supports WebRTC
  */
 export function isWebRtcSupported(): boolean {
+  if (typeof window === "undefined") return false;
+
   return !!(
     window.RTCPeerConnection &&
     navigator.mediaDevices &&

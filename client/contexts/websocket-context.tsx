@@ -4,6 +4,7 @@
  * across all components based on the user's profile ID
  */
 "use client";
+import { getApiUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { useQueryClient } from "@tanstack/react-query";
@@ -882,7 +883,7 @@ export function WebSocketProvider({
       });
 
       // Use the Next.js proxy route for Socket.IO connections
-      const socketUrl = window.location.origin;
+      const socketUrl = getApiUrl();
       const socketPath = "/socket.io";
 
       const socket = io(socketUrl, {

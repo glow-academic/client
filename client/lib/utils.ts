@@ -6,29 +6,6 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Returns the correct Socket.IO endpoint for the current runtime.
- *
- * • In the browser  → /api/ws (Socket.IO proxy endpoint)
- * • In SSR / Node  → http://localhost:8000 (Direct server connection)
- */
-export function getWebSocketUrl(): string {
-  // Detect "server" vs "browser"
-  const isBrowser = typeof window !== "undefined";
-
-  if (isBrowser) {
-    // Browser uses the Next.js API proxy at /api/ws
-    return "/api/ws";
-  }
-
-  // Server-side connections go directly to FastAPI
-  if (process.env["NODE_ENV"] === "development") {
-    return "http://localhost:8000";
-  } else {
-    return "http://server:8000";
-  }
-}
-
-/**
  * Generate API URL based on environment
  * Uses Docker internal network (server:8000) in production/Docker environments
  * Uses localhost:8000 in development mode
