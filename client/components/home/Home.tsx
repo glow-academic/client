@@ -5,7 +5,7 @@
  * 05/14/2025
  */
 "use client";
-import { logError } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
@@ -19,7 +19,14 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import React, { useCallback, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 import {
@@ -53,7 +60,6 @@ import {
 import { useRole } from "@/contexts/role-context";
 import { Agent, Scenario, Simulation, Standard, StandardGroup } from "@/types";
 import { getAgentConfig } from "@/utils/agents";
-import { startSimulation } from "@/utils/api/simulations/start-simulation";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -609,6 +615,10 @@ export default function Home() {
   const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
+  // WebSocket state
+  const [_isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef<Socket | null>(null);
+
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
 
@@ -696,6 +706,97 @@ export default function Home() {
     enabled: !!grades && grades.length > 0,
   });
 
+  // WebSocket connection setup
+  useEffect(() => {
+    // Don't create multiple connections
+    if (socketRef.current?.connected) {
+      return;
+    }
+
+    // Use the Next.js proxy route for Socket.IO connections (same as Attempt.tsx)
+    const socketUrl = window.location.origin; // Always use same origin with proxy
+    const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
+
+    const socket = io(socketUrl, {
+      path: socketPath,
+      transports: ["polling", "websocket"],
+      autoConnect: true,
+      forceNew: false,
+      timeout: 15000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      upgrade: true,
+      rememberUpgrade: true,
+      query: {
+        profileId: profile?.id, // Include profileId in query
+        timestamp: Date.now(),
+        EIO: "4", // Force Engine.IO protocol version 4
+      },
+    });
+
+    socketRef.current = socket;
+
+    socket.on("connect", () => {
+      setIsConnected(true);
+      logInfo("WebSocket connected (via proxy)", {
+        socketId: socket.id,
+        profileId: profile?.id,
+      });
+    });
+
+    socket.on("disconnect", (reason: string) => {
+      setIsConnected(false);
+      logInfo(`WebSocket disconnected: ${reason}`, {
+        socketId: socket.id,
+        profileId: profile?.id,
+      });
+    });
+
+    socket.on("connect_error", (error: Error) => {
+      logError("WebSocket connection error:", error.message, {
+        profileId: profile?.id,
+      });
+      setIsConnected(false);
+    });
+
+    // Simulation-specific WebSocket event listeners
+    socket.on(
+      "simulation_started",
+      (data: {
+        success: boolean;
+        message: string;
+        attempt_id: string;
+        chat_id: string;
+      }) => {
+        if (data.success) {
+          logInfo("Simulation started successfully", data);
+          toast.dismiss();
+          toast.success(data.message);
+          router.push(`/home/a/${data.attempt_id}`);
+        } else {
+          logError("Failed to start simulation", data.message);
+          toast.dismiss();
+          toast.error(data.message);
+        }
+        setLoadingSimulation(null);
+      }
+    );
+
+    socket.on("error", (data: { success: boolean; message: string }) => {
+      logError("WebSocket error:", data.message);
+      toast.dismiss();
+      toast.error(data.message);
+      setLoadingSimulation(null);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [profile?.id, router]); // Depend on profile ID and router
+
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
       try {
@@ -704,30 +805,35 @@ export default function Home() {
           return;
         }
 
+        if (!socketRef.current) {
+          toast.error("WebSocket not connected. Please refresh the page.");
+          return;
+        }
+
         setLoadingSimulation(simulationId);
         toast.loading("Starting simulation...");
 
-        const result = await startSimulation({
+        logInfo("Starting simulation via WebSocket", {
           simulationId,
-          ...(profile?.id && { profileId: profile.id }),
+          profileId: profile?.id,
         });
 
-        if (!result.success) {
-          throw new Error(result.message);
-        }
+        // Send start simulation request via WebSocket
+        socketRef.current.emit("start_simulation", {
+          simulation_id: simulationId,
+          profile_id: profile?.id || null,
+        });
 
-        toast.dismiss();
-        toast.success("Simulation started");
-        router.push(`/home/a/${result.attempt_id}`);
+        // The response will be handled via WebSocket events
+        // so we don't need to process the response here
       } catch (error) {
         logError("Error starting simulation:", error);
         toast.dismiss();
         toast.error("Failed to start simulation. Please try again.");
-      } finally {
         setLoadingSimulation(null);
       }
     },
-    [profile, router, classes]
+    [profile, classes]
   );
 
   // Separate simulations into default and cohort-based
