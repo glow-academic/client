@@ -33,7 +33,9 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Allow all origins
-allowed_origins = ["*"]
+allowed_origins = [
+    "http://localhost:3000",
+]
 
 # Store active chat connections
 active_connections: dict[str, str] = {}

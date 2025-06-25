@@ -136,14 +136,13 @@ export default function EvaluationRun({ runId }: { runId: string }) {
 
   // WebSocket connection setup
   useEffect(() => {
-    /** -----------------------------------------------------------------
-     *  IMPORTANT bit:
-     *  • url   = same-origin proxy   → "wss://<site>/api/ws"
-     *  • path  = upstream socket.io → "/socket.io"
-     *    (Because FastAPI's Socket.IO server still lives at /socket.io.
-     *     The proxy just lives one level higher and forwards the request.)
-     * ----------------------------------------------------------------- */
-    const socket = io({
+    // Determine the Socket.IO server URL based on environment
+    const socketUrl =
+      process.env.NODE_ENV === "production"
+        ? window.location.origin // In production, use same origin
+        : "http://localhost:8000"; // In development, connect directly to FastAPI server
+
+    const socket = io(socketUrl, {
       transports: ["polling", "websocket"],
       query: {
         EIO: "4", // Force Engine.IO protocol version 4

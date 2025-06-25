@@ -111,7 +111,13 @@ export function ChatProvider({ children }: ChatProviderProps) {
         attempt: connectionAttempts.current + 1,
       });
 
-      const socket = io("/api/ws", {
+      // Determine the Socket.IO server URL based on environment
+      const socketUrl =
+        process.env.NODE_ENV === "production"
+          ? window.location.origin // In production, use same origin
+          : "http://localhost:8000"; // In development, connect directly to FastAPI server
+
+      const socket = io(socketUrl, {
         transports: ["polling", "websocket"],
         autoConnect: true,
         forceNew: false,
