@@ -56,3 +56,6 @@ websockets>=12.0
 
 # mcp
 fastmcp
+
+# openai whisper
+openai-whisper==20240930

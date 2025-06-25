@@ -54,6 +54,8 @@ CREATE TABLE simulation_messages (
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   chat_id    UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
   content    TEXT        NOT NULL,
+  audio     BOOLEAN     NOT NULL           DEFAULT FALSE,
+  file_path  TEXT        NULL, -- if this has a corresponding audio file, this will be the path to the audio file
   type  simulation_message_type NOT NULL, -- query or response
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
