@@ -35,8 +35,7 @@ logger = logging.getLogger(__name__)
 # Allow all origins
 allowed_origins = [
     "http://localhost:3000",
-    "http://localhost:3000/api/ws",
-    "http://localhost:3000/api/ws/socket.io",
+    "http://client:3000",
 ]
 
 # Store active chat connections

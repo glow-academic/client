@@ -4,16 +4,9 @@
  * Proxies Socket.IO connections to FastAPI backend
  */
 
+import { getApiUrl } from "@/lib/utils";
 import { logError, logInfo } from "@/utils/logger";
 import type { NextApiRequest, NextApiResponse } from "next";
-
-// Get the target URL for the proxy (server-side HTTP URL for Socket.IO)
-function getProxyTargetUrl(): string {
-  if (process.env.NODE_ENV === "development") {
-    return "http://localhost:8000";
-  }
-  return "http://server:8000";
-}
 
 export default async function handler(
   req: NextApiRequest,
@@ -43,7 +36,7 @@ export default async function handler(
     targetPath = "/socket.io/";
   }
 
-  const targetUrl = `${getProxyTargetUrl()}${targetPath}`;
+  const targetUrl = `${getApiUrl()}${targetPath}`;
 
   logInfo("[SocketIO-proxy] Proxying request", {
     method: req.method,
