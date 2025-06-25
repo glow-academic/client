@@ -6,7 +6,7 @@
  */
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -39,6 +39,7 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
+import { useWebSocket } from "@/contexts/websocket-context";
 import { Document, EvalChat, EvalMessage } from "@/types";
 import {
   EvalRunStatus,
@@ -46,7 +47,7 @@ import {
 } from "@/utils/api/evals/get-eval-run-status";
 import { runEval } from "@/utils/api/evals/run-eval";
 import { stopAllEvalRuns } from "@/utils/api/evals/stop-all-evals";
-import { logError, logInfo } from "@/utils/logger";
+import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
@@ -85,8 +86,6 @@ interface ConversationData {
 }
 
 export default function EvaluationRun({ runId }: { runId: string }) {
-  const queryClient = useQueryClient();
-
   // State for chat selection and evaluation running
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -100,13 +99,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [runStatus, setRunStatus] = useState<EvalRunStatus | null>(null);
 
   // Use global WebSocket context
-  const {
-    isConnected,
-    emitStartEval,
-    emitRunEval,
-    emitStopEval,
-    emitStopAllEvals,
-  } = useWebSocket();
+  const { isConnected, joinRoom, leaveRoom } = useWebSocket();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -138,363 +131,21 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     refetchInterval: isRunningEval ? 2000 : false, // Poll every 2 seconds when running
   });
 
-  // WebSocket connection setup
+  // WebSocket events are now handled by the global WebSocket context
+  // All eval message events are processed by the websocket-context.tsx
+
+  // Join/leave eval run room when evalRun changes - using global WebSocket
   useEffect(() => {
-    // Determine the Socket.IO server URL based on environment
-    const socketUrl =
-      process.env.NODE_ENV === "production"
-        ? window.location.origin // In production, use same origin
-        : "http://localhost:8000"; // In development, connect directly to FastAPI server
+    if (!isConnected || !evalRun?.id) return;
 
-    const socket = io(socketUrl, {
-      transports: ["polling", "websocket"],
-      query: {
-        EIO: "4", // Force Engine.IO protocol version 4
-      },
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      setIsConnected(true);
-      logInfo("WebSocket connected (via proxy)");
-    });
-
-    socket.on("disconnect", (reason: string) => {
-      setIsConnected(false);
-      logInfo(`WebSocket disconnected: ${reason}`);
-    });
-
-    socket.on("connect_error", (error: Error) => {
-      logError("WebSocket connection error:", error);
-      setIsConnected(false);
-    });
-
-    // Evaluation-specific WebSocket event handlers
-    socket.on(
-      "eval_chat_start",
-      (data: {
-        eval_run_id: string;
-        chat_id: string;
-        chat_index: number;
-        total_chats: number;
-        message: string;
-      }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "chat_start",
-            message: data.message,
-            chat_id: data.chat_id,
-            chat_index: data.chat_index,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_turn_start",
-      (data: {
-        eval_run_id: string;
-        chat_id: string;
-        turn: number;
-        max_turns: number;
-        message: string;
-      }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "turn_start",
-            message: data.message,
-            chat_id: data.chat_id,
-            turn: data.turn,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_token",
-      (data: { eval_run_id: string; chat_id: string; token: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "token",
-            token: data.token,
-            chat_id: data.chat_id,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_turn_complete",
-      (data: {
-        eval_run_id: string;
-        chat_id: string;
-        turn: number;
-        message: string;
-      }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "turn_complete",
-            message: data.message,
-            chat_id: data.chat_id,
-            turn: data.turn,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_chat_complete",
-      (data: { eval_run_id: string; chat_id: string; message: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "chat_complete",
-            message: data.message,
-            chat_id: data.chat_id,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_evaluation_complete",
-      (data: {
-        eval_run_id: string;
-        chat_id: string;
-        eval_grade_id: string;
-      }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "evaluation_complete",
-            chat_id: data.chat_id,
-            evalGradeId: data.eval_grade_id,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-      }
-    );
-
-    socket.on(
-      "eval_run_complete",
-      (data: { eval_run_id: string; message: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "run_complete",
-            message: data.message,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        setIsRunningEval(false);
-        toast.success("All evaluations completed!");
-        // Invalidate queries to refresh data
-        queryClient.invalidateQueries({ queryKey: ["evalChats"] });
-        queryClient.invalidateQueries({ queryKey: ["evalMessages"] });
-      }
-    );
-
-    // Add standard message event handlers for eval messages
-    socket.on(
-      "new_message",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        role: string;
-        content: string;
-        completed: boolean;
-        created_at: string;
-      }) => {
-        logInfo("Eval received new_message", data);
-        // Update the messages cache with new message
-        queryClient.setQueryData(
-          ["evalMessages", data.chat_id],
-          (old: EvalMessage[] = []) => {
-            const exists = old.find((msg) => msg.id === data.message_id);
-            if (exists) return old;
-
-            const newMessage: EvalMessage = {
-              id: data.message_id,
-              chatId: data.chat_id,
-              type: data.role === "user" ? "query" : "response",
-              content: data.content,
-              completed: data.completed,
-              createdAt: data.created_at,
-            };
-
-            return [...old, newMessage].sort(
-              (a, b) =>
-                new Date(a.createdAt).getTime() -
-                new Date(b.createdAt).getTime()
-            );
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["evalMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on(
-      "message_token",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        token: string;
-        accumulated_content: string;
-      }) => {
-        logInfo("Eval received message_token", { token: data.token });
-        // Update the specific message with streaming content
-        queryClient.setQueryData(
-          ["evalMessages", data.chat_id],
-          (old: EvalMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.accumulated_content }
-                : msg
-            );
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["evalMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on(
-      "message_complete",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        final_content: string;
-      }) => {
-        logInfo("Eval received message_complete", data);
-        // Mark message as completed and update final content
-        queryClient.setQueryData(
-          ["evalMessages", data.chat_id],
-          (old: EvalMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["evalMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on(
-      "eval_chat_error",
-      (data: { eval_run_id: string; chat_id: string; error: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "chat_error",
-            chat_id: data.chat_id,
-            error: data.error,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        toast.error(`Chat error: ${data.error}`);
-      }
-    );
-
-    socket.on(
-      "eval_evaluation_error",
-      (data: { eval_run_id: string; chat_id: string; error: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "evaluation_error",
-            chat_id: data.chat_id,
-            error: data.error,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        toast.error(`Evaluation error: ${data.error}`);
-      }
-    );
-
-    socket.on(
-      "eval_run_error",
-      (data: { eval_run_id: string; error: string }) => {
-        setAiConversationData((prev) => [
-          ...prev,
-          {
-            type: "error",
-            error: data.error,
-            timestamp: new Date().toISOString(),
-          },
-        ]);
-        toast.error(`Evaluation run error: ${data.error}`);
-        setIsRunningEval(false);
-      }
-    );
-
-    socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
-      logInfo(`Joined ${data.chat_type} chat: ${data.chat_id}`);
-    });
-
-    socket.on(
-      "chat_stopped",
-      (data: { chat_id: string; chat_type: string; message: string }) => {
-        if (data.chat_type === "eval") {
-          setIsRunningEval(false);
-          setIsStoppingEval(false);
-          toast.success(data.message || "Evaluation stopped successfully");
-        }
-      }
-    );
+    joinRoom(evalRun.id, "eval");
 
     return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [queryClient]);
-
-  // Join/leave eval run room when evalRun changes
-  useEffect(() => {
-    if (!socketRef.current || !isConnected || !evalRun?.id) return;
-
-    socketRef.current.emit("join_chat", {
-      chat_id: evalRun.id,
-      chat_type: "eval",
-    });
-
-    return () => {
-      if (evalRun?.id && socketRef.current) {
-        socketRef.current.emit("leave_chat", {
-          chat_id: evalRun.id,
-          chat_type: "eval",
-        });
+      if (evalRun?.id) {
+        leaveRoom(evalRun.id, "eval");
       }
     };
-  }, [evalRun?.id, isConnected]);
+  }, [evalRun?.id, isConnected, joinRoom, leaveRoom]);
 
   // Poll for run status when evaluation is running
   useEffect(() => {
@@ -649,24 +300,18 @@ export default function EvaluationRun({ runId }: { runId: string }) {
     );
   }, [selectedChatId, chats, currentChat]);
 
-  // Join/leave individual chat rooms for real-time message updates
+  // Join/leave individual chat rooms for real-time message updates - using global WebSocket
   useEffect(() => {
-    if (!socketRef.current || !isConnected || !selectedChat?.id) return;
+    if (!isConnected || !selectedChat?.id) return;
 
-    socketRef.current.emit("join_chat", {
-      chat_id: selectedChat.id,
-      chat_type: "eval",
-    });
+    joinRoom(selectedChat.id, "eval");
 
     return () => {
-      if (selectedChat?.id && socketRef.current) {
-        socketRef.current.emit("leave_chat", {
-          chat_id: selectedChat.id,
-          chat_type: "eval",
-        });
+      if (selectedChat?.id) {
+        leaveRoom(selectedChat.id, "eval");
       }
     };
-  }, [selectedChat?.id, isConnected]);
+  }, [selectedChat?.id, isConnected, joinRoom, leaveRoom]);
 
   // Get basic rubric info for timer tooltip
   const selectedChatGrade = useMemo(() => {
@@ -797,11 +442,8 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       }
 
       // Join the WebSocket room for this eval run
-      if (socketRef.current && isConnected) {
-        socketRef.current.emit("join_chat", {
-          chat_id: evalRun.id,
-          chat_type: "eval",
-        });
+      if (isConnected) {
+        joinRoom(evalRun.id, "eval");
       }
 
       // The response will be handled via WebSocket events

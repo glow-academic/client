@@ -85,7 +85,7 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
-import { logError, logInfo } from "@/utils/logger";
+import { logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -522,22 +522,12 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     }
   }, [showResults, chats, selectedChatId]);
 
-  // Fetch scenario for results display
-  const { data: resultsScenario, isLoading: resultsScenarioLoading } = useQuery(
-    {
-      queryKey: ["resultsScenario", selectedChat?.scenarioId],
-      queryFn: () => getScenario(selectedChat!.scenarioId),
-      enabled: !!selectedChat?.scenarioId && showResults,
-    }
-  );
-
   // Fetch messages for selected chat in results
-  const { data: resultsMessages = [], isLoading: resultsMessagesLoading } =
-    useQuery({
-      queryKey: ["simulationMessages", selectedChat?.id],
-      queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
-      enabled: !!selectedChat?.id && showResults,
-    });
+  const { data: resultsMessages = [] } = useQuery({
+    queryKey: ["simulationMessages", selectedChat?.id],
+    queryFn: () => getSimulationMessagesByChat(selectedChat!.id),
+    enabled: !!selectedChat?.id && showResults,
+  });
 
   // Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
@@ -773,273 +763,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // WebSocket events are now handled by the global WebSocket context
   // All simulation message events (simulation_new_message, simulation_message_token, etc.)
   // are processed by the websocket-context.tsx and update the React Query cache automatically
-
-    socket.on(
-      "message_token",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        token: string;
-        accumulated_content: string;
-      }) => {
-        logInfo("Simulation received message_token", {
-          token: data.token,
-          messageId: data.message_id,
-          chatId: data.chat_id,
-          currentChatId: currentChatIdRef.current,
-        });
-
-        // Check if this message is for the current chat
-        if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(
-            `Ignoring token for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
-          );
-          return;
-        }
-
-        // Update the specific message with streaming content
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.accumulated_content }
-                : msg
-            );
-
-            return updated;
-          }
-        );
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on(
-      "message_complete",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        final_content: string;
-      }) => {
-        logInfo("Simulation received message_complete", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-          currentChatId: currentChatIdRef.current,
-          finalContentLength: data.final_content.length,
-        });
-
-        // Check if this message is for the current chat
-        if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(
-            `Ignoring completion for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
-          );
-          return;
-        }
-
-        // Mark message as completed and update final content
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-
-            return updated;
-          }
-        );
-
-        setIsSendingMessage(false);
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on("message_error", (data: { chat_id: string; error: string }) => {
-      logInfo("Simulation received message_error", {
-        chatId: data.chat_id,
-        currentChatId: currentChatIdRef.current,
-        error: data.error,
-      });
-
-      // Check if this error is for the current chat
-      if (data.chat_id !== currentChatIdRef.current) {
-        logInfo(
-          `Ignoring error for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
-        );
-        return;
-      }
-
-      toast.error(`Chat error: ${data.error}`);
-      setIsSendingMessage(false);
-    });
-
-    socket.on(
-      "chat_stopped",
-      (data: { chat_id: string; chat_type: string; message: string }) => {
-        if (data.chat_id === currentChatIdRef.current) {
-          setIsSendingMessage(false);
-          setIsStoppingMessage(false);
-          toast.success(data.message || "Chat stopped successfully");
-        }
-      }
-    );
-
-    socket.on(
-      "message_cancelled",
-      (data: {
-        message_id: string;
-        chat_id: string;
-        final_content: string;
-      }) => {
-        logInfo("Simulation received message_cancelled", {
-          messageId: data.message_id,
-          chatId: data.chat_id,
-          currentChatId: currentChatIdRef.current,
-        });
-
-        // Check if this message is for the current chat
-        if (data.chat_id !== currentChatIdRef.current) {
-          logInfo(
-            `Ignoring cancellation for different chat: ${data.chat_id} vs ${currentChatIdRef.current}`
-          );
-          return;
-        }
-
-        // Update the cancelled message with its final content
-        queryClient.setQueryData(
-          ["simulationMessages", data.chat_id],
-          (old: SimulationMessage[] = []) => {
-            const updated = old.map((msg) =>
-              msg.id === data.message_id
-                ? { ...msg, content: data.final_content, completed: true }
-                : msg
-            );
-
-            return updated;
-          }
-        );
-
-        setIsSendingMessage(false);
-        setIsStoppingMessage(false);
-
-        // Force re-render by invalidating the query after the update
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", data.chat_id],
-          });
-        }, 0);
-      }
-    );
-
-    socket.on("joined_chat", (data: { chat_id: string; chat_type: string }) => {
-      logInfo(`Successfully joined ${data.chat_type} chat: ${data.chat_id}`, {
-        currentChatId: currentChatIdRef.current,
-        isCurrentChat: data.chat_id === currentChatIdRef.current,
-      });
-    });
-
-    // Simulation-specific WebSocket event listeners
-    socket.on(
-      "simulation_started",
-      (data: {
-        success: boolean;
-        message: string;
-        attempt_id: string;
-        chat_id: string;
-      }) => {
-        if (data.success) {
-          logInfo("Simulation started successfully", data);
-          toast.success(data.message);
-        } else {
-          logError("Failed to start simulation", data.message);
-          toast.error(data.message);
-        }
-      }
-    );
-
-    socket.on(
-      "message_processing",
-      (data: { chat_id: string; status: string; message: string }) => {
-        logInfo("Message processing started", data);
-      }
-    );
-
-    socket.on(
-      "audio_transcribed",
-      (data: {
-        chat_id: string;
-        transcribed_text: string;
-        status: string;
-        message: string;
-      }) => {
-        logInfo("Audio transcribed", data);
-        toast.success(
-          `Audio transcribed: "${data.transcribed_text.substring(0, 50)}..."`
-        );
-      }
-    );
-
-    socket.on(
-      "simulation_stopped",
-      (data: { chat_id: string; success: boolean; message: string }) => {
-        if (data.chat_id === currentChatIdRef.current) {
-          setIsSendingMessage(false);
-          setIsStoppingMessage(false);
-          if (data.success) {
-            toast.success(data.message);
-          } else {
-            toast.error(data.message);
-          }
-        }
-      }
-    );
-
-    socket.on(
-      "simulation_continued",
-      (data: {
-        success: boolean;
-        message: string;
-        chat_id: string;
-        simulation_grade_id: string;
-        completed: boolean;
-      }) => {
-        if (data.success) {
-          logInfo("Simulation continued successfully", data);
-          toast.success(data.message);
-
-          // Invalidate queries to refresh data
-          queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-          queryClient.invalidateQueries({
-            queryKey: ["simulationChats", attemptId],
-          });
-          queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-          queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-        } else {
-          logError("Failed to continue simulation", data.message);
-          toast.error(data.message);
-        }
-        setEndChatLoading(false);
-      }
-    );
-
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
-    };
-  }, [queryClient, attempt?.profileId, attemptId]); // Depend on queryClient, profileId, and attemptId for WebSocket connection
 
   // Room management is now handled by the global WebSocket context in the first useEffect
 
@@ -1352,9 +1075,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     isLoadingFeedbacks ||
     isLoadingGrades ||
     isLoadingStandardGroups ||
-    isLoadingStandards ||
-    resultsMessagesLoading ||
-    resultsScenarioLoading
+    isLoadingStandards
   ) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
@@ -1407,7 +1128,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                       {/* Show scenario information */}
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {resultsScenario?.description || "Session Results"}
+                          {scenario?.description || "Session Results"}
                         </span>
                       </div>
                     </div>
