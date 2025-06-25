@@ -1,4 +1,4 @@
-# for use with the websockets
+# app/web/simulations.py
 
 """
 WebSocket handlers for simulation chat functionality
@@ -240,8 +240,17 @@ async def handle_send_audio(sid: str, data: Dict[str, Any]) -> None:
     """
     Handle audio message sending via WebSocket
     Transcribes audio using Whisper and processes as text
+    DEPRECATED: This is being replaced by WebRTC audio streaming
     """
     try:
+        # Emit deprecation warning
+        sio_instance = get_sio_instance()
+        await sio_instance.emit('audio_deprecated', {
+            'message': 'send_audio is deprecated. Please use WebRTC audio streaming instead.'
+        }, room=sid)
+        
+        # For backwards compatibility, we can still handle base64 audio
+        # but recommend using WebRTC
         chat_id = data.get('chat_id')
         audio_data = data.get('audio_data')  # Base64 encoded audio
         audio_format = data.get('audio_format', 'wav')  # Default to wav
@@ -316,7 +325,7 @@ async def handle_send_audio(sid: str, data: Dict[str, Any]) -> None:
                     'chat_id': chat_id,
                     'transcribed_text': transcribed_text,
                     'status': 'processing',
-                    'message': 'Audio transcribed and being processed'
+                    'message': 'Audio transcribed and being processed (via deprecated method)'
                 }, room=sid)
 
             finally:

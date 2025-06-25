@@ -38,3 +38,31 @@ class TestIce:
         # TODO: Implement error test for ice
         assert False, "IMPLEMENT: Error test for ice"
 
+
+class TestHandle_Offer:
+    """Tests for handle_offer endpoint."""
+    
+    def test_handle_offer_success(self, client):
+        """Test successful handle_offer request."""
+        # TODO: Implement test for handle_offer
+        assert False, "IMPLEMENT: Test for handle_offer"
+    
+    def test_handle_offer_error(self, client):
+        """Test handle_offer error handling."""
+        # TODO: Implement error test for handle_offer
+        assert False, "IMPLEMENT: Error test for handle_offer"
+
+
+class TestWebsocket_Signaling:
+    """Tests for websocket_signaling endpoint."""
+    
+    def test_websocket_signaling_success(self, client):
+        """Test successful websocket_signaling request."""
+        # TODO: Implement test for websocket_signaling
+        assert False, "IMPLEMENT: Test for websocket_signaling"
+    
+    def test_websocket_signaling_error(self, client):
+        """Test websocket_signaling error handling."""
+        # TODO: Implement error test for websocket_signaling
+        assert False, "IMPLEMENT: Error test for websocket_signaling"
+

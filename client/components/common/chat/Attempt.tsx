@@ -56,6 +56,8 @@ import {
   ChevronsUpDown,
   Clock,
   FileText,
+  Mic,
+  MicOff,
   PanelRightClose,
   PanelRightOpen,
   Send,
@@ -85,7 +87,7 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
-import { logInfo } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -98,6 +100,8 @@ import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+// WebRTC imports
+import { isWebRtcSupported, startRtcAudio, stopRtcAudio } from "@/utils/rtc";
 
 // Timer is now integrated directly into the component layout
 
@@ -232,6 +236,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [isStoppingMessage, setIsStoppingMessage] = useState(false);
   const currentRoomRef = useRef<string | null>(null);
+
+  // WebRTC Audio state
+  const [isRecording, setIsRecording] = useState(false);
+  const [webRtcSupported] = useState(isWebRtcSupported());
+  const [webRtcError, setWebRtcError] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1066,6 +1075,115 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     currentChatIdRef.current = currentChat?.id || null;
   }, [currentChat?.id]);
 
+  // WebRTC Audio handlers
+  const handleStartRecording = async () => {
+    if (!currentChat?.id || !webRtcSupported) return;
+
+    try {
+      setIsRecording(true);
+      setWebRtcError(null);
+      await startRtcAudio(currentChat.id);
+      toast.success("Audio recording started");
+    } catch (error) {
+      setIsRecording(false);
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to start recording";
+      setWebRtcError(errorMessage);
+      toast.error(`Failed to start audio recording: ${errorMessage}`);
+    }
+  };
+
+  const handleStopRecording = async () => {
+    if (!currentChat?.id) return;
+
+    try {
+      setIsRecording(false);
+      await stopRtcAudio(currentChat.id);
+      toast.success("Audio recording stopped");
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to stop recording";
+      toast.error(`Failed to stop audio recording: ${errorMessage}`);
+    }
+  };
+
+  // Listen for WebRTC events
+  useEffect(() => {
+    const handleWebRtcAudioStarted = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsRecording(true);
+        setWebRtcError(null);
+      }
+    };
+
+    const handleWebRtcAudioStopped = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsRecording(false);
+      }
+    };
+
+    const handleWebRtcAudioError = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsRecording(false);
+        setWebRtcError(event.detail.error);
+      }
+    };
+
+    const handleWebRtcConnectionFailed = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsRecording(false);
+        setWebRtcError("WebRTC connection failed");
+      }
+    };
+
+    window.addEventListener(
+      "webrtcAudioStarted",
+      handleWebRtcAudioStarted as EventListener
+    );
+    window.addEventListener(
+      "webrtcAudioStopped",
+      handleWebRtcAudioStopped as EventListener
+    );
+    window.addEventListener(
+      "webrtcAudioError",
+      handleWebRtcAudioError as EventListener
+    );
+    window.addEventListener(
+      "webrtcConnectionFailed",
+      handleWebRtcConnectionFailed as EventListener
+    );
+
+    return () => {
+      window.removeEventListener(
+        "webrtcAudioStarted",
+        handleWebRtcAudioStarted as EventListener
+      );
+      window.removeEventListener(
+        "webrtcAudioStopped",
+        handleWebRtcAudioStopped as EventListener
+      );
+      window.removeEventListener(
+        "webrtcAudioError",
+        handleWebRtcAudioError as EventListener
+      );
+      window.removeEventListener(
+        "webrtcConnectionFailed",
+        handleWebRtcConnectionFailed as EventListener
+      );
+    };
+  }, [currentChat?.id]);
+
+  // Clean up WebRTC when chat changes or component unmounts
+  useEffect(() => {
+    return () => {
+      if (currentChat?.id && isRecording) {
+        stopRtcAudio(currentChat.id).catch((error) => {
+          logError("Error stopping WebRTC audio", error);
+        });
+      }
+    };
+  }, [currentChat?.id, isRecording]);
+
   if (
     attemptLoading ||
     simulationLoading ||
@@ -1734,6 +1852,49 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }}
                               />
                               <div className="flex gap-2 justify-end">
+                                {/* Microphone Button for WebRTC Audio */}
+                                {webRtcSupported && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant={
+                                          isRecording
+                                            ? "destructive"
+                                            : "outline"
+                                        }
+                                        onClick={
+                                          isRecording
+                                            ? handleStopRecording
+                                            : handleStartRecording
+                                        }
+                                        disabled={
+                                          currentChat?.completed ||
+                                          (simulation?.timeLimit
+                                            ? !isActive
+                                            : false)
+                                        }
+                                        className="min-h-[40px] h-[40px] px-3"
+                                        data-testid="mic-button"
+                                      >
+                                        {isRecording ? (
+                                          <MicOff className="h-4 w-4" />
+                                        ) : (
+                                          <Mic className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {isRecording
+                                          ? "Stop audio recording"
+                                          : webRtcError
+                                            ? `Audio error: ${webRtcError}`
+                                            : "Start audio recording"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                                 <Button
                                   type="submit"
                                   disabled={
@@ -1815,6 +1976,49 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }}
                               />
                               <div className="flex gap-2 shrink-0">
+                                {/* Microphone Button for WebRTC Audio */}
+                                {webRtcSupported && (
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        type="button"
+                                        variant={
+                                          isRecording
+                                            ? "destructive"
+                                            : "outline"
+                                        }
+                                        onClick={
+                                          isRecording
+                                            ? handleStopRecording
+                                            : handleStartRecording
+                                        }
+                                        disabled={
+                                          currentChat?.completed ||
+                                          (simulation?.timeLimit
+                                            ? !isActive
+                                            : false)
+                                        }
+                                        className="min-h-[40px] h-[40px] px-3"
+                                        data-testid="mic-button"
+                                      >
+                                        {isRecording ? (
+                                          <MicOff className="h-4 w-4" />
+                                        ) : (
+                                          <Mic className="h-4 w-4" />
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {isRecording
+                                          ? "Stop audio recording"
+                                          : webRtcError
+                                            ? `Audio error: ${webRtcError}`
+                                            : "Start audio recording"}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
                                 <Button
                                   type="submit"
                                   disabled={
