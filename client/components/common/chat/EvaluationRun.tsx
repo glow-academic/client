@@ -41,12 +41,6 @@ import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
 import { useWebSocket } from "@/contexts/websocket-context";
 import { Document, EvalChat, EvalMessage } from "@/types";
-import {
-  EvalRunStatus,
-  getEvalRunStatus,
-} from "@/utils/api/evals/get-eval-run-status";
-import { runEval } from "@/utils/api/evals/run-eval";
-import { stopAllEvalRuns } from "@/utils/api/evals/stop-all-evals";
 import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -89,21 +83,25 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   // State for chat selection and evaluation running
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
-  const [isRunningEval, setIsRunningEval] = useState(false);
-  const [isStoppingEval, setIsStoppingEval] = useState(false);
   const [aiConversationData, setAiConversationData] = useState<
     ConversationData[]
   >([]);
   const [showGrades, setShowGrades] = useState(false);
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [runStatus, setRunStatus] = useState<EvalRunStatus | null>(null);
 
   // Use global WebSocket context
-  const { isConnected, joinRoom, leaveRoom } = useWebSocket();
+  const {
+    isConnected,
+    joinRoom,
+    leaveRoom,
+    emitRunEval,
+    emitStopAllEvals,
+    isRunningEval,
+    isStoppingAllEvals,
+  } = useWebSocket();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch eval run data
   const {
@@ -146,71 +144,6 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       }
     };
   }, [evalRun?.id, isConnected, joinRoom, leaveRoom]);
-
-  // Poll for run status when evaluation is running
-  useEffect(() => {
-    if (isRunningEval && evalRun?.id) {
-      const pollStatus = async () => {
-        try {
-          const response = await getEvalRunStatus({
-            eval_run_id: evalRun.id,
-          });
-
-          // Handle the new response format and convert to legacy format for compatibility
-          if (response.success && response.eval_run_id) {
-            const legacyStatus: EvalRunStatus = {
-              eval_run_id: response.eval_run_id,
-              total_chats: response.total_chats || 0,
-              completed_chats: response.completed_chats || 0,
-              progress_percentage: response.progress_percentage || 0,
-              chat_statuses: response.chat_statuses || [],
-            };
-            setRunStatus(legacyStatus);
-
-            // Check if all chats are completed
-            if (
-              legacyStatus.completed_chats === legacyStatus.total_chats &&
-              legacyStatus.total_chats > 0
-            ) {
-              setIsRunningEval(false);
-              toast.success("All evaluations completed!");
-            }
-          } else {
-            throw new Error(
-              response.message || "Failed to get eval run status"
-            );
-          }
-        } catch (error) {
-          toast.error("Error polling status: " + (error as Error).message);
-          logError("Error polling status:", error as Error);
-        }
-      };
-
-      // Poll immediately and then every 3 seconds
-      pollStatus();
-      pollingIntervalRef.current = setInterval(pollStatus, 3000);
-
-      return () => {
-        if (pollingIntervalRef.current) {
-          clearInterval(pollingIntervalRef.current);
-        }
-      };
-    }
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, [isRunningEval, evalRun?.id]);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
-  }, []);
 
   // Determine current chat based on index
   const currentChat = useMemo(() => {
@@ -394,11 +327,7 @@ export default function EvaluationRun({ runId }: { runId: string }) {
       const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
-    return () => {
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-    };
+    return;
   }, [aiConversationData.length, messages.length]);
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
@@ -430,21 +359,18 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const startEvaluationRun = async () => {
     if (!evalRun?.id) return;
 
-    setIsRunningEval(true);
     setAiConversationData([]);
 
     try {
-      const response = await runEval({
-        eval_run_id: evalRun.id,
-      });
-      if (!response.success) {
-        throw new Error(response.message);
-      }
-
       // Join the WebSocket room for this eval run
       if (isConnected) {
         joinRoom(evalRun.id, "eval");
       }
+
+      // Use WebSocket emitter instead of HTTP API
+      emitRunEval({
+        eval_run_id: evalRun.id,
+      });
 
       // The response will be handled via WebSocket events
     } catch (error) {
@@ -452,29 +378,22 @@ export default function EvaluationRun({ runId }: { runId: string }) {
         `Failed to run evaluation: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       logError("Error running evaluation:", error as Error);
-      setIsRunningEval(false);
     }
   };
 
   // Stop all evaluation chats in this run
   const stopAllEvaluationChats = async () => {
-    if (!evalRun?.id || isStoppingEval) return;
-
-    setIsStoppingEval(true);
+    if (!evalRun?.id || isStoppingAllEvals) return;
 
     try {
-      const response = await stopAllEvalRuns({
+      // Use WebSocket emitter instead of HTTP API
+      emitStopAllEvals({
         eval_run_id: evalRun.id,
       });
-
-      if (!response.success) {
-        throw new Error(response.message);
-      }
 
       // The WebSocket event will handle state updates
     } catch (error) {
       toast.error(`Failed to stop all evaluations: ${error}`);
-      setIsStoppingEval(false);
     }
   };
 
@@ -562,28 +481,22 @@ export default function EvaluationRun({ runId }: { runId: string }) {
                         variant="destructive"
                         size="sm"
                         className="flex items-center gap-2"
-                        disabled={isStoppingEval}
+                        disabled={isStoppingAllEvals}
                       >
-                        {isStoppingEval ? (
+                        {isStoppingAllEvals ? (
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         ) : (
                           <Square className="h-4 w-4" />
                         )}
-                        {isStoppingEval ? "Stopping..." : "Stop Evaluation"}
+                        {isStoppingAllEvals ? "Stopping..." : "Stop Evaluation"}
                       </Button>
                     )}
 
                     {/* Running Status */}
-                    {isRunningEval && !isStoppingEval && (
+                    {isRunningEval && !isStoppingAllEvals && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                         Running evaluation...
-                        {runStatus && (
-                          <span>
-                            ({runStatus.completed_chats}/{runStatus.total_chats}{" "}
-                            chats completed)
-                          </span>
-                        )}
                       </div>
                     )}
                   </div>
