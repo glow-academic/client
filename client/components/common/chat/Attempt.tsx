@@ -83,6 +83,7 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import Markdown from "@/components/common/chat/Markdown";
 import TableRubric from "@/components/common/rubric/TableRubric";
+import { useWebSocket } from "@/contexts/websocket-context";
 import { Document, SimulationChat, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
@@ -223,11 +224,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     isConnected,
     joinRoom,
     leaveRoom,
-    emitSendMessage,
+    emitSendSimulationMessage,
     emitStopSimulation,
     emitContinueSimulation,
-    addEventListener,
-    removeEventListener,
   } = useWebSocket();
 
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -743,78 +742,35 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  // WebSocket connection setup - should only run once
+  // Join/leave chat rooms when currentChat changes - using global WebSocket
   useEffect(() => {
-    // Only create connection if we have a profile ID
-    if (!attempt?.profileId) {
-      logInfo("Waiting for attempt profile ID before connecting WebSocket", {
-        attemptId,
-        profileId: attempt?.profileId,
-      });
-      return;
+    if (!isConnected || !currentChat?.id) return;
+
+    // Don't rejoin the same room
+    if (currentRoomRef.current === currentChat.id) return;
+
+    // Leave current room if we're in one
+    if (currentRoomRef.current) {
+      leaveRoom(currentRoomRef.current, "simulation");
     }
 
-    // Don't create multiple connections
-    if (socketRef.current?.connected) {
-      logInfo("WebSocket already connected, skipping initialization");
-      return;
-    }
+    // Join new room
+    joinRoom(currentChat.id, "simulation");
+    currentRoomRef.current = currentChat.id;
+    currentChatIdRef.current = currentChat.id;
 
-    /** -----------------------------------------------------------------
-     *  IMPORTANT bit:
-     *  • url   = same-origin proxy   → "wss://<site>/api/ws"
-     *  • path  = upstream socket.io → "/socket.io"
-     *    (Because FastAPI's Socket.IO server still lives at /socket.io.
-     *     The proxy just lives one level higher and forwards the request.)
-     * ----------------------------------------------------------------- */
+    logInfo(`Joined simulation chat room: ${currentChat.id}`);
 
-    // Use the Next.js proxy route for Socket.IO connections (same as chat-context.tsx)
-    const socketUrl = window.location.origin; // Always use same origin with proxy
-    const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
+    return () => {
+      if (currentRoomRef.current) {
+        leaveRoom(currentRoomRef.current, "simulation");
+        currentRoomRef.current = null;
+        currentChatIdRef.current = null;
+      }
+    };
+  }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
 
-    const socket = io(socketUrl, {
-      path: socketPath,
-      transports: ["polling", "websocket"],
-      autoConnect: true,
-      forceNew: false,
-      timeout: 15000,
-      reconnection: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      upgrade: true,
-      rememberUpgrade: true,
-      query: {
-        profileId: attempt?.profileId, // Include profileId in query
-        timestamp: Date.now(),
-        EIO: "4", // Force Engine.IO protocol version 4
-      },
-    });
-
-    socketRef.current = socket;
-
-    socket.on("connect", () => {
-      setIsConnected(true);
-      logInfo("WebSocket connected (via proxy)", {
-        socketId: socket.id,
-        profileId: attempt?.profileId,
-      });
-    });
-
-    socket.on("disconnect", (reason: string) => {
-      setIsConnected(false);
-      logInfo(`WebSocket disconnected: ${reason}`, {
-        socketId: socket.id,
-        profileId: attempt?.profileId,
-      });
-    });
-
-    socket.on("connect_error", (error: Error) => {
-      logError("WebSocket connection error:", error.message, {
-        profileId: attempt?.profileId,
-      });
-      setIsConnected(false);
-    });
+  // WebSocket events are now handled by the global WebSocket context
 
     socket.on(
       "new_message",
@@ -1206,7 +1162,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [currentChat?.id, isConnected]);
 
-  // WebSocket-based message handler
+  // WebSocket-based message handler using global context
   const handleSendMessage = async (
     e: React.FormEvent<HTMLFormElement> | null,
     initialMessage?: string
@@ -1220,33 +1176,28 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setIsSendingMessage(true);
 
     try {
-      if (!socketRef.current) {
-        throw new Error("WebSocket not connected");
-      }
-
-      // Send message via WebSocket
-      socketRef.current.emit("send_message", {
+      // Send message via global WebSocket context
+      emitSendSimulationMessage({
         chat_id: currentChat.id,
         message: messageToSend,
       });
 
-      // The response will be handled via WebSocket events
-      // so we don't need to process the response here
+      // The response will be handled via WebSocket events in the global context
     } catch (err) {
       toast.error(`Failed to send message: ${err}`);
       setIsSendingMessage(false);
     }
   };
 
-  // Stop message function
+  // Stop message function using global context
   const handleStopMessage = async () => {
-    if (!currentChat || !socketRef.current || isStoppingMessage) return;
+    if (!currentChat || isStoppingMessage) return;
 
     setIsStoppingMessage(true);
 
     try {
-      // Send stop request via WebSocket
-      socketRef.current.emit("stop_simulation", {
+      // Send stop request via global WebSocket context
+      emitStopSimulation({
         chat_id: currentChat.id,
       });
 
@@ -1263,12 +1214,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     setEndChatLoading(true);
 
     try {
-      if (!socketRef.current) {
-        throw new Error("WebSocket not connected");
-      }
-
-      // Send continue request via WebSocket
-      socketRef.current.emit("continue_simulation", {
+      // Send continue request via global WebSocket context
+      emitContinueSimulation({
         chat_id: currentChat.id,
         attempt_id: currentChat.attemptId,
       });

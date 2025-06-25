@@ -37,10 +37,10 @@ import ChatMessages from "./ChatMessages";
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const {
     uiState,
-    openWidget,
+    expand,
     close,
     currentChatId,
-    pastChats,
+    chats,
     isLoadingChats,
     selectChat,
     startBlankChat,
@@ -100,12 +100,12 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {pastChats && pastChats.length > 0 && (
+                {chats && chats.length > 0 && (
                   <>
                     <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                       Past Chats
                     </div>
-                    {pastChats
+                    {chats
                       .sort(
                         (a, b) =>
                           new Date(b.createdAt).getTime() -
@@ -143,7 +143,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={openWidget}
+                    onClick={expand}
                     className="h-8"
                   >
                     <Minimize2 className="h-4 w-4" />

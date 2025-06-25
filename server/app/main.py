@@ -10,9 +10,7 @@ from typing import Any, AsyncIterator, Generator
 import socketio  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
-from app.routes.assistants import router as assistants_router
 from app.routes.documents import router as documents_router
-from app.routes.evals import router as evals_router
 from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
 from app.services.mcp.server import server
@@ -205,9 +203,7 @@ fastapi_app.add_middleware(
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(profiles_router, prefix="/profiles")
-fastapi_app.include_router(evals_router, prefix="/evals")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
-fastapi_app.include_router(assistants_router, prefix="/assistants")
 
 # mounting the mcp servers - ensure trailing slashes for proper routing
 fastapi_app.mount("/domain", server.streamable_http_app(), name="MCP Server")

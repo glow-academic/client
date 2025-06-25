@@ -8,7 +8,6 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 // UI Components
@@ -100,9 +99,14 @@ export default function EvaluationRun({ runId }: { runId: string }) {
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [runStatus, setRunStatus] = useState<EvalRunStatus | null>(null);
 
-  // WebSocket state
-  const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  // Use global WebSocket context
+  const {
+    isConnected,
+    emitStartEval,
+    emitRunEval,
+    emitStopEval,
+    emitStopAllEvals,
+  } = useWebSocket();
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);

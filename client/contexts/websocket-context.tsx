@@ -23,6 +23,19 @@ interface WebSocketContextType {
   isConnected: boolean;
   socket: Socket | null;
 
+  // Loading states for debugging
+  isStartingSimulation: boolean;
+  isSendingSimulationMessage: boolean;
+  isStoppingSimulation: boolean;
+  isContinuingSimulation: boolean;
+  isStartingAssistant: boolean;
+  isSendingAssistantMessage: boolean;
+  isStoppingAssistant: boolean;
+  isStartingEval: boolean;
+  isRunningEval: boolean;
+  isStoppingEval: boolean;
+  isStoppingAllEvals: boolean;
+
   // Room management
   joinRoom: (
     roomId: string,
@@ -38,7 +51,10 @@ interface WebSocketContextType {
     simulation_id: string;
     profile_id: string;
   }) => void;
-  emitSendMessage: (data: { chat_id: string; message: string }) => void;
+  emitSendSimulationMessage: (data: {
+    chat_id: string;
+    message: string;
+  }) => void;
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
     chat_id: string;
@@ -89,12 +105,27 @@ export function WebSocketProvider({
   const maxConnectionAttempts = 5;
   const currentRoomsRef = useRef<Set<string>>(new Set());
 
-  // Set up common event handlers that all components might need
+  // Loading states for debugging
+  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
+  const [isSendingSimulationMessage, setIsSendingSimulationMessage] =
+    useState(false);
+  const [isStoppingSimulation, setIsStoppingSimulation] = useState(false);
+  const [isContinuingSimulation, setIsContinuingSimulation] = useState(false);
+  const [isStartingAssistant, setIsStartingAssistant] = useState(false);
+  const [isSendingAssistantMessage, setIsSendingAssistantMessage] =
+    useState(false);
+  const [isStoppingAssistant, setIsStoppingAssistant] = useState(false);
+  const [isStartingEval, setIsStartingEval] = useState(false);
+  const [isRunningEval, setIsRunningEval] = useState(false);
+  const [isStoppingEval, setIsStoppingEval] = useState(false);
+  const [isStoppingAllEvals, setIsStoppingAllEvals] = useState(false);
+
+  // Set up section-specific event handlers
   const setupCommonEventHandlers = useCallback(
     (socket: Socket) => {
-      // Assistant chat events
+      // Assistant-specific message events
       socket.on(
-        "new_message",
+        "assistant_new_message",
         (data: {
           message_id: string;
           chat_id: string;
@@ -103,72 +134,88 @@ export function WebSocketProvider({
           completed: boolean;
           created_at: string;
         }) => {
-          logInfo("Received new_message event", {
+          logInfo("Received assistant_new_message event", {
             messageId: data.message_id,
             chatId: data.chat_id,
             role: data.role,
           });
 
-          // Update appropriate cache based on message type
-          if (data.role === "assistant" || data.role === "user") {
-            // Assistant message
-            queryClient.setQueryData(
-              ["assistantMessages", data.chat_id],
-              (old: AssistantMessage[] = []) => {
-                const exists = old.find((msg) => msg.id === data.message_id);
-                if (exists) return old;
+          queryClient.setQueryData(
+            ["assistantMessages", data.chat_id],
+            (old: AssistantMessage[] = []) => {
+              const exists = old.find((msg) => msg.id === data.message_id);
+              if (exists) return old;
 
-                const newMessage = {
-                  id: data.message_id,
-                  chatId: data.chat_id,
-                  role: data.role,
-                  content: data.content,
-                  completed: data.completed,
-                  createdAt: data.created_at,
-                  updatedAt: data.created_at,
-                  completedAt: data.created_at,
-                };
+              const newMessage = {
+                id: data.message_id,
+                chatId: data.chat_id,
+                role: data.role,
+                content: data.content,
+                completed: data.completed,
+                createdAt: data.created_at,
+                updatedAt: data.created_at,
+                completedAt: data.created_at,
+              };
 
-                return [...old, newMessage].sort(
-                  (a, b) =>
-                    new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime()
-                );
-              }
-            );
-          } else {
-            // Simulation message
-            queryClient.setQueryData(
-              ["simulationMessages", data.chat_id],
-              (old: SimulationMessage[] = []) => {
-                const exists = old.find((msg) => msg.id === data.message_id);
-                if (exists) return old;
+              return [...old, newMessage].sort(
+                (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+              );
+            }
+          );
 
-                const newMessage = {
-                  id: data.message_id,
-                  chatId: data.chat_id,
-                  type: data.role === "user" ? "query" : "response",
-                  content: data.content,
-                  completed: data.completed,
-                  createdAt: data.created_at,
-                  audio: false,
-                  filePath: null,
-                };
-
-                return [...old, newMessage].sort(
-                  (a, b) =>
-                    new Date(a.createdAt).getTime() -
-                    new Date(b.createdAt).getTime()
-                );
-              }
-            );
-          }
-
-          // Invalidate queries to trigger re-renders
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["assistantMessages", data.chat_id],
             });
+          }, 0);
+        }
+      );
+
+      // Simulation-specific message events
+      socket.on(
+        "simulation_new_message",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          role: string;
+          content: string;
+          completed: boolean;
+          created_at: string;
+        }) => {
+          logInfo("Received simulation_new_message event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            role: data.role,
+          });
+
+          queryClient.setQueryData(
+            ["simulationMessages", data.chat_id],
+            (old: SimulationMessage[] = []) => {
+              const exists = old.find((msg) => msg.id === data.message_id);
+              if (exists) return old;
+
+              const newMessage = {
+                id: data.message_id,
+                chatId: data.chat_id,
+                type: data.role === "user" ? "query" : "response",
+                content: data.content,
+                completed: data.completed,
+                createdAt: data.created_at,
+                audio: false,
+                filePath: null,
+              };
+
+              return [...old, newMessage].sort(
+                (a, b) =>
+                  new Date(a.createdAt).getTime() -
+                  new Date(b.createdAt).getTime()
+              );
+            }
+          );
+
+          setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
             });
@@ -176,19 +223,19 @@ export function WebSocketProvider({
         }
       );
 
+      // Assistant message token updates
       socket.on(
-        "message_token",
+        "assistant_message_token",
         (data: {
           message_id: string;
           chat_id: string;
           accumulated_content: string;
         }) => {
-          logInfo("Received message_token event", {
+          logInfo("Received assistant_message_token event", {
             messageId: data.message_id,
             chatId: data.chat_id,
           });
 
-          // Update both assistant and simulation message caches
           queryClient.setQueryData(
             ["assistantMessages", data.chat_id],
             (old: AssistantMessage[] = []) => {
@@ -199,6 +246,27 @@ export function WebSocketProvider({
               );
             }
           );
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      // Simulation message token updates
+      socket.on(
+        "simulation_message_token",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          accumulated_content: string;
+        }) => {
+          logInfo("Received simulation_message_token event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+          });
 
           queryClient.setQueryData(
             ["simulationMessages", data.chat_id],
@@ -213,29 +281,26 @@ export function WebSocketProvider({
 
           setTimeout(() => {
             queryClient.invalidateQueries({
-              queryKey: ["assistantMessages", data.chat_id],
-            });
-            queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
             });
           }, 0);
         }
       );
 
+      // Assistant message completion
       socket.on(
-        "message_complete",
+        "assistant_message_complete",
         (data: {
           message_id: string;
           chat_id: string;
           final_content: string;
           completed: boolean;
         }) => {
-          logInfo("Received message_complete event", {
+          logInfo("Received assistant_message_complete event", {
             messageId: data.message_id,
             chatId: data.chat_id,
           });
 
-          // Update both caches
           queryClient.setQueryData(
             ["assistantMessages", data.chat_id],
             (old: AssistantMessage[] = []) => {
@@ -246,6 +311,28 @@ export function WebSocketProvider({
               );
             }
           );
+
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["assistantMessages", data.chat_id],
+            });
+          }, 0);
+        }
+      );
+
+      // Simulation message completion
+      socket.on(
+        "simulation_message_complete",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          final_content: string;
+          completed: boolean;
+        }) => {
+          logInfo("Received simulation_message_complete event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+          });
 
           queryClient.setQueryData(
             ["simulationMessages", data.chat_id],
@@ -259,9 +346,6 @@ export function WebSocketProvider({
           );
 
           setTimeout(() => {
-            queryClient.invalidateQueries({
-              queryKey: ["assistantMessages", data.chat_id],
-            });
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
             });
@@ -367,11 +451,84 @@ export function WebSocketProvider({
         }
       );
 
+      // Simulation-specific events
+      socket.on(
+        "simulation_started",
+        (data: {
+          success: boolean;
+          message: string;
+          attempt_id: string;
+          chat_id: string;
+        }) => {
+          logInfo("Simulation started", data);
+          setIsStartingSimulation(false);
+          if (data.success) {
+            toast.success(data.message);
+            // Trigger navigation by emitting a custom event
+            window.dispatchEvent(
+              new CustomEvent("simulationStarted", {
+                detail: { attemptId: data.attempt_id },
+              })
+            );
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "simulation_message_processing",
+        (data: { chat_id: string; status: string; message: string }) => {
+          logInfo("Simulation message processing", data);
+        }
+      );
+
+      socket.on(
+        "simulation_stopped",
+        (data: { chat_id: string; success: boolean; message: string }) => {
+          logInfo("Simulation stopped", data);
+          setIsStoppingSimulation(false);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "simulation_continued",
+        (data: { chat_id: string; success: boolean; message: string }) => {
+          logInfo("Simulation continued", data);
+          setIsContinuingSimulation(false);
+          if (data.success) {
+            toast.success(data.message);
+          } else {
+            toast.error(data.message);
+          }
+        }
+      );
+
+      socket.on(
+        "simulation_error",
+        (data: { success: boolean; message: string }) => {
+          logError("Simulation error", data.message);
+          setIsStartingSimulation(false);
+          setIsSendingSimulationMessage(false);
+          setIsStoppingSimulation(false);
+          setIsContinuingSimulation(false);
+          toast.error(data.message);
+          // Trigger error event for components that need to reset state
+          window.dispatchEvent(new CustomEvent("simulationError"));
+        }
+      );
+
       // Assistant-specific events
       socket.on(
         "assistant_started",
         (data: { success: boolean; message: string; chat_id: string }) => {
           logInfo("Assistant started", data);
+          setIsStartingAssistant(false);
           if (data.success) {
             toast.success(data.message);
           } else {
@@ -391,6 +548,7 @@ export function WebSocketProvider({
         "assistant_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
           logInfo("Assistant stopped", data);
+          setIsStoppingAssistant(false);
           if (data.success) {
             toast.success(data.message);
           } else {
@@ -403,6 +561,9 @@ export function WebSocketProvider({
         "assistant_error",
         (data: { success: boolean; message: string }) => {
           logError("Assistant error", data.message);
+          setIsStartingAssistant(false);
+          setIsSendingAssistantMessage(false);
+          setIsStoppingAssistant(false);
           toast.error(data.message);
         }
       );
@@ -417,6 +578,7 @@ export function WebSocketProvider({
           total_runs: number;
         }) => {
           logInfo("Eval started", data);
+          setIsStartingEval(false);
           if (data.success) {
             toast.success(data.message);
           } else {
@@ -436,6 +598,7 @@ export function WebSocketProvider({
         "eval_stopped",
         (data: { chat_id: string; success: boolean; message: string }) => {
           logInfo("Eval stopped", data);
+          setIsStoppingEval(false);
           if (data.success) {
             toast.success(data.message);
           } else {
@@ -454,6 +617,7 @@ export function WebSocketProvider({
           total_chats: number;
         }) => {
           logInfo("All evals stopped", data);
+          setIsStoppingAllEvals(false);
           if (data.success) {
             toast.success(data.message);
           } else {
@@ -464,6 +628,10 @@ export function WebSocketProvider({
 
       socket.on("eval_error", (data: { success: boolean; message: string }) => {
         logError("Eval error", data.message);
+        setIsStartingEval(false);
+        setIsRunningEval(false);
+        setIsStoppingEval(false);
+        setIsStoppingAllEvals(false);
         toast.error(data.message);
       });
 
@@ -751,22 +919,24 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStartingSimulation(true);
       logInfo("Emitting start_simulation", data);
       socketRef.current.emit("start_simulation", data);
     },
     [isConnected]
   );
 
-  const emitSendMessage = useCallback(
+  const emitSendSimulationMessage = useCallback(
     (data: { chat_id: string; message: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot send message - WebSocket not connected");
+        logError("Cannot send simulation message - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
-      logInfo("Emitting send_message", { chatId: data.chat_id });
-      socketRef.current.emit("send_message", data);
+      setIsSendingSimulationMessage(true);
+      logInfo("Emitting send_simulation_message", { chatId: data.chat_id });
+      socketRef.current.emit("send_simulation_message", data);
     },
     [isConnected]
   );
@@ -779,6 +949,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStoppingSimulation(true);
       logInfo("Emitting stop_simulation", data);
       socketRef.current.emit("stop_simulation", data);
     },
@@ -793,6 +964,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsContinuingSimulation(true);
       logInfo("Emitting continue_simulation", data);
       socketRef.current.emit("continue_simulation", data);
     },
@@ -808,6 +980,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStartingAssistant(true);
       logInfo("Emitting start_assistant", data);
       socketRef.current.emit("start_assistant", data);
     },
@@ -822,6 +995,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsSendingAssistantMessage(true);
       logInfo("Emitting send_assistant_message", { chatId: data.chat_id });
       socketRef.current.emit("send_assistant_message", data);
     },
@@ -836,6 +1010,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStoppingAssistant(true);
       logInfo("Emitting stop_assistant", data);
       socketRef.current.emit("stop_assistant", data);
     },
@@ -851,6 +1026,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStartingEval(true);
       logInfo("Emitting start_eval", data);
       socketRef.current.emit("start_eval", data);
     },
@@ -860,11 +1036,11 @@ export function WebSocketProvider({
   const emitRunEval = useCallback(
     (data: { eval_run_id: string }) => {
       if (!socketRef.current || !isConnected) {
-        logError("Cannot run eval - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
+      setIsRunningEval(true);
       logInfo("Emitting run_eval", data);
       socketRef.current.emit("run_eval", data);
     },
@@ -879,6 +1055,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStoppingEval(true);
       logInfo("Emitting stop_eval", data);
       socketRef.current.emit("stop_eval", data);
     },
@@ -893,6 +1070,7 @@ export function WebSocketProvider({
         return;
       }
 
+      setIsStoppingAllEvals(true);
       logInfo("Emitting stop_all_evals", data);
       socketRef.current.emit("stop_all_evals", data);
     },
@@ -902,10 +1080,21 @@ export function WebSocketProvider({
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
+    isStartingSimulation,
+    isSendingSimulationMessage,
+    isStoppingSimulation,
+    isContinuingSimulation,
+    isStartingAssistant,
+    isSendingAssistantMessage,
+    isStoppingAssistant,
+    isStartingEval,
+    isRunningEval,
+    isStoppingEval,
+    isStoppingAllEvals,
     joinRoom,
     leaveRoom,
     emitStartSimulation,
-    emitSendMessage,
+    emitSendSimulationMessage,
     emitStopSimulation,
     emitContinueSimulation,
     emitStartAssistant,

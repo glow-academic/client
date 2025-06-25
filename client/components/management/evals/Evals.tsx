@@ -45,7 +45,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Eval } from "@/types";
-import { startEval } from "@/utils/api/evals/start-eval";
 import { getAllEvalRuns } from "@/utils/queries/eval_runs/get-all-eval-runs";
 
 export default function Evals() {
@@ -57,6 +56,9 @@ export default function Evals() {
   } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [startingEvalId, setStartingEvalId] = useState<string | null>(null);
+
+  // Use global WebSocket context
+  const { emitStartEval, isConnected } = useWebSocket();
 
   // Fetch evaluations data
   const { data: evals, refetch: refetchEvals } = useQuery({
@@ -98,24 +100,21 @@ export default function Evals() {
   };
 
   const handleRun = async (id: string) => {
+    if (!isConnected) {
+      toast.error("WebSocket not connected. Please refresh the page.");
+      return;
+    }
+
     setStartingEvalId(id);
     try {
       toast.loading("Starting evaluation...");
 
-      const result = await startEval({
+      // Use WebSocket context to start evaluation
+      emitStartEval({
         eval_id: id,
       });
 
-      if (!result.success) {
-        throw new Error(result.message);
-      }
-
-      const successMessage = result.total_runs
-        ? `Evaluation started successfully! Created ${result.total_runs} eval runs.`
-        : "Evaluation started successfully!";
-
-      toast.success(successMessage);
-
+      // The WebSocket context will handle the response and show appropriate toasts
       // Navigate to the evaluation page
       router.push(`/management/evals/e/${id}`);
     } catch (error) {

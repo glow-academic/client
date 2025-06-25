@@ -29,7 +29,7 @@ export default function ChatWidget() {
     expand,
     close,
     currentChatId,
-    pastChats,
+    chats,
     isLoadingChats,
     selectChat,
     startBlankChat,
@@ -88,12 +88,12 @@ export default function ChatWidget() {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {pastChats && pastChats.length > 0 && (
+              {chats && chats.length > 0 && (
                 <>
                   <div className="px-2 py-1 text-xs font-medium text-muted-foreground">
                     Past Chats
                   </div>
-                  {pastChats
+                  {chats
                     .sort(
                       (a, b) =>
                         new Date(b.createdAt).getTime() -

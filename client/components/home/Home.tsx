@@ -610,12 +610,7 @@ export default function Home() {
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
   // Use global WebSocket context instead of local connection
-  const {
-    isConnected,
-    emitStartSimulation,
-    addEventListener,
-    removeEventListener,
-  } = useWebSocket();
+  const { isConnected, emitStartSimulation } = useWebSocket();
 
   // Use the role context instead of local state
   const { effectiveRole } = useRole();
@@ -706,44 +701,33 @@ export default function Home() {
 
   // Set up simulation-specific event listeners using global WebSocket
   useEffect(() => {
-    const handleSimulationStarted = (...args: unknown[]) => {
-      const data = args[0] as {
-        success: boolean;
-        message: string;
-        attempt_id: string;
-        chat_id: string;
-      };
-      if (data.success) {
-        logInfo("Simulation started successfully", data);
-        toast.dismiss();
-        toast.success(data.message);
-        router.push(`/home/a/${data.attempt_id}`);
-      } else {
-        logError("Failed to start simulation", data.message);
-        toast.dismiss();
-        toast.error(data.message);
-      }
+    // Listen for successful simulation starts to handle navigation
+    const handleSimulationStarted = (event: CustomEvent) => {
+      const { attemptId } = event.detail;
+      logInfo("Navigating to simulation attempt", { attemptId });
+      router.push(`/home/a/${attemptId}`);
       setLoadingSimulation(null);
     };
 
-    const handleError = (...args: unknown[]) => {
-      const data = args[0] as { success: boolean; message: string };
-      logError("WebSocket error:", data.message);
-      toast.dismiss();
-      toast.error(data.message);
+    // Listen for simulation errors to reset loading state
+    const handleSimulationError = () => {
       setLoadingSimulation(null);
     };
 
-    // Add event listeners
-    addEventListener("simulation_started", handleSimulationStarted);
-    addEventListener("error", handleError);
+    window.addEventListener(
+      "simulationStarted",
+      handleSimulationStarted as EventListener
+    );
+    window.addEventListener("simulationError", handleSimulationError);
 
-    // Cleanup function
     return () => {
-      removeEventListener("simulation_started", handleSimulationStarted);
-      removeEventListener("error", handleError);
+      window.removeEventListener(
+        "simulationStarted",
+        handleSimulationStarted as EventListener
+      );
+      window.removeEventListener("simulationError", handleSimulationError);
     };
-  }, [router, addEventListener, removeEventListener]);
+  }, [router]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {

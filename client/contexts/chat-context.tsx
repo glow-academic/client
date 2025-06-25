@@ -21,18 +21,24 @@ import React, {
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
-type ChatUIState = "closed" | "open" | "minimized";
+type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
 
 interface ChatContextType {
   // UI State
   uiState: ChatUIState;
   setUiState: (state: ChatUIState) => void;
+  openWidget: () => void;
+  expand: () => void;
+  close: () => void;
 
   // Chat Management
   currentChatId: string | null;
   setCurrentChatId: (chatId: string | null) => void;
   chats: AssistantChat[];
+  pastChats: AssistantChat[];
   isLoadingChats: boolean;
+  selectChat: (chatId: string) => void;
+  startBlankChat: () => void;
 
   // Connection State
   isConnected: boolean;
@@ -160,6 +166,41 @@ export function ChatProvider({ children }: ChatProviderProps) {
     };
   }, [currentChatId, isConnected, joinRoom, leaveRoom]);
 
+  // UI state management methods
+  const openWidget = useCallback(() => {
+    setUiState("widget");
+  }, []);
+
+  const expand = useCallback(() => {
+    setUiState("expanded");
+  }, []);
+
+  const close = useCallback(() => {
+    setUiState("closed");
+    setCurrentChatId(null);
+  }, []);
+
+  // Chat management methods
+  const selectChat = useCallback((chatId: string) => {
+    setCurrentChatId(chatId);
+  }, []);
+
+  const startBlankChat = useCallback(async () => {
+    if (!profile?.id) {
+      toast.error("Profile not found");
+      return;
+    }
+
+    try {
+      const newChat = await createChatMutation.mutateAsync(profile.id);
+      if (newChat?.id) {
+        setCurrentChatId(newChat.id);
+      }
+    } catch (error) {
+      logError("Failed to create chat:", error);
+    }
+  }, [profile?.id, createChatMutation]);
+
   const createNewChat = useCallback(async (): Promise<string | null> => {
     if (!profile?.id) {
       toast.error("Profile not found");
@@ -263,10 +304,16 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const value: ChatContextType = {
     uiState,
     setUiState,
+    openWidget,
+    expand,
+    close,
     currentChatId,
     setCurrentChatId,
     chats,
+    pastChats: chats, // Use the same chats array for pastChats
     isLoadingChats,
+    selectChat,
+    startBlankChat,
     isConnected,
     createNewChat,
     sendMessage,
