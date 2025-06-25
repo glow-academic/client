@@ -148,8 +148,13 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             db_session.commit()
             db_session.refresh(chat)
 
-            # Emit success response
+            # Join the client to the simulation room for real-time updates
             sio_instance = get_sio_instance()
+            simulation_room = f"simulation_{chat.id}"
+            await sio_instance.enter_room(sid, simulation_room)
+            logger.info(f"Client {sid} joined simulation room {simulation_room}")
+
+            # Emit success response
             await sio_instance.emit('simulation_started', {
                 'success': True,
                 'message': 'Simulation started successfully',
@@ -197,6 +202,12 @@ async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
                 await emit_error(sid, "Cannot send messages to completed chat")
                 return
 
+            # Ensure client is joined to the simulation room
+            sio_instance = get_sio_instance()
+            simulation_room = f"simulation_{chat_id}"
+            await sio_instance.enter_room(sid, simulation_room)
+            logger.info(f"Client {sid} ensured in simulation room {simulation_room}")
+
             # Process the message asynchronously
             asyncio.create_task(process_simulation_message_websocket(
                 chat_id=chat_id,
@@ -206,7 +217,6 @@ async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
             ))
             
             # Emit acknowledgment
-            sio_instance = get_sio_instance()
             await sio_instance.emit('message_processing', {
                 'chat_id': chat_id,
                 'status': 'processing',
@@ -252,6 +262,12 @@ async def handle_send_audio(sid: str, data: Dict[str, Any]) -> None:
                 await emit_error(sid, "Cannot send messages to completed chat")
                 return
 
+            # Ensure client is joined to the simulation room
+            sio_instance = get_sio_instance()
+            simulation_room = f"simulation_{chat_id}"
+            await sio_instance.enter_room(sid, simulation_room)
+            logger.info(f"Client {sid} ensured in simulation room {simulation_room}")
+
             # Decode base64 audio data
             try:
                 audio_bytes = base64.b64decode(audio_data)
@@ -291,7 +307,6 @@ async def handle_send_audio(sid: str, data: Dict[str, Any]) -> None:
                 ))
                 
                 # Emit acknowledgment with transcription
-                sio_instance = get_sio_instance()
                 await sio_instance.emit('audio_transcribed', {
                     'chat_id': chat_id,
                     'transcribed_text': transcribed_text,
