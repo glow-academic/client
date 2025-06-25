@@ -752,9 +752,26 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
      *    (Because FastAPI's Socket.IO server still lives at /socket.io.
      *     The proxy just lives one level higher and forwards the request.)
      * ----------------------------------------------------------------- */
-    const socket = io({
+
+    // Use the Next.js proxy route for Socket.IO connections (same as chat-context.tsx)
+    const socketUrl = window.location.origin; // Always use same origin with proxy
+    const socketPath = "/api/ws/socket.io"; // Custom path for the proxy
+
+    const socket = io(socketUrl, {
+      path: socketPath,
       transports: ["polling", "websocket"],
+      autoConnect: true,
+      forceNew: false,
+      timeout: 15000,
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      upgrade: true,
+      rememberUpgrade: true,
       query: {
+        profileId: attempt?.profileId, // Include profileId in query
+        timestamp: Date.now(),
         EIO: "4", // Force Engine.IO protocol version 4
       },
     });
@@ -763,16 +780,24 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     socket.on("connect", () => {
       setIsConnected(true);
-      logInfo("WebSocket connected (via proxy)");
+      logInfo("WebSocket connected (via proxy)", {
+        socketId: socket.id,
+        profileId: attempt?.profileId,
+      });
     });
 
     socket.on("disconnect", (reason: string) => {
       setIsConnected(false);
-      logInfo(`WebSocket disconnected: ${reason}`);
+      logInfo(`WebSocket disconnected: ${reason}`, {
+        socketId: socket.id,
+        profileId: attempt?.profileId,
+      });
     });
 
     socket.on("connect_error", (error: Error) => {
-      logError("WebSocket connection error:", error);
+      logError("WebSocket connection error:", error.message, {
+        profileId: attempt?.profileId,
+      });
       setIsConnected(false);
     });
 
@@ -1041,7 +1066,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [queryClient]); // Only depend on queryClient, not currentChat?.id
+  }, [queryClient, attempt?.profileId]); // Depend on queryClient and profileId for WebSocket connection
 
   // Join/leave chat rooms when currentChat changes
   useEffect(() => {
