@@ -216,416 +216,351 @@ $ concurrently "next dev" "node scripts/generate-component-tests.js"
 [0] 
 [0]  ✓ Starting...
 [0]    Using tsconfig file: ./tsconfig.json
-[0]  ✓ Ready in 1478ms
-[0]  ✓ Compiled /middleware in 120ms (108 modules)
-[0]  ○ Compiling / ...
-[0]  ✓ Compiled / in 1707ms (1101 modules)
-[0]  GET / 200 in 2107ms
+[0]  ✓ Ready in 1503ms
 [0]  ○ Compiling /api/auth/[...nextauth] ...
-[0]  ✓ Compiled /api/auth/[...nextauth] in 1150ms (1386 modules)
+[0]  ✓ Compiled /api/auth/[...nextauth] in 1161ms (650 modules)
+[0]  ✓ Compiled /middleware in 93ms (108 modules)
+[0]  GET /api/auth/session 200 in 1893ms
+[0]  ○ Compiling /home/a/[attemptId] ...
+[0]  ✓ Compiled / in 5.4s (4148 modules)
+[0]  GET /api/auth/session 200 in 5529ms
+[0]  GET / 200 in 3758ms
+[0] Cleaning up global WebSocket connection undefined
 [0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST / 200 in 1339ms
-[0]  GET / 200 in 21ms
-[0]  GET /api/auth/session 200 in 1867ms
-[0]  GET /api/auth/session 200 in 10ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 6870ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 1253ms
+[0]  GET /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 7077ms
+[0]  GET /api/auth/session 200 in 19ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 33ms
+[0]  GET /api/auth/session 200 in 15ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 70ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 11ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 13ms
+[0] Waiting for profile ID before connecting WebSocket {}
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 14ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 8ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 12ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 12ms
+[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 9ms
+[0]  GET / 200 in 19ms
 [0] Microsoft login attempt started undefined
-[0]  POST / 200 in 13ms
-[0]  GET /api/auth/providers 200 in 19ms
-[0]  GET /api/auth/csrf 200 in 8ms
-[0]  POST /api/auth/signin/microsoft-entra-id? 200 in 191ms
+[0]  POST / 200 in 203ms
+[0]  GET /api/auth/providers 200 in 33ms
+[0]  GET /api/auth/csrf 200 in 5ms
+[0]  POST /api/auth/signin/microsoft-entra-id? 200 in 172ms
 [0] Microsoft login attempt successful { redirectTo: '/analytics' }
-[0]  POST / 200 in 11ms
+[0]  POST / 200 in 29ms
 [0] Updating existing user profile: { userId: 1, email: 'redacted@purdue.edu' }
 [0] Updated existing user profile: {
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
 [0]   userId: 1,
 [0]   email: 'redacted@purdue.edu'
 [0] }
-[0]  GET /api/auth/callback/microsoft-entra-id?code=1.ATgAOb0wQVN8nEGx5YdY1tY_IWvaxzUTZodOgTpS1b2n7CY4ABI4AA.AgABBAIAAABVrSpeuWamRam2jAF1XRQEAwDs_wUA9P_nolrR9ERLQV7sW28vqOpgiqRo1H6gX1A1QHDlAUyK0tzFKfVVZu33zTVgHx6uxkUMDxexk6pSwovs2C6vkpmVjQU8aoPxrqRGk_qhfLpRiLEZcQaGPdUSTsOxN1GUBjxEIL-B47NVS1atHmK1Mdc2canEMxunr2wQq0AhKMjqSVrvEZZcYS4BpAa8AUm8bJhvl2JDYEMcvPxzWI0N0iG5MNWTYmyEpSACY_43TA9BxjxTrMAtEg11pBKtAHS8or8bwcWDRgh7wQ-1xfqk1xp9wM_MLh_O2JOoqZRikbxi1gMIuh70RzPOmUu-pjUncZ2rhhOo-cQA5kiTqcRdnUlC8uvRMJJIhUzaxWgiCtCbjHCGK_TxDTk6t5TynVNYt_SSiMYMz0JvMVoRkNqSKNoh_5cxeKuBslTzvKHEmLOIgywJCJM8bq_INlDjTe_Y40Jm8CvJU2PtcvE_MorUdYBwVtZaykx9AbH35mgqLtv5UEC3rwOg1Egvzwyx3tGbRjg_SZ6qz72gjUiHxSIp8xs1bqkKDKmdKkIJjJCuleySsHjBgvI35bD_8YVr2lhL8Vt9TW656lJbj0p8KIFCv5MdChqmdscTnXUmTshqihyrRudulTl9fp5MuEUJ_PO7KA9tJLX6eZSzxgCVM4Yl-lBi9McVH_Yab8q5b4GyeGGyig_FYi3f8A4bbmEmEiPJ64Oomwh6V-sb_A7wwPgFqeRqWt3eLEWqQDGK21yLUrf5rSrHmaYaxryOS1u4CjB_2IXPeBc4W7DiZeV_xvzx1hStpbyRfkUcO5dIbmrcQXurvg1FNwqI_WynrXOhi_jJG5_iWI4IUbnM3fY5pKXAsaCAFmKVehE9TeLkZRQ-75kEzMzBpdDSuGKSCE-BbCWFR5sZrBZ3XhAf0xVfYjolZeNjEs9Zn7FAYYV_9z5AFw&session_state=0040ba69-a447-bc77-8804-13742d5b24d8 302 in 650ms
+[0]  GET /api/auth/callback/microsoft-entra-id?code=1.ATgAOb0wQVN8nEGx5YdY1tY_IWvaxzUTZodOgTpS1b2n7CY4ABI4AA.AgABBAIAAABVrSpeuWamRam2jAF1XRQEAwDs_wUA9P9dubAWIihaUT7oMNCGbmXflI3xmicv84ZZSmqhqa_ACTT2Fuzk9B02t1hIs8PkZv-T-6MNQIPxB3IFVIt46XsyRzJgEeFPs2sj23VCCdkeMHOOXcssBO6M_-Xx_cTwG7jngnpsqWCW2Or_MLWvei7_JcoV9Pydb76r7uW1T_U4UR5qAaF261jYrqK7k2ZZS4OMl2TaZcUqsgAXfsjE6-AFP0Yyv9U4sa-qpgrBlpEcq7w_cEsBLkvuZJRcdp53bdUr1HvkoYszmqce0OxBU-fOWS5tiL_K9OaH5DuvmJPTk_9xGgAW7aJh2O6DybNP-igzFuqvZVlFIpaVIhOPQTR3fxksAlQRuS_-j84PXA-D_UC1KwVUGTO-48hhWKHSpMiXIho9ZE0zxwJHCu75rTWO29czUqEgWT5Vp2teP4HpxxfLRkOC1ybehUvvgYsx1ndrQkcFiydUEynAa_4ZcyR4ZFkRNnOnkZqgoibvTnzhwcjIH5fN-bTbvoEWzuv5RkGUb4d6k7hW6byJV453N9AqAKk6bb-sCJcf50Bvgz2mqA5n_hxk-t3uuZ1j6OxQXrj05O0t6LqHQAVrpYeUwn4_Wxt8V3qEgXzU8Z5_aB_avIygJZRPldsY03sGEVHXxC61bHj_9clAoBoRJEJvpFqsFqB199nHlnEQxF-LHlPvz-IF784JHQxgzWaHFINrvVVfrF9VL7ny8rUYfB7Gxj340xI1omA0S6sFdd_Or8yRR3AJXKv5-ixJUjeZ6vOiy9KhS-KmYPtrNqM9_cYGrnFOZ315Svh1HcywCcsja-QRp5zuz1lyoJZk2nXGCA_Nq1xT6LCASRAVp548zXIGh9-ryx4KQbpJp-XT1SGenS3sWSt1FujQ6pBEuo5FaZI3m7i3lKqzh3_KA27g8nlqyirlkvdmaSP3W7F9Shyk6cI&session_state=0040ba69-a447-bc77-8804-13742d5b24d8 302 in 665ms
 [0]  ○ Compiling /analytics ...
-[0]  ✓ Compiled /analytics in 1717ms (2889 modules)
-[0]  GET /analytics 307 in 2266ms
+[0]  ✓ Compiled /analytics in 1009ms (4153 modules)
+[0]  GET /analytics 307 in 1371ms
 [0]  ○ Compiling /analytics/dashboard ...
-[0]  ✓ Compiled /analytics/dashboard in 2.2s (4347 modules)
-[0]  GET /analytics/dashboard 200 in 2930ms
-[0]  GET /api/auth/session 200 in 135ms
-[0]  POST /analytics/dashboard 200 in 63ms
+[0]  ✓ Compiled /analytics/dashboard in 1497ms (4422 modules)
+[0]  GET /analytics/dashboard 200 in 2070ms
+[0]  GET /api/auth/session 200 in 192ms
+[0]  POST /analytics/dashboard 200 in 93ms
 [0]  GET /api/auth/session 200 in 18ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 10ms
-[0]  POST /analytics/dashboard 200 in 10ms
+[0]  GET /api/auth/session 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 20ms
+[0]  GET /api/auth/session 200 in 16ms
+[0]  POST /analytics/dashboard 200 in 16ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 13ms
 [0]  POST /analytics/dashboard 200 in 11ms
 [0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /analytics/dashboard 200 in 21ms
+[0]  POST /analytics/dashboard 200 in 23ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 8ms
 [0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 12ms
-[0]  POST /analytics/dashboard 200 in 10ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 8ms
 [0]  POST /analytics/dashboard 200 in 7ms
 [0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
-[0]  POST /analytics/dashboard 200 in 5ms
 [0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 14ms
 [0] Server confirmed WebSocket connection {
-[0]   serverSid: 'k_EsSHiY1rYppyIdAAAB',
+[0]   serverSid: 'QoZRfp0X6WKKJT40AAAB',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   serverTime: 1750912565.550713,
-[0]   clientTime: 1750912565553
+[0]   serverTime: 1750913877.591378,
+[0]   clientTime: 1750913877653
 [0] }
-[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 10ms
 [0] Global WebSocket connected successfully {
-[0]   socketId: 'k_EsSHiY1rYppyIdAAAB',
+[0]   socketId: 'QoZRfp0X6WKKJT40AAAB',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
 [0]   transport: 'websocket'
 [0] }
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 7ms
 [0]  POST /analytics/dashboard 200 in 14ms
-[0] ChatMessages - currentChatId { currentChatId: null }
-[0]  POST /analytics/dashboard 200 in 6ms
-[0] ChatMessages - messages {}
-[0]  POST /analytics/dashboard 200 in 7ms
-[0] ChatMessages - toolCalls {}
-[0]  POST /analytics/dashboard 200 in 5ms
-[0] ChatMessages - isConnected { isConnected: true }
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 25ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 10ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 17ms
-[0]  ○ Compiling /home ...
-[0]  ✓ Compiled /home in 2.2s (6073 modules)
-[0]  GET /home 200 in 2394ms
-[0]  POST /analytics/dashboard 200 in 85ms
-[0]  POST /analytics/dashboard 200 in 12ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 13ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 10ms
-[0]  POST /analytics/dashboard 200 in 21ms
 [0]  POST /analytics/dashboard 200 in 15ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 19ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 14ms
 [0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  ○ Compiling /home ...
+[0]  ✓ Compiled /home in 2.1s (6130 modules)
+[0]  GET /home 200 in 2371ms
+[0]  POST /analytics/dashboard 200 in 154ms
+[0]  POST /analytics/dashboard 200 in 20ms
+[0]  POST /analytics/dashboard 200 in 41ms
+[0]  POST /analytics/dashboard 200 in 16ms
+[0]  POST /analytics/dashboard 200 in 14ms
 [0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 16ms
 [0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 16ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 8ms
 [0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 6ms
 [0]  POST /analytics/dashboard 200 in 7ms
 [0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 8ms
 [0]  POST /analytics/dashboard 200 in 6ms
 [0]  POST /analytics/dashboard 200 in 4ms
 [0]  POST /analytics/dashboard 200 in 4ms
-[0]  POST /analytics/dashboard 200 in 4ms
-[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 6ms
 [0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 9ms
 [0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 5ms
 [0]  POST /analytics/dashboard 200 in 17ms
 [0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  GET /home 200 in 15ms
-[0]  POST /analytics/dashboard 200 in 19ms
-[0]  POST /home 200 in 16ms
-[0]  POST /home 200 in 6ms
+[0]  GET /home 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /home 200 in 38ms
+[0]  POST /home 200 in 27ms
 [0]  POST /home 200 in 8ms
-[0]  POST /home 200 in 10ms
-[0]  GET /api/auth/session 200 in 126ms
-[0]  GET /api/auth/session 200 in 17ms
+[0]  POST /home 200 in 294ms
+[0]  POST /home 200 in 53ms
+[0]  GET /api/auth/session 200 in 175ms
+[0]  GET /api/auth/session 200 in 9ms
 [0] Starting simulation via global WebSocket {
 [0]   simulationId: 'aaaaaaaa-1111-2222-3333-444444444444',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
 [0]   isConnected: true
 [0] }
-[0]  POST /home 200 in 24ms
+[0]  POST /home 200 in 23ms
 [0] Emitting start_simulation {
 [0]   simulation_id: 'aaaaaaaa-1111-2222-3333-444444444444',
 [0]   profile_id: '965bd24f-dfae-4063-b370-e1373df46322'
 [0] }
-[0]  POST /home 200 in 6ms
-[0]  ○ Compiling /home/a/[attemptId] ...
-[0]  ✓ Compiled /home/a/[attemptId] in 1287ms (6130 modules)
+[0]  POST /home 200 in 9ms
+[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 90ms
 [0] Simulation started {
 [0]   success: true,
 [0]   message: 'Simulation started successfully',
-[0]   attempt_id: 'db2b17aa-3016-4ef7-acc1-46757ada66f5',
-[0]   chat_id: 'f604a261-eb9e-4268-8d88-a8cf74c3f90f'
+[0]   attempt_id: 'd436c9c1-6883-4fd2-9cca-e29cd841f667',
+[0]   chat_id: '908a7571-8b3a-4fa4-948c-61fde43dddec'
 [0] }
-[0]  POST /home 200 in 1379ms
-[0] Navigating to simulation attempt { attemptId: 'db2b17aa-3016-4ef7-acc1-46757ada66f5' }
-[0]  POST /home 200 in 9ms
-[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 2042ms
-[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 24ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 29ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] Joining room: f604a261-eb9e-4268-8d88-a8cf74c3f90f (simulation) undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 15ms
-[0] Joined simulation chat room: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] Successfully joined simulation chat: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0]  GET /api/auth/session 200 in 56ms
-[0]  GET /api/auth/session 200 in 27ms
-[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 476ms
-[0]  GET /api/auth/session 200 in 12ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 23ms
+[0]  POST /home 200 in 32ms
+[0] Navigating to simulation attempt { attemptId: 'd436c9c1-6883-4fd2-9cca-e29cd841f667' }
+[0]  POST /home 200 in 22ms
+[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 21ms
+[0]  GET /api/auth/session 200 in 42ms
+[0]  GET /api/auth/session 200 in 17ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 53ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 50ms
+[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 20ms
+[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 31ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 13ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 363ms
 [0]  GET /api/auth/session 200 in 14ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 18ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  GET /api/auth/session 200 in 11ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
 [0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 15ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 14ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 13ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
 [0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
 [0] Server confirmed WebSocket connection {
-[0]   serverSid: 'IewF9FhehsDtZIRsAAAD',
+[0]   serverSid: '2i9OWQEPLN_YzzSBAAAD',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   serverTime: 1750912595.153619,
-[0]   clientTime: 1750912595156
+[0]   serverTime: 1750913899.303633,
+[0]   clientTime: 1750913899314
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
 [0] Global WebSocket connected successfully {
-[0]   socketId: 'IewF9FhehsDtZIRsAAAD',
+[0]   socketId: '2i9OWQEPLN_YzzSBAAAD',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
 [0]   transport: 'websocket'
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Joining room: f604a261-eb9e-4268-8d88-a8cf74c3f90f (simulation) undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
-[0] Joined simulation chat room: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Successfully joined simulation chat: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
-[0] Starting WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 18ms
-[0] Requesting user media for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
-[0] Got user media stream for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { audioTracks: 1, videoTracks: 0 }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
+[0] Starting WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
+[0] Requesting user media for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Got user media stream for chat 908a7571-8b3a-4fa4-948c-61fde43dddec { audioTracks: 1, videoTracks: 0 }
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
 [0] Fetched ICE config { urls: 5 }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
 [0] Added TURN servers with credentials undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0] Creating signaling WebSocket for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] WebSocket signaling connected for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Added audio track to peer connection for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   trackId: '4ace1423-635d-4aed-957c-713152b72474',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0] Creating signaling WebSocket for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0] WebSocket signaling connected for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 17ms
+[0] Added audio track to peer connection for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   trackId: 'b97b9f57-6416-426d-8c81-deb6e5204e67',
 [0]   trackLabel: 'Default - MacBook Pro Microphone (Built-in)',
 [0]   trackEnabled: true,
 [0]   trackReadyState: 'live'
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] WebRTC setup started for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Creating offer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] Set local description for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3347531887 1 udp 2122194688 192.168.1.11...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] WebRTC setup started for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Creating offer for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 11ms
+[0] Set local description for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:3840718447 1 udp 2122194688 192.168.1.11...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:1813306004 1 udp 2122063616 172.21.227.9...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:1333732500 1 udp 2122063616 172.21.227.9...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:764577843 1 udp 2122262784 2603:6000:db0...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:251229747 1 udp 2122262784 2603:6000:db0...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3203210781 1 udp 2122134272 fde1:4aae:e3...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:2642862109 1 udp 2122134272 fde1:4aae:e3...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] WebRTC ICE gathering state: gathering for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 3ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:1758308689 1 udp 1685987071 173.89.4.166...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] WebRTC ICE gathering state: gathering for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:1269192529 1 udp 1685987071 173.89.4.166...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3108547319 1 tcp 1518214911 192.168.1.11...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:2586006775 1 tcp 1518214911 192.168.1.11...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:316356620 1 tcp 1518083839 172.21.227.97...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:833668620 1 tcp 1518083839 172.21.227.97...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:1398631083 1 tcp 1518283007 2603:6000:db...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:1882625195 1 tcp 1518283007 2603:6000:db...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3223518341 1 tcp 1518154495 fde1:4aae:e3...',
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
+[0]   candidate: 'candidate:3813212805 1 tcp 1518154495 fde1:4aae:e3...',
 [0]   sdpMid: '0',
 [0]   sdpMLineIndex: 0
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
-[0] Received answer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0] WebRTC connection setup completed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Stopping WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0] WebRTC audio stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0] WebRTC audio streaming stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] WebSocket signaling closed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { code: 1000, reason: 'Normal closure', wasClean: true }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0]  GET /api/auth/session 200 in 49ms
-[0]  GET /api/auth/session 200 in 11ms
-[0] Starting WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
-[0] Requesting user media for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] Got user media stream for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { audioTracks: 1, videoTracks: 0 }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 57ms
-[0] Fetched ICE config { urls: 5 }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 12ms
-[0] Added TURN servers with credentials undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0] Creating signaling WebSocket for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] WebSocket signaling connected for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Added audio track to peer connection for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   trackId: 'a1aa9f47-9408-45d6-9c3b-adca66d32c14',
-[0]   trackLabel: 'Default - MacBook Pro Microphone (Built-in)',
-[0]   trackEnabled: true,
-[0]   trackReadyState: 'live'
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] Stopping WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 17ms
+[0] WebRTC audio stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] WebRTC audio streaming stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] WebSocket signaling closed for chat 908a7571-8b3a-4fa4-948c-61fde43dddec { code: 1000, reason: 'Normal closure', wasClean: true }
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0] Received answer for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 19ms
+[0] Error starting WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec [Function (anonymous)]
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
+[0] Stopping WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] WebRTC audio stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
+[0] WebRTC audio streaming stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
+[0] WebRTC audio error for chat 908a7571-8b3a-4fa4-948c-61fde43dddec Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': The RTCPeerConnection's signalingState is 'closed'.
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
+[0]  GET /api/auth/session 200 in 30ms
+[0]  GET /api/auth/session 200 in 8ms
+[0]  ✓ Compiled in 7.2s (6141 modules)
+[0] Global WebSocket disconnected: transport close { profileId: '965bd24f-dfae-4063-b370-e1373df46322' }
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6305ms
+[0] Leaving room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 27ms
+[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 204ms
+[0] Server confirmed WebSocket connection {
+[0]   serverSid: 'EiPINr_AG0Gg1lYgAAAB',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   serverTime: 1750913946.4626539,
+[0]   clientTime: 1750913946468
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] WebRTC setup started for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Creating offer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0] Set local description for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:1870564619 1 udp 2122194688 192.168.1.11...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 34ms
+[0] Global WebSocket connected successfully {
+[0]   socketId: 'EiPINr_AG0Gg1lYgAAAB',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   transport: 'websocket'
 [0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3303874544 1 udp 2122063616 172.21.227.9...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:2238401879 1 udp 2122262784 2603:6000:db...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:370465657 1 udp 2122134272 fde1:4aae:e35...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 3ms
-[0] WebRTC ICE gathering state: gathering for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3224661045 1 udp 1685987071 173.89.4.166...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 27ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:296841107 1 tcp 1518214911 192.168.1.111...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:3122855272 1 tcp 1518083839 172.21.227.9...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:4221874127 1 tcp 1518283007 2603:6000:db...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
-[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
-[0]   candidate: 'candidate:1759197665 1 tcp 1518154495 fde1:4aae:e3...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
-[0] Received answer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
-[0] WebRTC connection setup completed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] Stopping WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 20ms
-[0] WebRTC audio stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
-[0] WebRTC audio streaming stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
-[0] WebSocket signaling closed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { code: 1000, reason: 'Normal closure', wasClean: true }
-[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 24ms
+[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 40ms
+[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 59ms
+[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
+[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 25ms

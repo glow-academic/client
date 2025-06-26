@@ -241,6 +241,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const [isRecording, setIsRecording] = useState(false);
   const [webRtcSupported] = useState(isWebRtcSupported());
   const [webRtcError, setWebRtcError] = useState<string | null>(null);
+  const [lastTranscription, setLastTranscription] = useState<string | null>(
+    null
+  );
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -1093,6 +1097,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     try {
       setIsRecording(true);
+      setIsTranscribing(false);
+      setLastTranscription(null);
       setWebRtcError(null);
       // Show immediate feedback
       toast.success("Setting up audio connection...");
@@ -1100,6 +1106,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       // Success toast will be shown by the webrtcAudioStarted event
     } catch (error) {
       setIsRecording(false);
+      setIsTranscribing(false);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to start recording";
       setWebRtcError(errorMessage);
@@ -1111,10 +1118,13 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     if (!currentChat?.id) return;
 
     try {
-      setIsRecording(false);
+      setIsTranscribing(true); // Show that we're processing the audio
       await stopRtcAudio(currentChat.id);
-      toast.success("Audio recording stopped");
+      // Don't immediately set recording to false - let the event handler do it
+      // setIsRecording(false); // This will be handled by the event
     } catch (error) {
+      setIsRecording(false);
+      setIsTranscribing(false);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to stop recording";
       toast.error(`Failed to stop audio recording: ${errorMessage}`);
@@ -1143,6 +1153,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     const handleWebRtcAudioStopped = (event: CustomEvent) => {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
+        setIsTranscribing(false);
+        setLastTranscription(null);
         logInfo(`WebRTC audio stopped for chat ${event.detail.chatId}`);
       }
     };
@@ -1150,6 +1162,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     const handleWebRtcAudioError = (event: CustomEvent) => {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
+        setIsTranscribing(false);
         setWebRtcError(event.detail.error);
         toast.error(`Audio error: ${event.detail.error}`);
         logError(
@@ -1162,9 +1175,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     const handleWebRtcConnectionFailed = (event: CustomEvent) => {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
+        setIsTranscribing(false);
         setWebRtcError("WebRTC connection failed");
         toast.error("Audio connection failed - please try again");
         logError(`WebRTC connection failed for chat ${event.detail.chatId}`);
+      }
+    };
+
+    const handleWebRtcAudioTranscribed = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsTranscribing(false);
+        setLastTranscription(event.detail.transcribedText);
+        logInfo(
+          `WebRTC audio transcribed for chat ${event.detail.chatId}: ${event.detail.transcribedText}`
+        );
+        // The transcription will be automatically sent as a message by the server
       }
     };
 
@@ -1188,6 +1213,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       "webrtcConnectionFailed",
       handleWebRtcConnectionFailed as EventListener
     );
+    window.addEventListener(
+      "webrtcAudioTranscribed",
+      handleWebRtcAudioTranscribed as EventListener
+    );
 
     return () => {
       window.removeEventListener(
@@ -1209,6 +1238,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       window.removeEventListener(
         "webrtcConnectionFailed",
         handleWebRtcConnectionFailed as EventListener
+      );
+      window.removeEventListener(
+        "webrtcAudioTranscribed",
+        handleWebRtcAudioTranscribed as EventListener
       );
     };
   }, [currentChat?.id]);
@@ -1913,14 +1946,29 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                         }
                                         disabled={
                                           currentChat?.completed ||
+                                          isTranscribing ||
                                           (simulation?.timeLimit
                                             ? !isActive
                                             : false)
                                         }
-                                        className="min-h-[40px] h-[40px] px-3"
+                                        className={`min-h-[40px] h-[40px] px-3 ${
+                                          isTranscribing ? "animate-pulse" : ""
+                                        }`}
                                         data-testid="mic-button"
                                       >
-                                        {isRecording ? (
+                                        {isTranscribing ? (
+                                          <div className="flex items-center space-x-1">
+                                            {[0, 1, 2].map((i) => (
+                                              <div
+                                                key={i}
+                                                className="w-1 h-1 bg-current rounded-full animate-pulse"
+                                                style={{
+                                                  animationDelay: `${i * 0.2}s`,
+                                                }}
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : isRecording ? (
                                           <MicOff className="h-4 w-4" />
                                         ) : (
                                           <Mic className="h-4 w-4" />
@@ -1930,10 +1978,22 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     <TooltipContent>
                                       <p>
                                         {isRecording
-                                          ? "Stop audio recording"
+                                          ? isTranscribing
+                                            ? "Processing audio..."
+                                            : "Stop audio recording"
                                           : webRtcError
                                             ? `Audio error: ${webRtcError}`
                                             : "Start audio recording"}
+                                        {lastTranscription && (
+                                          <>
+                                            <br />
+                                            <span className="text-xs text-muted-foreground">
+                                              Last: "
+                                              {lastTranscription.slice(0, 50)}
+                                              ..."
+                                            </span>
+                                          </>
+                                        )}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>
@@ -2037,14 +2097,29 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                         }
                                         disabled={
                                           currentChat?.completed ||
+                                          isTranscribing ||
                                           (simulation?.timeLimit
                                             ? !isActive
                                             : false)
                                         }
-                                        className="min-h-[40px] h-[40px] px-3"
+                                        className={`min-h-[40px] h-[40px] px-3 ${
+                                          isTranscribing ? "animate-pulse" : ""
+                                        }`}
                                         data-testid="mic-button"
                                       >
-                                        {isRecording ? (
+                                        {isTranscribing ? (
+                                          <div className="flex items-center space-x-1">
+                                            {[0, 1, 2].map((i) => (
+                                              <div
+                                                key={i}
+                                                className="w-1 h-1 bg-current rounded-full animate-pulse"
+                                                style={{
+                                                  animationDelay: `${i * 0.2}s`,
+                                                }}
+                                              />
+                                            ))}
+                                          </div>
+                                        ) : isRecording ? (
                                           <MicOff className="h-4 w-4" />
                                         ) : (
                                           <Mic className="h-4 w-4" />
@@ -2054,10 +2129,22 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                     <TooltipContent>
                                       <p>
                                         {isRecording
-                                          ? "Stop audio recording"
+                                          ? isTranscribing
+                                            ? "Processing audio..."
+                                            : "Stop audio recording"
                                           : webRtcError
                                             ? `Audio error: ${webRtcError}`
                                             : "Start audio recording"}
+                                        {lastTranscription && (
+                                          <>
+                                            <br />
+                                            <span className="text-xs text-muted-foreground">
+                                              Last: "
+                                              {lastTranscription.slice(0, 50)}
+                                              ..."
+                                            </span>
+                                          </>
+                                        )}
                                       </p>
                                     </TooltipContent>
                                   </Tooltip>

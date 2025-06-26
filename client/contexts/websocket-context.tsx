@@ -474,6 +474,36 @@ export function WebSocketProvider({
         }
       );
 
+      // WebRTC Audio Transcription Event
+      socket.on(
+        "webrtc_audio_transcribed",
+        (data: {
+          chat_id: string;
+          transcribed_text: string;
+          status: string;
+        }) => {
+          logInfo("Received webrtc_audio_transcribed event", {
+            chatId: data.chat_id,
+            transcribedText: data.transcribed_text,
+            status: data.status,
+          });
+
+          // Show the transcribed text to the user with a toast
+          toast.success(`🎤 Transcribed: "${data.transcribed_text}"`);
+
+          // Dispatch custom event for components that need to show transcription
+          window.dispatchEvent(
+            new CustomEvent("webrtcAudioTranscribed", {
+              detail: {
+                chatId: data.chat_id,
+                transcribedText: data.transcribed_text,
+                status: data.status,
+              },
+            })
+          );
+        }
+      );
+
       socket.on(
         "message_cancelled",
         (data: { message_id: string; chat_id: string }) => {

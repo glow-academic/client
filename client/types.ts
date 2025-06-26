@@ -1,18 +1,13 @@
 import { 
   accounts as Accounts,
-  assistantChats as AssistantChats,
+  evalChatGrades as EvalChatGrades,
+  appLogs as AppLogs,
+  evalChatFeedbacks as EvalChatFeedbacks,
+  cohorts as Cohorts,
+  components as Components,
   evals as Evals,
   rubrics as Rubrics,
   sessions as Sessions,
-  appLogs as AppLogs,
-  assistantMessages as AssistantMessages,
-  assistantToolCalls as AssistantToolCalls,
-  dashboards as Dashboards,
-  evalChatGrades as EvalChatGrades,
-  cohorts as Cohorts,
-  components as Components,
-  classes as Classes,
-  evalChatFeedbacks as EvalChatFeedbacks,
   agents as Agents,
   events as Events,
   migrations as Migrations,
@@ -21,16 +16,21 @@ import {
   providers as Providers,
   scenarios as Scenarios,
   models as Models,
-  profiles as Profiles,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
-  standardGroups as StandardGroups,
-  simulationChatGrades as SimulationChatGrades,
   topics as Topics,
+  simulationChatGrades as SimulationChatGrades,
   schedules as Schedules,
   simulationAttempts as SimulationAttempts,
   users as Users,
   simulations as Simulations,
+  standardGroups as StandardGroups,
+  profiles as Profiles,
+  assistantChats as AssistantChats,
+  assistantMessages as AssistantMessages,
+  assistantToolCalls as AssistantToolCalls,
+  dashboards as Dashboards,
+  classes as Classes,
   documents as Documents,
   standards as Standards,
   evalChats as EvalChats,
@@ -41,19 +41,14 @@ import {
 
 // Use Drizzle schema types
 type Account = typeof Accounts.$inferSelect;
-type AssistantChat = typeof AssistantChats.$inferSelect;
+type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
+type AppLog = typeof AppLogs.$inferSelect;
+type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
+type Cohort = typeof Cohorts.$inferSelect;
+type Component = typeof Components.$inferSelect;
 type Eval = typeof Evals.$inferSelect;
 type Rubric = typeof Rubrics.$inferSelect;
 type Session = typeof Sessions.$inferSelect;
-type AppLog = typeof AppLogs.$inferSelect;
-type AssistantMessage = typeof AssistantMessages.$inferSelect;
-type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
-type EvalChatGrade = typeof EvalChatGrades.$inferSelect;
-type Cohort = typeof Cohorts.$inferSelect;
-type Component = typeof Components.$inferSelect;
-type Class = typeof Classes.$inferSelect;
-type EvalChatFeedback = typeof EvalChatFeedbacks.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
 type Event = typeof Events.$inferSelect;
 type Migration = typeof Migrations.$inferSelect;
@@ -62,16 +57,21 @@ type EvalMessage = typeof EvalMessages.$inferSelect;
 type Provider = typeof Providers.$inferSelect;
 type Scenario = typeof Scenarios.$inferSelect;
 type Model = typeof Models.$inferSelect;
-type Profile = typeof Profiles.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
-type StandardGroup = typeof StandardGroups.$inferSelect;
-type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type Topic = typeof Topics.$inferSelect;
+type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type Schedule = typeof Schedules.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type User = typeof Users.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
+type StandardGroup = typeof StandardGroups.$inferSelect;
+type Profile = typeof Profiles.$inferSelect;
+type AssistantChat = typeof AssistantChats.$inferSelect;
+type AssistantMessage = typeof AssistantMessages.$inferSelect;
+type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
+type Class = typeof Classes.$inferSelect;
 type Document = typeof Documents.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
 type EvalChat = typeof EvalChats.$inferSelect;
@@ -90,19 +90,14 @@ type SimulationMessageType = (typeof simulationMessageType.enumValues)[number];
 
 export type { 
   Account,
-  AssistantChat,
+  EvalChatGrade,
+  AppLog,
+  EvalChatFeedback,
+  Cohort,
+  Component,
   Eval,
   Rubric,
   Session,
-  AppLog,
-  AssistantMessage,
-  AssistantToolCall,
-  Dashboard,
-  EvalChatGrade,
-  Cohort,
-  Component,
-  Class,
-  EvalChatFeedback,
   Agent,
   Event,
   Migration,
@@ -111,16 +106,21 @@ export type {
   Provider,
   Scenario,
   Model,
-  Profile,
   SimulationChat,
   SimulationMessage,
-  StandardGroup,
-  SimulationChatGrade,
   Topic,
+  SimulationChatGrade,
   Schedule,
   SimulationAttempt,
   User,
   Simulation,
+  StandardGroup,
+  Profile,
+  AssistantChat,
+  AssistantMessage,
+  AssistantToolCall,
+  Dashboard,
+  Class,
   Document,
   Standard,
   EvalChat,

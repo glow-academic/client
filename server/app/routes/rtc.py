@@ -110,12 +110,20 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         super().__init__()  # initialise parent
         self.source_track = track
         self.chat_id = chat_id
-        self.audio_buffer: List[bytes] = []
-        self.buffer_duration = 0.5  # Process every 0.5 seconds for faster response
+        self.audio_buffer: List[np.ndarray[Any, np.dtype[np.float32]]] = []
+        self.buffer_duration = 2.0  # Process every 2 seconds for better accuracy
         self.sample_rate = 16000
         self.channels = 1
         self.last_process_time = 0.0
         self._processing = False
+        self.silence_threshold = 0.01  # Threshold for detecting silence
+        self.min_audio_length = 1.0  # Minimum seconds of audio before processing
+        
+        logger.info(f"🎤 AudioProcessor initialized for chat {chat_id}")
+        logger.info(f"   - Buffer duration: {self.buffer_duration}s")
+        logger.info(f"   - Sample rate: {self.sample_rate}Hz")
+        logger.info(f"   - Min audio length: {self.min_audio_length}s")
+        logger.info(f"   - Silence threshold: {self.silence_threshold}")
 
     async def _start_processing(self) -> None:
         """Start processing audio frames from the source track"""
@@ -150,17 +158,27 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         try:
             frame = await self.source_track.recv()
             
-            # Convert frame to bytes and add to buffer
+            # Convert frame to numpy array
             if hasattr(frame, 'to_ndarray'):
-                audio_bytes = frame.to_ndarray().tobytes()
-                self.audio_buffer.append(audio_bytes)
+                # Convert to numpy array (shape: [samples, channels])
+                audio_array = frame.to_ndarray()
                 
-                logger.debug(f"Added audio frame to buffer: {len(audio_bytes)} bytes, buffer size: {len(self.audio_buffer)}")
+                # Ensure mono audio
+                if len(audio_array.shape) > 1 and audio_array.shape[1] > 1:
+                    audio_array = np.mean(audio_array, axis=1)
+                
+                # Flatten to 1D if needed
+                audio_array = audio_array.flatten()
+                
+                # Add to buffer
+                self.audio_buffer.append(audio_array)
+                
+                logger.debug(f"Added audio frame to buffer: {len(audio_array)} samples, buffer size: {len(self.audio_buffer)}")
                 
                 # Check if we should process the buffer
                 current_time = asyncio.get_event_loop().time()
                 if current_time - self.last_process_time >= self.buffer_duration:
-                    logger.info(f"Processing audio buffer with {len(self.audio_buffer)} frames after {current_time - self.last_process_time:.2f}s")
+                    logger.info(f"🔊 Processing audio buffer with {len(self.audio_buffer)} frames after {current_time - self.last_process_time:.2f}s")
                     asyncio.create_task(self._process_audio_buffer())
                     self.last_process_time = current_time
             
@@ -179,40 +197,66 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         
         try:
             # Combine all audio data
-            combined_audio = b"".join(self.audio_buffer)
+            combined_audio = np.concatenate(self.audio_buffer)
             self.audio_buffer.clear()
             
             if len(combined_audio) == 0:
                 logger.warning("No audio data to process")
                 return
             
-            logger.info(f"Processing {len(combined_audio)} bytes of audio data")
-            
-            # Convert bytes to numpy array
-            audio_array = np.frombuffer(combined_audio, dtype=np.int16)
-            
-            # Ensure we have enough data for processing
-            if len(audio_array) < self.sample_rate:  # Less than 1 second
-                logger.warning("Not enough audio data for transcription")
+            # Check if audio is long enough
+            audio_duration = len(combined_audio) / self.sample_rate
+            if audio_duration < self.min_audio_length:
+                logger.info(f"Audio too short ({audio_duration:.2f}s), skipping transcription")
                 return
             
-            # Create AudioFrame correctly
-            audio_frame = av.AudioFrame.from_ndarray(
-                audio_array.reshape(-1, self.channels),
-                format="s16",
-                layout="mono"
-            )
-            audio_frame.sample_rate = self.sample_rate
+            # Check for silence (very low amplitude)
+            audio_rms = np.sqrt(np.mean(combined_audio**2))
+            if audio_rms < self.silence_threshold:
+                logger.info(f"Audio appears to be silence (RMS: {audio_rms:.6f}), skipping transcription")
+                return
+            
+            logger.info(f"Processing {len(combined_audio)} samples ({audio_duration:.2f}s) of audio data, RMS: {audio_rms:.6f}")
+            
+            # Normalize audio to [-1, 1] range for Whisper
+            if combined_audio.dtype != np.float32:
+                logger.info(f"Converting audio from {combined_audio.dtype} to float32")
+                if combined_audio.dtype == np.int16:
+                    combined_audio = combined_audio.astype(np.float32) / 32768.0
+                elif combined_audio.dtype == np.int32:
+                    combined_audio = combined_audio.astype(np.float32) / 2147483648.0
+                else:
+                    combined_audio = combined_audio.astype(np.float32)
+            
+            # Ensure audio is in the correct range
+            combined_audio = np.clip(combined_audio, -1.0, 1.0)
+            logger.info(f"Audio normalized, range: [{combined_audio.min():.6f}, {combined_audio.max():.6f}]")
             
             # Save to temporary file for Whisper processing
             with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_file:
                 temp_path = temp_file.name
                 
+                # Create AudioFrame from numpy array
+                audio_frame = av.AudioFrame.from_ndarray(
+                    combined_audio.reshape(-1, 1),  # Reshape to [samples, channels]
+                    format="flt",  # Use float format
+                    layout="mono"
+                )
+                audio_frame.sample_rate = self.sample_rate
+                
                 # Write audio frame to file
                 container = av.open(temp_path, mode="w")
-                stream = container.add_stream("pcm_s16le", rate=self.sample_rate)
+                stream = container.add_stream("pcm_f32le", rate=self.sample_rate)
                 stream.layout = "mono"
-                stream.write(audio_frame)
+                
+                # Write the frame
+                for packet in stream.encode(audio_frame):
+                    container.mux(packet)
+                
+                # Flush the encoder
+                for packet in stream.encode():
+                    container.mux(packet)
+                    
                 container.close()
                 
                 logger.info(f"Saved audio to temporary file: {temp_path}")
@@ -237,12 +281,23 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         Transcribe audio using Whisper
         """
         try:
+            logger.info(f"🎯 Starting Whisper transcription for {audio_path}")
             whisper_model = model_manager.get_whisper_model()
-            result = whisper_model.transcribe(audio_path)
+            logger.info(f"Got Whisper model: {type(whisper_model)}")
+            
+            result = whisper_model.transcribe(
+                audio_path,
+                task='transcribe',
+                language='en',  # Specify language for better performance
+                fp16=False,  # Disable fp16 for better compatibility
+                verbose=False  # Reduce logging
+            )
+            
             text = result.get("text", "")
+            logger.info(f"✅ Whisper transcription completed: '{text}' (length: {len(text)})")
             return text.strip() if isinstance(text, str) else None
         except Exception as e:
-            logger.error(f"Whisper transcription failed: {e}")
+            logger.error(f"❌ Whisper transcription failed: {e}")
             return None
 
     async def _send_transcription(self, text: str) -> None:
@@ -256,13 +311,26 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
             if len(text.strip()) < 3:
                 logger.warning(f"Transcription too short, skipping: '{text}'")
                 return
-                
-            # Use the correct function signature for process_simulation_message_websocket
+            
+            # Get Socket.IO instance to emit transcription event
+            from app.main import get_socketio_instance
+            sio_instance = get_socketio_instance()
+            
+            # First, emit the transcribed text to show it in the UI
+            await sio_instance.emit('webrtc_audio_transcribed', {
+                'chat_id': self.chat_id,
+                'transcribed_text': text,
+                'status': 'transcribed'
+            }, room=f"simulation_{self.chat_id}")
+            
+            logger.info(f"Emitted transcription event for chat {self.chat_id}")
+            
+            # Then process the message as if it was typed
             await process_simulation_message_websocket(
                 chat_id=self.chat_id,
                 message=text,
                 is_audio=True,
-                audio_data=None,
+                audio_data=None,  # We don't need to store the audio data
                 session=None
             )
             
@@ -270,6 +338,9 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
                 
         except Exception as e:
             logger.error(f"Error sending transcription for chat {self.chat_id}: {e}", exc_info=True)
+
+# Store active audio processors for cleanup (after AudioProcessor class definition)
+audio_processors: Dict[str, AudioProcessor] = {}
 
 @router.get("/ice", response_model=IceConfig)
 def ice() -> IceConfig:
@@ -357,6 +428,10 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
                     # Start processing the track
                     asyncio.create_task(processor._start_processing())
                     logger.info(f"Created and started audio processor for chat {offer.chat_id}")
+                    
+                    # Store the processor for potential cleanup
+                    audio_processors[offer.chat_id] = processor
+                    
                 except Exception as e:
                     logger.error(f"Error creating audio processor for chat {offer.chat_id}: {e}")
             else:
@@ -370,18 +445,24 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
                 logger.info(f"WebRTC connection established successfully for chat {offer.chat_id}")
             elif pc.connectionState == "failed":
                 logger.warning(f"WebRTC connection failed for chat {offer.chat_id}, cleaning up")
-                # Clean up peer connection
+                # Clean up peer connection and audio processor
                 if offer.chat_id in peer_connections:
                     del peer_connections[offer.chat_id]
+                if offer.chat_id in audio_processors:
+                    audio_processors[offer.chat_id].stop_processing()
+                    del audio_processors[offer.chat_id]
             elif pc.connectionState == "disconnected":
                 logger.info(f"WebRTC connection disconnected for chat {offer.chat_id}")
                 # Don't immediately clean up on disconnect - wait to see if it reconnects
             elif pc.connectionState == "closed":
                 logger.info(f"WebRTC connection closed for chat {offer.chat_id}, cleaning up")
-                # Clean up peer connection
+                # Clean up peer connection and audio processor
                 if offer.chat_id in peer_connections:
                     del peer_connections[offer.chat_id]
-                
+                if offer.chat_id in audio_processors:
+                    audio_processors[offer.chat_id].stop_processing()
+                    del audio_processors[offer.chat_id]
+        
         @pc.on("iceconnectionstatechange")  # type: ignore
         async def on_iceconnectionstatechange() -> None:
             logger.info(f"ICE connection state changed to {pc.iceConnectionState} for chat {offer.chat_id}")
