@@ -59,6 +59,7 @@ services:
         condition: service_healthy
     networks:
       - internal
+      - public_net
     ports:
       - "${SERVER_PORT:-8000}:8000"
 
@@ -90,6 +91,7 @@ services:
         condition: service_started
     networks:
       - internal
+      - public_net
     ports:
       - "${CLIENT_PORT:-3000}:3000"
 
