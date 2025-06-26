@@ -723,32 +723,6 @@ async def health_check() -> JSONResponse:
     return JSONResponse(content={"status": "ok"})
 
 
-def fake_chat_stream(user_message: str) -> Generator[bytes, None, None]:
-    """
-    Simulate streaming a chat response back in chunks.
-    """
-    # A very simple echo + delay demo
-    words = f"Echo: {user_message}".split()
-    for word in words:
-        yield (word + " ").encode("utf-8")
-        time.sleep(0.3)
-    # indicate end of stream
-    yield b""
-
-
-@fastapi_app.get("/db-test")
-async def test_db_connection(session: Session = Depends(get_session)) -> JSONResponse:
-    """Test database connection"""
-    try:
-        # Try a simple query
-        session.exec(select(SimulationChats)).first()
-        return JSONResponse(content={"status": "Database connection successful"})
-    except Exception as e:
-        logger.exception(f"Database connection error: {str(e)}")
-        return JSONResponse(
-            content={"status": "Database connection failed", "error": str(e)}
-        )
-
 
 if __name__ == "__main__":
     import uvicorn

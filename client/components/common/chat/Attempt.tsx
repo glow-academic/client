@@ -100,8 +100,7 @@ import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-// WebRTC imports
-import { isWebRtcSupported, startRtcAudio, stopRtcAudio } from "@/utils/rtc";
+// WebRTC functionality is now handled by the global WebSocket context
 
 // Timer is now integrated directly into the component layout
 
@@ -231,6 +230,9 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     emitSendSimulationMessage,
     emitStopSimulation,
     emitContinueSimulation,
+    isWebRTCSupported,
+    startWebRTC,
+    stopWebRTC,
   } = useWebSocket();
 
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -239,7 +241,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // WebRTC Audio state
   const [isRecording, setIsRecording] = useState(false);
-  const [webRtcSupported] = useState(isWebRtcSupported());
   const [webRtcError, setWebRtcError] = useState<string | null>(null);
   const [lastTranscription, setLastTranscription] = useState<string | null>(
     null
@@ -1082,18 +1083,18 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     // If chat changed and we were recording, stop the recording
     if (prevChatId && prevChatId !== newChatId && isRecording) {
-      stopRtcAudio(prevChatId).catch((error) => {
+      stopWebRTC().catch((error: Error) => {
         logError("Error stopping WebRTC audio on chat change", error);
       });
     }
 
     currentChatIdRef.current = newChatId;
     prevChatIdRef.current = newChatId;
-  }, [currentChat?.id, isRecording]);
+  }, [currentChat?.id, isRecording, stopWebRTC]);
 
   // WebRTC Audio handlers
   const handleStartRecording = async () => {
-    if (!currentChat?.id || !webRtcSupported) return;
+    if (!currentChat?.id || !isWebRTCSupported) return;
 
     try {
       setIsRecording(true);
@@ -1102,7 +1103,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       setWebRtcError(null);
       // Show immediate feedback
       toast.success("Setting up audio connection...");
-      await startRtcAudio(currentChat.id);
+      await startWebRTC();
       // Success toast will be shown by the webrtcAudioStarted event
     } catch (error) {
       setIsRecording(false);
@@ -1119,7 +1120,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     try {
       setIsTranscribing(true); // Show that we're processing the audio
-      await stopRtcAudio(currentChat.id);
+      await stopWebRTC();
       // Don't immediately set recording to false - let the event handler do it
       // setIsRecording(false); // This will be handled by the event
     } catch (error) {
@@ -1250,9 +1251,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   useEffect(() => {
     return () => {
       // Clean up any active recording when component unmounts
-      const chatId = currentChatIdRef.current;
-      if (chatId && isRecording) {
-        stopRtcAudio(chatId).catch((error) => {
+      if (isRecording) {
+        stopWebRTC().catch((error: Error) => {
           logError("Error stopping WebRTC audio on unmount", error);
         });
       }
@@ -1929,7 +1929,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               />
                               <div className="flex gap-2 justify-end">
                                 {/* Microphone Button for WebRTC Audio */}
-                                {webRtcSupported && (
+                                {isWebRTCSupported && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
@@ -2080,7 +2080,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                               />
                               <div className="flex gap-2 shrink-0">
                                 {/* Microphone Button for WebRTC Audio */}
-                                {webRtcSupported && (
+                                {isWebRTCSupported && (
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <Button
