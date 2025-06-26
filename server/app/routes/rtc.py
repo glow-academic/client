@@ -57,7 +57,7 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         self.source_track = track
         self.chat_id = chat_id
         self.audio_buffer: List[bytes] = []
-        self.buffer_duration = 1.0  # Process every 1 second
+        self.buffer_duration = 0.5  # Process every 0.5 seconds for faster response
         self.sample_rate = 16000
         self.channels = 1
         self.last_process_time = 0.0
@@ -217,15 +217,21 @@ def ice() -> IceConfig:
     """
     host = os.getenv("TURN_PUBLIC_IP", "localhost")
     realm = os.getenv("TURN_REALM", "example.com")
-    user = os.getenv("TURN_USERNAME", "webrtc")  # Use env var instead of hardcoding
-    pwd = os.getenv("TURN_PASS", "changeMe")
+    user = os.getenv("TURN_USERNAME")
+    pwd = os.getenv("TURN_PASS")
+
+    urls = [
+        f"stun:{host}:3478",
+        f"turn:{host}:3478?transport=udp",
+        f"turn:{host}:3478?transport=tcp",
+    ]
+
+    # Log the ICE configuration for debugging
+    logger.info(f"ICE configuration: host={host}, realm={realm}, has_credentials={bool(user and pwd)}")
+    logger.debug(f"ICE URLs: {urls}")
 
     return IceConfig(
-        urls=[
-            f"stun:{host}:3478",
-            f"turn:{host}:3478?transport=udp",
-            f"turn:{host}:3478?transport=tcp",
-        ],
+        urls=urls,
         username=user,
         credential=pwd,
     )
@@ -236,6 +242,8 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
     Handle WebRTC offer and return answer
     """
     try:
+        logger.info(f"Handling WebRTC offer for chat {offer.chat_id}")
+        
         # Create peer connection
         pc = RTCPeerConnection()
         peer_connections[offer.chat_id] = pc

@@ -2,8 +2,12 @@
  * client/utils/rtc.ts
  */
 
-import { getApiUrl } from "@/lib/utils";
 import { logError, logInfo } from "./logger";
+
+// Store active connections
+const activeConnections = new Map<string, RTCPeerConnection>();
+const activeStreams = new Map<string, MediaStream>();
+const activeSignalingWs = new Map<string, WebSocket>();
 
 interface IceConfig {
   urls: string[];
@@ -22,12 +26,49 @@ interface RTCAnswer {
   type: string;
 }
 
-// Global state for WebRTC connections
-const peerConnections = new Map<string, RTCPeerConnection>();
-const signalingWebSockets = new Map<string, WebSocket>();
+// Get API URL helper
+const getApiUrl = (): string => {
+  const baseUrl = process.env["NEXT_PUBLIC_API_URL"] || "http://localhost:8000";
+  return baseUrl.replace(/\/$/, ""); // Remove trailing slash
+};
 
 const fetchIce = async (): Promise<IceConfig> => {
-  return fetch(`${getApiUrl()}/rtc/ice`).then<IceConfig>((r) => r.json());
+  const response = await fetch(`${getApiUrl()}/rtc/ice`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ICE config: ${response.statusText}`);
+  }
+  return response.json();
+};
+
+// Create signaling WebSocket with promise-based connection
+const createSignalingWebSocket = (chatId: string): Promise<WebSocket> => {
+  return new Promise((resolve, reject) => {
+    const apiUrl = getApiUrl();
+    const wsUrl = apiUrl.replace(/^http/, "ws");
+    const ws = new WebSocket(`${wsUrl}/rtc/signaling/${chatId}`);
+
+    const timeout = setTimeout(() => {
+      ws.close();
+      reject(new Error("WebSocket connection timeout"));
+    }, 5000);
+
+    ws.onopen = () => {
+      clearTimeout(timeout);
+      logInfo(`WebSocket signaling connected for chat ${chatId}`);
+      resolve(ws);
+    };
+
+    ws.onerror = (error) => {
+      clearTimeout(timeout);
+      logError(`WebSocket signaling error for chat ${chatId}`, error);
+      reject(error);
+    };
+
+    ws.onclose = () => {
+      logInfo(`WebSocket signaling closed for chat ${chatId}`);
+      activeSignalingWs.delete(chatId);
+    };
+  });
 };
 
 /**
@@ -35,149 +76,27 @@ const fetchIce = async (): Promise<IceConfig> => {
  */
 export async function startRtcAudio(chatId: string): Promise<void> {
   try {
-    logInfo("Starting WebRTC audio for chat", { chatId });
+    logInfo(`Starting WebRTC audio for chat ${chatId}`);
 
-    // Clean up any existing connection for this chat
-    await stopRtcAudio(chatId);
-
-    // Get ICE servers configuration
-    const iceConfig = await fetchIce();
-
-    // Create peer connection with proper ICE servers format
-    const iceServers: RTCIceServer[] = [
-      // Add fallback STUN servers
-      { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" },
-    ];
-
-    // Add TURN server if credentials are available
-    if (iceConfig.username && iceConfig.credential) {
-      iceServers.unshift({
-        urls: iceConfig.urls,
-        username: iceConfig.username,
-        credential: iceConfig.credential,
-      });
-    } else {
-      // Add as STUN-only if no credentials
-      iceServers.unshift({ urls: iceConfig.urls });
+    // Stop any existing connection for this chat
+    if (activeConnections.has(chatId)) {
+      await stopRtcAudio(chatId);
     }
 
-    const pc = new RTCPeerConnection({ iceServers });
+    // Create signaling WebSocket first (before getUserMedia for faster startup)
+    const signalingWsPromise = createSignalingWebSocket(chatId);
 
-    // Store the peer connection
-    peerConnections.set(chatId, pc);
-
-    // Set up signaling WebSocket with proper timing
-    const signalingWs = new WebSocket(`${getApiUrl()}/rtc/signaling/${chatId}`);
-
-    // Listen for server ICE candidates
-    signalingWs.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data);
-
-      if (msg.type === "ice-candidate" && msg.candidate) {
-        logInfo(`Received ICE candidate from server for chat ${chatId}`, {
-          candidate: msg.candidate.candidate?.substring(0, 50) + "...",
-          sdpMid: msg.candidate.sdpMid,
-          sdpMLineIndex: msg.candidate.sdpMLineIndex,
-        });
-
-        pc.addIceCandidate(msg.candidate)
-          .then(() => {
-            logInfo(
-              `Successfully added remote ICE candidate for chat ${chatId}`
-            );
-          })
-          .catch((e) => {
-            logError("Failed to add remote ICE candidate", e);
-          });
-      } else if (msg.type === "error") {
-        logError("WebSocket signaling error:", msg.message);
-      }
-    };
-
-    signalingWs.onopen = () => {
-      logInfo(`WebSocket signaling connected for chat ${chatId}`);
-    };
-
-    signalingWs.onerror = (error) => {
-      logError("WebSocket signaling error:", error);
-    };
-
-    signalingWebSockets.set(chatId, signalingWs);
-
-    // Handle ICE candidates
-    pc.onicecandidate = (event) => {
-      if (event.candidate && signalingWs.readyState === WebSocket.OPEN) {
-        logInfo(`Sending ICE candidate for chat ${chatId}`, {
-          candidate: event.candidate.candidate.substring(0, 50) + "...",
-          sdpMid: event.candidate.sdpMid,
-          sdpMLineIndex: event.candidate.sdpMLineIndex,
-        });
-
-        signalingWs.send(
-          JSON.stringify({
-            type: "ice-candidate",
-            candidate: {
-              candidate: event.candidate.candidate,
-              sdpMLineIndex: event.candidate.sdpMLineIndex,
-              sdpMid: event.candidate.sdpMid,
-            },
-          })
-        );
-      } else if (event.candidate) {
-        logError(
-          `Cannot send ICE candidate - WebSocket not ready. State: ${signalingWs.readyState}`
-        );
-      }
-    };
-
-    // Handle connection state changes
-    pc.onconnectionstatechange = () => {
-      logInfo(
-        `WebRTC connection state: ${pc.connectionState} for chat ${chatId}`
-      );
-
-      if (pc.connectionState === "connected") {
-        logInfo(
-          `WebRTC connection established successfully for chat ${chatId}`
-        );
-      } else if (
-        pc.connectionState === "failed" ||
-        pc.connectionState === "disconnected"
-      ) {
-        logError(`WebRTC connection ${pc.connectionState} for chat ${chatId}`);
-        // Optionally emit an event for the UI to handle
-        window.dispatchEvent(
-          new CustomEvent("webrtcConnectionFailed", { detail: { chatId } })
-        );
-      } else if (pc.connectionState === "closed") {
-        logInfo(`WebRTC connection closed for chat ${chatId}`);
-      }
-    };
-
-    // Handle ICE connection state changes
-    pc.oniceconnectionstatechange = () => {
-      logInfo(
-        `WebRTC ICE connection state: ${pc.iceConnectionState} for chat ${chatId}`
-      );
-    };
-
-    // Handle ICE gathering state changes
-    pc.onicegatheringstatechange = () => {
-      logInfo(
-        `WebRTC ICE gathering state: ${pc.iceGatheringState} for chat ${chatId}`
-      );
-    };
-
-    // Get user media (audio only)
+    // Request user media
     logInfo(`Requesting user media for chat ${chatId}`);
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
         echoCancellation: true,
         noiseSuppression: true,
         autoGainControl: true,
-        sampleRate: 16000, // Optimal for Whisper
+        sampleRate: 16000,
+        channelCount: 1,
       },
+      video: false,
     });
 
     logInfo(`Got user media stream for chat ${chatId}`, {
@@ -185,52 +104,158 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       videoTracks: stream.getVideoTracks().length,
     });
 
+    // Wait for signaling WebSocket to be ready
+    const signalingWs = await signalingWsPromise;
+    activeSignalingWs.set(chatId, signalingWs);
+
+    // Fetch ICE configuration
+    const iceConfig = await fetchIce();
+    logInfo(`Fetched ICE config`, { urls: iceConfig.urls.length });
+
+    // Create peer connection with ICE servers
+    const iceServers: RTCIceServer[] = [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" },
+    ];
+
+    // Add TURN servers if credentials are provided
+    if (iceConfig.username && iceConfig.credential) {
+      iceServers.unshift({
+        urls: iceConfig.urls,
+        username: iceConfig.username,
+        credential: iceConfig.credential,
+      });
+      logInfo(`Added TURN servers with credentials`);
+    } else {
+      // Add as STUN servers if no credentials
+      iceServers.unshift({ urls: iceConfig.urls });
+      logInfo(`Added servers as STUN (no credentials provided)`);
+    }
+
+    const peerConnection = new RTCPeerConnection({
+      iceServers,
+      iceCandidatePoolSize: 10, // Pre-gather candidates
+    });
+
+    activeConnections.set(chatId, peerConnection);
+    activeStreams.set(chatId, stream);
+
+    // Set up peer connection event handlers
+    peerConnection.onicecandidate = (event) => {
+      if (event.candidate && signalingWs.readyState === WebSocket.OPEN) {
+        const candidateData = {
+          candidate: event.candidate.candidate,
+          sdpMid: event.candidate.sdpMid,
+          sdpMLineIndex: event.candidate.sdpMLineIndex,
+        };
+
+        signalingWs.send(
+          JSON.stringify({
+            type: "ice-candidate",
+            candidate: candidateData,
+          })
+        );
+
+        logInfo(`Sending ICE candidate for chat ${chatId}`, {
+          candidate: candidateData.candidate.substring(0, 50) + "...",
+          sdpMid: candidateData.sdpMid,
+          sdpMLineIndex: candidateData.sdpMLineIndex,
+        });
+      }
+    };
+
+    peerConnection.oniceconnectionstatechange = () => {
+      logInfo(
+        `WebRTC ICE connection state: ${peerConnection.iceConnectionState} for chat ${chatId}`
+      );
+
+      if (peerConnection.iceConnectionState === "connected") {
+        window.dispatchEvent(
+          new CustomEvent("webrtcAudioStarted", { detail: { chatId } })
+        );
+        logInfo(`WebRTC audio streaming started for chat ${chatId}`);
+      } else if (peerConnection.iceConnectionState === "disconnected") {
+        window.dispatchEvent(
+          new CustomEvent("webrtcAudioStopped", { detail: { chatId } })
+        );
+        logInfo(`WebRTC audio streaming stopped for chat ${chatId}`);
+      } else if (peerConnection.iceConnectionState === "failed") {
+        window.dispatchEvent(
+          new CustomEvent("webrtcConnectionFailed", { detail: { chatId } })
+        );
+        logError(`WebRTC connection failed for chat ${chatId}`);
+      }
+    };
+
+    peerConnection.onicegatheringstatechange = () => {
+      logInfo(
+        `WebRTC ICE gathering state: ${peerConnection.iceGatheringState} for chat ${chatId}`
+      );
+    };
+
+    peerConnection.onconnectionstatechange = () => {
+      logInfo(
+        `WebRTC connection state: ${peerConnection.connectionState} for chat ${chatId}`
+      );
+    };
+
+    // Handle incoming ICE candidates from server
+    signalingWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "ice-candidate" && data.candidate) {
+          const candidate = new RTCIceCandidate({
+            candidate: data.candidate.candidate,
+            sdpMid: data.candidate.sdpMid,
+            sdpMLineIndex: data.candidate.sdpMLineIndex,
+          });
+
+          peerConnection.addIceCandidate(candidate).catch((error) => {
+            logError(`Failed to add ICE candidate for chat ${chatId}`, error);
+          });
+
+          logInfo(`Received and added ICE candidate for chat ${chatId}`);
+        }
+      } catch (error) {
+        logError(
+          `Error processing signaling message for chat ${chatId}`,
+          error
+        );
+      }
+    };
+
     // Add audio track to peer connection
     const audioTrack = stream.getAudioTracks()[0];
     if (audioTrack) {
-      pc.addTrack(audioTrack, stream);
+      peerConnection.addTrack(audioTrack, stream);
       logInfo(`Added audio track to peer connection for chat ${chatId}`, {
         trackId: audioTrack.id,
         trackLabel: audioTrack.label,
         trackEnabled: audioTrack.enabled,
         trackReadyState: audioTrack.readyState,
       });
-
-      // Monitor track state
-      audioTrack.onended = () => {
-        logInfo(`Audio track ended for chat ${chatId}`);
-      };
-
-      audioTrack.onmute = () => {
-        logInfo(`Audio track muted for chat ${chatId}`);
-      };
-
-      audioTrack.onunmute = () => {
-        logInfo(`Audio track unmuted for chat ${chatId}`);
-      };
-    } else {
-      throw new Error("No audio track available");
     }
 
     // Create and send offer
-    const offer = await pc.createOffer({
-      offerToReceiveAudio: false, // We're only sending audio
+    const offer = await peerConnection.createOffer({
+      offerToReceiveAudio: false,
       offerToReceiveVideo: false,
     });
 
-    await pc.setLocalDescription(offer);
+    await peerConnection.setLocalDescription(offer);
 
-    // Send offer to server
+    const offerData: RTCOffer = {
+      sdp: offer.sdp!,
+      type: offer.type,
+      chat_id: chatId,
+    };
+
     const response = await fetch(`${getApiUrl()}/rtc/offer`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        sdp: offer.sdp,
-        type: offer.type,
-        chat_id: chatId,
-      } as RTCOffer),
+      body: JSON.stringify(offerData),
     });
 
     if (!response.ok) {
@@ -239,48 +264,21 @@ export async function startRtcAudio(chatId: string): Promise<void> {
 
     const answer: RTCAnswer = await response.json();
 
-    // Set remote description with the answer
-    await pc.setRemoteDescription(
+    await peerConnection.setRemoteDescription(
       new RTCSessionDescription({
-        type: answer.type as RTCSdpType,
         sdp: answer.sdp,
+        type: answer.type as RTCSdpType,
       })
     );
 
-    // Wait for signaling WebSocket to be ready before proceeding
-    await new Promise<void>((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        reject(new Error("WebSocket signaling connection timeout"));
-      }, 5000);
-
-      if (signalingWs.readyState === WebSocket.OPEN) {
-        clearTimeout(timeout);
-        resolve();
-      } else {
-        signalingWs.onopen = () => {
-          clearTimeout(timeout);
-          resolve();
-        };
-        signalingWs.onerror = () => {
-          clearTimeout(timeout);
-          reject(new Error("WebSocket signaling connection failed"));
-        };
-      }
-    });
-
-    logInfo(`WebRTC audio streaming started for chat ${chatId}`);
-
-    // Emit success event
-    window.dispatchEvent(
-      new CustomEvent("webrtcAudioStarted", { detail: { chatId } })
-    );
+    logInfo(`WebRTC connection established for chat ${chatId}`);
   } catch (error) {
-    logError("Failed to start WebRTC audio:", error);
+    logError(`Error starting WebRTC audio for chat ${chatId}`, error);
 
     // Clean up on error
     await stopRtcAudio(chatId);
 
-    // Emit error event
+    // Dispatch error event
     window.dispatchEvent(
       new CustomEvent("webrtcAudioError", {
         detail: {
@@ -299,35 +297,39 @@ export async function startRtcAudio(chatId: string): Promise<void> {
  */
 export async function stopRtcAudio(chatId: string): Promise<void> {
   try {
-    // Close peer connection
-    const pc = peerConnections.get(chatId);
-    if (pc) {
-      // Stop all tracks
-      pc.getSenders().forEach((sender) => {
-        if (sender.track) {
-          sender.track.stop();
-        }
-      });
-
-      pc.close();
-      peerConnections.delete(chatId);
-    }
+    logInfo(`Stopping WebRTC audio for chat ${chatId}`);
 
     // Close signaling WebSocket
-    const signalingWs = signalingWebSockets.get(chatId);
+    const signalingWs = activeSignalingWs.get(chatId);
     if (signalingWs) {
       signalingWs.close();
-      signalingWebSockets.delete(chatId);
+      activeSignalingWs.delete(chatId);
     }
 
-    logInfo(`WebRTC audio streaming stopped for chat ${chatId}`);
+    // Close peer connection
+    const peerConnection = activeConnections.get(chatId);
+    if (peerConnection) {
+      peerConnection.close();
+      activeConnections.delete(chatId);
+    }
 
-    // Emit stopped event
+    // Stop media stream
+    const stream = activeStreams.get(chatId);
+    if (stream) {
+      stream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      activeStreams.delete(chatId);
+    }
+
+    // Dispatch stopped event
     window.dispatchEvent(
       new CustomEvent("webrtcAudioStopped", { detail: { chatId } })
     );
+
+    logInfo(`WebRTC audio streaming stopped for chat ${chatId}`);
   } catch (error) {
-    logError("Error stopping WebRTC audio:", error);
+    logError(`Error stopping WebRTC audio for chat ${chatId}`, error);
   }
 }
 
@@ -335,8 +337,11 @@ export async function stopRtcAudio(chatId: string): Promise<void> {
  * Check if WebRTC audio is currently active for a chat
  */
 export function isRtcAudioActive(chatId: string): boolean {
-  const pc = peerConnections.get(chatId);
-  return pc ? pc.connectionState === "connected" : false;
+  const peerConnection = activeConnections.get(chatId);
+  return (
+    peerConnection?.iceConnectionState === "connected" ||
+    peerConnection?.iceConnectionState === "checking"
+  );
 }
 
 /**
@@ -345,19 +350,21 @@ export function isRtcAudioActive(chatId: string): boolean {
 export function getRtcConnectionState(
   chatId: string
 ): RTCPeerConnectionState | null {
-  const pc = peerConnections.get(chatId);
-  return pc ? pc.connectionState : null;
+  const peerConnection = activeConnections.get(chatId);
+  return peerConnection?.connectionState || null;
 }
 
 /**
  * Check if the browser supports WebRTC
  */
 export function isWebRtcSupported(): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined" || typeof navigator === "undefined") {
+    return false;
+  }
 
   return !!(
-    window.RTCPeerConnection &&
     navigator.mediaDevices &&
-    navigator.mediaDevices.getUserMedia
+    typeof navigator.mediaDevices.getUserMedia === "function" &&
+    window.RTCPeerConnection
   );
 }
