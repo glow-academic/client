@@ -9,8 +9,9 @@ from typing import Any, Dict, List, Optional
 
 import av  # type: ignore
 import numpy as np  # NEW: used for ndarray conversion
-from aiortc import (MediaStreamTrack, RTCIceCandidate,  # type: ignore
-                    RTCPeerConnection, RTCSessionDescription)
+from aiortc import (MediaStreamTrack, RTCConfiguration,  # type: ignore
+                    RTCIceCandidate, RTCIceServer, RTCPeerConnection,
+                    RTCSessionDescription)
 from app.config import model_manager
 from app.db import get_session
 from app.models import SimulationChats
@@ -25,6 +26,57 @@ router = APIRouter()
 
 # Store active peer connections
 peer_connections: Dict[str, RTCPeerConnection] = {}
+
+# ---------------------------------------------------------------------------
+# Helper utilities
+# ---------------------------------------------------------------------------
+
+def _build_ice_servers() -> List[Dict[str, Any]]:
+    """Return ICE server configuration matching the values returned by `/rtc/ice`.
+
+    Having the server gather TURN / STUN candidates as well greatly increases
+    the chance of establishing a successful connection, especially when the
+    server itself is running inside Docker or behind NAT.  We construct the
+    same list of servers that the `/rtc/ice` endpoint returns so that both the
+    browser and the server use a symmetric configuration.
+    """
+
+    host = os.getenv("TURN_PUBLIC_IP", "localhost")
+    user = os.getenv("TURN_USERNAME")
+    pwd = os.getenv("TURN_PASSWORD")
+
+    # Baseline public Google STUN servers + local STUN on the TURN host.
+    ice_servers: List[Dict[str, Any]] = [
+        {
+            "urls": [
+                "stun:stun.l.google.com:19302",
+                "stun:stun1.l.google.com:19302",
+                f"stun:{host}:3478",
+            ]
+        }
+    ]
+
+    # Add TURN entries only if credentials are present.
+    if user and pwd:
+        ice_servers.append(
+            {
+                "urls": [
+                    f"turn:{host}:3478?transport=udp",
+                    f"turn:{host}:3478?transport=tcp",
+                ],
+                "username": user,
+                "credential": pwd,
+            }
+        )
+
+    logger.info(
+        "Using ICE servers on server peer-connection: %s",
+        ", ".join(
+            [url for s in ice_servers for url in (s["urls"] if isinstance(s["urls"], list) else [s["urls"]])]
+        ),
+    )
+
+    return ice_servers
 
 class IceConfig(BaseModel):
     urls: List[str]
@@ -262,8 +314,24 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
     try:
         logger.info(f"Handling WebRTC offer for chat {offer.chat_id}")
         
-        # Create peer connection
-        pc = RTCPeerConnection()
+                # Create peer connection _with the same ICE servers that the client uses_.
+        # This is critical for reliable NAT traversal when the API server is
+        # running inside Docker or behind its own NAT.
+        
+        # Convert our dict format to aiortc's RTCIceServer objects
+        ice_servers_list = []
+        for server_config in _build_ice_servers():
+            if "username" in server_config and "credential" in server_config:
+                ice_servers_list.append(RTCIceServer(
+                    urls=server_config["urls"],
+                    username=server_config["username"],
+                    credential=server_config["credential"]
+                ))
+            else:
+                ice_servers_list.append(RTCIceServer(urls=server_config["urls"]))
+        
+        config = RTCConfiguration(iceServers=ice_servers_list)
+        pc = RTCPeerConnection(configuration=config)
         peer_connections[offer.chat_id] = pc
         
         # Set remote description
