@@ -135,26 +135,45 @@ EOF
   rm -f /tmp/turn_test.js
 }
 
+# Setup TURN server environment variables (copied from run.sh)
+setup_turn_env() {
+  # Set default values if not already set
+  export TURN_PUBLIC_IP="${TURN_PUBLIC_IP:-$(get_public_ip)}"
+  export TURN_REALM="${TURN_REALM:-localhost}"
+  export TURN_USERNAME="${TURN_USERNAME:-localuser}"
+  export TURN_PASSWORD="${TURN_PASSWORD:-localpass}"
+  
+  # Override with localhost for local development if public IP detection failed
+  if [[ "$TURN_PUBLIC_IP" == "localhost" ]]; then
+    export TURN_PUBLIC_IP="127.0.0.1"
+  fi
+  
+  # Set URIs based on environment
+  if [[ -z "${TURN_URI:-}" ]]; then
+    export TURN_URI="turn:${TURN_PUBLIC_IP}:3478?transport=udp"
+  fi
+  
+  if [[ -z "${STUN_URI:-}" ]]; then
+    export STUN_URI="stun:${TURN_PUBLIC_IP}:3478"
+  fi
+  
+  log_info "TURN server configuration:"
+  log_info "  Public IP: $TURN_PUBLIC_IP"
+  log_info "  Realm: $TURN_REALM"
+  log_info "  Username: $TURN_USERNAME"
+  log_info "  Password: $TURN_PASSWORD"
+  log_info "  TURN URI: $TURN_URI"
+  log_info "  STUN URI: $STUN_URI"
+}
+
 # Main setup function
 setup_turn_server() {
   echo -e "${BLUE}🔄 Setting up TURN/STUN server for WebRTC${NC}"
   echo ""
   
-  # Get configuration
-  local public_ip=$(get_public_ip)
-  local realm="${TURN_REALM:-localhost}"
-  local username="${TURN_USERNAME:-localuser}"
-  local password="${TURN_PASSWORD:-localpass}"
-  local turn_uri="${TURN_URI:-turn:${public_ip}:3478?transport=udp}"
-  local stun_uri="${STUN_URI:-stun:${public_ip}:3478}"
+  # Setup environment variables
+  setup_turn_env
   
-  log_info "Configuration:"
-  log_info "  Public IP: $public_ip"
-  log_info "  Realm: $realm"
-  log_info "  Username: $username"
-  log_info "  Password: $password"
-  log_info "  TURN URI: $turn_uri"
-  log_info "  STUN URI: $stun_uri"
   echo ""
   
   # Check if port is already in use
@@ -180,7 +199,7 @@ setup_turn_server() {
     # Pull the image
     docker pull coturn/coturn:4.6
     
-    # Start container
+    # Start container (using environment variables like run.sh)
     docker run -d \
       --name glow-realtime \
       --restart unless-stopped \
@@ -192,9 +211,9 @@ setup_turn_server() {
       --no-dtls \
       --no-tls \
       --lt-cred-mech \
-      --realm="$realm" \
-      --user="$username:$password" \
-      --external-ip="$public_ip" \
+      --realm="$TURN_REALM" \
+      --user="$TURN_USERNAME:$TURN_PASSWORD" \
+      --external-ip="$TURN_PUBLIC_IP" \
       --listening-port=3478 \
       --min-port=49160 \
       --max-port=49200 \
@@ -203,35 +222,55 @@ setup_turn_server() {
     # Wait for container to start
     sleep 5
     
-    if docker ps | grep -q glow-realtime; then
-      log_success "TURN server started using Docker"
-      
-      # Export environment variables
-      export TURN_PUBLIC_IP="$public_ip"
-      export TURN_REALM="$realm"
-      export TURN_USERNAME="$username"
-      export TURN_PASSWORD="$password"
-      export TURN_URI="$turn_uri"
-      export STUN_URI="$stun_uri"
+    # Check if container is running and healthy
+    local container_running=false
+    for i in {1..10}; do
+      if docker ps | grep -q glow-realtime; then
+        container_running=true
+        break
+      fi
+
+      sleep 1
+    done
+    
+    if $container_running; then
+      # Additional check: verify the container is actually listening
+      sleep 2
+      if docker exec glow-realtime netstat -ln 2>/dev/null | grep -q ":3478" || docker logs glow-realtime 2>/dev/null | grep -q "UDP listener opened"; then
+        log_success "TURN server started using Docker and is listening on port 3478"
+      else
+        log_success "TURN server started using Docker (container running)"
+      fi
       
       # Show environment variables to set
       echo ""
       echo -e "${YELLOW}📝 Add these to your environment:${NC}"
-      echo "export TURN_PUBLIC_IP=\"$public_ip\""
-      echo "export TURN_REALM=\"$realm\""
-      echo "export TURN_USERNAME=\"$username\""
-      echo "export TURN_PASSWORD=\"$password\""
-      echo "export TURN_URI=\"$turn_uri\""
-      echo "export STUN_URI=\"$stun_uri\""
+      echo "export TURN_PUBLIC_IP=\"$TURN_PUBLIC_IP\""
+      echo "export TURN_REALM=\"$TURN_REALM\""
+      echo "export TURN_USERNAME=\"$TURN_USERNAME\""
+      echo "export TURN_PASSWORD=\"$TURN_PASSWORD\""
+      echo "export TURN_URI=\"$TURN_URI\""
+      echo "export STUN_URI=\"$STUN_URI\""
       echo ""
       
-      # Test the server
-      test_turn_server "$public_ip" "$username" "$password"
+      # Test the server (optional, don't fail if test fails)
+      if command -v node &>/dev/null && node -e "require('wrtc')" 2>/dev/null; then
+        test_turn_server "$TURN_PUBLIC_IP" "$TURN_USERNAME" "$TURN_PASSWORD" || log_warning "TURN server test failed, but server appears to be running"
+      else
+        log_info "Skipping TURN server test (Node.js/wrtc not available)"
+      fi
       
       return 0
     else
       log_error "Failed to start Docker TURN server"
       log_info "Check Docker logs: docker logs glow-realtime"
+      
+      # Show container logs for debugging
+      if docker ps -a | grep -q glow-realtime; then
+        log_info "Container logs:"
+        docker logs --tail 10 glow-realtime
+      fi
+      
       return 1
     fi
   fi
@@ -263,9 +302,9 @@ setup_turn_server() {
   local config_file="/tmp/turnserver.conf"
   cat > "$config_file" << EOF
 listening-port=3478
-external-ip=$public_ip
-realm=$realm
-user=$username:$password
+external-ip=$TURN_PUBLIC_IP
+realm=$TURN_REALM
+user=$TURN_USERNAME:$TURN_PASSWORD
 lt-cred-mech
 log-file=stdout
 no-dtls
@@ -285,27 +324,23 @@ EOF
   if kill -0 $turn_pid 2>/dev/null; then
     log_success "TURN server started (PID: $turn_pid)"
     
-    # Export environment variables
-    export TURN_PUBLIC_IP="$public_ip"
-    export TURN_REALM="$realm"
-    export TURN_USERNAME="$username"
-    export TURN_PASSWORD="$password"
-    export TURN_URI="$turn_uri"
-    export STUN_URI="$stun_uri"
-    
     # Show environment variables
     echo ""
     echo -e "${YELLOW}📝 Add these to your environment:${NC}"
-    echo "export TURN_PUBLIC_IP=\"$public_ip\""
-    echo "export TURN_REALM=\"$realm\""
-    echo "export TURN_USERNAME=\"$username\""
-    echo "export TURN_PASSWORD=\"$password\""
-    echo "export TURN_URI=\"$turn_uri\""
-    echo "export STUN_URI=\"$stun_uri\""
+    echo "export TURN_PUBLIC_IP=\"$TURN_PUBLIC_IP\""
+    echo "export TURN_REALM=\"$TURN_REALM\""
+    echo "export TURN_USERNAME=\"$TURN_USERNAME\""
+    echo "export TURN_PASSWORD=\"$TURN_PASSWORD\""
+    echo "export TURN_URI=\"$TURN_URI\""
+    echo "export STUN_URI=\"$STUN_URI\""
     echo ""
     
-    # Test the server
-    test_turn_server "$public_ip" "$username" "$password"
+    # Test the server (optional, don't fail if test fails)
+    if command -v node &>/dev/null && node -e "require('wrtc')" 2>/dev/null; then
+      test_turn_server "$TURN_PUBLIC_IP" "$TURN_USERNAME" "$TURN_PASSWORD" || log_warning "TURN server test failed, but server appears to be running"
+    else
+      log_info "Skipping TURN server test (Node.js/wrtc not available)"
+    fi
     
     return 0
   else
@@ -321,10 +356,23 @@ show_status() {
   echo ""
   
   # Check if Docker container is running
-  if docker ps 2>/dev/null | grep -q glow-realtime; then
+  local docker_running=false
+  local native_running=false
+  
+  if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    if docker ps --format "table {{.Names}}" 2>/dev/null | grep -q "^glow-realtime$"; then
+      docker_running=true
+    fi
+  fi
+  
+  if pgrep -f "turnserver\|coturn" >/dev/null 2>&1; then
+    native_running=true
+  fi
+  
+  if $docker_running; then
     log_success "Docker TURN server is running (container: glow-realtime)"
-    docker logs --tail 5 glow-realtime
-  elif pgrep -f "turnserver\|coturn" >/dev/null; then
+    docker logs --tail 5 glow-realtime 2>/dev/null || log_warning "Could not fetch container logs"
+  elif $native_running; then
     log_success "Native TURN server is running"
     echo "PIDs: $(pgrep -f 'turnserver\|coturn' | tr '\n' ' ')"
   else
@@ -348,25 +396,31 @@ stop_turn_server() {
   echo -e "${BLUE}🛑 Stopping TURN server${NC}"
   echo ""
   
+  local stopped_something=false
+  
   # Stop Docker container
-  if docker ps 2>/dev/null | grep -q glow-realtime; then
-    log_info "Stopping Docker TURN server..."
-    docker stop glow-realtime
-    docker rm glow-realtime
-    log_success "Docker TURN server stopped"
+  if command -v docker &>/dev/null && docker info &>/dev/null 2>&1; then
+    if docker ps --format "table {{.Names}}" 2>/dev/null | grep -q "^glow-realtime$"; then
+      log_info "Stopping Docker TURN server..."
+      docker stop glow-realtime 2>/dev/null || log_warning "Failed to stop container"
+      docker rm glow-realtime 2>/dev/null || log_warning "Failed to remove container"
+      log_success "Docker TURN server stopped"
+      stopped_something=true
+    fi
   fi
   
   # Stop native processes
-  if pgrep -f "turnserver\|coturn" >/dev/null; then
+  if pgrep -f "turnserver\|coturn" >/dev/null 2>&1; then
     log_info "Stopping native TURN server..."
-    pkill -f "turnserver\|coturn"
+    pkill -f "turnserver\|coturn" 2>/dev/null || log_warning "Failed to stop native processes"
     log_success "Native TURN server stopped"
+    stopped_something=true
   fi
   
-  if ! pgrep -f "turnserver\|coturn" >/dev/null && ! docker ps 2>/dev/null | grep -q glow-realtime; then
-    log_success "All TURN servers stopped"
+  if $stopped_something; then
+    log_success "TURN server(s) stopped"
   else
-    log_warning "Some TURN processes may still be running"
+    log_info "No TURN servers were running"
   fi
 }
 
@@ -382,10 +436,11 @@ case "${1:-setup}" in
     stop_turn_server
     ;;
   test)
-    public_ip="${TURN_PUBLIC_IP:-$(get_public_ip)}"
-    username="${TURN_USERNAME:-localuser}"
-    password="${TURN_PASSWORD:-localpass}"
-    test_turn_server "$public_ip" "$username" "$password"
+    # Setup environment if not already set
+    if [[ -z "${TURN_PUBLIC_IP:-}" ]]; then
+      setup_turn_env
+    fi
+    test_turn_server "$TURN_PUBLIC_IP" "$TURN_USERNAME" "$TURN_PASSWORD"
     ;;
   --help|-h)
     echo "TURN Server Setup Script"

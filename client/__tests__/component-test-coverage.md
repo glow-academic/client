@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-26T15:32:08.341Z
+Generated on: 2025-06-26T16:09:03.926Z
 
 ## Summary
-- **Total Components**: 97
+- **Total Components**: 98
 - **Tests Created**: 0
-- **Tests Updated**: 39
+- **Tests Updated**: 40
 - **Tests Skipped** (already implemented): 58
 
 ## Component Coverage
@@ -77,6 +77,7 @@ Generated on: 2025-06-26T15:32:08.341Z
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
+| WebRTCDiagnostics | common/webrtc/WebRTCDiagnostics.tsx | WebRTCDiagnostics.test.tsx | ❌ Needs Implementation |
 | AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
 | Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
 | NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
@@ -200,6 +201,8 @@ __tests__/
 │   │   ├── ScenarioSlider.test.tsx
 │   ├── simulation/
 │   │   ├── Simulation.test.tsx
+│   ├── webrtc/
+│   │   ├── WebRTCDiagnostics.test.tsx
 ├── create/
 │   ├── agents/
 │   │   ├── AgentEdit.test.tsx
