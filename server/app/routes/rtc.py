@@ -26,6 +26,8 @@ router = APIRouter()
 
 # Store active peer connections
 peer_connections: Dict[str, RTCPeerConnection] = {}
+# NEW: buffer ICE candidates generated before signaling WS is open
+candidate_buffers: Dict[str, List[RTCIceCandidate]] = {}
 
 # ---------------------------------------------------------------------------
 # Helper utilities
@@ -333,6 +335,9 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
         config = RTCConfiguration(iceServers=ice_servers_list)
         pc = RTCPeerConnection(configuration=config)
         peer_connections[offer.chat_id] = pc
+
+        # NEW: Prepare candidate buffer for this chat (used by signaling WS)
+        candidate_buffers.setdefault(offer.chat_id, [])
         
         # Set remote description
         await pc.setRemoteDescription(RTCSessionDescription(
@@ -392,6 +397,18 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
         async def on_icegatheringstatechange() -> None:
             logger.info(f"ICE gathering state changed to {pc.iceGatheringState} for chat {offer.chat_id}")
         
+        # Register on_icecandidate to buffer candidates
+        @pc.on("icecandidate")  # type: ignore
+        async def _buffer_icecandidate(candidate: RTCIceCandidate) -> None:
+            # candidate can be None when gathering is complete
+            if candidate:
+                candidate_buffers[offer.chat_id].append(candidate)
+                logger.debug(
+                    "Buffered ICE candidate for chat %s (total buffered: %d)",
+                    offer.chat_id,
+                    len(candidate_buffers[offer.chat_id]),
+                )
+        
         # Create answer
         answer = await pc.createAnswer()
         await pc.setLocalDescription(answer)
@@ -437,6 +454,25 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
         # Track if we've sent any ICE candidates
         candidates_sent = 0
         candidates_received = 0
+        
+        # ------------------------------------------------------------------
+        # Send any candidates that were generated *before* the WebSocket
+        # connection was established.
+        # ------------------------------------------------------------------
+        initial_buffer = candidate_buffers.get(chat_id, [])
+        for cand in initial_buffer:
+            await websocket.send_text(json.dumps({
+                "type": "ice-candidate",
+                "candidate": {
+                    "candidate": str(cand),
+                    "sdpMid": cand.sdpMid,
+                    "sdpMLineIndex": cand.sdpMLineIndex,
+                },
+            }))
+            candidates_sent += 1
+        # Clear buffer once sent
+        if chat_id in candidate_buffers:
+            candidate_buffers[chat_id].clear()
         
         # --- Trickle-ICE back to the browser -------------------------------
         @pc.on("icecandidate")  # type: ignore

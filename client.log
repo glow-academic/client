@@ -1,0 +1,631 @@
+yarn run v1.22.22
+$ concurrently "next dev" "node scripts/generate-component-tests.js"
+[1] 🚀 Generating Jest/Vitest tests for React components...
+[1] 
+[1] ⏭️  Skipping excluded directory: ui
+[1] 📊 Found 97 components:
+[1]   - analytics/Dashboard.tsx
+[1]   - analytics/History.tsx
+[1]   - analytics/Reports.tsx
+[1]   - common/agent/Agent.tsx
+[1]   - common/analytics/Registry.tsx
+[1]   - common/analytics/footer/CohortCompletion.tsx
+[1]   - common/analytics/footer/ScenarioData.tsx
+[1]   - common/analytics/footer/SimulationPerformance.tsx
+[1]   - common/analytics/footer/SkillGrowth.tsx
+[1]   - common/analytics/header/ActiveCohorts.tsx
+[1]   - common/analytics/header/AverageScore.tsx
+[1]   - common/analytics/header/CompletionRate.tsx
+[1]   - common/analytics/header/NeedSupport.tsx
+[1]   - common/analytics/header/PassRate.tsx
+[1]   - common/analytics/header/TotalSessions.tsx
+[1]   - common/analytics/header/TotalTas.tsx
+[1]   - common/analytics/header/TrainingHours.tsx
+[1]   - common/analytics/header/TrainingSessions.tsx
+[1]   - common/analytics/primary/PerformanceByPersonality.tsx
+[1]   - common/analytics/primary/PerformanceTrends.tsx
+[1]   - common/analytics/primary/SessionActivity.tsx
+[1]   - common/analytics/secondary/ClassPerformance.tsx
+[1]   - common/analytics/secondary/SkillBreakdown.tsx
+[1]   - common/analytics/secondary/TrainingInsights.tsx
+[1]   - common/chat/Attempt.tsx
+[1]   - common/chat/DocumentViewer.tsx
+[1]   - common/chat/EvaluationRun.tsx
+[1]   - common/chat/Markdown.tsx
+[1]   - common/chat/MarkdownImage.tsx
+[1]   - common/class/ClassForm.tsx
+[1]   - common/cohort/Cohort.tsx
+[1]   - common/dashboard/CarouselSection.tsx
+[1]   - common/dashboard/DashboardEdit.tsx
+[1]   - common/dashboard/DraggableComponent.tsx
+[1]   - common/dashboard/DropZone.tsx
+[1]   - common/dashboard/FooterPreview.tsx
+[1]   - common/dashboard/HeaderPreview.tsx
+[1]   - common/dashboard/SettingsDialog.tsx
+[1]   - common/eval/Eval.tsx
+[1]   - common/history/SimulationHistory.tsx
+[1]   - common/history/columns.tsx
+[1]   - common/history/data-table-column-header.tsx
+[1]   - common/history/data-table-faceted-filter.tsx
+[1]   - common/history/data-table-pagination.tsx
+[1]   - common/history/data-table-row-actions.tsx
+[1]   - common/history/data-table-toolbar.tsx
+[1]   - common/history/data-table-view-options.tsx
+[1]   - common/history/data-table.tsx
+[1]   - common/history/export-button.tsx
+[1]   - common/home/ChatDialog.tsx
+[1]   - common/home/ChatFab.tsx
+[1]   - common/home/ChatInput.tsx
+[1]   - common/home/ChatMessages.tsx
+[1]   - common/home/ChatStarterPrompts.tsx
+[1]   - common/home/ChatWidget.tsx
+[1]   - common/layout/navigation-breadcrumbs.tsx
+[1]   - common/layout/unified-sidebar.tsx
+[1]   - common/login/Login.tsx
+[1]   - common/model/Model.tsx
+[1]   - common/rubric/Rubric.tsx
+[1]   - common/rubric/TableRubric.tsx
+[1]   - common/scenario/Scenario.tsx
+[1]   - common/scenario/ScenarioPicker.tsx
+[1]   - common/scenario/ScenarioSlider.tsx
+[1]   - common/simulation/Simulation.tsx
+[1]   - create/agents/AgentEdit.tsx
+[1]   - create/agents/Agents.tsx
+[1]   - create/agents/NewAgent.tsx
+[1]   - create/classes/ClassEdit.tsx
+[1]   - create/classes/ClassStatus.tsx
+[1]   - create/classes/Classes.tsx
+[1]   - create/classes/NewClass.tsx
+[1]   - create/rubrics/NewRubric.tsx
+[1]   - create/rubrics/RubricEdit.tsx
+[1]   - create/rubrics/Rubrics.tsx
+[1]   - create/scenarios/NewScenario.tsx
+[1]   - create/scenarios/ScenarioEdit.tsx
+[1]   - create/scenarios/Scenarios.tsx
+[1]   - create/simulations/NewSimulation.tsx
+[1]   - create/simulations/SimulationEdit.tsx
+[1]   - create/simulations/Simulations.tsx
+[1]   - home/Home.tsx
+[1]   - management/cohorts/CohortEdit.tsx
+[1]   - management/cohorts/Cohorts.tsx
+[1]   - management/cohorts/NewCohort.tsx
+[1]   - management/evals/EvalDetails.tsx
+[1]   - management/evals/EvalEdit.tsx
+[1]   - management/evals/Evals.tsx
+[1]   - management/evals/NewEval.tsx
+[1]   - management/logs/Logs.tsx
+[1]   - management/models/ModelEdit.tsx
+[1]   - management/models/Models.tsx
+[1]   - management/models/NewModel.tsx
+[1]   - management/staff/NewStaff.tsx
+[1]   - management/staff/Staff.tsx
+[1]   - management/staff/StaffEdit.tsx
+[1]   - profile/Profile.tsx
+[1] 
+[1] 📁 Generating test files...
+[1] ✨ Updated Dashboard.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping History.test.tsx (already implemented)
+[1] ⏭️  Skipping Reports.test.tsx (already implemented)
+[1] ⏭️  Skipping Agent.test.tsx (already implemented)
+[1] ✨ Updated Registry.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping CohortCompletion.test.tsx (already implemented)
+[1] ✨ Updated ScenarioData.test.tsx (was empty/incomplete)
+[1] ✨ Updated SimulationPerformance.test.tsx (was empty/incomplete)
+[1] ✨ Updated SkillGrowth.test.tsx (was empty/incomplete)
+[1] ✨ Updated ActiveCohorts.test.tsx (was empty/incomplete)
+[1] ✨ Updated AverageScore.test.tsx (was empty/incomplete)
+[1] ✨ Updated CompletionRate.test.tsx (was empty/incomplete)
+[1] ✨ Updated NeedSupport.test.tsx (was empty/incomplete)
+[1] ✨ Updated PassRate.test.tsx (was empty/incomplete)
+[1] ✨ Updated TotalSessions.test.tsx (was empty/incomplete)
+[1] ✨ Updated TotalTas.test.tsx (was empty/incomplete)
+[1] ✨ Updated TrainingHours.test.tsx (was empty/incomplete)
+[1] ✨ Updated TrainingSessions.test.tsx (was empty/incomplete)
+[1] ✨ Updated PerformanceByPersonality.test.tsx (was empty/incomplete)
+[1] ✨ Updated PerformanceTrends.test.tsx (was empty/incomplete)
+[1] ✨ Updated SessionActivity.test.tsx (was empty/incomplete)
+[1] ✨ Updated ClassPerformance.test.tsx (was empty/incomplete)
+[1] ✨ Updated SkillBreakdown.test.tsx (was empty/incomplete)
+[1] ✨ Updated TrainingInsights.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping Attempt.test.tsx (already implemented)
+[1] ⏭️  Skipping DocumentViewer.test.tsx (already implemented)
+[1] ⏭️  Skipping EvaluationRun.test.tsx (already implemented)
+[1] ⏭️  Skipping Markdown.test.tsx (already implemented)
+[1] ⏭️  Skipping MarkdownImage.test.tsx (already implemented)
+[1] ⏭️  Skipping ClassForm.test.tsx (already implemented)
+[1] ⏭️  Skipping Cohort.test.tsx (already implemented)
+[1] ✨ Updated CarouselSection.test.tsx (was empty/incomplete)
+[1] ✨ Updated DashboardEdit.test.tsx (was empty/incomplete)
+[1] ✨ Updated DraggableComponent.test.tsx (was empty/incomplete)
+[1] ✨ Updated DropZone.test.tsx (was empty/incomplete)
+[1] ✨ Updated FooterPreview.test.tsx (was empty/incomplete)
+[1] ✨ Updated HeaderPreview.test.tsx (was empty/incomplete)
+[1] ✨ Updated SettingsDialog.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping Eval.test.tsx (already implemented)
+[1] ⏭️  Skipping SimulationHistory.test.tsx (already implemented)
+[1] ⏭️  Skipping columns.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-column-header.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-faceted-filter.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-pagination.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-row-actions.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-toolbar.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table-view-options.test.tsx (already implemented)
+[1] ⏭️  Skipping data-table.test.tsx (already implemented)
+[1] ⏭️  Skipping export-button.test.tsx (already implemented)
+[1] ✨ Updated ChatDialog.test.tsx (was empty/incomplete)
+[1] ✨ Updated ChatFab.test.tsx (was empty/incomplete)
+[1] ✨ Updated ChatInput.test.tsx (was empty/incomplete)
+[1] ✨ Updated ChatMessages.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping ChatStarterPrompts.test.tsx (already implemented)
+[1] ✨ Updated ChatWidget.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping navigation-breadcrumbs.test.tsx (already implemented)
+[1] ⏭️  Skipping unified-sidebar.test.tsx (already implemented)
+[1] ✨ Updated Login.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping Model.test.tsx (already implemented)
+[1] ⏭️  Skipping Rubric.test.tsx (already implemented)
+[1] ⏭️  Skipping TableRubric.test.tsx (already implemented)
+[1] ⏭️  Skipping Scenario.test.tsx (already implemented)
+[1] ⏭️  Skipping ScenarioPicker.test.tsx (already implemented)
+[1] ⏭️  Skipping ScenarioSlider.test.tsx (already implemented)
+[1] ⏭️  Skipping Simulation.test.tsx (already implemented)
+[1] ⏭️  Skipping AgentEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Agents.test.tsx (already implemented)
+[1] ⏭️  Skipping NewAgent.test.tsx (already implemented)
+[1] ⏭️  Skipping ClassEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping ClassStatus.test.tsx (already implemented)
+[1] ⏭️  Skipping Classes.test.tsx (already implemented)
+[1] ⏭️  Skipping NewClass.test.tsx (already implemented)
+[1] ⏭️  Skipping NewRubric.test.tsx (already implemented)
+[1] ⏭️  Skipping RubricEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Rubrics.test.tsx (already implemented)
+[1] ⏭️  Skipping NewScenario.test.tsx (already implemented)
+[1] ⏭️  Skipping ScenarioEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Scenarios.test.tsx (already implemented)
+[1] ⏭️  Skipping NewSimulation.test.tsx (already implemented)
+[1] ⏭️  Skipping SimulationEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Simulations.test.tsx (already implemented)
+[1] ⏭️  Skipping Home.test.tsx (already implemented)
+[1] ⏭️  Skipping CohortEdit.test.tsx (already implemented)
+[1] ✨ Updated Cohorts.test.tsx (was empty/incomplete)
+[1] ✨ Updated NewCohort.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping EvalDetails.test.tsx (already implemented)
+[1] ⏭️  Skipping EvalEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Evals.test.tsx (already implemented)
+[1] ⏭️  Skipping NewEval.test.tsx (already implemented)
+[1] ✨ Updated Logs.test.tsx (was empty/incomplete)
+[1] ✨ Updated ModelEdit.test.tsx (was empty/incomplete)
+[1] ✨ Updated Models.test.tsx (was empty/incomplete)
+[1] ✨ Updated NewModel.test.tsx (was empty/incomplete)
+[1] ⏭️  Skipping NewStaff.test.tsx (already implemented)
+[1] ⏭️  Skipping Staff.test.tsx (already implemented)
+[1] ⏭️  Skipping StaffEdit.test.tsx (already implemented)
+[1] ⏭️  Skipping Profile.test.tsx (already implemented)
+[1] 
+[1] 📊 Summary:
+[1]   ✨ Created: 0 files
+[1]   🔄 Updated: 39 files
+[1]   ⏭️  Skipped: 58 files
+[1] 📋 Generated coverage report: /Users/ashoksaravanan/Coding/glow/client/__tests__/component-test-coverage.md
+[1] 
+[1] ✅ Component test generation complete!
+[1] 💡 Run "npm run test:components" to execute all component tests
+[1] node scripts/generate-component-tests.js exited with code 0
+[0]    ▲ Next.js 15.3.2
+[0]    - Local:        http://localhost:3000
+[0]    - Network:      http://192.168.1.111:3000
+[0] 
+[0]  ✓ Starting...
+[0]    Using tsconfig file: ./tsconfig.json
+[0]  ✓ Ready in 1478ms
+[0]  ✓ Compiled /middleware in 120ms (108 modules)
+[0]  ○ Compiling / ...
+[0]  ✓ Compiled / in 1707ms (1101 modules)
+[0]  GET / 200 in 2107ms
+[0]  ○ Compiling /api/auth/[...nextauth] ...
+[0]  ✓ Compiled /api/auth/[...nextauth] in 1150ms (1386 modules)
+[0] Waiting for profile ID before connecting WebSocket {}
+[0]  POST / 200 in 1339ms
+[0]  GET / 200 in 21ms
+[0]  GET /api/auth/session 200 in 1867ms
+[0]  GET /api/auth/session 200 in 10ms
+[0] Microsoft login attempt started undefined
+[0]  POST / 200 in 13ms
+[0]  GET /api/auth/providers 200 in 19ms
+[0]  GET /api/auth/csrf 200 in 8ms
+[0]  POST /api/auth/signin/microsoft-entra-id? 200 in 191ms
+[0] Microsoft login attempt successful { redirectTo: '/analytics' }
+[0]  POST / 200 in 11ms
+[0] Updating existing user profile: { userId: 1, email: 'redacted@purdue.edu' }
+[0] Updated existing user profile: {
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   userId: 1,
+[0]   email: 'redacted@purdue.edu'
+[0] }
+[0]  GET /api/auth/callback/microsoft-entra-id?code=1.ATgAOb0wQVN8nEGx5YdY1tY_IWvaxzUTZodOgTpS1b2n7CY4ABI4AA.AgABBAIAAABVrSpeuWamRam2jAF1XRQEAwDs_wUA9P_nolrR9ERLQV7sW28vqOpgiqRo1H6gX1A1QHDlAUyK0tzFKfVVZu33zTVgHx6uxkUMDxexk6pSwovs2C6vkpmVjQU8aoPxrqRGk_qhfLpRiLEZcQaGPdUSTsOxN1GUBjxEIL-B47NVS1atHmK1Mdc2canEMxunr2wQq0AhKMjqSVrvEZZcYS4BpAa8AUm8bJhvl2JDYEMcvPxzWI0N0iG5MNWTYmyEpSACY_43TA9BxjxTrMAtEg11pBKtAHS8or8bwcWDRgh7wQ-1xfqk1xp9wM_MLh_O2JOoqZRikbxi1gMIuh70RzPOmUu-pjUncZ2rhhOo-cQA5kiTqcRdnUlC8uvRMJJIhUzaxWgiCtCbjHCGK_TxDTk6t5TynVNYt_SSiMYMz0JvMVoRkNqSKNoh_5cxeKuBslTzvKHEmLOIgywJCJM8bq_INlDjTe_Y40Jm8CvJU2PtcvE_MorUdYBwVtZaykx9AbH35mgqLtv5UEC3rwOg1Egvzwyx3tGbRjg_SZ6qz72gjUiHxSIp8xs1bqkKDKmdKkIJjJCuleySsHjBgvI35bD_8YVr2lhL8Vt9TW656lJbj0p8KIFCv5MdChqmdscTnXUmTshqihyrRudulTl9fp5MuEUJ_PO7KA9tJLX6eZSzxgCVM4Yl-lBi9McVH_Yab8q5b4GyeGGyig_FYi3f8A4bbmEmEiPJ64Oomwh6V-sb_A7wwPgFqeRqWt3eLEWqQDGK21yLUrf5rSrHmaYaxryOS1u4CjB_2IXPeBc4W7DiZeV_xvzx1hStpbyRfkUcO5dIbmrcQXurvg1FNwqI_WynrXOhi_jJG5_iWI4IUbnM3fY5pKXAsaCAFmKVehE9TeLkZRQ-75kEzMzBpdDSuGKSCE-BbCWFR5sZrBZ3XhAf0xVfYjolZeNjEs9Zn7FAYYV_9z5AFw&session_state=0040ba69-a447-bc77-8804-13742d5b24d8 302 in 650ms
+[0]  ○ Compiling /analytics ...
+[0]  ✓ Compiled /analytics in 1717ms (2889 modules)
+[0]  GET /analytics 307 in 2266ms
+[0]  ○ Compiling /analytics/dashboard ...
+[0]  ✓ Compiled /analytics/dashboard in 2.2s (4347 modules)
+[0]  GET /analytics/dashboard 200 in 2930ms
+[0]  GET /api/auth/session 200 in 135ms
+[0]  POST /analytics/dashboard 200 in 63ms
+[0]  GET /api/auth/session 200 in 18ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0] Waiting for profile ID before connecting WebSocket {}
+[0]  POST /analytics/dashboard 200 in 21ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0] Server confirmed WebSocket connection {
+[0]   serverSid: 'k_EsSHiY1rYppyIdAAAB',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   serverTime: 1750912565.550713,
+[0]   clientTime: 1750912565553
+[0] }
+[0]  POST /analytics/dashboard 200 in 7ms
+[0] Global WebSocket connected successfully {
+[0]   socketId: 'k_EsSHiY1rYppyIdAAAB',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   transport: 'websocket'
+[0] }
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 14ms
+[0] ChatMessages - currentChatId { currentChatId: null }
+[0]  POST /analytics/dashboard 200 in 6ms
+[0] ChatMessages - messages {}
+[0]  POST /analytics/dashboard 200 in 7ms
+[0] ChatMessages - toolCalls {}
+[0]  POST /analytics/dashboard 200 in 5ms
+[0] ChatMessages - isConnected { isConnected: true }
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 25ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 17ms
+[0]  ○ Compiling /home ...
+[0]  ✓ Compiled /home in 2.2s (6073 modules)
+[0]  GET /home 200 in 2394ms
+[0]  POST /analytics/dashboard 200 in 85ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 21ms
+[0]  POST /analytics/dashboard 200 in 15ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 19ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 4ms
+[0]  POST /analytics/dashboard 200 in 4ms
+[0]  POST /analytics/dashboard 200 in 4ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 17ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  GET /home 200 in 15ms
+[0]  POST /analytics/dashboard 200 in 19ms
+[0]  POST /home 200 in 16ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 10ms
+[0]  GET /api/auth/session 200 in 126ms
+[0]  GET /api/auth/session 200 in 17ms
+[0] Starting simulation via global WebSocket {
+[0]   simulationId: 'aaaaaaaa-1111-2222-3333-444444444444',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   isConnected: true
+[0] }
+[0]  POST /home 200 in 24ms
+[0] Emitting start_simulation {
+[0]   simulation_id: 'aaaaaaaa-1111-2222-3333-444444444444',
+[0]   profile_id: '965bd24f-dfae-4063-b370-e1373df46322'
+[0] }
+[0]  POST /home 200 in 6ms
+[0]  ○ Compiling /home/a/[attemptId] ...
+[0]  ✓ Compiled /home/a/[attemptId] in 1287ms (6130 modules)
+[0] Simulation started {
+[0]   success: true,
+[0]   message: 'Simulation started successfully',
+[0]   attempt_id: 'db2b17aa-3016-4ef7-acc1-46757ada66f5',
+[0]   chat_id: 'f604a261-eb9e-4268-8d88-a8cf74c3f90f'
+[0] }
+[0]  POST /home 200 in 1379ms
+[0] Navigating to simulation attempt { attemptId: 'db2b17aa-3016-4ef7-acc1-46757ada66f5' }
+[0]  POST /home 200 in 9ms
+[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 2042ms
+[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 24ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 29ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Joining room: f604a261-eb9e-4268-8d88-a8cf74c3f90f (simulation) undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 15ms
+[0] Joined simulation chat room: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Successfully joined simulation chat: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0]  GET /api/auth/session 200 in 56ms
+[0]  GET /api/auth/session 200 in 27ms
+[0]  GET /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 476ms
+[0]  GET /api/auth/session 200 in 12ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 23ms
+[0]  GET /api/auth/session 200 in 14ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 18ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Waiting for profile ID before connecting WebSocket {}
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 15ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 14ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Server confirmed WebSocket connection {
+[0]   serverSid: 'IewF9FhehsDtZIRsAAAD',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   serverTime: 1750912595.153619,
+[0]   clientTime: 1750912595156
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
+[0] Global WebSocket connected successfully {
+[0]   socketId: 'IewF9FhehsDtZIRsAAAD',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   transport: 'websocket'
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Joining room: f604a261-eb9e-4268-8d88-a8cf74c3f90f (simulation) undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 10ms
+[0] Joined simulation chat room: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Successfully joined simulation chat: f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 13ms
+[0] Starting WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 18ms
+[0] Requesting user media for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
+[0] Got user media stream for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { audioTracks: 1, videoTracks: 0 }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Fetched ICE config { urls: 5 }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Added TURN servers with credentials undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0] Creating signaling WebSocket for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] WebSocket signaling connected for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Added audio track to peer connection for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   trackId: '4ace1423-635d-4aed-957c-713152b72474',
+[0]   trackLabel: 'Default - MacBook Pro Microphone (Built-in)',
+[0]   trackEnabled: true,
+[0]   trackReadyState: 'live'
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] WebRTC setup started for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Creating offer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Set local description for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3347531887 1 udp 2122194688 192.168.1.11...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:1813306004 1 udp 2122063616 172.21.227.9...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:764577843 1 udp 2122262784 2603:6000:db0...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3203210781 1 udp 2122134272 fde1:4aae:e3...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] WebRTC ICE gathering state: gathering for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 3ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:1758308689 1 udp 1685987071 173.89.4.166...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3108547319 1 tcp 1518214911 192.168.1.11...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:316356620 1 tcp 1518083839 172.21.227.97...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:1398631083 1 tcp 1518283007 2603:6000:db...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3223518341 1 tcp 1518154495 fde1:4aae:e3...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 9ms
+[0] Received answer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0] WebRTC connection setup completed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Stopping WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0] WebRTC audio stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0] WebRTC audio streaming stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] WebSocket signaling closed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { code: 1000, reason: 'Normal closure', wasClean: true }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0]  GET /api/auth/session 200 in 49ms
+[0]  GET /api/auth/session 200 in 11ms
+[0] Starting WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
+[0] Requesting user media for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Got user media stream for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { audioTracks: 1, videoTracks: 0 }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 57ms
+[0] Fetched ICE config { urls: 5 }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 12ms
+[0] Added TURN servers with credentials undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0] Creating signaling WebSocket for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] WebSocket signaling connected for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Added audio track to peer connection for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   trackId: 'a1aa9f47-9408-45d6-9c3b-adca66d32c14',
+[0]   trackLabel: 'Default - MacBook Pro Microphone (Built-in)',
+[0]   trackEnabled: true,
+[0]   trackReadyState: 'live'
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] WebRTC setup started for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Creating offer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0] Set local description for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:1870564619 1 udp 2122194688 192.168.1.11...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 8ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3303874544 1 udp 2122063616 172.21.227.9...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:2238401879 1 udp 2122262784 2603:6000:db...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:370465657 1 udp 2122134272 fde1:4aae:e35...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 3ms
+[0] WebRTC ICE gathering state: gathering for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 4ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3224661045 1 udp 1685987071 173.89.4.166...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 27ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:296841107 1 tcp 1518214911 192.168.1.111...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:3122855272 1 tcp 1518083839 172.21.227.9...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:4221874127 1 tcp 1518283007 2603:6000:db...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
+[0] Sent ICE candidate for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f {
+[0]   candidate: 'candidate:1759197665 1 tcp 1518154495 fde1:4aae:e3...',
+[0]   sdpMid: '0',
+[0]   sdpMLineIndex: 0
+[0] }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 7ms
+[0] Received answer for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 17ms
+[0] WebRTC connection setup completed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] Stopping WebRTC audio for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 20ms
+[0] WebRTC audio stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 6ms
+[0] WebRTC audio streaming stopped for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f undefined
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 11ms
+[0] WebSocket signaling closed for chat f604a261-eb9e-4268-8d88-a8cf74c3f90f { code: 1000, reason: 'Normal closure', wasClean: true }
+[0]  POST /home/a/db2b17aa-3016-4ef7-acc1-46757ada66f5 200 in 5ms
