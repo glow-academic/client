@@ -111,12 +111,18 @@ interface WebSocketProviderProps {
 }
 
 // Connection Status Indicator Component
-function ConnectionStatusIndicator({ isConnected }: { isConnected: boolean }) {
+function ConnectionStatusIndicator({
+  wsConnected,
+  webRTCConnected,
+}: {
+  wsConnected: boolean;
+  webRTCConnected: boolean;
+}) {
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50">
+    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2">
       <div
         className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg transition-all duration-300 ${
-          isConnected
+          wsConnected
             ? "bg-green-100 text-green-800 border border-green-200"
             : "bg-red-100 text-red-800 border border-red-200"
         }`}
@@ -124,10 +130,26 @@ function ConnectionStatusIndicator({ isConnected }: { isConnected: boolean }) {
         <div className="flex items-center gap-2">
           <div
             className={`w-2 h-2 rounded-full ${
-              isConnected ? "bg-green-500" : "bg-red-500"
-            } ${isConnected ? "animate-pulse" : ""}`}
+              wsConnected ? "bg-green-500" : "bg-red-500"
+            } ${wsConnected ? "animate-pulse" : ""}`}
           />
-          {isConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
+          {wsConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
+        </div>
+      </div>
+      <div
+        className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg transition-all duration-300 ${
+          webRTCConnected
+            ? "bg-green-100 text-green-800 border border-green-200"
+            : "bg-red-100 text-red-800 border border-red-200"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              webRTCConnected ? "bg-green-500" : "bg-red-500"
+            } ${webRTCConnected ? "animate-pulse" : ""}`}
+          />
+          {webRTCConnected ? "WebRTC Connected" : "WebRTC Disconnected"}
         </div>
       </div>
     </div>
@@ -1605,7 +1627,10 @@ export function WebSocketProvider({
 
   return (
     <WebSocketContext.Provider value={value}>
-      <ConnectionStatusIndicator isConnected={isConnected} />
+      <ConnectionStatusIndicator
+        wsConnected={isConnected}
+        webRTCConnected={isWebRTCConnected}
+      />
       {children}
     </WebSocketContext.Provider>
   );
