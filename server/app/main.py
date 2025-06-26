@@ -243,8 +243,7 @@ async def cleanup_webrtc_connection(profile_id: str) -> None:
     # Close peer connection
     if profile_id in webrtc_peer_connections:
         pc = webrtc_peer_connections[profile_id]
-        await pc.close()  # Properly await the async close method
-        del webrtc_peer_connections[profile_id]
+        await pc.close()
     
     # Clean up data channels
     if profile_id in webrtc_data_channels:
