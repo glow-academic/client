@@ -154,34 +154,28 @@ services:
   # Realtime Services (TURN/STUN)
   # --------------------
   realtime:
-    image: coturn/coturn:4.6
+    build: ./realtime          # <-- NEW: build the tiny wrapper image
     container_name: glow-realtime
-    command: >
-      turnserver
-        --log-file=stdout
-        --no-dtls --no-tls --lt-cred-mech
-        --realm=${TURN_REALM:-localhost}
-        --user=${TURN_USERNAME:-localuser}:${TURN_PASSWORD:-localpass}
-        # advertise public/LAN pair
-        --external-ip=${TURN_PUBLIC_IP}/${TURN_PRIVATE_IP:-172.17.0.1}
-        --listening-port=3478
-        --min-port=49160 --max-port=49200
-        --fingerprint --mobility --verbose
+    restart: unless-stopped
+
+    # Advertise TURN on both UDP & TCP + relay port range
     ports:
       - "3478:3478/udp"
       - "3478:3478/tcp"
       - "49160-49200:49160-49200/udp"
       - "49160-49200:49160-49200/tcp"
+
     environment:
+      # Public IP or hostname that browsers on the Internet must dial
       - TURN_PUBLIC_IP=${TURN_PUBLIC_IP}
-      - TURN_PRIVATE_IP=${TURN_PRIVATE_IP:-172.17.0.1}
-      - TURN_REALM=${TURN_REALM}
-      - TURN_USERNAME=${TURN_USERNAME}
-      - TURN_PASSWORD=${TURN_PASSWORD}
+      # Usual auth / realm values (already in your .env)
+      - TURN_REALM=${TURN_REALM:-localhost}
+      - TURN_USERNAME=${TURN_USERNAME:-localuser}
+      - TURN_PASSWORD=${TURN_PASSWORD:-localpass}
+
     networks:
-      - internal      # talk to client/server
-      - public_net    # expose to the world
-    restart: unless-stopped
+      internal:       # let API / Next.js containers reach it at 'realtime:3478'
+      public_net:     # route traffic from outside world
 
 volumes:
   pgdata:
