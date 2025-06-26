@@ -220,14 +220,25 @@ def ice() -> IceConfig:
     user = os.getenv("TURN_USERNAME")
     pwd = os.getenv("TURN_PASS")
 
+    # Create comprehensive STUN/TURN URLs
     urls = [
+        # Google STUN servers (fallback)
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        # Local TURN/STUN server
         f"stun:{host}:3478",
-        f"turn:{host}:3478?transport=udp",
-        f"turn:{host}:3478?transport=tcp",
     ]
+    
+    # Add TURN URLs if credentials are available
+    if user and pwd:
+        urls.extend([
+            f"turn:{host}:3478?transport=udp",
+            f"turn:{host}:3478?transport=tcp",
+        ])
+        logger.info(f"ICE configuration: host={host}, realm={realm}, with TURN credentials")
+    else:
+        logger.info(f"ICE configuration: host={host}, STUN only (no TURN credentials)")
 
-    # Log the ICE configuration for debugging
-    logger.info(f"ICE configuration: host={host}, realm={realm}, has_credentials={bool(user and pwd)}")
     logger.debug(f"ICE URLs: {urls}")
 
     return IceConfig(

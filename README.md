@@ -11,7 +11,8 @@ bash run.sh
 ```
 
 That's it! This automatically:
-- ✅ **Installs all dependencies** (PostgreSQL, Node.js packages, Python packages)
+- ✅ **Installs all dependencies** (PostgreSQL, coturn, Node.js packages, Python packages)
+- ✅ **Starts TURN/STUN server** (for WebRTC audio streaming)
 - ✅ **Starts the database** (from your latest backup)
 - ✅ **Starts the web app** (client + server)
 - ✅ **Shows you when ready** (with URLs to visit)
@@ -22,6 +23,7 @@ That's it! This automatically:
 bash run.sh --clean    # Start fresh (creates backup first)
 bash run.sh --test     # Run all tests after startup
 bash run.sh --detach   # Run in background (for automation)
+bash run.sh --no-turn  # Skip TURN server (use external/Docker)
 bash run.sh --help     # Show all options
 ```
 
@@ -30,6 +32,7 @@ bash run.sh --help     # Show all options
 The `run.sh` script will automatically install:
 
 - **PostgreSQL** (via brew on macOS, apt on Ubuntu, yum on CentOS)
+- **coturn** (TURN/STUN server for WebRTC, via brew/apt/yum or Docker)
 - **Client dependencies** (Node.js packages via yarn)
 - **Server dependencies** (Python packages via uv/pip)
 - **Database tools** (Drizzle, Cypress, etc.)

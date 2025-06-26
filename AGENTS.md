@@ -9,10 +9,11 @@ bash run.sh
 ```
 
 This will automatically:
-1. **Check and install dependencies** (PostgreSQL, Node.js packages, Python packages)
-2. **Start the database** (from latest backup)
-3. **Start the client and server** in parallel  
-4. **Show you when everything is ready**
+1. **Check and install dependencies** (PostgreSQL, coturn, Node.js packages, Python packages)
+2. **Start the TURN/STUN server** (coturn) for WebRTC connectivity
+3. **Start the database** (from latest backup)
+4. **Start the client and server** in parallel  
+5. **Show you when everything is ready**
 
 **Zero-setup experience**: Just run `bash run.sh` and everything will be installed and configured automatically.
 
@@ -23,6 +24,7 @@ bash run.sh                # Start all services (interactive mode)
 bash run.sh --clean        # Start with fresh database (creates backup first)
 bash run.sh --test         # Run all test suites after startup
 bash run.sh --detach       # Start services in background, script exits
+bash run.sh --no-turn      # Skip TURN/STUN server startup
 bash run.sh --clean --test # Clean start + run tests
 bash run.sh --help         # Show help message
 ```
@@ -38,6 +40,7 @@ If you need to start services individually or install dependencies manually:
 
 ### Prerequisites (Auto-installed by `run.sh`)
 - **PostgreSQL** (auto-installed via brew/apt/yum)
+- **coturn** (TURN/STUN server for WebRTC, auto-installed via brew/apt/yum or Docker)
 - **Node.js and Yarn** for the client (dependencies auto-installed)
 - **Python and uv** for the server (dependencies auto-installed)
 
@@ -67,6 +70,79 @@ cd client && yarn dev
 # Server
 cd server && make run
 ```
+
+## WebRTC & TURN Server
+
+The application includes WebRTC functionality for real-time audio streaming. A TURN/STUN server (coturn) is automatically started for reliable connectivity.
+
+### TURN Server Management
+
+**Automatic Setup** (recommended):
+```bash
+bash run.sh                    # Starts TURN server automatically
+bash run.sh --no-turn          # Skip TURN server startup
+```
+
+**Manual TURN Server Setup**:
+```bash
+bash scripts/setup-turn-server.sh          # Setup and start TURN server
+bash scripts/setup-turn-server.sh status   # Check TURN server status
+bash scripts/setup-turn-server.sh stop     # Stop TURN server
+bash scripts/setup-turn-server.sh test     # Test TURN server connectivity
+```
+
+**Docker TURN Server** (alternative):
+```bash
+docker compose up turn -d      # Start TURN server in Docker
+docker compose logs turn       # Check TURN server logs
+```
+
+### Environment Variables
+
+The TURN server requires these environment variables (auto-configured):
+
+```bash
+export TURN_PUBLIC_IP="your.public.ip"    # Auto-detected
+export TURN_REALM="example.com"           # Default realm
+export TURN_USERNAME="webrtc"             # Default username
+export TURN_PASS="generated_password"     # Auto-generated
+```
+
+### WebRTC Testing
+
+**Test TURN Server Connectivity**:
+```bash
+cd client && node scripts/test-webrtc-turn.js
+```
+
+**Test WebRTC in Browser**:
+1. Start services: `bash run.sh`
+2. Open http://localhost:3000
+3. Navigate to a simulation with audio features
+4. Test microphone functionality
+
+### Troubleshooting WebRTC
+
+**Common Issues:**
+- **Slow audio startup**: Ensure TURN server is running and accessible
+- **Connection failures**: Check firewall allows UDP traffic on ports 3478 and 49160-49200
+- **No audio detected**: Verify microphone permissions in browser
+
+**Debug Commands:**
+```bash
+# Check TURN server status
+bash scripts/setup-turn-server.sh status
+
+# Test connectivity
+cd client && node scripts/test-webrtc-turn.js
+
+# Check server logs for WebRTC errors
+cd server && tail -f logs/server.log | grep -i webrtc
+```
+
+**Network Requirements:**
+- Port 3478 (UDP/TCP): STUN/TURN server
+- Ports 49160-49200 (UDP): TURN relay ports
 
 ## Testing Instructions
 
