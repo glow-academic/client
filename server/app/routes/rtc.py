@@ -196,6 +196,13 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
         Send transcribed text as a simulation message
         """
         try:
+            logger.info(f"Attempting to send transcription for chat {self.chat_id}: '{text[:100]}...' (length: {len(text)})")
+            
+            # Check if text is meaningful (not just noise/silence)
+            if len(text.strip()) < 3:
+                logger.warning(f"Transcription too short, skipping: '{text}'")
+                return
+                
             # Use the correct function signature for process_simulation_message_websocket
             await process_simulation_message_websocket(
                 chat_id=self.chat_id,
@@ -205,10 +212,10 @@ class AudioProcessor(MediaStreamTrack):  # type: ignore
                 session=None
             )
             
-            logger.info(f"Processed WebRTC transcription for chat {self.chat_id}: {text[:50]}...")
+            logger.info(f"Successfully processed WebRTC transcription for chat {self.chat_id}: {text[:50]}...")
                 
         except Exception as e:
-            logger.error(f"Error sending transcription: {e}")
+            logger.error(f"Error sending transcription for chat {self.chat_id}: {e}", exc_info=True)
 
 @router.get("/ice", response_model=IceConfig)
 def ice() -> IceConfig:
@@ -288,18 +295,31 @@ async def handle_offer(offer: RTCOffer) -> RTCAnswer:
             
             if pc.connectionState == "connected":
                 logger.info(f"WebRTC connection established successfully for chat {offer.chat_id}")
-            elif pc.connectionState in ["failed", "closed"]:
-                logger.warning(f"WebRTC connection {pc.connectionState} for chat {offer.chat_id}, cleaning up")
+            elif pc.connectionState == "failed":
+                logger.warning(f"WebRTC connection failed for chat {offer.chat_id}, cleaning up")
                 # Clean up peer connection
                 if offer.chat_id in peer_connections:
                     del peer_connections[offer.chat_id]
             elif pc.connectionState == "disconnected":
                 logger.info(f"WebRTC connection disconnected for chat {offer.chat_id}")
+                # Don't immediately clean up on disconnect - wait to see if it reconnects
+            elif pc.connectionState == "closed":
+                logger.info(f"WebRTC connection closed for chat {offer.chat_id}, cleaning up")
+                # Clean up peer connection
+                if offer.chat_id in peer_connections:
+                    del peer_connections[offer.chat_id]
                 
         @pc.on("iceconnectionstatechange")  # type: ignore
         async def on_iceconnectionstatechange() -> None:
             logger.info(f"ICE connection state changed to {pc.iceConnectionState} for chat {offer.chat_id}")
             
+            if pc.iceConnectionState == "failed":
+                logger.warning(f"ICE connection failed for chat {offer.chat_id}")
+                # Don't immediately clean up - let connection state handler deal with it
+            elif pc.iceConnectionState == "disconnected":
+                logger.info(f"ICE connection disconnected for chat {offer.chat_id}")
+                # Don't immediately clean up - connection might recover
+                
         @pc.on("icegatheringstatechange")  # type: ignore  
         async def on_icegatheringstatechange() -> None:
             logger.info(f"ICE gathering state changed to {pc.iceGatheringState} for chat {offer.chat_id}")
@@ -326,16 +346,18 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
     logger.info(f"WebSocket signaling connected for chat {chat_id}")
     
     try:
-        # Wait for peer connection to be created
+        # Wait for peer connection to be created with longer timeout
         pc = None
-        for _ in range(50):  # Wait up to 5 seconds for peer connection
+        max_attempts = 100  # Wait up to 10 seconds for peer connection
+        for attempt in range(max_attempts):
             pc = peer_connections.get(chat_id)
             if pc:
+                logger.info(f"Found peer connection for chat {chat_id} after {attempt * 0.1:.1f}s")
                 break
             await asyncio.sleep(0.1)
         
         if not pc:
-            logger.error(f"No peer connection found for chat {chat_id} after waiting")
+            logger.error(f"No peer connection found for chat {chat_id} after waiting {max_attempts * 0.1}s")
             await websocket.send_text(json.dumps({
                 "type": "error",
                 "message": "No peer connection found for this chat"
@@ -344,9 +366,14 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
         
         logger.info(f"Found peer connection for chat {chat_id}, setting up ICE candidate handling")
         
+        # Track if we've sent any ICE candidates
+        candidates_sent = 0
+        candidates_received = 0
+        
         # --- Trickle-ICE back to the browser -------------------------------
         @pc.on("icecandidate")  # type: ignore
         async def on_icecandidate(candidate: RTCIceCandidate) -> None:
+            nonlocal candidates_sent
             if candidate and websocket.client_state.name == "CONNECTED":
                 try:
                     # Convert RTCIceCandidate to proper format for browser
@@ -360,14 +387,23 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
                         "type": "ice-candidate",
                         "candidate": candidate_dict,
                     }))
-                    logger.info(f"Sent ICE candidate to client for chat {chat_id}: {candidate_dict['candidate'][:50]}...")
+                    candidates_sent += 1
+                    logger.info(f"Sent ICE candidate #{candidates_sent} to client for chat {chat_id}: {candidate_dict['candidate'][:50]}...")
                 except Exception as e:
                     logger.error(f"Error sending ICE candidate: {e}")
         
-        # Handle incoming messages
-        while True:
+        # Send initial status message
+        await websocket.send_text(json.dumps({
+            "type": "signaling_ready",
+            "message": f"Signaling ready for chat {chat_id}"
+        }))
+        
+        # Keep connection alive and handle incoming messages
+        connection_active = True
+        while connection_active:
             try:
-                data = await websocket.receive_text()
+                # Use a timeout to periodically check connection state
+                data = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
                 message = json.loads(data)
                 
                 if message.get("type") == "ice-candidate":
@@ -428,7 +464,8 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
                             )
                             
                             await pc.addIceCandidate(candidate)
-                            logger.info(f"Added ICE candidate for chat {chat_id}: {candidate_type} {ip}:{port}")
+                            candidates_received += 1
+                            logger.info(f"Added ICE candidate #{candidates_received} for chat {chat_id}: {candidate_type} {ip}:{port}")
                         except ValueError as e:
                             logger.error(f"Failed to parse ICE candidate values: {e}")
                             logger.debug(f"Candidate string: {candidate_str}")
@@ -436,15 +473,31 @@ async def websocket_signaling(websocket: WebSocket, chat_id: str) -> None:
                             logger.error(f"Failed to add ICE candidate: {e}")
                             logger.debug(f"Candidate data: {candidate_data}")
                             logger.debug(f"Candidate string: {candidate_str}")
+                elif message.get("type") == "ping":
+                    # Respond to ping to keep connection alive
+                    await websocket.send_text(json.dumps({"type": "pong"}))
                         
+            except asyncio.TimeoutError:
+                # Check if peer connection is still active
+                if chat_id not in peer_connections:
+                    logger.info(f"Peer connection removed for chat {chat_id}, closing signaling")
+                    connection_active = False
+                    break
+                # Continue waiting for messages
+                continue
             except WebSocketDisconnect:
                 logger.info(f"WebSocket disconnected for chat {chat_id}")
+                connection_active = False
                 break
             except Exception as e:
                 logger.error(f"Error in WebSocket signaling: {e}")
+                connection_active = False
                 break
+                
+        logger.info(f"WebSocket signaling session ended for chat {chat_id} - sent {candidates_sent} candidates, received {candidates_received} candidates")
                 
     except Exception as e:
         logger.error(f"WebSocket signaling error: {e}")
     finally:
         logger.info(f"WebSocket signaling disconnected for chat {chat_id}")
+        # Don't clean up peer connection here - let the main connection handler do it

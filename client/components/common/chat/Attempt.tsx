@@ -248,6 +248,7 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
+  const prevChatIdRef = useRef<string | null>(null);
 
   // Fetch attempt data
   const {
@@ -1070,10 +1071,21 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }); // No dependencies - run on every render until it succeeds
 
-  // Update the ref whenever currentChat changes
+  // Update the ref whenever currentChat changes and handle cleanup
   useEffect(() => {
-    currentChatIdRef.current = currentChat?.id || null;
-  }, [currentChat?.id]);
+    const newChatId = currentChat?.id || null;
+    const prevChatId = prevChatIdRef.current;
+
+    // If chat changed and we were recording, stop the recording
+    if (prevChatId && prevChatId !== newChatId && isRecording) {
+      stopRtcAudio(prevChatId).catch((error) => {
+        logError("Error stopping WebRTC audio on chat change", error);
+      });
+    }
+
+    currentChatIdRef.current = newChatId;
+    prevChatIdRef.current = newChatId;
+  }, [currentChat?.id, isRecording]);
 
   // WebRTC Audio handlers
   const handleStartRecording = async () => {
@@ -1082,8 +1094,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     try {
       setIsRecording(true);
       setWebRtcError(null);
+      // Show immediate feedback
+      toast.success("Setting up audio connection...");
       await startRtcAudio(currentChat.id);
-      toast.success("Audio recording started");
+      // Success toast will be shown by the webrtcAudioStarted event
     } catch (error) {
       setIsRecording(false);
       const errorMessage =
@@ -1109,16 +1123,27 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
   // Listen for WebRTC events
   useEffect(() => {
+    const handleWebRtcSetupStarted = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChat?.id) {
+        setIsRecording(true);
+        setWebRtcError(null);
+        logInfo(`WebRTC setup started for chat ${event.detail.chatId}`);
+      }
+    };
+
     const handleWebRtcAudioStarted = (event: CustomEvent) => {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(true);
         setWebRtcError(null);
+        toast.success("🎤 Audio recording active - speak now!");
+        logInfo(`WebRTC audio started for chat ${event.detail.chatId}`);
       }
     };
 
     const handleWebRtcAudioStopped = (event: CustomEvent) => {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
+        logInfo(`WebRTC audio stopped for chat ${event.detail.chatId}`);
       }
     };
 
@@ -1126,6 +1151,11 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
         setWebRtcError(event.detail.error);
+        toast.error(`Audio error: ${event.detail.error}`);
+        logError(
+          `WebRTC audio error for chat ${event.detail.chatId}`,
+          event.detail.error
+        );
       }
     };
 
@@ -1133,9 +1163,15 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       if (event.detail.chatId === currentChat?.id) {
         setIsRecording(false);
         setWebRtcError("WebRTC connection failed");
+        toast.error("Audio connection failed - please try again");
+        logError(`WebRTC connection failed for chat ${event.detail.chatId}`);
       }
     };
 
+    window.addEventListener(
+      "webrtcSetupStarted",
+      handleWebRtcSetupStarted as EventListener
+    );
     window.addEventListener(
       "webrtcAudioStarted",
       handleWebRtcAudioStarted as EventListener
@@ -1155,6 +1191,10 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     return () => {
       window.removeEventListener(
+        "webrtcSetupStarted",
+        handleWebRtcSetupStarted as EventListener
+      );
+      window.removeEventListener(
         "webrtcAudioStarted",
         handleWebRtcAudioStarted as EventListener
       );
@@ -1173,16 +1213,19 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     };
   }, [currentChat?.id]);
 
-  // Clean up WebRTC when chat changes or component unmounts
+  // Clean up WebRTC when component unmounts
   useEffect(() => {
     return () => {
-      if (currentChat?.id && isRecording) {
-        stopRtcAudio(currentChat.id).catch((error) => {
-          logError("Error stopping WebRTC audio", error);
+      // Clean up any active recording when component unmounts
+      const chatId = currentChatIdRef.current;
+      if (chatId && isRecording) {
+        stopRtcAudio(chatId).catch((error) => {
+          logError("Error stopping WebRTC audio on unmount", error);
         });
       }
     };
-  }, [currentChat?.id, isRecording]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount/unmount
 
   if (
     attemptLoading ||

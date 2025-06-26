@@ -87,10 +87,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       await stopRtcAudio(chatId);
     }
 
-    // Create signaling WebSocket first (before getUserMedia for faster startup)
-    const signalingWsPromise = createSignalingWebSocket(chatId);
-
-    // Request user media
+    // Request user media first
     logInfo(`Requesting user media for chat ${chatId}`);
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: {
@@ -108,9 +105,8 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       videoTracks: stream.getVideoTracks().length,
     });
 
-    // Wait for signaling WebSocket to be ready
-    const signalingWs = await signalingWsPromise;
-    activeSignalingWs.set(chatId, signalingWs);
+    // Store stream immediately to prevent cleanup issues
+    activeStreams.set(chatId, stream);
 
     // Fetch ICE configuration
     const iceConfig = await fetchIce();
@@ -145,16 +141,112 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       iceCandidatePoolSize: 10, // Pre-gather candidates
     });
 
+    // Store connection immediately
     activeConnections.set(chatId, peerConnection);
-    activeStreams.set(chatId, stream);
 
-    // Set up peer connection event handlers
+    // Track connection state for debugging
+    let connectionEstablished = false;
+    let iceCandidatesBuffer: RTCIceCandidate[] = [];
+
+    // Create signaling WebSocket FIRST (before setting up ICE candidate handler)
+    logInfo(`Creating signaling WebSocket for chat ${chatId}`);
+    const signalingWs = await createSignalingWebSocket(chatId);
+    activeSignalingWs.set(chatId, signalingWs);
+
+    // Set up ping mechanism to keep WebSocket alive
+    const pingInterval = setInterval(() => {
+      if (signalingWs.readyState === WebSocket.OPEN) {
+        signalingWs.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30000); // Ping every 30 seconds
+
+    // Clean up ping interval when WebSocket closes
+    const originalOnClose = signalingWs.onclose;
+    signalingWs.onclose = (event) => {
+      clearInterval(pingInterval);
+      if (originalOnClose) {
+        originalOnClose.call(signalingWs, event);
+      }
+    };
+
+    // Handle incoming ICE candidates from server
+    signalingWs.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "ice-candidate" && data.candidate) {
+          // Check if peer connection is still valid
+          if (peerConnection.connectionState === "closed") {
+            logError(
+              `Cannot add ICE candidate - peer connection closed for chat ${chatId}`
+            );
+            return;
+          }
+
+          const candidate = new RTCIceCandidate({
+            candidate: data.candidate.candidate,
+            sdpMid: data.candidate.sdpMid,
+            sdpMLineIndex: data.candidate.sdpMLineIndex,
+          });
+
+          peerConnection.addIceCandidate(candidate).catch((error) => {
+            logError(`Failed to add ICE candidate for chat ${chatId}`, error);
+          });
+
+          logInfo(`Received and added ICE candidate for chat ${chatId}`);
+        } else if (data.type === "pong") {
+          // Handle pong response (just log for debugging)
+          logInfo(`Received pong from server for chat ${chatId}`);
+        }
+      } catch (error) {
+        logError(
+          `Error processing signaling message for chat ${chatId}`,
+          error
+        );
+      }
+    };
+
+    // Now set up peer connection event handlers with WebSocket ready
     peerConnection.onicecandidate = (event) => {
-      if (event.candidate && signalingWs.readyState === WebSocket.OPEN) {
+      if (event.candidate) {
+        if (signalingWs.readyState === WebSocket.OPEN) {
+          const candidateData = {
+            candidate: event.candidate.candidate,
+            sdpMid: event.candidate.sdpMid,
+            sdpMLineIndex: event.candidate.sdpMLineIndex,
+          };
+
+          signalingWs.send(
+            JSON.stringify({
+              type: "ice-candidate",
+              candidate: candidateData,
+            })
+          );
+
+          logInfo(`Sent ICE candidate for chat ${chatId}`, {
+            candidate: candidateData.candidate.substring(0, 50) + "...",
+            sdpMid: candidateData.sdpMid,
+            sdpMLineIndex: candidateData.sdpMLineIndex,
+          });
+        } else {
+          // Buffer candidates if WebSocket is not ready yet
+          iceCandidatesBuffer.push(event.candidate);
+          logInfo(
+            `Buffered ICE candidate for chat ${chatId} (WebSocket not ready)`
+          );
+        }
+      }
+    };
+
+    // Send buffered candidates when WebSocket becomes ready
+    if (
+      signalingWs.readyState === WebSocket.OPEN &&
+      iceCandidatesBuffer.length > 0
+    ) {
+      for (const candidate of iceCandidatesBuffer) {
         const candidateData = {
-          candidate: event.candidate.candidate,
-          sdpMid: event.candidate.sdpMid,
-          sdpMLineIndex: event.candidate.sdpMLineIndex,
+          candidate: candidate.candidate,
+          sdpMid: candidate.sdpMid,
+          sdpMLineIndex: candidate.sdpMLineIndex,
         };
 
         signalingWs.send(
@@ -164,13 +256,10 @@ export async function startRtcAudio(chatId: string): Promise<void> {
           })
         );
 
-        logInfo(`Sending ICE candidate for chat ${chatId}`, {
-          candidate: candidateData.candidate.substring(0, 50) + "...",
-          sdpMid: candidateData.sdpMid,
-          sdpMLineIndex: candidateData.sdpMLineIndex,
-        });
+        logInfo(`Sent buffered ICE candidate for chat ${chatId}`);
       }
-    };
+      iceCandidatesBuffer = [];
+    }
 
     peerConnection.oniceconnectionstatechange = () => {
       logInfo(
@@ -178,20 +267,25 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       );
 
       if (peerConnection.iceConnectionState === "connected") {
+        connectionEstablished = true;
         window.dispatchEvent(
           new CustomEvent("webrtcAudioStarted", { detail: { chatId } })
         );
         logInfo(`WebRTC audio streaming started for chat ${chatId}`);
       } else if (peerConnection.iceConnectionState === "disconnected") {
-        window.dispatchEvent(
-          new CustomEvent("webrtcAudioStopped", { detail: { chatId } })
-        );
-        logInfo(`WebRTC audio streaming stopped for chat ${chatId}`);
+        if (connectionEstablished) {
+          window.dispatchEvent(
+            new CustomEvent("webrtcAudioStopped", { detail: { chatId } })
+          );
+          logInfo(`WebRTC audio streaming stopped for chat ${chatId}`);
+        }
       } else if (peerConnection.iceConnectionState === "failed") {
         window.dispatchEvent(
           new CustomEvent("webrtcConnectionFailed", { detail: { chatId } })
         );
         logError(`WebRTC connection failed for chat ${chatId}`);
+        // Clean up on failure
+        stopRtcAudio(chatId);
       }
     };
 
@@ -205,30 +299,14 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       logInfo(
         `WebRTC connection state: ${peerConnection.connectionState} for chat ${chatId}`
       );
-    };
 
-    // Handle incoming ICE candidates from server
-    signalingWs.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.type === "ice-candidate" && data.candidate) {
-          const candidate = new RTCIceCandidate({
-            candidate: data.candidate.candidate,
-            sdpMid: data.candidate.sdpMid,
-            sdpMLineIndex: data.candidate.sdpMLineIndex,
-          });
-
-          peerConnection.addIceCandidate(candidate).catch((error) => {
-            logError(`Failed to add ICE candidate for chat ${chatId}`, error);
-          });
-
-          logInfo(`Received and added ICE candidate for chat ${chatId}`);
-        }
-      } catch (error) {
-        logError(
-          `Error processing signaling message for chat ${chatId}`,
-          error
-        );
+      if (peerConnection.connectionState === "closed") {
+        logInfo(`WebRTC connection closed for chat ${chatId}`);
+        // Clean up when connection is closed
+        activeConnections.delete(chatId);
+      } else if (peerConnection.connectionState === "failed") {
+        logError(`WebRTC connection failed for chat ${chatId}`);
+        stopRtcAudio(chatId);
       }
     };
 
@@ -244,13 +322,20 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       });
     }
 
+    // Dispatch early setup complete event for immediate UI feedback
+    window.dispatchEvent(
+      new CustomEvent("webrtcSetupStarted", { detail: { chatId } })
+    );
+
     // Create and send offer
+    logInfo(`Creating offer for chat ${chatId}`);
     const offer = await peerConnection.createOffer({
       offerToReceiveAudio: false,
       offerToReceiveVideo: false,
     });
 
     await peerConnection.setLocalDescription(offer);
+    logInfo(`Set local description for chat ${chatId}`);
 
     const offerData: RTCOffer = {
       sdp: offer.sdp!,
@@ -271,6 +356,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
     }
 
     const answer: RTCAnswer = await response.json();
+    logInfo(`Received answer for chat ${chatId}`);
 
     await peerConnection.setRemoteDescription(
       new RTCSessionDescription({
@@ -279,7 +365,7 @@ export async function startRtcAudio(chatId: string): Promise<void> {
       })
     );
 
-    logInfo(`WebRTC connection established for chat ${chatId}`);
+    logInfo(`WebRTC connection setup completed for chat ${chatId}`);
   } catch (error) {
     logError(`Error starting WebRTC audio for chat ${chatId}`, error);
 
@@ -307,16 +393,25 @@ export async function stopRtcAudio(chatId: string): Promise<void> {
   try {
     logInfo(`Stopping WebRTC audio for chat ${chatId}`);
 
-    // Close signaling WebSocket
+    // Close signaling WebSocket (this will trigger cleanup of ping interval)
     const signalingWs = activeSignalingWs.get(chatId);
     if (signalingWs) {
-      signalingWs.close();
+      if (signalingWs.readyState === WebSocket.OPEN) {
+        signalingWs.close(1000, "Normal closure");
+      }
       activeSignalingWs.delete(chatId);
     }
 
     // Close peer connection
     const peerConnection = activeConnections.get(chatId);
     if (peerConnection) {
+      // Close all transceivers first
+      peerConnection.getTransceivers().forEach((transceiver) => {
+        if (transceiver.stop) {
+          transceiver.stop();
+        }
+      });
+
       peerConnection.close();
       activeConnections.delete(chatId);
     }
