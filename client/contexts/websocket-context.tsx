@@ -4,15 +4,9 @@
  * across all components based on the user's profile ID
  */
 "use client";
-import WebRTCDiagnostics from "@/components/common/webrtc/WebRTCDiagnostics";
 import { getApiUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
-import {
-  diagnoseWebRTCIssues,
-  WebRTCConnectionStats,
-  webRTCDebugger,
-} from "@/utils/webrtc-debug";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -120,11 +114,9 @@ interface WebSocketProviderProps {
 function ConnectionStatusIndicator({
   wsConnected,
   webRTCConnected,
-  profileId,
 }: {
   wsConnected: boolean;
   webRTCConnected: boolean;
-  profileId: string | undefined;
 }) {
   return (
     <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2">
@@ -160,7 +152,6 @@ function ConnectionStatusIndicator({
           {webRTCConnected ? "WebRTC Connected" : "WebRTC Disconnected"}
         </div>
       </div>
-      {profileId && <WebRTCDiagnostics profileId={profileId} />}
     </div>
   );
 }
@@ -980,19 +971,6 @@ export function WebSocketProvider({
             const pc = new RTCPeerConnection({ iceServers });
             webRTCPeerConnection.current = pc;
 
-            // Start monitoring the WebRTC connection
-            webRTCDebugger.startMonitoring(
-              data.profile_id,
-              pc,
-              (stats: WebRTCConnectionStats) => {
-                // Update connection state based on monitoring stats
-                if (stats.connectionState !== pc.connectionState) {
-                  setWebRTCConnectionState(stats.connectionState);
-                  setIsWebRTCConnected(stats.connectionState === "connected");
-                }
-              }
-            );
-
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
               if (event.candidate && socket.connected) {
@@ -1013,16 +991,7 @@ export function WebSocketProvider({
               setIsWebRTCConnected(pc.connectionState === "connected");
               logInfo(`WebRTC connection state: ${pc.connectionState}`);
 
-              // Handle connection failures with auto-diagnosis
-              if (pc.connectionState === "failed") {
-                const diagnosis = diagnoseWebRTCIssues(data.profile_id);
-                logError(`WebRTC connection failed for ${data.profile_id}`, {
-                  diagnosis: diagnosis.diagnosis,
-                  severity: diagnosis.severity,
-                  recommendations: diagnosis.recommendations,
-                });
-                toast.error(`WebRTC connection failed: ${diagnosis.diagnosis}`);
-              }
+
             };
 
             // Set remote description
@@ -1066,12 +1035,6 @@ export function WebSocketProvider({
             if (pc && data.candidate) {
               const iceCandidate = new RTCIceCandidate(data.candidate);
               await pc.addIceCandidate(iceCandidate);
-
-              // Record the received candidate for debugging
-              webRTCDebugger.recordReceivedCandidate(
-                data.profile_id,
-                iceCandidate
-              );
 
               logInfo("Added WebRTC ICE candidate");
             }
@@ -1489,11 +1452,6 @@ export function WebSocketProvider({
     try {
       logInfo("Stopping WebRTC connection");
 
-      // Stop monitoring if we have a profile ID
-      if (profileId) {
-        webRTCDebugger.stopMonitoring(profileId);
-      }
-
       // Close data channels
       webRTCDataChannels.current.forEach((channel) => {
         if (channel.readyState === "open") {
@@ -1513,7 +1471,7 @@ export function WebSocketProvider({
     } catch (error) {
       logError("Error stopping WebRTC", error);
     }
-  }, [profileId]);
+  }, []);
 
   // Helper function to create data channel if it doesn't exist
   const createDataChannelIfNeeded = useCallback(
@@ -1676,7 +1634,6 @@ export function WebSocketProvider({
       <ConnectionStatusIndicator
         wsConnected={isConnected}
         webRTCConnected={isWebRTCConnected}
-        profileId={profileId}
       />
       {children}
     </WebSocketContext.Provider>
