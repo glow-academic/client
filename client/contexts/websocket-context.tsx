@@ -952,14 +952,17 @@ export function WebSocketProvider({
 
             // Handle ICE candidates
             pc.onicecandidate = (event) => {
-              if (event.candidate && socket.connected) {
+              if (socket.connected) {
                 socket.emit("webrtc_ice_candidate", {
-                  profile_id: data.profile_id,
-                  candidate: {
-                    candidate: event.candidate.candidate,
-                    sdpMid: event.candidate.sdpMid,
-                    sdpMLineIndex: event.candidate.sdpMLineIndex,
-                  },
+                  profile_id: profileId,
+                  // When event.candidate is null we send null → end-of-candidates
+                  candidate: event.candidate
+                    ? {
+                        candidate: event.candidate.candidate,
+                        sdpMid: event.candidate.sdpMid,
+                        sdpMLineIndex: event.candidate.sdpMLineIndex,
+                      }
+                    : null,
                 });
               }
             };

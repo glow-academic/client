@@ -209,17 +209,19 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
         }, room=profile_id)
     
     @pc.on("icecandidate")  # type: ignore
-    async def on_icecandidate(candidate: RTCIceCandidate) -> None:
-        if candidate:
-            # Send ICE candidate via Socket.IO
-            await sio.emit('webrtc_ice_candidate', {
-                'profile_id': profile_id,
-                'candidate': {
-                    'candidate': str(candidate),
-                    'sdpMid': candidate.sdpMid,
-                    'sdpMLineIndex': candidate.sdpMLineIndex,
-                }
-            }, room=profile_id)
+    async def on_icecandidate(candidate: RTCIceCandidate | None) -> None:
+        await sio.emit(
+            "webrtc_ice_candidate",
+            {
+                "profile_id": profile_id,
+                "candidate": {
+                    "candidate": str(candidate),
+                    "sdpMid": candidate.sdpMid,
+                    "sdpMLineIndex": candidate.sdpMLineIndex,
+                } if candidate else None,      # <-- None when gathering is done
+            },
+            room=profile_id,
+        )
     
     @pc.on("datachannel")  # type: ignore
     def on_datachannel(channel: Any) -> None:
@@ -241,7 +243,7 @@ async def cleanup_webrtc_connection(profile_id: str) -> None:
     # Close peer connection
     if profile_id in webrtc_peer_connections:
         pc = webrtc_peer_connections[profile_id]
-        pc.close()
+        await pc.close()  # Properly await the async close method
         del webrtc_peer_connections[profile_id]
     
     # Clean up data channels
@@ -548,34 +550,40 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
 async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
     profile_id     = data.get("profile_id")
     candidate_dict = data.get("candidate")
-    if not profile_id or not candidate_dict:
+    if not profile_id:
         return
 
     pc = webrtc_peer_connections.get(profile_id)
     if not pc:
         return
 
-    # 1) Turn the raw SDP line into an RTCIceCandidate -----------------
+    # --- end-of-candidates ---------------------------------------------
+    if candidate_dict is None:             # remote finished trickling
+        try:
+            await pc.addIceCandidate(None)  # required by spec
+        except AttributeError:
+            # running on aiortc < 1.4 – harmless, just ignore
+            logger.warning("aiortc too old for end-of-candidates bug-fix")
+        return
+
+    # --- normal candidate ----------------------------------------------
     try:
-        ice: RTCIceCandidate = candidate_from_sdp(candidate_dict["candidate"])
+        ice = candidate_from_sdp(candidate_dict["candidate"])
     except Exception:
-        # Fallback: minimal manual parse (works for host / srflx / relay)
         parts = candidate_dict["candidate"].split()
         ice   = RTCIceCandidate(
-            component=int(parts[1]),
-            foundation=parts[0].split(':')[1],
-            ip=parts[4],
-            port=int(parts[5]),
-            priority=int(parts[3]),
-            protocol=parts[2].lower(),
-            type=parts[7],
+            component  = int(parts[1]),
+            foundation = parts[0].split(':')[1],
+            ip         = parts[4],
+            port       = int(parts[5]),
+            priority   = int(parts[3]),
+            protocol   = parts[2].lower(),
+            type       = parts[7],
         )
 
-    # 2) Copy the MID / index coming from the browser -------------------
-    ice.sdpMid        = candidate_dict.get("sdpMid")
-    ice.sdpMLineIndex = candidate_dict.get("sdpMLineIndex")
+    ice.sdpMid        = candidate_dict.get("sdpMid") or "0"
+    ice.sdpMLineIndex = candidate_dict.get("sdpMLineIndex", 0)
 
-    # 3) Now the call matches aiortc’s expectations ---------------------
     await pc.addIceCandidate(ice)
     logger.debug("Added ICE candidate for %s", profile_id)
 
