@@ -216,10 +216,13 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
 async def process_assistant_message_websocket(
     chat_id: uuid.UUID, 
     message: str, 
+    is_audio: bool = False,
+    audio_data: Optional[bytes] = None,
     session: Optional[Session] = None
 ) -> None:
     """
     Process an assistant message and stream the response via WebSocket
+    Supports both text and audio messages (audio support to be implemented)
     """
     
     # Create a new session for this async operation

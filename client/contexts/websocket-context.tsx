@@ -24,6 +24,11 @@ interface WebSocketContextType {
   isConnected: boolean;
   socket: Socket | null;
 
+  // WebRTC state
+  isWebRTCConnected: boolean;
+  webRTCConnectionState: string;
+  isWebRTCSupported: boolean;
+
   // Loading states for debugging
   isStartingSimulation: boolean;
   isSendingSimulationMessage: boolean;
@@ -78,6 +83,16 @@ interface WebSocketContextType {
   emitRunEval: (data: { eval_run_id: string }) => void;
   emitStopEval: (data: { chat_id: string }) => void;
   emitStopAllEvals: (data: { eval_run_id: string }) => void;
+
+  // WebRTC functions
+  startWebRTC: () => Promise<void>;
+  stopWebRTC: () => Promise<void>;
+  sendWebRTCMessage: (
+    chatId: string,
+    message: string,
+    isAudio?: boolean
+  ) => void;
+  sendWebRTCAudio: (chatId: string, audioData: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -144,6 +159,21 @@ export function WebSocketProvider({
   const [isRunningEval, setIsRunningEval] = useState(false);
   const [isStoppingEval, setIsStoppingEval] = useState(false);
   const [isStoppingAllEvals, setIsStoppingAllEvals] = useState(false);
+
+  // WebRTC state
+  const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
+  const [webRTCConnectionState, setWebRTCConnectionState] = useState("new");
+  const [isWebRTCSupported, setIsWebRTCSupported] = useState(false);
+  const webRTCPeerConnection = useRef<RTCPeerConnection | null>(null);
+  const webRTCDataChannels = useRef<Map<string, RTCDataChannel>>(new Map());
+
+  // Check if WebRTC is supported
+  useEffect(() => {
+    setIsWebRTCSupported(
+      typeof RTCPeerConnection !== "undefined" &&
+        typeof RTCDataChannel !== "undefined"
+    );
+  }, []);
 
   // Set up section-specific event handlers
   const setupCommonEventHandlers = useCallback(
@@ -882,6 +912,137 @@ export function WebSocketProvider({
           toast.error(`Eval run error: ${data.error}`);
         }
       );
+
+      // WebRTC event handlers
+      socket.on(
+        "webrtc_offer",
+        async (data: {
+          profile_id: string;
+          offer: { sdp: string; type: string };
+          ice_config: {
+            urls: string[];
+            username?: string;
+            credential?: string;
+          };
+        }) => {
+          logInfo("Received WebRTC offer", { profileId: data.profile_id });
+
+          try {
+            // Create peer connection
+            const iceServers: RTCIceServer[] = [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:stun1.l.google.com:19302" },
+            ];
+
+            if (data.ice_config.username && data.ice_config.credential) {
+              iceServers.unshift({
+                urls: data.ice_config.urls,
+                username: data.ice_config.username,
+                credential: data.ice_config.credential,
+              } as RTCIceServer);
+            } else if (data.ice_config.urls.length > 0) {
+              iceServers.unshift({
+                urls: data.ice_config.urls,
+              } as RTCIceServer);
+            }
+
+            const pc = new RTCPeerConnection({ iceServers });
+            webRTCPeerConnection.current = pc;
+
+            // Handle ICE candidates
+            pc.onicecandidate = (event) => {
+              if (event.candidate && socket.connected) {
+                socket.emit("webrtc_ice_candidate", {
+                  profile_id: data.profile_id,
+                  candidate: {
+                    candidate: event.candidate.candidate,
+                    sdpMid: event.candidate.sdpMid,
+                    sdpMLineIndex: event.candidate.sdpMLineIndex,
+                  },
+                });
+              }
+            };
+
+            // Handle connection state changes
+            pc.onconnectionstatechange = () => {
+              setWebRTCConnectionState(pc.connectionState);
+              setIsWebRTCConnected(pc.connectionState === "connected");
+              logInfo(`WebRTC connection state: ${pc.connectionState}`);
+            };
+
+            // Set remote description
+            await pc.setRemoteDescription({
+              sdp: data.offer.sdp,
+              type: data.offer.type as RTCSdpType,
+            });
+
+            // Create answer
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            // Send answer
+            socket.emit("webrtc_answer", {
+              profile_id: data.profile_id,
+              answer: {
+                sdp: answer.sdp,
+                type: answer.type,
+              },
+            });
+
+            logInfo("Sent WebRTC answer");
+          } catch (error) {
+            logError("Error handling WebRTC offer", error);
+          }
+        }
+      );
+
+      socket.on(
+        "webrtc_ice_candidate",
+        async (data: {
+          profile_id: string;
+          candidate: {
+            candidate: string;
+            sdpMid?: string;
+            sdpMLineIndex?: number;
+          };
+        }) => {
+          try {
+            const pc = webRTCPeerConnection.current;
+            if (pc && data.candidate) {
+              await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+              logInfo("Added WebRTC ICE candidate");
+            }
+          } catch (error) {
+            logError("Error adding ICE candidate", error);
+          }
+        }
+      );
+
+      socket.on("webrtc_ready", (data: { profile_id: string }) => {
+        logInfo("WebRTC connection ready", { profileId: data.profile_id });
+
+        // Create data channels for different chat types
+        const pc = webRTCPeerConnection.current;
+        if (pc) {
+          // We'll create channels dynamically when needed
+          toast.success("WebRTC connection established!");
+        }
+      });
+
+      socket.on(
+        "webrtc_connection_state",
+        (data: { profile_id: string; state: string }) => {
+          setWebRTCConnectionState(data.state);
+          setIsWebRTCConnected(data.state === "connected");
+          logInfo(`WebRTC connection state: ${data.state}`);
+        }
+      );
+
+      socket.on("webrtc_error", (data: { error: string }) => {
+        logError("WebRTC error", data.error);
+        toast.error(`WebRTC error: ${data.error}`);
+        setIsWebRTCConnected(false);
+      });
     },
     [queryClient, profileId]
   );
@@ -1244,9 +1405,174 @@ export function WebSocketProvider({
     [isConnected]
   );
 
+  // WebRTC functions
+  const startWebRTC = useCallback(async () => {
+    if (!isWebRTCSupported || !profileId || !socketRef.current) {
+      logError("Cannot start WebRTC - not supported or missing requirements");
+      return;
+    }
+
+    try {
+      logInfo("Starting WebRTC connection", { profileId });
+
+      // Request WebRTC start from server
+      socketRef.current.emit("webrtc_start", { profile_id: profileId });
+    } catch (error) {
+      logError("Error starting WebRTC", error);
+    }
+  }, [isWebRTCSupported, profileId]);
+
+  const stopWebRTC = useCallback(async () => {
+    try {
+      logInfo("Stopping WebRTC connection");
+
+      // Close data channels
+      webRTCDataChannels.current.forEach((channel) => {
+        if (channel.readyState === "open") {
+          channel.close();
+        }
+      });
+      webRTCDataChannels.current.clear();
+
+      // Close peer connection
+      if (webRTCPeerConnection.current) {
+        webRTCPeerConnection.current.close();
+        webRTCPeerConnection.current = null;
+      }
+
+      setIsWebRTCConnected(false);
+      setWebRTCConnectionState("closed");
+    } catch (error) {
+      logError("Error stopping WebRTC", error);
+    }
+  }, []);
+
+  // Helper function to create data channel if it doesn't exist
+  const createDataChannelIfNeeded = useCallback(
+    (channelLabel: string): RTCDataChannel | undefined => {
+      const pc = webRTCPeerConnection.current;
+      if (!pc || pc.connectionState !== "connected") {
+        return undefined;
+      }
+
+      let channel = webRTCDataChannels.current.get(channelLabel);
+      if (!channel || channel.readyState === "closed") {
+        // Create new data channel
+        channel = pc.createDataChannel(channelLabel, {
+          ordered: true,
+        });
+
+        channel.onopen = () => {
+          logInfo(`WebRTC data channel opened: ${channelLabel}`);
+        };
+
+        channel.onclose = () => {
+          logInfo(`WebRTC data channel closed: ${channelLabel}`);
+          webRTCDataChannels.current.delete(channelLabel);
+        };
+
+        channel.onerror = (error) => {
+          logError(`WebRTC data channel error for ${channelLabel}`, error);
+        };
+
+        webRTCDataChannels.current.set(channelLabel, channel);
+        logInfo(`Created WebRTC data channel: ${channelLabel}`);
+      }
+
+      return channel;
+    },
+    []
+  );
+
+  const sendWebRTCMessage = useCallback(
+    (chatId: string, message: string, isAudio = false) => {
+      try {
+        const channelLabel = isAudio ? `audio-${chatId}` : `text-${chatId}`;
+
+        // Try to get or create the data channel
+        let channel = webRTCDataChannels.current.get(channelLabel);
+        if (!channel || channel.readyState !== "open") {
+          channel = createDataChannelIfNeeded(channelLabel);
+        }
+
+        if (!channel || channel.readyState !== "open") {
+          logError(
+            `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
+          );
+          // Fallback to WebSocket
+          if (isAudio) {
+            // Handle audio fallback (could send as base64)
+            logInfo("Audio fallback not implemented yet");
+          } else {
+            // Send text via WebSocket
+            if (chatId.includes("simulation")) {
+              emitSendSimulationMessage({ chat_id: chatId, message });
+            } else if (chatId.includes("assistant")) {
+              emitSendAssistantMessage({ chat_id: chatId, message });
+            }
+          }
+          return;
+        }
+
+        const messageData = {
+          type: "message_complete",
+          chat_id: chatId,
+          content: message,
+          is_audio: isAudio,
+          timestamp: Date.now(),
+        };
+
+        channel.send(JSON.stringify(messageData));
+        logInfo(`Sent WebRTC message via ${channelLabel}`, {
+          chatId,
+          messageLength: message.length,
+        });
+      } catch (error) {
+        logError("Error sending WebRTC message", error);
+      }
+    },
+    [
+      emitSendSimulationMessage,
+      emitSendAssistantMessage,
+      createDataChannelIfNeeded,
+    ]
+  );
+
+  const sendWebRTCAudio = useCallback((chatId: string, audioData: string) => {
+    try {
+      const channelLabel = `audio-${chatId}`;
+      const channel = webRTCDataChannels.current.get(channelLabel);
+
+      if (!channel || channel.readyState !== "open") {
+        logError(
+          `WebRTC audio channel not available, falling back to WebSocket`
+        );
+        // Could implement base64 audio fallback here
+        return;
+      }
+
+      const messageData = {
+        type: "message_complete",
+        chat_id: chatId,
+        content: "",
+        is_audio: true,
+        audio_data: audioData,
+        timestamp: Date.now(),
+      };
+
+      channel.send(JSON.stringify(messageData));
+      logInfo(`Sent WebRTC audio via ${channelLabel}`, { chatId });
+    } catch (error) {
+      logError("Error sending WebRTC audio", error);
+    }
+  }, []);
+
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
+    isWebRTCConnected,
+    webRTCConnectionState,
+    isWebRTCSupported,
     isStartingSimulation,
     isSendingSimulationMessage,
     isStoppingSimulation,
@@ -1271,6 +1597,10 @@ export function WebSocketProvider({
     emitRunEval,
     emitStopEval,
     emitStopAllEvals,
+    startWebRTC,
+    stopWebRTC,
+    sendWebRTCMessage,
+    sendWebRTCAudio,
   };
 
   return (
