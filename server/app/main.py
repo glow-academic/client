@@ -13,6 +13,7 @@ import socketio  # type: ignore
 # WebRTC imports
 from aiortc import (RTCConfiguration, RTCIceCandidate,  # type: ignore
                     RTCIceServer, RTCPeerConnection, RTCSessionDescription)
+from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
@@ -152,31 +153,6 @@ def _build_ice_servers() -> List[Dict[str, Any]]:
 
     return ice_servers
 
-def get_ice_config() -> Dict[str, Any]:
-    """Get ICE server configuration in client-friendly format."""
-    ice_servers = _build_ice_servers()
-    
-    # Flatten for client consumption
-    urls = []
-    username = None
-    credential = None
-    
-    for server in ice_servers:
-        if isinstance(server["urls"], list):
-            urls.extend(server["urls"])
-        else:
-            urls.append(server["urls"])
-        
-        if "username" in server:
-            username = server["username"]
-            credential = server["credential"]
-    
-    return {
-        "urls": urls,
-        "username": username,
-        "credential": credential
-    }
-
 async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
     """Create a new WebRTC peer connection for a profile."""
     logger.info(f"Creating WebRTC peer connection for profile {profile_id}")
@@ -200,6 +176,14 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
     webrtc_peer_connections[profile_id] = pc
     webrtc_data_channels[profile_id] = {}
     webrtc_ice_candidates_buffer[profile_id] = []
+
+    # ---- ensure at least one negotiated data channel so the initial SDP has an m-section ----
+    signalling_dc = pc.createDataChannel("signalling")  # name arbitrary but consistent
+
+    @signalling_dc.on("open")  # type: ignore
+    def _() -> None:
+        logger.info(f"Signalling data channel open for profile {profile_id}")
+    # ------------------------------------------------------------------------------------------
     
     # Set up peer connection event handlers
     @pc.on("connectionstatechange")  # type: ignore
@@ -493,7 +477,7 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
                 'sdp': offer.sdp,
                 'type': offer.type
             },
-            'ice_config': get_ice_config()
+            'ice_config': _build_ice_servers()
         }, room=sid)
         
         logger.info(f"Sent WebRTC offer to profile {profile_id}")
@@ -561,74 +545,39 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
         }, room=sid)
 
 @sio.event  # type: ignore
-async def webrtc_ice_candidate(sid: str, data: Dict[str, Any]) -> None:
-    """Handle ICE candidate from client"""
+async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
+    profile_id     = data.get("profile_id")
+    candidate_dict = data.get("candidate")
+    if not profile_id or not candidate_dict:
+        return
+
+    pc = webrtc_peer_connections.get(profile_id)
+    if not pc:
+        return
+
+    # 1) Turn the raw SDP line into an RTCIceCandidate -----------------
     try:
-        profile_id = data.get('profile_id')
-        candidate_data = data.get('candidate')
-        
-        if not profile_id or not candidate_data:
-            return
-        
-        pc = webrtc_peer_connections.get(profile_id)
-        if not pc:
-            return
-        
-        # Parse and add ICE candidate
-        candidate_str = candidate_data.get('candidate')
-        if not candidate_str:
-            return
-        
-        # Parse candidate string
-        parts = candidate_str.split()
-        if len(parts) < 8:
-            logger.error(f"Invalid candidate format: {candidate_str}")
-            return
-        
-        foundation = parts[0].split(':')[1]
-        component = int(parts[1])
-        protocol = parts[2]
-        priority = int(parts[3])
-        ip = parts[4]
-        port = int(parts[5])
-        
-        if "typ" not in parts:
-            logger.error(f"No 'typ' found in candidate: {candidate_str}")
-            return
-        typ_index = parts.index("typ")
-        candidate_type = parts[typ_index + 1]
-        
-        # Handle related address and port
-        related_address = None
-        related_port = None
-        if "raddr" in parts:
-            raddr_index = parts.index("raddr")
-            if raddr_index + 1 < len(parts):
-                related_address = parts[raddr_index + 1]
-        if "rport" in parts:
-            rport_index = parts.index("rport")
-            if rport_index + 1 < len(parts):
-                related_port = int(parts[rport_index + 1])
-        
-        candidate = RTCIceCandidate(
-            component=component,
-            foundation=foundation,
-            ip=ip,
-            port=port,
-            priority=priority,
-            protocol=protocol,
-            type=candidate_type,
-            relatedAddress=related_address,
-            relatedPort=related_port,
-            sdpMid=candidate_data.get("sdpMid"),
-            sdpMLineIndex=candidate_data.get("sdpMLineIndex")
+        ice: RTCIceCandidate = candidate_from_sdp(candidate_dict["candidate"])
+    except Exception:
+        # Fallback: minimal manual parse (works for host / srflx / relay)
+        parts = candidate_dict["candidate"].split()
+        ice   = RTCIceCandidate(
+            component=int(parts[1]),
+            foundation=parts[0].split(':')[1],
+            ip=parts[4],
+            port=int(parts[5]),
+            priority=int(parts[3]),
+            protocol=parts[2].lower(),
+            type=parts[7],
         )
-        
-        await pc.addIceCandidate(candidate)
-        logger.debug(f"Added ICE candidate for profile {profile_id}")
-        
-    except Exception as e:
-        logger.error(f"Error handling ICE candidate: {e}")
+
+    # 2) Copy the MID / index coming from the browser -------------------
+    ice.sdpMid        = candidate_dict.get("sdpMid")
+    ice.sdpMLineIndex = candidate_dict.get("sdpMLineIndex")
+
+    # 3) Now the call matches aiortc’s expectations ---------------------
+    await pc.addIceCandidate(ice)
+    logger.debug("Added ICE candidate for %s", profile_id)
 
 @sio.event  # type: ignore
 async def join_chat(sid: str, data: dict[str, Any]) -> None:

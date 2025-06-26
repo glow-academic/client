@@ -941,34 +941,13 @@ export function WebSocketProvider({
         async (data: {
           profile_id: string;
           offer: { sdp: string; type: string };
-          ice_config: {
-            urls: string[];
-            username?: string;
-            credential?: string;
-          };
+          ice_config: RTCIceServer[];
         }) => {
           logInfo("Received WebRTC offer", { profileId: data.profile_id });
 
           try {
-            // Create peer connection
-            const iceServers: RTCIceServer[] = [
-              { urls: "stun:stun.l.google.com:19302" },
-              { urls: "stun:stun1.l.google.com:19302" },
-            ];
-
-            if (data.ice_config.username && data.ice_config.credential) {
-              iceServers.unshift({
-                urls: data.ice_config.urls,
-                username: data.ice_config.username,
-                credential: data.ice_config.credential,
-              } as RTCIceServer);
-            } else if (data.ice_config.urls.length > 0) {
-              iceServers.unshift({
-                urls: data.ice_config.urls,
-              } as RTCIceServer);
-            }
-
-            const pc = new RTCPeerConnection({ iceServers });
+            // Create peer connection using the configuration from the server
+            const pc = new RTCPeerConnection({ iceServers: data.ice_config });
             webRTCPeerConnection.current = pc;
 
             // Handle ICE candidates
@@ -990,8 +969,6 @@ export function WebSocketProvider({
               setWebRTCConnectionState(pc.connectionState);
               setIsWebRTCConnected(pc.connectionState === "connected");
               logInfo(`WebRTC connection state: ${pc.connectionState}`);
-
-
             };
 
             // Set remote description
@@ -1472,6 +1449,29 @@ export function WebSocketProvider({
       logError("Error stopping WebRTC", error);
     }
   }, []);
+
+  useEffect(() => {
+    if (
+      isConnected && // WebSocket is green
+      !isWebRTCConnected && // we haven’t finished ICE yet
+      isWebRTCSupported && // browser supports it
+      profileId // we know who we are
+    ) {
+      startWebRTC(); // fire the "webrtc_start" emit
+    }
+  }, [
+    isConnected,
+    isWebRTCConnected,
+    isWebRTCSupported,
+    profileId,
+    startWebRTC,
+  ]);
+
+  useEffect(() => {
+    if (!isConnected && isWebRTCConnected) {
+      stopWebRTC(); // close data channels + RTCPeerConnection
+    }
+  }, [isConnected, isWebRTCConnected, stopWebRTC]);
 
   // Helper function to create data channel if it doesn't exist
   const createDataChannelIfNeeded = useCallback(
