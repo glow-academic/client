@@ -175,15 +175,26 @@ get_public_ip() {
 setup_turn_env() {
   # Set default values if not already set
   export TURN_PUBLIC_IP="${TURN_PUBLIC_IP:-$(get_public_ip)}"
-  export TURN_REALM="${TURN_REALM:-example.com}"
-  export TURN_USERNAME="${TURN_USERNAME:-webrtc}"
-  export TURN_PASS="${TURN_PASS:-$(openssl rand -base64 12 2>/dev/null || echo "changeMe")}"
+  export TURN_REALM="${TURN_REALM:-localhost}"
+  export TURN_USERNAME="${TURN_USERNAME:-localuser}"
+  export TURN_PASSWORD="${TURN_PASSWORD:-localpass}"
+  
+  # Set URIs based on environment
+  if [[ -z "${TURN_URI:-}" ]]; then
+    export TURN_URI="turn:${TURN_PUBLIC_IP}:3478?transport=udp"
+  fi
+  
+  if [[ -z "${STUN_URI:-}" ]]; then
+    export STUN_URI="stun:${TURN_PUBLIC_IP}:3478"
+  fi
   
   log_info "TURN server configuration:"
   log_info "  Public IP: $TURN_PUBLIC_IP"
   log_info "  Realm: $TURN_REALM"
   log_info "  Username: $TURN_USERNAME"
-  log_info "  Password: $TURN_PASS"
+  log_info "  Password: $TURN_PASSWORD"
+  log_info "  TURN URI: $TURN_URI"
+  log_info "  STUN URI: $STUN_URI"
 }
 
 # Start TURN/STUN server
@@ -231,7 +242,7 @@ start_turn_server() {
       --no-tls \
       --lt-cred-mech \
       --realm="$TURN_REALM" \
-      --user="$TURN_USERNAME:$TURN_PASS" \
+      --user="$TURN_USERNAME:$TURN_PASSWORD" \
       --external-ip="$TURN_PUBLIC_IP" \
       --listening-port=3478 \
       --min-port=49160 \
@@ -277,7 +288,7 @@ start_turn_server() {
 listening-port=3478
 external-ip=$TURN_PUBLIC_IP
 realm=$TURN_REALM
-user=$TURN_USERNAME:$TURN_PASS
+user=$TURN_USERNAME:$TURN_PASSWORD
 lt-cred-mech
 log-file=stdout
 no-dtls
@@ -558,7 +569,9 @@ if $START_TURN; then
   echo -e "  TURN_PUBLIC_IP: ${TURN_PUBLIC_IP}"
   echo -e "  TURN_REALM: ${TURN_REALM}"
   echo -e "  TURN_USERNAME: ${TURN_USERNAME}"
-  echo -e "  TURN_PASS: ${TURN_PASS}"
+  echo -e "  TURN_PASSWORD: ${TURN_PASSWORD}"
+  echo -e "  TURN_URI: ${TURN_URI}"
+  echo -e "  STUN_URI: ${STUN_URI}"
   echo ""
 fi
 

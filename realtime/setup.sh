@@ -142,15 +142,19 @@ setup_turn_server() {
   
   # Get configuration
   local public_ip=$(get_public_ip)
-  local realm="${TURN_REALM:-example.com}"
-  local username="${TURN_USERNAME:-webrtc}"
-  local password="${TURN_PASS:-$(openssl rand -base64 12 2>/dev/null || echo "changeMe")}"
+  local realm="${TURN_REALM:-localhost}"
+  local username="${TURN_USERNAME:-localuser}"
+  local password="${TURN_PASSWORD:-localpass}"
+  local turn_uri="${TURN_URI:-turn:${public_ip}:3478?transport=udp}"
+  local stun_uri="${STUN_URI:-stun:${public_ip}:3478}"
   
   log_info "Configuration:"
   log_info "  Public IP: $public_ip"
   log_info "  Realm: $realm"
   log_info "  Username: $username"
   log_info "  Password: $password"
+  log_info "  TURN URI: $turn_uri"
+  log_info "  STUN URI: $stun_uri"
   echo ""
   
   # Check if port is already in use
@@ -206,7 +210,9 @@ setup_turn_server() {
       export TURN_PUBLIC_IP="$public_ip"
       export TURN_REALM="$realm"
       export TURN_USERNAME="$username"
-      export TURN_PASS="$password"
+      export TURN_PASSWORD="$password"
+      export TURN_URI="$turn_uri"
+      export STUN_URI="$stun_uri"
       
       # Show environment variables to set
       echo ""
@@ -214,7 +220,9 @@ setup_turn_server() {
       echo "export TURN_PUBLIC_IP=\"$public_ip\""
       echo "export TURN_REALM=\"$realm\""
       echo "export TURN_USERNAME=\"$username\""
-      echo "export TURN_PASS=\"$password\""
+      echo "export TURN_PASSWORD=\"$password\""
+      echo "export TURN_URI=\"$turn_uri\""
+      echo "export STUN_URI=\"$stun_uri\""
       echo ""
       
       # Test the server
@@ -281,7 +289,9 @@ EOF
     export TURN_PUBLIC_IP="$public_ip"
     export TURN_REALM="$realm"
     export TURN_USERNAME="$username"
-    export TURN_PASS="$password"
+    export TURN_PASSWORD="$password"
+    export TURN_URI="$turn_uri"
+    export STUN_URI="$stun_uri"
     
     # Show environment variables
     echo ""
@@ -289,7 +299,9 @@ EOF
     echo "export TURN_PUBLIC_IP=\"$public_ip\""
     echo "export TURN_REALM=\"$realm\""
     echo "export TURN_USERNAME=\"$username\""
-    echo "export TURN_PASS=\"$password\""
+    echo "export TURN_PASSWORD=\"$password\""
+    echo "export TURN_URI=\"$turn_uri\""
+    echo "export STUN_URI=\"$stun_uri\""
     echo ""
     
     # Test the server
@@ -326,7 +338,9 @@ show_status() {
   echo "  TURN_PUBLIC_IP: ${TURN_PUBLIC_IP:-not set}"
   echo "  TURN_REALM: ${TURN_REALM:-not set}"
   echo "  TURN_USERNAME: ${TURN_USERNAME:-not set}"
-  echo "  TURN_PASS: ${TURN_PASS:-not set}"
+  echo "  TURN_PASSWORD: ${TURN_PASSWORD:-not set}"
+  echo "  TURN_URI: ${TURN_URI:-not set}"
+  echo "  STUN_URI: ${STUN_URI:-not set}"
 }
 
 # Stop TURN server
@@ -369,8 +383,8 @@ case "${1:-setup}" in
     ;;
   test)
     public_ip="${TURN_PUBLIC_IP:-$(get_public_ip)}"
-    username="${TURN_USERNAME:-webrtc}"
-    password="${TURN_PASS:-changeMe}"
+    username="${TURN_USERNAME:-localuser}"
+    password="${TURN_PASSWORD:-localpass}"
     test_turn_server "$public_ip" "$username" "$password"
     ;;
   --help|-h)
@@ -387,9 +401,11 @@ case "${1:-setup}" in
     echo ""
     echo "Environment variables:"
     echo "  TURN_PUBLIC_IP   Public IP for TURN server (auto-detected)"
-    echo "  TURN_REALM       TURN realm (default: example.com)"
-    echo "  TURN_USERNAME    TURN username (default: webrtc)"
-    echo "  TURN_PASS        TURN password (auto-generated)"
+    echo "  TURN_REALM       TURN realm (default: localhost)"
+    echo "  TURN_USERNAME    TURN username (default: localuser)"
+    echo "  TURN_PASSWORD    TURN password (default: localpass)"
+    echo "  TURN_URI         Full TURN URI (auto-generated)"
+    echo "  STUN_URI         Full STUN URI (auto-generated)"
     ;;
   *)
     log_error "Unknown command: $1"

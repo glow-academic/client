@@ -159,8 +159,8 @@ services:
       - --no-dtls
       - --no-tls
       - --lt-cred-mech
-      - --realm=${TURN_REALM:-example.com}
-      - --user=${TURN_USERNAME:-webrtc}:${TURN_PASS:-changeMe}
+      - --realm=${TURN_REALM:-localhost}
+      - --user=${TURN_USERNAME:-localuser}:${TURN_PASSWORD:-localpass}
       - --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
       - --listening-port=3478
       - --min-port=49160
@@ -176,9 +176,11 @@ services:
       - "49160-49200:49160-49200/udp"
     environment:
       - TURN_PUBLIC_IP=${TURN_PUBLIC_IP:-127.0.0.1}
-      - TURN_REALM=${TURN_REALM:-example.com}
-      - TURN_USERNAME=${TURN_USERNAME:-webrtc}
-      - TURN_PASS=${TURN_PASS:-changeMe}
+      - TURN_REALM=${TURN_REALM:-localhost}
+      - TURN_USERNAME=${TURN_USERNAME:-localuser}
+      - TURN_PASSWORD=${TURN_PASSWORD:-localpass}
+      - TURN_URI=${TURN_URI:-turn:127.0.0.1:3478?transport=udp}
+      - STUN_URI=${STUN_URI:-stun:stun.l.google.com:19302}
     networks:
       - internal
     restart: unless-stopped

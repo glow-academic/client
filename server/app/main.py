@@ -187,6 +187,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
     async with contextlib.AsyncExitStack() as stack:
         await stack.enter_async_context(server.session_manager.run())
         
+        # Log WebRTC configuration
+        logger.info("WebRTC Configuration:")
+        logger.info(f"  TURN_PUBLIC_IP: {os.getenv('TURN_PUBLIC_IP', 'not set')}")
+        logger.info(f"  TURN_REALM: {os.getenv('TURN_REALM', 'not set')}")
+        logger.info(f"  TURN_USERNAME: {os.getenv('TURN_USERNAME', 'not set')}")
+        logger.info(f"  TURN_PASSWORD: {'***' if os.getenv('TURN_PASSWORD') else 'not set'}")
+        logger.info(f"  TURN_URI: {os.getenv('TURN_URI', 'not set')}")
+        logger.info(f"  STUN_URI: {os.getenv('STUN_URI', 'not set')}")
+        
         # Initialize Whisper model during startup
         try:
             from app.config import model_manager

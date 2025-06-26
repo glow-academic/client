@@ -216,9 +216,9 @@ def ice() -> IceConfig:
     Get ICE server configuration for WebRTC
     """
     host = os.getenv("TURN_PUBLIC_IP", "localhost")
-    realm = os.getenv("TURN_REALM", "example.com")
+    realm = os.getenv("TURN_REALM", "localhost")
     user = os.getenv("TURN_USERNAME")
-    pwd = os.getenv("TURN_PASS")
+    pwd = os.getenv("TURN_PASSWORD")
 
     # Create comprehensive STUN/TURN URLs
     urls = [

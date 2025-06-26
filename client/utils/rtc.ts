@@ -114,22 +114,26 @@ export async function startRtcAudio(chatId: string): Promise<void> {
 
     // Create peer connection with ICE servers
     const iceServers: RTCIceServer[] = [
+      // Default STUN servers as fallback
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
     ];
 
-    // Add TURN servers if credentials are provided
-    if (iceConfig.username && iceConfig.credential) {
-      iceServers.unshift({
-        urls: iceConfig.urls,
-        username: iceConfig.username,
-        credential: iceConfig.credential,
-      });
-      logInfo(`Added TURN servers with credentials`);
-    } else {
-      // Add as STUN servers if no credentials
-      iceServers.unshift({ urls: iceConfig.urls });
-      logInfo(`Added servers as STUN (no credentials provided)`);
+    // Add configured ICE servers
+    if (iceConfig.urls && iceConfig.urls.length > 0) {
+      if (iceConfig.username && iceConfig.credential) {
+        // Add as TURN servers with credentials
+        iceServers.unshift({
+          urls: iceConfig.urls,
+          username: iceConfig.username,
+          credential: iceConfig.credential,
+        });
+        logInfo(`Added TURN servers with credentials`);
+      } else {
+        // Add as STUN servers if no credentials
+        iceServers.unshift({ urls: iceConfig.urls });
+        logInfo(`Added servers as STUN (no credentials provided)`);
+      }
     }
 
     const peerConnection = new RTCPeerConnection({
