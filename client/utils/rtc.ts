@@ -50,7 +50,7 @@ const createSignalingWebSocket = (chatId: string): Promise<WebSocket> => {
     const timeout = setTimeout(() => {
       ws.close();
       reject(new Error("WebSocket connection timeout"));
-    }, 5000);
+    }, 10000); // Increased timeout to 10 seconds
 
     ws.onopen = () => {
       clearTimeout(timeout);
@@ -64,8 +64,12 @@ const createSignalingWebSocket = (chatId: string): Promise<WebSocket> => {
       reject(error);
     };
 
-    ws.onclose = () => {
-      logInfo(`WebSocket signaling closed for chat ${chatId}`);
+    ws.onclose = (event) => {
+      logInfo(`WebSocket signaling closed for chat ${chatId}`, {
+        code: event.code,
+        reason: event.reason,
+        wasClean: event.wasClean,
+      });
       activeSignalingWs.delete(chatId);
     };
   });

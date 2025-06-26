@@ -3,3 +3,6 @@ uploads/
 .cursorignore
 .mypy_cache/
 .pytest_cache/
+
+client.log
+server.log
