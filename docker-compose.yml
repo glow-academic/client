@@ -144,23 +144,25 @@ services:
       - internal
 
   # --------------------
-  # STUN / TURN Server
+  # Realtime Services (TURN/STUN)
   # --------------------
   realtime:
     image: coturn/coturn:4.6
-    command: >
-      --log-file=stdout                # log to docker logs
-      --no-dtls                        # (TLS later, keep simple for now)
-      --no-tls
-      --lt-cred-mech                   # long-term credentials
-      --realm=${TURN_REALM:-example.com}
-      --user ${TURN_USERNAME:-webrtc}:${TURN_PASS:-changeMe}
-      --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
-      --listening-port=3478
-      --min-port=49160 --max-port=49200 # UDP relay range
-      --verbose                        # Enable verbose logging
-      --fingerprint                    # Enable fingerprint in TURN messages
-      --mobility                       # Enable mobility support
+    container_name: glow-realtime
+    command:
+      - --log-file=stdout
+      - --no-dtls
+      - --no-tls
+      - --lt-cred-mech
+      - --realm=${TURN_REALM:-example.com}
+      - --user=${TURN_USERNAME:-webrtc}:${TURN_PASS:-changeMe}
+      - --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
+      - --listening-port=3478
+      - --min-port=49160
+      - --max-port=49200
+      - --verbose
+      - --fingerprint
+      - --mobility
     ports:
       # STUN / TURN discovery (UDP + TCP 3478)
       - "3478:3478/udp"

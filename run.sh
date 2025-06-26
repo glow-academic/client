@@ -215,12 +215,12 @@ start_turn_server() {
     log_info "Starting TURN server using Docker..."
     
     # Stop existing container if running
-    docker stop glow-turn 2>/dev/null || true
-    docker rm glow-turn 2>/dev/null || true
+    docker stop glow-realtime 2>/dev/null || true
+    docker rm glow-realtime 2>/dev/null || true
     
     # Start coturn container
     docker run -d \
-      --name glow-turn \
+      --name glow-realtime \
       --restart unless-stopped \
       -p 3478:3478/udp \
       -p 3478:3478/tcp \
@@ -241,8 +241,8 @@ start_turn_server() {
     # Wait a moment for container to start
     sleep 3
     
-    if docker ps | grep -q glow-turn; then
-      log_success "TURN server started using Docker (container: glow-turn)"
+    if docker ps | grep -q glow-realtime; then
+      log_success "TURN server started using Docker (container: glow-realtime)"
       return 0
     else
       log_warning "Docker TURN server failed to start, trying native installation..."
@@ -540,8 +540,8 @@ echo ""
 log_step "Step 5: Environment Status:"
 if $START_TURN && [[ -n "${TURN_PID:-}" ]]; then
   echo -e "  ${GREEN}✅ TURN Server:${NC} Running (PID: $TURN_PID) - UDP 3478"
-elif $START_TURN && docker ps | grep -q glow-turn; then
-  echo -e "  ${GREEN}✅ TURN Server:${NC} Running (Docker: glow-turn) - UDP 3478"
+elif $START_TURN && docker ps | grep -q glow-realtime; then
+  echo -e "  ${GREEN}✅ TURN Server:${NC} Running (Docker: glow-realtime) - UDP 3478"
 elif $START_TURN; then
   echo -e "  ${YELLOW}⚠️  TURN Server:${NC} Failed to start"
 else
@@ -607,8 +607,8 @@ if $DETACHED; then
   echo -e "${GREEN}✅ Services started in detached mode:${NC}"
   if $START_TURN && [[ -n "${TURN_PID:-}" ]]; then
     echo -e "  ${CYAN}TURN Server PID:${NC} $TURN_PID - UDP 3478"
-  elif $START_TURN && docker ps | grep -q glow-turn; then
-    echo -e "  ${CYAN}TURN Server:${NC} Docker container 'glow-turn' - UDP 3478"
+  elif $START_TURN && docker ps | grep -q glow-realtime; then
+    echo -e "  ${CYAN}TURN Server:${NC} Docker container 'glow-realtime' - UDP 3478"
   fi
   echo -e "  ${CYAN}Database PID:${NC} $DB_PID"
   echo -e "  ${CYAN}Client PID:${NC}   $CLIENT_PID - http://localhost:3000"
@@ -617,8 +617,8 @@ if $DETACHED; then
   echo -e "${YELLOW}💡 To stop services later, run:${NC}"
   if $START_TURN && [[ -n "${TURN_PID:-}" ]]; then
     echo -e "  kill $TURN_PID $DB_PID $CLIENT_PID $SERVER_PID"
-  elif $START_TURN && docker ps | grep -q glow-turn; then
-    echo -e "  docker stop glow-turn && kill $DB_PID $CLIENT_PID $SERVER_PID"
+  elif $START_TURN && docker ps | grep -q glow-realtime; then
+    echo -e "  docker stop glow-realtime && kill $DB_PID $CLIENT_PID $SERVER_PID"
   else
     echo -e "  kill $DB_PID $CLIENT_PID $SERVER_PID"
   fi
@@ -629,7 +629,7 @@ if $DETACHED; then
   echo -e "  pkill -f 'start.sh'     # Stop database"
   if $START_TURN; then
     echo -e "  pkill -f 'turnserver'   # Stop TURN server"
-    echo -e "  docker stop glow-turn   # Stop Docker TURN server"
+    echo -e "  docker stop glow-realtime   # Stop Docker TURN server"
   fi
   echo ""
   log_success "Services running in background. Script exiting."
@@ -648,9 +648,9 @@ else
     if $START_TURN && [[ -n "${TURN_PID:-}" ]] && kill -0 $TURN_PID 2>/dev/null; then
       log_info "Stopping TURN server..."
       kill $TURN_PID
-    elif $START_TURN && docker ps | grep -q glow-turn; then
+    elif $START_TURN && docker ps | grep -q glow-realtime; then
       log_info "Stopping Docker TURN server..."
-      docker stop glow-turn >/dev/null 2>&1
+      docker stop glow-realtime >/dev/null 2>&1
     fi
     
     # Kill all child processes

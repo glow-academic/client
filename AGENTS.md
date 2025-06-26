@@ -85,16 +85,16 @@ bash run.sh --no-turn          # Skip TURN server startup
 
 **Manual TURN Server Setup**:
 ```bash
-bash scripts/setup-turn-server.sh          # Setup and start TURN server
-bash scripts/setup-turn-server.sh status   # Check TURN server status
-bash scripts/setup-turn-server.sh stop     # Stop TURN server
-bash scripts/setup-turn-server.sh test     # Test TURN server connectivity
+bash realtime/setup.sh          # Setup and start TURN server
+bash realtime/setup.sh status   # Check TURN server status
+bash realtime/setup.sh stop     # Stop TURN server
+bash realtime/setup.sh test     # Test TURN server connectivity
 ```
 
 **Docker TURN Server** (alternative):
 ```bash
-docker compose up turn -d      # Start TURN server in Docker
-docker compose logs turn       # Check TURN server logs
+docker compose up realtime -d      # Start TURN server in Docker
+docker compose logs realtime       # Check TURN server logs
 ```
 
 ### Environment Variables
@@ -131,7 +131,7 @@ cd client && node scripts/test-webrtc-turn.js
 **Debug Commands:**
 ```bash
 # Check TURN server status
-bash scripts/setup-turn-server.sh status
+bash realtime/setup.sh status
 
 # Test connectivity
 cd client && node scripts/test-webrtc-turn.js

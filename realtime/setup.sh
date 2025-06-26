@@ -170,15 +170,15 @@ setup_turn_server() {
     log_info "Starting TURN server using Docker..."
     
     # Stop existing container
-    docker stop glow-turn 2>/dev/null || true
-    docker rm glow-turn 2>/dev/null || true
+    docker stop glow-realtime 2>/dev/null || true
+    docker rm glow-realtime 2>/dev/null || true
     
     # Pull the image
     docker pull coturn/coturn:4.6
     
     # Start container
     docker run -d \
-      --name glow-turn \
+      --name glow-realtime \
       --restart unless-stopped \
       -p 3478:3478/udp \
       -p 3478:3478/tcp \
@@ -199,7 +199,7 @@ setup_turn_server() {
     # Wait for container to start
     sleep 5
     
-    if docker ps | grep -q glow-turn; then
+    if docker ps | grep -q glow-realtime; then
       log_success "TURN server started using Docker"
       
       # Export environment variables
@@ -223,7 +223,7 @@ setup_turn_server() {
       return 0
     else
       log_error "Failed to start Docker TURN server"
-      log_info "Check Docker logs: docker logs glow-turn"
+      log_info "Check Docker logs: docker logs glow-realtime"
       return 1
     fi
   fi
@@ -309,9 +309,9 @@ show_status() {
   echo ""
   
   # Check if Docker container is running
-  if docker ps 2>/dev/null | grep -q glow-turn; then
-    log_success "Docker TURN server is running (container: glow-turn)"
-    docker logs --tail 5 glow-turn
+  if docker ps 2>/dev/null | grep -q glow-realtime; then
+    log_success "Docker TURN server is running (container: glow-realtime)"
+    docker logs --tail 5 glow-realtime
   elif pgrep -f "turnserver\|coturn" >/dev/null; then
     log_success "Native TURN server is running"
     echo "PIDs: $(pgrep -f 'turnserver\|coturn' | tr '\n' ' ')"
@@ -335,10 +335,10 @@ stop_turn_server() {
   echo ""
   
   # Stop Docker container
-  if docker ps 2>/dev/null | grep -q glow-turn; then
+  if docker ps 2>/dev/null | grep -q glow-realtime; then
     log_info "Stopping Docker TURN server..."
-    docker stop glow-turn
-    docker rm glow-turn
+    docker stop glow-realtime
+    docker rm glow-realtime
     log_success "Docker TURN server stopped"
   fi
   
@@ -349,7 +349,7 @@ stop_turn_server() {
     log_success "Native TURN server stopped"
   fi
   
-  if ! pgrep -f "turnserver\|coturn" >/dev/null && ! docker ps 2>/dev/null | grep -q glow-turn; then
+  if ! pgrep -f "turnserver\|coturn" >/dev/null && ! docker ps 2>/dev/null | grep -q glow-realtime; then
     log_success "All TURN servers stopped"
   else
     log_warning "Some TURN processes may still be running"
