@@ -216,351 +216,188 @@ $ concurrently "next dev" "node scripts/generate-component-tests.js"
 [0] 
 [0]  ✓ Starting...
 [0]    Using tsconfig file: ./tsconfig.json
-[0]  ✓ Ready in 1503ms
+[0]  ✓ Ready in 1519ms
+[0]  ✓ Compiled /middleware in 143ms (108 modules)
+[0]  ○ Compiling / ...
+[0]  ✓ Compiled / in 2.8s (1101 modules)
+[0]  GET / 200 in 3161ms
 [0]  ○ Compiling /api/auth/[...nextauth] ...
-[0]  ✓ Compiled /api/auth/[...nextauth] in 1161ms (650 modules)
-[0]  ✓ Compiled /middleware in 93ms (108 modules)
-[0]  GET /api/auth/session 200 in 1893ms
-[0]  ○ Compiling /home/a/[attemptId] ...
-[0]  ✓ Compiled / in 5.4s (4148 modules)
-[0]  GET /api/auth/session 200 in 5529ms
-[0]  GET / 200 in 3758ms
-[0] Cleaning up global WebSocket connection undefined
+[0]  ✓ Compiled /api/auth/[...nextauth] in 1084ms (1386 modules)
 [0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 6870ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 1253ms
-[0]  GET /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 7077ms
-[0]  GET /api/auth/session 200 in 19ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 33ms
-[0]  GET /api/auth/session 200 in 15ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 70ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 11ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 13ms
-[0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 14ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 8ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 12ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 12ms
-[0]  POST /home/a/f0764864-09b7-4765-9b5c-5f9e06702682 200 in 9ms
-[0]  GET / 200 in 19ms
+[0]  POST / 200 in 1549ms
 [0] Microsoft login attempt started undefined
-[0]  POST / 200 in 203ms
-[0]  GET /api/auth/providers 200 in 33ms
-[0]  GET /api/auth/csrf 200 in 5ms
-[0]  POST /api/auth/signin/microsoft-entra-id? 200 in 172ms
+[0]  POST / 200 in 9ms
+[0]  GET / 200 in 22ms
+[0]  GET /api/auth/providers 200 in 280ms
+[0]  GET /api/auth/csrf 200 in 10ms
+[0]  GET /api/auth/session 200 in 2009ms
+[0]  GET /api/auth/session 200 in 9ms
+[0]  POST /api/auth/signin/microsoft-entra-id? 200 in 239ms
 [0] Microsoft login attempt successful { redirectTo: '/analytics' }
-[0]  POST / 200 in 29ms
+[0]  POST / 200 in 9ms
 [0] Updating existing user profile: { userId: 1, email: 'redacted@purdue.edu' }
 [0] Updated existing user profile: {
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
 [0]   userId: 1,
 [0]   email: 'redacted@purdue.edu'
 [0] }
-[0]  GET /api/auth/callback/microsoft-entra-id?code=1.ATgAOb0wQVN8nEGx5YdY1tY_IWvaxzUTZodOgTpS1b2n7CY4ABI4AA.AgABBAIAAABVrSpeuWamRam2jAF1XRQEAwDs_wUA9P9dubAWIihaUT7oMNCGbmXflI3xmicv84ZZSmqhqa_ACTT2Fuzk9B02t1hIs8PkZv-T-6MNQIPxB3IFVIt46XsyRzJgEeFPs2sj23VCCdkeMHOOXcssBO6M_-Xx_cTwG7jngnpsqWCW2Or_MLWvei7_JcoV9Pydb76r7uW1T_U4UR5qAaF261jYrqK7k2ZZS4OMl2TaZcUqsgAXfsjE6-AFP0Yyv9U4sa-qpgrBlpEcq7w_cEsBLkvuZJRcdp53bdUr1HvkoYszmqce0OxBU-fOWS5tiL_K9OaH5DuvmJPTk_9xGgAW7aJh2O6DybNP-igzFuqvZVlFIpaVIhOPQTR3fxksAlQRuS_-j84PXA-D_UC1KwVUGTO-48hhWKHSpMiXIho9ZE0zxwJHCu75rTWO29czUqEgWT5Vp2teP4HpxxfLRkOC1ybehUvvgYsx1ndrQkcFiydUEynAa_4ZcyR4ZFkRNnOnkZqgoibvTnzhwcjIH5fN-bTbvoEWzuv5RkGUb4d6k7hW6byJV453N9AqAKk6bb-sCJcf50Bvgz2mqA5n_hxk-t3uuZ1j6OxQXrj05O0t6LqHQAVrpYeUwn4_Wxt8V3qEgXzU8Z5_aB_avIygJZRPldsY03sGEVHXxC61bHj_9clAoBoRJEJvpFqsFqB199nHlnEQxF-LHlPvz-IF784JHQxgzWaHFINrvVVfrF9VL7ny8rUYfB7Gxj340xI1omA0S6sFdd_Or8yRR3AJXKv5-ixJUjeZ6vOiy9KhS-KmYPtrNqM9_cYGrnFOZ315Svh1HcywCcsja-QRp5zuz1lyoJZk2nXGCA_Nq1xT6LCASRAVp548zXIGh9-ryx4KQbpJp-XT1SGenS3sWSt1FujQ6pBEuo5FaZI3m7i3lKqzh3_KA27g8nlqyirlkvdmaSP3W7F9Shyk6cI&session_state=0040ba69-a447-bc77-8804-13742d5b24d8 302 in 665ms
+[0]  GET /api/auth/callback/microsoft-entra-id?code=1.ATgAOb0wQVN8nEGx5YdY1tY_IWvaxzUTZodOgTpS1b2n7CY4ABI4AA.AgABBAIAAABVrSpeuWamRam2jAF1XRQEAwDs_wUA9P_KF2f7a2jmu7AapCkmM9pTUrHUUBsG8oJkOrIbbGxp3yuMUElW4K0CEDorWk8ujc55K9b3pQZsqDRqkCGrtvSkQMJ53Dyl0fTEhNvXI-8RP9AqdBJd1jlqZWn-HhXfFDhv0QQhFVY5X3FCn8t1Xg7R2IQFMXB135MOwKSzSojuR4VtP56UsE7oCcoX-UhuzxBNTcie1chCk7KtfAjGz1M1mdAvn1zLhJFxQ4_INcSVj7h7QL2HGWkYxHeM9t_X0x0GqAkunB8nCQg88W2hiHz4J9m0-EdwuTt_kgevlQoiPNZ6oY6NLYVqqb7Tb0txFV84ly4nXBCh2hGYBBnKb8NZiT26yN_c0Ma4z9w3szd-BlZPABmtNdlcZ8jc15_6f0fREKCQmVtOn6DSpY6SD2_qH19eaJGn9HJYdclI913Z18-3-N_X0NZ5W9N4aSlGjrlcUM_BLdlhFBzOVPEeUyeZhM-PZ-f3Dqj3f1A-M1DteDwYWJcFqGmwJ3QEMmrfDskyQT3MLjcEOtx1DxIkikQXDQny-2HUCnn8-JDor0N6IERL0mQQqNyy9O-Oq39hKxTufStWjP89InyX1t1pQd2Ov9VGgsLrxXj-KwYKoWPpR5FLds8AKT-_bkE5ekGhe4QlqdgqxyVVRi4CstS7VaW9eiQ6FNCJcGLbfWtmslSe9nzQjrJi33zTLgmGlGzCdXrreo8vjA4gBcqOURb122lfHYCoCOhmfy3MAXI8n6IF0liRx1_5exmSLHJEKygi4ysb9rWHDKp54iZAR3V6bV16SBis0vsiuKPhRGBvnw44YavC9ApFW-WZ2s8SStFHYoy6C0NZzPRKl6tC1sGklSbzvTJMuJipECFtpOzVzJV54zgEOqnt0XAKf96V2CUs8OvBBARfYRBHzecGI7FUduYH0nL_9Q0HAMESis3QmTc&session_state=0040ba69-a447-bc77-8804-13742d5b24d8 302 in 912ms
 [0]  ○ Compiling /analytics ...
-[0]  ✓ Compiled /analytics in 1009ms (4153 modules)
-[0]  GET /analytics 307 in 1371ms
+[0]  ✓ Compiled /analytics in 1764ms (2889 modules)
+[0]  GET /analytics 307 in 2161ms
 [0]  ○ Compiling /analytics/dashboard ...
-[0]  ✓ Compiled /analytics/dashboard in 1497ms (4422 modules)
-[0]  GET /analytics/dashboard 200 in 2070ms
-[0]  GET /api/auth/session 200 in 192ms
-[0]  POST /analytics/dashboard 200 in 93ms
-[0]  GET /api/auth/session 200 in 18ms
-[0]  GET /api/auth/session 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 20ms
-[0]  GET /api/auth/session 200 in 16ms
-[0]  POST /analytics/dashboard 200 in 16ms
-[0]  POST /analytics/dashboard 200 in 13ms
-[0]  POST /analytics/dashboard 200 in 13ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /analytics/dashboard 200 in 23ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 13ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 14ms
-[0] Server confirmed WebSocket connection {
-[0]   serverSid: 'QoZRfp0X6WKKJT40AAAB',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   serverTime: 1750913877.591378,
-[0]   clientTime: 1750913877653
-[0] }
+[0]  ✓ Compiled /analytics/dashboard in 1532ms (4347 modules)
+[0]  GET /analytics/dashboard 200 in 2271ms
+[0]  GET /api/auth/session 200 in 119ms
+[0]  GET /api/auth/session 200 in 61ms
+[0]  POST /analytics/dashboard 200 in 78ms
 [0]  POST /analytics/dashboard 200 in 10ms
-[0] Global WebSocket connected successfully {
-[0]   socketId: 'QoZRfp0X6WKKJT40AAAB',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   transport: 'websocket'
-[0] }
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 14ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0] Waiting for profile ID before connecting WebSocket {}
+[0]  POST /analytics/dashboard 200 in 19ms
+[0]  POST /analytics/dashboard 200 in 11ms
+[0]  POST /analytics/dashboard 200 in 16ms
+[0]  POST /analytics/dashboard 200 in 33ms
+[0]  POST /analytics/dashboard 200 in 11ms
 [0]  POST /analytics/dashboard 200 in 15ms
-[0]  POST /analytics/dashboard 200 in 14ms
 [0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 10ms
-[0]  ○ Compiling /home ...
-[0]  ✓ Compiled /home in 2.1s (6130 modules)
-[0]  GET /home 200 in 2371ms
-[0]  POST /analytics/dashboard 200 in 154ms
-[0]  POST /analytics/dashboard 200 in 20ms
-[0]  POST /analytics/dashboard 200 in 41ms
-[0]  POST /analytics/dashboard 200 in 16ms
-[0]  POST /analytics/dashboard 200 in 14ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 16ms
-[0]  POST /analytics/dashboard 200 in 12ms
-[0]  POST /analytics/dashboard 200 in 8ms
 [0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 16ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 5ms
 [0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 11ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  POST /analytics/dashboard 200 in 5ms
+[0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
 [0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 6ms
-[0]  POST /analytics/dashboard 200 in 4ms
-[0]  POST /analytics/dashboard 200 in 4ms
 [0]  POST /analytics/dashboard 200 in 6ms
 [0]  POST /analytics/dashboard 200 in 13ms
-[0]  POST /analytics/dashboard 200 in 9ms
-[0]  POST /analytics/dashboard 200 in 8ms
-[0]  POST /analytics/dashboard 200 in 17ms
-[0]  POST /analytics/dashboard 200 in 5ms
-[0]  GET /home 200 in 8ms
+[0] Server confirmed WebSocket connection {
+[0]   serverSid: '0o9IGQ31QIjD67YZAAAB',
+[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
+[0]   serverTime: 1750948890.030547,
+[0]   clientTime: 1750948890040
+[0] }
 [0]  POST /analytics/dashboard 200 in 7ms
-[0]  POST /home 200 in 38ms
-[0]  POST /home 200 in 27ms
-[0]  POST /home 200 in 8ms
-[0]  POST /home 200 in 294ms
-[0]  POST /home 200 in 53ms
-[0]  GET /api/auth/session 200 in 175ms
-[0]  GET /api/auth/session 200 in 9ms
-[0] Starting simulation via global WebSocket {
-[0]   simulationId: 'aaaaaaaa-1111-2222-3333-444444444444',
+[0] Global WebSocket connected successfully {
+[0]   socketId: '0o9IGQ31QIjD67YZAAAB',
 [0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   isConnected: true
+[0]   transport: 'websocket'
 [0] }
-[0]  POST /home 200 in 23ms
-[0] Emitting start_simulation {
-[0]   simulation_id: 'aaaaaaaa-1111-2222-3333-444444444444',
-[0]   profile_id: '965bd24f-dfae-4063-b370-e1373df46322'
-[0] }
+[0]  POST /analytics/dashboard 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 14ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 26ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 20ms
+[0]  POST /analytics/dashboard 200 in 24ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 12ms
+[0]  ○ Compiling /home ...
+[0]  ✓ Compiled /home in 1961ms (6073 modules)
+[0]  GET /home 200 in 2163ms
+[0]  GET /home 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 79ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /analytics/dashboard 200 in 10ms
+[0]  POST /analytics/dashboard 200 in 13ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 19ms
+[0]  POST /home 200 in 50ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 6ms
 [0]  POST /home 200 in 9ms
-[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 90ms
-[0] Simulation started {
-[0]   success: true,
-[0]   message: 'Simulation started successfully',
-[0]   attempt_id: 'd436c9c1-6883-4fd2-9cca-e29cd841f667',
-[0]   chat_id: '908a7571-8b3a-4fa4-948c-61fde43dddec'
-[0] }
-[0]  POST /home 200 in 32ms
-[0] Navigating to simulation attempt { attemptId: 'd436c9c1-6883-4fd2-9cca-e29cd841f667' }
+[0]  POST /home 200 in 5ms
+[0]  POST /analytics/dashboard 200 in 11ms
 [0]  POST /home 200 in 22ms
-[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 21ms
-[0]  GET /api/auth/session 200 in 42ms
-[0]  GET /api/auth/session 200 in 17ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 53ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 50ms
-[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 20ms
-[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 31ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 13ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 363ms
-[0]  GET /api/auth/session 200 in 14ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
+[0]  POST /home 200 in 18ms
+[0]  POST /analytics/dashboard 200 in 8ms
+[0]  POST /home 200 in 14ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /home 200 in 13ms
+[0]  POST /home 200 in 7ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /home 200 in 17ms
+[0]  POST /analytics/dashboard 200 in 9ms
+[0]  POST /home 200 in 17ms
+[0]  POST /analytics/dashboard 200 in 7ms
+[0]  POST /home 200 in 15ms
+[0]  POST /home 200 in 7ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 9ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 11ms
+[0]  POST /home 200 in 9ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 4ms
+[0]  POST /analytics/dashboard 200 in 6ms
+[0]  POST /home 200 in 15ms
+[0]  POST /home 200 in 18ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 18ms
+[0]  POST /home 200 in 5ms
+[0]  GET /home 200 in 130ms
+[0]  POST /home 200 in 11ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 6ms
+[0]  GET /api/auth/session 200 in 140ms
+[0]  GET /api/auth/session 200 in 6ms
+[0]  GET /api/auth/session 200 in 27ms
 [0]  GET /api/auth/session 200 in 11ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Waiting for profile ID before connecting WebSocket {}
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 13ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Initializing global WebSocket connection { profileId: '965bd24f-dfae-4063-b370-e1373df46322', attempt: 1 }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
-[0] Server confirmed WebSocket connection {
-[0]   serverSid: '2i9OWQEPLN_YzzSBAAAD',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   serverTime: 1750913899.303633,
-[0]   clientTime: 1750913899314
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
-[0] Global WebSocket connected successfully {
-[0]   socketId: '2i9OWQEPLN_YzzSBAAAD',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   transport: 'websocket'
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 12ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 10ms
-[0] Starting WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 8ms
-[0] Requesting user media for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Got user media stream for chat 908a7571-8b3a-4fa4-948c-61fde43dddec { audioTracks: 1, videoTracks: 0 }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] Fetched ICE config { urls: 5 }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
-[0] Added TURN servers with credentials undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] Creating signaling WebSocket for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] WebSocket signaling connected for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 17ms
-[0] Added audio track to peer connection for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   trackId: 'b97b9f57-6416-426d-8c81-deb6e5204e67',
-[0]   trackLabel: 'Default - MacBook Pro Microphone (Built-in)',
-[0]   trackEnabled: true,
-[0]   trackReadyState: 'live'
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] WebRTC setup started for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Creating offer for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 11ms
-[0] Set local description for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 9ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:3840718447 1 udp 2122194688 192.168.1.11...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:1333732500 1 udp 2122063616 172.21.227.9...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:251229747 1 udp 2122262784 2603:6000:db0...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:2642862109 1 udp 2122134272 fde1:4aae:e3...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] WebRTC ICE gathering state: gathering for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:1269192529 1 udp 1685987071 173.89.4.166...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:2586006775 1 tcp 1518214911 192.168.1.11...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:833668620 1 tcp 1518083839 172.21.227.97...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:1882625195 1 tcp 1518283007 2603:6000:db...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] Sent ICE candidate for chat 908a7571-8b3a-4fa4-948c-61fde43dddec {
-[0]   candidate: 'candidate:3813212805 1 tcp 1518154495 fde1:4aae:e3...',
-[0]   sdpMid: '0',
-[0]   sdpMLineIndex: 0
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] Stopping WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 17ms
-[0] WebRTC audio stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] WebRTC audio streaming stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] WebSocket signaling closed for chat 908a7571-8b3a-4fa4-948c-61fde43dddec { code: 1000, reason: 'Normal closure', wasClean: true }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0] Received answer for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 19ms
-[0] Error starting WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec [Function (anonymous)]
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6ms
-[0] Stopping WebRTC audio for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] WebRTC audio stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 4ms
-[0] WebRTC audio streaming stopped for chat 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 7ms
-[0] WebRTC audio error for chat 908a7571-8b3a-4fa4-948c-61fde43dddec Failed to execute 'setRemoteDescription' on 'RTCPeerConnection': The RTCPeerConnection's signalingState is 'closed'.
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 5ms
-[0]  GET /api/auth/session 200 in 30ms
+[0]  POST /home 200 in 18ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 9ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 14ms
+[0]  POST /home 200 in 12ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 17ms
+[0]  POST /home 200 in 8ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 12ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 7ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 5ms
+[0]  POST /home 200 in 10ms
+[0]  POST /home 200 in 11ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 17ms
+[0]  POST /home 200 in 6ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 4ms
+[0]  POST /home 200 in 7ms
+[0]  GET /api/auth/session 200 in 96ms
+[0]  GET /api/auth/session 200 in 21ms
+[0]  GET /api/auth/session 200 in 42ms
 [0]  GET /api/auth/session 200 in 8ms
-[0]  ✓ Compiled in 7.2s (6141 modules)
-[0] Global WebSocket disconnected: transport close { profileId: '965bd24f-dfae-4063-b370-e1373df46322' }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 6305ms
-[0] Leaving room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 27ms
-[0]  GET /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 204ms
-[0] Server confirmed WebSocket connection {
-[0]   serverSid: 'EiPINr_AG0Gg1lYgAAAB',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   serverTime: 1750913946.4626539,
-[0]   clientTime: 1750913946468
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 34ms
-[0] Global WebSocket connected successfully {
-[0]   socketId: 'EiPINr_AG0Gg1lYgAAAB',
-[0]   profileId: '965bd24f-dfae-4063-b370-e1373df46322',
-[0]   transport: 'websocket'
-[0] }
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 24ms
-[0] Joining room: 908a7571-8b3a-4fa4-948c-61fde43dddec (simulation) undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 40ms
-[0] Joined simulation chat room: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 59ms
-[0] Successfully joined simulation chat: 908a7571-8b3a-4fa4-948c-61fde43dddec undefined
-[0]  POST /home/a/d436c9c1-6883-4fd2-9cca-e29cd841f667 200 in 25ms
+[0]  GET /api/auth/session 200 in 153ms
+[0]  GET /api/auth/session 200 in 53ms

@@ -21,7 +21,6 @@ from sqlmodel import Session, select
 
 async def run_simulation_agent(
     chat_id: uuid.UUID,
-    input_text: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -35,6 +34,7 @@ async def run_simulation_agent(
         chat_id: The ID of the chat session (can be simulation_chat_id or eval_chat_id)
         input_text: Optional input text to send to the agent
         test_data: Whether to use test data
+        input_audio: Optional audio to send to the agent
     Yields:
         Text chunks from the agent's response
     """
@@ -44,10 +44,10 @@ async def run_simulation_agent(
         select(SimulationChats).where(SimulationChats.id == chat_id)
     ).one_or_none()
     
-    if simulation_chat and input_text:
+    if simulation_chat:
         # Handle simulation chat
         async for token in _handle_simulation_chat(
-            simulation_chat, input_text, session
+            simulation_chat, session
         ):
             yield token
     else:
@@ -69,7 +69,7 @@ def cancel_simulation_run(chat_id: uuid.UUID) -> bool:
 
 
 async def _handle_simulation_chat(
-    chat: SimulationChats, input_text: str, session: Session
+    chat: SimulationChats, session: Session
 ) -> AsyncGenerator[str, None]:
     """Handle simulation chat processing."""
 

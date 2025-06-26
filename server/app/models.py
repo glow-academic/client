@@ -2,12 +2,13 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime,
+from sqlalchemy import (ARRAY, BigInteger, Boolean, Column, DateTime, Double,
                         Enum, ForeignKeyConstraint, Integer,
-                        PrimaryKeyConstraint, String, Text, Uuid, text, Double)
+                        PrimaryKeyConstraint, String, Text, Uuid, text)
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Field, Relationship, SQLModel
 from sqlalchemy.orm import Mapped
+from sqlmodel import Field, Relationship, SQLModel
+
 
 class _Base(SQLModel):
     """Shared config so Pydantic will accept SQLAlchemy types."""

@@ -17,7 +17,6 @@ from sqlmodel import Session, select
 
 async def run_eval_agent(
     chat_id: uuid.UUID,
-    input_text: Optional[str] = None,
     session: Session = Depends(get_session),
 ) -> AsyncGenerator[str, None]:
     """
@@ -29,8 +28,6 @@ async def run_eval_agent(
 
     Args:
         chat_id: The ID of the chat session (can be simulation_chat_id or eval_chat_id)
-        input_text: Optional input text to send to the agent
-        test_data: Whether to use test data
     Yields:
         Text chunks from the agent's response
     """
@@ -40,7 +37,7 @@ async def run_eval_agent(
         select(EvalChats).where(EvalChats.id == chat_id)
     ).one_or_none()
 
-    if eval_chat and input_text:
+    if eval_chat:
         # Handle eval chat
         async for token in _handle_eval_chat(eval_chat, session):
             yield token

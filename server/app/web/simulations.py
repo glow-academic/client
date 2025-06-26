@@ -236,113 +236,6 @@ async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
         await emit_error(sid, f"Failed to send message: {str(e)}")
 
 
-async def handle_send_audio(sid: str, data: Dict[str, Any]) -> None:
-    """
-    Handle audio message sending via WebSocket
-    Transcribes audio using Whisper and processes as text
-    DEPRECATED: This is being replaced by WebRTC audio streaming
-    """
-    try:
-        # Emit deprecation warning
-        sio_instance = get_sio_instance()
-        await sio_instance.emit('audio_deprecated', {
-            'message': 'send_audio is deprecated. Please use WebRTC audio streaming instead.'
-        }, room=sid)
-        
-        # For backwards compatibility, we can still handle base64 audio
-        # but recommend using WebRTC
-        chat_id = data.get('chat_id')
-        audio_data = data.get('audio_data')  # Base64 encoded audio
-        audio_format = data.get('audio_format', 'wav')  # Default to wav
-        
-        if not chat_id or not audio_data:
-            await emit_error(sid, "Missing chat_id or audio_data")
-            return
-
-        # Create a new session for this operation
-        db_session = next(get_session())
-        
-        try:
-            # Verify the chat exists
-            chat = db_session.exec(
-                select(SimulationChats).where(SimulationChats.id == chat_id)
-            ).one_or_none()
-            if not chat:
-                await emit_error(sid, "Chat not found")
-                return
-
-            # Check if chat is completed
-            if chat.completed:
-                await emit_error(sid, "Cannot send messages to completed chat")
-                return
-
-            # Ensure client is joined to the simulation room
-            sio_instance = get_sio_instance()
-            simulation_room = f"simulation_{chat_id}"
-            await sio_instance.enter_room(sid, simulation_room)
-            logger.info(f"Client {sid} ensured in simulation room {simulation_room}")
-
-            # Decode base64 audio data
-            try:
-                audio_bytes = base64.b64decode(audio_data)
-            except Exception as e:
-                await emit_error(sid, f"Invalid base64 audio data: {str(e)}")
-                return
-
-            # Save audio to temporary file for transcription
-            with tempfile.NamedTemporaryFile(suffix=f'.{audio_format}', delete=False) as temp_file:
-                temp_file.write(audio_bytes)
-                temp_file_path = temp_file.name
-
-            try:
-                # Transcribe audio using Whisper
-                whisper_model = model_manager.get_whisper_model()
-                result = whisper_model.transcribe(
-                    temp_file_path,
-                    task='transcribe',
-                    fp16=torch.cuda.is_available(),
-                )
-                
-                transcribed_text = result['text'].strip()
-                
-                if not transcribed_text:
-                    await emit_error(sid, "Could not transcribe audio - no text detected")
-                    return
-
-                logger.info(f"Transcribed audio for chat {chat_id}: {transcribed_text[:100]}...")
-
-                # Process the transcribed message asynchronously
-                asyncio.create_task(process_simulation_message_websocket(
-                    chat_id=chat_id,
-                    message=transcribed_text,
-                    is_audio=True,
-                    audio_data=audio_bytes,
-                    session=None
-                ))
-                
-                # Emit acknowledgment with transcription
-                await sio_instance.emit('audio_transcribed', {
-                    'chat_id': chat_id,
-                    'transcribed_text': transcribed_text,
-                    'status': 'processing',
-                    'message': 'Audio transcribed and being processed (via deprecated method)'
-                }, room=sid)
-
-            finally:
-                # Clean up temporary file
-                try:
-                    os.unlink(temp_file_path)
-                except OSError:
-                    pass
-
-        finally:
-            db_session.close()
-
-    except Exception as e:
-        logger.error(f"Error processing audio for {sid}: {str(e)}")
-        await emit_error(sid, f"Failed to process audio: {str(e)}")
-
-
 async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
     """
     Handle simulation stop requests via WebSocket
@@ -612,7 +505,7 @@ async def process_simulation_message_websocket(
         cancelled = False
         
         try:
-            async for token in run_simulation_agent(uuid.UUID(chat_id), message, db_session):
+            async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
                 # Regular content token
                 accumulated_content += token
                 
@@ -711,11 +604,6 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
     async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         """Send a text message in simulation"""
         await handle_send_message(sid, data)
-    
-    @sio.event  # type: ignore
-    async def send_audio(sid: str, data: Dict[str, Any]) -> None:
-        """Send an audio message in simulation"""
-        await handle_send_audio(sid, data)
     
     @sio.event  # type: ignore
     async def stop_simulation(sid: str, data: Dict[str, Any]) -> None:
