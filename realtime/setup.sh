@@ -28,6 +28,37 @@ log_error() {
   echo -e "${RED}[ERROR]${NC} $1"
 }
 
+############################################
+# 1 · helper: discover our LAN interface   #
+############################################
+get_private_ip() {
+  # macOS: ipconfig, Linux: hostname -I
+  if command -v ipconfig &>/dev/null; then
+    ipconfig getifaddr en0 2>/dev/null || echo "127.0.0.1"
+  else
+    hostname -I 2>/dev/null | awk '{print $1}'
+  fi
+}
+
+############################################
+#  ✨  Helper: build TURN/STUN URI strings  #
+############################################
+build_ice_uris() {
+  local ip="$1"           # public IP or hostname
+  local port="${2:-3478}" # default TURN port
+
+  # TURN – build "turn:<ip>:<port>?transport=udp,tcp"
+  local _transports=(udp tcp)
+  local _turn_list=()
+  for _proto in "${_transports[@]}"; do
+    _turn_list+=("turn:${ip}:${port}?transport=${_proto}")
+  done
+  TURN_URI="$(IFS=,; echo "${_turn_list[*]}")"
+
+  # STUN – single URI is enough
+  STUN_URI="stun:${ip}:${port}"
+}
+
 # Get public IP for TURN server configuration
 get_public_ip() {
   local public_ip=""
@@ -180,19 +211,8 @@ setup_turn_env() {
   export TURN_USERNAME="${TURN_USERNAME:-localuser}"
   export TURN_PASSWORD="${TURN_PASSWORD:-localpass}"
   
-  # Override with localhost for local development if public IP detection failed
-  if [[ "$TURN_PUBLIC_IP" == "localhost" ]]; then
-    export TURN_PUBLIC_IP="127.0.0.1"
-  fi
-  
-  # Set URIs based on environment
-  if [[ -z "${TURN_URI:-}" ]]; then
-    export TURN_URI="turn:${TURN_PUBLIC_IP}:3478?transport=udp"
-  fi
-  
-  if [[ -z "${STUN_URI:-}" ]]; then
-    export STUN_URI="stun:${TURN_PUBLIC_IP}:3478"
-  fi
+  build_ice_uris "$TURN_PUBLIC_IP" 3478
+  export TURN_URI STUN_URI
   
   log_info "TURN server configuration:"
   log_info "  Public IP: $TURN_PUBLIC_IP"
@@ -246,23 +266,22 @@ setup_turn_server() {
       -p 3478:3478/udp \
       -p 3478:3478/tcp \
       -p 49160-49200:49160-49200/udp \
-      coturn/coturn:4.6 \
-      --log-file=stdout \
-      --no-dtls \
-      --no-tls \
-      --lt-cred-mech \
-      --realm="$TURN_REALM" \
-      --user="$TURN_USERNAME:$TURN_PASSWORD" \
-      --external-ip="$TURN_PUBLIC_IP" \
-      --listening-port=3478 \
-      --min-port=49160 \
-      --max-port=49200 \
-      --verbose
-    
-    # Wait for container to start
+      coturn/coturn:4.6 turnserver \
+        --log-file=stdout \
+        --lt-cred-mech \
+        --no-tls \
+        --no-dtls \
+        --verbose \
+        --listening-port=3478 \
+        --min-port=49160 \
+        --max-port=49200 \
+        --realm="$TURN_REALM" \
+        --user="$TURN_USERNAME:$TURN_PASSWORD" \
+        --listening-ip="0.0.0.0" \
+        --external-ip="$TURN_PUBLIC_IP"
+        
     sleep 5
     
-    # Check if container is running and healthy
     local container_running=false
     for i in {1..10}; do
       if docker ps | grep -q glow-realtime; then

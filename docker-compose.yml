@@ -3,6 +3,8 @@ networks:
   internal:
     driver: bridge
     internal: true
+  public_net:               # <-- NEW: normal bridge
+    driver: bridge
 
 services:
   # --------------------
@@ -154,42 +156,32 @@ services:
   realtime:
     image: coturn/coturn:4.6
     container_name: glow-realtime
-    command:
-      - --log-file=stdout
-      - --no-dtls
-      - --no-tls
-      - --lt-cred-mech
-      - --realm=${TURN_REALM:-localhost}
-      - --user=${TURN_USERNAME:-localuser}:${TURN_PASSWORD:-localpass}
-      - --external-ip=${TURN_PUBLIC_IP:-127.0.0.1}
-      - --listening-port=3478
-      - --min-port=49160
-      - --max-port=49200
-      - --verbose
-      - --fingerprint
-      - --mobility
+    command: >
+      turnserver
+        --log-file=stdout
+        --no-dtls --no-tls --lt-cred-mech
+        --realm=${TURN_REALM:-localhost}
+        --user=${TURN_USERNAME:-localuser}:${TURN_PASSWORD:-localpass}
+        # advertise public/LAN pair
+        --external-ip=${TURN_PUBLIC_IP}/${TURN_PRIVATE_IP:-172.17.0.1}
+        --listening-port=3478
+        --min-port=49160 --max-port=49200
+        --fingerprint --mobility --verbose
     ports:
-      # STUN / TURN discovery (UDP + TCP 3478)
       - "3478:3478/udp"
       - "3478:3478/tcp"
-      # Relay ports (UDP only is usually enough)
       - "49160-49200:49160-49200/udp"
+      - "49160-49200:49160-49200/tcp"
     environment:
-      - TURN_PUBLIC_IP=${TURN_PUBLIC_IP:-127.0.0.1}
-      - TURN_REALM=${TURN_REALM:-localhost}
-      - TURN_USERNAME=${TURN_USERNAME:-localuser}
-      - TURN_PASSWORD=${TURN_PASSWORD:-localpass}
-      - TURN_URI=${TURN_URI:-turn:127.0.0.1:3478?transport=udp}
-      - STUN_URI=${STUN_URI:-stun:stun.l.google.com:19302}
+      - TURN_PUBLIC_IP=${TURN_PUBLIC_IP}
+      - TURN_PRIVATE_IP=${TURN_PRIVATE_IP:-172.17.0.1}
+      - TURN_REALM=${TURN_REALM}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD}
     networks:
-      - internal
+      - internal      # talk to client/server
+      - public_net    # expose to the world
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "nc -z -u localhost 3478 || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
 
 volumes:
   pgdata:
