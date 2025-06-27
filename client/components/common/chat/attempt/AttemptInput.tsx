@@ -26,11 +26,7 @@ import {
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 
-interface AttemptInputProps {
-  attemptId: string;
-}
-
-export default function AttemptInput({ attemptId }: AttemptInputProps) {
+export default function AttemptInput() {
   const {
     simulation,
     isActive,
@@ -79,7 +75,7 @@ export default function AttemptInput({ attemptId }: AttemptInputProps) {
 
   // Handle end chat
   const handleEndChat = async () => {
-    endChat(attemptId);
+    endChat();
   };
 
   // Handle WebRTC recording

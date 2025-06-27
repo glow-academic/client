@@ -5,25 +5,13 @@
  * 06/27/2025
  */
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+
 import {
   ResizableHandle,
   ResizablePanel,
@@ -41,8 +29,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
 import {
-  Check,
-  ChevronsUpDown,
   Clock,
   FileText,
   PanelRightClose,
@@ -58,16 +44,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { CircularProgress } from "@/components/ui/circular-progress";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationChat } from "@/types";
+import { formatTime } from "@/utils/time";
 
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
-export default function AttemptChat({ attemptId }: { attemptId: string }) {
+export default function AttemptChat() {
   const {
     simulation,
     scenario,
@@ -82,6 +70,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     isActive,
     showResults,
     isSingleChatAttempt,
+    expectedChatCount,
   } = useSimulation();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
@@ -90,7 +79,6 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
   const [selectedDocumentId, setSelectedDocumentId] = useState<string | null>(
     null
   );
-  const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
@@ -99,7 +87,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
   }, [selectedChatId, chats]);
 
   // Auto-select first completed chat when results show and default to showing rubric if all chats completed
-  useState(() => {
+  useEffect(() => {
     if (showResults && chats && chats.length > 0 && !selectedChatId) {
       const completedChats = chats.filter(
         (chat: SimulationChat) => chat.completed
@@ -113,10 +101,10 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
         }
       }
     }
-  });
+  }, [showResults, chats, selectedChatId]);
 
   // Set default selected document
-  useState(() => {
+  useEffect(() => {
     if (
       scenarioDocuments.length > 0 &&
       !selectedDocumentId &&
@@ -124,13 +112,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     ) {
       setSelectedDocumentId(scenarioDocuments[0].id);
     }
-  });
-
-  const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
-  };
+  }, [scenarioDocuments, selectedDocumentId]);
 
   if (isLoadingChats) {
     return (
@@ -374,6 +356,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                           <AttemptMessages
                             simulation={simulation}
                             isActive={true}
+                            chatId={selectedChat.id}
                           />
                         </div>
                       ) : (
@@ -401,57 +384,11 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                     {/* Select dropdown directly above document */}
                     {scenarioDocuments.length > 1 && (
                       <div className="p-3 pb-2 border-b">
-                        <Popover
-                          open={documentSearchOpen}
-                          onOpenChange={setDocumentSearchOpen}
-                        >
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              aria-expanded={documentSearchOpen}
-                              className="w-full justify-between"
-                            >
-                              {selectedDocumentId
-                                ? scenarioDocuments.find(
-                                    (doc) => doc.id === selectedDocumentId
-                                  )?.name
-                                : "Select document..."}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-full p-0" align="start">
-                            <Command>
-                              <CommandInput placeholder="Search documents..." />
-                              <CommandList>
-                                <CommandEmpty>No document found.</CommandEmpty>
-                                <CommandGroup>
-                                  {scenarioDocuments.map((doc) => (
-                                    <CommandItem
-                                      key={doc.id}
-                                      value={doc.name}
-                                      onSelect={() => {
-                                        setSelectedDocumentId(doc.id);
-                                        setDocumentSearchOpen(false);
-                                      }}
-                                    >
-                                      <Check
-                                        className={`mr-2 h-4 w-4 ${
-                                          selectedDocumentId === doc.id
-                                            ? "opacity-100"
-                                            : "opacity-0"
-                                        }`}
-                                      />
-                                      <span className="truncate">
-                                        {doc.name}
-                                      </span>
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
+                        <DocumentSelect
+                          documents={scenarioDocuments}
+                          selectedDocumentId={selectedDocumentId}
+                          onDocumentSelect={setSelectedDocumentId}
+                        />
                       </div>
                     )}
                     {/* Document viewer with minimal padding */}
@@ -507,39 +444,35 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {simulation?.scenarioIds?.length &&
-                              simulation?.scenarioIds?.length > 1 && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                      <CircularProgress
-                                        progress={
-                                          (chats.filter(
-                                            (chat: SimulationChat) =>
-                                              chat.completed
-                                          ).length /
-                                            (simulation?.scenarioIds?.length ||
-                                              1)) *
-                                          100
-                                        }
-                                        size={64}
-                                      />
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>
-                                      {
-                                        chats.filter(
+                            {expectedChatCount > 1 && (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="text-sm text-muted-foreground flex items-center gap-2">
+                                    <CircularProgress
+                                      progress={
+                                        (chats.filter(
                                           (chat: SimulationChat) =>
                                             chat.completed
-                                        ).length
-                                      }{" "}
-                                      of {simulation?.scenarioIds?.length} chats
-                                      completed
-                                    </p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
+                                        ).length /
+                                          expectedChatCount) *
+                                        100
+                                      }
+                                      size={64}
+                                    />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {
+                                      chats.filter(
+                                        (chat: SimulationChat) => chat.completed
+                                      ).length
+                                    }{" "}
+                                    of {expectedChatCount} chats completed
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
 
                             {scenarioDocuments.length > 0 && (
                               <Tooltip>
@@ -628,7 +561,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                 <ResizableHandle />
                 {/* Input Area */}
                 <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                  <AttemptInput attemptId={attemptId} />
+                  <AttemptInput />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </TooltipProvider>
@@ -645,55 +578,11 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                   {/* Select dropdown directly above document */}
                   {scenarioDocuments.length > 1 && (
                     <div className="p-3 pb-2 border-b">
-                      <Popover
-                        open={documentSearchOpen}
-                        onOpenChange={setDocumentSearchOpen}
-                      >
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            aria-expanded={documentSearchOpen}
-                            className="w-full justify-between"
-                          >
-                            {selectedDocumentId
-                              ? scenarioDocuments.find(
-                                  (doc) => doc.id === selectedDocumentId
-                                )?.name
-                              : "Select document..."}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0" align="start">
-                          <Command>
-                            <CommandInput placeholder="Search documents..." />
-                            <CommandList>
-                              <CommandEmpty>No document found.</CommandEmpty>
-                              <CommandGroup>
-                                {scenarioDocuments.map((doc) => (
-                                  <CommandItem
-                                    key={doc.id}
-                                    value={doc.name}
-                                    onSelect={() => {
-                                      setSelectedDocumentId(doc.id);
-                                      setDocumentSearchOpen(false);
-                                    }}
-                                  >
-                                    <Check
-                                      className={`mr-2 h-4 w-4 ${
-                                        selectedDocumentId === doc.id
-                                          ? "opacity-100"
-                                          : "opacity-0"
-                                      }`}
-                                    />
-                                    <span className="truncate">{doc.name}</span>
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
+                      <DocumentSelect
+                        documents={scenarioDocuments}
+                        selectedDocumentId={selectedDocumentId}
+                        onDocumentSelect={setSelectedDocumentId}
+                      />
                     </div>
                   )}
                   {/* Document viewer with minimal padding */}

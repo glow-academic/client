@@ -65,6 +65,7 @@ interface TimerState {
 
 interface SimulationContextType {
   // Attempt and simulation data
+  attemptId: string;
   attempt: SimulationAttempt | null;
   simulation: Simulation | null;
   scenario: Scenario | null;
@@ -90,6 +91,7 @@ interface SimulationContextType {
   // UI state
   showResults: boolean;
   isSingleChatAttempt: boolean;
+  expectedChatCount: number;
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
 
@@ -99,7 +101,7 @@ interface SimulationContextType {
   // WebSocket operations
   sendMessage: (message: string) => void;
   stopMessage: () => void;
-  endChat: (attemptId: string) => void;
+  endChat: () => void;
 
   // WebRTC Audio operations
   startRecording: () => void;
@@ -445,8 +447,10 @@ export function SimulationProvider({
     };
   }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
 
-  // Determine if this is a single chat attempt
-  const isSingleChatAttempt = chats?.length === 1;
+  // Determine if this is a single chat attempt and calculate expected chat count
+  const expectedChatCount =
+    simulation?.scenarioIds?.length || chats?.length || 1;
+  const isSingleChatAttempt = expectedChatCount === 1;
 
   // Timer calculation
   const timer = useMemo((): TimerState => {
@@ -567,8 +571,9 @@ export function SimulationProvider({
         }
       }
     }
-    // Always return a cleanup function, even if it's empty
-    return () => {};
+    return () => {
+      setFreshlyCompletedChats(new Set());
+    };
   }, [
     currentChat?.completed,
     currentChat?.id,
@@ -706,35 +711,32 @@ export function SimulationProvider({
     }
   }, [currentChat, isStoppingMessage, emitStopSimulation]);
 
-  const endChat = useCallback(
-    async (attemptId: string) => {
-      if (!currentChat) return;
+  const endChat = useCallback(async () => {
+    if (!currentChat) return;
 
-      setEndChatLoading(true);
+    setEndChatLoading(true);
 
-      try {
-        emitContinueSimulation({
-          chat_id: currentChat.id,
-          attempt_id: attemptId,
-        });
+    try {
+      emitContinueSimulation({
+        chat_id: currentChat.id,
+        attempt_id: attemptId,
+      });
 
-        setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
+      setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
 
-        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-        queryClient.invalidateQueries({
-          queryKey: ["simulationChats", attemptId],
-        });
-        queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-        queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-        toast.success("Chat ended successfully");
-      } catch (error) {
-        toast.error(`Failed to end chat: ${error}`);
-      } finally {
-        setEndChatLoading(false);
-      }
-    },
-    [currentChat, emitContinueSimulation, queryClient]
-  );
+      queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+      queryClient.invalidateQueries({
+        queryKey: ["simulationChats", attemptId],
+      });
+      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+      toast.success("Chat ended successfully");
+    } catch (error) {
+      toast.error(`Failed to end chat: ${error}`);
+    } finally {
+      setEndChatLoading(false);
+    }
+  }, [currentChat, emitContinueSimulation, queryClient, attemptId]);
 
   // WebRTC Audio handlers
   const startRecording = useCallback(async () => {
@@ -995,6 +997,7 @@ export function SimulationProvider({
 
   const value: SimulationContextType = {
     // Data
+    attemptId,
     attempt: attempt || null,
     simulation: simulation || null,
     scenario: scenario || null,
@@ -1020,6 +1023,7 @@ export function SimulationProvider({
     // UI state
     showResults,
     isSingleChatAttempt,
+    expectedChatCount,
     freshlyCompletedChats,
     setFreshlyCompletedChats,
 

@@ -20,18 +20,18 @@ import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 import { Simulation, SimulationMessage } from "@/types";
-import { getClass } from "@/utils/queries/classes/get-class";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
 interface AttemptMessagesProps {
   simulation: Simulation | null;
   isActive: boolean;
+  chatId?: string; // Optional override for which chat to show messages for
 }
 
 export default function AttemptMessages({
   simulation,
   isActive,
+  chatId,
 }: AttemptMessagesProps) {
   const { currentChat, sendMessage, isSendingMessage } = useSimulation();
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -39,24 +39,14 @@ export default function AttemptMessages({
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-  // Fetch messages for current chat
+  // Use the provided chatId or fall back to currentChat
+  const targetChatId = chatId || currentChat?.id;
+
+  // Fetch messages for target chat
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
-    queryKey: ["simulationMessages", currentChat?.id],
-    queryFn: () => getSimulationMessagesByChat(currentChat!.id),
-    enabled: !!currentChat,
-  });
-
-  // Fetch scenario for current chat
-  const { data: scenario, isLoading: scenarioLoading } = useQuery({
-    queryKey: ["interaction", currentChat?.scenarioId],
-    queryFn: () => getScenario(currentChat!.scenarioId),
-    enabled: !!currentChat,
-  });
-
-  const { data: classData } = useQuery({
-    queryKey: ["class", scenario?.classId],
-    queryFn: () => getClass(scenario!.classId!),
-    enabled: !!scenario,
+    queryKey: ["simulationMessages", targetChatId],
+    queryFn: () => getSimulationMessagesByChat(targetChatId!),
+    enabled: !!targetChatId,
   });
 
   // Generate starter prompts
@@ -65,25 +55,10 @@ export default function AttemptMessages({
       "Hi, how are you?",
       "What can I help you with?",
       "I'm ready to assist you today",
-      "How can I support your learning?",
-      "What would you like to work on?",
     ];
 
-    if (classData?.classCode) {
-      basePrompts.push(`Are you here for ${classData.classCode}?`);
-    }
-
-    // Return 3-4 prompts, prioritizing the class-specific one if available
-    if (classData?.classCode) {
-      return [
-        "Hi, how are you?",
-        "What can I help you with?",
-        `Are you here for ${classData.classCode}?`,
-      ];
-    }
-
-    return basePrompts.slice(0, 3);
-  }, [classData?.classCode]);
+    return basePrompts;
+  }, []);
 
   // Handle starter prompt click
   const handleStarterPromptClick = (prompt: string) => {
@@ -142,7 +117,7 @@ export default function AttemptMessages({
     };
   }, [messages.length]);
 
-  if (messagesLoading || scenarioLoading) {
+  if (messagesLoading) {
     return (
       <div className="flex-1 flex flex-col p-0 min-h-0 relative">
         <ScrollArea className="flex-1 px-4 min-h-0">

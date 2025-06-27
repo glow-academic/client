@@ -5,9 +5,9 @@
  * 06/08/2025
  */
 
-import Attempt from "@/components/common/chat/Attempt";
-// import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-// import { SimulationProvider } from "@/contexts/simulation-context";
+// import Attempt from "@/components/common/chat/Attempt";
+import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
+import { SimulationProvider } from "@/contexts/simulation-context";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { Metadata, ResolvingMetadata } from "next";
@@ -44,10 +44,10 @@ export default function AttemptPage({
   const { attemptId } = use(params);
   return (
     <div className="space-y-6">
-      {/* <SimulationProvider attemptId={attemptId}>
-        <AttemptChat attemptId={attemptId} />
-      </SimulationProvider> */}
-      <Attempt attemptId={attemptId} />
+      <SimulationProvider attemptId={attemptId}>
+        <AttemptChat />
+      </SimulationProvider>
+      {/* <Attempt attemptId={attemptId} /> */}
     </div>
   );
 }
