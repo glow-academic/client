@@ -762,14 +762,16 @@ export function SimulationProvider({
 
   // WebRTC Audio handlers
   const startRecording = useCallback(async () => {
-    if (!currentChat?.id || !isWebRTCSupported) {
-      toast.error("Audio is not supported on this browser.");
+    if (!currentChat?.id || !isWebRTCSupported || isRecording) {
+      if (!isWebRTCSupported) {
+        toast.error("Audio is not supported on this browser.");
+      }
       return;
     }
 
     setIsRecording(true);
     await startAudioStream(currentChat.id);
-  }, [currentChat?.id, isWebRTCSupported, startAudioStream]);
+  }, [currentChat?.id, isWebRTCSupported, startAudioStream, isRecording]);
 
   const stopRecording = useCallback(async () => {
     if (!currentChat?.id) return;

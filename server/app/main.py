@@ -175,6 +175,9 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
     config = RTCConfiguration(iceServers=ice_servers_list)
     pc = RTCPeerConnection(configuration=config)
     
+    # Prepare to receive an audio track
+    pc.addTransceiver("audio", direction="recvonly")
+    
     # Store the peer connection
     webrtc_peer_connections[profile_id] = pc
     webrtc_data_channels[profile_id] = {}
