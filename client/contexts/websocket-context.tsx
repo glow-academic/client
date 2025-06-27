@@ -1080,12 +1080,18 @@ export function WebSocketProvider({
       });
 
       // Use the Next.js proxy route for Socket.IO connections
-      const socketUrl = getApiUrl();
+      const origin = window.location.origin;
+      const port = window.location.port;
+      const originWithoutPort = origin.replace(`:${port}`, "");
+      logInfo("Origin without port", { originWithoutPort });
+      const socketUrl =
+        process.env.NODE_ENV === "development"
+          ? getApiUrl()
+          : originWithoutPort;
       const socketPath = "/socket.io";
-
       const socket = io(socketUrl, {
         path: socketPath,
-        transports: ["websocket"],
+        transports: ["websocket", "polling"], // temporary until we fix the nginx proxy
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout
