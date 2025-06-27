@@ -588,8 +588,13 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
         ice_candidate.sdpMid = candidate_data.get("sdpMid")
         ice_candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
 
-        await pc.addIceCandidate(ice_candidate)
-        logger.debug("Added ICE candidate for %s", profile_id)
+        # Buffer candidate if remote description is not yet set
+        if not pc.remoteDescription:
+            logger.info(f"Buffering ICE candidate for {profile_id} (remote description not set)")
+            webrtc_ice_candidates_buffer.setdefault(profile_id, []).append(ice_candidate)
+        else:
+            await pc.addIceCandidate(ice_candidate)
+            logger.info(f"Successfully added ICE candidate for {profile_id}")
 
     except Exception as e:
         logger.error(
