@@ -604,18 +604,44 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
 
 @sio.event  # type: ignore
 async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
-    """Signal from client that they are starting to send an audio track."""
+    """Signal from client that they are starting to send an audio track, and trigger renegotiation."""
     profile_id = data.get("profile_id")
     chat_id = data.get("chat_id")
     if not profile_id or not chat_id:
         logger.error("Missing profile_id or chat_id for webrtc_start_audio")
         return
 
-    logger.info(f"Client {sid} is starting audio for chat {chat_id}")
+    logger.info(f"Client {sid} is starting audio for chat {chat_id}, beginning renegotiation.")
+    
+    pc = webrtc_peer_connections.get(profile_id)
+    if not pc:
+        logger.error(f"No peer connection found for profile {profile_id} to start audio.")
+        await sio.emit('webrtc_error', {'error': 'Peer connection not found.'}, room=sid)
+        return
+
     # Associate the next track for this profile with this chat_id.
-    # This is a bit of a simplification. A more robust solution might use a track-specific ID.
-    if profile_id in webrtc_peer_connections:
-        webrtc_peer_connections[profile_id].__dict__["_last_chat_id"] = chat_id
+    pc.__dict__["_last_chat_id"] = chat_id
+
+    try:
+        # Create a new offer to trigger renegotiation
+        offer = await pc.createOffer()
+        await pc.setLocalDescription(offer)
+        
+        # Send the new offer to the client
+        await sio.emit('webrtc_offer', {
+            'profile_id': profile_id,
+            'offer': {
+                'sdp': offer.sdp,
+                'type': offer.type
+            },
+            'ice_config': _build_ice_servers() # Resending config might be needed by client
+        }, room=sid)
+        
+        logger.info(f"Sent renegotiation offer to profile {profile_id} for chat {chat_id}")
+
+    except Exception as e:
+        logger.error(f"Error during audio start renegotiation for profile {profile_id}: {e}", exc_info=True)
+        await sio.emit('webrtc_error', {'error': f'Failed to renegotiate for audio: {e}'}, room=sid)
 
 @sio.event  # type: ignore
 async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:

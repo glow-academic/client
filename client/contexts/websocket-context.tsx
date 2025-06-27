@@ -762,66 +762,76 @@ export function WebSocketProvider({
           logInfo("Received WebRTC offer", { profileId: data.profile_id });
 
           try {
-            // Create peer connection using the configuration from the server
-            const pc = new RTCPeerConnection({ iceServers: data.ice_config });
-            webRTCPeerConnection.current = pc;
+            let pc = webRTCPeerConnection.current;
 
-            // Handle ICE candidates
-            pc.onicecandidate = (event) => {
-              if (socket.connected) {
-                socket.emit("webrtc_ice_candidate", {
-                  profile_id: profileId,
-                  // When event.candidate is null we send null → end-of-candidates
-                  candidate: event.candidate
-                    ? {
-                        candidate: event.candidate.candidate,
-                        sdpMid: event.candidate.sdpMid,
-                        sdpMLineIndex: event.candidate.sdpMLineIndex,
-                      }
-                    : null,
-                });
-              }
-            };
+            if (!pc) {
+              logInfo("Creating new PeerConnection for initial setup.");
+              pc = new RTCPeerConnection({ iceServers: data.ice_config });
+              webRTCPeerConnection.current = pc;
 
-            // Handle connection state changes
-            pc.onconnectionstatechange = () => {
-              setWebRTCConnectionState(pc.connectionState);
-              setIsWebRTCConnected(pc.connectionState === "connected");
-              logInfo(`WebRTC connection state: ${pc.connectionState}`);
-            };
-
-            pc.ontrack = (event) => {
-              logInfo("Received remote audio track", {
-                streamId: event.streams[0]?.id,
-              });
-              const stream = event.streams[0];
-              if (stream) {
-                // This is a bit of a hack. We don't know which chat this track is for
-                // until the server tells us. We'll assume it's for the last room joined.
-                const lastJoinedRoom = Array.from(
-                  currentRoomsRef.current
-                ).pop();
-                if (lastJoinedRoom) {
-                  const audio = new Audio();
-                  audio.srcObject = stream;
-                  audio.autoplay = true;
-                  remoteAudioStreams.current.set(lastJoinedRoom, audio);
-
-                  stream.onremovetrack = () => {
-                    const existingAudio =
-                      remoteAudioStreams.current.get(lastJoinedRoom);
-                    if (existingAudio) {
-                      existingAudio.pause();
-                      existingAudio.srcObject = null;
-                      remoteAudioStreams.current.delete(lastJoinedRoom);
-                      logInfo(
-                        `Remote audio stream removed for chat ${lastJoinedRoom}`
-                      );
-                    }
-                  };
+              // Handle ICE candidates
+              pc.onicecandidate = (event) => {
+                if (socket.connected) {
+                  socket.emit("webrtc_ice_candidate", {
+                    profile_id: profileId,
+                    // When event.candidate is null we send null → end-of-candidates
+                    candidate: event.candidate
+                      ? {
+                          candidate: event.candidate.candidate,
+                          sdpMid: event.candidate.sdpMid,
+                          sdpMLineIndex: event.candidate.sdpMLineIndex,
+                        }
+                      : null,
+                  });
                 }
-              }
-            };
+              };
+
+              // Handle connection state changes
+              pc.onconnectionstatechange = () => {
+                if (webRTCPeerConnection.current) {
+                  const currentState =
+                    webRTCPeerConnection.current.connectionState;
+                  setWebRTCConnectionState(currentState);
+                  setIsWebRTCConnected(currentState === "connected");
+                  logInfo(`WebRTC connection state: ${currentState}`);
+                }
+              };
+
+              pc.ontrack = (event) => {
+                logInfo("Received remote audio track", {
+                  streamId: event.streams[0]?.id,
+                });
+                const stream = event.streams[0];
+                if (stream) {
+                  // This is a bit of a hack. We don't know which chat this track is for
+                  // until the server tells us. We'll assume it's for the last room joined.
+                  const lastJoinedRoom = Array.from(
+                    currentRoomsRef.current
+                  ).pop();
+                  if (lastJoinedRoom) {
+                    const audio = new Audio();
+                    audio.srcObject = stream;
+                    audio.autoplay = true;
+                    remoteAudioStreams.current.set(lastJoinedRoom, audio);
+
+                    stream.onremovetrack = () => {
+                      const existingAudio =
+                        remoteAudioStreams.current.get(lastJoinedRoom);
+                      if (existingAudio) {
+                        existingAudio.pause();
+                        existingAudio.srcObject = null;
+                        remoteAudioStreams.current.delete(lastJoinedRoom);
+                        logInfo(
+                          `Remote audio stream removed for chat ${lastJoinedRoom}`
+                        );
+                      }
+                    };
+                  }
+                }
+              };
+            } else {
+              logInfo("Using existing PeerConnection for renegotiation.");
+            }
 
             // Set remote description
             await pc.setRemoteDescription({
