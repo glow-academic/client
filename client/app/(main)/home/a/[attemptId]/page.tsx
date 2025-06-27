@@ -5,7 +5,6 @@
  * 06/08/2025
  */
 
-// import Attempt from "@/components/common/chat/Attempt";
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
 import { SimulationProvider } from "@/contexts/simulation-context";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
@@ -47,7 +46,6 @@ export default function AttemptPage({
       <SimulationProvider attemptId={attemptId}>
         <AttemptChat />
       </SimulationProvider>
-      {/* <Attempt attemptId={attemptId} /> */}
     </div>
   );
 }

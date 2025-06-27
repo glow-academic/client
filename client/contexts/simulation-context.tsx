@@ -170,6 +170,7 @@ export function SimulationProvider({
   const queryClient = useQueryClient();
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
+  const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
 
   // Use the global WebSocket context
   const {
@@ -560,9 +561,9 @@ export function SimulationProvider({
     let timerTimeout: NodeJS.Timeout | null = null;
 
     if (currentChat?.completed && !showResults) {
-      const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
+      const isFresh = freshlyCompletedChatsRef.current.has(currentChat.id); // make this a ref
 
-      if (isFreshlyCompleted) {
+      if (isFresh) {
         if (
           !isSingleChatAttempt &&
           currentChatIndex < (chats?.length || 0) - 1
@@ -582,22 +583,14 @@ export function SimulationProvider({
           onSimulationFinished?.();
         }
       }
+
+      freshlyCompletedChatsRef.current = new Set();
     }
 
     return () => {
       if (timerTimeout) clearTimeout(timerTimeout);
-      setFreshlyCompletedChats(new Set());
     };
-  }, [
-    currentChat?.completed,
-    currentChat?.id,
-    currentChatIndex,
-    chats?.length,
-    showResults,
-    isSingleChatAttempt,
-    freshlyCompletedChats,
-    onSimulationFinished,
-  ]);
+  }, [currentChat?.completed, currentChat?.id, currentChatIndex, chats?.length, showResults, isSingleChatAttempt, onSimulationFinished]);
 
   // Check if all chats are completed and show results
   useEffect(() => {
