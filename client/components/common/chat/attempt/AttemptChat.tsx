@@ -5,9 +5,9 @@
  * 06/27/2025
  */
 "use client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
@@ -72,7 +72,6 @@ import {
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
 import { useSimulation } from "@/contexts/simulation-context";
 import { Document, SimulationChat } from "@/types";
-import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -83,9 +82,9 @@ import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 
+import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
-import AttemptResults from "./AttemptResults";
 
 // Dynamic rubric interface based on grades/feedback
 interface DynamicRubric {
@@ -180,18 +179,9 @@ const CircularProgress = ({
 };
 
 export default function AttemptChat({ attemptId }: { attemptId: string }) {
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  const {
-    currentChat,
-    chats,
-    isLoadingChats,
-    currentChatIndex,
-    setCurrentChatIndex,
-    freshlyCompletedChats,
-    setFreshlyCompletedChats,
-  } = useSimulation();
+  const { currentChat, chats, isLoadingChats } = useSimulation();
 
   const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -230,36 +220,32 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
 
   const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
     {
-      queryKey: ["standardGroups", rubrics?.map((rubric: any) => rubric.id)],
+      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
       queryFn: () =>
-        getStandardGroupsByRubrics(rubrics!.map((rubric: any) => rubric.id)),
+        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
       enabled: !!rubrics,
     }
   );
 
   const { data: standards, isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group: any) => group.id)],
+    queryKey: ["standards", standardGroups?.map((group) => group.id)],
     queryFn: () =>
-      getStandardsByStandardGroups(
-        standardGroups!.map((group: any) => group.id)
-      ),
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
     enabled: !!standardGroups,
   });
 
   const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat: any) => chat.id)],
+    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
     queryFn: () =>
-      getSimulationChatGradesBySimulationChats(
-        chats!.map((chat: any) => chat.id)
-      ),
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
     enabled: !!chats,
   });
 
   const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade: any) => grade.id)],
+    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
     queryFn: () =>
       getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade: any) => grade.id)
+        grades!.map((grade) => grade.id)
       ),
     enabled: !!grades,
   });
@@ -270,23 +256,6 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     queryFn: () => getScenario(currentChat!.scenarioId),
     enabled: !!currentChat,
   });
-
-  const { data: classData } = useQuery({
-    queryKey: ["class", scenario?.classId],
-    queryFn: () => getClass(scenario!.classId!),
-    enabled: !!scenario,
-  });
-
-  // Helper function to calculate actual time taken from database timestamps
-  const calculateActualTimeTaken = useCallback(
-    (chat: SimulationChat): number => {
-      return (
-        grades?.find((grade: any) => grade.simulationChatId === chat.id)
-          ?.timeTaken || 0
-      );
-    },
-    [grades]
-  );
 
   // Create dynamic rubric for current chat based on grades/feedback
   const currentDynamicRubric = useMemo((): DynamicRubric | null => {
@@ -300,12 +269,12 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
       return null;
 
     const chatGrade = grades.find(
-      (grade: any) => grade.simulationChatId === currentChat.id
+      (grade) => grade.simulationChatId === currentChat.id
     );
     if (!chatGrade) return null;
 
     const chatFeedbacks = feedbacks.filter(
-      (feedback: any) => feedback.simulationChatGradeId === chatGrade.id
+      (feedback) => feedback.simulationChatGradeId === chatGrade.id
     );
 
     // Calculate skill scores and feedbacks
@@ -313,28 +282,28 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     const skillFeedbacks: Record<string, string> = {};
     let totalPossiblePoints = 0;
 
-    standardGroups.forEach((group: any) => {
+    standardGroups.forEach((group) => {
       const groupStandards = standards.filter(
-        (s: any) => s.standardGroupId === group.id
+        (s) => s.standardGroupId === group.id
       );
-      const groupFeedbacks = chatFeedbacks.filter((f: any) =>
-        groupStandards.some((s: any) => s.id === f.standardId)
+      const groupFeedbacks = chatFeedbacks.filter((f) =>
+        groupStandards.some((s) => s.id === f.standardId)
       );
 
       if (groupFeedbacks.length > 0) {
         // Use group.points instead of max standard points for correct total calculation
         const groupMaxPoints = group.points;
         const maxStandardPoints = Math.max(
-          ...groupStandards.map((s: any) => s.points)
+          ...groupStandards.map((s) => s.points)
         );
         const avgScore =
-          groupFeedbacks.reduce((sum: number, f: any) => sum + f.total, 0) /
+          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
           groupFeedbacks.length;
         const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5); // Convert to 1-5 scale
 
         skillScores[group.name] = normalizedScore;
         skillFeedbacks[group.shortName] = groupFeedbacks
-          .map((f: any) => f.feedback)
+          .map((f) => f.feedback)
           .join("; ");
         totalPossiblePoints += groupMaxPoints; // Use group points for total
       }
@@ -353,76 +322,6 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
       totalPossiblePoints,
     };
   }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
-
-  // Create dynamic rubrics for all completed chats
-  const allDynamicRubrics = useMemo((): DynamicRubric[] => {
-    if (!chats || !grades || !feedbacks || !standards || !standardGroups)
-      return [];
-
-    const completedChats = chats.filter(
-      (chat: SimulationChat) => chat.completed
-    );
-
-    return completedChats
-      .map((chat) => {
-        const chatGrade = grades.find(
-          (grade: any) => grade.simulationChatId === chat.id
-        );
-        if (!chatGrade) return null;
-
-        const chatFeedbacks = feedbacks.filter(
-          (feedback: any) => feedback.simulationChatGradeId === chatGrade.id
-        );
-
-        // Calculate skill scores and feedbacks
-        const skillScores: Record<string, number> = {};
-        const skillFeedbacks: Record<string, string> = {};
-        let totalPossiblePoints = 0;
-
-        standardGroups.forEach((group: any) => {
-          const groupStandards = standards.filter(
-            (s: any) => s.standardGroupId === group.id
-          );
-          const groupFeedbacks = chatFeedbacks.filter((f: any) =>
-            groupStandards.some((s: any) => s.id === f.standardId)
-          );
-
-          if (groupFeedbacks.length > 0) {
-            // Use group.points instead of max standard points for correct total calculation
-            const groupMaxPoints = group.points;
-            const maxStandardPoints = Math.max(
-              ...groupStandards.map((s: any) => s.points)
-            );
-            const avgScore =
-              groupFeedbacks.reduce((sum: number, f: any) => sum + f.total, 0) /
-              groupFeedbacks.length;
-            const normalizedScore = Math.round(
-              (avgScore / maxStandardPoints) * 5
-            ); // Convert to 1-5 scale
-
-            skillScores[group.name] = normalizedScore;
-            skillFeedbacks[group.name] = groupFeedbacks
-              .map((f: any) => f.feedback)
-              .join("; ");
-            totalPossiblePoints += groupMaxPoints; // Use group points for total
-          }
-        });
-
-        // Calculate if passed (assuming 70% threshold)
-        const passed = chatGrade.score >= totalPossiblePoints * 0.7;
-
-        return {
-          chatId: chat.id,
-          score: chatGrade.score,
-          passed,
-          timeTaken: chatGrade.timeTaken,
-          skillScores,
-          skillFeedbacks,
-          totalPossiblePoints,
-        };
-      })
-      .filter(Boolean) as DynamicRubric[];
-  }, [chats, grades, feedbacks, standards, standardGroups]);
 
   // Fetch documents for the attempt class
   const { data: documents = [] } = useQuery({
@@ -448,7 +347,75 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     return chats.find((chat: SimulationChat) => chat.id === selectedChatId);
   }, [selectedChatId, chats]);
 
-  // Continue with timer logic and useEffects...
+  // Timer logic - Update timer values every second based on actual attempt creation timestamp
+  useEffect(() => {
+    if (!attempt?.createdAt || !simulation || showResults) return;
+
+    // Calculate time based on actual attempt creation timestamp
+    const calculateTimerValues = () => {
+      const attemptStartTime = new Date(attempt.createdAt);
+      const currentTime = new Date();
+      const elapsedSeconds = Math.floor(
+        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
+      );
+
+      if (simulation.timeLimit) {
+        // For time-limited attempts, calculate remaining time
+        const totalTimeSeconds = simulation.timeLimit * 60;
+        const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
+        return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
+      } else {
+        // For unlimited attempts, just track elapsed time
+        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+      }
+    };
+
+    // Initial calculation
+    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
+      calculateTimerValues();
+    setElapsedTime(initialElapsed);
+    setTimeRemaining(initialRemaining);
+
+    // Check if time has already expired
+    if (simulation.timeLimit && initialRemaining === 0) {
+      setIsActive(false);
+      setShowResults(true);
+      return;
+    }
+
+    const timer = setInterval(() => {
+      const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
+        calculateTimerValues();
+      setElapsedTime(newElapsed);
+      setTimeRemaining(newRemaining);
+
+      // Check if time limit reached
+      if (simulation.timeLimit && newRemaining === 0 && isActive) {
+        setIsActive(false);
+        setShowResults(true);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [
+    attempt?.createdAt,
+    simulation?.timeLimit,
+    showResults,
+    isActive,
+    simulation,
+  ]);
+
+  // Set default selected document
+  useEffect(() => {
+    if (
+      scenarioDocuments.length > 0 &&
+      !selectedDocumentId &&
+      scenarioDocuments[0]
+    ) {
+      setSelectedDocumentId(scenarioDocuments[0].id);
+    }
+  }, [scenarioDocuments, selectedDocumentId]);
+
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -628,10 +595,12 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
                       {showGrades && selectedChat && simulation?.rubricId ? (
-                        <AttemptResults
-                          rubricId={simulation.rubricId}
-                          selectedChatId={selectedChat.id}
-                        />
+                        <div className="space-y-4 py-4">
+                          <TableRubric
+                            rubricId={simulation?.rubricId}
+                            simulationChatId={selectedChatId || ""}
+                          />
+                        </div>
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
@@ -821,7 +790,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
 
                     {/* Messages Area */}
                     <AttemptMessages
-                      simulation={simulation}
+                      simulation={simulation || null}
                       isActive={isActive}
                     />
                   </div>
@@ -832,7 +801,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                 <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
                   <AttemptInput
                     attemptId={attemptId}
-                    simulation={simulation}
+                    simulation={simulation || null}
                     isActive={isActive}
                     isSingleChatAttempt={isSingleChatAttempt}
                   />

@@ -413,89 +413,118 @@ export function SimulationProvider({
 
   // Listen for WebSocket loading state changes
   useEffect(() => {
-    const handleSimulationMessageStart = () => {
-      setIsSendingMessage(true);
+    const handleSimulationMessageStart = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(true);
+      }
     };
 
-    const handleSimulationMessageComplete = () => {
-      setIsSendingMessage(false);
+    const handleSimulationMessageComplete = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+      }
     };
 
-    const handleSimulationMessageCancelled = () => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
+    const handleSimulationMessageCancelled = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
     };
 
-    const handleSimulationMessageError = () => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
+    const handleSimulationMessageError = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+      }
     };
 
-    const handleSimulationStopped = () => {
-      setIsStoppingMessage(false);
+    const handleSimulationStopped = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsStoppingMessage(false);
+      }
     };
 
-    const handleSimulationContinued = () => {
-      setEndChatLoading(false);
+    const handleSimulationContinued = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setEndChatLoading(false);
+      }
     };
 
-    const handleSimulationError = () => {
-      setIsSendingMessage(false);
-      setIsStoppingMessage(false);
-      setEndChatLoading(false);
+    const handleSimulationError = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        setIsSendingMessage(false);
+        setIsStoppingMessage(false);
+        setEndChatLoading(false);
+      }
     };
 
     // Listen to WebSocket events via window events (emitted by websocket-context)
     window.addEventListener(
       "simulationMessageStart",
-      handleSimulationMessageStart
+      handleSimulationMessageStart as EventListener
     );
     window.addEventListener(
       "simulationMessageComplete",
-      handleSimulationMessageComplete
+      handleSimulationMessageComplete as EventListener
     );
     window.addEventListener(
       "simulationMessageCancelled",
-      handleSimulationMessageCancelled
+      handleSimulationMessageCancelled as EventListener
     );
     window.addEventListener(
       "simulationMessageError",
-      handleSimulationMessageError
+      handleSimulationMessageError as EventListener
     );
-    window.addEventListener("simulationStopped", handleSimulationStopped);
-    window.addEventListener("simulationContinued", handleSimulationContinued);
-    window.addEventListener("simulationError", handleSimulationError);
+    window.addEventListener(
+      "simulationStopped",
+      handleSimulationStopped as EventListener
+    );
+    window.addEventListener(
+      "simulationContinued",
+      handleSimulationContinued as EventListener
+    );
+    window.addEventListener(
+      "simulationError",
+      handleSimulationError as EventListener
+    );
 
     return () => {
       window.removeEventListener(
         "simulationMessageStart",
-        handleSimulationMessageStart
+        handleSimulationMessageStart as EventListener
       );
       window.removeEventListener(
         "simulationMessageComplete",
-        handleSimulationMessageComplete
+        handleSimulationMessageComplete as EventListener
       );
       window.removeEventListener(
         "simulationMessageCancelled",
-        handleSimulationMessageCancelled
+        handleSimulationMessageCancelled as EventListener
       );
       window.removeEventListener(
         "simulationMessageError",
-        handleSimulationMessageError
+        handleSimulationMessageError as EventListener
       );
-      window.removeEventListener("simulationStopped", handleSimulationStopped);
+      window.removeEventListener(
+        "simulationStopped",
+        handleSimulationStopped as EventListener
+      );
       window.removeEventListener(
         "simulationContinued",
-        handleSimulationContinued
+        handleSimulationContinued as EventListener
       );
-      window.removeEventListener("simulationError", handleSimulationError);
+      window.removeEventListener(
+        "simulationError",
+        handleSimulationError as EventListener
+      );
     };
   }, []);
 
   const value: SimulationContextType = {
     currentChatIndex,
     setCurrentChatIndex,
-    currentChat,
+    currentChat: currentChat || null,
     chats,
     isLoadingChats,
     isConnected,
