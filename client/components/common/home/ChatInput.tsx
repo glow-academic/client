@@ -7,7 +7,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useChat } from "@/contexts/chat-context";
+import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { Send, Square } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -28,7 +28,7 @@ export default function ChatInput({
     isSendingMessage,
     isStoppingMessage,
     currentChatId,
-  } = useChat();
+  } = useAssistant();
   const { effectiveRole } = useRole();
 
   // Set message when promptToSet changes

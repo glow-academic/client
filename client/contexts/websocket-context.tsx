@@ -43,11 +43,11 @@ interface WebSocketContextType {
   joinRoom: (
     roomId: string,
     roomType: "assistant" | "simulation"
-  ) => void;
+  ) => void; // should create webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
   leaveRoom: (
     roomId: string,
     roomType: "assistant" | "simulation"
-  ) => void;
+  ) => void; // should close webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
 
   // Simulation event emitters
   emitStartSimulation: (data: {
@@ -57,7 +57,7 @@ interface WebSocketContextType {
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void; // this should automatically send over webRTC data channel (for text) and media channel (for audio)
+  }) => void; // this should be modified to send over webRTC data channel (for text)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
     chat_id: string;
@@ -72,7 +72,7 @@ interface WebSocketContextType {
   emitSendAssistantMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void; // this should automatically send over webRTC data channel (for text) and media channel (for audio)
+  }) => void; // this should automatically send over webRTC data channel (for text)
   emitStopAssistant: (data: { chat_id: string }) => void;
 }
 

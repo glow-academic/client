@@ -21,7 +21,7 @@ import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
-import { ChatProvider } from "@/contexts/chat-context";
+import { ChatProvider } from "@/contexts/assistant-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,

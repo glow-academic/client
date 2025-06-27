@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useChat } from "@/contexts/chat-context";
+import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-chat";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ export default function ChatWidget() {
     isLoadingChats,
     selectChat,
     startBlankChat,
-  } = useChat();
+  } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
 

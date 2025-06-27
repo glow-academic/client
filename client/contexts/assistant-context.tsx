@@ -23,7 +23,7 @@ import { useWebSocket } from "./websocket-context";
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
 
-interface ChatContextType {
+interface AssistantContextType {
   // UI State
   uiState: ChatUIState;
   setUiState: (state: ChatUIState) => void;
@@ -53,21 +53,21 @@ interface ChatContextType {
   isStoppingMessage: boolean;
 }
 
-const ChatContext = createContext<ChatContextType | null>(null);
+const AssistantContext = createContext<AssistantContextType | null>(null);
 
-export const useChat = () => {
-  const context = useContext(ChatContext);
+export const useAssistant = () => {
+  const context = useContext(AssistantContext);
   if (!context) {
-    throw new Error("useChat must be used within ChatProvider");
+    throw new Error("useAssistant must be used within AssistantProvider");
   }
   return context;
 };
 
-interface ChatProviderProps {
+interface AssistantProviderProps {
   children: React.ReactNode;
 }
 
-export function ChatProvider({ children }: ChatProviderProps) {
+export function AssistantProvider({ children }: AssistantProviderProps) {
   const [uiState, setUiState] = useState<ChatUIState>("closed");
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -324,7 +324,7 @@ export function ChatProvider({ children }: ChatProviderProps) {
     }
   }, [currentChatId, isConnected, emitStopAssistant]);
 
-  const value: ChatContextType = {
+  const value: AssistantContextType = {
     uiState,
     setUiState,
     openWidget,
@@ -345,5 +345,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
     isStoppingMessage,
   };
 
-  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+  return (
+    <AssistantContext.Provider value={value}>
+      {children}
+    </AssistantContext.Provider>
+  );
 }

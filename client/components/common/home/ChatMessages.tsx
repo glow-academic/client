@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useChat } from "@/contexts/chat-context";
+import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { AssistantMessage, AssistantToolCall } from "@/types";
 import { logInfo } from "@/utils/logger";
@@ -93,7 +93,7 @@ interface ChatMessagesProps {
 export default function ChatMessages({
   onPromptClick,
 }: ChatMessagesProps = {}) {
-  const { currentChatId, isConnected } = useChat();
+  const { currentChatId, isConnected } = useAssistant();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 

@@ -6,13 +6,13 @@
  */
 "use client";
 import { Button } from "@/components/ui/button";
-import { useChat } from "@/contexts/chat-context";
+import { useAssistant } from "@/contexts/assistant-context";
 import { useRole } from "@/contexts/role-context";
 import { MessageCircle } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export default function ChatFab() {
-  const { openWidget, uiState } = useChat();
+  const { openWidget, uiState } = useAssistant();
   const { effectiveRole } = useRole();
 
   // Only show for instructor, instructional, or admin roles
