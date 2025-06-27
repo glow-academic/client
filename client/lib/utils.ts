@@ -16,13 +16,6 @@ export function cn(...inputs: ClassValue[]) {
  * - Use getClientApiUrl() for: Real-time updates, frequent polling, user interactions
  */
 export function getApiUrl(): string {
-  const isDevelopment = process.env.NODE_ENV === "development";
-
-  if (isDevelopment) {
-    // Development mode: use localhost
-    return "http://localhost:8000";
-  } else {
-    // Production/Docker mode: use Docker internal network
-    return "http://server:8000";
-  }
+  const serverPort = process.env["SERVER_PORT"] || "8000";
+  return `http://localhost:${serverPort}`;
 }

@@ -4,6 +4,7 @@
  * across all components based on the user's profile ID
  */
 "use client";
+
 import { getApiUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
@@ -1079,19 +1080,11 @@ export function WebSocketProvider({
         attempt: connectionAttempts.current + 1,
       });
 
-      // Use the Next.js proxy route for Socket.IO connections
-      const origin = window.location.origin;
-      const port = window.location.port;
-      const originWithoutPort = origin.replace(`:${port}`, "");
-      logInfo("Origin without port", { originWithoutPort });
-      const socketUrl =
-        process.env.NODE_ENV === "development"
-          ? getApiUrl()
-          : originWithoutPort;
+      const socketUrl = getApiUrl();
       const socketPath = "/socket.io";
       const socket = io(socketUrl, {
         path: socketPath,
-        transports: ["websocket", "polling"], // temporary until we fix the nginx proxy
+        transports: ["websocket"],
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout

@@ -34,10 +34,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+client_port = os.getenv("CLIENT_PORT", "3000")
+
 # Allow all origins
 allowed_origins = [
-    "http://localhost:3000",
-    "http://client:3000",
+    f"http://localhost:{client_port}",
+    "https://boilersketch.cs.purdue.edu",
 ]
 
 # Store active chat connections
