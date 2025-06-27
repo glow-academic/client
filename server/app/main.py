@@ -510,100 +510,92 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
 
 @sio.event  # type: ignore
 async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
-    """Handle WebRTC answer from client"""
-    try:
-        profile_id = data.get('profile_id')
-        answer_data = data.get('answer')
-        
-        if not profile_id or not answer_data:
-            await sio.emit('webrtc_error', {
-                'error': 'Missing profile_id or answer'
-            }, room=sid)
-            return
-        
-        logger.info(f"Received WebRTC answer from profile {profile_id}")
-        
-        pc = webrtc_peer_connections.get(profile_id)
-        if not pc:
-            await sio.emit('webrtc_error', {
-                'error': 'No peer connection found'
-            }, room=sid)
-            return
-        
-        # Set remote description
-        answer = RTCSessionDescription(
-            sdp=answer_data['sdp'],
-            type=answer_data['type']
-        )
-        await pc.setRemoteDescription(answer)
-        
-        logger.info(f"Set remote description for profile {profile_id}")
-        
-        # Send any buffered ICE candidates
-        buffered_candidates = webrtc_ice_candidates_buffer.get(profile_id, [])
-        for candidate in buffered_candidates:
-            await sio.emit('webrtc_ice_candidate', {
-                'profile_id': profile_id,
-                'candidate': {
-                    'candidate': str(candidate),
-                    'sdpMid': candidate.sdpMid,
-                    'sdpMLineIndex': candidate.sdpMLineIndex,
-                }
-            }, room=profile_id)
-        
-        # Clear buffer
-        webrtc_ice_candidates_buffer[profile_id] = []
-        
-        await sio.emit('webrtc_ready', {
-            'profile_id': profile_id
-        }, room=sid)
-        
-    except Exception as e:
-        logger.error(f"Error handling WebRTC answer: {e}")
-        await sio.emit('webrtc_error', {
-            'error': str(e)
-        }, room=sid)
-
-@sio.event  # type: ignore
-async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
-    profile_id     = data.get("profile_id")
-    candidate_dict = data.get("candidate")
+    """Handle WebRTC answer from client."""
+    profile_id = data.get("profile_id")
     if not profile_id:
+        logger.warning("Received webrtc_answer without profile_id")
         return
 
     pc = webrtc_peer_connections.get(profile_id)
     if not pc:
+        logger.warning(f"Received webrtc_answer for non-existent peer connection for profile_id: {profile_id}")
         return
-
-    # --- end-of-candidates ---------------------------------------------
-    if candidate_dict is None:             # remote finished trickling
-        try:
-            await pc.addIceCandidate(None)  # required by spec
-        except AttributeError:
-            # running on aiortc < 1.4 – harmless, just ignore
-            logger.warning("aiortc too old for end-of-candidates bug-fix")
-        return
-
-    # --- normal candidate ----------------------------------------------
+        
+    logger.info(f"Received WebRTC answer from profile {profile_id}")
     try:
-        ice = candidate_from_sdp(candidate_dict["candidate"])
-    except Exception:
-        parts = candidate_dict["candidate"].split()
-        ice   = RTCIceCandidate(
-            component  = int(parts[1]),
-            foundation = parts[0].split(':')[1],
-            ip         = parts[4],
-            port       = int(parts[5]),
-            priority   = int(parts[3]),
-            protocol   = parts[2].lower(),
-            type       = parts[7],
+        answer = data.get('answer')
+        if not answer:
+            await sio.emit('webrtc_error', {
+                'error': 'Missing answer in webrtc_answer'
+            }, room=profile_id)
+            return
+
+        # --- Set the remote description ---
+        answer_obj = RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
+        await pc.setRemoteDescription(answer_obj)
+        logger.info(f"Successfully set remote description for profile {profile_id}")
+
+        # --- Process any buffered ICE candidates ---
+        buffered_candidates = webrtc_ice_candidates_buffer.pop(profile_id, [])
+        if buffered_candidates:
+            logger.info(f"Processing {len(buffered_candidates)} buffered ICE candidates for profile {profile_id}")
+            for candidate in buffered_candidates:
+                try:
+                    await pc.addIceCandidate(candidate)
+                    logger.info(f"Successfully added buffered ICE candidate for {profile_id}")
+                except Exception as e:
+                    logger.error(
+                        f"Error adding buffered ICE candidate for profile {profile_id}: {e}",
+                        exc_info=True
+                    )
+        
+        await sio.emit("webrtc_ready", {"profile_id": profile_id}, room=profile_id)
+        logger.info(f"WebRTC handshake complete, ready for profile {profile_id}")
+
+    except Exception as e:
+        logger.error(f"Error handling WebRTC answer: {e}", exc_info=True)
+        await sio.emit('webrtc_error', {
+            'error': f'Failed to process answer: {e}'
+        }, room=profile_id)
+
+
+@sio.event  # type: ignore
+async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
+    """Handle incoming ICE candidates from the client."""
+    profile_id = data.get("profile_id")
+    if not profile_id:
+        logger.warning("Received webrtc_ice_candidate without profile_id")
+        return
+
+    pc = webrtc_peer_connections.get(profile_id)
+    if not pc:
+        logger.warning(f"Received ICE candidate for non-existent peer connection: {profile_id}")
+        return
+
+    candidate_data = data.get("candidate")
+    if not candidate_data:
+        logger.info(f"End of ICE candidates signal received for profile {profile_id}")
+        try:
+            # An empty candidate signals the end of trickle ICE
+            await pc.addIceCandidate(None)
+        except Exception as e:
+            logger.warning(f"Error adding null ICE candidate for {profile_id}, may already be closed: {e}")
+        return
+
+    try:
+        # Reconstruct the RTCIceCandidate object from SDP string
+        ice_candidate = candidate_from_sdp(candidate_data["candidate"])
+        ice_candidate.sdpMid = candidate_data.get("sdpMid")
+        ice_candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
+
+        await pc.addIceCandidate(ice_candidate)
+        logger.debug("Added ICE candidate for %s", profile_id)
+
+    except Exception as e:
+        logger.error(
+            f"Failed to process ICE candidate for profile {profile_id}: {e}",
+            exc_info=True
         )
-
-    ice.sdpMid        = candidate_dict.get("sdpMid") or "0"
-    ice.sdpMLineIndex = candidate_dict.get("sdpMLineIndex", 0)
-
-    await pc.addIceCandidate(ice)
-    logger.debug("Added ICE candidate for %s", profile_id)
 
 @sio.event  # type: ignore
 async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
