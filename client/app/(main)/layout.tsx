@@ -21,7 +21,7 @@ import ChatFab from "@/components/common/home/ChatFab";
 import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
-import { ChatProvider } from "@/contexts/assistant-context";
+import { AssistantProvider } from "@/contexts/assistant-context";
 import {
   generateEnhancedBreadcrumbs,
   getActiveSectionFromPath,
@@ -215,7 +215,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const actionButton = getActionButton();
 
   return (
-    <ChatProvider>
+    <AssistantProvider>
       <SidebarProvider>
         <UnifiedSidebar
           activeSection={activeSection}
@@ -242,7 +242,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       <ChatFab />
       <ChatWidget />
       <ChatDialog />
-    </ChatProvider>
+    </AssistantProvider>
   );
 }
 
