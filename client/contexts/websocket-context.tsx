@@ -40,14 +40,13 @@ interface WebSocketContextType {
   isStoppingAssistant: boolean;
 
   // Room management
-  joinRoom: (
-    roomId: string,
-    roomType: "assistant" | "simulation"
-  ) => void; // should create webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
-  leaveRoom: (
-    roomId: string,
-    roomType: "assistant" | "simulation"
-  ) => void; // should close webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
+  joinRoom: (roomId: string, roomType: "assistant" | "simulation") => void; // should create webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
+  leaveRoom: (roomId: string, roomType: "assistant" | "simulation") => void; // should close webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
+
+  // WebRTC Emitters
+  sendWebRTCMessage: (chatId: string, message: string) => void;
+  startAudioStream: (chatId: string) => Promise<void>;
+  stopAudioStream: (chatId: string) => void;
 
   // Simulation event emitters
   emitStartSimulation: (data: {
@@ -56,7 +55,7 @@ interface WebSocketContextType {
   }) => void;
   emitSendSimulationMessage: (data: {
     chat_id: string;
-    message: string;
+    message: string; // sending a message here would be fallback if webRTC is not supported.
   }) => void; // this should be modified to send over webRTC data channel (for text)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
@@ -71,8 +70,8 @@ interface WebSocketContextType {
   }) => void;
   emitSendAssistantMessage: (data: {
     chat_id: string;
-    message: string;
-  }) => void; // this should automatically send over webRTC data channel (for text)
+    message: string; // sending a message here would be fallback if webRTC is not supported.
+  }) => void; // this should be modified to send over webRTC data channel (for text)
   emitStopAssistant: (data: { chat_id: string }) => void;
 }
 
@@ -165,6 +164,10 @@ export function WebSocketProvider({
   const [isWebRTCSupported, setIsWebRTCSupported] = useState(false);
   const webRTCPeerConnection = useRef<RTCPeerConnection | null>(null);
   const webRTCDataChannels = useRef<Map<string, RTCDataChannel>>(new Map());
+  const userMediaStream = useRef<MediaStream | null>(null);
+  const audioTrackSenders = useRef<Map<string, RTCRtpSender>>(new Map());
+
+  const remoteAudioStreams = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   // Check if WebRTC is supported
   useEffect(() => {
@@ -787,6 +790,39 @@ export function WebSocketProvider({
               logInfo(`WebRTC connection state: ${pc.connectionState}`);
             };
 
+            pc.ontrack = (event) => {
+              logInfo("Received remote audio track", {
+                streamId: event.streams[0]?.id,
+              });
+              const stream = event.streams[0];
+              if (stream) {
+                // This is a bit of a hack. We don't know which chat this track is for
+                // until the server tells us. We'll assume it's for the last room joined.
+                const lastJoinedRoom = Array.from(
+                  currentRoomsRef.current
+                ).pop();
+                if (lastJoinedRoom) {
+                  const audio = new Audio();
+                  audio.srcObject = stream;
+                  audio.autoplay = true;
+                  remoteAudioStreams.current.set(lastJoinedRoom, audio);
+
+                  stream.onremovetrack = () => {
+                    const existingAudio =
+                      remoteAudioStreams.current.get(lastJoinedRoom);
+                    if (existingAudio) {
+                      existingAudio.pause();
+                      existingAudio.srcObject = null;
+                      remoteAudioStreams.current.delete(lastJoinedRoom);
+                      logInfo(
+                        `Remote audio stream removed for chat ${lastJoinedRoom}`
+                      );
+                    }
+                  };
+                }
+              }
+            };
+
             // Set remote description
             await pc.setRemoteDescription({
               sdp: data.offer.sdp,
@@ -836,6 +872,13 @@ export function WebSocketProvider({
           }
         }
       );
+
+      socket.on("webrtc_server_audio_starting", (data: { chat_id: string }) => {
+        logInfo("Server is preparing to send an audio stream for", {
+          chatId: data.chat_id,
+        });
+        // This event now serves as a signal, the ontrack event will handle the stream itself.
+      });
 
       socket.on("webrtc_ready", (data: { profile_id: string }) => {
         logInfo("WebRTC connection ready", { profileId: data.profile_id });
@@ -1014,6 +1057,43 @@ export function WebSocketProvider({
     };
   }, [profileId, setupCommonEventHandlers]);
 
+  // Helper function to create data channel if it doesn't exist
+  const createDataChannelIfNeeded = useCallback(
+    (channelLabel: string): RTCDataChannel | undefined => {
+      const pc = webRTCPeerConnection.current;
+      if (!pc || pc.connectionState !== "connected") {
+        return undefined;
+      }
+
+      let channel = webRTCDataChannels.current.get(channelLabel);
+      if (!channel || channel.readyState === "closed") {
+        // Create new data channel
+        channel = pc.createDataChannel(channelLabel, {
+          ordered: true,
+        });
+
+        channel.onopen = () => {
+          logInfo(`WebRTC data channel opened: ${channelLabel}`);
+        };
+
+        channel.onclose = () => {
+          logInfo(`WebRTC data channel closed: ${channelLabel}`);
+          webRTCDataChannels.current.delete(channelLabel);
+        };
+
+        channel.onerror = (error) => {
+          logError(`WebRTC data channel error for ${channelLabel}`, error);
+        };
+
+        webRTCDataChannels.current.set(channelLabel, channel);
+        logInfo(`Created WebRTC data channel: ${channelLabel}`);
+      }
+
+      return channel;
+    },
+    []
+  );
+
   // Room management
   const joinRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
@@ -1031,8 +1111,11 @@ export function WebSocketProvider({
         chat_type: roomType,
       });
       currentRoomsRef.current.add(roomId);
+
+      // Create a data channel for this room if it doesn't exist
+      createDataChannelIfNeeded(`text-${roomId}`);
     },
-    [isConnected]
+    [isConnected, createDataChannelIfNeeded]
   );
 
   const leaveRoom = useCallback(
@@ -1051,6 +1134,15 @@ export function WebSocketProvider({
         chat_type: roomType,
       });
       currentRoomsRef.current.delete(roomId);
+
+      // Close and remove the data channel
+      const channelLabel = `text-${roomId}`;
+      const channel = webRTCDataChannels.current.get(channelLabel);
+      if (channel) {
+        channel.close();
+        webRTCDataChannels.current.delete(channelLabel);
+        logInfo(`Closed and removed WebRTC data channel: ${channelLabel}`);
+      }
     },
     []
   );
@@ -1207,7 +1299,7 @@ export function WebSocketProvider({
   useEffect(() => {
     if (
       isConnected && // WebSocket is green
-      !isWebRTCConnected && // we haven’t finished ICE yet
+      !isWebRTCConnected && // we haven't finished ICE yet
       isWebRTCSupported && // browser supports it
       profileId // we know who we are
     ) {
@@ -1227,125 +1319,141 @@ export function WebSocketProvider({
     }
   }, [isConnected, isWebRTCConnected, stopWebRTC]);
 
-  // Helper function to create data channel if it doesn't exist
-  const createDataChannelIfNeeded = useCallback(
-    (channelLabel: string): RTCDataChannel | undefined => {
-      const pc = webRTCPeerConnection.current;
-      if (!pc || pc.connectionState !== "connected") {
-        return undefined;
-      }
-
-      let channel = webRTCDataChannels.current.get(channelLabel);
-      if (!channel || channel.readyState === "closed") {
-        // Create new data channel
-        channel = pc.createDataChannel(channelLabel, {
-          ordered: true,
-        });
-
-        channel.onopen = () => {
-          logInfo(`WebRTC data channel opened: ${channelLabel}`);
-        };
-
-        channel.onclose = () => {
-          logInfo(`WebRTC data channel closed: ${channelLabel}`);
-          webRTCDataChannels.current.delete(channelLabel);
-        };
-
-        channel.onerror = (error) => {
-          logError(`WebRTC data channel error for ${channelLabel}`, error);
-        };
-
-        webRTCDataChannels.current.set(channelLabel, channel);
-        logInfo(`Created WebRTC data channel: ${channelLabel}`);
-      }
-
-      return channel;
-    },
-    []
-  );
-
   const _sendWebRTCMessage = useCallback(
     (chatId: string, message: string, isAudio = false) => {
       try {
         const channelLabel = isAudio ? `audio-${chatId}` : `text-${chatId}`;
 
-        // Try to get or create the data channel
-        let channel = webRTCDataChannels.current.get(channelLabel);
-        if (!channel || channel.readyState !== "open") {
-          channel = createDataChannelIfNeeded(channelLabel);
-        }
+        // Try to get or create the data channel for text messages
+        if (!isAudio) {
+          const textChannel =
+            webRTCDataChannels.current.get(channelLabel) ||
+            createDataChannelIfNeeded(channelLabel);
 
-        if (!channel || channel.readyState !== "open") {
-          logError(
-            `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
-          );
-          // Fallback to WebSocket
-          if (isAudio) {
-            // Handle audio fallback (could send as base64)
-            logInfo("Audio fallback not implemented yet");
-          } else {
-            // Send text via WebSocket
+          if (!textChannel || textChannel.readyState !== "open") {
+            logError(
+              `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
+            );
+            // Fallback to WebSocket for text
             if (chatId.includes("simulation")) {
               emitSendSimulationMessage({ chat_id: chatId, message });
             } else if (chatId.includes("assistant")) {
               emitSendAssistantMessage({ chat_id: chatId, message });
             }
+            return;
           }
-          return;
+
+          const messageData = {
+            type: "message_complete",
+            chat_id: chatId,
+            content: message,
+            is_audio: isAudio,
+            timestamp: Date.now(),
+          };
+
+          textChannel.send(JSON.stringify(messageData));
+          logInfo(`Sent WebRTC message via ${channelLabel}`, {
+            chatId,
+            messageLength: message.length,
+          });
         }
-
-        const messageData = {
-          type: "message_complete",
-          chat_id: chatId,
-          content: message,
-          is_audio: isAudio,
-          timestamp: Date.now(),
-        };
-
-        channel.send(JSON.stringify(messageData));
-        logInfo(`Sent WebRTC message via ${channelLabel}`, {
-          chatId,
-          messageLength: message.length,
-        });
+        // Audio is now handled via tracks, not data channels.
       } catch (error) {
         logError("Error sending WebRTC message", error);
       }
     },
     [
+      createDataChannelIfNeeded,
       emitSendSimulationMessage,
       emitSendAssistantMessage,
-      createDataChannelIfNeeded,
     ]
   );
 
-  const _sendWebRTCAudio = useCallback((chatId: string, audioData: string) => {
-    try {
-      const channelLabel = `audio-${chatId}`;
-      const channel = webRTCDataChannels.current.get(channelLabel);
+  const sendWebRTCMessage = useCallback(
+    (chatId: string, message: string) => {
+      _sendWebRTCMessage(chatId, message, false);
+    },
+    [_sendWebRTCMessage]
+  );
 
-      if (!channel || channel.readyState !== "open") {
+  const startAudioStream = useCallback(
+    async (chatId: string) => {
+      if (
+        !isWebRTCSupported ||
+        !profileId ||
+        !socketRef.current ||
+        !webRTCPeerConnection.current
+      ) {
         logError(
-          `WebRTC audio channel not available, falling back to WebSocket`
+          "Cannot start audio stream - not supported or missing requirements"
         );
-        // Could implement base64 audio fallback here
+        toast.error("WebRTC not ready. Cannot start audio.");
         return;
       }
 
-      const messageData = {
-        type: "message_complete",
-        chat_id: chatId,
-        content: "",
-        is_audio: true,
-        audio_data: audioData,
-        timestamp: Date.now(),
-      };
+      try {
+        logInfo(`Starting audio stream for chat: ${chatId}`);
 
-      channel.send(JSON.stringify(messageData));
-      logInfo(`Sent WebRTC audio via ${channelLabel}`, { chatId });
-    } catch (error) {
-      logError("Error sending WebRTC audio", error);
-    }
-  }, []);
+        // Get user media stream if not already available
+        if (!userMediaStream.current) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true,
+            },
+          });
+          userMediaStream.current = stream;
+        }
+
+        const audioTrack = userMediaStream.current.getAudioTracks()[0];
+        if (audioTrack && webRTCPeerConnection.current) {
+          const sender = webRTCPeerConnection.current.addTrack(
+            audioTrack,
+            userMediaStream.current
+          );
+          audioTrackSenders.current.set(chatId, sender);
+
+          // Notify server to associate this new track with the chat
+          socketRef.current.emit("webrtc_start_audio", {
+            chat_id: chatId,
+            profile_id: profileId,
+          });
+          logInfo(`Started and sent audio stream for chat: ${chatId}`);
+        }
+      } catch (error) {
+        logError("Error starting audio stream", error);
+        toast.error("Failed to start microphone. Please check permissions.");
+      }
+    },
+    [isWebRTCSupported, profileId]
+  );
+
+  const stopAudioStream = useCallback(
+    (chatId: string) => {
+      logInfo(`Stopping audio stream for chat: ${chatId}`);
+      const sender = audioTrackSenders.current.get(chatId);
+      if (sender && webRTCPeerConnection.current) {
+        webRTCPeerConnection.current.removeTrack(sender);
+        audioTrackSenders.current.delete(chatId);
+      }
+
+      // If no other chats are using the stream, stop the tracks.
+      if (audioTrackSenders.current.size === 0 && userMediaStream.current) {
+        userMediaStream.current.getTracks().forEach((track) => track.stop());
+        userMediaStream.current = null;
+        logInfo("All audio streams stopped. Mic released.");
+      }
+
+      if (socketRef.current && profileId) {
+        socketRef.current.emit("webrtc_stop_audio", {
+          chat_id: chatId,
+          profile_id: profileId,
+        });
+      }
+    },
+    [profileId]
+  );
 
   const value: WebSocketContextType = {
     isConnected,
@@ -1362,6 +1470,9 @@ export function WebSocketProvider({
     isStoppingAssistant,
     joinRoom,
     leaveRoom,
+    sendWebRTCMessage,
+    startAudioStream,
+    stopAudioStream,
     emitStartSimulation,
     emitSendSimulationMessage,
     emitStopSimulation,

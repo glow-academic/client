@@ -4,6 +4,8 @@
 WebSocket handlers for simulation chat functionality
 Supports text and audio message processing with real-time streaming
 """
+# Note: This file now requires `webrtcvad-wheels`.
+# Please add it to your requirements.txt.
 
 import asyncio
 import base64
@@ -12,11 +14,14 @@ import logging
 import os
 import tempfile
 import uuid
+from collections import deque
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 
+import numpy as np
 import socketio  # type: ignore
 import torch
+import webrtcvad  # type: ignore
 from agents import gen_trace_id
 from app.config import model_manager
 from app.db import get_session
@@ -36,9 +41,24 @@ logger = logging.getLogger(__name__)
 active_simulation_runs: Dict[str, Any] = {}
 
 
+class VadDetector:
+    """A class to detect speech in an audio stream."""
+
+    def __init__(self, sample_rate: int, frame_duration_ms: int, vad_level: int):
+        self.vad = webrtcvad.Vad(vad_level)
+        self.sample_rate = sample_rate
+        self.frame_duration_ms = frame_duration_ms
+        self.frame_size = int(sample_rate * (frame_duration_ms / 1000.0))
+        self.buffer = bytearray()
+
+    def is_speech(self, frame: bytes) -> bool:
+        return self.vad.is_speech(frame, self.sample_rate)  # type: ignore
+
+
 def get_sio_instance() -> socketio.AsyncServer:
     """Get the Socket.IO server instance from main.py"""
     from app.main import get_socketio_instance
+
     return get_socketio_instance()
 
 
@@ -49,10 +69,10 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
     """
     try:
         logger.info(f"Received start_simulation request from {sid} with data: {data}")
-        
-        simulation_id = data.get('simulation_id')
-        profile_id = data.get('profile_id')
-        
+
+        simulation_id = data.get("simulation_id")
+        profile_id = data.get("profile_id")
+
         if not simulation_id:
             logger.error(f"Missing simulation_id in request from {sid}")
             await emit_error(sid, "Missing simulation_id")
@@ -61,12 +81,14 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         # Handle empty string profile_id as None for guest mode
         if profile_id == "" or profile_id == "null":
             profile_id = None
-            
-        logger.info(f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, sid={sid}")
+
+        logger.info(
+            f"Processing simulation start: simulation_id={simulation_id}, profile_id={profile_id}, sid={sid}"
+        )
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Get the simulation
             simulation = db_session.exec(
@@ -85,23 +107,30 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             db_session.commit()
             db_session.refresh(new_attempt)
 
-            logger.info(f"Created attempt {new_attempt.id} for simulation {simulation_id}")
+            logger.info(
+                f"Created attempt {new_attempt.id} for simulation {simulation_id}"
+            )
 
             # Get scenario IDs for this simulation
             scenario_ids = simulation.scenario_ids or []
 
             # If no scenarios are configured, pick a random scenario
             if not scenario_ids:
-                logger.info(f"No scenarios configured for simulation {simulation_id}, selecting random scenario")
+                logger.info(
+                    f"No scenarios configured for simulation {simulation_id}, selecting random scenario"
+                )
                 all_scenarios = db_session.exec(select(Scenarios)).all()
                 if not all_scenarios:
                     await emit_error(sid, "No scenarios available in the system")
                     return
-                
+
                 import random
+
                 random_scenario = random.choice(all_scenarios)
                 scenario_id = random_scenario.id
-                logger.info(f"Selected random scenario {scenario_id} for simulation {simulation_id}")
+                logger.info(
+                    f"Selected random scenario {scenario_id} for simulation {simulation_id}"
+                )
             else:
                 scenario_id = scenario_ids[0]
 
@@ -160,14 +189,20 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
             logger.info(f"Client {sid} joined simulation room {simulation_room}")
 
             # Emit success response
-            await sio_instance.emit('simulation_started', {
-                'success': True,
-                'message': 'Simulation started successfully',
-                'attempt_id': str(new_attempt.id),
-                'chat_id': str(chat.id),
-            }, room=sid)
+            await sio_instance.emit(
+                "simulation_started",
+                {
+                    "success": True,
+                    "message": "Simulation started successfully",
+                    "attempt_id": str(new_attempt.id),
+                    "chat_id": str(chat.id),
+                },
+                room=sid,
+            )
 
-            logger.info(f"Simulation started successfully for {sid}: attempt={new_attempt.id}, chat={chat.id}")
+            logger.info(
+                f"Simulation started successfully for {sid}: attempt={new_attempt.id}, chat={chat.id}"
+            )
 
         finally:
             db_session.close()
@@ -183,16 +218,16 @@ async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
     Replaces /simulations/message endpoint
     """
     try:
-        chat_id = data.get('chat_id')
-        message = data.get('message')
-        
+        chat_id = data.get("chat_id")
+        message = data.get("message")
+
         if not chat_id or not message:
             await emit_error(sid, "Missing chat_id or message")
             return
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Verify the chat exists
             chat = db_session.exec(
@@ -214,19 +249,22 @@ async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
             logger.info(f"Client {sid} ensured in simulation room {simulation_room}")
 
             # Process the message asynchronously
-            asyncio.create_task(process_simulation_message_websocket(
-                chat_id=chat_id,
-                message=message,
-                is_audio=False,
-                session=None
-            ))
-            
+            asyncio.create_task(
+                process_simulation_message_websocket(
+                    chat_id=chat_id, message=message, is_audio=False, session=None
+                )
+            )
+
             # Emit acknowledgment
-            await sio_instance.emit('message_processing', {
-                'chat_id': chat_id,
-                'status': 'processing',
-                'message': 'Message is being processed'
-            }, room=sid)
+            await sio_instance.emit(
+                "message_processing",
+                {
+                    "chat_id": chat_id,
+                    "status": "processing",
+                    "message": "Message is being processed",
+                },
+                room=sid,
+            )
 
         finally:
             db_session.close()
@@ -242,15 +280,15 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
     Replaces /simulations/stop endpoint
     """
     try:
-        chat_id = data.get('chat_id')
-        
+        chat_id = data.get("chat_id")
+
         if not chat_id:
             await emit_error(sid, "Missing chat_id")
             return
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Verify the chat exists
             chat = db_session.exec(
@@ -259,29 +297,37 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
             if not chat:
                 await emit_error(sid, "Chat not found")
                 return
-            
+
             # Attempt to cancel the simulation run
             success = cancel_simulation_run(chat_id)
-            
+
             sio_instance = get_sio_instance()
-            
+
             if success:
                 logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
-                
+
                 # Emit stop signal via WebSocket
-                await sio_instance.emit('simulation_stopped', {
-                    'chat_id': chat_id,
-                    'success': True,
-                    'message': 'Simulation stopped successfully'
-                }, room=f"simulation_{chat_id}")
-                
+                await sio_instance.emit(
+                    "simulation_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": True,
+                        "message": "Simulation stopped successfully",
+                    },
+                    room=f"simulation_{chat_id}",
+                )
+
             else:
                 logger.warning(f"No active simulation run found for chat {chat_id}")
-                await sio_instance.emit('simulation_stopped', {
-                    'chat_id': chat_id,
-                    'success': False,
-                    'message': 'No active simulation run found'
-                }, room=f"simulation_{chat_id}")
+                await sio_instance.emit(
+                    "simulation_stopped",
+                    {
+                        "chat_id": chat_id,
+                        "success": False,
+                        "message": "No active simulation run found",
+                    },
+                    room=f"simulation_{chat_id}",
+                )
 
         finally:
             db_session.close()
@@ -297,16 +343,16 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
     Replaces /simulations/continue endpoint
     """
     try:
-        chat_id = data.get('chat_id')
-        attempt_id = data.get('attempt_id')
-        
+        chat_id = data.get("chat_id")
+        attempt_id = data.get("attempt_id")
+
         if not chat_id or not attempt_id:
             await emit_error(sid, "Missing chat_id or attempt_id")
             return
 
         # Create a new session for this operation
         db_session = next(get_session())
-        
+
         try:
             # Get the chat
             chat = db_session.exec(
@@ -326,7 +372,9 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Get the simulation
             simulation = db_session.exec(
-                select(Simulations).where(Simulations.id == simulation_attempt.simulation_id)
+                select(Simulations).where(
+                    Simulations.id == simulation_attempt.simulation_id
+                )
             ).one_or_none()
             if not simulation:
                 await emit_error(sid, "Simulation not found")
@@ -339,7 +387,9 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
             if scenario_ids:
                 # Count existing chats for this attempt to determine the next scenario index
                 existing_chats = db_session.exec(
-                    select(SimulationChats).where(SimulationChats.attempt_id == attempt_id)
+                    select(SimulationChats).where(
+                        SimulationChats.attempt_id == attempt_id
+                    )
                 ).all()
 
                 next_index = len(existing_chats)
@@ -355,11 +405,17 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                         return
 
                     # Randomly fill any null attributes in the next scenario
-                    next_scenario = await randomly_fill_scenario_attributes(old_next_scenario, db_session)
+                    next_scenario = await randomly_fill_scenario_attributes(
+                        old_next_scenario, db_session
+                    )
 
                     # Generate scenario description if empty
                     if not next_scenario.description or next_scenario.description == "":
-                        name, description, trace_id = await run_scenario_agent(
+                        (
+                            name,
+                            description,
+                            trace_id,
+                        ) = await run_scenario_agent(
                             agent_id=next_scenario.agent_id,
                             class_id=next_scenario.class_id,
                             document_ids=next_scenario.documents,
@@ -400,15 +456,21 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
             # Emit success response
             sio_instance = get_sio_instance()
-            await sio_instance.emit('simulation_continued', {
-                'success': True,
-                'message': 'Simulation continued successfully',
-                'chat_id': str(next_chat_id),
-                'simulation_grade_id': simulation_grade_id,
-                'completed': next_chat_id == chat_id,
-            }, room=sid)
+            await sio_instance.emit(
+                "simulation_continued",
+                {
+                    "success": True,
+                    "message": "Simulation continued successfully",
+                    "chat_id": str(next_chat_id),
+                    "simulation_grade_id": simulation_grade_id,
+                    "completed": next_chat_id == chat_id,
+                },
+                room=sid,
+            )
 
-            logger.info(f"Simulation continued successfully: next_chat={next_chat_id}, completed={next_chat_id == chat_id}")
+            logger.info(
+                f"Simulation continued successfully: next_chat={next_chat_id}, completed={next_chat_id == chat_id}"
+            )
 
         finally:
             db_session.close()
@@ -419,159 +481,189 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 
 async def process_simulation_message_websocket(
-    chat_id: str, 
-    message: str, 
+    chat_id: str,
+    message: str,
     is_audio: bool = False,
     audio_data: Optional[bytes] = None,
-    session: Optional[Session] = None
+    session: Optional[Session] = None,
+    profile_id: Optional[str] = None,  # Added for audio response
 ) -> None:
     """
     Process a simulation message and stream the response via WebSocket
     Handles both text and audio messages
     """
-    
+
     # Create a new session for this async operation
     from app.db import get_session
+
     db_session = next(get_session())
-    
+
     try:
         # 1. Add the user message to the chat
         user_message = SimulationMessages(
-            chat_id=chat_id,
-            type="query",
-            content=message,
-            completed=True,
-            audio=is_audio
+            chat_id=chat_id, type="query", content=message, completed=True, audio=is_audio
         )
-        
+
         # Save audio file if this is an audio message
         if is_audio and audio_data:
             # Generate unique filename for audio
             audio_filename = f"{user_message.id}.wav"
             audio_filepath = os.path.join(AUDIO_FOLDER, audio_filename)
-            
+
             # Save audio file
-            with open(audio_filepath, 'wb') as f:
+            with open(audio_filepath, "wb") as f:
                 f.write(audio_data)
-            
+
             user_message.file_path = audio_filepath
-            logger.info(f"Saved audio file for message {user_message.id}: {audio_filepath}")
-        
+            logger.info(
+                f"Saved audio file for message {user_message.id}: {audio_filepath}"
+            )
+
         db_session.add(user_message)
         db_session.commit()
         db_session.refresh(user_message)
-        
+
         # 2. Emit user message to connected clients
         sio_instance = get_sio_instance()
         logger.info(f"Emitting user message to room simulation_{chat_id}")
-        await sio_instance.emit('simulation_new_message', {
-            'message_id': str(user_message.id),
-            'chat_id': str(chat_id),
-            'role': 'user',
-            'content': message,
-            'completed': True,
-            'audio': is_audio,
-            'created_at': user_message.created_at.isoformat()
-        }, room=f"simulation_{chat_id}")
-        
+        await sio_instance.emit(
+            "simulation_new_message",
+            {
+                "message_id": str(user_message.id),
+                "chat_id": str(chat_id),
+                "role": "user",
+                "content": message,
+                "completed": True,
+                "audio": is_audio,
+                "created_at": user_message.created_at.isoformat(),
+            },
+            room=f"simulation_{chat_id}",
+        )
+
         # 3. Create placeholder assistant message
         assistant_message = SimulationMessages(
             chat_id=chat_id,
             type="response",
             content="",
             completed=False,
-            audio=False  # Will be updated if audio response is generated
+            audio=False,  # Will be updated if audio response is generated
         )
         db_session.add(assistant_message)
         db_session.commit()
         db_session.refresh(assistant_message)
-        
+
         # 4. Emit placeholder assistant message
         logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
-        await sio_instance.emit('simulation_new_message', {
-            'message_id': str(assistant_message.id),
-            'chat_id': str(chat_id),
-            'role': 'assistant',
-            'content': '',
-            'completed': False,
-            'audio': False,
-            'created_at': assistant_message.created_at.isoformat()
-        }, room=f"simulation_{chat_id}")
+        await sio_instance.emit(
+            "simulation_new_message",
+            {
+                "message_id": str(assistant_message.id),
+                "chat_id": str(chat_id),
+                "role": "assistant",
+                "content": "",
+                "completed": False,
+                "audio": False,
+                "created_at": assistant_message.created_at.isoformat(),
+            },
+            room=f"simulation_{chat_id}",
+        )
 
         logger.info(f"Processing simulation message for chat {chat_id}")
 
         # 5. Stream the assistant response
         accumulated_content = ""
         cancelled = False
-        
+
         try:
             async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
                 # Regular content token
                 accumulated_content += token
-                
+
                 # Update the database with accumulated content
                 assistant_message.content = accumulated_content
                 db_session.add(assistant_message)
                 db_session.commit()
-                
+
                 # Emit token update to connected clients
-                logger.info(f"Emitting token to room simulation_{chat_id}: {token[:20]}...")
-                await sio_instance.emit('simulation_message_token', {
-                    'message_id': str(assistant_message.id),
-                    'chat_id': str(chat_id),
-                    'token': token,
-                    'accumulated_content': accumulated_content
-                }, room=f"simulation_{chat_id}")
+                logger.info(
+                    f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
+                )
+                await sio_instance.emit(
+                    "simulation_message_token",
+                    {
+                        "message_id": str(assistant_message.id),
+                        "chat_id": str(chat_id),
+                        "token": token,
+                        "accumulated_content": accumulated_content,
+                    },
+                    room=f"simulation_{chat_id}",
+                )
         except Exception as e:
             if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                 # Handle cancellation gracefully
                 cancelled = True
                 logger.info(f"Simulation run for chat {chat_id} was cancelled")
-                
+
                 # Update message content with cancellation notice
                 if not accumulated_content.strip():
                     accumulated_content = "[Simulation cancelled by user]"
                 else:
                     accumulated_content += "\n\n[Simulation cancelled by user]"
-                
+
                 assistant_message.content = accumulated_content
                 db_session.add(assistant_message)
                 db_session.commit()
-                
+
                 # Emit cancellation signal
                 logger.info(f"Emitting cancellation to room simulation_{chat_id}")
-                await sio_instance.emit('simulation_message_cancelled', {
-                    'message_id': str(assistant_message.id),
-                    'chat_id': str(chat_id),
-                    'final_content': accumulated_content
-                }, room=f"simulation_{chat_id}")
+                await sio_instance.emit(
+                    "simulation_message_cancelled",
+                    {
+                        "message_id": str(assistant_message.id),
+                        "chat_id": str(chat_id),
+                        "final_content": accumulated_content,
+                    },
+                    room=f"simulation_{chat_id}",
+                )
             else:
                 # Re-raise other exceptions
                 raise e
-        
+
         # 6. Mark as completed
         assistant_message.completed = True
         db_session.add(assistant_message)
         db_session.commit()
-        
+
+        # For now, we don't generate audio responses.
+        # This is where you would add TTS logic and stream the audio back.
+        if is_audio and profile_id:
+            logger.info(
+                f"Would generate audio response for profile {profile_id} here."
+            )
+
         # 7. Emit completion signal (only if not cancelled)
         if not cancelled:
             logger.info(f"Emitting completion to room simulation_{chat_id}")
-            await sio_instance.emit('simulation_message_complete', {
-                'message_id': str(assistant_message.id),
-                'chat_id': str(chat_id),
-                'final_content': accumulated_content,
-                'audio': assistant_message.audio
-            }, room=f"simulation_{chat_id}")
-        
+            await sio_instance.emit(
+                "simulation_message_complete",
+                {
+                    "message_id": str(assistant_message.id),
+                    "chat_id": str(chat_id),
+                    "final_content": accumulated_content,
+                    "audio": assistant_message.audio,
+                },
+                room=f"simulation_{chat_id}",
+            )
+
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
         sio_instance = get_sio_instance()
         logger.info(f"Emitting error to room simulation_{chat_id}")
-        await sio_instance.emit('simulation_message_error', {
-            'chat_id': str(chat_id),
-            'error': str(e)
-        }, room=f"simulation_{chat_id}")
+        await sio_instance.emit(
+            "simulation_message_error",
+            {"chat_id": str(chat_id), "error": str(e)},
+            room=f"simulation_{chat_id}",
+        )
     finally:
         db_session.close()
 
@@ -579,40 +671,102 @@ async def process_simulation_message_websocket(
 async def emit_error(sid: str, message: str) -> None:
     """Helper function to emit error messages to a specific client"""
     sio_instance = get_sio_instance()
-    await sio_instance.emit('error', {
-        'success': False,
-        'message': message
-    }, room=sid)
+    await sio_instance.emit("error", {"success": False, "message": message}, room=sid)
     logger.error(f"Emitted error to {sid}: {message}")
+
+
+async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> None:
+    """Process an incoming audio stream from a client with VAD."""
+    logger.info(
+        f"Audio processing task started for chat {chat_id} from profile {profile_id}"
+    )
+
+    sample_rate = 16000  # Whisper requires 16kHz
+    frame_duration_ms = 30  # VAD supports 10, 20, or 30 ms frames
+    vad = VadDetector(sample_rate, frame_duration_ms, vad_level=2)
+
+    speech_buffer: deque[bytes] = deque()
+    is_speaking = False
+    silence_frames = 0
+    silence_threshold = 25  # ~750ms of silence
+
+    try:
+        while True:
+            frame = await track.recv()
+            audio_bytes = frame.to_ndarray().tobytes()
+
+            if vad.is_speech(audio_bytes):
+                is_speaking = True
+                silence_frames = 0
+                speech_buffer.append(audio_bytes)
+            elif is_speaking:
+                silence_frames += 1
+                speech_buffer.append(audio_bytes)  # Buffer some silence too
+
+                if silence_frames > silence_threshold:
+                    is_speaking = False
+                    silence_frames = 0
+
+                    # Combine buffer into a single audio chunk
+                    full_audio_bytes = b"".join(speech_buffer)
+                    speech_buffer.clear()
+
+                    # Convert to numpy array for transcription
+                    audio_np = np.frombuffer(
+                        full_audio_bytes, dtype=np.int16
+                    ).astype(np.float32) / 32768.0
+
+                    # Transcribe
+                    whisper_model = model_manager.get_whisper_model()
+                    transcribed_text = whisper_model.transcribe(audio_np)
+                    logger.info(
+                        f"Transcribed audio for chat {chat_id}: '{transcribed_text}'"
+                    )
+
+                    if transcribed_text and transcribed_text.strip():
+                        # Process the transcribed text as a message
+                        asyncio.create_task(
+                            process_simulation_message_websocket(
+                                chat_id=chat_id,
+                                message=transcribed_text,
+                                is_audio=True,
+                                profile_id=profile_id,  # Pass profile for potential audio response
+                            )
+                        )
+
+    except Exception as e:
+        logger.info(f"Audio stream for chat {chat_id} ended: {e}")
 
 
 def register_simulation_events(sio: socketio.AsyncServer) -> None:
     """Register all simulation WebSocket event handlers"""
-    
+
     logger.info("Starting registration of simulation WebSocket event handlers")
-    
+
     # Don't register connect/disconnect here as they're already handled in main.py
     # Just register simulation-specific events
-    
+
     @sio.event  # type: ignore
     async def start_simulation(sid: str, data: Dict[str, Any]) -> None:
         """Start a new simulation attempt"""
-        logger.info(f"start_simulation event triggered for sid={sid} with data keys: {list(data.keys())}")
+        logger.info(
+            f"start_simulation event triggered for sid={sid} with data keys: {list(data.keys())}"
+        )
         await handle_start_simulation(sid, data)
-    
+
     @sio.event  # type: ignore
     async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         """Send a text message in simulation"""
         await handle_send_message(sid, data)
-    
+
     @sio.event  # type: ignore
     async def stop_simulation(sid: str, data: Dict[str, Any]) -> None:
         """Stop an active simulation"""
         await handle_stop_simulation(sid, data)
-    
+
     @sio.event  # type: ignore
     async def continue_simulation(sid: str, data: Dict[str, Any]) -> None:
         """Continue to next chat in simulation"""
         await handle_continue_simulation(sid, data)
-    
+
     logger.info("Successfully registered simulation WebSocket event handlers")

@@ -1,4 +1,5 @@
 # server/app/main.py
+import asyncio
 import contextlib
 import json
 import logging
@@ -225,6 +226,22 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
             room=profile_id,
         )
     
+    @pc.on("track")
+    async def on_track(track: Any) -> None:
+        logger.info(f"Received track: {track.kind} for profile {profile_id}")
+        if track.kind == "audio":
+            chat_id = getattr(pc, "_last_chat_id", None)
+            if chat_id:
+                from app.web.simulations import process_audio_stream
+
+                asyncio.create_task(
+                    process_audio_stream(track, chat_id, profile_id)
+                )
+            else:
+                logger.warning(
+                    f"Received audio track for profile {profile_id} but no chat_id was associated."
+                )
+
     @pc.on("datachannel")  # type: ignore
     def on_datachannel(channel: Any) -> None:
         logger.info(f"Received data channel: {channel.label} for profile {profile_id}")
@@ -233,7 +250,6 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
         @channel.on("message")  # type: ignore
         def on_message(message: Any) -> None:
             # Handle incoming WebRTC data channel messages
-            import asyncio
             asyncio.create_task(handle_webrtc_data_message(profile_id, channel.label, message))
     
     return pc
@@ -585,6 +601,30 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
 
     await pc.addIceCandidate(ice)
     logger.debug("Added ICE candidate for %s", profile_id)
+
+@sio.event  # type: ignore
+async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
+    """Signal from client that they are starting to send an audio track."""
+    profile_id = data.get("profile_id")
+    chat_id = data.get("chat_id")
+    if not profile_id or not chat_id:
+        logger.error("Missing profile_id or chat_id for webrtc_start_audio")
+        return
+
+    logger.info(f"Client {sid} is starting audio for chat {chat_id}")
+    # Associate the next track for this profile with this chat_id.
+    # This is a bit of a simplification. A more robust solution might use a track-specific ID.
+    if profile_id in webrtc_peer_connections:
+        webrtc_peer_connections[profile_id].__dict__["_last_chat_id"] = chat_id
+
+@sio.event  # type: ignore
+async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:
+    """Signal from client that they are stopping an audio track."""
+    profile_id = data.get("profile_id")
+    chat_id = data.get("chat_id")
+    logger.info(f"Client {sid} is stopping audio for chat {chat_id}")
+    # Here you would add logic to signal the audio processing task to stop.
+    # For now, we'll just log it. A robust implementation would use an asyncio.Event or similar.
 
 @sio.event  # type: ignore
 async def join_chat(sid: str, data: dict[str, Any]) -> None:

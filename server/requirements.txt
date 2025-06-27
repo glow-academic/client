@@ -62,3 +62,6 @@ openai-whisper==20240930
 
 # RTC
 aiortc[av]          # if you want Opus decode/encode
+
+# webrtcvad
+webrtcvad
