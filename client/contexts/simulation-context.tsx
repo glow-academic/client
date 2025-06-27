@@ -6,6 +6,7 @@
  */
 "use client";
 import {
+  Class,
   Document,
   Scenario,
   Simulation,
@@ -13,6 +14,7 @@ import {
   SimulationChat,
 } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
+import { getClass } from "@/utils/queries/classes/get-class";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
@@ -69,6 +71,7 @@ interface SimulationContextType {
   attempt: SimulationAttempt | null;
   simulation: Simulation | null;
   scenario: Scenario | null;
+  classData: Class | null;
   documents: Document[];
   scenarioDocuments: Document[];
 
@@ -255,6 +258,13 @@ export function SimulationProvider({
     queryKey: ["interaction", currentChat?.scenarioId],
     queryFn: () => getScenario(currentChat!.scenarioId),
     enabled: !!currentChat,
+  });
+
+  // Fetch class data for current scenario
+  const { data: classData } = useQuery({
+    queryKey: ["class", scenario?.classId],
+    queryFn: () => getClass(scenario!.classId!),
+    enabled: !!scenario?.classId,
   });
 
   // Fetch documents
@@ -448,6 +458,7 @@ export function SimulationProvider({
   }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
 
   // Determine if this is a single chat attempt and calculate expected chat count
+  // TODO: Store expectedChatCount in attempt record to prevent drift when scenarios are added later
   const expectedChatCount =
     simulation?.scenarioIds?.length || chats?.length || 1;
   const isSingleChatAttempt = expectedChatCount === 1;
@@ -546,6 +557,8 @@ export function SimulationProvider({
 
   // Check if current chat is completed and move to next or show results
   useEffect(() => {
+    let timerTimeout: NodeJS.Timeout | null = null;
+
     if (currentChat?.completed && !showResults) {
       const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
 
@@ -554,7 +567,7 @@ export function SimulationProvider({
           !isSingleChatAttempt &&
           currentChatIndex < (chats?.length || 0) - 1
         ) {
-          const timerTimeout = setTimeout(() => {
+          timerTimeout = setTimeout(() => {
             setCurrentChatIndex((prev) => {
               const nextIndex = prev + 1;
               toast.success(
@@ -563,7 +576,6 @@ export function SimulationProvider({
               return nextIndex;
             });
           }, 2000);
-          return () => clearTimeout(timerTimeout);
         } else {
           setShowResults(true);
           setIsActive(false);
@@ -571,7 +583,9 @@ export function SimulationProvider({
         }
       }
     }
+
     return () => {
+      if (timerTimeout) clearTimeout(timerTimeout);
       setFreshlyCompletedChats(new Set());
     };
   }, [
@@ -917,6 +931,7 @@ export function SimulationProvider({
     const handleSimulationStopped = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
         setIsStoppingMessage(false);
+        setIsSendingMessage(false);
       }
     };
 
@@ -1001,6 +1016,7 @@ export function SimulationProvider({
     attempt: attempt || null,
     simulation: simulation || null,
     scenario: scenario || null,
+    classData: classData || null,
     documents,
     scenarioDocuments,
 

@@ -33,7 +33,8 @@ export default function AttemptMessages({
   isActive,
   chatId,
 }: AttemptMessagesProps) {
-  const { currentChat, sendMessage, isSendingMessage } = useSimulation();
+  const { currentChat, classData, sendMessage, isSendingMessage } =
+    useSimulation();
   const [showScrollButton, setShowScrollButton] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -57,8 +58,21 @@ export default function AttemptMessages({
       "I'm ready to assist you today",
     ];
 
-    return basePrompts;
-  }, []);
+    if (classData?.classCode) {
+      basePrompts.push(`Are you here for ${classData.classCode}?`);
+    }
+
+    // Return 3-4 prompts, prioritizing the class-specific one if available
+    if (classData?.classCode) {
+      return [
+        "Hi, how are you?",
+        "What can I help you with?",
+        `Are you here for ${classData.classCode}?`,
+      ];
+    }
+
+    return basePrompts.slice(0, 3);
+  }, [classData?.classCode]);
 
   // Handle starter prompt click
   const handleStarterPromptClick = (prompt: string) => {

@@ -160,7 +160,7 @@ export default function AttemptInput() {
       }
       clearTimeout(measureTimer);
     };
-  }); // No dependencies - run on every render until it succeeds
+  }, []); // Empty dependency array to run only once
 
   // Don't render input if chat is completed
   if (currentChat?.completed) {
