@@ -1900,113 +1900,142 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }}
                               />
                               <div className="flex gap-2 justify-end">
-                                {/* Microphone Button for WebRTC Audio */}
-                                {isWebRTCSupported && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        type="button"
-                                        variant={
-                                          isRecording
-                                            ? "destructive"
-                                            : "outline"
-                                        }
-                                        onClick={
-                                          isRecording
-                                            ? handleStopRecording
-                                            : handleStartRecording
-                                        }
-                                        disabled={
-                                          currentChat?.completed ||
-                                          isTranscribing ||
-                                          (simulation?.timeLimit
-                                            ? !isActive
-                                            : false)
-                                        }
-                                        className={`min-h-[40px] h-[40px] px-3 ${
-                                          isTranscribing ? "animate-pulse" : ""
-                                        }`}
-                                        data-testid="mic-button"
-                                      >
-                                        {isTranscribing ? (
-                                          <div className="flex items-center space-x-1">
-                                            {[0, 1, 2].map((i) => (
-                                              <div
-                                                key={i}
-                                                className="w-1 h-1 bg-current rounded-full animate-pulse"
-                                                style={{
-                                                  animationDelay: `${i * 0.2}s`,
-                                                }}
-                                              />
-                                            ))}
-                                          </div>
-                                        ) : isRecording ? (
-                                          <MicOff className="h-4 w-4" />
-                                        ) : (
-                                          <Mic className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>
-                                        {isRecording
-                                          ? isTranscribing
-                                            ? "Processing audio..."
-                                            : "Stop audio recording"
-                                          : webRtcError
-                                            ? `Audio error: ${webRtcError}`
-                                            : "Start audio recording"}
-                                        {lastTranscription && (
-                                          <>
-                                            <br />
-                                            <span className="text-xs text-muted-foreground">
-                                              Last: "
-                                              {lastTranscription.slice(0, 50)}
-                                              ..."
-                                            </span>
-                                          </>
-                                        )}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                {/* Microphone Button for WebRTC Audio - shows when no text */}
+                                {isWebRTCSupported && !newMessage.trim() && (
+                                  <div
+                                    className={`transition-all duration-300 ease-in-out ${
+                                      !newMessage.trim()
+                                        ? "opacity-100 scale-100 translate-x-0"
+                                        : "opacity-0 scale-95 translate-x-2 pointer-events-none"
+                                    }`}
+                                  >
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          variant={
+                                            isRecording
+                                              ? "destructive"
+                                              : "outline"
+                                          }
+                                          onClick={
+                                            isRecording
+                                              ? handleStopRecording
+                                              : handleStartRecording
+                                          }
+                                          disabled={
+                                            currentChat?.completed ||
+                                            isTranscribing ||
+                                            (simulation?.timeLimit
+                                              ? !isActive
+                                              : false)
+                                          }
+                                          className={`min-h-[40px] h-[40px] px-3 ${
+                                            isTranscribing
+                                              ? "animate-pulse"
+                                              : ""
+                                          }`}
+                                          data-testid="mic-button"
+                                        >
+                                          {isTranscribing ? (
+                                            <div className="flex items-center space-x-1">
+                                              {[0, 1, 2].map((i) => (
+                                                <div
+                                                  key={i}
+                                                  className="w-1 h-1 bg-current rounded-full animate-pulse"
+                                                  style={{
+                                                    animationDelay: `${i * 0.2}s`,
+                                                  }}
+                                                />
+                                              ))}
+                                            </div>
+                                          ) : isRecording ? (
+                                            <>
+                                              <MicOff className="h-4 w-4" />
+                                              Stop Audio
+                                            </>
+                                          ) : (
+                                            <>
+                                              <Mic className="h-4 w-4" />
+                                              Start Audio
+                                            </>
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          {isRecording
+                                            ? isTranscribing
+                                              ? "Processing audio..."
+                                              : "Stop audio recording"
+                                            : webRtcError
+                                              ? `Audio error: ${webRtcError}`
+                                              : "Start audio recording"}
+                                          {lastTranscription && (
+                                            <>
+                                              <br />
+                                              <span className="text-xs text-muted-foreground">
+                                                Last: "
+                                                {lastTranscription.slice(0, 50)}
+                                                ..."
+                                              </span>
+                                            </>
+                                          )}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
                                 )}
-                                <Button
-                                  type="submit"
-                                  disabled={
-                                    isSendingMessage
-                                      ? isStoppingMessage
-                                      : !newMessage.trim() ||
-                                        (simulation?.timeLimit
-                                          ? !isActive
-                                          : false)
-                                  }
-                                  data-testid="send-button"
-                                  className="min-h-[40px] h-[40px] px-4"
-                                  variant={
-                                    isSendingMessage ? "destructive" : "default"
-                                  }
-                                  onClick={
-                                    isSendingMessage
-                                      ? handleStopMessage
-                                      : undefined
-                                  }
-                                >
-                                  {isSendingMessage ? (
-                                    isStoppingMessage ? (
-                                      <LoadingDots />
-                                    ) : (
-                                      <>
-                                        <Square className="h-4 w-4 mr-2" />
-                                        Stop
-                                      </>
-                                    )
-                                  ) : (
-                                    <>
-                                      <Send className="h-4 w-4 mr-2" />
-                                      Send
-                                    </>
-                                  )}
-                                </Button>
+                                {/* Send Button - shows when there is text */}
+                                {newMessage.trim() && (
+                                  <div
+                                    className={`transition-all duration-300 ease-in-out ${
+                                      newMessage.trim()
+                                        ? "opacity-100 scale-100 translate-x-0"
+                                        : "opacity-0 scale-95 translate-x-2 pointer-events-none"
+                                    }`}
+                                  >
+                                    <Button
+                                      type="submit"
+                                      disabled={
+                                        isSendingMessage
+                                          ? isStoppingMessage
+                                          : !newMessage.trim() ||
+                                            (simulation?.timeLimit
+                                              ? !isActive
+                                              : false)
+                                      }
+                                      data-testid="send-button"
+                                      className="min-h-[40px] h-[40px] px-4"
+                                      variant={
+                                        isSendingMessage
+                                          ? "destructive"
+                                          : "default"
+                                      }
+                                      onClick={
+                                        isSendingMessage
+                                          ? handleStopMessage
+                                          : undefined
+                                      }
+                                    >
+                                      {isSendingMessage ? (
+                                        isStoppingMessage ? (
+                                          <LoadingDots />
+                                        ) : (
+                                          <>
+                                            <Square className="h-4 w-4 mr-2" />
+                                            Stop
+                                          </>
+                                        )
+                                      ) : (
+                                        <>
+                                          <Send className="h-4 w-4 mr-2" />
+                                          Send
+                                        </>
+                                      )}
+                                    </Button>
+                                  </div>
+                                )}
                                 <Button
                                   type="button"
                                   variant="outline"
@@ -2051,107 +2080,131 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
                                 }}
                               />
                               <div className="flex gap-2 shrink-0">
-                                {/* Microphone Button for WebRTC Audio */}
-                                {isWebRTCSupported && (
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <Button
-                                        type="button"
-                                        variant={
-                                          isRecording
-                                            ? "destructive"
-                                            : "outline"
-                                        }
-                                        onClick={
-                                          isRecording
-                                            ? handleStopRecording
-                                            : handleStartRecording
-                                        }
-                                        disabled={
-                                          currentChat?.completed ||
-                                          isTranscribing ||
-                                          (simulation?.timeLimit
-                                            ? !isActive
-                                            : false)
-                                        }
-                                        className={`min-h-[40px] h-[40px] px-3 ${
-                                          isTranscribing ? "animate-pulse" : ""
-                                        }`}
-                                        data-testid="mic-button"
-                                      >
-                                        {isTranscribing ? (
-                                          <div className="flex items-center space-x-1">
-                                            {[0, 1, 2].map((i) => (
-                                              <div
-                                                key={i}
-                                                className="w-1 h-1 bg-current rounded-full animate-pulse"
-                                                style={{
-                                                  animationDelay: `${i * 0.2}s`,
-                                                }}
-                                              />
-                                            ))}
-                                          </div>
-                                        ) : isRecording ? (
-                                          <MicOff className="h-4 w-4" />
-                                        ) : (
-                                          <Mic className="h-4 w-4" />
-                                        )}
-                                      </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>
-                                        {isRecording
-                                          ? isTranscribing
-                                            ? "Processing audio..."
-                                            : "Stop audio recording"
-                                          : webRtcError
-                                            ? `Audio error: ${webRtcError}`
-                                            : "Start audio recording"}
-                                        {lastTranscription && (
-                                          <>
-                                            <br />
-                                            <span className="text-xs text-muted-foreground">
-                                              Last: "
-                                              {lastTranscription.slice(0, 50)}
-                                              ..."
-                                            </span>
-                                          </>
-                                        )}
-                                      </p>
-                                    </TooltipContent>
-                                  </Tooltip>
+                                {/* Microphone Button for WebRTC Audio - shows when no text */}
+                                {isWebRTCSupported && !newMessage.trim() && (
+                                  <div
+                                    className={`transition-all duration-300 ease-in-out ${
+                                      !newMessage.trim()
+                                        ? "opacity-100 scale-100 translate-x-0"
+                                        : "opacity-0 scale-95 translate-x-2 pointer-events-none"
+                                    }`}
+                                  >
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          type="button"
+                                          variant={
+                                            isRecording
+                                              ? "destructive"
+                                              : "outline"
+                                          }
+                                          onClick={
+                                            isRecording
+                                              ? handleStopRecording
+                                              : handleStartRecording
+                                          }
+                                          disabled={
+                                            currentChat?.completed ||
+                                            isTranscribing ||
+                                            (simulation?.timeLimit
+                                              ? !isActive
+                                              : false)
+                                          }
+                                          className={`min-h-[40px] h-[40px] px-3 ${
+                                            isTranscribing
+                                              ? "animate-pulse"
+                                              : ""
+                                          }`}
+                                          data-testid="mic-button"
+                                        >
+                                          {isTranscribing ? (
+                                            <div className="flex items-center space-x-1">
+                                              {[0, 1, 2].map((i) => (
+                                                <div
+                                                  key={i}
+                                                  className="w-1 h-1 bg-current rounded-full animate-pulse"
+                                                  style={{
+                                                    animationDelay: `${i * 0.2}s`,
+                                                  }}
+                                                />
+                                              ))}
+                                            </div>
+                                          ) : isRecording ? (
+                                            <MicOff className="h-4 w-4" />
+                                          ) : (
+                                            <Mic className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>
+                                          {isRecording
+                                            ? isTranscribing
+                                              ? "Processing audio..."
+                                              : "Stop audio recording"
+                                            : webRtcError
+                                              ? `Audio error: ${webRtcError}`
+                                              : "Start audio recording"}
+                                          {lastTranscription && (
+                                            <>
+                                              <br />
+                                              <span className="text-xs text-muted-foreground">
+                                                Last: "
+                                                {lastTranscription.slice(0, 50)}
+                                                ..."
+                                              </span>
+                                            </>
+                                          )}
+                                        </p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
                                 )}
-                                <Button
-                                  type="submit"
-                                  disabled={
-                                    isSendingMessage
-                                      ? isStoppingMessage
-                                      : !newMessage.trim() ||
-                                        (simulation?.timeLimit
-                                          ? !isActive
-                                          : false)
-                                  }
-                                  data-testid="send-button"
-                                  className="min-h-[40px] h-[40px] px-3"
-                                  variant={
-                                    isSendingMessage ? "destructive" : "default"
-                                  }
-                                  onClick={
-                                    isSendingMessage
-                                      ? handleStopMessage
-                                      : undefined
-                                  }
-                                >
-                                  {isSendingMessage ? (
-                                    isStoppingMessage ? (
-                                      <LoadingDots />
-                                    ) : (
-                                      <Square className="h-4 w-4" />
-                                    )
-                                  ) : (
-                                    <Send className="h-4 w-4" />
-                                  )}
-                                </Button>
+                                {/* Send Button - shows when there is text */}
+                                {newMessage.trim() && (
+                                  <div
+                                    className={`transition-all duration-300 ease-in-out ${
+                                      newMessage.trim()
+                                        ? "opacity-100 scale-100 translate-x-0"
+                                        : "opacity-0 scale-95 translate-x-2 pointer-events-none"
+                                    }`}
+                                  >
+                                    <Button
+                                      type="submit"
+                                      disabled={
+                                        isSendingMessage
+                                          ? isStoppingMessage
+                                          : !newMessage.trim() ||
+                                            (simulation?.timeLimit
+                                              ? !isActive
+                                              : false)
+                                      }
+                                      data-testid="send-button"
+                                      className="min-h-[40px] h-[40px] px-3"
+                                      variant={
+                                        isSendingMessage
+                                          ? "destructive"
+                                          : "default"
+                                      }
+                                      onClick={
+                                        isSendingMessage
+                                          ? handleStopMessage
+                                          : undefined
+                                      }
+                                    >
+                                      {isSendingMessage ? (
+                                        isStoppingMessage ? (
+                                          <LoadingDots />
+                                        ) : (
+                                          <Square className="h-4 w-4" />
+                                        )
+                                      ) : (
+                                        <Send className="h-4 w-4" />
+                                      )}
+                                    </Button>
+                                  </div>
+                                )}
+
                                 <Button
                                   type="button"
                                   variant="outline"

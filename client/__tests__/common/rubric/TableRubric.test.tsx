@@ -36,20 +36,6 @@ vi.mock(
   })
 );
 
-vi.mock(
-  "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats",
-  () => ({
-    getEvalChatGradesByEvalChats: vi.fn(),
-  })
-);
-
-vi.mock(
-  "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades",
-  () => ({
-    getEvalChatFeedbacksByEvalChatGrades: vi.fn(),
-  })
-);
-
 // Import mocked functions
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
@@ -77,7 +63,8 @@ describe("TableRubric", () => {
       points: 100,
       passPoints: 70,
       createdAt: "2024-01-01T00:00:00Z",
-      rubricType: "simulation" as const,
+      updatedAt: "2024-01-01T00:00:00Z",
+      defaultRubric: true,
     };
 
     const mockStandardGroups = [

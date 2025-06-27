@@ -57,7 +57,7 @@ interface WebSocketContextType {
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void; // this should automatically create webRTC data channel (for text) and media channel (for audio)
+  }) => void; // this should automatically send over webRTC data channel (for text) and media channel (for audio)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
     chat_id: string;
@@ -72,7 +72,7 @@ interface WebSocketContextType {
   emitSendAssistantMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void; // this should automatically create webRTC data channel (for text) and media channel (for audio)
+  }) => void; // this should automatically send over webRTC data channel (for text) and media channel (for audio)
   emitStopAssistant: (data: { chat_id: string }) => void;
 }
 

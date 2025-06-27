@@ -20,17 +20,14 @@ import { getStandardGroupsByRubric } from "@/utils/queries/standard_groups/get-s
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getEvalChatGradesByEvalChats } from "@/utils/queries/eval_chat_grades/get-eval-chat-grades-by-evalchats";
-import { getEvalChatFeedbacksByEvalChatGrades } from "@/utils/queries/eval_chat_feedbacks/get-eval-chat-feedbacks-by-evalchatgrades";
 import { StandardGroup, Standard } from "@/types";
 
 interface TableRubricProps {
     rubricId: string;
     simulationChatId?: string;
-    evaluationChatId?: string;
 }
 
-export default function TableRubric({ rubricId, simulationChatId, evaluationChatId }: TableRubricProps) {
+export default function TableRubric({ rubricId, simulationChatId }: TableRubricProps) {
     const { isLoading: loadingRubric } = useQuery({
         queryKey: ["rubric", rubricId],
         queryFn: () => getRubric(rubricId),
@@ -62,22 +59,9 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         enabled: !!simulationGrades && simulationGrades.length > 0,
     });
 
-    // Fetch grades and feedback for evaluation chats
-    const { data: evaluationGrades, isLoading: loadingEvaluationGrades } = useQuery({
-        queryKey: ["evaluationGrades", evaluationChatId],
-        queryFn: () => getEvalChatGradesByEvalChats([evaluationChatId!]),
-        enabled: !!evaluationChatId,
-    });
-
-    const { data: evaluationFeedbacks, isLoading: loadingEvaluationFeedbacks } = useQuery({
-        queryKey: ["evaluationFeedbacks", evaluationGrades?.map((grade) => grade.id)],
-        queryFn: () => getEvalChatFeedbacksByEvalChatGrades(evaluationGrades!.map((grade) => grade.id)),
-        enabled: !!evaluationGrades && evaluationGrades.length > 0,
-    });
-
     // Get the appropriate grade and feedback data
-    const grades = simulationChatId ? simulationGrades : evaluationGrades;
-    const feedbacks = simulationChatId ? simulationFeedbacks : evaluationFeedbacks;
+    const grades = simulationGrades;
+    const feedbacks = simulationFeedbacks;
     const chatGrade = grades?.[0]; // Assuming one grade per chat
 
     // Helper function to get feedback for a specific standard
@@ -85,12 +69,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         if (!feedbacks || !chatGrade) return null;
         return feedbacks.find(feedback => {
             if (feedback.standardId !== standardId) return false;
-
-            if (simulationChatId) {
-                return 'simulationChatGradeId' in feedback && feedback.simulationChatGradeId === chatGrade.id;
-            } else {
-                return 'evalChatGradeId' in feedback && feedback.evalChatGradeId === chatGrade.id;
-            }
+            return 'simulationChatGradeId' in feedback && feedback.simulationChatGradeId === chatGrade.id;
         });
     };
 
@@ -123,7 +102,7 @@ export default function TableRubric({ rubricId, simulationChatId, evaluationChat
         return standard.points <= achievedStandard.points;
     };
 
-    if (loadingRubric || loadingStandardGroups || loadingStandards || loadingSimulationGrades || loadingSimulationFeedbacks || loadingEvaluationGrades || loadingEvaluationFeedbacks) {
+    if (loadingRubric || loadingStandardGroups || loadingStandards || loadingSimulationGrades || loadingSimulationFeedbacks) {
         return (
             <div className="flex items-center justify-center p-8">
                 <div className="text-center space-y-2">
