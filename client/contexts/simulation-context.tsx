@@ -5,28 +5,93 @@
  * 06/27/2025
  */
 "use client";
-import { SimulationChat } from "@/types";
+import {
+  Document,
+  Scenario,
+  Simulation,
+  SimulationAttempt,
+  SimulationChat,
+} from "@/types";
 import { logError, logInfo } from "@/utils/logger";
+import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
+import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
+import { getScenario } from "@/utils/queries/scenarios/get-scenario";
+import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
+import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
+import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
 import { getSimulationChatsByAttempt } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempt";
+import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
+import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
 import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
+// Dynamic rubric interface based on grades/feedback
+interface DynamicRubric {
+  chatId: string;
+  score: number;
+  passed: boolean;
+  timeTaken: number;
+  skillScores: Record<string, number>;
+  skillFeedbacks: Record<string, string>;
+  totalPossiblePoints: number;
+}
+
+// Aggregated results interface
+interface AggregatedResults {
+  totalChats: number;
+  passedChats: number;
+  averageScore: number;
+  totalTime: number;
+  overallPassed: boolean;
+}
+
+// Timer state interface
+interface TimerState {
+  elapsed: number;
+  remaining: number | null;
+  expired: boolean;
+}
+
 interface SimulationContextType {
+  // Attempt and simulation data
+  attempt: SimulationAttempt | null;
+  simulation: Simulation | null;
+  scenario: Scenario | null;
+  documents: Document[];
+  scenarioDocuments: Document[];
+
   // Current chat management
   currentChatIndex: number;
   setCurrentChatIndex: (index: number) => void;
   currentChat: SimulationChat | null;
   chats: SimulationChat[];
   isLoadingChats: boolean;
+
+  // Results and grading
+  currentDynamicRubric: DynamicRubric | null;
+  allDynamicRubrics: DynamicRubric[];
+  aggregatedResults: AggregatedResults | null;
+
+  // Timer state
+  timer: TimerState;
+  isActive: boolean;
+
+  // UI state
+  showResults: boolean;
+  isSingleChatAttempt: boolean;
+  freshlyCompletedChats: Set<string>;
+  setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
 
   // Connection state
   isConnected: boolean;
@@ -50,9 +115,8 @@ interface SimulationContextType {
   isStoppingMessage: boolean;
   endChatLoading: boolean;
 
-  // Chat completion tracking
-  freshlyCompletedChats: Set<string>;
-  setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
+  // Event handlers
+  onSimulationFinished?: (() => void) | undefined;
 }
 
 const SimulationContext = createContext<SimulationContextType | null>(null);
@@ -68,11 +132,13 @@ export const useSimulation = () => {
 interface SimulationProviderProps {
   children: React.ReactNode;
   attemptId: string;
+  onSimulationFinished?: () => void;
 }
 
 export function SimulationProvider({
   children,
   attemptId,
+  onSimulationFinished,
 }: SimulationProviderProps) {
   const [currentChatIndex, setCurrentChatIndex] = useState(0);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -81,6 +147,12 @@ export function SimulationProvider({
   const [freshlyCompletedChats, setFreshlyCompletedChats] = useState<
     Set<string>
   >(new Set());
+  const [showResults, setShowResults] = useState(false);
+  const [isActive, setIsActive] = useState(true);
+
+  // Timer state
+  const [elapsedTime, setElapsedTime] = useState<number>(0);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
 
   // WebRTC Audio state
   const [isRecording, setIsRecording] = useState(false);
@@ -105,6 +177,13 @@ export function SimulationProvider({
     isWebRTCSupported,
   } = useWebSocket();
 
+  // Fetch attempt data
+  const { data: attempt } = useQuery({
+    queryKey: ["attempt", attemptId],
+    queryFn: () => getSimulationAttempt(attemptId),
+    enabled: !!attemptId,
+  });
+
   // Get chats for the attempt
   const { data: chats = [], isLoading: isLoadingChats } = useQuery({
     queryKey: ["simulationChats", attemptId],
@@ -112,8 +191,51 @@ export function SimulationProvider({
     enabled: !!attemptId,
   });
 
+  // Fetch simulation data
+  const { data: simulation } = useQuery({
+    queryKey: ["simulation", attempt?.simulationId],
+    queryFn: () => getSimulation(attempt!.simulationId),
+    enabled: !!attempt,
+  });
+
+  // Fetch rubrics and standards data
+  const { data: rubrics } = useQuery({
+    queryKey: ["rubrics"],
+    queryFn: () => getAllRubrics(),
+  });
+
+  const { data: standardGroups } = useQuery({
+    queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
+    queryFn: () =>
+      getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
+    enabled: !!rubrics,
+  });
+
+  const { data: standards } = useQuery({
+    queryKey: ["standards", standardGroups?.map((group) => group.id)],
+    queryFn: () =>
+      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
+    enabled: !!standardGroups,
+  });
+
+  const { data: grades } = useQuery({
+    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
+    queryFn: () =>
+      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
+    enabled: !!chats,
+  });
+
+  const { data: feedbacks } = useQuery({
+    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
+    queryFn: () =>
+      getSimulationChatFeedbacksBySimulationChatGrades(
+        grades!.map((grade) => grade.id)
+      ),
+    enabled: !!grades,
+  });
+
   // Determine current chat based on actual chats for this attempt
-  const currentChat = React.useMemo(() => {
+  const currentChat = useMemo(() => {
     if (!chats || !chats.length) return null;
 
     // Sort chats by creation date to ensure consistent ordering
@@ -126,21 +248,289 @@ export function SimulationProvider({
     return sortedChats[currentChatIndex] || sortedChats[0];
   }, [chats, currentChatIndex]);
 
+  // Fetch scenario for current chat
+  const { data: scenario } = useQuery({
+    queryKey: ["interaction", currentChat?.scenarioId],
+    queryFn: () => getScenario(currentChat!.scenarioId),
+    enabled: !!currentChat,
+  });
+
+  // Fetch documents
+  const { data: documents = [] } = useQuery({
+    queryKey: ["documents", scenario?.id],
+    queryFn: () => getAllDocuments(),
+    enabled: !!scenario?.id,
+  });
+
+  // Filter documents for the current attempt's class
+  const scenarioDocuments = useMemo(() => {
+    if (!scenario || !documents) return [];
+    return documents.filter((doc: Document) =>
+      scenario.documents?.includes(doc.id)
+    );
+  }, [documents, scenario]);
+
+  // Helper function to calculate actual time taken from database timestamps
+  const calculateActualTimeTaken = useCallback(
+    (chat: SimulationChat): number => {
+      return (
+        grades?.find((grade) => grade.simulationChatId === chat.id)
+          ?.timeTaken || 0
+      );
+    },
+    [grades]
+  );
+
+  // Create dynamic rubric for current chat based on grades/feedback
+  const currentDynamicRubric = useMemo((): DynamicRubric | null => {
+    if (
+      !currentChat?.id ||
+      !grades ||
+      !feedbacks ||
+      !standards ||
+      !standardGroups
+    )
+      return null;
+
+    const chatGrade = grades.find(
+      (grade) => grade.simulationChatId === currentChat.id
+    );
+    if (!chatGrade) return null;
+
+    const chatFeedbacks = feedbacks.filter(
+      (feedback) => feedback.simulationChatGradeId === chatGrade.id
+    );
+
+    // Calculate skill scores and feedbacks
+    const skillScores: Record<string, number> = {};
+    const skillFeedbacks: Record<string, string> = {};
+    let totalPossiblePoints = 0;
+
+    standardGroups.forEach((group) => {
+      const groupStandards = standards.filter(
+        (s) => s.standardGroupId === group.id
+      );
+      const groupFeedbacks = chatFeedbacks.filter((f) =>
+        groupStandards.some((s) => s.id === f.standardId)
+      );
+
+      if (groupFeedbacks.length > 0) {
+        const groupMaxPoints = group.points;
+        const maxStandardPoints = Math.max(
+          ...groupStandards.map((s) => s.points)
+        );
+        const avgScore =
+          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+          groupFeedbacks.length;
+        const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5);
+
+        skillScores[group.name] = normalizedScore;
+        skillFeedbacks[group.shortName] = groupFeedbacks
+          .map((f) => f.feedback)
+          .join("; ");
+        totalPossiblePoints += groupMaxPoints;
+      }
+    });
+
+    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
+
+    return {
+      chatId: currentChat.id,
+      score: chatGrade.score,
+      passed,
+      timeTaken: chatGrade.timeTaken,
+      skillScores,
+      skillFeedbacks,
+      totalPossiblePoints,
+    };
+  }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
+
+  // Create dynamic rubrics for all completed chats
+  const allDynamicRubrics = useMemo((): DynamicRubric[] => {
+    if (!chats || !grades || !feedbacks || !standards || !standardGroups)
+      return [];
+
+    const completedChats = chats.filter(
+      (chat: SimulationChat) => chat.completed
+    );
+
+    return completedChats
+      .map((chat) => {
+        const chatGrade = grades.find(
+          (grade) => grade.simulationChatId === chat.id
+        );
+        if (!chatGrade) return null;
+
+        const chatFeedbacks = feedbacks.filter(
+          (feedback) => feedback.simulationChatGradeId === chatGrade.id
+        );
+
+        const skillScores: Record<string, number> = {};
+        const skillFeedbacks: Record<string, string> = {};
+        let totalPossiblePoints = 0;
+
+        standardGroups.forEach((group) => {
+          const groupStandards = standards.filter(
+            (s) => s.standardGroupId === group.id
+          );
+          const groupFeedbacks = chatFeedbacks.filter((f) =>
+            groupStandards.some((s) => s.id === f.standardId)
+          );
+
+          if (groupFeedbacks.length > 0) {
+            const groupMaxPoints = group.points;
+            const maxStandardPoints = Math.max(
+              ...groupStandards.map((s) => s.points)
+            );
+            const avgScore =
+              groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
+              groupFeedbacks.length;
+            const normalizedScore = Math.round(
+              (avgScore / maxStandardPoints) * 5
+            );
+
+            skillScores[group.name] = normalizedScore;
+            skillFeedbacks[group.name] = groupFeedbacks
+              .map((f) => f.feedback)
+              .join("; ");
+            totalPossiblePoints += groupMaxPoints;
+          }
+        });
+
+        const passed = chatGrade.score >= totalPossiblePoints * 0.7;
+
+        return {
+          chatId: chat.id,
+          score: chatGrade.score,
+          passed,
+          timeTaken: chatGrade.timeTaken,
+          skillScores,
+          skillFeedbacks,
+          totalPossiblePoints,
+        };
+      })
+      .filter(Boolean) as DynamicRubric[];
+  }, [chats, grades, feedbacks, standards, standardGroups]);
+
+  // Calculate aggregated results for final display
+  const aggregatedResults = useMemo((): AggregatedResults | null => {
+    if (allDynamicRubrics.length === 0) return null;
+
+    const totalScore = allDynamicRubrics.reduce(
+      (sum: number, rubric: DynamicRubric) => sum + rubric.score,
+      0
+    );
+    const averageScore = totalScore / allDynamicRubrics.length;
+    const passedChats = allDynamicRubrics.filter(
+      (rubric: DynamicRubric) => rubric.passed
+    ).length;
+
+    // Calculate total time using actual database timestamps
+    const totalTime = chats
+      ? chats
+          .filter((chat: SimulationChat) => chat.completed)
+          .reduce(
+            (sum: number, chat: SimulationChat) =>
+              sum + calculateActualTimeTaken(chat),
+            0
+          )
+      : 0;
+
+    return {
+      totalChats: allDynamicRubrics.length,
+      passedChats,
+      averageScore: Math.round(averageScore * 10) / 10,
+      totalTime: totalTime,
+      overallPassed: passedChats === allDynamicRubrics.length,
+    };
+  }, [allDynamicRubrics, chats, calculateActualTimeTaken]);
+
+  // Determine if this is a single chat attempt
+  const isSingleChatAttempt = chats?.length === 1;
+
+  // Timer calculation
+  const timer = useMemo((): TimerState => {
+    return {
+      elapsed: elapsedTime,
+      remaining: timeRemaining,
+      expired: simulation?.timeLimit ? timeRemaining === 0 : false,
+    };
+  }, [elapsedTime, timeRemaining, simulation?.timeLimit]);
+
+  // Timer logic - Update timer values every second based on actual attempt creation timestamp
+  useEffect(() => {
+    if (!attempt?.createdAt || !simulation || showResults) return;
+
+    const calculateTimerValues = () => {
+      const attemptStartTime = new Date(attempt.createdAt);
+      const currentTime = new Date();
+      const elapsedSeconds = Math.floor(
+        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
+      );
+
+      if (simulation.timeLimit) {
+        const totalTimeSeconds = simulation.timeLimit * 60;
+        const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
+        return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
+      } else {
+        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+      }
+    };
+
+    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
+      calculateTimerValues();
+    setElapsedTime(initialElapsed);
+    setTimeRemaining(initialRemaining);
+
+    if (simulation.timeLimit && initialRemaining === 0) {
+      setIsActive(false);
+      setShowResults(true);
+      toast.success(
+        isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
+      );
+      onSimulationFinished?.();
+      return;
+    }
+
+    const timerInterval = setInterval(() => {
+      const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
+        calculateTimerValues();
+      setElapsedTime(newElapsed);
+      setTimeRemaining(newRemaining);
+
+      if (simulation.timeLimit && newRemaining === 0 && isActive) {
+        setIsActive(false);
+        setShowResults(true);
+        toast.success(
+          isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
+        );
+        onSimulationFinished?.();
+      }
+    }, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, [
+    attempt?.createdAt,
+    simulation?.timeLimit,
+    showResults,
+    isActive,
+    isSingleChatAttempt,
+    simulation,
+    onSimulationFinished,
+  ]);
+
   // Initialize to first incomplete chat when data loads
   useEffect(() => {
     if (chats && chats.length > 0 && currentChatIndex === 0) {
-      // Sort chats by creation date to ensure consistent ordering
       const sortedChats = [...chats].sort(
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
 
-      // Find the first incomplete chat
       const firstIncompleteIndex = sortedChats.findIndex(
         (chat: SimulationChat) => !chat.completed
       );
 
-      // If we found an incomplete chat, set the index to it
       if (
         firstIncompleteIndex !== -1 &&
         firstIncompleteIndex !== currentChatIndex
@@ -150,19 +540,115 @@ export function SimulationProvider({
     }
   }, [chats, currentChatIndex]);
 
-  // Join/leave chat rooms when currentChat changes - using global WebSocket
+  // Check if current chat is completed and move to next or show results
+  useEffect(() => {
+    if (currentChat?.completed && !showResults) {
+      const isFreshlyCompleted = freshlyCompletedChats.has(currentChat.id);
+
+      if (isFreshlyCompleted) {
+        if (
+          !isSingleChatAttempt &&
+          currentChatIndex < (chats?.length || 0) - 1
+        ) {
+          const timerTimeout = setTimeout(() => {
+            setCurrentChatIndex((prev) => {
+              const nextIndex = prev + 1;
+              toast.success(
+                `Moving to chat ${nextIndex + 1} of ${chats?.length || 0}`
+              );
+              return nextIndex;
+            });
+          }, 2000);
+          return () => clearTimeout(timerTimeout);
+        } else {
+          setShowResults(true);
+          setIsActive(false);
+          onSimulationFinished?.();
+        }
+      }
+    }
+    // Always return a cleanup function, even if it's empty
+    return () => {};
+  }, [
+    currentChat?.completed,
+    currentChat?.id,
+    currentChatIndex,
+    chats?.length,
+    showResults,
+    isSingleChatAttempt,
+    freshlyCompletedChats,
+    onSimulationFinished,
+  ]);
+
+  // Check if all chats are completed and show results
+  useEffect(() => {
+    if (chats && chats.length > 0 && !showResults) {
+      const totalExpectedChats = chats.length;
+      const completedChats = chats.filter(
+        (chat: SimulationChat) => chat.completed
+      ).length;
+
+      if (completedChats === totalExpectedChats) {
+        const completedChatIds = chats
+          .filter((chat: SimulationChat) => chat.completed)
+          .map((chat) => chat.id);
+        const hasGradingData =
+          completedChatIds.length === 0 ||
+          (grades &&
+            grades.some((grade) =>
+              completedChatIds.includes(grade.simulationChatId)
+            ));
+
+        if (hasGradingData) {
+          setShowResults(true);
+          setIsActive(false);
+          onSimulationFinished?.();
+        }
+      }
+    }
+  }, [chats, showResults, grades, feedbacks, onSimulationFinished]);
+
+  // Handle case where grading data becomes available after chats are loaded as completed
+  useEffect(() => {
+    if (
+      chats &&
+      chats.length > 0 &&
+      !showResults &&
+      grades &&
+      grades.length > 0
+    ) {
+      const totalExpectedChats = chats.length;
+      const completedChats = chats.filter(
+        (chat: SimulationChat) => chat.completed
+      ).length;
+
+      if (completedChats === totalExpectedChats) {
+        const completedChatIds = chats
+          .filter((chat: SimulationChat) => chat.completed)
+          .map((chat) => chat.id);
+        const hasGradingForAllCompleted = completedChatIds.every((chatId) =>
+          grades.some((grade) => grade.simulationChatId === chatId)
+        );
+
+        if (hasGradingForAllCompleted) {
+          setShowResults(true);
+          setIsActive(false);
+          onSimulationFinished?.();
+        }
+      }
+    }
+  }, [grades, feedbacks, chats, showResults, onSimulationFinished]);
+
+  // Join/leave chat rooms when currentChat changes
   useEffect(() => {
     if (!isConnected || !currentChat?.id) return;
 
-    // Don't rejoin the same room
     if (currentRoomRef.current === currentChat.id) return;
 
-    // Leave current room if we're in one
     if (currentRoomRef.current) {
       leaveRoom(currentRoomRef.current, "simulation");
     }
 
-    // Join new room
     joinRoom(currentChat.id, "simulation");
     currentRoomRef.current = currentChat.id;
     currentChatIdRef.current = currentChat.id;
@@ -178,13 +664,13 @@ export function SimulationProvider({
     };
   }, [currentChat?.id, isConnected, joinRoom, leaveRoom]);
 
-  // Update the ref whenever currentChat changes and handle cleanup
+  // Update the ref whenever currentChat changes
   useEffect(() => {
     const newChatId = currentChat?.id || null;
     currentChatIdRef.current = newChatId;
   }, [currentChat?.id]);
 
-  // WebSocket-based message handler using global context
+  // WebSocket-based message handler
   const sendMessage = useCallback(
     async (message: string) => {
       if (!message.trim() || !currentChat || isSendingMessage) return;
@@ -192,13 +678,10 @@ export function SimulationProvider({
       setIsSendingMessage(true);
 
       try {
-        // Send message via global WebSocket context
         emitSendSimulationMessage({
           chat_id: currentChat.id,
           message: message,
         });
-
-        // The response will be handled via WebSocket events in the global context
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
         setIsSendingMessage(false);
@@ -207,19 +690,16 @@ export function SimulationProvider({
     [currentChat, isSendingMessage, emitSendSimulationMessage]
   );
 
-  // Stop message function using global context
+  // Stop message function
   const stopMessage = useCallback(async () => {
     if (!currentChat || isStoppingMessage) return;
 
     setIsStoppingMessage(true);
 
     try {
-      // Send stop request via global WebSocket context
       emitStopSimulation({
         chat_id: currentChat.id,
       });
-
-      // The WebSocket event will handle state updates
     } catch (error) {
       toast.error(`Failed to stop message: ${error}`);
       setIsStoppingMessage(false);
@@ -233,13 +713,11 @@ export function SimulationProvider({
       setEndChatLoading(true);
 
       try {
-        // Send continue request via global WebSocket context
         emitContinueSimulation({
           chat_id: currentChat.id,
           attempt_id: attemptId,
         });
 
-        // Mark this chat as freshly completed
         setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
 
         queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
@@ -267,9 +745,7 @@ export function SimulationProvider({
       setIsTranscribing(false);
       setLastTranscription(null);
       setWebRtcError(null);
-      // Show immediate feedback
       toast.success("Setting up audio connection...");
-      // Success toast will be shown by the webrtcAudioStarted event
     } catch (error) {
       setIsRecording(false);
       setIsTranscribing(false);
@@ -284,9 +760,7 @@ export function SimulationProvider({
     if (!currentChat?.id) return;
 
     try {
-      setIsTranscribing(true); // Show that we're processing the audio
-      // Don't immediately set recording to false - let the event handler do it
-      // setIsRecording(false); // This will be handled by the event
+      setIsTranscribing(true);
     } catch (error) {
       setIsRecording(false);
       setIsTranscribing(false);
@@ -354,7 +828,6 @@ export function SimulationProvider({
         logInfo(
           `WebRTC audio transcribed for chat ${event.detail.chatId}: ${event.detail.transcribedText}`
         );
-        // The transcription will be automatically sent as a message by the server
       }
     };
 
@@ -459,7 +932,6 @@ export function SimulationProvider({
       }
     };
 
-    // Listen to WebSocket events via window events (emitted by websocket-context)
     window.addEventListener(
       "simulationMessageStart",
       handleSimulationMessageStart as EventListener
@@ -522,15 +994,44 @@ export function SimulationProvider({
   }, []);
 
   const value: SimulationContextType = {
+    // Data
+    attempt: attempt || null,
+    simulation: simulation || null,
+    scenario: scenario || null,
+    documents,
+    scenarioDocuments,
+
+    // Current chat management
     currentChatIndex,
     setCurrentChatIndex,
     currentChat: currentChat || null,
     chats,
     isLoadingChats,
+
+    // Results and grading
+    currentDynamicRubric,
+    allDynamicRubrics,
+    aggregatedResults,
+
+    // Timer state
+    timer,
+    isActive,
+
+    // UI state
+    showResults,
+    isSingleChatAttempt,
+    freshlyCompletedChats,
+    setFreshlyCompletedChats,
+
+    // Connection
     isConnected,
+
+    // WebSocket operations
     sendMessage,
     stopMessage,
     endChat,
+
+    // WebRTC Audio operations
     startRecording,
     stopRecording,
     isRecording,
@@ -538,11 +1039,14 @@ export function SimulationProvider({
     webRtcError,
     lastTranscription,
     isWebRTCSupported,
+
+    // Loading states
     isSendingMessage,
     isStoppingMessage,
     endChatLoading,
-    freshlyCompletedChats,
-    setFreshlyCompletedChats,
+
+    // Event handlers
+    onSimulationFinished,
   };
 
   return (

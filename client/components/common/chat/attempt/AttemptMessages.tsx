@@ -17,23 +17,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowDown } from "lucide-react";
 
 import Markdown from "@/components/common/chat/Markdown";
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 import { Simulation, SimulationMessage } from "@/types";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
-
-const LoadingDots = () => (
-  <div className="flex space-x-1">
-    {[0, 1, 2].map((i) => (
-      <div
-        key={i}
-        className="w-2 h-2 bg-muted-foreground rounded-full animate-pulse"
-        style={{ animationDelay: `${i * 0.2}s` }}
-      />
-    ))}
-  </div>
-);
 
 interface AttemptMessagesProps {
   simulation: Simulation | null;

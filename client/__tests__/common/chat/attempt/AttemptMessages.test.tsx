@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import ChatDialog from '@/components/common/home/ChatDialog';
+import AttemptMessages from '@/components/common/chat/attempt/AttemptMessages';
 
 // Mock external dependencies
 
@@ -11,7 +11,7 @@ import ChatDialog from '@/components/common/home/ChatDialog';
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('ChatDialog', () => {
+describe('AttemptMessages', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -37,20 +37,26 @@ describe('ChatDialog', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for ChatDialog
-      renderWithProviders(<ChatDialog />);
+      // TODO: Implement basic rendering test for AttemptMessages
+      renderWithProviders(<AttemptMessages />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for AttemptMessages
     });
 
-    
+    it('should render with props', () => {
+      // TODO: Test component with various props
+      // Props interface: AttemptMessagesProps
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Props testing for AttemptMessages
+    });
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for AttemptMessages
     });
   });
 
@@ -62,7 +68,7 @@ describe('ChatDialog', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: State management test for AttemptMessages
     });
 
     it('should handle user events', async () => {
@@ -70,7 +76,7 @@ describe('ChatDialog', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: User events test for AttemptMessages
     });
   });
 
@@ -79,21 +85,21 @@ describe('ChatDialog', () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: API integration test for AttemptMessages
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for AttemptMessages
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for AttemptMessages
     });
   });
 
@@ -104,29 +110,34 @@ describe('ChatDialog', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ChatDialog
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for AttemptMessages
     });
 
-    
+    it('should handle missing or invalid props', () => {
+      // TODO: Test with missing/invalid props
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Invalid props test for AttemptMessages
+    });
   });
 });
 
 /*
- * Component Analysis for ChatDialog:
- * Path: common/home/ChatDialog.tsx
+ * Component Analysis for AttemptMessages:
+ * Path: common/chat/attempt/AttemptMessages.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: false
- * - Props interface: None detected
+ * - Has props: true
+ * - Props interface: AttemptMessagesProps
  * - Client component: true
- * - Uses hooks: user, useAssistant, useRole, useQuery, useState
+ * - Uses hooks: user, useQuery, useEffect, useMemo, useRef, useState, useSimulation
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: true
- * - Uses effects: false
+ * - Uses effects: true
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -134,12 +145,12 @@ describe('ChatDialog', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatDialog />);
+ * render(<AttemptMessages {...mockProps} />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ChatDialog {...props} />);
+ * render(<AttemptMessages {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

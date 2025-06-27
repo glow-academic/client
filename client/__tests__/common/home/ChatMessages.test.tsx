@@ -113,7 +113,7 @@ describe('ChatMessages', () => {
  * - Has props: true
  * - Props interface: ChatMessagesProps
  * - Client component: true
- * - Uses hooks: useChat, useRole, useQuery, useCallback, useEffect, useRef, user
+ * - Uses hooks: useAssistant, useRole, useQuery, useCallback, useEffect, useRef, user
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

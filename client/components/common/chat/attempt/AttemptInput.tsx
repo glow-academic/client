@@ -23,35 +23,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { Simulation } from "@/types";
-
-const LoadingDots = () => (
-  <div className="flex space-x-1">
-    {[0, 1, 2].map((i) => (
-      <div
-        key={i}
-        className="w-2 h-2 bg-current rounded-full animate-pulse"
-        style={{ animationDelay: `${i * 0.2}s` }}
-      />
-    ))}
-  </div>
-);
 
 interface AttemptInputProps {
   attemptId: string;
-  simulation: Simulation | null;
-  isActive: boolean;
-  isSingleChatAttempt: boolean;
 }
 
-export default function AttemptInput({
-  attemptId,
-  simulation,
-  isActive,
-  isSingleChatAttempt,
-}: AttemptInputProps) {
+export default function AttemptInput({ attemptId }: AttemptInputProps) {
   const {
+    simulation,
+    isActive,
+    isSingleChatAttempt,
     currentChat,
     sendMessage,
     stopMessage,

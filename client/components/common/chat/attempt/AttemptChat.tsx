@@ -5,9 +5,7 @@
  * 06/27/2025
  */
 "use client";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
@@ -60,134 +58,32 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-// Add RadialBarChart imports
-import { ChartContainer } from "@/components/ui/chart";
-import {
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  RadialBar,
-  RadialBarChart,
-} from "recharts";
-
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
+import { CircularProgress } from "@/components/ui/circular-progress";
 import { useSimulation } from "@/contexts/simulation-context";
-import { Document, SimulationChat } from "@/types";
-import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
-import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
-import { getScenario } from "@/utils/queries/scenarios/get-scenario";
-import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
-import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
-import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
-import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
-import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
+import { SimulationChat } from "@/types";
 
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
-// Dynamic rubric interface based on grades/feedback
-interface DynamicRubric {
-  chatId: string;
-  score: number;
-  passed: boolean;
-  timeTaken: number;
-  skillScores: Record<string, number>;
-  skillFeedbacks: Record<string, string>;
-  totalPossiblePoints: number;
-}
-
-// Add circular progress component
-const CircularProgress = ({
-  progress,
-  size = 40,
-  strokeWidth = 4,
-}: {
-  progress: number;
-  size?: number;
-  strokeWidth?: number;
-}) => {
-  // Calculate color based on progress (red to yellow to green)
-  const getProgressColor = (progress: number) => {
-    if (progress < 50) {
-      // Red to yellow (0-50%)
-      const ratio = progress / 50;
-      return `hsl(${ratio * 60}, 70%, 50%)`; // 0 = red, 60 = yellow
-    } else {
-      // Yellow to green (50-100%)
-      const ratio = (progress - 50) / 50;
-      return `hsl(${60 + ratio * 60}, 70%, 50%)`; // 60 = yellow, 120 = green
-    }
-  };
-
-  const progressColor = getProgressColor(progress);
-
-  const chartData = [
-    {
-      progress: Math.max(0, Math.min(100, progress)), // Ensure progress is between 0-100
-      fill: progressColor,
-    },
-  ];
-
-  const chartConfig = {
-    progress: {
-      label: "Progress",
-      color: progressColor,
-    },
-  };
-
-  return (
-    <div className="relative flex items-center justify-center">
-      <ChartContainer
-        config={chartConfig}
-        className={`aspect-square`}
-        style={{ width: size, height: size }}
-      >
-        <RadialBarChart
-          data={chartData}
-          startAngle={90}
-          endAngle={-270}
-          innerRadius="75%"
-          outerRadius="100%"
-        >
-          {/* Map progress (0-100) to the sweep angle */}
-          <PolarAngleAxis
-            type="number"
-            domain={[0, 100]}
-            dataKey="progress"
-            angleAxisId={0}
-            tick={false}
-            tickLine={false}
-            axisLine={false}
-          />
-          <PolarRadiusAxis tick={false} tickLine={false} axisLine={false} />
-          <RadialBar
-            dataKey="progress"
-            cornerRadius={strokeWidth / 2}
-            fill={progressColor}
-            background={{ fill: "rgba(0,0,0,0.1)" }}
-          />
-        </RadialBarChart>
-      </ChartContainer>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-xs font-medium text-foreground">
-          {Math.round(progress)}%
-        </span>
-      </div>
-    </div>
-  );
-};
-
 export default function AttemptChat({ attemptId }: { attemptId: string }) {
-  const router = useRouter();
+  const {
+    simulation,
+    scenario,
+    scenarioDocuments,
+    currentChat,
+    chats,
+    isLoadingChats,
+    currentDynamicRubric,
+    allDynamicRubrics,
+    aggregatedResults,
+    timer,
+    isActive,
+    showResults,
+    isSingleChatAttempt,
+  } = useSimulation();
 
-  const { currentChat, chats, isLoadingChats } = useSimulation();
-
-  const [timeRemaining, setTimeRemaining] = useState<number | null>(0);
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [isActive, setIsActive] = useState(true);
-
-  const [showResults, setShowResults] = useState(false);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
   const [showDocuments, setShowDocuments] = useState(true);
@@ -196,217 +92,31 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
   );
   const [documentSearchOpen, setDocumentSearchOpen] = useState(false);
 
-  // Fetch attempt data
-  const {
-    data: attempt,
-    isLoading: attemptLoading,
-    error: attemptError,
-  } = useQuery({
-    queryKey: ["attempt", attemptId],
-    queryFn: () => getSimulationAttempt(attemptId),
-    enabled: !!attemptId,
-  });
-
-  const { data: simulation, isLoading: simulationLoading } = useQuery({
-    queryKey: ["simulation", attempt?.simulationId],
-    queryFn: () => getSimulation(attempt!.simulationId),
-    enabled: !!attempt,
-  });
-
-  const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
-    queryKey: ["rubrics"],
-    queryFn: () => getAllRubrics(),
-  });
-
-  const { data: standardGroups, isLoading: isLoadingStandardGroups } = useQuery(
-    {
-      queryKey: ["standardGroups", rubrics?.map((rubric) => rubric.id)],
-      queryFn: () =>
-        getStandardGroupsByRubrics(rubrics!.map((rubric) => rubric.id)),
-      enabled: !!rubrics,
-    }
-  );
-
-  const { data: standards, isLoading: isLoadingStandards } = useQuery({
-    queryKey: ["standards", standardGroups?.map((group) => group.id)],
-    queryFn: () =>
-      getStandardsByStandardGroups(standardGroups!.map((group) => group.id)),
-    enabled: !!standardGroups,
-  });
-
-  const { data: grades, isLoading: isLoadingGrades } = useQuery({
-    queryKey: ["simulationGrades", chats?.map((chat) => chat.id)],
-    queryFn: () =>
-      getSimulationChatGradesBySimulationChats(chats!.map((chat) => chat.id)),
-    enabled: !!chats,
-  });
-
-  const { data: feedbacks, isLoading: isLoadingFeedbacks } = useQuery({
-    queryKey: ["simulationFeedbacks", grades?.map((grade) => grade.id)],
-    queryFn: () =>
-      getSimulationChatFeedbacksBySimulationChatGrades(
-        grades!.map((grade) => grade.id)
-      ),
-    enabled: !!grades,
-  });
-
-  // Fetch scenario for current chat
-  const { data: scenario, isLoading: scenarioLoading } = useQuery({
-    queryKey: ["interaction", currentChat?.scenarioId],
-    queryFn: () => getScenario(currentChat!.scenarioId),
-    enabled: !!currentChat,
-  });
-
-  // Create dynamic rubric for current chat based on grades/feedback
-  const currentDynamicRubric = useMemo((): DynamicRubric | null => {
-    if (
-      !currentChat?.id ||
-      !grades ||
-      !feedbacks ||
-      !standards ||
-      !standardGroups
-    )
-      return null;
-
-    const chatGrade = grades.find(
-      (grade) => grade.simulationChatId === currentChat.id
-    );
-    if (!chatGrade) return null;
-
-    const chatFeedbacks = feedbacks.filter(
-      (feedback) => feedback.simulationChatGradeId === chatGrade.id
-    );
-
-    // Calculate skill scores and feedbacks
-    const skillScores: Record<string, number> = {};
-    const skillFeedbacks: Record<string, string> = {};
-    let totalPossiblePoints = 0;
-
-    standardGroups.forEach((group) => {
-      const groupStandards = standards.filter(
-        (s) => s.standardGroupId === group.id
-      );
-      const groupFeedbacks = chatFeedbacks.filter((f) =>
-        groupStandards.some((s) => s.id === f.standardId)
-      );
-
-      if (groupFeedbacks.length > 0) {
-        // Use group.points instead of max standard points for correct total calculation
-        const groupMaxPoints = group.points;
-        const maxStandardPoints = Math.max(
-          ...groupStandards.map((s) => s.points)
-        );
-        const avgScore =
-          groupFeedbacks.reduce((sum, f) => sum + f.total, 0) /
-          groupFeedbacks.length;
-        const normalizedScore = Math.round((avgScore / maxStandardPoints) * 5); // Convert to 1-5 scale
-
-        skillScores[group.name] = normalizedScore;
-        skillFeedbacks[group.shortName] = groupFeedbacks
-          .map((f) => f.feedback)
-          .join("; ");
-        totalPossiblePoints += groupMaxPoints; // Use group points for total
-      }
-    });
-
-    // Calculate if passed (assuming 70% threshold)
-    const passed = chatGrade.score >= totalPossiblePoints * 0.7;
-
-    return {
-      chatId: currentChat.id,
-      score: chatGrade.score,
-      passed,
-      timeTaken: chatGrade.timeTaken,
-      skillScores,
-      skillFeedbacks,
-      totalPossiblePoints,
-    };
-  }, [currentChat?.id, grades, feedbacks, standards, standardGroups]);
-
-  // Fetch documents for the attempt class
-  const { data: documents = [] } = useQuery({
-    queryKey: ["documents", scenario?.id],
-    queryFn: () => getAllDocuments(),
-    enabled: !!scenario?.id,
-  });
-
-  // Filter documents for the current attempt's class
-  const scenarioDocuments = useMemo(() => {
-    if (!scenario || !documents) return [];
-    return documents.filter((doc: Document) =>
-      scenario.documents?.includes(doc.id)
-    );
-  }, [documents, scenario]);
-
-  // Determine if this is a single chat attempt (acts like individual chat) or multiple chats
-  const isSingleChatAttempt = chats?.length === 1;
-
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
     if (!selectedChatId || !chats) return null;
     return chats.find((chat: SimulationChat) => chat.id === selectedChatId);
   }, [selectedChatId, chats]);
 
-  // Timer logic - Update timer values every second based on actual attempt creation timestamp
-  useEffect(() => {
-    if (!attempt?.createdAt || !simulation || showResults) return;
-
-    // Calculate time based on actual attempt creation timestamp
-    const calculateTimerValues = () => {
-      const attemptStartTime = new Date(attempt.createdAt);
-      const currentTime = new Date();
-      const elapsedSeconds = Math.floor(
-        (currentTime.getTime() - attemptStartTime.getTime()) / 1000
+  // Auto-select first completed chat when results show and default to showing rubric if all chats completed
+  useState(() => {
+    if (showResults && chats && chats.length > 0 && !selectedChatId) {
+      const completedChats = chats.filter(
+        (chat: SimulationChat) => chat.completed
       );
+      if (completedChats.length > 0 && completedChats[0]) {
+        setSelectedChatId(completedChats[0].id);
 
-      if (simulation.timeLimit) {
-        // For time-limited attempts, calculate remaining time
-        const totalTimeSeconds = simulation.timeLimit * 60;
-        const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
-        return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
-      } else {
-        // For unlimited attempts, just track elapsed time
-        return { elapsedTime: elapsedSeconds, timeRemaining: null };
+        // If all chats are completed, default to showing rubric
+        if (completedChats.length === chats.length) {
+          setShowGrades(true);
+        }
       }
-    };
-
-    // Initial calculation
-    const { elapsedTime: initialElapsed, timeRemaining: initialRemaining } =
-      calculateTimerValues();
-    setElapsedTime(initialElapsed);
-    setTimeRemaining(initialRemaining);
-
-    // Check if time has already expired
-    if (simulation.timeLimit && initialRemaining === 0) {
-      setIsActive(false);
-      setShowResults(true);
-      return;
     }
-
-    const timer = setInterval(() => {
-      const { elapsedTime: newElapsed, timeRemaining: newRemaining } =
-        calculateTimerValues();
-      setElapsedTime(newElapsed);
-      setTimeRemaining(newRemaining);
-
-      // Check if time limit reached
-      if (simulation.timeLimit && newRemaining === 0 && isActive) {
-        setIsActive(false);
-        setShowResults(true);
-      }
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [
-    attempt?.createdAt,
-    simulation?.timeLimit,
-    showResults,
-    isActive,
-    simulation,
-  ]);
+  });
 
   // Set default selected document
-  useEffect(() => {
+  useState(() => {
     if (
       scenarioDocuments.length > 0 &&
       !selectedDocumentId &&
@@ -414,7 +124,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     ) {
       setSelectedDocumentId(scenarioDocuments[0].id);
     }
-  }, [scenarioDocuments, selectedDocumentId]);
+  });
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
@@ -422,17 +132,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
   };
 
-  if (
-    attemptLoading ||
-    simulationLoading ||
-    scenarioLoading ||
-    isLoadingChats ||
-    isLoadingRubrics ||
-    isLoadingFeedbacks ||
-    isLoadingGrades ||
-    isLoadingStandardGroups ||
-    isLoadingStandards
-  ) {
+  if (isLoadingChats) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -443,7 +143,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
     );
   }
 
-  if (attemptError || !attempt || !chats || chats.length === 0) {
+  if (!chats || chats.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Card>
@@ -453,7 +153,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
               The attempt you're looking for doesn't exist or has no chats
               available.
             </p>
-            <Button onClick={() => router.push("/home")}>
+            <Button onClick={() => (window.location.href = "/home")}>
               Return To Dashboard
             </Button>
           </CardContent>
@@ -544,20 +244,87 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div
-                                className={`flex items-center gap-2 px-3 py-1 rounded-full bg-muted`}
+                                className={`flex items-center gap-2 px-3 py-1 rounded-full ${
+                                  selectedChat &&
+                                  allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )
+                                    ? allDynamicRubrics.find(
+                                        (rubric) =>
+                                          rubric.chatId === selectedChat.id
+                                      )?.passed
+                                      ? "bg-green-100 dark:bg-green-900/30"
+                                      : "bg-red-100 dark:bg-red-900/30"
+                                    : aggregatedResults
+                                      ? aggregatedResults.overallPassed
+                                        ? "bg-green-100 dark:bg-green-900/30"
+                                        : "bg-red-100 dark:bg-red-900/30"
+                                      : "bg-muted"
+                                }`}
                               >
                                 <Clock className="h-4 w-4" />
                                 <span
                                   className="text-sm font-medium"
                                   data-testid="timer"
                                 >
-                                  {formatTime(elapsedTime)}
+                                  {selectedChat &&
+                                  allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )?.timeTaken !== undefined
+                                    ? formatTime(
+                                        allDynamicRubrics.find(
+                                          (rubric) =>
+                                            rubric.chatId === selectedChat.id
+                                        )?.timeTaken ?? 0
+                                      )
+                                    : aggregatedResults?.totalTime !== undefined
+                                      ? formatTime(aggregatedResults.totalTime)
+                                      : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Session completed</p>
-                            </TooltipContent>
+                            {selectedChat &&
+                            allDynamicRubrics.find(
+                              (rubric) => rubric.chatId === selectedChat.id
+                            ) ? (
+                              <TooltipContent>
+                                <p>
+                                  {allDynamicRubrics.find(
+                                    (rubric) =>
+                                      rubric.chatId === selectedChat.id
+                                  )?.passed
+                                    ? "Passed"
+                                    : "Failed"}
+                                  (
+                                  {
+                                    allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === selectedChat.id
+                                    )?.score
+                                  }
+                                  /
+                                  {
+                                    allDynamicRubrics.find(
+                                      (rubric) =>
+                                        rubric.chatId === selectedChat.id
+                                    )?.totalPossiblePoints
+                                  }
+                                  )
+                                </p>
+                              </TooltipContent>
+                            ) : aggregatedResults ? (
+                              <TooltipContent>
+                                <p>
+                                  {aggregatedResults.overallPassed
+                                    ? "Passed"
+                                    : "Failed"}
+                                  ({aggregatedResults.passedChats}/
+                                  {aggregatedResults.totalChats} chats passed)
+                                </p>
+                              </TooltipContent>
+                            ) : null}
                           </Tooltip>
                         </TooltipProvider>
                       </div>
@@ -604,13 +371,10 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
-                          {/* Placeholder for results messages - would need to implement */}
-                          <div className="text-center py-8">
-                            <p className="text-muted-foreground">
-                              Chat conversation view for results (to be
-                              implemented)
-                            </p>
-                          </div>
+                          <AttemptMessages
+                            simulation={simulation}
+                            isActive={true}
+                          />
                         </div>
                       ) : (
                         /* Fallback content when no chat is selected */
@@ -634,7 +398,63 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
               <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                 <Card className="h-full flex flex-col ml-4 p-0">
                   <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
-                    {/* Document viewer */}
+                    {/* Select dropdown directly above document */}
+                    {scenarioDocuments.length > 1 && (
+                      <div className="p-3 pb-2 border-b">
+                        <Popover
+                          open={documentSearchOpen}
+                          onOpenChange={setDocumentSearchOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={documentSearchOpen}
+                              className="w-full justify-between"
+                            >
+                              {selectedDocumentId
+                                ? scenarioDocuments.find(
+                                    (doc) => doc.id === selectedDocumentId
+                                  )?.name
+                                : "Select document..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search documents..." />
+                              <CommandList>
+                                <CommandEmpty>No document found.</CommandEmpty>
+                                <CommandGroup>
+                                  {scenarioDocuments.map((doc) => (
+                                    <CommandItem
+                                      key={doc.id}
+                                      value={doc.name}
+                                      onSelect={() => {
+                                        setSelectedDocumentId(doc.id);
+                                        setDocumentSearchOpen(false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={`mr-2 h-4 w-4 ${
+                                          selectedDocumentId === doc.id
+                                            ? "opacity-100"
+                                            : "opacity-0"
+                                        }`}
+                                      />
+                                      <span className="truncate">
+                                        {doc.name}
+                                      </span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    )}
+                    {/* Document viewer with minimal padding */}
                     <div className="flex-1 min-h-0 p-2">
                       {selectedDocumentId && (
                         <DocumentViewer
@@ -694,7 +514,10 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                                     <div className="text-sm text-muted-foreground flex items-center gap-2">
                                       <CircularProgress
                                         progress={
-                                          ((chats.length - 1) /
+                                          (chats.filter(
+                                            (chat: SimulationChat) =>
+                                              chat.completed
+                                          ).length /
                                             (simulation?.scenarioIds?.length ||
                                               1)) *
                                           100
@@ -705,8 +528,14 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>
-                                      Chat {chats.length} of{" "}
-                                      {simulation?.scenarioIds?.length}
+                                      {
+                                        chats.filter(
+                                          (chat: SimulationChat) =>
+                                            chat.completed
+                                        ).length
+                                      }{" "}
+                                      of {simulation?.scenarioIds?.length} chats
+                                      completed
                                     </p>
                                   </TooltipContent>
                                 </Tooltip>
@@ -758,11 +587,11 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                                     data-testid="timer"
                                   >
                                     {simulation?.timeLimit &&
-                                    timeRemaining !== null
-                                      ? formatTime(timeRemaining)
-                                      : formatTime(elapsedTime)}
+                                    timer.remaining !== null
+                                      ? formatTime(timer.remaining)
+                                      : formatTime(timer.elapsed)}
                                   </span>
-                                  {simulation?.timeLimit && !isActive && (
+                                  {simulation?.timeLimit && timer.expired && (
                                     <span className="text-xs text-red-500 ml-1">
                                       (Expired)
                                     </span>
@@ -790,7 +619,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
 
                     {/* Messages Area */}
                     <AttemptMessages
-                      simulation={simulation || null}
+                      simulation={simulation}
                       isActive={isActive}
                     />
                   </div>
@@ -799,12 +628,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                 <ResizableHandle />
                 {/* Input Area */}
                 <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                  <AttemptInput
-                    attemptId={attemptId}
-                    simulation={simulation || null}
-                    isActive={isActive}
-                    isSingleChatAttempt={isSingleChatAttempt}
-                  />
+                  <AttemptInput attemptId={attemptId} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </TooltipProvider>
@@ -846,7 +670,7 @@ export default function AttemptChat({ attemptId }: { attemptId: string }) {
                             <CommandList>
                               <CommandEmpty>No document found.</CommandEmpty>
                               <CommandGroup>
-                                {scenarioDocuments.map((doc: Document) => (
+                                {scenarioDocuments.map((doc) => (
                                   <CommandItem
                                     key={doc.id}
                                     value={doc.name}

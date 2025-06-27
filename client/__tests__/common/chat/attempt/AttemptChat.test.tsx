@@ -1,14 +1,14 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import userEvent from '@testing-library/user-event';
-import ChatInput from '@/components/common/home/ChatInput';
+import AttemptChat from '@/components/common/chat/attempt/AttemptChat';
 
 // Mock external dependencies
 
 
 
 
-describe('ChatInput', () => {
+describe('AttemptChat', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     
@@ -18,44 +18,32 @@ describe('ChatInput', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for ChatInput
-      render(<ChatInput />);
+      // TODO: Implement basic rendering test for AttemptChat
+      render(<AttemptChat />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatInput
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for AttemptChat
     });
 
-    it('should render with props', () => {
-      // TODO: Test component with various props
-      // Props interface: ChatInputProps
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Props testing for ChatInput
-    });
+    
 
     it('should have correct accessibility attributes', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ChatInput
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for AttemptChat
     });
   });
 
   describe('User Interactions', () => {
-    it('should handle form submissions', async () => {
-      // TODO: Test form handling
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Form handling test for ChatInput
-    });
+    
 
     it('should handle state changes', async () => {
       // TODO: Test state management
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: State management test for ChatInput
+      expect(true).toBe(false); // IMPLEMENT: State management test for AttemptChat
     });
 
     it('should handle user events', async () => {
@@ -63,7 +51,7 @@ describe('ChatInput', () => {
       const _user = userEvent.setup();
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for ChatInput
+      expect(true).toBe(false); // IMPLEMENT: User events test for AttemptChat
     });
   });
 
@@ -76,34 +64,29 @@ describe('ChatInput', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ChatInput
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for AttemptChat
     });
 
-    it('should handle missing or invalid props', () => {
-      // TODO: Test with missing/invalid props
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Invalid props test for ChatInput
-    });
+    
   });
 });
 
 /*
- * Component Analysis for ChatInput:
- * Path: common/home/ChatInput.tsx
+ * Component Analysis for AttemptChat:
+ * Path: common/chat/attempt/AttemptChat.tsx
  * 
  * Features detected:
  * - Default export: true
  * - Named exports: None
- * - Has props: true
- * - Props interface: ChatInputProps
+ * - Has props: false
+ * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useAssistant, useRole, useEffect, useState
+ * - Uses hooks: useMemo, useState, useSimulation
  * - Uses router: false
  * - Has API calls: false
- * - Has form handling: true
+ * - Has form handling: false
  * - Uses state: true
- * - Uses effects: true
+ * - Uses effects: false
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -111,12 +94,12 @@ describe('ChatInput', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatInput {...mockProps} />);
+ * render(<AttemptChat />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ChatInput {...props} />);
+ * render(<AttemptChat {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

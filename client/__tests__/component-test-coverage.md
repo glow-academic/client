@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-27T14:22:34.282Z
+Generated on: 2025-06-27T19:56:52.582Z
 
 ## Summary
-- **Total Components**: 91
-- **Tests Created**: 0
+- **Total Components**: 94
+- **Tests Created**: 3
 - **Tests Updated**: 39
 - **Tests Skipped** (already implemented): 52
 
@@ -40,6 +40,9 @@ Generated on: 2025-06-27T14:22:34.282Z
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
+| AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ❌ Needs Implementation |
+| AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ❌ Needs Implementation |
+| AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ❌ Needs Implementation |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ❌ Needs Implementation |
@@ -145,6 +148,10 @@ __tests__/
 │   │   ├── DocumentViewer.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx
+│   │   ├── attempt/
+│   │   │   ├── AttemptChat.test.tsx
+│   │   │   ├── AttemptInput.test.tsx
+│   │   │   ├── AttemptMessages.test.tsx
 │   ├── class/
 │   │   ├── ClassForm.test.tsx
 │   ├── cohort/

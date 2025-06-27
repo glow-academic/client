@@ -121,7 +121,7 @@ describe('ChatWidget', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useChat, useRole, useQuery, useState
+ * - Uses hooks: user, useAssistant, useRole, useQuery, useState
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

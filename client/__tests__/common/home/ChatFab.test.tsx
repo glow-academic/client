@@ -92,7 +92,7 @@ describe('ChatFab', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: user, useChat, useRole, usePathname
+ * - Uses hooks: user, useAssistant, useRole, usePathname
  * - Uses router: true
  * - Has API calls: false
  * - Has form handling: false
