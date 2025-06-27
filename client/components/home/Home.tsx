@@ -606,6 +606,10 @@ export default function Home() {
   const [loadingSimulation, setLoadingSimulation] = useState<string | null>(
     null
   );
+  const [loadingToastId, setLoadingToastId] = useState<string | number | null>(
+    null
+  );
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
   const [soloCarouselIndex, setSoloCarouselIndex] = useState(0);
   const [multiCarouselIndex, setMultiCarouselIndex] = useState(0);
 
@@ -703,6 +707,13 @@ export default function Home() {
   useEffect(() => {
     // Listen for successful simulation starts to handle navigation
     const handleSimulationStarted = (event: CustomEvent) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastId) {
+        toast.dismiss(loadingToastId);
+        setLoadingToastId(null);
+      }
       const { attemptId } = event.detail;
       logInfo("Navigating to simulation attempt", { attemptId });
       router.push(`/home/a/${attemptId}`);
@@ -711,6 +722,14 @@ export default function Home() {
 
     // Listen for simulation errors to reset loading state
     const handleSimulationError = () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      if (loadingToastId) {
+        toast.dismiss(loadingToastId);
+        setLoadingToastId(null);
+      }
+      toast.error("Failed to start simulation. Please try again.");
       setLoadingSimulation(null);
     };
 
@@ -726,8 +745,11 @@ export default function Home() {
         handleSimulationStarted as EventListener
       );
       window.removeEventListener("simulationError", handleSimulationError);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
     };
-  }, [router]);
+  }, [router, loadingToastId]);
 
   const handleStartSimulation = useCallback(
     async (simulationId: string) => {
@@ -755,7 +777,8 @@ export default function Home() {
         }
 
         setLoadingSimulation(simulationId);
-        const loadingToast = toast.loading("Starting simulation...");
+        const toastId = toast.loading("Starting simulation...");
+        setLoadingToastId(toastId);
 
         logInfo("Starting simulation via global WebSocket", {
           simulationId,
@@ -770,24 +793,27 @@ export default function Home() {
         });
 
         // Set a timeout to handle cases where the server doesn't respond
-        const timeoutId = setTimeout(() => {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(() => {
           logError("Simulation start timeout - no response from server");
-          toast.dismiss(loadingToast);
+          toast.dismiss(toastId);
           toast.error("Simulation start timed out. Please try again.");
           setLoadingSimulation(null);
+          setLoadingToastId(null);
         }, 30000); // 30 second timeout
-
-        // Store timeout for potential cleanup (if needed)
-        return () => clearTimeout(timeoutId);
       } catch (error) {
         logError("Error starting simulation:", error);
-        toast.dismiss();
+        if (loadingToastId) {
+          toast.dismiss(loadingToastId);
+        }
         toast.error("Failed to start simulation. Please try again.");
         setLoadingSimulation(null);
+        setLoadingToastId(null);
       }
-      return;
     },
-    [profile, classes, isConnected, emitStartSimulation]
+    [profile, classes, isConnected, emitStartSimulation, loadingToastId]
   );
 
   // Separate simulations into default and cohort-based
@@ -1160,7 +1186,6 @@ export default function Home() {
   return (
     <TooltipProvider>
       <div className="space-y-8">
-
         {/* Cohort Simulations Carousel */}
         {cohortSimulations.length > 0 &&
           renderCarousel(cohortSimulations, "cohort")}

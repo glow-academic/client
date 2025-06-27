@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-27T20:12:30.100Z
+Generated on: 2025-06-27T21:54:21.140Z
 
 ## Summary
-- **Total Components**: 95
-- **Tests Created**: 1
-- **Tests Updated**: 42
-- **Tests Skipped** (already implemented): 52
+- **Total Components**: 94
+- **Tests Created**: 0
+- **Tests Updated**: 43
+- **Tests Skipped** (already implemented): 51
 
 ## Component Coverage
 
@@ -36,7 +36,6 @@ Generated on: 2025-06-27T20:12:30.100Z
 | ClassPerformance | common/analytics/secondary/ClassPerformance.tsx | ClassPerformance.test.tsx | ❌ Needs Implementation |
 | SkillBreakdown | common/analytics/secondary/SkillBreakdown.tsx | SkillBreakdown.test.tsx | ❌ Needs Implementation |
 | TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
-| Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | DocumentSelect | common/chat/DocumentSelect.tsx | DocumentSelect.test.tsx | ❌ Needs Implementation |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
@@ -145,7 +144,6 @@ __tests__/
 │   │   │   ├── SkillBreakdown.test.tsx
 │   │   │   ├── TrainingInsights.test.tsx
 │   ├── chat/
-│   │   ├── Attempt.test.tsx
 │   │   ├── DocumentSelect.test.tsx
 │   │   ├── DocumentViewer.test.tsx
 │   │   ├── Markdown.test.tsx
