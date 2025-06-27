@@ -16,8 +16,9 @@ import tempfile
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
+import av
 import numpy as np
 import socketio  # type: ignore
 import torch
@@ -39,6 +40,50 @@ logger = logging.getLogger(__name__)
 
 # Global store for active simulation runs
 active_simulation_runs: Dict[str, Any] = {}
+
+# -- Audio Processing Constants & Helpers --
+TARGET_SR = 16_000
+FRAME_MS = 30  # VAD supports 10, 20, or 30 ms frames
+TARGET_SAMPLES_PER_FRAME = TARGET_SR * FRAME_MS // 1000
+TARGET_BYTES_PER_FRAME = TARGET_SAMPLES_PER_FRAME * 2  # 16-bit PCM
+
+async def resample_and_chunk_audio(
+    track: Any,
+) -> AsyncGenerator[bytes, None]:
+    """
+    Resamples audio from the track to 16kHz, mono, 16-bit PCM,
+    and yields it in chunks of the size required by VAD.
+    """
+    buffer = b""
+    async for frame in track:
+        try:
+            # Reformat the frame using PyAV's built-in resampler.
+            # This is safer than manual conversion.
+            resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_SR)
+            resampled_frames = resampler.resample(frame)
+            
+            # Append resampled audio bytes to our buffer
+            for resampled_frame in resampled_frames:
+                buffer += resampled_frame.to_ndarray().tobytes()
+
+            # Yield as many complete VAD frames as we can from the buffer
+            while len(buffer) >= TARGET_BYTES_PER_FRAME:
+                # Yield a VAD-compatible chunk
+                yield buffer[:TARGET_BYTES_PER_FRAME]
+                # Keep the rest of the buffer for the next round
+                buffer = buffer[TARGET_BYTES_PER_FRAME:]
+
+        except av.error.EOFError:
+            logger.info("Audio track processing finished (EOF).")
+            break
+        except Exception:
+            logger.exception("Error during audio frame resampling, skipping frame.")
+            continue
+    
+    # If there's a lingering partial frame, pad and yield it
+    if buffer:
+        padded_buffer = buffer.ljust(TARGET_BYTES_PER_FRAME, b'\0')
+        yield padded_buffer
 
 
 class VadDetector:
@@ -671,7 +716,9 @@ async def process_simulation_message_websocket(
 async def emit_error(sid: str, message: str) -> None:
     """Helper function to emit error messages to a specific client"""
     sio_instance = get_sio_instance()
-    await sio_instance.emit("error", {"success": False, "message": message}, room=sid)
+    await sio_instance.emit(
+        "simulation_error", {"success": False, "message": message}, room=sid
+    )
     logger.error(f"Emitted error to {sid}: {message}")
 
 
@@ -681,27 +728,21 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
         f"Audio processing task started for chat {chat_id} from profile {profile_id}"
     )
 
-    sample_rate = 16000  # Whisper requires 16kHz
-    frame_duration_ms = 30  # VAD supports 10, 20, or 30 ms frames
-    vad = VadDetector(sample_rate, frame_duration_ms, vad_level=2)
-
+    vad = VadDetector(TARGET_SR, FRAME_MS, vad_level=2)
     speech_buffer: deque[bytes] = deque()
     is_speaking = False
     silence_frames = 0
     silence_threshold = 25  # ~750ms of silence
 
     try:
-        while True:
-            frame = await track.recv()
-            audio_bytes = frame.to_ndarray().tobytes()
-
-            if vad.is_speech(audio_bytes):
+        async for vad_frame in resample_and_chunk_audio(track):
+            if vad.is_speech(vad_frame):
                 is_speaking = True
                 silence_frames = 0
-                speech_buffer.append(audio_bytes)
+                speech_buffer.append(vad_frame)
             elif is_speaking:
                 silence_frames += 1
-                speech_buffer.append(audio_bytes)  # Buffer some silence too
+                speech_buffer.append(vad_frame)  # Buffer some silence too
 
                 if silence_frames > silence_threshold:
                     is_speaking = False
@@ -712,13 +753,18 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
                     speech_buffer.clear()
 
                     # Convert to numpy array for transcription
-                    audio_np = np.frombuffer(
-                        full_audio_bytes, dtype=np.int16
-                    ).astype(np.float32) / 32768.0
+                    audio_np = (
+                        np.frombuffer(full_audio_bytes, dtype=np.int16).astype(
+                            np.float32
+                        )
+                        / 32768.0
+                    )
 
                     # Transcribe
                     whisper_model = model_manager.get_whisper_model()
-                    transcribed_text = whisper_model.transcribe(audio_np)
+                    result = whisper_model.transcribe(audio_np, language="en")
+                    transcribed_text = result["text"]
+
                     logger.info(
                         f"Transcribed audio for chat {chat_id}: '{transcribed_text}'"
                     )
@@ -730,12 +776,13 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
                                 chat_id=chat_id,
                                 message=transcribed_text,
                                 is_audio=True,
-                                profile_id=profile_id,  # Pass profile for potential audio response
+                                profile_id=profile_id,
                             )
                         )
-
-    except Exception as e:
-        logger.info(f"Audio stream for chat {chat_id} ended: {e}")
+    except Exception:
+        logger.exception(
+            f"Audio stream processing for chat {chat_id} crashed."
+        )
 
 
 def register_simulation_events(sio: socketio.AsyncServer) -> None:
