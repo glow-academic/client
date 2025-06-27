@@ -146,10 +146,10 @@ describe("breadcrumb-utils", () => {
           ],
         },
         {
-          path: "/management/evals",
+          path: "/management/models",
           expected: [
             { title: "Management", section: "management" },
-            { title: "Evaluations", section: "evals" },
+            { title: "Models", section: "models" },
           ],
         },
       ];

@@ -248,14 +248,7 @@ export function UnifiedSidebar({
         section: "cohorts",
       });
 
-      // Evaluations - available for admin
-      managementItems.push({
-        title: "Evaluations",
-        url: "#",
-        section: "evals",
-      });
-
-      // Evaluations - available for admin
+      // Models - available for admin
       managementItems.push({
         title: "Models",
         url: "#",

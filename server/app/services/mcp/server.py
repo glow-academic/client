@@ -5,11 +5,9 @@ from typing import Any, Dict, List
 
 from app.db import engine, get_session
 from app.models import (Agents, Classes, Cohorts, Components, Dashboards,
-                        EvalChatFeedbacks, EvalChatGrades, EvalChats,
-                        EvalMessages, EvalRuns, Profiles, Rubrics, Scenarios,
-                        SimulationAttempts, SimulationChatFeedbacks,
-                        SimulationChatGrades, SimulationChats,
-                        SimulationMessages, Simulations, StandardGroups,
+                        Profiles, Rubrics, Scenarios, SimulationAttempts,
+                        SimulationChatFeedbacks, SimulationChatGrades,
+                        SimulationChats, SimulationMessages, Simulations,
                         Standards)
 from mcp.server.fastmcp import FastMCP
 from sqlalchemy import desc, func, text
@@ -918,8 +916,7 @@ def search_by_scenario(scenario_id: str, limit: int = 100) -> Dict[str, Any]:
     Detail a scenario:
 
     • Scenario record + linked class & agent  
-    • SimulationChats + EvalChats counts  
-    • Recent feedback themes (group by Standard)
+    • SimulationChats counts  
     """
     try:
         scenario_uuid = uuid.UUID(scenario_id)
@@ -971,12 +968,7 @@ def search_by_scenario(scenario_id: str, limit: int = 100) -> Dict[str, Any]:
             SimulationChats.scenario_id == scenario_uuid
         )
         sim_chats_count = session.exec(sim_chats_stmt).one()
-        
-        # Count eval chats
-        eval_chats_stmt = select(func.count(EvalChats.id)).where(
-            EvalChats.scenario_id == scenario_uuid
-        )
-        eval_chats_count = session.exec(eval_chats_stmt).one()
+
         
         return {
             "scenario": scenario_data,
@@ -984,7 +976,6 @@ def search_by_scenario(scenario_id: str, limit: int = 100) -> Dict[str, Any]:
             "agent": agent_data,
             "usage_stats": {
                 "simulation_chats": sim_chats_count,
-                "eval_chats": eval_chats_count
             }
         }
         
@@ -999,7 +990,6 @@ def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
 
     • Agent config (system_prompt, temperature)  
     • Scenarios powered by this agent  
-    • EvalRuns history & pass-rate statistics
     """
     try:
         agent_uuid = uuid.UUID(agent_id)
@@ -1048,67 +1038,10 @@ def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
             for scenario in scenarios
         ]
         
-        # Get eval runs statistics
-        eval_runs_stmt = select(EvalRuns).where(
-            EvalRuns.agent_id == agent_uuid
-        ).limit(limit)
-
-        # sort eval runs by created_at
-        eval_runs = session.exec(eval_runs_stmt).all()
-        eval_runs = list(eval_runs)
-        eval_runs = sorted(eval_runs, key=lambda x: x.created_at)
-        
-        eval_runs_data = []
-        total_evals = 0
-        total_passed = 0
-        
-        for eval_run in eval_runs:
-            # Count eval chats and grades for this run
-            eval_chats_stmt = select(EvalChats).where(
-                EvalChats.eval_run_id == eval_run.id
-            )
-
-            # sort eval chats by created_at
-            eval_chats = session.exec(eval_chats_stmt).all()
-            eval_chats = list(eval_chats)
-            eval_chats = sorted(eval_chats, key=lambda x: x.created_at)
-
-            run_total = 0
-            run_passed = 0
-            
-            for eval_chat in eval_chats:
-                grade_stmt = select(EvalChatGrades).where(
-                    EvalChatGrades.eval_chat_id == eval_chat.id
-                )
-                grade = session.exec(grade_stmt).first()
-                
-                if grade:
-                    run_total += 1
-                    total_evals += 1
-                    if grade.passed:
-                        run_passed += 1
-                        total_passed += 1
-            
-            eval_runs_data.append({
-                "id": str(eval_run.id),
-                "created_at": eval_run.created_at.isoformat() if eval_run.created_at else None,
-                "total_chats": run_total,
-                "passed_chats": run_passed,
-                "pass_rate": round((run_passed / run_total * 100) if run_total > 0 else 0, 2)
-            })
-        
-        overall_pass_rate = (total_passed / total_evals * 100) if total_evals > 0 else 0
-        
         return {
             "agent": agent_data,
             "model": model_data,
             "scenarios": scenarios_data,
-            "eval_statistics": {
-                "total_eval_runs": len(eval_runs),
-                "total_evaluations": total_evals,
-                "overall_pass_rate": round(overall_pass_rate, 2),
-                "recent_runs": eval_runs_data
-            }
         }
         
     except SQLAlchemyError as e:

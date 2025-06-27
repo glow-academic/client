@@ -231,8 +231,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
     emitStopSimulation,
     emitContinueSimulation,
     isWebRTCSupported,
-    startWebRTC,
-    stopWebRTC,
   } = useWebSocket();
 
   const [isSendingMessage, setIsSendingMessage] = useState(false);
@@ -253,7 +251,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
-  const prevChatIdRef = useRef<string | null>(null);
 
   // Fetch attempt data
   const {
@@ -1079,18 +1076,8 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
   // Update the ref whenever currentChat changes and handle cleanup
   useEffect(() => {
     const newChatId = currentChat?.id || null;
-    const prevChatId = prevChatIdRef.current;
-
-    // If chat changed and we were recording, stop the recording
-    if (prevChatId && prevChatId !== newChatId && isRecording) {
-      stopWebRTC().catch((error: Error) => {
-        logError("Error stopping WebRTC audio on chat change", error);
-      });
-    }
-
     currentChatIdRef.current = newChatId;
-    prevChatIdRef.current = newChatId;
-  }, [currentChat?.id, isRecording, stopWebRTC]);
+  }, [currentChat?.id]);
 
   // WebRTC Audio handlers
   const handleStartRecording = async () => {
@@ -1103,7 +1090,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       setWebRtcError(null);
       // Show immediate feedback
       toast.success("Setting up audio connection...");
-      await startWebRTC();
       // Success toast will be shown by the webrtcAudioStarted event
     } catch (error) {
       setIsRecording(false);
@@ -1120,7 +1106,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
 
     try {
       setIsTranscribing(true); // Show that we're processing the audio
-      await stopWebRTC();
       // Don't immediately set recording to false - let the event handler do it
       // setIsRecording(false); // This will be handled by the event
     } catch (error) {
@@ -1246,19 +1231,6 @@ export default function Attempt({ attemptId }: { attemptId: string }) {
       );
     };
   }, [currentChat?.id]);
-
-  // Clean up WebRTC when component unmounts
-  useEffect(() => {
-    return () => {
-      // Clean up any active recording when component unmounts
-      if (isRecording) {
-        stopWebRTC().catch((error: Error) => {
-          logError("Error stopping WebRTC audio on unmount", error);
-        });
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only run on mount/unmount
 
   if (
     attemptLoading ||

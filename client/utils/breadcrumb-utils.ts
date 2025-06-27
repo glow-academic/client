@@ -8,8 +8,6 @@ import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
-import { getEvalRun } from "./queries/eval_runs/get-eval-run";
-import { getEval } from "./queries/evals/get-eval";
 import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
@@ -83,22 +81,6 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
         const modelData = await getModel(id);
         return modelData?.name || `Model ${id.substring(0, 8)}...`;
 
-      case "eval":
-        const evalData = await getEval(id);
-        return evalData?.name || `Evaluation ${id.substring(0, 8)}...`;
-
-      case "eval-run":
-        const evalRunData = await getEvalRun(id);
-        // get the agent for the eval run
-        if (!evalRunData) {
-          return `Eval Run ${id.substring(0, 8)}...`;
-        }
-        const agentEvalData = await getAgent(evalRunData?.agentId);
-        // get base agent from eval
-        const evalRunEvalData = await getEval(evalRunData?.evalId || "");
-        const baseAgent = await getAgent(evalRunEvalData?.baseAgentId || "");
-        return `${baseAgent?.name} vs ${agentEvalData?.name}`;
-
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
     }
@@ -159,10 +141,6 @@ export const generateEnhancedBreadcrumbs = async (
         context = "profile";
       } else if (prevSegment === "r" && segments.includes("rubrics")) {
         context = "rubric";
-      } else if (prevSegment === "r" && segments.includes("evals")) {
-        context = "eval-run";
-      } else if (prevSegment === "e" && segments.includes("evals")) {
-        context = "eval";
       }
 
       if (context) {
@@ -231,9 +209,6 @@ export const generateEnhancedBreadcrumbs = async (
         // Management subsections
         case "staff":
           title = "Staff";
-          break;
-        case "evals":
-          title = "Evaluations";
           break;
         case "cohorts":
           title = "Cohorts";
@@ -346,12 +321,6 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "agents";
       }
-      if (second === "evals") {
-        if (third === "e" && fourth) {
-          return `eval-${fourth}`;
-        }
-        return "evals";
-      }
       if (second === "cohorts") {
         if (third === "c" && fourth) {
           return `cohort-${fourth}`;
@@ -380,12 +349,6 @@ const getSectionFromSegments = (segments: string[]): string => {
         return `attempt-${second}`;
       }
       return "simulations"; // Attempt pages should be under simulations section
-
-    case "e":
-      if (second) {
-        return `eval-${second}`;
-      }
-      return "evals"; // Evaluation pages
 
     case "profile":
       return "profile";
@@ -467,9 +430,6 @@ export const generateBreadcrumbs = (pathname: string): BreadcrumbItem[] => {
         break;
       case "staff":
         title = "Staff";
-        break;
-      case "evals":
-        title = "Evaluations";
         break;
       case "new":
         title = "New";

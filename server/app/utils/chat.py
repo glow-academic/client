@@ -6,8 +6,7 @@ from typing import Any, Dict, List, Union
 
 from agents.items import TResponseInputItem
 from app.models import (Agents, AssistantMessages, AssistantToolCalls,
-                        EvalChats, EvalMessages, Scenarios, SimulationChats,
-                        SimulationMessages)
+                        Scenarios, SimulationChats, SimulationMessages)
 from openai.types.responses import ResponseFunctionToolCallParam
 from sqlmodel import Session, select
 
@@ -16,30 +15,6 @@ logger = logging.getLogger(__name__)
 
 def get_simulation_conversation_history(
     messages: List[SimulationMessages],
-) -> list[TResponseInputItem]:
-    """
-    Get the conversation history for a given list of messages.
-
-    Args:
-        messages: List of Messages objects from the database
-
-    Returns:
-        List of message objects formatted for OpenAI API consumption
-    """
-    conversation_history: list[TResponseInputItem] = []
-
-    for message in messages:
-        if message.type == "query":
-            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
-            conversation_history.append(user_message_item)
-        if message.type == "response":
-            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
-            conversation_history.append(assistant_message_item)
-
-    return conversation_history
-
-def get_eval_conversation_history(
-    messages: List[EvalMessages],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -144,7 +119,7 @@ def get_assistant_conversation_history(
     return conversation_history
 
 
-def get_chat_scenario(chat: SimulationChats | EvalChats, session: Session) -> TResponseInputItem:
+def get_chat_scenario(chat: SimulationChats, session: Session) -> TResponseInputItem:
     """
     Get the scenario for a given chat.
     """

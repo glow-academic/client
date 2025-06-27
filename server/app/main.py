@@ -407,13 +407,11 @@ sio = socketio.AsyncServer(
 )
 
 from app.web.assistants import register_assistant_events
-from app.web.evals import register_eval_events
-# Register simulation WebSocket events IMMEDIATELY after sio creation
 from app.web.simulations import register_simulation_events
 
+# Register simulation WebSocket events IMMEDIATELY after sio creation
 register_simulation_events(sio)
 register_assistant_events(sio)
-register_eval_events(sio)
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:

@@ -31,9 +31,6 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- 6. Tables that depend on multiple previous tables
 \i app/simulations/init.sql
 
--- 7. Evaluation system (depends on rubrics)
-\i app/evals/init.sql
-
 -- ============================================================================
 -- COMPLETION MESSAGE
 -- ============================================================================

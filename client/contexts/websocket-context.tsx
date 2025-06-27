@@ -38,19 +38,15 @@ interface WebSocketContextType {
   isStartingAssistant: boolean;
   isSendingAssistantMessage: boolean;
   isStoppingAssistant: boolean;
-  isStartingEval: boolean;
-  isRunningEval: boolean;
-  isStoppingEval: boolean;
-  isStoppingAllEvals: boolean;
 
   // Room management
   joinRoom: (
     roomId: string,
-    roomType: "assistant" | "simulation" | "eval"
+    roomType: "assistant" | "simulation"
   ) => void;
   leaveRoom: (
     roomId: string,
-    roomType: "assistant" | "simulation" | "eval"
+    roomType: "assistant" | "simulation"
   ) => void;
 
   // Simulation event emitters
@@ -61,7 +57,7 @@ interface WebSocketContextType {
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void;
+  }) => void; // this should automatically create webRTC data channel (for text) and media channel (for audio)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
     chat_id: string;
@@ -76,24 +72,8 @@ interface WebSocketContextType {
   emitSendAssistantMessage: (data: {
     chat_id: string;
     message: string;
-  }) => void;
+  }) => void; // this should automatically create webRTC data channel (for text) and media channel (for audio)
   emitStopAssistant: (data: { chat_id: string }) => void;
-
-  // Eval event emitters
-  emitStartEval: (data: { eval_id: string }) => void;
-  emitRunEval: (data: { eval_run_id: string }) => void;
-  emitStopEval: (data: { chat_id: string }) => void;
-  emitStopAllEvals: (data: { eval_run_id: string }) => void;
-
-  // WebRTC functions
-  startWebRTC: () => Promise<void>;
-  stopWebRTC: () => Promise<void>;
-  sendWebRTCMessage: (
-    chatId: string,
-    message: string,
-    isAudio?: boolean
-  ) => void;
-  sendWebRTCAudio: (chatId: string, audioData: string) => void;
 }
 
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
@@ -178,10 +158,6 @@ export function WebSocketProvider({
   const [isSendingAssistantMessage, setIsSendingAssistantMessage] =
     useState(false);
   const [isStoppingAssistant, setIsStoppingAssistant] = useState(false);
-  const [isStartingEval, setIsStartingEval] = useState(false);
-  const [isRunningEval, setIsRunningEval] = useState(false);
-  const [isStoppingEval, setIsStoppingEval] = useState(false);
-  const [isStoppingAllEvals, setIsStoppingAllEvals] = useState(false);
 
   // WebRTC state
   const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
@@ -772,170 +748,6 @@ export function WebSocketProvider({
         }
       );
 
-      // Eval-specific events
-      socket.on(
-        "eval_started",
-        (data: {
-          success: boolean;
-          message: string;
-          eval_run_ids: string[];
-          total_runs: number;
-        }) => {
-          logInfo("Eval started", data);
-          setIsStartingEval(false);
-          if (data.success) {
-            toast.success(data.message);
-          } else {
-            toast.error(data.message);
-          }
-        }
-      );
-
-      socket.on(
-        "eval_run_processing",
-        (data: { eval_run_id: string; status: string; message: string }) => {
-          logInfo("Eval run processing", data);
-        }
-      );
-
-      socket.on(
-        "eval_stopped",
-        (data: { chat_id: string; success: boolean; message: string }) => {
-          logInfo("Eval stopped", data);
-          setIsStoppingEval(false);
-          if (data.success) {
-            toast.success(data.message);
-          } else {
-            toast.error(data.message);
-          }
-        }
-      );
-
-      socket.on(
-        "eval_all_stopped",
-        (data: {
-          eval_run_id: string;
-          success: boolean;
-          message: string;
-          cancelled_count: number;
-          total_chats: number;
-        }) => {
-          logInfo("All evals stopped", data);
-          setIsStoppingAllEvals(false);
-          if (data.success) {
-            toast.success(data.message);
-          } else {
-            toast.error(data.message);
-          }
-        }
-      );
-
-      socket.on("eval_error", (data: { success: boolean; message: string }) => {
-        logError("Eval error", data.message);
-        setIsStartingEval(false);
-        setIsRunningEval(false);
-        setIsStoppingEval(false);
-        setIsStoppingAllEvals(false);
-        toast.error(data.message);
-      });
-
-      // Eval progress events
-      socket.on(
-        "eval_chat_start",
-        (data: {
-          eval_run_id: string;
-          chat_id: string;
-          chat_index: number;
-          total_chats: number;
-          message: string;
-        }) => {
-          logInfo("Eval chat started", data);
-        }
-      );
-
-      socket.on(
-        "eval_turn_start",
-        (data: {
-          eval_run_id: string;
-          chat_id: string;
-          turn: number;
-          max_turns: number;
-          message: string;
-        }) => {
-          logInfo("Eval turn started", data);
-        }
-      );
-
-      socket.on(
-        "eval_token",
-        (data: { eval_run_id: string; chat_id: string; token: string }) => {
-          logInfo("Eval token received", {
-            evalRunId: data.eval_run_id,
-            chatId: data.chat_id,
-          });
-        }
-      );
-
-      socket.on(
-        "eval_turn_complete",
-        (data: {
-          eval_run_id: string;
-          chat_id: string;
-          turn: number;
-          message: string;
-        }) => {
-          logInfo("Eval turn completed", data);
-        }
-      );
-
-      socket.on(
-        "eval_chat_complete",
-        (data: { eval_run_id: string; chat_id: string; message: string }) => {
-          logInfo("Eval chat completed", data);
-        }
-      );
-
-      socket.on(
-        "eval_run_complete",
-        (data: { eval_run_id: string; message: string }) => {
-          logInfo("Eval run completed", data);
-          toast.success(data.message);
-        }
-      );
-
-      socket.on(
-        "eval_chat_error",
-        (data: { eval_run_id: string; chat_id: string; error: string }) => {
-          logError("Eval chat error", data.error);
-        }
-      );
-
-      socket.on(
-        "eval_evaluation_complete",
-        (data: {
-          eval_run_id: string;
-          chat_id: string;
-          eval_grade_id: string;
-        }) => {
-          logInfo("Eval evaluation completed", data);
-        }
-      );
-
-      socket.on(
-        "eval_evaluation_error",
-        (data: { eval_run_id: string; chat_id: string; error: string }) => {
-          logError("Eval evaluation error", data.error);
-        }
-      );
-
-      socket.on(
-        "eval_run_error",
-        (data: { eval_run_id: string; error: string }) => {
-          logError("Eval run error", data.error);
-          toast.error(`Eval run error: ${data.error}`);
-        }
-      );
-
       // WebRTC event handlers
       socket.on(
         "webrtc_offer",
@@ -1204,7 +1016,7 @@ export function WebSocketProvider({
 
   // Room management
   const joinRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation" | "eval") => {
+    (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current || !isConnected) {
         logInfo("Cannot join room - WebSocket not connected", {
           roomId,
@@ -1224,7 +1036,7 @@ export function WebSocketProvider({
   );
 
   const leaveRoom = useCallback(
-    (roomId: string, roomType: "assistant" | "simulation" | "eval") => {
+    (roomId: string, roomType: "assistant" | "simulation") => {
       if (!socketRef.current) {
         logInfo("Cannot leave room - WebSocket not available", {
           roomId,
@@ -1350,66 +1162,6 @@ export function WebSocketProvider({
     [isConnected]
   );
 
-  // Eval event emitters
-  const emitStartEval = useCallback(
-    (data: { eval_id: string }) => {
-      if (!socketRef.current || !isConnected) {
-        logError("Cannot start eval - WebSocket not connected");
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsStartingEval(true);
-      logInfo("Emitting start_eval", data);
-      socketRef.current.emit("start_eval", data);
-    },
-    [isConnected]
-  );
-
-  const emitRunEval = useCallback(
-    (data: { eval_run_id: string }) => {
-      if (!socketRef.current || !isConnected) {
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsRunningEval(true);
-      logInfo("Emitting run_eval", data);
-      socketRef.current.emit("run_eval", data);
-    },
-    [isConnected]
-  );
-
-  const emitStopEval = useCallback(
-    (data: { chat_id: string }) => {
-      if (!socketRef.current || !isConnected) {
-        logError("Cannot stop eval - WebSocket not connected");
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsStoppingEval(true);
-      logInfo("Emitting stop_eval", data);
-      socketRef.current.emit("stop_eval", data);
-    },
-    [isConnected]
-  );
-
-  const emitStopAllEvals = useCallback(
-    (data: { eval_run_id: string }) => {
-      if (!socketRef.current || !isConnected) {
-        logError("Cannot stop all evals - WebSocket not connected");
-        toast.error("WebSocket not connected. Please refresh the page.");
-        return;
-      }
-
-      setIsStoppingAllEvals(true);
-      logInfo("Emitting stop_all_evals", data);
-      socketRef.current.emit("stop_all_evals", data);
-    },
-    [isConnected]
-  );
-
   // WebRTC functions
   const startWebRTC = useCallback(async () => {
     if (!isWebRTCSupported || !profileId || !socketRef.current) {
@@ -1512,7 +1264,7 @@ export function WebSocketProvider({
     []
   );
 
-  const sendWebRTCMessage = useCallback(
+  const _sendWebRTCMessage = useCallback(
     (chatId: string, message: string, isAudio = false) => {
       try {
         const channelLabel = isAudio ? `audio-${chatId}` : `text-${chatId}`;
@@ -1566,7 +1318,7 @@ export function WebSocketProvider({
     ]
   );
 
-  const sendWebRTCAudio = useCallback((chatId: string, audioData: string) => {
+  const _sendWebRTCAudio = useCallback((chatId: string, audioData: string) => {
     try {
       const channelLabel = `audio-${chatId}`;
       const channel = webRTCDataChannels.current.get(channelLabel);
@@ -1608,10 +1360,6 @@ export function WebSocketProvider({
     isStartingAssistant,
     isSendingAssistantMessage,
     isStoppingAssistant,
-    isStartingEval,
-    isRunningEval,
-    isStoppingEval,
-    isStoppingAllEvals,
     joinRoom,
     leaveRoom,
     emitStartSimulation,
@@ -1621,14 +1369,6 @@ export function WebSocketProvider({
     emitStartAssistant,
     emitSendAssistantMessage,
     emitStopAssistant,
-    emitStartEval,
-    emitRunEval,
-    emitStopEval,
-    emitStopAllEvals,
-    startWebRTC,
-    stopWebRTC,
-    sendWebRTCMessage,
-    sendWebRTCAudio,
   };
 
   return (

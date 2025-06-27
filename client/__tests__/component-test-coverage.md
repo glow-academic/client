@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-06-27T00:10:45.389Z
+Generated on: 2025-06-27T13:53:22.679Z
 
 ## Summary
-- **Total Components**: 97
+- **Total Components**: 91
 - **Tests Created**: 0
 - **Tests Updated**: 39
-- **Tests Skipped** (already implemented): 58
+- **Tests Skipped** (already implemented): 52
 
 ## Component Coverage
 
@@ -38,7 +38,6 @@ Generated on: 2025-06-27T00:10:45.389Z
 | TrainingInsights | common/analytics/secondary/TrainingInsights.tsx | TrainingInsights.test.tsx | ❌ Needs Implementation |
 | Attempt | common/chat/Attempt.tsx | Attempt.test.tsx | ✅ Implemented |
 | DocumentViewer | common/chat/DocumentViewer.tsx | DocumentViewer.test.tsx | ✅ Implemented |
-| EvaluationRun | common/chat/EvaluationRun.tsx | EvaluationRun.test.tsx | ✅ Implemented |
 | Markdown | common/chat/Markdown.tsx | Markdown.test.tsx | ✅ Implemented |
 | MarkdownImage | common/chat/MarkdownImage.tsx | MarkdownImage.test.tsx | ✅ Implemented |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
@@ -50,7 +49,6 @@ Generated on: 2025-06-27T00:10:45.389Z
 | FooterPreview | common/dashboard/FooterPreview.tsx | FooterPreview.test.tsx | ❌ Needs Implementation |
 | HeaderPreview | common/dashboard/HeaderPreview.tsx | HeaderPreview.test.tsx | ❌ Needs Implementation |
 | SettingsDialog | common/dashboard/SettingsDialog.tsx | SettingsDialog.test.tsx | ❌ Needs Implementation |
-| Eval | common/eval/Eval.tsx | Eval.test.tsx | ✅ Implemented |
 | SimulationHistory | common/history/SimulationHistory.tsx | SimulationHistory.test.tsx | ✅ Implemented |
 | columns | common/history/columns.tsx | columns.test.tsx | ✅ Implemented |
 | data-table-column-header | common/history/data-table-column-header.tsx | data-table-column-header.test.tsx | ✅ Implemented |
@@ -97,10 +95,6 @@ Generated on: 2025-06-27T00:10:45.389Z
 | CohortEdit | management/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
 | NewCohort | management/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
-| EvalDetails | management/evals/EvalDetails.tsx | EvalDetails.test.tsx | ✅ Implemented |
-| EvalEdit | management/evals/EvalEdit.tsx | EvalEdit.test.tsx | ✅ Implemented |
-| Evals | management/evals/Evals.tsx | Evals.test.tsx | ✅ Implemented |
-| NewEval | management/evals/NewEval.tsx | NewEval.test.tsx | ✅ Implemented |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
 | Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
@@ -149,7 +143,6 @@ __tests__/
 │   ├── chat/
 │   │   ├── Attempt.test.tsx
 │   │   ├── DocumentViewer.test.tsx
-│   │   ├── EvaluationRun.test.tsx
 │   │   ├── Markdown.test.tsx
 │   │   ├── MarkdownImage.test.tsx
 │   ├── class/
@@ -164,8 +157,6 @@ __tests__/
 │   │   ├── FooterPreview.test.tsx
 │   │   ├── HeaderPreview.test.tsx
 │   │   ├── SettingsDialog.test.tsx
-│   ├── eval/
-│   │   ├── Eval.test.tsx
 │   ├── history/
 │   │   ├── SimulationHistory.test.tsx
 │   │   ├── columns.test.tsx
@@ -229,11 +220,6 @@ __tests__/
 │   │   ├── CohortEdit.test.tsx
 │   │   ├── Cohorts.test.tsx
 │   │   ├── NewCohort.test.tsx
-│   ├── evals/
-│   │   ├── EvalDetails.test.tsx
-│   │   ├── EvalEdit.test.tsx
-│   │   ├── Evals.test.tsx
-│   │   ├── NewEval.test.tsx
 │   ├── logs/
 │   │   ├── Logs.test.tsx
 │   ├── models/
