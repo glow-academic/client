@@ -1,9 +1,7 @@
-#!/usr/bin/env sh
+#!/bin/sh
 set -e
 
-# Container's primary IPv4 inside the **internal** network.
 PRIVATE_IP=$(ip -4 addr show eth0 | awk '/inet /{print $2}' | cut -d/ -f1)
-
 echo "⏩ Detected container LAN IP: ${PRIVATE_IP}"
 
 exec turnserver \
