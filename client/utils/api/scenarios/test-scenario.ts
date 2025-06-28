@@ -6,7 +6,7 @@
  */
 "use server";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
+import { getApiUrl } from "@/utils/api/url";
 
 export interface TestScenarioParams {
   agentId: string;
@@ -33,7 +33,8 @@ export async function testScenario(
     }
     formData.append("query", params.query);
 
-    const response = await fetch(`${getApiUrl()}/scenarios/test`, {
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/scenarios/test`, {
       method: "POST",
       credentials: "include",
       body: formData,

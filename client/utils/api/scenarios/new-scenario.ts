@@ -6,7 +6,7 @@
  */
 "use server";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
+import { getApiUrl } from "@/utils/api/url";
 
 export interface NewScenarioParams {
   agentId?: string | null;
@@ -55,7 +55,8 @@ export async function newScenario(
       formData.append("intensity", params.intensity.toString());
     }
 
-    const response = await fetch(`${getApiUrl()}/scenarios/new`, {
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/scenarios/new`, {
       method: "POST",
       credentials: "include",
       body: formData,

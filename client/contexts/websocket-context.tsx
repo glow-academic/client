@@ -5,9 +5,9 @@
  */
 "use client";
 
-import { getApiUrl } from "@/lib/utils";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
+import { getApiUrl } from "@/utils/api/url";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -939,13 +939,13 @@ export function WebSocketProvider({
     // Capture current rooms at effect creation time for cleanup
     const roomsToCleanup = currentRoomsRef.current;
 
-    const connectWebSocket = () => {
+    const connectWebSocket = async () => {
       logInfo("Initializing global WebSocket connection", {
         profileId,
         attempt: connectionAttempts.current + 1,
       });
 
-      const socketUrl = getApiUrl();
+      const socketUrl = await getApiUrl();
       const socketPath = "/socket.io";
       const socket = io(socketUrl, {
         path: socketPath,

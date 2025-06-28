@@ -6,7 +6,7 @@
  */
 "use server";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
+import { getApiUrl } from "@/utils/api/url";
 
 export interface FinalizeDocumentUploadParams {
   fileId: string;
@@ -77,7 +77,8 @@ export async function finalizeDocumentUpload(
       ...(profile !== undefined && { profile }),
     };
 
-    const response = await fetch(`${getApiUrl()}/documents/tus/finalize`, {
+    const apiUrl = await getApiUrl();
+    const response = await fetch(`${apiUrl}/documents/tus/finalize`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -6,7 +6,7 @@
  */
 "use server";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "../../../lib/utils";
+import { getApiUrl } from "@/utils/api/url";
 
 export interface ProcessCourseParams {
   classId: string;

@@ -5,8 +5,8 @@
  * Proxies to FastAPI backend at /documents/tus/{upload_id}
  */
 
-import { getApiUrl } from "@/lib/utils";
 import { logError, logInfo } from "@/utils/logger";
+import { getApiUrl } from "@/utils/api/url";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch
@@ -21,7 +21,8 @@ async function handleProxyRequest(
   try {
     const { upload_id } = await params;
     const url = new URL(req.url);
-    const targetUrl = `${getApiUrl()}/documents/tus/${upload_id}${url.search}`;
+    const apiUrl = await getApiUrl();
+    const targetUrl = `${apiUrl}/documents/tus/${upload_id}${url.search}`;
 
     logInfo(`[TUS proxy] ${req.method} ${url.pathname} -> ${targetUrl}`);
 
