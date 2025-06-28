@@ -75,13 +75,6 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             await sio_instance.enter_room(sid, assistant_room)
             logger.info(f"Client {sid} joined assistant room {assistant_room}")
 
-            # Process the initial message asynchronously
-            asyncio.create_task(process_assistant_message_websocket(
-                chat_id=uuid.UUID(chat_id),
-                message=initial_message,
-                session=None
-            ))
-
             # Update the title with the title agent
             chat_title = await run_title_agent(uuid.UUID(chat_id), initial_message, db_session)
             logger.info(f"Chat title: {chat_title}")
@@ -107,57 +100,6 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
     except Exception as e:
         logger.error(f"Error starting assistant for {sid}: {str(e)}")
         await emit_assistant_error(sid, f"Failed to start assistant: {str(e)}")
-
-
-async def handle_send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
-    """
-    Handle assistant message sending via WebSocket
-    Replaces /assistants/message endpoint
-    """
-    try:
-        chat_id = data.get('chat_id')
-        message = data.get('message')
-        
-        if not chat_id or not message:
-            await emit_assistant_error(sid, "Missing chat_id or message")
-            return
-
-        # Create a new session for this operation
-        db_session = next(get_session())
-        
-        try:
-            # Verify the chat exists
-            chat = db_session.get(AssistantChats, uuid.UUID(chat_id))
-            if not chat:
-                await emit_assistant_error(sid, "Chat not found")
-                return
-
-            # Ensure client is joined to the assistant room
-            sio_instance = get_sio_instance()
-            assistant_room = f"assistant_{chat_id}"
-            await sio_instance.enter_room(sid, assistant_room)
-            logger.info(f"Client {sid} ensured in assistant room {assistant_room}")
-
-            # Process the message asynchronously
-            asyncio.create_task(process_assistant_message_websocket(
-                chat_id=uuid.UUID(chat_id),
-                message=message,
-                session=None
-            ))
-            
-            # Emit acknowledgment
-            await sio_instance.emit('assistant_message_processing', {
-                'chat_id': chat_id,
-                'status': 'processing',
-                'message': 'Message is being processed'
-            }, room=sid)
-
-        finally:
-            db_session.close()
-
-    except Exception as e:
-        logger.error(f"Error sending assistant message for {sid}: {str(e)}")
-        await emit_assistant_error(sid, f"Failed to send message: {str(e)}")
 
 
 async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
@@ -481,11 +423,6 @@ def register_assistant_events(sio: socketio.AsyncServer) -> None:
         """Start a new assistant chat"""
         logger.info(f"start_assistant event triggered for sid={sid} with data keys: {list(data.keys())}")
         await handle_start_assistant(sid, data)
-    
-    @sio.event  # type: ignore
-    async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
-        """Send a message to assistant"""
-        await handle_send_assistant_message(sid, data)
     
     @sio.event  # type: ignore
     async def stop_assistant(sid: str, data: Dict[str, Any]) -> None:

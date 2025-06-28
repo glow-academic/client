@@ -236,6 +236,7 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
             if chat_id:
                 from app.web.simulations import process_audio_stream
 
+                # move this to send in a stream of audio bytes, process in the simulation itself.
                 asyncio.create_task(
                     process_audio_stream(track, chat_id, profile_id)
                 )
@@ -286,7 +287,6 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
             # Handle text data
             data = json.loads(message)
         
-        message_type = data.get('type')
         chat_id = data.get('chat_id')
         content = data.get('content', '')
         
@@ -295,110 +295,36 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
             return
         
         # Determine chat type from channel label or chat_id prefix
-        chat_type = 'simulation'  # Default
-        if channel_label.startswith('text-') or channel_label.startswith('audio-'):
-            # Try to determine chat type from chat_id or context
-            # Could be enhanced to detect from active rooms or chat_id patterns
+        if channel_label.startswith('text-'):
             if 'assistant' in chat_id or 'asst' in chat_id:
                 chat_type = 'assistant'
-            elif 'eval' in chat_id:
-                chat_type = 'eval'
-            # Otherwise defaults to 'simulation'
+            else:
+                chat_type = 'simulation'
             
-            if message_type == 'text_message':
-                # Handle text message
-                await process_webrtc_text_message(profile_id, chat_id, content, chat_type)
-            elif message_type == 'audio_message':
-                # Handle audio message (for now, just empty content)
-                audio_data = data.get('audio_data')  # base64 encoded audio
-                await process_webrtc_audio_message(profile_id, chat_id, content, audio_data, chat_type)
-            elif message_type == 'message_complete':
-                # Message is complete, process it
-                is_audio = data.get('is_audio', False)
-                audio_data = data.get('audio_data') if is_audio else None
-                await process_webrtc_complete_message(profile_id, chat_id, content, is_audio, audio_data, chat_type)
+            if chat_type == 'assistant':
+                from app.web.assistants import \
+                    process_assistant_message_websocket
+                await process_assistant_message_websocket(
+                    chat_id=uuid.UUID(chat_id),
+                    message=content,
+                    is_audio=False,
+                    session=None
+                )
+            elif chat_type == 'simulation':
+                from app.web.simulations import \
+                    process_simulation_message_websocket
+                await process_simulation_message_websocket(
+                    chat_id=chat_id,
+                    message=content,
+                    is_audio=False,
+                    session=None
+                )
+            else:
+                logger.warning(f"Unknown chat type for WebRTC message: {chat_type}")
+                return
         
     except Exception as e:
         logger.error(f"Error handling WebRTC data message: {e}")
-
-async def process_webrtc_text_message(profile_id: str, chat_id: str, content: str, chat_type: str) -> None:
-    """Process a text message received via WebRTC."""
-    # Import the appropriate processing function based on chat type
-    if chat_type == 'simulation':
-        from app.web.simulations import process_simulation_message_websocket
-        await process_simulation_message_websocket(
-            chat_id=chat_id,
-            message=content,
-            is_audio=False,
-            session=None
-        )
-    elif chat_type == 'assistant':
-        from app.web.assistants import process_assistant_message_websocket
-        await process_assistant_message_websocket(
-            chat_id=uuid.UUID(chat_id),
-            message=content,
-            is_audio=False,
-            session=None
-        )
-    elif chat_type == 'eval':
-        # Eval system doesn't have individual message processing like the others
-        # It processes entire eval runs. For now, log this case.
-        logger.info(f"WebRTC eval message received but eval system doesn't support individual messages: {chat_id}")
-    else:
-        logger.warning(f"Unknown chat type for WebRTC message: {chat_type}")
-
-async def process_webrtc_audio_message(profile_id: str, chat_id: str, content: str, audio_data: Optional[str], chat_type: str) -> None:
-    """Process an audio message received via WebRTC."""
-    # For now, just process as empty text since we're removing Whisper logic
-    # In the future, this could decode the base64 audio_data and process it
-    
-    if chat_type == 'simulation':
-        from app.web.simulations import process_simulation_message_websocket
-        await process_simulation_message_websocket(
-            chat_id=chat_id,
-            message="",  # Empty content for audio messages for now
-            is_audio=True,
-            audio_data=None,  # Could decode audio_data here
-            session=None
-        )
-    elif chat_type == 'assistant':
-        from app.web.assistants import process_assistant_message_websocket
-        await process_assistant_message_websocket(
-            chat_id=uuid.UUID(chat_id),
-            message="",  # Empty content for audio messages for now
-            is_audio=True,
-            session=None
-        )
-    elif chat_type == 'eval':
-        logger.info(f"WebRTC eval audio message received but eval system doesn't support individual messages: {chat_id}")
-    else:
-        logger.warning(f"Unknown chat type for WebRTC audio message: {chat_type}")
-
-async def process_webrtc_complete_message(profile_id: str, chat_id: str, content: str, is_audio: bool, audio_data: Optional[str], chat_type: str) -> None:
-    """Process a complete message (text or audio) received via WebRTC."""
-    logger.info(f"Processing complete WebRTC message for chat {chat_id}, is_audio: {is_audio}")
-    
-    if chat_type == 'simulation':
-        from app.web.simulations import process_simulation_message_websocket
-        await process_simulation_message_websocket(
-            chat_id=chat_id,
-            message=content,
-            is_audio=is_audio,
-            audio_data=None,  # Could decode audio_data here
-            session=None
-        )
-    elif chat_type == 'assistant':
-        from app.web.assistants import process_assistant_message_websocket
-        await process_assistant_message_websocket(
-            chat_id=uuid.UUID(chat_id),
-            message=content,
-            is_audio=is_audio,
-            session=None
-        )
-    elif chat_type == 'eval':
-        logger.info(f"WebRTC eval complete message received but eval system doesn't support individual messages: {chat_id}")
-    else:
-        logger.warning(f"Unknown chat type for WebRTC complete message: {chat_type}")
 
 # Create Socket.IO server instance globally
 sio = socketio.AsyncServer(

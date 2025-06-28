@@ -250,6 +250,7 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
         await emit_error(sid, f"Failed to start simulation: {str(e)}")
 
+
 async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
     """
     Handle simulation stop requests via WebSocket
