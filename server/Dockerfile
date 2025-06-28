@@ -19,7 +19,9 @@ COPY requirements.txt .
 # Leverage BuildKit cache so unchanged deps are instant
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --no-cache-dir --prefix=/install -r requirements.txt
+    pip install --no-cache-dir --prefix=/install \
+      -r requirements.txt \
+      --extra-index-url https://download.pytorch.org/whl/cpu
 
 #####################################
 # 2️⃣  Runtime image
