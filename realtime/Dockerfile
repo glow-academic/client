@@ -1,18 +1,17 @@
 FROM coturn/coturn:4.6
 
-# Copy the script into the container
 COPY start-turn.sh /usr/local/bin/start-turn.sh
 
-# Switch to the root user to be able to change file permissions
+# Switch to root to modify the script
 USER root
 
-# Correctly set permissions and ownership
+# 1. Fix line endings (if you haven't done it locally with dos2unix).
+# 2. Make the script executable by everyone.
+#    Since all users can execute it, we don't need to change its owner.
 RUN sed -i 's/\r$//' /usr/local/bin/start-turn.sh \
-    && chmod 755 /usr/local/bin/start-turn.sh \
-    && chown turnserver /usr/local/bin/start-turn.sh # <--- MODIFIED THIS LINE
+    && chmod 755 /usr/local/bin/start-turn.sh
 
-# Switch back to the non-privileged turnserver user for security
+# Switch to the turnserver user that the entrypoint will use
 USER turnserver
 
-# Set the entrypoint to run the script
 ENTRYPOINT ["/usr/local/bin/start-turn.sh"]
