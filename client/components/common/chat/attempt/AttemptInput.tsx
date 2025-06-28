@@ -46,6 +46,7 @@ export default function AttemptInput() {
 
   const [newMessage, setNewMessage] = useState("");
   const [isTall, setIsTall] = useState(false);
+  const [assistantAudioEnabled, setAssistantAudioEnabled] = useState(false);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -62,7 +63,7 @@ export default function AttemptInput() {
     if (!messageToSend || !currentChat || isSendingMessage) return;
 
     setNewMessage("");
-    sendMessage(messageToSend);
+    sendMessage(messageToSend, assistantAudioEnabled);
   };
 
   // Handle stop message

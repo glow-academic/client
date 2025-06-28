@@ -35,7 +35,8 @@ from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
 from app.services.agents.voice.simulation import SimulationPipeline
-from app.utils.audio import Modalities, resample_and_chunk_audio
+from app.utils.audio import (FRAME_MS, TARGET_SR, Modalities, VadDetector,
+                             resample_and_chunk_audio)
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import Session, select
 
@@ -410,15 +411,15 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 
 async def process_simulation_message_websocket(
     chat_id: str,
-    message: str,
-    audio_mode: Modalities = Modalities.TEXT_TEXT,
+    message: str = "",
     audio_data: Optional[bytes] = None,
     session: Optional[Session] = None,
-    profile_id: Optional[str] = None,  # Added for audio response
+    profile_id: Optional[str] = None,
+    assistant_audio_enabled: bool = False,  # New parameter for assistant audio preference
 ) -> None:
     """
     Process a simulation message and stream the response via WebSocket
-    Handles both text and audio messages
+    Handles both text and audio messages with unified pipeline
     """
 
     # Create a new session for this async operation
@@ -427,38 +428,42 @@ async def process_simulation_message_websocket(
     db_session = next(get_session())
 
     try:
-
-        if audio_mode != Modalities.TEXT_TEXT:
-            # create voice pipeline
-            pipeline = SimulationPipeline(chat_id, audio_mode, session).get_pipeline()
-            output_audio = pipeline.run(audio_data)
-            async for chunk in output_audio:
-                await sio_instance.emit(
-                    "simulation_message_token",
-                    {"message_id": str(assistant_message.id), "chat_id": str(chat_id), "token": chunk, "accumulated_content": accumulated_content},
-                    room=f"simulation_{chat_id}",
-                )
+        # Auto-determine modality based on input parameters
+        has_audio_input = audio_data is not None and len(audio_data) > 0
+        has_text_input = message and message.strip()
+        
+        if has_audio_input and assistant_audio_enabled:
+            audio_mode = Modalities.AUDIO_AUDIO
+        elif has_audio_input and not assistant_audio_enabled:
+            audio_mode = Modalities.AUDIO_TEXT
+        elif has_text_input and assistant_audio_enabled:
+            audio_mode = Modalities.TEXT_AUDIO
         else:
+            audio_mode = Modalities.TEXT_TEXT
 
+        logger.info(f"Processing message with modality: {audio_mode}")
+
+        # Use pipeline for audio modalities, keep existing flow for TEXT_TEXT
+        if audio_mode != Modalities.TEXT_TEXT:
+            # Use the new audio pipeline
+            pipeline = SimulationPipeline(
+                chat_id=uuid.UUID(chat_id),
+                mode=audio_mode,
+                session=db_session,
+                original_message=message
+            )
+            
+            # Process through pipeline (it handles all WebSocket emissions and database operations)
+            async for result in pipeline.process_and_stream(audio_data=audio_data, profile_id=profile_id):
+                # Pipeline handles everything, we just need to consume the stream
+                pass
+                
+        else:
+            # Keep existing TEXT_TEXT flow unchanged
             # 1. Add the user message to the chat
             user_message = SimulationMessages(
-                chat_id=chat_id, type="query", content=message, completed=True, audio=is_audio
+                chat_id=chat_id, type="query", content=message, completed=True, audio=False
             )
-
-            # Save audio file if this is an audio message
-            if audio_mode == Modalities.AUDIO_AUDIO and audio_data:
-                # Generate unique filename for audio
-                audio_filename = f"{user_message.id}.wav"
-                audio_filepath = os.path.join(AUDIO_FOLDER, audio_filename)
-
-                # Save audio file
-                with open(audio_filepath, "wb") as f:
-                    f.write(audio_data)
-
-                user_message.file_path = audio_filepath
-                logger.info(
-                    f"Saved audio file for message {user_message.id}: {audio_filepath}"
-                )
 
             db_session.add(user_message)
             db_session.commit()
@@ -475,7 +480,7 @@ async def process_simulation_message_websocket(
                     "role": "user",
                     "content": message,
                     "completed": True,
-                    "audio": is_audio,
+                    "audio": False,
                     "created_at": user_message.created_at.isoformat(),
                 },
                 room=f"simulation_{chat_id}",
@@ -487,7 +492,7 @@ async def process_simulation_message_websocket(
                 type="response",
                 content="",
                 completed=False,
-                audio=False,  # Will be updated if audio response is generated
+                audio=False,
             )
             db_session.add(assistant_message)
             db_session.commit()
@@ -575,13 +580,6 @@ async def process_simulation_message_websocket(
             db_session.add(assistant_message)
             db_session.commit()
 
-            # For now, we don't generate audio responses.
-            # This is where you would add TTS logic and stream the audio back.
-            if is_audio and profile_id:
-                logger.info(
-                    f"Would generate audio response for profile {profile_id} here."
-                )
-
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
                 logger.info(f"Emitting completion to room simulation_{chat_id}")
@@ -651,9 +649,10 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
                     asyncio.create_task(
                         process_simulation_message_websocket(
                             chat_id=chat_id,
-                            audio_mode=Modalities.AUDIO_AUDIO,
+                            message="",  # No text message for audio input
                             audio_data=full_audio_bytes,
                             profile_id=profile_id,
+                            assistant_audio_enabled=True,  # Default to audio response for audio input
                         )
                     )
     except Exception:

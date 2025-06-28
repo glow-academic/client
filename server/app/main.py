@@ -16,10 +16,10 @@ from aiortc import (RTCConfiguration, RTCIceCandidate,  # type: ignore
                     RTCIceServer, RTCPeerConnection, RTCSessionDescription)
 from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
-from app.utils.audio import Modalities
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
+from app.utils.audio import Modalities
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -290,6 +290,7 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
         
         chat_id = data.get('chat_id')
         content = data.get('content', '')
+        assistant_audio_enabled = data.get('assistant_audio_enabled', False)  # New field
         
         if not chat_id:
             logger.error(f"No chat_id in WebRTC message: {data}")
@@ -316,6 +317,8 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
                 await process_simulation_message_websocket(
                     chat_id=chat_id,
                     message=content,
+                    profile_id=profile_id,
+                    assistant_audio_enabled=assistant_audio_enabled,
                     session=None
                 )
             else:
@@ -354,6 +357,39 @@ from app.web.simulations import register_simulation_events
 
 # Register simulation WebSocket events IMMEDIATELY after sio creation
 register_simulation_events(sio)
+
+@sio.event  # type: ignore
+async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
+    """Handle simulation message sending requests"""
+    try:
+        chat_id = data.get("chat_id")
+        message = data.get("message")
+        assistant_audio_enabled = data.get("assistant_audio_enabled", False)
+
+        if not chat_id or not message:
+            logger.error(f"Missing chat_id or message in request from {sid}")
+            return
+
+        logger.info(f"Processing send_simulation_message from {sid}: {chat_id} (audio: {assistant_audio_enabled})")
+
+        # Process the message via WebSocket
+        from app.web.simulations import process_simulation_message_websocket
+
+        await process_simulation_message_websocket(
+            chat_id=chat_id, 
+            message=message, 
+            assistant_audio_enabled=assistant_audio_enabled,
+            session=None
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_simulation_message for {sid}: {str(e)}")
+        await sio.emit(
+            "simulation_error",
+            {"success": False, "message": str(e)},
+            room=sid,
+        )
+
 register_assistant_events(sio)
 
 @sio.event  # type: ignore

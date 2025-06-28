@@ -44,7 +44,11 @@ interface WebSocketContextType {
   leaveRoom: (roomId: string, roomType: "assistant" | "simulation") => void; // should close webRTC data channel (for text) and optionally media channel (for audio, for simulation only)
 
   // WebRTC Emitters
-  sendWebRTCMessage: (chatId: string, message: string) => void;
+  sendWebRTCMessage: (
+    chatId: string,
+    message: string,
+    assistantAudioEnabled?: boolean
+  ) => void;
   startAudioStream: (chatId: string) => Promise<void>;
   stopAudioStream: (chatId: string) => void;
 
@@ -56,6 +60,7 @@ interface WebSocketContextType {
   emitSendSimulationMessage: (data: {
     chat_id: string;
     message: string; // sending a message here would be fallback if webRTC is not supported.
+    assistant_audio_enabled?: boolean;
   }) => void; // this should be modified to send over webRTC data channel (for text)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
@@ -1172,7 +1177,11 @@ export function WebSocketProvider({
   );
 
   const emitSendSimulationMessage = useCallback(
-    (data: { chat_id: string; message: string }) => {
+    (data: {
+      chat_id: string;
+      message: string;
+      assistant_audio_enabled?: boolean;
+    }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot send simulation message - WebSocket not connected");
         toast.error("WebSocket not connected. Please refresh the page.");
@@ -1180,7 +1189,10 @@ export function WebSocketProvider({
       }
 
       setIsSendingSimulationMessage(true);
-      logInfo("Emitting send_simulation_message", { chatId: data.chat_id });
+      logInfo("Emitting send_simulation_message", {
+        chatId: data.chat_id,
+        assistantAudioEnabled: data.assistant_audio_enabled,
+      });
       socketRef.current.emit("send_simulation_message", data);
     },
     [isConnected]
@@ -1378,10 +1390,55 @@ export function WebSocketProvider({
   );
 
   const sendWebRTCMessage = useCallback(
-    (chatId: string, message: string) => {
-      _sendWebRTCMessage(chatId, message, false);
+    (
+      chatId: string,
+      message: string,
+      assistantAudioEnabled: boolean = false
+    ) => {
+      try {
+        const channelLabel = `text-${chatId}`;
+        const textChannel =
+          webRTCDataChannels.current.get(channelLabel) ||
+          createDataChannelIfNeeded(channelLabel);
+
+        if (!textChannel || textChannel.readyState !== "open") {
+          logError(
+            `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
+          );
+          // Fallback to WebSocket for text
+          if (chatId.includes("simulation")) {
+            emitSendSimulationMessage({
+              chat_id: chatId,
+              message,
+              assistant_audio_enabled: assistantAudioEnabled,
+            });
+          } else if (chatId.includes("assistant")) {
+            emitSendAssistantMessage({ chat_id: chatId, message });
+          }
+          return;
+        }
+
+        const messageData = {
+          chat_id: chatId,
+          content: message,
+          assistant_audio_enabled: assistantAudioEnabled,
+        };
+
+        textChannel.send(JSON.stringify(messageData));
+        logInfo(`Sent WebRTC message via ${channelLabel}`, {
+          chatId,
+          messageLength: message.length,
+          assistantAudioEnabled,
+        });
+      } catch (error) {
+        logError("Error sending WebRTC message", error);
+      }
     },
-    [_sendWebRTCMessage]
+    [
+      createDataChannelIfNeeded,
+      emitSendSimulationMessage,
+      emitSendAssistantMessage,
+    ]
   );
 
   const startAudioStream = useCallback(
