@@ -54,6 +54,7 @@ services:
       - DOCKER_ENV=1
     volumes:
       - uploads-data:/app/uploads   # makes /app/uploads writable
+      - whisper-cache:/app/cache/whisper_models
     depends_on:
       database:
         condition: service_healthy
@@ -169,4 +170,4 @@ volumes:
   pgdata:
   uploads-data:
   history-data:
-
+  whisper-cache:
