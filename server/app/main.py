@@ -16,6 +16,7 @@ from aiortc import (RTCConfiguration, RTCIceCandidate,  # type: ignore
                     RTCIceServer, RTCPeerConnection, RTCSessionDescription)
 from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
+from app.utils.audio import Modalities
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
@@ -307,7 +308,6 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
                 await process_assistant_message_websocket(
                     chat_id=uuid.UUID(chat_id),
                     message=content,
-                    is_audio=False,
                     session=None
                 )
             elif chat_type == 'simulation':
@@ -316,7 +316,6 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
                 await process_simulation_message_websocket(
                     chat_id=chat_id,
                     message=content,
-                    is_audio=False,
                     session=None
                 )
             else:

@@ -19,6 +19,7 @@ from app.models import AssistantChats, AssistantMessages, AssistantToolCalls
 from app.services.agents.collection.assistant import (cancel_assistant_run,
                                                       run_assistant_agent)
 from app.services.agents.collection.title import run_title_agent
+from app.utils.audio import Modalities
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
@@ -158,7 +159,7 @@ async def handle_stop_assistant(sid: str, data: Dict[str, Any]) -> None:
 async def process_assistant_message_websocket(
     chat_id: uuid.UUID, 
     message: str, 
-    is_audio: bool = False,
+    audio_mode: Modalities = Modalities.TEXT_TEXT,
     audio_data: Optional[bytes] = None,
     session: Optional[Session] = None
 ) -> None:

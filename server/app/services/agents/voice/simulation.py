@@ -1,6 +1,8 @@
 import abc
+import uuid
 from typing import AsyncIterator
 
+from fastapi import Depends
 import numpy as np
 from agents.voice.input import AudioInput, StreamedAudioInput
 from agents.voice.model import (StreamedTranscriptionSession, STTModel,
@@ -8,6 +10,11 @@ from agents.voice.model import (StreamedTranscriptionSession, STTModel,
 from agents.voice.pipeline import VoicePipeline, VoicePipelineConfig
 from agents.voice.workflow import VoiceWorkflowBase
 from app.services.agents.collection.simulation import run_simulation_agent
+from app.db import get_session
+from app.models import SimulationMessages
+from sqlmodel import Session, select
+from app.utils.audio import Modalities
+from app.config import model_manager
 
 
 class SimulationSTTModel(STTModel):
@@ -39,7 +46,13 @@ class SimulationSTTModel(STTModel):
             The text transcription of the audio input.
         """
         # we will use whisper here to transcribe the audio
-        return "Hello, how are you?"
+        # Convert to numpy array for transcription
+        input.buffer
+
+        # Transcribe
+        whisper_model = model_manager.get_whisper_model()
+        result = whisper_model.transcribe(audio_np, language="en")
+        transcribed_text = result["text"]
 
     async def create_session(
         self,
@@ -85,8 +98,10 @@ class SimulationTTSModel(TTSModel):
         # call LiteLLM to generate the audio.
 
 class SimulationWorkflow(VoiceWorkflowBase):
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        self.chat_id = chat_id
+        self.session = session
     
     def run(self, transcription: str) -> AsyncIterator[str]:
         """
@@ -96,25 +111,35 @@ class SimulationWorkflow(VoiceWorkflowBase):
         the stream.
         """
 
-        async for text in run_simulation_agent(transcription):
+        # insert the transcription into the chat.
+        self.session.add(SimulationMessages(
+            chat_id=self.chat_id,
+            message=transcription,
+            role="user",
+        ))
+        self.session.commit()
+
+        async for text in run_simulation_agent(self.chat_id, transcription):
             yield text
         
 
 
-class Modalities(Enum):
-    AUDIO_AUDIO = "audio_audio" # GTA audio, AI audio
-    AUDIO_TEXT = "audio_text" # GTA audio, AI text
-    TEXT_AUDIO = "text_audio" # AI audio, GTA text
-    # text text is not supported, since this handles audio workflows.
-
 class SimulationPipeline():
-    def __init__(self, mode: Modalities) -> None:
+    def __init__(self, chat_id: uuid.UUID, mode: Modalities, session: Session = Depends(get_session)) -> None:
+        """
+        Args:
+            chat_id: The ID of the chat session.
+            mode: The modality of the pipeline.
+            session: The database session.
+        """
         self.mode = mode
+        self.chat_id = chat_id
+        self.session = session
     
     def get_pipeline(self, config: VoicePipelineConfig | None = None) -> VoicePipeline:
         if self.mode == Modalities.AUDIO_AUDIO:
             return VoicePipeline(
-                workflow=SimulationWorkflow(),
+                workflow=SimulationWorkflow(self.chat_id, self.session),
                 stt_model=SimulationSTTModel(),
                 tts_model=SimulationTTSModel(),
                 config=config,
@@ -122,14 +147,14 @@ class SimulationPipeline():
         elif self.mode == Modalities.AUDIO_TEXT:
             # we won't need to tts, since we just need text afterwards.
             return VoicePipeline(
-                workflow=SimulationWorkflow(),
+                workflow=SimulationWorkflow(self.chat_id, self.session),
                 stt_model=SimulationSTTModel(),
                 tts_model=SimulationTTSModel(False), # we don't need to generate audio, since we just need text afterwards.
                 config=config,
             )
         elif self.mode == Modalities.TEXT_AUDIO:
             return VoicePipeline(
-                workflow=SimulationWorkflow(),
+                workflow=SimulationWorkflow(self.chat_id, self.session),
                 stt_model=SimulationSTTModel(False), # we don't need to generate audio, since we just need text afterwards.
                 tts_model=SimulationTTSModel(),
                 config=config,

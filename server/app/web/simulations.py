@@ -34,6 +34,8 @@ from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
                                                        run_simulation_agent)
+from app.services.agents.voice.simulation import SimulationPipeline
+from app.utils.audio import Modalities, resample_and_chunk_audio
 from app.utils.scenario import randomly_fill_scenario_attributes
 from sqlmodel import Session, select
 
@@ -41,57 +43,6 @@ logger = logging.getLogger(__name__)
 
 # Global store for active simulation runs
 active_simulation_runs: Dict[str, Any] = {}
-
-# -- Audio Processing Constants & Helpers --
-TARGET_SR = 16_000
-FRAME_MS = 30  # VAD supports 10, 20, or 30 ms frames
-TARGET_SAMPLES_PER_FRAME = TARGET_SR * FRAME_MS // 1000
-TARGET_BYTES_PER_FRAME = TARGET_SAMPLES_PER_FRAME * 2  # 16-bit PCM
-
-async def resample_and_chunk_audio(track: MediaStreamTrack) -> AsyncGenerator[bytes, None]:
-    """
-    Convert the incoming WebRTC audio (whatever rate/format) to 16-kHz mono
-    16-bit PCM and yield it in 30-ms chunks (960 bytes) suitable for webrtc-vad.
-    """
-    resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_SR)
-
-    buffer = b""
-    try:
-        while True:
-            frame = await track.recv()      # ← pull next frame
-
-            # make sure frame is an AudioFrame
-            if not isinstance(frame, av.AudioFrame):
-                logger.warning(f"Received non-audio frame: {type(frame)}")
-                continue
-
-            for fr in resampler.resample(frame):      # PyAV objects
-                buffer += fr.to_ndarray().tobytes()
-
-            # Emit as many complete VAD frames as we have
-            while len(buffer) >= TARGET_BYTES_PER_FRAME:
-                yield buffer[:TARGET_BYTES_PER_FRAME]
-                buffer = buffer[TARGET_BYTES_PER_FRAME:]
-
-    except av.error.EOFError:
-        pass        # peer closed the track
-    finally:
-        if buffer:  # flush tail, padding to full frame
-            yield buffer.ljust(TARGET_BYTES_PER_FRAME, b"\0")
-
-
-class VadDetector:
-    """A class to detect speech in an audio stream."""
-
-    def __init__(self, sample_rate: int, frame_duration_ms: int, vad_level: int):
-        self.vad = webrtcvad.Vad(vad_level)
-        self.sample_rate = sample_rate
-        self.frame_duration_ms = frame_duration_ms
-        self.frame_size = int(sample_rate * (frame_duration_ms / 1000.0))
-        self.buffer = bytearray()
-
-    def is_speech(self, frame: bytes) -> bool:
-        return self.vad.is_speech(frame, self.sample_rate)  # type: ignore
 
 
 def get_sio_instance() -> socketio.AsyncServer:
@@ -460,7 +411,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 async def process_simulation_message_websocket(
     chat_id: str,
     message: str,
-    is_audio: bool = False,
+    audio_mode: Modalities = Modalities.TEXT_TEXT,
     audio_data: Optional[bytes] = None,
     session: Optional[Session] = None,
     profile_id: Optional[str] = None,  # Added for audio response
@@ -476,161 +427,174 @@ async def process_simulation_message_websocket(
     db_session = next(get_session())
 
     try:
-        # 1. Add the user message to the chat
-        user_message = SimulationMessages(
-            chat_id=chat_id, type="query", content=message, completed=True, audio=is_audio
-        )
 
-        # Save audio file if this is an audio message
-        if is_audio and audio_data:
-            # Generate unique filename for audio
-            audio_filename = f"{user_message.id}.wav"
-            audio_filepath = os.path.join(AUDIO_FOLDER, audio_filename)
-
-            # Save audio file
-            with open(audio_filepath, "wb") as f:
-                f.write(audio_data)
-
-            user_message.file_path = audio_filepath
-            logger.info(
-                f"Saved audio file for message {user_message.id}: {audio_filepath}"
-            )
-
-        db_session.add(user_message)
-        db_session.commit()
-        db_session.refresh(user_message)
-
-        # 2. Emit user message to connected clients
-        sio_instance = get_sio_instance()
-        logger.info(f"Emitting user message to room simulation_{chat_id}")
-        await sio_instance.emit(
-            "simulation_new_message",
-            {
-                "message_id": str(user_message.id),
-                "chat_id": str(chat_id),
-                "role": "user",
-                "content": message,
-                "completed": True,
-                "audio": is_audio,
-                "created_at": user_message.created_at.isoformat(),
-            },
-            room=f"simulation_{chat_id}",
-        )
-
-        # 3. Create placeholder assistant message
-        assistant_message = SimulationMessages(
-            chat_id=chat_id,
-            type="response",
-            content="",
-            completed=False,
-            audio=False,  # Will be updated if audio response is generated
-        )
-        db_session.add(assistant_message)
-        db_session.commit()
-        db_session.refresh(assistant_message)
-
-        # 4. Emit placeholder assistant message
-        logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
-        await sio_instance.emit(
-            "simulation_new_message",
-            {
-                "message_id": str(assistant_message.id),
-                "chat_id": str(chat_id),
-                "role": "assistant",
-                "content": "",
-                "completed": False,
-                "audio": False,
-                "created_at": assistant_message.created_at.isoformat(),
-            },
-            room=f"simulation_{chat_id}",
-        )
-
-        logger.info(f"Processing simulation message for chat {chat_id}")
-
-        # 5. Stream the assistant response
-        accumulated_content = ""
-        cancelled = False
-
-        try:
-            async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
-                # Regular content token
-                accumulated_content += token
-
-                # Update the database with accumulated content
-                assistant_message.content = accumulated_content
-                db_session.add(assistant_message)
-                db_session.commit()
-
-                # Emit token update to connected clients
-                logger.info(
-                    f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
-                )
+        if audio_mode != Modalities.TEXT_TEXT:
+            # create voice pipeline
+            pipeline = SimulationPipeline(chat_id, audio_mode, session).get_pipeline()
+            output_audio = pipeline.run(audio_data)
+            async for chunk in output_audio:
                 await sio_instance.emit(
                     "simulation_message_token",
-                    {
-                        "message_id": str(assistant_message.id),
-                        "chat_id": str(chat_id),
-                        "token": token,
-                        "accumulated_content": accumulated_content,
-                    },
+                    {"message_id": str(assistant_message.id), "chat_id": str(chat_id), "token": chunk, "accumulated_content": accumulated_content},
                     room=f"simulation_{chat_id}",
                 )
-        except Exception as e:
-            if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
-                # Handle cancellation gracefully
-                cancelled = True
-                logger.info(f"Simulation run for chat {chat_id} was cancelled")
+        else:
 
-                # Update message content with cancellation notice
-                if not accumulated_content.strip():
-                    accumulated_content = "[Simulation cancelled by user]"
+            # 1. Add the user message to the chat
+            user_message = SimulationMessages(
+                chat_id=chat_id, type="query", content=message, completed=True, audio=is_audio
+            )
+
+            # Save audio file if this is an audio message
+            if audio_mode == Modalities.AUDIO_AUDIO and audio_data:
+                # Generate unique filename for audio
+                audio_filename = f"{user_message.id}.wav"
+                audio_filepath = os.path.join(AUDIO_FOLDER, audio_filename)
+
+                # Save audio file
+                with open(audio_filepath, "wb") as f:
+                    f.write(audio_data)
+
+                user_message.file_path = audio_filepath
+                logger.info(
+                    f"Saved audio file for message {user_message.id}: {audio_filepath}"
+                )
+
+            db_session.add(user_message)
+            db_session.commit()
+            db_session.refresh(user_message)
+
+            # 2. Emit user message to connected clients
+            sio_instance = get_sio_instance()
+            logger.info(f"Emitting user message to room simulation_{chat_id}")
+            await sio_instance.emit(
+                "simulation_new_message",
+                {
+                    "message_id": str(user_message.id),
+                    "chat_id": str(chat_id),
+                    "role": "user",
+                    "content": message,
+                    "completed": True,
+                    "audio": is_audio,
+                    "created_at": user_message.created_at.isoformat(),
+                },
+                room=f"simulation_{chat_id}",
+            )
+
+            # 3. Create placeholder assistant message
+            assistant_message = SimulationMessages(
+                chat_id=chat_id,
+                type="response",
+                content="",
+                completed=False,
+                audio=False,  # Will be updated if audio response is generated
+            )
+            db_session.add(assistant_message)
+            db_session.commit()
+            db_session.refresh(assistant_message)
+
+            # 4. Emit placeholder assistant message
+            logger.info(f"Emitting assistant placeholder to room simulation_{chat_id}")
+            await sio_instance.emit(
+                "simulation_new_message",
+                {
+                    "message_id": str(assistant_message.id),
+                    "chat_id": str(chat_id),
+                    "role": "assistant",
+                    "content": "",
+                    "completed": False,
+                    "audio": False,
+                    "created_at": assistant_message.created_at.isoformat(),
+                },
+                room=f"simulation_{chat_id}",
+            )
+
+            logger.info(f"Processing simulation message for chat {chat_id}")
+
+            # 5. Stream the assistant response
+            accumulated_content = ""
+            cancelled = False
+
+            try:
+                async for token in run_simulation_agent(uuid.UUID(chat_id), db_session):
+                    # Regular content token
+                    accumulated_content += token
+
+                    # Update the database with accumulated content
+                    assistant_message.content = accumulated_content
+                    db_session.add(assistant_message)
+                    db_session.commit()
+
+                    # Emit token update to connected clients
+                    logger.info(
+                        f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
+                    )
+                    await sio_instance.emit(
+                        "simulation_message_token",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(chat_id),
+                            "token": token,
+                            "accumulated_content": accumulated_content,
+                        },
+                        room=f"simulation_{chat_id}",
+                    )
+            except Exception as e:
+                if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                    # Handle cancellation gracefully
+                    cancelled = True
+                    logger.info(f"Simulation run for chat {chat_id} was cancelled")
+
+                    # Update message content with cancellation notice
+                    if not accumulated_content.strip():
+                        accumulated_content = "[Simulation cancelled by user]"
+                    else:
+                        accumulated_content += "\n\n[Simulation cancelled by user]"
+
+                    assistant_message.content = accumulated_content
+                    db_session.add(assistant_message)
+                    db_session.commit()
+
+                    # Emit cancellation signal
+                    logger.info(f"Emitting cancellation to room simulation_{chat_id}")
+                    await sio_instance.emit(
+                        "simulation_message_cancelled",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(chat_id),
+                            "final_content": accumulated_content,
+                        },
+                        room=f"simulation_{chat_id}",
+                    )
                 else:
-                    accumulated_content += "\n\n[Simulation cancelled by user]"
+                    # Re-raise other exceptions
+                    raise e
 
-                assistant_message.content = accumulated_content
-                db_session.add(assistant_message)
-                db_session.commit()
+            # 6. Mark as completed
+            assistant_message.completed = True
+            db_session.add(assistant_message)
+            db_session.commit()
 
-                # Emit cancellation signal
-                logger.info(f"Emitting cancellation to room simulation_{chat_id}")
+            # For now, we don't generate audio responses.
+            # This is where you would add TTS logic and stream the audio back.
+            if is_audio and profile_id:
+                logger.info(
+                    f"Would generate audio response for profile {profile_id} here."
+                )
+
+            # 7. Emit completion signal (only if not cancelled)
+            if not cancelled:
+                logger.info(f"Emitting completion to room simulation_{chat_id}")
                 await sio_instance.emit(
-                    "simulation_message_cancelled",
+                    "simulation_message_complete",
                     {
                         "message_id": str(assistant_message.id),
                         "chat_id": str(chat_id),
                         "final_content": accumulated_content,
+                        "audio": assistant_message.audio,
                     },
                     room=f"simulation_{chat_id}",
                 )
-            else:
-                # Re-raise other exceptions
-                raise e
-
-        # 6. Mark as completed
-        assistant_message.completed = True
-        db_session.add(assistant_message)
-        db_session.commit()
-
-        # For now, we don't generate audio responses.
-        # This is where you would add TTS logic and stream the audio back.
-        if is_audio and profile_id:
-            logger.info(
-                f"Would generate audio response for profile {profile_id} here."
-            )
-
-        # 7. Emit completion signal (only if not cancelled)
-        if not cancelled:
-            logger.info(f"Emitting completion to room simulation_{chat_id}")
-            await sio_instance.emit(
-                "simulation_message_complete",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(chat_id),
-                    "final_content": accumulated_content,
-                    "audio": assistant_message.audio,
-                },
-                room=f"simulation_{chat_id}",
-            )
 
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
@@ -684,33 +648,14 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
                     full_audio_bytes = b"".join(speech_buffer)
                     speech_buffer.clear()
 
-                    # Convert to numpy array for transcription
-                    audio_np = (
-                        np.frombuffer(full_audio_bytes, dtype=np.int16).astype(
-                            np.float32
+                    asyncio.create_task(
+                        process_simulation_message_websocket(
+                            chat_id=chat_id,
+                            audio_mode=Modalities.AUDIO_AUDIO,
+                            audio_data=full_audio_bytes,
+                            profile_id=profile_id,
                         )
-                        / 32768.0
                     )
-
-                    # Transcribe
-                    whisper_model = model_manager.get_whisper_model()
-                    result = whisper_model.transcribe(audio_np, language="en")
-                    transcribed_text = result["text"]
-
-                    logger.info(
-                        f"Transcribed audio for chat {chat_id}: '{transcribed_text}'"
-                    )
-
-                    if transcribed_text and transcribed_text.strip():
-                        # Process the transcribed text as a message
-                        asyncio.create_task(
-                            process_simulation_message_websocket(
-                                chat_id=chat_id,
-                                message=transcribed_text,
-                                is_audio=True,
-                                profile_id=profile_id,
-                            )
-                        )
     except Exception:
         logger.exception(
             f"Audio stream processing for chat {chat_id} crashed."
