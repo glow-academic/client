@@ -250,69 +250,6 @@ async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
         logger.error(f"Error starting simulation for {sid}: {str(e)}")
         await emit_error(sid, f"Failed to start simulation: {str(e)}")
 
-
-async def handle_send_message(sid: str, data: Dict[str, Any]) -> None:
-    """
-    Handle text message sending via WebSocket
-    Replaces /simulations/message endpoint
-    """
-    try:
-        chat_id = data.get("chat_id")
-        message = data.get("message")
-
-        if not chat_id or not message:
-            await emit_error(sid, "Missing chat_id or message")
-            return
-
-        # Create a new session for this operation
-        db_session = next(get_session())
-
-        try:
-            # Verify the chat exists
-            chat = db_session.exec(
-                select(SimulationChats).where(SimulationChats.id == chat_id)
-            ).one_or_none()
-            if not chat:
-                await emit_error(sid, "Chat not found")
-                return
-
-            # Check if chat is completed
-            if chat.completed:
-                await emit_error(sid, "Cannot send messages to completed chat")
-                return
-
-            # Ensure client is joined to the simulation room
-            sio_instance = get_sio_instance()
-            simulation_room = f"simulation_{chat_id}"
-            await sio_instance.enter_room(sid, simulation_room)
-            logger.info(f"Client {sid} ensured in simulation room {simulation_room}")
-
-            # Process the message asynchronously
-            asyncio.create_task(
-                process_simulation_message_websocket(
-                    chat_id=chat_id, message=message, is_audio=False, session=None
-                )
-            )
-
-            # Emit acknowledgment
-            await sio_instance.emit(
-                "message_processing",
-                {
-                    "chat_id": chat_id,
-                    "status": "processing",
-                    "message": "Message is being processed",
-                },
-                room=sid,
-            )
-
-        finally:
-            db_session.close()
-
-    except Exception as e:
-        logger.error(f"Error sending message for {sid}: {str(e)}")
-        await emit_error(sid, f"Failed to send message: {str(e)}")
-
-
 async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
     """
     Handle simulation stop requests via WebSocket
@@ -794,11 +731,6 @@ def register_simulation_events(sio: socketio.AsyncServer) -> None:
             f"start_simulation event triggered for sid={sid} with data keys: {list(data.keys())}"
         )
         await handle_start_simulation(sid, data)
-
-    @sio.event  # type: ignore
-    async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
-        """Send a text message in simulation"""
-        await handle_send_message(sid, data)
 
     @sio.event  # type: ignore
     async def stop_simulation(sid: str, data: Dict[str, Any]) -> None:
