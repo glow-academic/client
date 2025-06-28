@@ -24,6 +24,7 @@ import socketio  # type: ignore
 import torch
 import webrtcvad  # type: ignore
 from agents import gen_trace_id
+from aiortc import MediaStreamTrack
 from app.config import model_manager
 from app.db import get_session
 from app.extensions import AUDIO_FOLDER
@@ -47,43 +48,36 @@ FRAME_MS = 30  # VAD supports 10, 20, or 30 ms frames
 TARGET_SAMPLES_PER_FRAME = TARGET_SR * FRAME_MS // 1000
 TARGET_BYTES_PER_FRAME = TARGET_SAMPLES_PER_FRAME * 2  # 16-bit PCM
 
-async def resample_and_chunk_audio(
-    track: Any,
-) -> AsyncGenerator[bytes, None]:
+async def resample_and_chunk_audio(track: MediaStreamTrack) -> AsyncGenerator[bytes, None]:
     """
-    Resamples audio from the track to 16kHz, mono, 16-bit PCM,
-    and yields it in chunks of the size required by VAD.
+    Convert the incoming WebRTC audio (whatever rate/format) to 16-kHz mono
+    16-bit PCM and yield it in 30-ms chunks (960 bytes) suitable for webrtc-vad.
     """
-    buffer = b""
-    async for frame in track:
-        try:
-            # Reformat the frame using PyAV's built-in resampler.
-            # This is safer than manual conversion.
-            resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_SR)
-            resampled_frames = resampler.resample(frame)
-            
-            # Append resampled audio bytes to our buffer
-            for resampled_frame in resampled_frames:
-                buffer += resampled_frame.to_ndarray().tobytes()
+    resampler = av.AudioResampler(format="s16", layout="mono", rate=TARGET_SR)
 
-            # Yield as many complete VAD frames as we can from the buffer
+    buffer = b""
+    try:
+        while True:
+            frame = await track.recv()      # ← pull next frame
+
+            # make sure frame is an AudioFrame
+            if not isinstance(frame, av.AudioFrame):
+                logger.warning(f"Received non-audio frame: {type(frame)}")
+                continue
+
+            for fr in resampler.resample(frame):      # PyAV objects
+                buffer += fr.to_ndarray().tobytes()
+
+            # Emit as many complete VAD frames as we have
             while len(buffer) >= TARGET_BYTES_PER_FRAME:
-                # Yield a VAD-compatible chunk
                 yield buffer[:TARGET_BYTES_PER_FRAME]
-                # Keep the rest of the buffer for the next round
                 buffer = buffer[TARGET_BYTES_PER_FRAME:]
 
-        except av.error.EOFError:
-            logger.info("Audio track processing finished (EOF).")
-            break
-        except Exception:
-            logger.exception("Error during audio frame resampling, skipping frame.")
-            continue
-    
-    # If there's a lingering partial frame, pad and yield it
-    if buffer:
-        padded_buffer = buffer.ljust(TARGET_BYTES_PER_FRAME, b'\0')
-        yield padded_buffer
+    except av.error.EOFError:
+        pass        # peer closed the track
+    finally:
+        if buffer:  # flush tail, padding to full frame
+            yield buffer.ljust(TARGET_BYTES_PER_FRAME, b"\0")
 
 
 class VadDetector:
