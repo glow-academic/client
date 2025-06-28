@@ -27,18 +27,12 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 FROM python:3.11-slim AS runtime
 WORKDIR /app
 
-# Runtime-only OS tools (TeX, LibreOffice, PDF utils) - installed once
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        texlive-latex-base \
-        texlive-latex-recommended \
-        texlive-latex-extra \
-        texlive-fonts-recommended \
-        fonts-lmodern \
-        libreoffice-core \
-        libreoffice-writer \
-        poppler-utils \
-        curl \
-    && rm -rf /var/lib/apt/lists/*
+# Runtime-only
+# If you’ll use curl in health-checks / scripts, keep it.
+# Also bring in CA certs to avoid HTTPS failures.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy the pre-built Python deps — no `pip install` here
 COPY --from=deps /install /usr/local

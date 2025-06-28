@@ -15,7 +15,7 @@ sqlmodel
 openai
 openai-agents[litellm]
 
-pylatex
+python-docx
 matplotlib
 numpy
 

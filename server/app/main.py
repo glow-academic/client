@@ -18,7 +18,6 @@ from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
-from app.routes.profiles import router as profiles_router
 from app.routes.scenarios import router as scenarios_router
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
@@ -767,7 +766,6 @@ fastapi_app.add_middleware(
 
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
-fastapi_app.include_router(profiles_router, prefix="/profiles")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
 # Note: Removed rtc_router as we're migrating to WebSocket-based signaling
 
