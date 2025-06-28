@@ -6,7 +6,7 @@
  */
 
 import { logError, logInfo } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
+import { getApiBase } from "@/lib/api-base";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch
@@ -21,8 +21,7 @@ async function handleProxyRequest(
   try {
     const { upload_id } = await params;
     const url = new URL(req.url);
-    const apiUrl = await getApiUrl();
-    const targetUrl = `${apiUrl}/documents/tus/${upload_id}${url.search}`;
+    const targetUrl = `${getApiBase()}/documents/tus/${upload_id}${url.search}`;
 
     logInfo(`[TUS proxy] ${req.method} ${url.pathname} -> ${targetUrl}`);
 

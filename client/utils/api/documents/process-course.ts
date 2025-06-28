@@ -5,8 +5,8 @@
  * 06/24/2025
  */
 "use server";
+import { getApiBase } from "@/lib/api-base";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 
 export interface ProcessCourseParams {
   classId: string;
@@ -27,7 +27,7 @@ export async function processCourse(
 ): Promise<ProcessCourseResponse> {
   try {
     const response = await fetch(
-      `${getApiUrl()}/documents/course?class_id=${classId}`,
+      `${getApiBase()}/documents/course?class_id=${classId}`,
       {
         method: "POST",
       }

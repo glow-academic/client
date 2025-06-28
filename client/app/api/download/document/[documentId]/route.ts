@@ -4,8 +4,8 @@
  * Proxies requests to FastAPI backend while preserving server context
  */
 
+import { getApiBase } from "@/lib/api-base";
 import { logError, logInfo } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 import type { NextRequest } from "next/server";
 
 export async function GET(
@@ -16,10 +16,9 @@ export async function GET(
     const { documentId } = await params;
 
     logInfo(`Downloading document ${documentId}`, { documentId });
-    const apiUrl = await getApiUrl();
 
     // Forward the request to FastAPI backend
-    const response = await fetch(`${apiUrl}/documents/id/${documentId}`, {
+    const response = await fetch(`${getApiBase()}/documents/id/${documentId}`, {
       method: "GET",
       headers: {
         // Forward relevant headers from the original request

@@ -5,8 +5,8 @@
  * 06/24/2025
  */
 "use server";
+import { getApiBase } from "@/lib/api-base";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 
 export interface DeleteDocumentParams {
   documentId: string;
@@ -24,8 +24,7 @@ export async function deleteDocument(
   force: boolean = true
 ): Promise<DeleteDocumentResponse> {
   try {
-    const apiUrl = await getApiUrl();
-    const url = new URL(`${apiUrl}/documents/id/${documentId}`);
+    const url = new URL(`${getApiBase()}/documents/id/${documentId}`);
     if (force) {
       url.searchParams.set("force", "true");
     }

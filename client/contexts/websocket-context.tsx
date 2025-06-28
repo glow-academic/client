@@ -5,9 +5,9 @@
  */
 "use client";
 
+import { getApiBase } from "@/lib/api-base";
 import { AssistantChat, AssistantMessage, SimulationMessage } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 import { useQueryClient } from "@tanstack/react-query";
 import React, {
   createContext,
@@ -945,10 +945,8 @@ export function WebSocketProvider({
         attempt: connectionAttempts.current + 1,
       });
 
-      const socketUrl = await getApiUrl();
-      const socketPath = "/socket.io";
-      const socket = io(socketUrl, {
-        path: socketPath,
+      const socket = io(getApiBase(), {
+        path: "/socket.io",
         transports: ["websocket"],
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections

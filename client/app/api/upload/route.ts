@@ -6,16 +6,15 @@
  * without exposing that host to the public internet.
  */
 
+import { getApiBase } from "@/lib/api-base";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 import type { NextRequest } from "next/server";
 
 // Helper function to handle proxy requests using fetch
 async function handleProxyRequest(req: NextRequest) {
   try {
     const url = new URL(req.url);
-    const apiUrl = await getApiUrl();
-    const targetUrl = `${apiUrl}/documents/tus${url.pathname.replace("/api/upload", "")}${url.search}`;
+    const targetUrl = `${getApiBase()}/documents/tus${url.pathname.replace("/api/upload", "")}${url.search}`;
 
     // Prepare fetch options
     const fetchOptions: RequestInit = {

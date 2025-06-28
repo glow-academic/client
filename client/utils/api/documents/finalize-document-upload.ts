@@ -5,8 +5,8 @@
  * 06/24/2025
  */
 "use server";
+import { getApiBase } from "@/lib/api-base";
 import { logError } from "@/utils/logger";
-import { getApiUrl } from "@/utils/api/url";
 
 export interface FinalizeDocumentUploadParams {
   fileId: string;
@@ -77,8 +77,7 @@ export async function finalizeDocumentUpload(
       ...(profile !== undefined && { profile }),
     };
 
-    const apiUrl = await getApiUrl();
-    const response = await fetch(`${apiUrl}/documents/tus/finalize`, {
+    const response = await fetch(`${getApiBase()}/documents/tus/finalize`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
