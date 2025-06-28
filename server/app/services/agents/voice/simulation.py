@@ -58,7 +58,7 @@ class SimulationSTTModel(STTModel):
             # Use Whisper model for transcription
             whisper_model = model_manager.get_whisper_model()
             result = whisper_model.transcribe(audio_np, language="en")
-            transcribed_text = result["text"].strip()
+            transcribed_text = str(result["text"]).strip()
             
             logger.info(f"STT transcribed: {transcribed_text}")
             return transcribed_text
@@ -238,8 +238,11 @@ class SimulationPipeline:
             user_message_id = None
             if self.mode in [Modalities.AUDIO_AUDIO, Modalities.AUDIO_TEXT] and audio_data and len(audio_data) > 0:
                 user_message_id = str(uuid.uuid4())  # Temporary ID, will be updated by workflow
-                user_audio_path = os.path.join(AUDIO_FOLDER, f"{user_message_id}.wav")
+                user_audio_path: str | None = os.path.join(AUDIO_FOLDER, f"{user_message_id}.wav")
                 try:
+                    if user_audio_path is None:
+                        raise ValueError("User audio path is None")
+                    
                     with open(user_audio_path, "wb") as f:
                         f.write(audio_data)
                     logger.info(f"Saved user audio to {user_audio_path}")

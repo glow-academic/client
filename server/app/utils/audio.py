@@ -3,8 +3,8 @@ from enum import Enum
 from typing import AsyncGenerator
 
 import av
-import webrtcvad
-from av.audio.stream import MediaStreamTrack
+import webrtcvad  # type: ignore
+from aiortc import MediaStreamTrack
 
 logger = logging.getLogger(__name__)
 

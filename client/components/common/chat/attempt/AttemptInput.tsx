@@ -46,7 +46,7 @@ export default function AttemptInput() {
 
   const [newMessage, setNewMessage] = useState("");
   const [isTall, setIsTall] = useState(false);
-  const [assistantAudioEnabled, setAssistantAudioEnabled] = useState(false);
+  const [assistantAudioEnabled, _setAssistantAudioEnabled] = useState(false);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
