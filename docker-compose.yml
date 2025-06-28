@@ -27,7 +27,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      # - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
       - history-data:/database/history 
     ports:
@@ -77,7 +77,6 @@ services:
         DB_NAME: ${DB_NAME}
         DB_PORT: ${DB_PORT}
         DB_HOST: database
-        AUTH_URL: ${AUTH_URL}
         AUTH_SECRET: ${AUTH_SECRET}
         AUTH_MICROSOFT_ENTRA_ID_ID: ${AUTH_MICROSOFT_ENTRA_ID_ID}
         AUTH_MICROSOFT_ENTRA_ID_SECRET: ${AUTH_MICROSOFT_ENTRA_ID_SECRET}
@@ -166,7 +165,7 @@ services:
       public_net:     # route traffic from outside world
 
 volumes:
-  # pgdata:
+  pgdata:
   uploads-data:
   history-data:
 
