@@ -27,7 +27,7 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # - pgdata:/var/lib/postgresql/data
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
       - history-data:/database/history 
     ports:
@@ -166,7 +166,7 @@ services:
       public_net:     # route traffic from outside world
 
 volumes:
-  pgdata:
+  # pgdata:
   uploads-data:
   history-data:
 
