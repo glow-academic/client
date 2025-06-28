@@ -28,8 +28,8 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./database/history:/database/history
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
+      - history-data:/database/history 
     ports:
       - "${DB_PORT}:5432"
     healthcheck:
@@ -53,7 +53,7 @@ services:
       - DB_HOST=database
       - DOCKER_ENV=1
     volumes:
-      - ./uploads:/app/uploads   # makes /app/uploads writable
+      - uploads-data:/app/uploads   # makes /app/uploads writable
     depends_on:
       database:
         condition: service_healthy
@@ -167,3 +167,6 @@ services:
 
 volumes:
   pgdata:
+  uploads-data:
+  history-data:
+

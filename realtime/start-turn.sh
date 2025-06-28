@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-PRIVATE_IP=$(ip -4 addr show eth0 | awk '/inet /{print $2}' | cut -d/ -f1)
+PRIVATE_IP=$(hostname -I | awk '{print $1}')
 echo "⏩ Detected container LAN IP: ${PRIVATE_IP}"
 
 exec turnserver \

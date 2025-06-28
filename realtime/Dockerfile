@@ -5,9 +5,6 @@ COPY start-turn.sh /usr/local/bin/start-turn.sh
 # Switch to root to modify the script's permissions
 USER root
 
-# Install iproute2 to provide the `ip` binary
-RUN apk add --no-cache iproute2
-
 # Make the script executable.
 # If you haven't already, ensure the script has Unix-style line endings
 # by running "dos2unix realtime/start-turn.sh" on your host machine.
