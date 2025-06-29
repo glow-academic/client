@@ -44,6 +44,7 @@ interface FormErrors {
   name?: string;
   description?: string;
   providerId?: string;
+  modelType?: string;
 }
 
 export default function Model({ modelId }: ModelProps) {
@@ -61,6 +62,7 @@ export default function Model({ modelId }: ModelProps) {
     description: "",
     providerId: "",
     active: true,
+    modelType: "ttt",
   };
 
   const [formData, setFormData] = useState<Partial<ModelType>>(initialFormData);
@@ -88,6 +90,7 @@ export default function Model({ modelId }: ModelProps) {
           description: modelToEdit.description || "",
           providerId: modelToEdit.providerId || "",
           active: modelToEdit.active ?? true,
+          modelType: modelToEdit.modelType || "ttt",
         });
       }
     }
@@ -134,6 +137,10 @@ export default function Model({ modelId }: ModelProps) {
       newErrors.providerId = "Provider is required";
     }
 
+    if (!formData.modelType) {
+      newErrors.modelType = "Model type is required";
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -168,6 +175,7 @@ export default function Model({ modelId }: ModelProps) {
           description: formData.description || "",
           providerId: formData.providerId || "",
           active: formData.active || true,
+          modelType: formData.modelType || "ttt",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         });
@@ -250,6 +258,28 @@ export default function Model({ modelId }: ModelProps) {
           </Select>
           {errors.providerId && (
             <p className="text-sm text-destructive">{errors.providerId}</p>
+          )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="modelType">Model Type</Label>
+          <Select
+            value={formData.modelType || "ttt"}
+            onValueChange={(value) => handleInputChange("modelType", value)}
+          >
+            <SelectTrigger
+              className={errors.modelType ? "border-destructive" : ""}
+            >
+              <SelectValue placeholder="Select model type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ttt">Text-to-Text (TTT)</SelectItem>
+              <SelectItem value="stt">Speech-to-Text (STT)</SelectItem>
+              <SelectItem value="tts">Text-to-Speech (TTS)</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.modelType && (
+            <p className="text-sm text-destructive">{errors.modelType}</p>
           )}
         </div>
 

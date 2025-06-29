@@ -63,8 +63,8 @@ export default function Agent({
     temperature: 0,
     modelId: null,
     voiceAgent: false,
-    sttModelId: null,
-    ttsModelId: null,
+    sttModelId: "default",
+    ttsModelId: "default",
   });
 
   const { data: agent, isLoading } = useQuery({
@@ -87,8 +87,8 @@ export default function Agent({
         temperature: agent.temperature || 0,
         modelId: agent.modelId || null,
         voiceAgent: agent.voiceAgent || false,
-        sttModelId: agent.sttModelId || null,
-        ttsModelId: agent.ttsModelId || null,
+        sttModelId: agent.sttModelId || "default",
+        ttsModelId: agent.ttsModelId || "default",
       });
     }
   }, [agent, isEditMode]);
@@ -138,6 +138,10 @@ export default function Agent({
     try {
       const submitData = {
         ...formData,
+        sttModelId:
+          formData.sttModelId === "default" ? null : formData.sttModelId,
+        ttsModelId:
+          formData.ttsModelId === "default" ? null : formData.ttsModelId,
       };
 
       if (isEditMode) {
@@ -252,8 +256,10 @@ export default function Agent({
                   setFormData((prev) => ({
                     ...prev,
                     voiceAgent: checked,
-                    // Clear voice model selections when disabling voice
-                    ...(checked ? {} : { sttModelId: null, ttsModelId: null }),
+                    // Reset voice model selections when disabling voice
+                    ...(checked
+                      ? {}
+                      : { sttModelId: "default", ttsModelId: "default" }),
                   }))
                 }
               />
@@ -273,7 +279,7 @@ export default function Agent({
                 onValueChange={(value) =>
                   setFormData((prev) => ({
                     ...prev,
-                    modelId: value || null,
+                    modelId: value === "default" ? null : value,
                   }))
                 }
                 required
@@ -287,7 +293,6 @@ export default function Agent({
                   />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default</SelectItem>
                   {models
                     ?.filter(
                       (model) => model.active && model.modelType === "ttt"
@@ -310,7 +315,7 @@ export default function Agent({
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        sttModelId: value || null,
+                        sttModelId: value === "default" ? null : value,
                       }))
                     }
                     disabled={isModelsLoading}
@@ -346,7 +351,7 @@ export default function Agent({
                     onValueChange={(value) =>
                       setFormData((prev) => ({
                         ...prev,
-                        ttsModelId: value || null,
+                        ttsModelId: value === "default" ? null : value,
                       }))
                     }
                     disabled={isModelsLoading}
