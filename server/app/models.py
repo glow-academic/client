@@ -110,8 +110,6 @@ class Models(_Base, table=True):
     model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), server_default=text("'ttt'::model_type")))
 
     agents: List['Agents'] = Relationship(back_populates='model')
-    agents_: List['Agents'] = Relationship(back_populates='stt_model')
-    agents1: List['Agents'] = Relationship(back_populates='tts_model')
 
 
 class Providers(_Base, table=True):
@@ -185,8 +183,6 @@ class VerificationToken(_Base, table=True):
 class Agents(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['model_id'], ['models.id'], name='agents_model_id_fkey'),
-        ForeignKeyConstraint(['stt_model_id'], ['models.id'], name='agents_stt_model_id_fkey'),
-        ForeignKeyConstraint(['tts_model_id'], ['models.id'], name='agents_tts_model_id_fkey'),
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
@@ -206,8 +202,6 @@ class Agents(_Base, table=True):
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
-    stt_model: Optional['Models'] = Relationship(back_populates='agents_')
-    tts_model: Optional['Models'] = Relationship(back_populates='agents1')
     scenarios: List['Scenarios'] = Relationship(back_populates='agent')
 
 

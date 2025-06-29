@@ -345,16 +345,6 @@ export const agents = pgTable("agents", {
 			foreignColumns: [models.id],
 			name: "agents_model_id_fkey"
 		}),
-	foreignKey({
-			columns: [table.sttModelId],
-			foreignColumns: [models.id],
-			name: "agents_stt_model_id_fkey"
-		}),
-	foreignKey({
-			columns: [table.ttsModelId],
-			foreignColumns: [models.id],
-			name: "agents_tts_model_id_fkey"
-		}),
 ]);
 
 export const cohorts = pgTable("cohorts", {

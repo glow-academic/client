@@ -110,20 +110,9 @@ export const scenariosRelations = relations(scenarios, ({one, many}) => ({
 
 export const agentsRelations = relations(agents, ({one, many}) => ({
 	scenarios: many(scenarios),
-	model_modelId: one(models, {
+	model: one(models, {
 		fields: [agents.modelId],
-		references: [models.id],
-		relationName: "agents_modelId_models_id"
-	}),
-	model_sttModelId: one(models, {
-		fields: [agents.sttModelId],
-		references: [models.id],
-		relationName: "agents_sttModelId_models_id"
-	}),
-	model_ttsModelId: one(models, {
-		fields: [agents.ttsModelId],
-		references: [models.id],
-		relationName: "agents_ttsModelId_models_id"
+		references: [models.id]
 	}),
 }));
 
@@ -135,15 +124,7 @@ export const dashboardsRelations = relations(dashboards, ({one}) => ({
 }));
 
 export const modelsRelations = relations(models, ({many}) => ({
-	agents_modelId: many(agents, {
-		relationName: "agents_modelId_models_id"
-	}),
-	agents_sttModelId: many(agents, {
-		relationName: "agents_sttModelId_models_id"
-	}),
-	agents_ttsModelId: many(agents, {
-		relationName: "agents_ttsModelId_models_id"
-	}),
+	agents: many(agents),
 }));
 
 export const simulationsRelations = relations(simulations, ({one, many}) => ({

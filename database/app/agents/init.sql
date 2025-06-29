@@ -19,8 +19,8 @@ CREATE TABLE agents (
   voice_agent BOOLEAN NOT NULL DEFAULT FALSE, -- If true, the agent is a voice agent
   editable BOOLEAN NOT NULL DEFAULT FALSE, -- For internal models, these are not editable
   model_id UUID REFERENCES models(id),
-  stt_model_id UUID REFERENCES models(id) NULL, -- NULL if not used
-  tts_model_id UUID REFERENCES models(id) NULL, -- NULL if not used
+  stt_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
+  tts_model_id UUID NULL, -- NULL if not used (not using foreign key since it will cause issues)
   reasoning reasoning_effort DEFAULT NULL
 );
 
