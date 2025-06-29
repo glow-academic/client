@@ -133,17 +133,6 @@ export default function Agent({
       return;
     }
 
-    if (formData.voiceAgent) {
-      if (!formData.sttModelId) {
-        toast.error("Speech-to-Text model is required for voice agents");
-        return;
-      }
-      if (!formData.ttsModelId) {
-        toast.error("Text-to-Speech model is required for voice agents");
-        return;
-      }
-    }
-
     setIsSubmitting(true);
 
     try {
@@ -255,38 +244,6 @@ export default function Agent({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="modelId">Model *</Label>
-            <Select
-              value={formData.modelId || ""}
-              onValueChange={(value) =>
-                setFormData((prev) => ({
-                  ...prev,
-                  modelId: value || null,
-                }))
-              }
-              required
-              disabled={isModelsLoading}
-            >
-              <SelectTrigger>
-                <SelectValue
-                  placeholder={
-                    isModelsLoading ? "Loading models..." : "Select a model"
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {models
-                  ?.filter((model) => model.active && model.modelType === "ttt")
-                  ?.map((model) => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.name}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <div className="flex items-center space-x-2">
               <Switch
                 id="voiceAgent"
@@ -300,89 +257,126 @@ export default function Agent({
                   }))
                 }
               />
-              <Label htmlFor="voiceAgent">Enable Voice Agent</Label>
+              <Label htmlFor="voiceAgent">
+                {formData.voiceAgent ? "Voice Mode" : "Standard Mode"}
+              </Label>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Enable voice capabilities for this agent (requires STT and TTS
-              models)
-            </p>
           </div>
 
-          {formData.voiceAgent && (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="sttModelId">Speech-to-Text Model *</Label>
-                <Select
-                  value={formData.sttModelId || ""}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      sttModelId: value || null,
-                    }))
-                  }
-                  required={formData.voiceAgent}
-                  disabled={isModelsLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        isModelsLoading
-                          ? "Loading models..."
-                          : "Select STT model"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models
-                      ?.filter(
-                        (model) => model.active && model.modelType === "stt"
-                      )
-                      ?.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <div
+            className={`grid gap-4 ${formData.voiceAgent ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1"}`}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="modelId">Text Model *</Label>
+              <Select
+                value={formData.modelId || "default"}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    modelId: value || null,
+                  }))
+                }
+                required
+                disabled={isModelsLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      isModelsLoading ? "Loading models..." : "Select a model"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default</SelectItem>
+                  {models
+                    ?.filter(
+                      (model) => model.active && model.modelType === "ttt"
+                    )
+                    ?.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="ttsModelId">Text-to-Speech Model *</Label>
-                <Select
-                  value={formData.ttsModelId || ""}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      ttsModelId: value || null,
-                    }))
-                  }
-                  required={formData.voiceAgent}
-                  disabled={isModelsLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={
-                        isModelsLoading
-                          ? "Loading models..."
-                          : "Select TTS model"
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models
-                      ?.filter(
-                        (model) => model.active && model.modelType === "tts"
-                      )
-                      ?.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          {model.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </>
-          )}
+            {formData.voiceAgent && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="sttModelId">Speech-to-Text Model</Label>
+                  <Select
+                    value={formData.sttModelId || "default"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        sttModelId: value || null,
+                      }))
+                    }
+                    disabled={isModelsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          isModelsLoading
+                            ? "Loading models..."
+                            : "Select STT model"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      {models
+                        ?.filter(
+                          (model) => model.active && model.modelType === "stt"
+                        )
+                        ?.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ttsModelId">Text-to-Speech Model</Label>
+                  <Select
+                    value={formData.ttsModelId || "default"}
+                    onValueChange={(value) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        ttsModelId: value || null,
+                      }))
+                    }
+                    disabled={isModelsLoading}
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={
+                          isModelsLoading
+                            ? "Loading models..."
+                            : "Select TTS model"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Default</SelectItem>
+                      {models
+                        ?.filter(
+                          (model) => model.active && model.modelType === "tts"
+                        )
+                        ?.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>
+                            {model.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="temperature">
@@ -404,8 +398,8 @@ export default function Agent({
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0 (Deterministic)</span>
-              <span>100 (Creative)</span>
+              <span>Deterministic</span>
+              <span>Creative</span>
             </div>
           </div>
 
