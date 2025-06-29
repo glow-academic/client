@@ -65,3 +65,6 @@ aiortc
 
 # webrtcvad
 webrtcvad
+
+# kokoro
+kokoro

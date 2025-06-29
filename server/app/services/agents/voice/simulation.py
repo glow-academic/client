@@ -16,24 +16,46 @@ from agents.voice.workflow import VoiceWorkflowBase
 from app.config import model_manager
 from app.db import get_session
 from app.extensions import AUDIO_FOLDER
-from app.models import SimulationMessages
+from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
+                        SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
 
 logger = logging.getLogger(__name__)
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 
 class SimulationSTTModel(STTModel):
-    def __init__(self, chat_id: uuid.UUID, generate_text: bool = True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, model_id: uuid.UUID | None = None, generate_text: bool = True, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.generate_text = generate_text
         self.chat_id = chat_id
+        self.model_id = model_id
+        self.session = session
+        
+        if model_id is None:
+            self.name = "whisper" # using open source model
+            self.description = "whisper"
+            return
+        
+        # get the model
+        model = self.session.exec(select(Models).where(Models.id == model_id)).one()
+        if not model:
+            raise ValueError(f"Model not found: {model_id}")
+        
+        # get the provider
+        provider = self.session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+        if not provider:
+            raise ValueError(f"Provider not found for model {model.id}")
 
+        self.name = f"{provider.name}/{model.name}"
+        self.description = model.description
+        
+                
     @property
     def model_name(self) -> str:
         """The name of the STT model."""
-        return "simulation-whisper"
+        return self.description
 
     async def transcribe(
         self,
@@ -46,24 +68,34 @@ class SimulationSTTModel(STTModel):
         if not self.generate_text:
             # Return empty string for dummy STT
             return ""
-        
+                
         try:
-            # Convert AudioInput buffer to numpy array for Whisper
-            audio_np = input.buffer
-            if audio_np.dtype == np.float32:
-                # Whisper expects float32 in range [-1, 1]
-                audio_np = np.clip(audio_np, -1.0, 1.0)
-            elif audio_np.dtype == np.int16:
-                # Convert int16 to float32
-                audio_np = audio_np.astype(np.float32) / 32767.0
-            
-            # Use Whisper model for transcription
-            whisper_model = model_manager.get_whisper_model()
-            result = whisper_model.transcribe(audio_np, language="en")
-            transcribed_text = str(result["text"]).strip()
-            
-            logger.info(f"STT transcribed: {transcribed_text}")
-            return transcribed_text
+            if self.model_id is None:
+                # Convert AudioInput buffer to numpy array for Whisper
+                audio_np = input.buffer
+                if audio_np.dtype == np.float32:
+                    # Whisper expects float32 in range [-1, 1]
+                    audio_np = np.clip(audio_np, -1.0, 1.0)
+                elif audio_np.dtype == np.int16:
+                    # Convert int16 to float32
+                    audio_np = audio_np.astype(np.float32) / 32767.0
+                
+                # Use Whisper model for transcription
+                whisper_model = model_manager.get_whisper_model()
+                result = whisper_model.transcribe(audio_np, language="en")
+                transcribed_text = str(result["text"]).strip()
+                
+                logger.info(f"STT transcribed: {transcribed_text}")
+                return transcribed_text
+            else:
+                # Use LiteLLM with transcribe endpoint
+                response = await litellm.atranscription(
+                    model=self.name,
+                    file=input.buffer,
+                    prompt=settings.prompt,
+                )
+                return str(response.text)
+        
             
         except Exception as e:
             logger.error(f"STT transcription failed: {e}")
@@ -82,15 +114,35 @@ class SimulationSTTModel(STTModel):
 
 
 class SimulationTTSModel(TTSModel):
-    def __init__(self, chat_id: uuid.UUID, generate_audio: bool = True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, model_id: uuid.UUID | None = None,  generate_audio: bool = True, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.generate_audio = generate_audio
         self.chat_id = chat_id
+        self.session = session
+        self.model_id = model_id
+
+        if model_id is None:
+            self.name = "kokoro" # using open source model
+            self.description = "kokoro"
+            return
+        
+        # get the model
+        model = self.session.exec(select(Models).where(Models.id == model_id)).one()
+        if not model:
+            raise ValueError(f"Model not found: {model_id}")
+        
+        # get the provider
+        provider = self.session.exec(select(Providers).where(Providers.id == model.provider_id)).one()
+        if not provider:
+            raise ValueError(f"Provider not found for model {model.id}")
+
+        self.name = f"{provider.name}/{model.name}"
+        self.description = model.description
 
     @property
     def model_name(self) -> str:
         """The name of the TTS model."""
-        return "simulation-gemini-tts"
+        return self.description
 
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
         """Given a text string, produces a stream of audio bytes, in PCM format."""
@@ -100,27 +152,32 @@ class SimulationTTSModel(TTSModel):
             return
         
         try:
-            logger.info(f"TTS generating audio for text: {text[:50]}...")
-            
-            # Use LiteLLM with Gemini TTS
-            response = await litellm.aspeech(
-                model="openai/gpt-4o-mini-tts",
-                input=text,
-                voice="ash"
-            )
-            
-            # Stream the audio response
-            # Note: LiteLLM may return the full audio at once, so we'll chunk it
-            audio_data = response.content if hasattr(response, 'content') else b""
-            
-            # Chunk the audio data for streaming (16KB chunks)
-            chunk_size = 16384
-            for i in range(0, len(audio_data), chunk_size):
-                chunk = audio_data[i:i + chunk_size]
-                if chunk:
-                    yield chunk
-                    
-            logger.info(f"TTS completed for text length: {len(text)}")
+
+            if self.model_id is None:
+                # TODO: use kokoro here
+                pass
+            else:
+                logger.info(f"TTS generating audio for text: {text[:50]}...")
+                
+                # Use LiteLLM with Gemini TTS
+                response = await litellm.aspeech(
+                    model=self.name,
+                    input=text,
+                    instructions=settings.instructions,
+                )
+                
+                # Stream the audio response
+                # Note: LiteLLM may return the full audio at once, so we'll chunk it
+                audio_data = response.content if hasattr(response, 'content') else b""
+                
+                # Chunk the audio data for streaming (16KB chunks)
+                chunk_size = 16384
+                for i in range(0, len(audio_data), chunk_size):
+                    chunk = audio_data[i:i + chunk_size]
+                    if chunk:
+                        yield chunk
+                        
+                logger.info(f"TTS completed for text length: {len(text)}")
             
         except Exception as e:
             logger.error(f"TTS generation failed: {e}")
@@ -178,40 +235,78 @@ class SimulationPipeline:
         self.chat_id = chat_id
         self.session = session
         self.original_message = original_message
-    
+
+        # Find the chat first
+        chat = self.session.exec(select(SimulationChats).where(SimulationChats.id == chat_id)).one()
+        if not chat:
+            raise ValueError(f"Chat not found for chat_id {chat_id}")
+
+        # Find scenario for the chat
+        scenario = self.session.exec(select(Scenarios).where(Scenarios.id == chat.scenario_id)).one()
+        if not scenario:
+            raise ValueError(f"Scenario not found for chat {chat.id}")
+        
+        # Find the agent for the scenario
+        agent = self.session.exec(select(Agents).where(Agents.id == scenario.agent_id)).one()
+        if not agent:
+            raise ValueError(f"Agent not found for scenario {scenario.id}")
+        
+        self.agent_id = agent.id
+        self.stt_model_id = agent.stt_model_id
+        self.tts_model_id = agent.tts_model_id
+
     def get_pipeline(self, config: VoicePipelineConfig | None = None) -> VoicePipeline:
         """Get the appropriate voice pipeline based on modality."""
-
-        no_split = lambda t: (t, "") 
-        tts_settings = TTSModelSettings(
-            buffer_size=24000,
-            text_splitter=no_split,
-            instructions="Read exactly what you receive.",
-        )
         if config is None:
-            config = VoicePipelineConfig(tts_settings=tts_settings)
+
+            # getting tts config
+            tts_model = self.session.exec(select(Models).where(Models.id == self.tts_model_id)).one()
+
+            # Find the stt and tts models for the agent
+            if not tts_model:
+                raise ValueError(f"TTS model not found for agent {self.agent_id}")
+            
+            no_split = lambda t: (t, "") 
+            tts_settings = TTSModelSettings(
+                buffer_size=24000,
+                text_splitter=no_split,
+                instructions="Read exactly what you receive.",
+            )
+
+            # getting stt config
+            stt_model = self.session.exec(select(Models).where(Models.id == self.stt_model_id)).one()
+
+            # Find the stt and tts models for the agent
+            if not stt_model:
+                raise ValueError(f"STT model not found for agent {self.agent_id}")
+            
+            # getting stt settings
+            stt_settings = STTModelSettings(
+                prompt="Transcribe the following audio into text.",
+            )
+            config = VoicePipelineConfig(tts_settings=tts_settings, stt_settings=stt_settings)
             
         workflow = SimulationWorkflow(self.chat_id, self.session, self.original_message)
         
         if self.mode == Modalities.AUDIO_AUDIO:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=True),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=True),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True),
                 config=config,
             )
         elif self.mode == Modalities.AUDIO_TEXT:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=True),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=False),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=False),
                 config=config,
             )
         elif self.mode == Modalities.TEXT_AUDIO:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=False),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=True),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=False),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True),
                 config=config,
             )
         else:
