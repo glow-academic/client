@@ -42,11 +42,11 @@ export default function AttemptInput() {
     isSendingMessage,
     isStoppingMessage,
     endChatLoading,
+    assistantAudioEnabled,
   } = useSimulation();
 
   const [newMessage, setNewMessage] = useState("");
   const [isTall, setIsTall] = useState(false);
-  const [assistantAudioEnabled, _setAssistantAudioEnabled] = useState(false);
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);

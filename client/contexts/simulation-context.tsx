@@ -98,6 +98,10 @@ interface SimulationContextType {
   freshlyCompletedChats: Set<string>;
   setFreshlyCompletedChats: React.Dispatch<React.SetStateAction<Set<string>>>;
 
+  // Audio state
+  assistantAudioEnabled: boolean;
+  setAssistantAudioEnabled: (enabled: boolean) => void;
+
   // Connection state
   isConnected: boolean;
 
@@ -158,6 +162,9 @@ export function SimulationProvider({
 
   // WebRTC Audio state
   const [isRecording, setIsRecording] = useState(false);
+
+  // Assistant audio state
+  const [assistantAudioEnabled, setAssistantAudioEnabled] = useState(false);
 
   const queryClient = useQueryClient();
   const currentRoomRef = useRef<string | null>(null);
@@ -998,6 +1005,11 @@ export function SimulationProvider({
     };
   }, []);
 
+  // Reset assistant audio state when moving to next chat
+  useEffect(() => {
+    setAssistantAudioEnabled(false);
+  }, [currentChat?.id]);
+
   const value: SimulationContextType = {
     // Data
     attemptId,
@@ -1030,6 +1042,10 @@ export function SimulationProvider({
     expectedChatCount,
     freshlyCompletedChats,
     setFreshlyCompletedChats,
+
+    // Audio state
+    assistantAudioEnabled,
+    setAssistantAudioEnabled,
 
     // Connection
     isConnected,

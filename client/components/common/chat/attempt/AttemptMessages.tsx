@@ -14,7 +14,15 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
-import { ArrowDown } from "lucide-react";
+import { ArrowDown, AudioWaveform, Captions } from "lucide-react";
+
+// Tooltip
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -33,9 +41,17 @@ export default function AttemptMessages({
   isActive,
   chatId,
 }: AttemptMessagesProps) {
-  const { currentChat, classData, sendMessage, isSendingMessage } =
-    useSimulation();
+  const {
+    currentChat,
+    classData,
+    sendMessage,
+    isSendingMessage,
+    assistantAudioEnabled,
+    setAssistantAudioEnabled,
+  } = useSimulation();
+
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [captionsEnabled, setCaptionsEnabled] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -49,6 +65,21 @@ export default function AttemptMessages({
     queryFn: () => getSimulationMessagesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
+
+  // Get the latest assistant message for audio mode
+  const latestAssistantMessage = useMemo(() => {
+    return messages
+      .filter((msg: SimulationMessage) => msg.type === "response")
+      .sort(
+        (a: SimulationMessage, b: SimulationMessage) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+  }, [messages]);
+
+  // Check if assistant is currently speaking (streaming)
+  const isAssistantSpeaking = useMemo(() => {
+    return latestAssistantMessage && !latestAssistantMessage.completed;
+  }, [latestAssistantMessage]);
 
   // Generate starter prompts
   const starterPrompts = useMemo(() => {
@@ -150,98 +181,183 @@ export default function AttemptMessages({
 
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
-      <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
-        <div className="space-y-4 py-4">
-          {messages.length === 0 ? (
-            /* Starter Prompts - shown when no messages */
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Choose a prompt below or type your own message
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 w-full max-w-md">
-                {starterPrompts.map((prompt, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className="h-auto p-4 text-left justify-start whitespace-normal"
-                    onClick={() => handleStarterPromptClick(prompt)}
-                    disabled={
-                      currentChat?.completed ||
-                      isSendingMessage ||
-                      (simulation?.timeLimit ? !isActive : false)
-                    }
-                  >
-                    <span className="text-sm">{prompt}</span>
-                  </Button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            messages
-              .sort(
-                (a: SimulationMessage, b: SimulationMessage) =>
-                  new Date(a.createdAt).getTime() -
-                  new Date(b.createdAt).getTime()
-              )
-              .map((message: SimulationMessage) => (
-                <div key={message.id} className="space-y-3">
-                  {/* User Message */}
-                  {message.type === "query" && (
-                    <div className="flex justify-end mb-3">
-                      <div className="max-w-[80%]">
-                        <div className="bg-primary text-primary-foreground rounded-lg p-3">
-                          <Markdown>{message.content}</Markdown>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Assistant Response */}
-                  {message.type === "response" && message.content !== "" && (
-                    <div className="flex justify-start mb-3">
-                      <div className="max-w-[80%]">
-                        <div className="bg-muted rounded-lg p-3">
-                          {message.content === "" ? (
-                            <div className="flex items-center">
-                              <span className="text-gray-500 mr-2">
-                                Analyzing
-                              </span>
-                              <LoadingDots />
-                            </div>
-                          ) : (
-                            <Markdown>{message.content}</Markdown>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-          )}
-          <div ref={messagesEndRef} />
+      <TooltipProvider>
+        {/* Audio Mode Toggle Button - Top Left */}
+        <div className="absolute top-4 left-4 z-10">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={assistantAudioEnabled ? "default" : "outline"}
+                size="sm"
+                onClick={() => setAssistantAudioEnabled(!assistantAudioEnabled)}
+                className="p-2"
+              >
+                <AudioWaveform className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Toggle Audio Mode</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
-      </ScrollArea>
 
-      {/* Scroll to bottom button with smooth fade transition */}
-      <div
-        className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
-          showScrollButton
-            ? "opacity-100 translate-y-0 pointer-events-auto"
-            : "opacity-0 translate-y-2 pointer-events-none"
-        }`}
-      >
-        <Button
-          variant="default"
-          size="sm"
-          onClick={scrollToBottom}
-          className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
-          data-testid="scroll-to-bottom-button"
-        >
-          <ArrowDown className="h-4 w-4" />
-        </Button>
-      </div>
+        {/* Captions Toggle Button - Top Right (only visible in audio mode) */}
+        {assistantAudioEnabled && (
+          <div className="absolute top-4 right-4 z-10">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={captionsEnabled ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCaptionsEnabled(!captionsEnabled)}
+                  className="p-2"
+                >
+                  <Captions className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Captions</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
+
+        {/* Audio Mode UI */}
+        {assistantAudioEnabled ? (
+          <div className="flex-1 flex flex-col items-center justify-center min-h-0 p-8">
+            {/* Pulsating Circle */}
+            <div className="relative mb-8">
+              <div
+                className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
+                  isAssistantSpeaking ? "animate-pulse" : ""
+                }`}
+                style={{
+                  background: isAssistantSpeaking
+                    ? "linear-gradient(135deg, #60a5fa, #a855f7, #ec4899)"
+                    : "linear-gradient(135deg, #94a3b8, #64748b, #475569)",
+                }}
+              />
+            </div>
+
+            {/* Captions Display */}
+            {captionsEnabled && latestAssistantMessage && (
+              <div className="w-full max-w-4xl">
+                <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
+                  <div className="text-lg leading-relaxed">
+                    <Markdown>{latestAssistantMessage.content}</Markdown>
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Regular Messages UI */
+          <>
+            <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
+              <div className="space-y-4 py-4">
+                {messagesLoading ? (
+                  <>
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-16 w-full" />
+                      </div>
+                    ))}
+                  </>
+                ) : messages.length === 0 ? (
+                  /* Starter Prompts - shown when no messages */
+                  <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
+                    <div className="text-center space-y-2">
+                      <p className="text-sm text-muted-foreground">
+                        Choose a prompt below or type your own message
+                      </p>
+                    </div>
+                    <div className="flex flex-col gap-3 w-full max-w-md">
+                      {starterPrompts.map((prompt, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          className="h-auto p-4 text-left justify-start whitespace-normal"
+                          onClick={() => handleStarterPromptClick(prompt)}
+                          disabled={
+                            currentChat?.completed ||
+                            isSendingMessage ||
+                            (simulation?.timeLimit ? !isActive : false)
+                          }
+                        >
+                          <span className="text-sm">{prompt}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  messages
+                    .sort(
+                      (a: SimulationMessage, b: SimulationMessage) =>
+                        new Date(a.createdAt).getTime() -
+                        new Date(b.createdAt).getTime()
+                    )
+                    .map((message: SimulationMessage) => (
+                      <div key={message.id} className="space-y-3">
+                        {/* User Message */}
+                        {message.type === "query" && (
+                          <div className="flex justify-end mb-3">
+                            <div className="max-w-[80%]">
+                              <div className="bg-primary text-primary-foreground rounded-lg p-3">
+                                <Markdown>{message.content}</Markdown>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Assistant Response */}
+                        {message.type === "response" &&
+                          message.content !== "" && (
+                            <div className="flex justify-start mb-3">
+                              <div className="max-w-[80%]">
+                                <div className="bg-muted rounded-lg p-3">
+                                  {message.content === "" ? (
+                                    <div className="flex items-center">
+                                      <span className="text-gray-500 mr-2">
+                                        Analyzing
+                                      </span>
+                                      <LoadingDots />
+                                    </div>
+                                  ) : (
+                                    <Markdown>{message.content}</Markdown>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    ))
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+
+            {/* Scroll to bottom button with smooth fade transition */}
+            <div
+              className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
+                showScrollButton
+                  ? "opacity-100 translate-y-0 pointer-events-auto"
+                  : "opacity-0 translate-y-2 pointer-events-none"
+              }`}
+            >
+              <Button
+                variant="default"
+                size="sm"
+                onClick={scrollToBottom}
+                className="rounded-full h-10 w-10 p-0 shadow-lg bg-primary hover:bg-primary/90 border-2 border-background"
+                data-testid="scroll-to-bottom-button"
+              >
+                <ArrowDown className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        )}
+      </TooltipProvider>
     </div>
   );
 }

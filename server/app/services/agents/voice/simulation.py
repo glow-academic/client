@@ -22,6 +22,9 @@ from app.utils.audio import Modalities
 logger = logging.getLogger(__name__)
 from sqlmodel import Session
 
+from dotenv import load_dotenv
+load_dotenv()
+
 
 class SimulationSTTModel(STTModel):
     def __init__(self, generate_text: bool = True, *args: Any, **kwargs: Any) -> None:
@@ -103,7 +106,8 @@ class SimulationTTSModel(TTSModel):
             response = await litellm.aspeech(
                 model="gemini/gemini-2.5-flash-preview-tts",
                 input=text,
-                voice="alloy"  # Default voice
+                api_key=os.getenv("GEMINI_API_KEY"),
+                voice="Orus"  # Default voice
             )
             
             # Stream the audio response
