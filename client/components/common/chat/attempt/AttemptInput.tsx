@@ -42,7 +42,6 @@ export default function AttemptInput() {
     isSendingMessage,
     isStoppingMessage,
     endChatLoading,
-    assistantAudioEnabled,
   } = useSimulation();
 
   const [newMessage, setNewMessage] = useState("");
@@ -63,7 +62,7 @@ export default function AttemptInput() {
     if (!messageToSend || !currentChat || isSendingMessage) return;
 
     setNewMessage("");
-    sendMessage(messageToSend, assistantAudioEnabled);
+    sendMessage(messageToSend);
   };
 
   // Handle stop message

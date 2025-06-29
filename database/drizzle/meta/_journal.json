@@ -169,6 +169,13 @@
       "when": 1751031612708,
       "tag": "0023_rainy_mandarin",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1751226954443,
+      "tag": "0024_chunky_cammi",
+      "breakpoints": true
     }
   ]
 }

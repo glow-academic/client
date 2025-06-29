@@ -107,8 +107,11 @@ class Models(_Base, table=True):
     description: str = Field(sa_column=Column('description', Text))
     provider_id: Mapped[uuid.UUID] = Field(sa_column=Column('provider_id', Uuid(as_uuid=True)))
     active: bool = Field(sa_column=Column('active', Boolean, server_default=text('true')))
+    model_type: str = Field(sa_column=Column('model_type', Enum('ttt', 'tts', 'stt', name='model_type'), server_default=text("'ttt'::model_type")))
 
     agents: List['Agents'] = Relationship(back_populates='model')
+    agents_: List['Agents'] = Relationship(back_populates='stt_model')
+    agents1: List['Agents'] = Relationship(back_populates='tts_model')
 
 
 class Providers(_Base, table=True):
@@ -182,6 +185,8 @@ class VerificationToken(_Base, table=True):
 class Agents(_Base, table=True):
     __table_args__ = (
         ForeignKeyConstraint(['model_id'], ['models.id'], name='agents_model_id_fkey'),
+        ForeignKeyConstraint(['stt_model_id'], ['models.id'], name='agents_stt_model_id_fkey'),
+        ForeignKeyConstraint(['tts_model_id'], ['models.id'], name='agents_tts_model_id_fkey'),
         PrimaryKeyConstraint('id', name='agents_pkey')
     )
 
@@ -193,11 +198,16 @@ class Agents(_Base, table=True):
     system_prompt: str = Field(sa_column=Column('system_prompt', Text))
     temperature: int = Field(sa_column=Column('temperature', Integer))
     default_agent: bool = Field(sa_column=Column('default_agent', Boolean, server_default=text('false')))
+    voice_agent: bool = Field(sa_column=Column('voice_agent', Boolean, server_default=text('false')))
     editable: bool = Field(sa_column=Column('editable', Boolean, server_default=text('false')))
     model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('model_id', Uuid(as_uuid=True)))
+    stt_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('stt_model_id', Uuid(as_uuid=True)))
+    tts_model_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('tts_model_id', Uuid(as_uuid=True)))
     reasoning: Optional[str] = Field(default=None, sa_column=Column('reasoning', Enum('low', 'medium', 'high', name='reasoning_effort')))
 
     model: Optional['Models'] = Relationship(back_populates='agents')
+    stt_model: Optional['Models'] = Relationship(back_populates='agents_')
+    tts_model: Optional['Models'] = Relationship(back_populates='agents1')
     scenarios: List['Scenarios'] = Relationship(back_populates='agent')
 
 

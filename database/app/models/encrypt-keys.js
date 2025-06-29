@@ -34,7 +34,7 @@ function encryptProviderKey(providerKey) {
 
 // Get API keys from environment variables
 const openaiKey = process.env.OPENAI_API_KEY;
-const googleKey = process.env.GOOGLE_API_KEY;
+const googleKey = process.env.GEMINI_API_KEY;
 
 if (!openaiKey) {
   console.error("OPENAI_API_KEY environment variable is not set");
@@ -42,7 +42,7 @@ if (!openaiKey) {
 }
 
 if (!googleKey) {
-  console.error("GOOGLE_API_KEY environment variable is not set");
+  console.error("GEMINI_API_KEY environment variable is not set");
   process.exit(1);
 }
 

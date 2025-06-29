@@ -106,7 +106,7 @@ interface SimulationContextType {
   isConnected: boolean;
 
   // WebSocket operations
-  sendMessage: (message: string, assistantAudioEnabled?: boolean) => void;
+  sendMessage: (message: string) => void;
   stopMessage: () => void;
   endChat: () => void;
 
@@ -695,7 +695,7 @@ export function SimulationProvider({
 
   // WebSocket-based message handler
   const sendMessage = useCallback(
-    async (message: string, assistantAudioEnabled: boolean = false) => {
+    async (message: string) => {
       if (!message.trim() || !currentChat || isSendingMessage) return;
 
       setIsSendingMessage(true);
@@ -722,6 +722,7 @@ export function SimulationProvider({
       isWebRTCConnected,
       sendWebRTCMessage,
       emitSendSimulationMessage,
+      assistantAudioEnabled,
     ]
   );
 

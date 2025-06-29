@@ -20,26 +20,3 @@ AUDIO_FOLDER.mkdir(parents=True, exist_ok=True) # saving each audio file as audi
 
 MODEL_CACHE_DIR = BASE_FOLDER / "cache"
 MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True) # for whisper model
-
-
-# ---- Gemini ---------------------------------------------------------
-logger = logging.getLogger(__name__)
-_gemini: AsyncOpenAI | None = None
-
-
-def _init_gemini() -> None:
-    global _gemini
-    key = os.getenv("GOOGLE_API_KEY")
-    if key and _gemini is None:
-        _gemini = AsyncOpenAI(
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
-            api_key=key,
-        )
-    elif _gemini is None:
-        logger.warning("GOOGLE_API_KEY missing - Gemini features disabled")
-
-
-def get_gemini() -> AsyncOpenAI | None:
-    if _gemini is None:
-        _init_gemini()
-    return _gemini

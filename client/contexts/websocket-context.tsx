@@ -952,7 +952,7 @@ export function WebSocketProvider({
 
       const socket = io(getApiBase(), {
         path: "/socket.io",
-        transports: ["websocket"],
+        transports: ["websocket", "polling"],
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout
@@ -1338,56 +1338,6 @@ export function WebSocketProvider({
       stopWebRTC(); // close data channels + RTCPeerConnection
     }
   }, [isConnected, isWebRTCConnected, stopWebRTC]);
-
-  const _sendWebRTCMessage = useCallback(
-    (chatId: string, message: string, isAudio = false) => {
-      try {
-        const channelLabel = isAudio ? `audio-${chatId}` : `text-${chatId}`;
-
-        // Try to get or create the data channel for text messages
-        if (!isAudio) {
-          const textChannel =
-            webRTCDataChannels.current.get(channelLabel) ||
-            createDataChannelIfNeeded(channelLabel);
-
-          if (!textChannel || textChannel.readyState !== "open") {
-            logError(
-              `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
-            );
-            // Fallback to WebSocket for text
-            if (chatId.includes("simulation")) {
-              emitSendSimulationMessage({ chat_id: chatId, message });
-            } else if (chatId.includes("assistant")) {
-              emitSendAssistantMessage({ chat_id: chatId, message });
-            }
-            return;
-          }
-
-          const messageData = {
-            type: "message_complete",
-            chat_id: chatId,
-            content: message,
-            is_audio: isAudio,
-            timestamp: Date.now(),
-          };
-
-          textChannel.send(JSON.stringify(messageData));
-          logInfo(`Sent WebRTC message via ${channelLabel}`, {
-            chatId,
-            messageLength: message.length,
-          });
-        }
-        // Audio is now handled via tracks, not data channels.
-      } catch (error) {
-        logError("Error sending WebRTC message", error);
-      }
-    },
-    [
-      createDataChannelIfNeeded,
-      emitSendSimulationMessage,
-      emitSendAssistantMessage,
-    ]
-  );
 
   const sendWebRTCMessage = useCallback(
     (

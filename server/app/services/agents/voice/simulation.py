@@ -2,10 +2,11 @@ import abc
 import logging
 import os
 import uuid
-from typing import Any, AsyncGenerator, AsyncIterator
+from typing import Any, AsyncGenerator, AsyncIterator, Callable
 
 import litellm
 import numpy as np
+from agents import trace
 from agents.voice.input import AudioInput, StreamedAudioInput
 from agents.voice.model import (StreamedTranscriptionSession, STTModel,
                                 STTModelSettings, TTSModel, TTSModelSettings)
@@ -22,14 +23,12 @@ from app.utils.audio import Modalities
 logger = logging.getLogger(__name__)
 from sqlmodel import Session
 
-from dotenv import load_dotenv
-load_dotenv()
-
 
 class SimulationSTTModel(STTModel):
-    def __init__(self, generate_text: bool = True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, generate_text: bool = True, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.generate_text = generate_text
+        self.chat_id = chat_id
 
     @property
     def model_name(self) -> str:
@@ -83,9 +82,10 @@ class SimulationSTTModel(STTModel):
 
 
 class SimulationTTSModel(TTSModel):
-    def __init__(self, generate_audio: bool = True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, generate_audio: bool = True, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.generate_audio = generate_audio
+        self.chat_id = chat_id
 
     @property
     def model_name(self) -> str:
@@ -104,10 +104,9 @@ class SimulationTTSModel(TTSModel):
             
             # Use LiteLLM with Gemini TTS
             response = await litellm.aspeech(
-                model="gemini/gemini-2.5-flash-preview-tts",
+                model="openai/gpt-4o-mini-tts",
                 input=text,
-                api_key=os.getenv("GEMINI_API_KEY"),
-                voice="Orus"  # Default voice
+                voice="ash"
             )
             
             # Stream the audio response
@@ -182,30 +181,37 @@ class SimulationPipeline:
     
     def get_pipeline(self, config: VoicePipelineConfig | None = None) -> VoicePipeline:
         """Get the appropriate voice pipeline based on modality."""
+
+        no_split = lambda t: (t, "") 
+        tts_settings = TTSModelSettings(
+            buffer_size=24000,
+            text_splitter=no_split,
+            instructions="Read exactly what you receive.",
+        )
         if config is None:
-            config = VoicePipelineConfig()
+            config = VoicePipelineConfig(tts_settings=tts_settings)
             
         workflow = SimulationWorkflow(self.chat_id, self.session, self.original_message)
         
         if self.mode == Modalities.AUDIO_AUDIO:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(generate_text=True),
-                tts_model=SimulationTTSModel(generate_audio=True),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=True),
                 config=config,
             )
         elif self.mode == Modalities.AUDIO_TEXT:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(generate_text=True),
-                tts_model=SimulationTTSModel(generate_audio=False),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=False),
                 config=config,
             )
         elif self.mode == Modalities.TEXT_AUDIO:
             return VoicePipeline(
                 workflow=workflow,
-                stt_model=SimulationSTTModel(generate_text=False),
-                tts_model=SimulationTTSModel(generate_audio=True),
+                stt_model=SimulationSTTModel(chat_id=self.chat_id, generate_text=False),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, generate_audio=True),
                 config=config,
             )
         else:

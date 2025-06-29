@@ -5,6 +5,7 @@ export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'a
 export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read', 'update', 'delete'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
+export const modelType = pgEnum("model_type", ['ttt', 'tts', 'stt'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
 export const reasoningEffort = pgEnum("reasoning_effort", ['low', 'medium', 'high'])
 export const seniorityLevels = pgEnum("seniority_levels", ['freshman', 'sophomore', 'junior', 'senior'])
@@ -130,6 +131,7 @@ export const models = pgTable("models", {
 	description: text().notNull(),
 	providerId: uuid("provider_id").notNull(),
 	active: boolean().default(true).notNull(),
+	modelType: modelType("model_type").default('ttt').notNull(),
 });
 
 export const users = pgTable("users", {
@@ -331,14 +333,27 @@ export const agents = pgTable("agents", {
 	systemPrompt: text("system_prompt").notNull(),
 	temperature: integer().notNull(),
 	defaultAgent: boolean("default_agent").default(false).notNull(),
+	voiceAgent: boolean("voice_agent").default(false).notNull(),
 	editable: boolean().default(false).notNull(),
 	modelId: uuid("model_id"),
+	sttModelId: uuid("stt_model_id"),
+	ttsModelId: uuid("tts_model_id"),
 	reasoning: reasoningEffort(),
 }, (table) => [
 	foreignKey({
 			columns: [table.modelId],
 			foreignColumns: [models.id],
 			name: "agents_model_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.sttModelId],
+			foreignColumns: [models.id],
+			name: "agents_stt_model_id_fkey"
+		}),
+	foreignKey({
+			columns: [table.ttsModelId],
+			foreignColumns: [models.id],
+			name: "agents_tts_model_id_fkey"
 		}),
 ]);
 

@@ -23,7 +23,7 @@ import numpy as np
 import socketio  # type: ignore
 import torch
 import webrtcvad  # type: ignore
-from agents import gen_trace_id
+from agents import gen_trace_id, trace
 from aiortc import MediaStreamTrack
 from app.config import model_manager
 from app.db import get_session
@@ -426,8 +426,16 @@ async def process_simulation_message_websocket(
     from app.db import get_session
 
     db_session = next(get_session())
+    
 
     try:
+        # get the chat
+        chat = db_session.exec(
+            select(SimulationChats).where(SimulationChats.id == chat_id)
+        ).one_or_none()
+        if not chat:
+            raise ValueError(f"Chat {chat_id} not found")
+
         # Auto-determine modality based on input parameters
         has_audio_input = audio_data is not None and len(audio_data) > 0
         has_text_input = message and message.strip()
@@ -452,11 +460,12 @@ async def process_simulation_message_websocket(
                 session=db_session,
                 original_message=message
             )
-            
-            # Process through pipeline (it handles all WebSocket emissions and database operations)
-            async for result in pipeline.process_and_stream(audio_data=audio_data, profile_id=profile_id):
-                # Pipeline handles everything, we just need to consume the stream
-                pass
+
+            with trace(chat.title, trace_id=chat.trace_id, group_id=str(chat.attempt_id)):
+                # Process through pipeline (it handles all WebSocket emissions and database operations)
+                async for result in pipeline.process_and_stream(audio_data=audio_data, profile_id=profile_id):
+                    # Pipeline handles everything, we just need to consume the stream
+                    pass
                 
         else:
             # Keep existing TEXT_TEXT flow unchanged

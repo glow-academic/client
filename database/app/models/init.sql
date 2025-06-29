@@ -5,6 +5,8 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- TABLE DEFINITIONS
 -- ============================================================================
 
+CREATE TYPE model_type AS ENUM ('ttt', 'tts', 'stt'); -- ttt: text to text, tts: text to speech, stt: speech to text
+
 CREATE TABLE providers (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
@@ -21,14 +23,18 @@ CREATE TABLE models (
   name       TEXT        NOT NULL,
   description TEXT        NOT NULL,
   provider_id UUID        NOT NULL,
-  active      BOOLEAN     NOT NULL DEFAULT TRUE
+  active      BOOLEAN     NOT NULL DEFAULT TRUE,
+  model_type model_type  NOT NULL DEFAULT 'ttt'
 );
 
 -- Insert providers with properly encrypted API keys
 INSERT INTO providers (id, name, description, api_key) VALUES 
-('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', 'SBPqtB9wYDcG7J9g/yBBTRonfEmhj5RXTmxup91v6OEfKbovVwAZhlNnsLfohp1QQT+tEtQA/jB8HlMmkoT+tYasBA7CQ1YZu/yIulz8nnz44W6thxb+W1BQKFe80MrCCfsMzV8zTy3CewurSFOMt/k23IFoWqbyDeHKGV+zD0gy1oOFwY2Aq9KhxMfd0fDS0h+Qh1rt/cYko5dHvz3c8IP1O1bNUtzaMXhWVKb5LWr3DYZk8JwJyZKraDxNT+X5sSy/u8cGY6Um0NkFpQnzRncJF07YPT2QanN2Tz/8czY='),
-('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', 'WCFXIXvNWcuOR/7r9XKketTa+PXd5EJVcBb6ugnn3/GLolSKIqj7dOT8qROJg/Xr6yKi54u/zCdLYz4gR3YKoaAXZ6D+vS/NsHGW56ZU9LXLw9gvwbn6HR4fg06+TTzd');
+('11111111-aaaa-aaaa-aaaa-111111111111', 'openai', 'OpenAI', 'ZAkZOICLkhgK1tgrYKMjJAtcLbERAkVZMy/Hjk3yJp05HAjGSocCI3mpg7Gj5YrY8D1tzmv/J7WpZi5sIFwL9pkts4bZtPjc8KIC0GGAXJ8sYXKQIxemkHI6Y/3PUiXBTGrYyECWZFKCUbBxogjScZ1JZdn30lGvqqW2AcGHBe9A0pXFoxxGQVPjv1QLlJ6N9hk6jud/r5pdFAr9bBwA7XOENpDpvbWZ7oGL8YaS+tfC5XUFNusHK5uCTNyBg+RxgRXoJ7YVKGu1SIxGjA40sNFylrPaouJIVXst+sqBW/A='),
+('33333333-cccc-cccc-cccc-333333333333', 'gemini', 'Google', '0p1mmpoYMiO/Kcd9Z9ybKkZm7RjuJO6g/tAZXy2TPein+ItvfyRtPg2l7VepjIjGPHYW2Xsm3CrvN+77Wj5lazMv8kj+R+omtzVW4MBPFnIkh5TzbeJt5ZgXCwLhJXBZ');
 
-INSERT INTO models (id, name, description, provider_id) VALUES
-('11111111-aaaa-aaaa-aaaa-111111111111', 'gpt-4o', 'GPT-4o is a language model that can be used to generate text, images, and audio.', '11111111-aaaa-aaaa-aaaa-111111111111'),
-('33333333-cccc-cccc-cccc-333333333333', 'gemini-2.5-flash', 'Gemini 2.5 Flash is a language model that can be used to generate text, images, and audio.', '33333333-cccc-cccc-cccc-333333333333');
+INSERT INTO models (id, name, description, provider_id, model_type) VALUES
+('11111111-aaaa-aaaa-aaaa-111111111111', 'gpt-4o', 'GPT-4o is a language model that can be used to generate text, images, and audio.', '11111111-aaaa-aaaa-aaaa-111111111111', 'ttt'),
+('33333333-cccc-cccc-cccc-333333333333', 'gemini-2.5-flash', 'Gemini 2.5 Flash is a language model that can be used to generate text, images, and audio.', '33333333-cccc-cccc-cccc-333333333333', 'ttt'),
+('44444444-dddd-dddd-dddd-444444444444', 'gpt-4o-mini-tts', 'GPT-4o Mini TTS is a text to speech model that can be used to generate audio.', '11111111-aaaa-aaaa-aaaa-111111111111', 'tts'),
+('22222222-bbbb-bbbb-bbbb-222222222222', 'gemini-2.5-flash-preview-tts', 'Gemini 2.5 Flash TTS is a text to speech model that can be used to generate audio.', '33333333-cccc-cccc-cccc-333333333333', 'tts'),
+('55555555-eeee-eeee-eeee-555555555555', 'gpt-4o-mini-transcribe', 'GPT-4o Mini Transcribe is a speech to text model that can be used to transcribe audio.', '11111111-aaaa-aaaa-aaaa-111111111111', 'stt');
