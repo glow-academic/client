@@ -33,7 +33,7 @@ WORKDIR /app
 # If you’ll use curl in health-checks / scripts, keep it.
 # Also bring in CA certs to avoid HTTPS failures.
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl ca-certificates && \
+    apt-get install -y --no-install-recommends curl ca-certificates espeak-ng && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy the pre-built Python deps — no `pip install` here

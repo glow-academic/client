@@ -68,3 +68,5 @@ webrtcvad
 
 # kokoro
 kokoro
+soundfile
+misaki[en]
