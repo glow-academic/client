@@ -466,6 +466,7 @@ async def process_simulation_message_websocket(
             if audio_mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
                 # Get the existing peer connection
                 profiles, ServerAudioStreamTrack = get_profiles_and_track_class()
+                sio_instance = get_sio_instance()
                 
                 if not profile_id or profile_id not in profiles or not profiles[profile_id].get("peer_connection"):
                     logger.error(f"No active peer connection for profile {profile_id} to send audio.")
@@ -478,6 +479,25 @@ async def process_simulation_message_websocket(
                 server_audio_track = ServerAudioStreamTrack()
                 pc.addTrack(server_audio_track)
                 logger.info(f"Added new ServerAudioStreamTrack to PC for chat {chat_id}")
+
+                # --------------------------------------------------
+                # 👇 THE CRITICAL RENEGOTIATION FIX
+                # --------------------------------------------------
+                # 1. Create a new offer that includes the new track
+                offer = await pc.createOffer()
+                
+                # 2. Set the server's local description to this new offer
+                await pc.setLocalDescription(offer)
+                
+                # 3. Emit this new offer to the specific client
+                await sio_instance.emit('webrtc_renegotiation_offer', {
+                    'profile_id': profile_id,
+                    'connection_id': profiles[profile_id].get("current_connection_id"),
+                    'offer': {'sdp': offer.sdp, 'type': offer.type}
+                }, room=profiles[profile_id].get("current_socket"))
+                
+                logger.info(f"Sent renegotiation offer to client for new audio track.")
+                # --------------------------------------------------
 
             # Use the new audio pipeline
             pipeline = SimulationPipeline(

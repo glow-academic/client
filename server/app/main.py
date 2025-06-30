@@ -827,6 +827,32 @@ async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:
     # For now, we'll just log it. A robust implementation would use an asyncio.Event or similar.
 
 @sio.event  # type: ignore
+async def webrtc_renegotiation_answer(sid: str, data: Dict[str, Any]) -> None:
+    """Handle the client's answer to a server-initiated renegotiation."""
+    profile_id = data.get("profile_id")
+    connection_id = data.get("connection_id")
+    answer_data = data.get("answer")
+
+    if not all([profile_id, connection_id, answer_data]):
+        logger.warning("Invalid renegotiation answer received.")
+        return
+        
+    logger.info(f"Received renegotiation answer from client {sid}")
+
+    if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+        pc = profiles[profile_id].get("peer_connection")
+        if pc and pc.signalingState != "closed":
+            try:
+                if isinstance(answer_data, dict) and "sdp" in answer_data and "type" in answer_data:
+                    answer_obj = RTCSessionDescription(sdp=str(answer_data["sdp"]), type=str(answer_data["type"]))
+                    await pc.setRemoteDescription(answer_obj)
+                    logger.info("Renegotiation complete. New audio track should be active.")
+                else:
+                    logger.error("Invalid answer data format in renegotiation response")
+            except Exception as e:
+                logger.error(f"Error setting remote description during renegotiation: {e}")
+
+@sio.event  # type: ignore
 async def join_chat(sid: str, data: dict[str, Any]) -> None:
     """Join a specific chat room for real-time updates"""
     chat_id = data.get('chat_id')

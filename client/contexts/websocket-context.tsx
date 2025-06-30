@@ -1029,6 +1029,39 @@ export function WebSocketProvider({
         toast.error(`WebRTC error: ${data.error}`);
         setIsWebRTCConnected(false);
       });
+
+      // 👇 ADD THIS NEW EVENT HANDLER FOR RENEGOTIATION
+      socket.on(
+        "webrtc_renegotiation_offer",
+        async (data: {
+          profile_id: string;
+          connection_id: string;
+          offer: { sdp: string; type: string };
+        }) => {
+          logInfo("Received renegotiation offer from server", data);
+          const pc = webRTCPeerConnection.current;
+
+          if (pc && pc.signalingState !== "closed") {
+            try {
+              await pc.setRemoteDescription({
+                sdp: data.offer.sdp,
+                type: data.offer.type as RTCSdpType,
+              });
+              const answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+
+              socket.emit("webrtc_renegotiation_answer", {
+                profile_id: data.profile_id,
+                connection_id: data.connection_id,
+                answer: { sdp: answer.sdp, type: answer.type },
+              });
+              logInfo("Sent renegotiation answer to server.");
+            } catch (error) {
+              logError("Error handling renegotiation offer", error);
+            }
+          }
+        }
+      );
     },
     [queryClient, profileId]
   );
