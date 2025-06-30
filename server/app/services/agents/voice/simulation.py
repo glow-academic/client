@@ -4,6 +4,7 @@ import logging
 import os
 import random
 import uuid
+import wave
 from typing import Any, AsyncGenerator, AsyncIterator, Callable, Dict
 
 import litellm
@@ -549,8 +550,19 @@ class SimulationPipeline:
                     # Update the message with the audio file details
                     assistant_message.audio = True # Correct the audio flag as the workflow assumes False
                     path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
-                    with open(path, "wb") as f:
-                        f.write(b"".join(assistant_audio_chunks))
+
+                    # --- 👇 THIS IS THE FIX 👇 ---
+                    # Replace the simple `open()` with the `wave` module to write a proper WAV file
+                    
+                    full_audio_data = b"".join(assistant_audio_chunks)
+                    
+                    with wave.open(path, 'wb') as wf:
+                        wf.setnchannels(1)  # Mono audio
+                        wf.setsampwidth(2)  # 16-bit PCM --> 2 bytes per sample
+                        wf.setframerate(24000) # The sample rate of your Kokoro TTS model
+                        wf.writeframes(full_audio_data)
+                    # ------------------------------------
+
                     assistant_message.file_path = path
                     self.session.add(assistant_message)
                     self.session.commit()

@@ -27,7 +27,6 @@ from agents import gen_trace_id, trace
 from aiortc import MediaStreamTrack, RTCPeerConnection
 from app.config import model_manager
 from app.db import get_session
-from app.extensions import AUDIO_FOLDER
 from app.main import ServerAudioStreamTrack
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
