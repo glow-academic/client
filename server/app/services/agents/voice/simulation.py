@@ -449,22 +449,29 @@ class SimulationPipeline:
                 room=f"simulation_{self.chat_id}",
             )
             
+            # In the SimulationPipeline class within your first provided file.
+            # Replace the "async for event in result.stream()" loop with this corrected version.
+
             accumulated_content = ""
             assistant_audio_chunks = []
-            
+
             # Stream the results
             async for event in result.stream():
-                if hasattr(event, 'data') and hasattr(event.data, 'decode'):
-                    # Text event
-                    text_chunk = event.data.decode() if isinstance(event.data, bytes) else str(event.data)
+                # Check if the event has a 'data' attribute before proceeding
+                if not hasattr(event, 'data'):
+                    continue
+
+                # 1. Check for TEXT data (`str`) from the workflow
+                if isinstance(event.data, str):
+                    text_chunk = event.data
                     accumulated_content += text_chunk
-                    
-                    # Update database
+
+                    # Update the database with the latest content
                     assistant_message.content = accumulated_content
                     self.session.add(assistant_message)
                     self.session.commit()
-                    
-                    # Emit text token
+
+                    # Emit the text token back to the user via WebSocket
                     await sio_instance.emit(
                         "simulation_message_token",
                         {
@@ -475,19 +482,20 @@ class SimulationPipeline:
                         },
                         room=f"simulation_{self.chat_id}",
                     )
-                    
+
+                    # Yield for the internal stream processing if needed
                     yield {"type": "text", "data": text_chunk}
-                    
-                elif hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
-                    # Audio event
+
+                # 2. Check for AUDIO data (`bytes` or `np.ndarray`) from the TTS model
+                elif isinstance(event.data, (bytes, np.ndarray)):
                     audio_chunk = event.data
                     if isinstance(audio_chunk, np.ndarray):
-                        audio_chunk = audio_chunk.tobytes()
-                    
-                    assistant_audio_chunks.append(audio_chunk)
-                    
-                    # Stream audio via WebSocket (for fallback) or WebRTC
-                    yield {"type": "audio", "data": audio_chunk}
+                        audio_chunk = audio_chunk.tobytes() # Ensure data is in bytes format
+
+                    if audio_chunk:
+                        assistant_audio_chunks.append(audio_chunk)
+                        # Stream audio via WebSocket or WebRTC
+                        yield {"type": "audio", "data": audio_chunk}
             
             # Save assistant audio file if we generated audio
             if assistant_audio_chunks and self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:

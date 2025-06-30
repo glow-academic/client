@@ -172,7 +172,8 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
             logger.error(f"Error closing peer connection for profile {profile_id}: {e}")
     
     # Clean up profile data
-    del profiles[profile_id]
+    if profile_id in profiles:
+        del profiles[profile_id]
 
 async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> RTCPeerConnection:
     """Create a new WebRTC peer connection for a profile with connection ID."""
