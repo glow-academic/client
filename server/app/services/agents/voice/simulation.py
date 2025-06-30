@@ -335,27 +335,10 @@ class SimulationPipeline:
     def get_pipeline(self, config: VoicePipelineConfig | None = None) -> VoicePipeline:
         """Get the appropriate voice pipeline based on modality."""
         if config is None:
-
-            # getting tts config
-            tts_model = self.session.exec(select(Models).where(Models.id == self.tts_model_id)).one()
-
-            # Find the stt and tts models for the agent
-            if not tts_model:
-                raise ValueError(f"TTS model not found for agent {self.agent_id}")
-            
-            no_split = lambda t: (t, "") 
+            # no_split = lambda t: (t, "") # using the default split
             tts_settings = TTSModelSettings(
-                buffer_size=24000,
-                text_splitter=no_split,
                 instructions="Read exactly what you receive.",
             )
-
-            # getting stt config
-            stt_model = self.session.exec(select(Models).where(Models.id == self.stt_model_id)).one()
-
-            # Find the stt and tts models for the agent
-            if not stt_model:
-                raise ValueError(f"STT model not found for agent {self.agent_id}")
             
             # getting stt settings
             stt_settings = STTModelSettings(
