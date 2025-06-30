@@ -1108,7 +1108,6 @@ export function WebSocketProvider({
       const socket = io(getApiBase(), {
         path: "/socket.io",
         autoConnect: true,
-        forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout
         reconnection: true,
         reconnectionAttempts: 3, // Reduce attempts to avoid spam
