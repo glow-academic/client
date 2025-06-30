@@ -67,25 +67,18 @@ class ServerAudioStreamTrack(MediaStreamTrack):
         self.queue: asyncio.Queue[Optional[AudioFrame]] = asyncio.Queue()
         self._ended = False
         self._pts = 0
-        self._sample_rate = 24000  # Opus standard sample rate
-        self._samples_per_frame = 480  # 20ms of audio at 24kHz
+        self._sample_rate = 24000  # Your TTS model's sample rate
 
     async def recv(self) -> AudioFrame:
         """Pulls the next AudioFrame from the queue or returns silence."""
-        try:
-            # Wait for a real frame, but with a short timeout.
-            frame = await asyncio.wait_for(self.queue.get(), timeout=0.01)
-        except asyncio.TimeoutError:
-            # If no frame is available, create a silent one to keep the stream alive.
-            frame = None
-
+        frame = await self.queue.get()
         if frame is None:
-            # If we received the 'end' signal, stop the track.
-            # We must raise CancelledError to stop aiortc's internal loop.
             self._ended = True
-            raise asyncio.CancelledError("Audio stream ended")
+            raise asyncio.CancelledError("Audio stream ended cleanly")
 
-        # Update the presentation timestamp (PTS) for the frame
+        # 👇 THE CRITICAL FIX IS HERE 👇
+        # We must set the presentation timestamp (pts) AND the time_base
+        # for the receiver to correctly interpret the stream's timing.
         frame.pts = self._pts
         frame.time_base = fractions.Fraction(1, self._sample_rate)
         self._pts += frame.samples
@@ -100,6 +93,8 @@ class ServerAudioStreamTrack(MediaStreamTrack):
         """Signals the end of the stream by adding a None sentinel."""
         if not self._ended:
             logger.info("Signaling end of server audio stream.")
+            # Set the ended flag before putting None in the queue
+            self._ended = True
             self.queue.put_nowait(None)
 
 def _get_public_ip() -> str:
