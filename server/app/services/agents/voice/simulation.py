@@ -27,13 +27,7 @@ from app.utils.audio import Modalities
 logger = logging.getLogger(__name__)
 from sqlmodel import Session, select
 
-# Kokoro TTS imports
-try:
-    from kokoro import KPipeline  # type: ignore
-    KOKORO_AVAILABLE = True
-except ImportError:
-    KOKORO_AVAILABLE = False
-    logger.error("Kokoro TTS library not available. Install with: pip install kokoro")
+# Kokoro TTS will be loaded through model_manager
 
 
 class SimulationSTTModel(STTModel):
@@ -167,40 +161,47 @@ class SimulationTTSModel(TTSModel):
                 # Use Kokoro TTS for open source inference
                 # Kokoro is a lightweight 82M parameter TTS model with high quality output
                 # It supports multiple voices and languages with CPU inference
-                if not KOKORO_AVAILABLE:
+                
+                # Get Kokoro pipeline from model manager
+                kokoro_pipeline = model_manager.get_kokoro_pipeline()
+                if kokoro_pipeline is None:
                     logger.error("Kokoro TTS not available, returning empty audio")
                     yield b""
                     return
                 
                 # Randomly select between male and female voices
-                voices = ['af_bella', 'am_michael']  # af = American Female, am = American Male
-                selected_voice = random.choice(voices)
+                selected_voice = random.choice(model_manager.kokoro_voices)
                 
                 logger.info(f"TTS generating audio with Kokoro using voice: {selected_voice} for text: {text[:50]}...")
                 
                 try:
-                    # Initialize Kokoro pipeline for American English
-                    pipeline = KPipeline(lang_code='a')  # 'a' for American English
-                    
-                    # Generate audio using Kokoro
-                    generator = pipeline(text, voice=selected_voice)
+                    # Generate audio using Kokoro pipeline from model manager
+                    generator = kokoro_pipeline(text, voice=selected_voice)
                     
                     # Process the generator results
                     audio_chunks_generated = 0
                     for i, (gs, ps, audio) in enumerate(generator):
                         logger.info(f"Kokoro TTS chunk {i}: graphemes={len(gs)}, phonemes={len(ps)}, audio_shape={audio.shape if hasattr(audio, 'shape') else 'unknown'}")
                         
-                        # Convert numpy array to bytes if needed
+                        # Convert numpy array or torch tensor to bytes if needed
                         if isinstance(audio, np.ndarray) and audio.size > 0:
+                            audio_np = audio
+                        elif hasattr(audio, 'detach') and hasattr(audio, 'cpu') and hasattr(audio, 'numpy'):
+                            # Handle PyTorch tensors
+                            audio_np = audio.detach().cpu().numpy()
+                        else:
+                            audio_np = None
+                        
+                        if audio_np is not None and audio_np.size > 0:
                             # Kokoro outputs float32 audio at 24kHz, convert to int16 PCM
-                            if audio.dtype == np.float32:
+                            if audio_np.dtype == np.float32:
                                 # Clip to [-1, 1] range and convert to int16
-                                audio_int16 = (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)
-                            elif audio.dtype == np.int16:
-                                audio_int16 = audio
+                                audio_int16 = (np.clip(audio_np, -1.0, 1.0) * 32767).astype(np.int16)
+                            elif audio_np.dtype == np.int16:
+                                audio_int16 = audio_np
                             else:
                                 # Convert other types to int16
-                                audio_normalized = audio.astype(np.float32)
+                                audio_normalized = audio_np.astype(np.float32)
                                 if np.max(np.abs(audio_normalized)) > 1.0:
                                     audio_normalized = audio_normalized / np.max(np.abs(audio_normalized))
                                 audio_int16 = (audio_normalized * 32767).astype(np.int16)

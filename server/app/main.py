@@ -711,6 +711,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
             logger.error(f"Failed to initialize Whisper model: {e}")
             # Continue without Whisper - audio features will be disabled
         
+        # Initialize Kokoro TTS model during startup
+        try:
+            logger.info("Initializing Kokoro TTS model...")
+            model_manager.initialize_kokoro_pipeline()
+            logger.info("Kokoro TTS model initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Kokoro TTS model: {e}")
+            # Continue without Kokoro - TTS features will use fallback
+        
         yield
 
 # Create FastAPI app with lifespan
