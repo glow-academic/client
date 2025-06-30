@@ -48,7 +48,7 @@ export default function AttemptMessages({
     isSendingMessage,
     assistantAudioEnabled,
     setAssistantAudioEnabled,
-    playRemoteAudio,
+    testAndEnableAudio,
   } = useSimulation();
 
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -111,12 +111,14 @@ export default function AttemptMessages({
     sendMessage(prompt);
   };
 
-  // Handle audio mode toggle with playback
+  // Handle audio mode toggle with audio testing
   const handleAudioModeToggle = () => {
-    // The user's click event starts here
-    setAssistantAudioEnabled(!assistantAudioEnabled);
-    // Directly call the playback function within the event handler
-    playRemoteAudio();
+    const newAudioMode = !assistantAudioEnabled;
+    setAssistantAudioEnabled(newAudioMode);
+    // We only need to get consent when turning audio ON
+    if (newAudioMode) {
+      testAndEnableAudio();
+    }
   };
 
   const scrollToBottom = () => {

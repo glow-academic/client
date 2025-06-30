@@ -55,6 +55,7 @@ interface WebSocketContextType {
   ) => Promise<void>;
   stopAudioStream: (chatId: string) => void;
   playRemoteAudio: () => Promise<void>;
+  testAndEnableAudio: () => Promise<void>;
 
   // Simulation event emitters
   emitStartSimulation: (data: {
@@ -144,6 +145,17 @@ function ConnectionStatusIndicator({
     </div>
   );
 }
+
+// ADD THIS HELPER FUNCTION
+// Creates a short, silent audio buffer. This is a reliable way to
+// get audio playback consent from the browser without needing an MP3 file.
+const createSilentAudio = (context: AudioContext) => {
+  const buffer = context.createBuffer(1, 1, 22050);
+  const source = context.createBufferSource();
+  source.buffer = buffer;
+  source.connect(context.destination);
+  return source;
+};
 
 export function WebSocketProvider({
   children,
@@ -1643,6 +1655,52 @@ export function WebSocketProvider({
     }
   }, []);
 
+  const testAndEnableAudio = useCallback(async () => {
+    logInfo("Testing audio playback with a user gesture.");
+
+    // 1. Create a temporary AudioContext to play a silent sound
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as typeof window & { webkitAudioContext?: typeof AudioContext })
+        .webkitAudioContext;
+    if (!AudioContextClass) {
+      toast.error("Audio not supported", {
+        description: "Your browser doesn't support Web Audio API.",
+      });
+      return;
+    }
+    const audioContext = new AudioContextClass();
+    const silentSound = createSilentAudio(audioContext);
+
+    try {
+      // This is the most important part: getting user-gesture consent
+      silentSound.start(0);
+      // If the line above doesn't throw an error, we have consent!
+      toast.success("Audio enabled! 🎉", {
+        description: "Your browser has granted audio playback permission.",
+      });
+
+      // 2. Now, immediately try to play any REAL audio streams that have arrived
+      for (const audio of remoteAudioStreams.current.values()) {
+        if (audio.paused) {
+          await audio.play();
+          logInfo("Played a queued remote audio stream.");
+        }
+      }
+    } catch (error) {
+      logError("Audio consent was denied by the browser.", error);
+      toast.error("Audio Blocked! 🔇", {
+        description:
+          "Your browser is blocking audio. Please check site settings.",
+      });
+    } finally {
+      // Clean up the context
+      if (audioContext.state !== "closed") {
+        await audioContext.close();
+      }
+    }
+  }, []);
+
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
@@ -1669,6 +1727,7 @@ export function WebSocketProvider({
     emitSendAssistantMessage,
     emitStopAssistant,
     playRemoteAudio,
+    testAndEnableAudio,
   };
 
   return (

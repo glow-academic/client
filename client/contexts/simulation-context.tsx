@@ -116,6 +116,7 @@ interface SimulationContextType {
   isRecording: boolean;
   isWebRTCSupported: boolean;
   playRemoteAudio: () => Promise<void>;
+  testAndEnableAudio: () => Promise<void>;
 
   // Loading states
   isSendingMessage: boolean;
@@ -186,6 +187,7 @@ export function SimulationProvider({
     startAudioStream,
     stopAudioStream,
     playRemoteAudio,
+    testAndEnableAudio,
   } = useWebSocket();
 
   // Fetch attempt data
@@ -1027,6 +1029,7 @@ export function SimulationProvider({
     isRecording,
     isWebRTCSupported,
     playRemoteAudio,
+    testAndEnableAudio,
 
     // Loading states
     isSendingMessage,
