@@ -12,14 +12,16 @@ from typing import Any, AsyncIterator, Dict, Generator, List, Optional
 
 import socketio  # type: ignore
 # WebRTC imports
-from aiortc import (RTCConfiguration, RTCIceCandidate,  # type: ignore
-                    RTCIceServer, RTCPeerConnection, RTCSessionDescription)
+from aiortc import (MediaStreamTrack, RTCConfiguration,  # type: ignore
+                    RTCIceCandidate, RTCIceServer, RTCPeerConnection,
+                    RTCSessionDescription)
 from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
 from app.utils.audio import Modalities
+from av import AudioFrame  # type: ignore
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -51,6 +53,66 @@ active_runs: dict[str, Any] = {}
 
 # Profile-based connection management (one socket + one WebRTC per profile)
 profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer}
+
+class ServerAudioStreamTrack(MediaStreamTrack):
+    """A custom audio track for sending server-generated audio."""
+    kind = "audio"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+        self._ended = False
+
+    async def recv(self) -> AudioFrame:
+        """Receive the next audio frame from the queue."""
+        if self._ended:
+            raise Exception("Track has ended")
+            
+        try:
+            frame_data = await asyncio.wait_for(self.queue.get(), timeout=1.0)
+            if frame_data is None:  # End signal
+                self._ended = True
+                raise Exception("Track has ended")
+                
+            # Assuming PCM s16le, 24000Hz, mono
+            # Create an AudioFrame for aiortc
+            samples = len(frame_data) // 2  # 2 bytes per sample for s16
+            if samples == 0:
+                # Return a small silent frame to keep the stream alive
+                samples = 480  # 20ms at 24kHz
+                frame_data = b'\x00' * (samples * 2)
+            
+            frame = AudioFrame(format='s16', layout='mono', samples=samples)
+            frame.planes[0].update(frame_data)
+            frame.sample_rate = 24000  # Make sure this matches your TTS output
+            frame.pts = getattr(self, '_pts', 0)
+            self._pts = getattr(self, '_pts', 0) + samples
+            return frame
+        except asyncio.TimeoutError:
+            # Return a silent frame to keep the stream alive
+            samples = 480  # 20ms at 24kHz
+            frame_data = b'\x00' * (samples * 2)
+            frame = AudioFrame(format='s16', layout='mono', samples=samples)
+            frame.planes[0].update(frame_data)
+            frame.sample_rate = 24000
+            frame.pts = getattr(self, '_pts', 0)
+            self._pts = getattr(self, '_pts', 0) + samples
+            return frame
+
+    def add_chunk(self, chunk: bytes) -> None:
+        """Add a chunk of audio data to the queue."""
+        if not self._ended and chunk:
+            try:
+                self.queue.put_nowait(chunk)
+            except asyncio.QueueFull:
+                logger.warning("Audio queue is full, dropping chunk")
+
+    def end_stream(self) -> None:
+        """Signal the end of the audio stream."""
+        try:
+            self.queue.put_nowait(None)  # End signal
+        except asyncio.QueueFull:
+            pass
 
 def _get_public_ip() -> str:
     """Get public IP address for TURN server configuration."""
@@ -163,6 +225,14 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
         
     profile_data = profiles[profile_id]
     
+    # End server audio track
+    if "server_audio_track" in profile_data and profile_data["server_audio_track"]:
+        try:
+            profile_data["server_audio_track"].end_stream()
+            logger.info(f"Ended server audio track for profile {profile_id}")
+        except Exception as e:
+            logger.error(f"Error ending server audio track for profile {profile_id}: {e}")
+    
     # Close peer connection
     if "peer_connection" in profile_data and profile_data["peer_connection"]:
         try:
@@ -194,8 +264,12 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     config = RTCConfiguration(iceServers=ice_servers_list)
     pc = RTCPeerConnection(configuration=config)
     
-    # Prepare to receive an audio track
+    # Prepare to receive an audio track from client
     pc.addTransceiver("audio", direction="recvonly")
+    
+    # Create and add a server-to-client audio track
+    server_audio_track = ServerAudioStreamTrack()
+    pc.addTrack(server_audio_track)
     
     # Store the peer connection with connection tracking
     if profile_id not in profiles:
@@ -205,7 +279,8 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         "peer_connection": pc,
         "current_connection_id": connection_id,
         "data_channels": {},
-        "ice_candidates_buffer": []
+        "ice_candidates_buffer": [],
+        "server_audio_track": server_audio_track
     })
 
     # ---- ensure at least one negotiated data channel so the initial SDP has an m-section ----
