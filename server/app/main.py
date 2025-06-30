@@ -1,6 +1,7 @@
 # server/app/main.py
 import asyncio
 import contextlib
+import fractions
 import json
 import logging
 import os
@@ -56,8 +57,8 @@ profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, curre
 
 class ServerAudioStreamTrack(MediaStreamTrack):
     """
-    A custom audio track for sending server-generated audio.
-    This version is simplified to be more robust and handles timestamps correctly.
+    A robust audio track for sending server-generated audio.
+    It sends silence when the queue is empty to keep the track alive.
     """
     kind = "audio"
 
@@ -65,39 +66,41 @@ class ServerAudioStreamTrack(MediaStreamTrack):
         super().__init__()
         self.queue: asyncio.Queue[Optional[AudioFrame]] = asyncio.Queue()
         self._ended = False
+        self._pts = 0
+        self._sample_rate = 24000  # Opus standard sample rate
+        self._samples_per_frame = 480  # 20ms of audio at 24kHz
 
     async def recv(self) -> AudioFrame:
-        """
-        Pulls the next AudioFrame from the queue.
-        This is called by the aiortc library's internal loop.
-        """
-        # This will block until a frame is available or the sentinel is received
-        frame = await self.queue.get()
+        """Pulls the next AudioFrame from the queue or returns silence."""
+        try:
+            # Wait for a real frame, but with a short timeout.
+            frame = await asyncio.wait_for(self.queue.get(), timeout=0.01)
+        except asyncio.TimeoutError:
+            # If no frame is available, create a silent one to keep the stream alive.
+            frame = None
+
         if frame is None:
-            # This is the signal to stop.
+            # If we received the 'end' signal, stop the track.
+            # We must raise CancelledError to stop aiortc's internal loop.
             self._ended = True
-            # The official way to stop a track is to return a 0-sample frame.
-            # However, raising CancelledError is also a common pattern that works.
-            raise asyncio.CancelledError("Track ended")
-        
+            raise asyncio.CancelledError("Audio stream ended")
+
+        # Update the presentation timestamp (PTS) for the frame
+        frame.pts = self._pts
+        frame.time_base = fractions.Fraction(1, self._sample_rate)
+        self._pts += frame.samples
         return frame
 
     def add_frame(self, frame: AudioFrame) -> None:
         """Adds a new AudioFrame to the queue for sending."""
         if not self._ended:
-            try:
-                self.queue.put_nowait(frame)
-            except asyncio.QueueFull:
-                logger.warning("Audio frame queue is full, dropping frame")
+            self.queue.put_nowait(frame)
 
     def end_stream(self) -> None:
         """Signals the end of the stream by adding a None sentinel."""
         if not self._ended:
-            self._ended = True
-            try:
-                self.queue.put_nowait(None)
-            except asyncio.QueueFull:
-                pass
+            logger.info("Signaling end of server audio stream.")
+            self.queue.put_nowait(None)
 
 def _get_public_ip() -> str:
     """Get public IP address for TURN server configuration."""
