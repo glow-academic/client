@@ -64,7 +64,7 @@ services:
       database:
         condition: service_healthy
     deploy:
-      replicas: 4
+      replicas: 1
     command: >
       gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 --log-level info
     networks:
