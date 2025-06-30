@@ -803,36 +803,136 @@ export function WebSocketProvider({
               };
 
               pc.ontrack = (event) => {
-                logInfo("Received remote audio track", {
+                logInfo("Received remote track", {
                   streamId: event.streams[0]?.id,
+                  trackKind: event.track.kind,
+                  trackId: event.track.id,
                 });
-                const stream = event.streams[0];
-                if (stream) {
-                  // This is a bit of a hack. We don't know which chat this track is for
-                  // until the server tells us. We'll assume it's for the last room joined.
-                  const lastJoinedRoom = Array.from(
-                    currentRoomsRef.current
-                  ).pop();
-                  if (lastJoinedRoom) {
-                    const audio = new Audio();
-                    audio.srcObject = stream;
-                    audio.autoplay = true;
-                    remoteAudioStreams.current.set(lastJoinedRoom, audio);
 
-                    stream.onremovetrack = () => {
-                      const existingAudio =
-                        remoteAudioStreams.current.get(lastJoinedRoom);
-                      if (existingAudio) {
-                        existingAudio.pause();
-                        existingAudio.srcObject = null;
-                        remoteAudioStreams.current.delete(lastJoinedRoom);
+                // Only handle audio tracks
+                if (event.track.kind !== "audio") {
+                  logInfo("Skipping non-audio track");
+                  return;
+                }
+
+                const stream = event.streams[0];
+                if (!stream) {
+                  logError("No stream received with audio track");
+                  return;
+                }
+
+                // This is a bit of a hack. We don't know which chat this track is for
+                // until the server tells us. We'll assume it's for the last room joined.
+                const lastJoinedRoom = Array.from(
+                  currentRoomsRef.current
+                ).pop();
+
+                if (!lastJoinedRoom) {
+                  logError("No room to associate audio track with");
+                  return;
+                }
+
+                // Clean up any existing audio for this room
+                const existingAudio =
+                  remoteAudioStreams.current.get(lastJoinedRoom);
+                if (existingAudio) {
+                  existingAudio.pause();
+                  existingAudio.srcObject = null;
+                  remoteAudioStreams.current.delete(lastJoinedRoom);
+                }
+
+                const audio = new Audio();
+                audio.srcObject = stream;
+                audio.autoplay = true;
+                audio.volume = 1.0;
+
+                // Handle audio playback promise and autoplay restrictions
+                audio.addEventListener("loadedmetadata", async () => {
+                  try {
+                    await audio.play();
+                    logInfo(
+                      `Audio playback started for chat ${lastJoinedRoom}`
+                    );
+                    toast.success("🔊 Assistant audio playing");
+                  } catch (error) {
+                    logError(
+                      "Audio autoplay failed, user interaction required",
+                      error
+                    );
+                    // For autoplay restrictions, we'll try to play when user interacts
+                    const tryPlayOnInteraction = async () => {
+                      try {
+                        await audio.play();
                         logInfo(
-                          `Remote audio stream removed for chat ${lastJoinedRoom}`
+                          `Audio playback started after user interaction for chat ${lastJoinedRoom}`
+                        );
+                        toast.success("🔊 Assistant audio playing");
+                        document.removeEventListener(
+                          "click",
+                          tryPlayOnInteraction
+                        );
+                        document.removeEventListener(
+                          "keydown",
+                          tryPlayOnInteraction
+                        );
+                      } catch (playError) {
+                        logError(
+                          "Failed to play audio even after user interaction",
+                          playError
+                        );
+                        toast.error(
+                          "Audio playback failed - please check your audio settings"
                         );
                       }
                     };
+
+                    document.addEventListener("click", tryPlayOnInteraction, {
+                      once: true,
+                    });
+                    document.addEventListener("keydown", tryPlayOnInteraction, {
+                      once: true,
+                    });
+                    toast.info("🔊 Click anywhere to enable assistant audio");
                   }
-                }
+                });
+
+                audio.addEventListener("error", (error) => {
+                  logError(
+                    `Audio playback error for chat ${lastJoinedRoom}`,
+                    error
+                  );
+                  toast.error("Audio playback failed");
+                });
+
+                audio.addEventListener("ended", () => {
+                  logInfo(`Audio playback ended for chat ${lastJoinedRoom}`);
+                });
+
+                remoteAudioStreams.current.set(lastJoinedRoom, audio);
+
+                stream.onremovetrack = () => {
+                  const currentAudio =
+                    remoteAudioStreams.current.get(lastJoinedRoom);
+                  if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.srcObject = null;
+                    remoteAudioStreams.current.delete(lastJoinedRoom);
+                    logInfo(
+                      `Remote audio stream removed for chat ${lastJoinedRoom}`
+                    );
+                  }
+                };
+
+                event.track.onended = () => {
+                  logInfo(`Audio track ended for chat ${lastJoinedRoom}`);
+                  const currentAudio =
+                    remoteAudioStreams.current.get(lastJoinedRoom);
+                  if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.srcObject = null;
+                    remoteAudioStreams.current.delete(lastJoinedRoom);
+                  }
+                };
               };
             } else {
               logInfo("Using existing PeerConnection for renegotiation.");
