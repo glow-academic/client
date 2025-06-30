@@ -154,7 +154,36 @@ class SimulationTTSModel(TTSModel):
         """Given a text string, produces a stream of audio bytes, in PCM format."""
         # MODIFIED: Change the behavior for the generate_audio=False case
         if not self.generate_audio:
-            return
+                # In text-only mode, we stream a dummy .wav file to keep the pipeline
+                # alive, but we will filter this output later so it's never sent to the client.
+                dummy_audio_path = os.path.join(AUDIO_FOLDER, "test.wav")
+
+                if not os.path.exists(dummy_audio_path):
+                    logger.error(
+                        f"Dummy audio file not found at {dummy_audio_path}. The voice pipeline might fail."
+                    )
+                    # Fallback to the previous 'always-on' method if the file is missing
+                    try:
+                        while True:
+                            yield b""
+                            await asyncio.sleep(0.2)
+                    except asyncio.CancelledError:
+                        return
+                
+                try:
+                    logger.info(f"Streaming dummy audio from '{dummy_audio_path}' to keep pipeline alive.")
+                    chunk_size = 1024  # Read in 1KB chunks
+                    with open(dummy_audio_path, "rb") as f:
+                        while True:
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break  # End of file
+                            yield chunk
+                    logger.info("Finished streaming dummy audio file.")
+                except Exception as e:
+                    logger.error(f"Error streaming dummy audio file: {e}")
+                finally:
+                    return
         
         try:
             if self.model_id is None:
@@ -272,6 +301,9 @@ class SimulationWorkflow(VoiceWorkflowBase):
         """
         Run the voice workflow. Receives transcription and yields text for TTS.
         """
+        from app.web.simulations import get_sio_instance
+        sio_instance = get_sio_instance()
+        
         try:
             # Use transcription if available, otherwise fall back to original message
             message_text = transcription.strip() if transcription.strip() else self.original_message
@@ -287,12 +319,98 @@ class SimulationWorkflow(VoiceWorkflowBase):
             self.session.add(user_message)
             self.session.commit()
             self.session.refresh(user_message)
+
+            # Create assistant message placeholder
+            assistant_message = SimulationMessages(
+                chat_id=self.chat_id,
+                type="response",
+                content="",
+                completed=False,
+                audio=False
+            )
+            self.session.add(assistant_message)
+            self.session.commit()
+            self.session.refresh(assistant_message)
             
             logger.info(f"Created user message {user_message.id} for chat {self.chat_id}")
 
             # Stream the assistant response using the existing simulation agent
-            async for text_chunk in run_simulation_agent(self.chat_id, self.session):
-                yield text_chunk
+            accumulated_content = ""
+            cancelled = False
+
+            try:
+                async for token in run_simulation_agent(self.chat_id, self.session):
+                    # Regular content token
+                    accumulated_content += token
+
+                    # Update the database with accumulated content
+                    assistant_message.content = accumulated_content
+                    self.session.add(assistant_message)
+                    self.session.commit()
+
+                    # Emit token update to connected clients
+                    logger.info(
+                        f"Emitting token to room simulation_{self.chat_id}: {token[:20]}..."
+                    )
+                    await sio_instance.emit(
+                        "simulation_message_token",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(self.chat_id),
+                            "token": token,
+                            "accumulated_content": accumulated_content,
+                        },
+                        room=f"simulation_{self.chat_id}",
+                    )
+            except Exception as e:
+                if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
+                    # Handle cancellation gracefully
+                    cancelled = True
+                    logger.info(f"Simulation run for chat {self.chat_id} was cancelled")
+
+                    # Update message content with cancellation notice
+                    if not accumulated_content.strip():
+                        accumulated_content = "[Simulation cancelled by user]"
+                    else:
+                        accumulated_content += "\n\n[Simulation cancelled by user]"
+
+                    assistant_message.content = accumulated_content
+                    self.session.add(assistant_message)
+                    self.session.commit()
+
+                    # Emit cancellation signal
+                    logger.info(f"Emitting cancellation to room simulation_{self.chat_id}")
+                    await sio_instance.emit(
+                        "simulation_message_cancelled",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(self.chat_id),
+                            "final_content": accumulated_content,
+                        },
+                        room=f"simulation_{self.chat_id}",
+                    )
+                else:
+                    # Re-raise other exceptions
+                    raise e
+
+            # 6. Mark as completed
+            assistant_message.completed = True
+            self.session.add(assistant_message)
+            self.session.commit()
+
+            # 7. Emit completion signal (only if not cancelled)
+            if not cancelled:
+                logger.info(f"Emitting completion to room simulation_{self.chat_id}")
+                await sio_instance.emit(
+                    "simulation_message_complete",
+                    {
+                        "message_id": str(assistant_message.id),
+                        "chat_id": str(self.chat_id),
+                        "final_content": accumulated_content,
+                        "audio": assistant_message.audio,
+                    },
+                    room=f"simulation_{self.chat_id}",
+                )
                 
         except Exception as e:
             logger.error(f"Simulation workflow failed: {e}")
@@ -422,67 +540,46 @@ class SimulationPipeline:
             from app.web.simulations import get_sio_instance
             sio_instance = get_sio_instance()
             
-            # Create assistant message placeholder
-            assistant_message = SimulationMessages(
-                chat_id=self.chat_id,
-                type="response",
-                content="",
-                completed=False,
-                audio=self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]
-            )
-            self.session.add(assistant_message)
-            self.session.commit()
-            self.session.refresh(assistant_message)
+            # # Create assistant message placeholder
+            # assistant_message = SimulationMessages(
+            #     chat_id=self.chat_id,
+            #     type="response",
+            #     content="",
+            #     completed=False,
+            #     audio=self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]
+            # )
+            # self.session.add(assistant_message)
+            # self.session.commit()
+            # self.session.refresh(assistant_message)
             
-            # Emit assistant message placeholder
-            await sio_instance.emit(
-                "simulation_new_message",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(self.chat_id),
-                    "role": "assistant",
-                    "content": "",
-                    "completed": False,
-                    "audio": assistant_message.audio,
-                    "created_at": assistant_message.created_at.isoformat(),
-                },
-                room=f"simulation_{self.chat_id}",
-            )
+            # # Emit assistant message placeholder
+            # await sio_instance.emit(
+            #     "simulation_new_message",
+            #     {
+            #         "message_id": str(assistant_message.id),
+            #         "chat_id": str(self.chat_id),
+            #         "role": "assistant",
+            #         "content": "",
+            #         "completed": False,
+            #         "audio": assistant_message.audio,
+            #         "created_at": assistant_message.created_at.isoformat(),
+            #     },
+            #     room=f"simulation_{self.chat_id}",
+            # )
+
+            # pull the latest assistant message from the database
+            assistant_message = self.session.exec(select(SimulationMessages).where(SimulationMessages.chat_id == self.chat_id, SimulationMessages.type == "response", SimulationMessages.completed == True)).one()
+            if not assistant_message:
+                raise ValueError(f"Assistant message not found for chat {self.chat_id}")
             
             # In the SimulationPipeline class within your first provided file.
             # Replace the "async for event in result.stream()" loop with this corrected version.
-
-            accumulated_content = ""
             assistant_audio_chunks = []
 
             # Stream the results from the pipeline
             async for event in result.stream():
                 if not hasattr(event, 'data'):
                     continue
-
-                # 1. Handle TEXT data from the workflow (this is now reachable)
-                if isinstance(event.data, str):
-                    text_chunk = event.data
-                    accumulated_content += text_chunk
-
-                    # Update DB
-                    assistant_message.content = accumulated_content
-                    self.session.add(assistant_message)
-                    self.session.commit()
-
-                    # Emit text token to the client
-                    await sio_instance.emit(
-                        "simulation_message_token",
-                        {
-                            "message_id": str(assistant_message.id),
-                            "chat_id": str(self.chat_id),
-                            "token": text_chunk,
-                            "accumulated_content": accumulated_content,
-                        },
-                        room=f"simulation_{self.chat_id}",
-                    )
-                    yield {"type": "text", "data": text_chunk}
-
                 # 2. Handle AUDIO data from the TTS model
                 elif isinstance(event.data, (bytes, np.ndarray)):
                     # --- MODIFIED LOGIC ---
@@ -522,7 +619,7 @@ class SimulationPipeline:
                 {
                     "message_id": str(assistant_message.id),
                     "chat_id": str(self.chat_id),
-                    "final_content": accumulated_content,
+                    "final_content": assistant_message.content,
                     "audio": assistant_message.audio,
                 },
                 room=f"simulation_{self.chat_id}",
