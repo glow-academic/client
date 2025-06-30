@@ -55,65 +55,47 @@ active_runs: dict[str, Any] = {}
 profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer}
 
 class ServerAudioStreamTrack(MediaStreamTrack):
-    """A custom audio track for sending server-generated audio."""
+    """
+    A custom audio track for sending server-generated audio.
+    This version is simplified to be more robust and handles timestamps correctly.
+    """
     kind = "audio"
 
     def __init__(self) -> None:
         super().__init__()
-        self.queue: asyncio.Queue[bytes | None] = asyncio.Queue()
+        self.queue: asyncio.Queue[Optional[AudioFrame]] = asyncio.Queue()
         self._ended = False
-        self._pts = 0
-        self._sample_rate = 24000
-        self._samples_per_frame = (self._sample_rate // 1000) * 20  # 20ms frames
 
     async def recv(self) -> AudioFrame:
-        """Receive the next audio frame from the queue."""
-        if self._ended:
-            # When ended, we must stop the track by stopping the task that calls recv()
-            # The proper way is to have the task check self._ended and break its loop.
-            # aiortc's internal loop doesn't do this, so we raise a specific error
-            # that we know is just a clean shutdown.
-            raise asyncio.CancelledError("Track has ended")
-
-        try:
-            # Wait for data, but with a timeout to send silence if needed
-            frame_data = await asyncio.wait_for(self.queue.get(), timeout=1.0)
-
-            if frame_data is None:  # Our end signal
-                self._ended = True
-                # Cleanly end the track
-                return await self.recv()
-
-            samples = len(frame_data) // 2
-        except asyncio.TimeoutError:
-            # If we time out, send a silent frame to keep the connection alive
-            samples = self._samples_per_frame
-            frame_data = b'\x00' * (samples * 2)
-
-        if samples == 0:
-            return await self.recv()  # Avoid sending empty frames
-
-        frame = AudioFrame(format='s16', layout='mono', samples=samples)
-        frame.planes[0].update(frame_data)
-        frame.sample_rate = self._sample_rate
-        frame.pts = self._pts
-        self._pts += samples
+        """
+        Pulls the next AudioFrame from the queue.
+        This is called by the aiortc library's internal loop.
+        """
+        # This will block until a frame is available or the sentinel is received
+        frame = await self.queue.get()
+        if frame is None:
+            # This is the signal to stop.
+            self._ended = True
+            # The official way to stop a track is to return a 0-sample frame.
+            # However, raising CancelledError is also a common pattern that works.
+            raise asyncio.CancelledError("Track ended")
+        
         return frame
 
-    def add_chunk(self, chunk: bytes) -> None:
-        """Add a chunk of audio data to the queue."""
-        if not self._ended and chunk:
+    def add_frame(self, frame: AudioFrame) -> None:
+        """Adds a new AudioFrame to the queue for sending."""
+        if not self._ended:
             try:
-                self.queue.put_nowait(chunk)
+                self.queue.put_nowait(frame)
             except asyncio.QueueFull:
-                logger.warning("Audio queue is full, dropping chunk")
+                logger.warning("Audio frame queue is full, dropping frame")
 
     def end_stream(self) -> None:
-        """Signal the end of the audio stream."""
+        """Signals the end of the stream by adding a None sentinel."""
         if not self._ended:
             self._ended = True
             try:
-                self.queue.put_nowait(None)  # Sentinel value to signal the end
+                self.queue.put_nowait(None)
             except asyncio.QueueFull:
                 pass
 

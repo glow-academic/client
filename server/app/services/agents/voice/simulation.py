@@ -22,6 +22,7 @@ from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
+from av import AudioFrame
 
 # Removed custom logger import - using standard logging
 
@@ -499,6 +500,9 @@ class SimulationPipeline:
             # This loop's ONLY job is to process the final audio stream, if one exists.
             # It will correctly ignore the dummy audio from test.wav.
             assistant_audio_chunks = []
+            pts = 0  # Presentation timestamp starts at 0
+            sample_rate = 24000  # Your TTS model's sample rate
+
             async for event in result.stream():
                 if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
                     if self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
@@ -507,9 +511,16 @@ class SimulationPipeline:
                             audio_chunk = audio_chunk.tobytes()
                         if audio_chunk:
                             assistant_audio_chunks.append(audio_chunk)
-                            # Stream the audio chunk directly to WebRTC using the passed-in track
+
+                            # 👇 THE KEY CHANGE: Create and queue an AudioFrame
                             if server_audio_track:
-                                server_audio_track.add_chunk(audio_chunk)
+                                new_frame = AudioFrame(format='s16', layout='mono', samples=len(audio_chunk) // 2)
+                                new_frame.planes[0].update(audio_chunk)
+                                new_frame.sample_rate = sample_rate
+                                new_frame.pts = pts
+                                pts += new_frame.samples  # Increment timestamp
+                                server_audio_track.add_frame(new_frame)
+                            
                             # This yield is for any potential future use, like live WebRTC audio playback
                             yield {"type": "audio", "data": audio_chunk}
 
