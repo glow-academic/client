@@ -49,7 +49,7 @@ interface WebSocketContextType {
     message: string,
     assistantAudioEnabled?: boolean
   ) => void;
-  startAudioStream: (chatId: string) => Promise<void>;
+  startAudioStream: (chatId: string, assistantAudioEnabled?: boolean) => Promise<void>;
   stopAudioStream: (chatId: string) => void;
 
   // Simulation event emitters
@@ -1603,7 +1603,7 @@ export function WebSocketProvider({
   );
 
   const startAudioStream = useCallback(
-    async (chatId: string) => {
+    async (chatId: string, assistantAudioEnabled: boolean = false) => {
       if (
         !isWebRTCSupported ||
         !profileId ||
@@ -1645,6 +1645,7 @@ export function WebSocketProvider({
             chat_id: chatId,
             profile_id: profileId,
             connection_id: currentConnectionId.current,
+            assistant_audio_enabled: assistantAudioEnabled,
           });
           logInfo(`Started and sent audio stream for chat: ${chatId}`);
         }

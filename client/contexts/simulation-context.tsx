@@ -779,8 +779,8 @@ export function SimulationProvider({
     }
 
     setIsRecording(true);
-    await startAudioStream(currentChat.id);
-  }, [currentChat?.id, isWebRTCSupported, startAudioStream, isRecording]);
+    await startAudioStream(currentChat.id, assistantAudioEnabled);
+  }, [currentChat?.id, isWebRTCSupported, startAudioStream, isRecording, assistantAudioEnabled]);
 
   const stopRecording = useCallback(async () => {
     if (!currentChat?.id) return;

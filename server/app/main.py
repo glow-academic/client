@@ -268,12 +268,15 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         logger.info(f"Received track: {track.kind} for profile {profile_id}, connection {connection_id}")
         if track.kind == "audio":
             chat_id = getattr(pc, "_last_chat_id", None)
+            # MODIFIED: Get the stored audio preference
+            assistant_audio_enabled = getattr(pc, "_assistant_audio_enabled", True)
+
             if chat_id:
                 from app.web.simulations import process_audio_stream
 
-                # move this to send in a stream of audio bytes, process in the simulation itself.
+                # MODIFIED: Pass the preference down to the processing function
                 asyncio.create_task(
-                    process_audio_stream(track, chat_id, profile_id)
+                    process_audio_stream(track, chat_id, profile_id, assistant_audio_enabled)
                 )
             else:
                 logger.warning(
@@ -678,12 +681,15 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
     profile_id = data.get("profile_id")
     connection_id = data.get("connection_id")
     chat_id = data.get("chat_id")
+    # MODIFIED: Get the audio preference from the client, default to True for safety
+    assistant_audio_enabled = data.get("assistant_audio_enabled", True)
     
     if not profile_id or not connection_id or not chat_id:
         logger.error("Missing profile_id, connection_id, or chat_id for webrtc_start_audio")
         return
 
-    logger.info(f"Client {sid} is starting audio for chat {chat_id}, connection {connection_id}, beginning renegotiation.")
+    # Add this log line for easier debugging
+    logger.info(f"Client {sid} is starting audio for chat {chat_id} (assistant audio: {assistant_audio_enabled}), connection {connection_id}, beginning renegotiation.")
     
     # Verify profile and connection ID
     if profile_id not in profiles:
@@ -709,8 +715,9 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
         await sio.emit('webrtc_error', {'error': 'Peer connection is closed.'}, room=sid)
         return
 
-    # Associate the next track for this profile with this chat_id.
+    # MODIFIED: Associate the chat_id AND the audio preference with the connection
     pc.__dict__["_last_chat_id"] = chat_id
+    pc.__dict__["_assistant_audio_enabled"] = assistant_audio_enabled
 
     try:
         # Create a new offer to trigger renegotiation

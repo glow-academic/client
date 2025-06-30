@@ -625,10 +625,11 @@ async def emit_error(sid: str, message: str) -> None:
     logger.error(f"Emitted error to {sid}: {message}")
 
 
-async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> None:
+async def process_audio_stream(track: Any, chat_id: str, profile_id: str, assistant_audio_enabled: bool) -> None:
     """Process an incoming audio stream from a client with VAD."""
+    # MODIFIED: Update log to show the preference being used
     logger.info(
-        f"Audio processing task started for chat {chat_id} from profile {profile_id}"
+        f"Audio processing task started for chat {chat_id} from profile {profile_id} (assistant audio: {assistant_audio_enabled})"
     )
 
     vad = VadDetector(TARGET_SR, FRAME_MS, vad_level=2)
@@ -661,7 +662,8 @@ async def process_audio_stream(track: Any, chat_id: str, profile_id: str) -> Non
                             message="",  # No text message for audio input
                             audio_data=full_audio_bytes,
                             profile_id=profile_id,
-                            assistant_audio_enabled=True,  # Default to audio response for audio input
+                            # MODIFIED: Use the passed-in preference instead of hardcoding
+                            assistant_audio_enabled=assistant_audio_enabled,
                         )
                     )
     except Exception:
