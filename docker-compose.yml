@@ -44,7 +44,7 @@ services:
   # API Server
   # --------------------
   server:
-    container_name: glow-server
+    # container_name: glow-server
     build:
       context: ./server
       dockerfile: Dockerfile
