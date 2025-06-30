@@ -470,113 +470,59 @@ class SimulationPipeline:
         profile_id: str | None = None
     ) -> AsyncGenerator[dict[str, Any], None]:
         """
-        Process audio/text through the pipeline and stream results via WebSocket.
+        Processes audio/text through the pipeline. The workflow now handles all
+        text-related events. This function's role is to run the pipeline for tracing
+        and to handle any real audio output.
         """
         try:
             pipeline = self.get_pipeline()
             
-            # Create appropriate input based on modality
             if self.mode in [Modalities.AUDIO_AUDIO, Modalities.AUDIO_TEXT]:
-                if not audio_data:
-                    audio_data = b""  # Empty bytes for dummy audio
-                
-                # Convert bytes to numpy array for AudioInput
-                audio_np = np.frombuffer(audio_data, dtype=np.int16)
-                if len(audio_np) == 0:
-                    audio_np = np.zeros(1000, dtype=np.int16)  # Dummy audio
-                    
-                audio_input = AudioInput(buffer=audio_np)
+                audio_np = np.frombuffer(audio_data or b"", dtype=np.int16)
+                audio_input = AudioInput(buffer=audio_np if audio_np.size > 0 else np.zeros(1, dtype=np.int16))
             else:
-                # For TEXT_AUDIO, create dummy audio input
-                audio_np = np.zeros(1000, dtype=np.int16)
-                audio_input = AudioInput(buffer=audio_np)
+                audio_input = AudioInput(buffer=np.zeros(1, dtype=np.int16))
             
-            # Save user audio file if we have real audio data
-            user_message_id = None
-            if self.mode in [Modalities.AUDIO_AUDIO, Modalities.AUDIO_TEXT] and audio_data and len(audio_data) > 0:
-                user_message_id = str(uuid.uuid4())  # Temporary ID, will be updated by workflow
-                user_audio_path: str | None = os.path.join(AUDIO_FOLDER, f"{user_message_id}.wav")
-                try:
-                    if user_audio_path is None:
-                        raise ValueError("User audio path is None")
-                    
-                    with open(user_audio_path, "wb") as f:
-                        f.write(audio_data)
-                    logger.info(f"Saved user audio to {user_audio_path}")
-                except Exception as e:
-                    logger.error(f"Failed to save user audio: {e}")
-                    user_audio_path = None
-            
-            # Run the pipeline
             result = await pipeline.run(audio_input)
             
-            # Get socket instance for WebSocket emissions
-            sio_instance = get_sio_instance()
-
-            # pull the latest assistant message from the database
-            assistant_message = self.session.exec(select(SimulationMessages).where(SimulationMessages.chat_id == self.chat_id, SimulationMessages.type == "response", SimulationMessages.completed == True)).one()
-            if not assistant_message:
-                raise ValueError(f"Assistant message not found for chat {self.chat_id}")
-            
-            # In the SimulationPipeline class within your first provided file.
-            # Replace the "async for event in result.stream()" loop with this corrected version.
+            # The workflow handles text events. We only process audio here.
             assistant_audio_chunks = []
-
-            # Stream the results from the pipeline
             async for event in result.stream():
-                if not hasattr(event, 'data'):
-                    continue
-                # 2. Handle AUDIO data from the TTS model
-                elif isinstance(event.data, (bytes, np.ndarray)):
-                    # --- MODIFIED LOGIC ---
-                    # Only process audio chunks if the mode requires audio output.
-                    # This check filters out the dummy stream from test.wav in AUDIO_TEXT mode.
+                if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
                     if self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
                         audio_chunk = event.data
                         if isinstance(audio_chunk, np.ndarray):
                             audio_chunk = audio_chunk.tobytes()
-
                         if audio_chunk:
                             assistant_audio_chunks.append(audio_chunk)
-                            # This yield is for any internal consumer or potential WebRTC audio streaming
                             yield {"type": "audio", "data": audio_chunk}
-            
-            # Save assistant audio file if we generated audio
-            if assistant_audio_chunks and self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
-                assistant_audio_path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
-                try:
-                    full_audio = b"".join(assistant_audio_chunks)
-                    with open(assistant_audio_path, "wb") as f:
-                        f.write(full_audio)
-                    assistant_message.file_path = assistant_audio_path
-                    logger.info(f"Saved assistant audio to {assistant_audio_path}")
-                except Exception as e:
-                    logger.error(f"Failed to save assistant audio: {e}")
-                    # Keep audio=True but file_path=None to show mismatch in frontend
-            
-            # Mark as completed
-            assistant_message.completed = True
-            self.session.add(assistant_message)
-            self.session.commit()
-            
-            # Emit completion
-            await sio_instance.emit(
-                "simulation_message_complete",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(self.chat_id),
-                    "final_content": assistant_message.content,
-                    "audio": assistant_message.audio,
-                },
-                room=f"simulation_{self.chat_id}",
-            )
+
+            if assistant_audio_chunks:
+                logger.info("Real TTS audio was generated. Saving to file.")
+                # The workflow created the message, but we must update it with audio info.
+                assistant_messages = self.session.exec(
+                    select(SimulationMessages)
+                    .where(SimulationMessages.chat_id == self.chat_id, SimulationMessages.type == "response")
+                ).all()
+                sorted_messages = sorted(assistant_messages, key=lambda x: x.created_at, reverse=True)
+                assistant_message = sorted_messages[0]
+                if not assistant_message:
+                    raise ValueError(f"Assistant message not found for chat {self.chat_id}")
+                
+                if assistant_message:
+                    assistant_message.audio = True # Correct the audio flag
+                    path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
+                    with open(path, "wb") as f:
+                        f.write(b"".join(assistant_audio_chunks))
+                    assistant_message.file_path = path
+                    self.session.add(assistant_message)
+                    self.session.commit()
+                    logger.info(f"Saved assistant audio to {path}")
             
             yield {"type": "complete", "data": "finished"}
             
         except Exception as e:
-            logger.error(f"Pipeline processing failed: {e}")
-            # Emit error
-            from app.web.simulations import get_sio_instance
+            logger.exception("Pipeline processing failed")
             sio_instance = get_sio_instance()
             await sio_instance.emit(
                 "simulation_message_error",
