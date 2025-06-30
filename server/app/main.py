@@ -415,8 +415,7 @@ register_assistant_events(sio)
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
-    """Handle WebSocket connection with profile-based socket management"""
-    # Extract profile ID from query string for better logging
+    """Handle WebSocket connection with robust, profile-based socket management."""
     query_string = environ.get('QUERY_STRING', '')
     profile_id = None
     if 'profileId=' in query_string:
@@ -424,36 +423,36 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
             profile_id = query_string.split('profileId=')[1].split('&')[0]
         except IndexError:
             pass
-    
-    logger.info(f"Client connecting: sid={sid}, profile_id={profile_id}, transport={environ.get('HTTP_UPGRADE', 'polling')}")
-    
-    # Handle one socket per profile policy
+
+    logger.info(f"Client connecting: sid={sid}, profile_id={profile_id}")
+
     if profile_id:
-        # Check if there's already a socket for this profile
+        # Check if another socket is already active for this profile
         if profile_id in profiles and "current_socket" in profiles[profile_id]:
             old_sid = profiles[profile_id]["current_socket"]
             if old_sid != sid:
-                logger.info(f"Closing old socket {old_sid} for profile {profile_id}, accepting new socket {sid}")
-                # Disconnect the old socket
-                await sio.disconnect(old_sid)
-                # Clean up the old connection
-                await cleanup_profile_connection(profile_id, "new socket connection")
-        
-        # Initialize or update profile data
+                logger.warning(
+                    f"Profile {profile_id} already has active socket {old_sid}. "
+                    f"Closing old connection and accepting new one {sid}."
+                )
+                # Clean up the entire old session for this profile
+                await cleanup_profile_connection(profile_id, "new socket takeover")
+                # Forcefully disconnect the old socket from the server-side
+                await sio.disconnect(old_sid, ignore_queue=True)
+
+        # Initialize or update profile data for the new socket
         if profile_id not in profiles:
             profiles[profile_id] = {}
         profiles[profile_id]["current_socket"] = sid
-        
-        # Join profile-specific room for WebRTC signaling
+
         await sio.enter_room(sid, profile_id)
-    
-    # Send immediate confirmation to client
+
     await sio.emit('connection_confirmed', {
         'sid': sid,
         'profile_id': profile_id,
         'server_time': time.time()
     }, room=sid)
-    
+
     logger.info(f"Client connected successfully: sid={sid}, profile_id={profile_id}")
     return True
 
