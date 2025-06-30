@@ -62,42 +62,43 @@ class ServerAudioStreamTrack(MediaStreamTrack):
         super().__init__()
         self.queue: asyncio.Queue[bytes | None] = asyncio.Queue()
         self._ended = False
+        self._pts = 0
+        self._sample_rate = 24000
+        self._samples_per_frame = (self._sample_rate // 1000) * 20  # 20ms frames
 
     async def recv(self) -> AudioFrame:
         """Receive the next audio frame from the queue."""
         if self._ended:
-            raise Exception("Track has ended")
-            
+            # When ended, we must stop the track by stopping the task that calls recv()
+            # The proper way is to have the task check self._ended and break its loop.
+            # aiortc's internal loop doesn't do this, so we raise a specific error
+            # that we know is just a clean shutdown.
+            raise asyncio.CancelledError("Track has ended")
+
         try:
+            # Wait for data, but with a timeout to send silence if needed
             frame_data = await asyncio.wait_for(self.queue.get(), timeout=1.0)
-            if frame_data is None:  # End signal
+
+            if frame_data is None:  # Our end signal
                 self._ended = True
-                raise Exception("Track has ended")
-                
-            # Assuming PCM s16le, 24000Hz, mono
-            # Create an AudioFrame for aiortc
-            samples = len(frame_data) // 2  # 2 bytes per sample for s16
-            if samples == 0:
-                # Return a small silent frame to keep the stream alive
-                samples = 480  # 20ms at 24kHz
-                frame_data = b'\x00' * (samples * 2)
-            
-            frame = AudioFrame(format='s16', layout='mono', samples=samples)
-            frame.planes[0].update(frame_data)
-            frame.sample_rate = 24000  # Make sure this matches your TTS output
-            frame.pts = getattr(self, '_pts', 0)
-            self._pts = getattr(self, '_pts', 0) + samples
-            return frame
+                # Cleanly end the track
+                return await self.recv()
+
+            samples = len(frame_data) // 2
         except asyncio.TimeoutError:
-            # Return a silent frame to keep the stream alive
-            samples = 480  # 20ms at 24kHz
+            # If we time out, send a silent frame to keep the connection alive
+            samples = self._samples_per_frame
             frame_data = b'\x00' * (samples * 2)
-            frame = AudioFrame(format='s16', layout='mono', samples=samples)
-            frame.planes[0].update(frame_data)
-            frame.sample_rate = 24000
-            frame.pts = getattr(self, '_pts', 0)
-            self._pts = getattr(self, '_pts', 0) + samples
-            return frame
+
+        if samples == 0:
+            return await self.recv()  # Avoid sending empty frames
+
+        frame = AudioFrame(format='s16', layout='mono', samples=samples)
+        frame.planes[0].update(frame_data)
+        frame.sample_rate = self._sample_rate
+        frame.pts = self._pts
+        self._pts += samples
+        return frame
 
     def add_chunk(self, chunk: bytes) -> None:
         """Add a chunk of audio data to the queue."""
@@ -109,10 +110,12 @@ class ServerAudioStreamTrack(MediaStreamTrack):
 
     def end_stream(self) -> None:
         """Signal the end of the audio stream."""
-        try:
-            self.queue.put_nowait(None)  # End signal
-        except asyncio.QueueFull:
-            pass
+        if not self._ended:
+            self._ended = True
+            try:
+                self.queue.put_nowait(None)  # Sentinel value to signal the end
+            except asyncio.QueueFull:
+                pass
 
 def _get_public_ip() -> str:
     """Get public IP address for TURN server configuration."""
@@ -223,27 +226,29 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     if profile_id not in profiles:
         return
         
-    profile_data = profiles[profile_id]
-    
+    profile_data = profiles.pop(profile_id, None)  # Atomically get and remove
+    if not profile_data:
+        return
+
     # End server audio track
-    if "server_audio_track" in profile_data and profile_data["server_audio_track"]:
+    server_audio_track = profile_data.get("server_audio_track")
+    if server_audio_track:
         try:
-            profile_data["server_audio_track"].end_stream()
-            logger.info(f"Ended server audio track for profile {profile_id}")
+            server_audio_track.end_stream()
+            logger.info(f"Signaled end for server audio track for profile {profile_id}")
         except Exception as e:
             logger.error(f"Error ending server audio track for profile {profile_id}: {e}")
-    
+
     # Close peer connection
-    if "peer_connection" in profile_data and profile_data["peer_connection"]:
+    pc = profile_data.get("peer_connection")
+    if pc and pc.connectionState != "closed":
         try:
-            await profile_data["peer_connection"].close()
+            # Give a moment for tasks to wrap up before closing
+            await asyncio.sleep(0.1)  # Small delay to prevent race conditions
+            await pc.close()
             logger.info(f"Closed peer connection for profile {profile_id}")
         except Exception as e:
             logger.error(f"Error closing peer connection for profile {profile_id}: {e}")
-    
-    # Clean up profile data
-    if profile_id in profiles:
-        del profiles[profile_id]
 
 async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> RTCPeerConnection:
     """Create a new WebRTC peer connection for a profile with connection ID."""
