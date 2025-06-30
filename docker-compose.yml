@@ -63,6 +63,10 @@ services:
     depends_on:
       database:
         condition: service_healthy
+    deploy:
+      replicas: 4
+    command: >
+      gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 --log-level info
     networks:
       - internal
       - public_net
