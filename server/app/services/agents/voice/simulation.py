@@ -22,7 +22,6 @@ from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
-from app.web.simulations import get_sio_instance
 
 # Removed custom logger import - using standard logging
 
@@ -155,36 +154,37 @@ class SimulationTTSModel(TTSModel):
         """Given a text string, produces a stream of audio bytes, in PCM format."""
         # MODIFIED: Change the behavior for the generate_audio=False case
         if not self.generate_audio:
-                # In text-only mode, we stream a dummy .wav file to keep the pipeline
-                # alive, but we will filter this output later so it's never sent to the client.
-                dummy_audio_path = os.path.join(AUDIO_FOLDER, "test.wav")
+                return
+                # # In text-only mode, we stream a dummy .wav file to keep the pipeline
+                # # alive, but we will filter this output later so it's never sent to the client.
+                # dummy_audio_path = os.path.join(AUDIO_FOLDER, "test.wav")
 
-                if not os.path.exists(dummy_audio_path):
-                    logger.error(
-                        f"Dummy audio file not found at {dummy_audio_path}. The voice pipeline might fail."
-                    )
-                    # Fallback to the previous 'always-on' method if the file is missing
-                    try:
-                        while True:
-                            yield b""
-                            await asyncio.sleep(0.2)
-                    except asyncio.CancelledError:
-                        return
+                # if not os.path.exists(dummy_audio_path):
+                #     logger.error(
+                #         f"Dummy audio file not found at {dummy_audio_path}. The voice pipeline might fail."
+                #     )
+                #     # Fallback to the previous 'always-on' method if the file is missing
+                #     try:
+                #         while True:
+                #             yield b""
+                #             await asyncio.sleep(0.2)
+                #     except asyncio.CancelledError:
+                #         return
                 
-                try:
-                    logger.info(f"Streaming dummy audio from '{dummy_audio_path}' to keep pipeline alive.")
-                    chunk_size = 1024  # Read in 1KB chunks
-                    with open(dummy_audio_path, "rb") as f:
-                        while True:
-                            chunk = f.read(chunk_size)
-                            if not chunk:
-                                break  # End of file
-                            yield chunk
-                    logger.info("Finished streaming dummy audio file.")
-                except Exception as e:
-                    logger.error(f"Error streaming dummy audio file: {e}")
-                finally:
-                    return
+                # try:
+                #     logger.info(f"Streaming dummy audio from '{dummy_audio_path}' to keep pipeline alive.")
+                #     chunk_size = 1024  # Read in 1KB chunks
+                #     with open(dummy_audio_path, "rb") as f:
+                #         while True:
+                #             chunk = f.read(chunk_size)
+                #             if not chunk:
+                #                 break  # End of file
+                #             yield chunk
+                #     logger.info("Finished streaming dummy audio file.")
+                # except Exception as e:
+                #     logger.error(f"Error streaming dummy audio file: {e}")
+                # finally:
+                #     return
         
         try:
             if self.model_id is None:
@@ -302,6 +302,7 @@ class SimulationWorkflow(VoiceWorkflowBase):
         """
         Run the voice workflow. Receives transcription and yields text for TTS.
         """
+        from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
         
         try:
@@ -477,15 +478,20 @@ class SimulationPipeline:
         try:
             pipeline = self.get_pipeline()
             
+            # Create the audio input for the pipeline
             if self.mode in [Modalities.AUDIO_AUDIO, Modalities.AUDIO_TEXT]:
                 audio_np = np.frombuffer(audio_data or b"", dtype=np.int16)
+                # Use a tiny silent buffer if audio is empty to prevent errors
                 audio_input = AudioInput(buffer=audio_np if audio_np.size > 0 else np.zeros(1, dtype=np.int16))
             else:
+                # Dummy audio for text-input modes
                 audio_input = AudioInput(buffer=np.zeros(1, dtype=np.int16))
             
+            # This call starts the SimulationWorkflow in the background
             result = await pipeline.run(audio_input)
             
-            # The workflow handles text events. We only process audio here.
+            # This loop's ONLY job is to process the final audio stream, if one exists.
+            # It will correctly ignore the dummy audio from test.wav.
             assistant_audio_chunks = []
             async for event in result.stream():
                 if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
@@ -495,22 +501,28 @@ class SimulationPipeline:
                             audio_chunk = audio_chunk.tobytes()
                         if audio_chunk:
                             assistant_audio_chunks.append(audio_chunk)
+                            # This yield is for any potential future use, like live WebRTC audio playback
                             yield {"type": "audio", "data": audio_chunk}
 
+            # If real audio was generated, find the message the workflow created and save the file.
             if assistant_audio_chunks:
                 logger.info("Real TTS audio was generated. Saving to file.")
-                # The workflow created the message, but we must update it with audio info.
+                
+                # --- THIS IS THE MODIFIED BLOCK ---
+                # Find the message the workflow just created using a manual sort.
                 assistant_messages = self.session.exec(
                     select(SimulationMessages)
                     .where(SimulationMessages.chat_id == self.chat_id, SimulationMessages.type == "response")
                 ).all()
-                sorted_messages = sorted(assistant_messages, key=lambda x: x.created_at, reverse=True)
-                assistant_message = sorted_messages[0]
-                if not assistant_message:
-                    raise ValueError(f"Assistant message not found for chat {self.chat_id}")
-                
-                if assistant_message:
-                    assistant_message.audio = True # Correct the audio flag
+
+                if assistant_messages:
+                    # Sort the messages by creation date in descending order
+                    sorted_messages = sorted(assistant_messages, key=lambda x: x.created_at, reverse=True)
+                    # The most recent message is the first one
+                    assistant_message = sorted_messages[0]
+
+                    # Update the message with the audio file details
+                    assistant_message.audio = True # Correct the audio flag as the workflow assumes False
                     path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
                     with open(path, "wb") as f:
                         f.write(b"".join(assistant_audio_chunks))
@@ -518,11 +530,15 @@ class SimulationPipeline:
                     self.session.add(assistant_message)
                     self.session.commit()
                     logger.info(f"Saved assistant audio to {path}")
+                else:
+                    logger.error(f"Could not find assistant message for chat {self.chat_id} to attach audio file.")
             
+            # We are done. The workflow has already sent all necessary WebSocket events.
             yield {"type": "complete", "data": "finished"}
             
         except Exception as e:
             logger.exception("Pipeline processing failed")
+            from app.web.simulations import get_sio_instance
             sio_instance = get_sio_instance()
             await sio_instance.emit(
                 "simulation_message_error",
