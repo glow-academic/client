@@ -97,6 +97,40 @@ class ServerAudioStreamTrack(MediaStreamTrack):
             self._ended = True
             self.queue.put_nowait(None)
 
+# Add this helper function to the top of the file
+def force_opus_codec(sdp: str) -> str:
+    """Manipulates the SDP to prioritize the Opus codec."""
+    sdp_lines = sdp.splitlines()
+    opus_payload_type = None
+    
+    # Find the payload type for Opus
+    for line in sdp_lines:
+        if "rtpmap" in line and "opus/48000" in line:
+            try:
+                # Example: a=rtpmap:96 opus/48000/2
+                opus_payload_type = line.split(":")[1].split(" ")[0]
+                break
+            except IndexError:
+                continue
+                
+    if opus_payload_type:
+        logger.info(f"Found Opus codec with payload type: {opus_payload_type}")
+        new_sdp_lines = []
+        for line in sdp_lines:
+            # Rebuild the m=audio line to only include Opus
+            if line.startswith("m=audio"):
+                parts = line.split(" ")
+                # Example becomes: m=audio 9 UDP/TLS/RTP/SAVPF 96
+                new_line = " ".join(parts[:3] + [opus_payload_type])
+                new_sdp_lines.append(new_line)
+                logger.info(f"Rewriting m=audio line to: {new_line}")
+            else:
+                new_sdp_lines.append(line)
+        return "\r\n".join(new_sdp_lines)
+
+    logger.warning("Opus codec not found in offer, cannot force it.")
+    return sdp
+
 def _get_public_ip() -> str:
     """Get public IP address for TURN server configuration."""
     import socket
@@ -628,17 +662,20 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
         
     logger.info(f"Received WebRTC answer from profile {profile_id}, connection {connection_id}")
     try:
-        answer = data.get('answer')
-        if not answer:
+        answer_data = data.get('answer')
+        if not answer_data:
             await sio.emit('webrtc_error', {
                 'error': 'Missing answer in webrtc_answer'
             }, room=profile_id)
             return
 
-        # --- Set the remote description ---
-        answer_obj = RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
+        # 👇 THIS IS THE FIX 👇
+        # Before setting the remote description, force it to use Opus
+        modified_sdp = force_opus_codec(answer_data["sdp"])
+        answer_obj = RTCSessionDescription(sdp=modified_sdp, type=answer_data["type"])
+        # 👆 END OF FIX 👆
         await pc.setRemoteDescription(answer_obj)
-        logger.info(f"Successfully set remote description for profile {profile_id}, connection {connection_id}")
+        logger.info(f"Successfully set MODIFIED remote description for profile {profile_id}")
 
         # --- Process any buffered ICE candidates ---
         buffered_candidates = profile_data.get("ice_candidates_buffer", [])
