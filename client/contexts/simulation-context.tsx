@@ -788,65 +788,34 @@ export function SimulationProvider({
     stopAudioStream(currentChat.id);
   }, [currentChat?.id, stopAudioStream]);
 
-  // Listen for WebRTC events
+  // Listen for audio recording state changes from WebSocket context
   useEffect(() => {
-    const handleWebRtcSetupStarted = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        setIsRecording(true);
-        logInfo(`WebRTC setup started for chat ${event.detail.chatId}`);
-      }
+    const handleWebRtcAudioStarted = () => {
+      setIsRecording(true);
+      toast.success("🎤 Audio recording active - speak now!");
     };
 
-    const handleWebRtcAudioStarted = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        setIsRecording(true);
-        toast.success("🎤 Audio recording active - speak now!");
-        logInfo(`WebRTC audio started for chat ${event.detail.chatId}`);
-      }
-    };
-
-    const handleWebRtcAudioStopped = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        setIsRecording(false);
-        logInfo(`WebRTC audio stopped for chat ${event.detail.chatId}`);
-      }
+    const handleWebRtcAudioStopped = () => {
+      setIsRecording(false);
     };
 
     const handleWebRtcAudioError = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        setIsRecording(false);
-        const errorMessage =
-          event.detail.error instanceof Error
-            ? event.detail.error.message
-            : event.detail.error;
-        toast.error(`Audio error: ${errorMessage}`);
-        logError(
-          `WebRTC audio error for chat ${event.detail.chatId}`,
-          errorMessage
-        );
-      }
+      setIsRecording(false);
+      const errorMessage =
+        event.detail.error instanceof Error
+          ? event.detail.error.message
+          : event.detail.error;
+      toast.error(`Audio error: ${errorMessage}`);
+      logError("WebRTC audio error", errorMessage);
     };
 
-    const handleWebRtcConnectionFailed = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        setIsRecording(false);
-        toast.error("Audio connection failed - please try again");
-        logError(`WebRTC connection failed for chat ${event.detail.chatId}`);
-      }
+    const handleWebRtcConnectionFailed = () => {
+      setIsRecording(false);
+      toast.error("Audio connection failed - please try again");
+      logError("WebRTC connection failed");
     };
 
-    const handleWebRtcAudioTranscribed = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChat?.id) {
-        logInfo(
-          `WebRTC audio transcribed for chat ${event.detail.chatId}: ${event.detail.transcribedText}`
-        );
-      }
-    };
-
-    window.addEventListener(
-      "webrtcSetupStarted",
-      handleWebRtcSetupStarted as EventListener
-    );
+    // Listen to global WebRTC events (not chat-specific anymore)
     window.addEventListener(
       "webrtcAudioStarted",
       handleWebRtcAudioStarted as EventListener
@@ -863,16 +832,8 @@ export function SimulationProvider({
       "webrtcConnectionFailed",
       handleWebRtcConnectionFailed as EventListener
     );
-    window.addEventListener(
-      "webrtcAudioTranscribed",
-      handleWebRtcAudioTranscribed as EventListener
-    );
 
     return () => {
-      window.removeEventListener(
-        "webrtcSetupStarted",
-        handleWebRtcSetupStarted as EventListener
-      );
       window.removeEventListener(
         "webrtcAudioStarted",
         handleWebRtcAudioStarted as EventListener
@@ -889,12 +850,8 @@ export function SimulationProvider({
         "webrtcConnectionFailed",
         handleWebRtcConnectionFailed as EventListener
       );
-      window.removeEventListener(
-        "webrtcAudioTranscribed",
-        handleWebRtcAudioTranscribed as EventListener
-      );
     };
-  }, [currentChat?.id]);
+  }, []);
 
   // Listen for WebSocket loading state changes
   useEffect(() => {

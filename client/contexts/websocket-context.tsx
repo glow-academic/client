@@ -163,7 +163,7 @@ export function WebSocketProvider({
     useState(false);
   const [isStoppingAssistant, setIsStoppingAssistant] = useState(false);
 
-  // WebRTC state
+  // WebRTC state with connection tracking
   const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
   const [webRTCConnectionState, setWebRTCConnectionState] = useState("new");
   const [isWebRTCSupported, setIsWebRTCSupported] = useState(false);
@@ -171,8 +171,15 @@ export function WebSocketProvider({
   const webRTCDataChannels = useRef<Map<string, RTCDataChannel>>(new Map());
   const userMediaStream = useRef<MediaStream | null>(null);
   const audioTrackSenders = useRef<Map<string, RTCRtpSender>>(new Map());
-
   const remoteAudioStreams = useRef<Map<string, HTMLAudioElement>>(new Map());
+
+  // Connection state persistence to prevent React re-render triggers
+  const currentConnectionId = useRef<string | null>(null);
+  const webRTCRetryCount = useRef(0);
+  const maxWebRTCRetries = 3;
+  const webRTCStartDebounceTimer = useRef<NodeJS.Timeout | null>(null);
+  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
+  const lastPongReceived = useRef<number>(Date.now());
 
   // Check if WebRTC is supported
   useEffect(() => {
@@ -761,24 +768,43 @@ export function WebSocketProvider({
         "webrtc_offer",
         async (data: {
           profile_id: string;
+          connection_id: string;
           offer: { sdp: string; type: string };
           ice_config: RTCIceServer[];
         }) => {
-          logInfo("Received WebRTC offer", { profileId: data.profile_id });
+          logInfo("Received WebRTC offer", {
+            profileId: data.profile_id,
+            connectionId: data.connection_id,
+          });
 
           try {
             let pc = webRTCPeerConnection.current;
 
+            // State guard: check if we should handle this offer
+            if (pc && pc.signalingState === "closed") {
+              logInfo("Ignoring offer for closed peer connection");
+              return;
+            }
+
+            // Store the connection ID for tracking
+            currentConnectionId.current = data.connection_id;
+
             if (!pc) {
               logInfo("Creating new PeerConnection for initial setup.");
-              pc = new RTCPeerConnection({ iceServers: data.ice_config });
+              pc = new RTCPeerConnection({
+                iceServers: data.ice_config,
+              });
               webRTCPeerConnection.current = pc;
 
-              // Handle ICE candidates
+              // Handle ICE candidates with connection ID
               pc.onicecandidate = (event) => {
-                if (socket.connected) {
+                if (
+                  socket.connected &&
+                  currentConnectionId.current === data.connection_id
+                ) {
                   socket.emit("webrtc_ice_candidate", {
                     profile_id: profileId,
+                    connection_id: data.connection_id,
                     // When event.candidate is null we send null → end-of-candidates
                     candidate: event.candidate
                       ? {
@@ -791,14 +817,34 @@ export function WebSocketProvider({
                 }
               };
 
-              // Handle connection state changes
+              // Handle connection state changes with retry logic
               pc.onconnectionstatechange = () => {
-                if (webRTCPeerConnection.current) {
+                if (
+                  webRTCPeerConnection.current &&
+                  currentConnectionId.current === data.connection_id
+                ) {
                   const currentState =
                     webRTCPeerConnection.current.connectionState;
                   setWebRTCConnectionState(currentState);
                   setIsWebRTCConnected(currentState === "connected");
                   logInfo(`WebRTC connection state: ${currentState}`);
+
+                  if (
+                    currentState === "failed" &&
+                    webRTCRetryCount.current < maxWebRTCRetries
+                  ) {
+                    logInfo(
+                      `WebRTC connection failed, retrying (${webRTCRetryCount.current + 1}/${maxWebRTCRetries})`
+                    );
+                    webRTCRetryCount.current++;
+                    setTimeout(() => {
+                      if (profileId && socket.connected) {
+                        startWebRTCRef.current();
+                      }
+                    }, 2000); // 2 second delay before retry
+                  } else if (currentState === "connected") {
+                    webRTCRetryCount.current = 0; // Reset retry count on success
+                  }
                 }
               };
 
@@ -948,9 +994,10 @@ export function WebSocketProvider({
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
-            // Send answer
+            // Send answer with connection ID
             socket.emit("webrtc_answer", {
               profile_id: data.profile_id,
+              connection_id: data.connection_id,
               answer: {
                 sdp: answer.sdp,
                 type: answer.type,
@@ -995,16 +1042,24 @@ export function WebSocketProvider({
         // This event now serves as a signal, the ontrack event will handle the stream itself.
       });
 
-      socket.on("webrtc_ready", (data: { profile_id: string }) => {
-        logInfo("WebRTC connection ready", { profileId: data.profile_id });
+      socket.on(
+        "webrtc_ready",
+        (data: { profile_id: string; connection_id: string }) => {
+          logInfo("WebRTC connection ready", {
+            profileId: data.profile_id,
+            connectionId: data.connection_id,
+          });
 
-        // Create data channels for different chat types
-        const pc = webRTCPeerConnection.current;
-        if (pc) {
-          // We'll create channels dynamically when needed
-          toast.success("WebRTC connection established!");
+          // Only handle if this is the current connection
+          if (currentConnectionId.current === data.connection_id) {
+            const pc = webRTCPeerConnection.current;
+            if (pc) {
+              // We'll create channels dynamically when needed
+              toast.success("WebRTC connection established!");
+            }
+          }
         }
-      });
+      );
 
       socket.on(
         "webrtc_connection_state",
@@ -1052,7 +1107,6 @@ export function WebSocketProvider({
 
       const socket = io(getApiBase(), {
         path: "/socket.io",
-        transports: ["websocket", "polling"],
         autoConnect: true,
         forceNew: true, // Force new connection to avoid stale connections
         timeout: 30000, // Increase timeout
@@ -1145,8 +1199,46 @@ export function WebSocketProvider({
         toast.error("Connection lost. Please refresh the page to reconnect.");
       });
 
+      // Handle heartbeat pong responses
+      socket.on("pong", (data: { timestamp: number }) => {
+        lastPongReceived.current = Date.now();
+        logInfo("Received heartbeat pong", { serverTimestamp: data.timestamp });
+      });
+
       // Set up common event handlers that update React Query cache
       setupCommonEventHandlers(socket);
+
+      // Start heartbeat mechanism
+      const startHeartbeat = () => {
+        if (heartbeatInterval.current) {
+          clearInterval(heartbeatInterval.current);
+        }
+
+        heartbeatInterval.current = setInterval(() => {
+          if (socket.connected) {
+            const now = Date.now();
+            // Check if we haven't received a pong in 30 seconds (2x heartbeat interval)
+            if (now - lastPongReceived.current > 30000) {
+              logError("Heartbeat timeout - reconnecting WebSocket");
+              socket.disconnect();
+              socket.connect();
+            } else {
+              socket.emit("ping", { timestamp: now });
+            }
+          }
+        }, 15000); // Send ping every 15 seconds
+      };
+
+      socket.on("connect", () => {
+        startHeartbeat();
+      });
+
+      socket.on("disconnect", () => {
+        if (heartbeatInterval.current) {
+          clearInterval(heartbeatInterval.current);
+          heartbeatInterval.current = null;
+        }
+      });
     };
 
     connectWebSocket();
@@ -1166,6 +1258,16 @@ export function WebSocketProvider({
         socketRef.current.disconnect();
         socketRef.current = null;
         setIsConnected(false);
+      }
+
+      // Clean up timers
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+      if (webRTCStartDebounceTimer.current) {
+        clearTimeout(webRTCStartDebounceTimer.current);
+        webRTCStartDebounceTimer.current = null;
       }
     };
   }, [profileId, setupCommonEventHandlers]);
@@ -1374,22 +1476,37 @@ export function WebSocketProvider({
     [isConnected]
   );
 
-  // WebRTC functions
+  // WebRTC functions with debouncing
   const startWebRTC = useCallback(async () => {
     if (!isWebRTCSupported || !profileId || !socketRef.current) {
       logError("Cannot start WebRTC - not supported or missing requirements");
       return;
     }
 
-    try {
-      logInfo("Starting WebRTC connection", { profileId });
-
-      // Request WebRTC start from server
-      socketRef.current.emit("webrtc_start", { profile_id: profileId });
-    } catch (error) {
-      logError("Error starting WebRTC", error);
+    // Debounce WebRTC start to prevent Fast-Refresh spam
+    if (webRTCStartDebounceTimer.current) {
+      clearTimeout(webRTCStartDebounceTimer.current);
     }
+
+    webRTCStartDebounceTimer.current = setTimeout(() => {
+      if (!socketRef.current || !profileId) return;
+
+      try {
+        logInfo("Starting WebRTC connection", { profileId });
+
+        // Request WebRTC start from server
+        socketRef.current.emit("webrtc_start", { profile_id: profileId });
+      } catch (error) {
+        logError("Error starting WebRTC", error);
+      }
+    }, 500); // 500ms debounce
   }, [isWebRTCSupported, profileId]);
+
+  // Store startWebRTC in a ref to avoid circular dependencies
+  const startWebRTCRef = useRef(startWebRTC);
+  useEffect(() => {
+    startWebRTCRef.current = startWebRTC;
+  }, [startWebRTC]);
 
   const stopWebRTC = useCallback(async () => {
     try {
@@ -1423,15 +1540,9 @@ export function WebSocketProvider({
       isWebRTCSupported && // browser supports it
       profileId // we know who we are
     ) {
-      startWebRTC(); // fire the "webrtc_start" emit
+      startWebRTCRef.current(); // fire the "webrtc_start" emit
     }
-  }, [
-    isConnected,
-    isWebRTCConnected,
-    isWebRTCSupported,
-    profileId,
-    startWebRTC,
-  ]);
+  }, [isConnected, isWebRTCConnected, isWebRTCSupported, profileId]);
 
   useEffect(() => {
     if (!isConnected && isWebRTCConnected) {
@@ -1533,6 +1644,7 @@ export function WebSocketProvider({
           socketRef.current.emit("webrtc_start_audio", {
             chat_id: chatId,
             profile_id: profileId,
+            connection_id: currentConnectionId.current,
           });
           logInfo(`Started and sent audio stream for chat: ${chatId}`);
         }
@@ -1564,6 +1676,7 @@ export function WebSocketProvider({
         socketRef.current.emit("webrtc_stop_audio", {
           chat_id: chatId,
           profile_id: profileId,
+          connection_id: currentConnectionId.current,
         });
       }
     },

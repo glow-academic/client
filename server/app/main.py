@@ -49,10 +49,8 @@ active_connections: dict[str, str] = {}
 # Global store for all active runs (unified tracking)
 active_runs: dict[str, Any] = {}
 
-# WebRTC global storage
-webrtc_peer_connections: Dict[str, RTCPeerConnection] = {}  # profile_id -> peer_connection
-webrtc_data_channels: Dict[str, Dict[str, Any]] = {}  # profile_id -> {channel_label: channel}
-webrtc_ice_candidates_buffer: Dict[str, List[RTCIceCandidate]] = {}  # profile_id -> candidates
+# Profile-based connection management (one socket + one WebRTC per profile)
+profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer}
 
 def _get_public_ip() -> str:
     """Get public IP address for TURN server configuration."""
@@ -156,9 +154,29 @@ def _build_ice_servers() -> List[Dict[str, Any]]:
 
     return ice_servers
 
-async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
-    """Create a new WebRTC peer connection for a profile."""
-    logger.info(f"Creating WebRTC peer connection for profile {profile_id}")
+async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -> None:
+    """Clean up all connections for a profile."""
+    logger.info(f"Cleaning up profile {profile_id} connections - {reason}")
+    
+    if profile_id not in profiles:
+        return
+        
+    profile_data = profiles[profile_id]
+    
+    # Close peer connection
+    if "peer_connection" in profile_data and profile_data["peer_connection"]:
+        try:
+            await profile_data["peer_connection"].close()
+            logger.info(f"Closed peer connection for profile {profile_id}")
+        except Exception as e:
+            logger.error(f"Error closing peer connection for profile {profile_id}: {e}")
+    
+    # Clean up profile data
+    del profiles[profile_id]
+
+async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> RTCPeerConnection:
+    """Create a new WebRTC peer connection for a profile with connection ID."""
+    logger.info(f"Creating WebRTC peer connection for profile {profile_id}, connection {connection_id}")
     
     # Convert our dict format to aiortc's RTCIceServer objects
     ice_servers_list = []
@@ -178,60 +196,75 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
     # Prepare to receive an audio track
     pc.addTransceiver("audio", direction="recvonly")
     
-    # Store the peer connection
-    webrtc_peer_connections[profile_id] = pc
-    webrtc_data_channels[profile_id] = {}
-    webrtc_ice_candidates_buffer[profile_id] = []
+    # Store the peer connection with connection tracking
+    if profile_id not in profiles:
+        profiles[profile_id] = {}
+    
+    profiles[profile_id].update({
+        "peer_connection": pc,
+        "current_connection_id": connection_id,
+        "data_channels": {},
+        "ice_candidates_buffer": []
+    })
 
     # ---- ensure at least one negotiated data channel so the initial SDP has an m-section ----
     signalling_dc = pc.createDataChannel("signalling")  # name arbitrary but consistent
 
     @signalling_dc.on("open")  # type: ignore
     def _() -> None:
-        logger.info(f"Signalling data channel open for profile {profile_id}")
+        logger.info(f"Signalling data channel open for profile {profile_id}, connection {connection_id}")
     # ------------------------------------------------------------------------------------------
     
     # Set up peer connection event handlers
     @pc.on("connectionstatechange")  # type: ignore
     async def on_connectionstatechange() -> None:
-        logger.info(f"WebRTC connection state changed to {pc.connectionState} for profile {profile_id}")
+        logger.info(f"WebRTC connection state changed to {pc.connectionState} for profile {profile_id}, connection {connection_id}")
         
-        await sio.emit('webrtc_connection_state', {
-            'profile_id': profile_id,
-            'state': pc.connectionState
-        }, room=profile_id)
-        
-        if pc.connectionState == "failed" or pc.connectionState == "closed":
-            # Clean up on failure/closure
-            await cleanup_webrtc_connection(profile_id)
+        # Only emit if this is still the current connection
+        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+            await sio.emit('webrtc_connection_state', {
+                'profile_id': profile_id,
+                'connection_id': connection_id,
+                'state': pc.connectionState
+            }, room=profile_id)
+            
+            if pc.connectionState == "failed" or pc.connectionState == "closed":
+                # Clean up on failure/closure
+                await cleanup_profile_connection(profile_id, f"connection state {pc.connectionState}")
     
     @pc.on("iceconnectionstatechange")  # type: ignore
     async def on_iceconnectionstatechange() -> None:
-        logger.info(f"WebRTC ICE connection state changed to {pc.iceConnectionState} for profile {profile_id}")
+        logger.info(f"WebRTC ICE connection state changed to {pc.iceConnectionState} for profile {profile_id}, connection {connection_id}")
         
-        await sio.emit('webrtc_ice_state', {
-            'profile_id': profile_id,
-            'state': pc.iceConnectionState
-        }, room=profile_id)
+        # Only emit if this is still the current connection
+        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+            await sio.emit('webrtc_ice_state', {
+                'profile_id': profile_id,
+                'connection_id': connection_id,
+                'state': pc.iceConnectionState
+            }, room=profile_id)
     
     @pc.on("icecandidate")  # type: ignore
     async def on_icecandidate(candidate: RTCIceCandidate | None) -> None:
-        await sio.emit(
-            "webrtc_ice_candidate",
-            {
-                "profile_id": profile_id,
-                "candidate": {
-                    "candidate": str(candidate),
-                    "sdpMid": candidate.sdpMid,
-                    "sdpMLineIndex": candidate.sdpMLineIndex,
-                } if candidate else None,      # <-- None when gathering is done
-            },
-            room=profile_id,
-        )
+        # Only emit if this is still the current connection
+        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+            await sio.emit(
+                "webrtc_ice_candidate",
+                {
+                    "profile_id": profile_id,
+                    "connection_id": connection_id,
+                    "candidate": {
+                        "candidate": str(candidate),
+                        "sdpMid": candidate.sdpMid,
+                        "sdpMLineIndex": candidate.sdpMLineIndex,
+                    } if candidate else None,      # <-- None when gathering is done
+                },
+                room=profile_id,
+            )
     
     @pc.on("track")
     async def on_track(track: Any) -> None:
-        logger.info(f"Received track: {track.kind} for profile {profile_id}")
+        logger.info(f"Received track: {track.kind} for profile {profile_id}, connection {connection_id}")
         if track.kind == "audio":
             chat_id = getattr(pc, "_last_chat_id", None)
             if chat_id:
@@ -248,32 +281,16 @@ async def create_webrtc_peer_connection(profile_id: str) -> RTCPeerConnection:
 
     @pc.on("datachannel")  # type: ignore
     def on_datachannel(channel: Any) -> None:
-        logger.info(f"Received data channel: {channel.label} for profile {profile_id}")
-        webrtc_data_channels[profile_id][channel.label] = channel
-        
-        @channel.on("message")  # type: ignore
-        def on_message(message: Any) -> None:
-            # Handle incoming WebRTC data channel messages
-            asyncio.create_task(handle_webrtc_data_message(profile_id, channel.label, message))
+        logger.info(f"Received data channel: {channel.label} for profile {profile_id}, connection {connection_id}")
+        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+            profiles[profile_id]["data_channels"][channel.label] = channel
+            
+            @channel.on("message")  # type: ignore
+            def on_message(message: Any) -> None:
+                # Handle incoming WebRTC data channel messages
+                asyncio.create_task(handle_webrtc_data_message(profile_id, channel.label, message))
     
     return pc
-
-async def cleanup_webrtc_connection(profile_id: str) -> None:
-    """Clean up WebRTC connection for a profile."""
-    logger.info(f"Cleaning up WebRTC connection for profile {profile_id}")
-    
-    # Close peer connection
-    if profile_id in webrtc_peer_connections:
-        pc = webrtc_peer_connections[profile_id]
-        await pc.close()
-    
-    # Clean up data channels
-    if profile_id in webrtc_data_channels:
-        del webrtc_data_channels[profile_id]
-    
-    # Clean up ICE candidates buffer
-    if profile_id in webrtc_ice_candidates_buffer:
-        del webrtc_ice_candidates_buffer[profile_id]
 
 async def handle_webrtc_data_message(profile_id: str, channel_label: str, message: Any) -> None:
     """Handle incoming WebRTC data channel messages."""
@@ -394,7 +411,7 @@ register_assistant_events(sio)
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
-    """Handle WebSocket connection"""
+    """Handle WebSocket connection with profile-based socket management"""
     # Extract profile ID from query string for better logging
     query_string = environ.get('QUERY_STRING', '')
     profile_id = None
@@ -404,10 +421,26 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         except IndexError:
             pass
     
-    logger.info(f"Client connected: sid={sid}, profile_id={profile_id}, transport={environ.get('HTTP_UPGRADE', 'polling')}")
+    logger.info(f"Client connecting: sid={sid}, profile_id={profile_id}, transport={environ.get('HTTP_UPGRADE', 'polling')}")
     
-    # Join profile-specific room for WebRTC signaling
+    # Handle one socket per profile policy
     if profile_id:
+        # Check if there's already a socket for this profile
+        if profile_id in profiles and "current_socket" in profiles[profile_id]:
+            old_sid = profiles[profile_id]["current_socket"]
+            if old_sid != sid:
+                logger.info(f"Closing old socket {old_sid} for profile {profile_id}, accepting new socket {sid}")
+                # Disconnect the old socket
+                await sio.disconnect(old_sid)
+                # Clean up the old connection
+                await cleanup_profile_connection(profile_id, "new socket connection")
+        
+        # Initialize or update profile data
+        if profile_id not in profiles:
+            profiles[profile_id] = {}
+        profiles[profile_id]["current_socket"] = sid
+        
+        # Join profile-specific room for WebRTC signaling
         await sio.enter_room(sid, profile_id)
     
     # Send immediate confirmation to client
@@ -417,22 +450,40 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
         'server_time': time.time()
     }, room=sid)
     
+    logger.info(f"Client connected successfully: sid={sid}, profile_id={profile_id}")
     return True
 
 @sio.event  # type: ignore
 async def disconnect(sid: str) -> None:
-    """Handle WebSocket disconnection"""
-    logger.info(f"Client disconnected: {sid}")
+    """Handle WebSocket disconnection with immediate cleanup"""
+    logger.info(f"Client disconnecting: {sid}")
+    
+    # Find and clean up profile for this socket
+    profile_to_cleanup = None
+    for profile_id, profile_data in profiles.items():
+        if profile_data.get("current_socket") == sid:
+            profile_to_cleanup = profile_id
+            break
+    
+    if profile_to_cleanup:
+        await cleanup_profile_connection(profile_to_cleanup, "socket disconnect")
+    
     # Remove from active connections
     for chat_id, connection_sid in list(active_connections.items()):
         if connection_sid == sid:
             del active_connections[chat_id]
             break
 
-# WebRTC-specific Socket.IO events
+# Heartbeat mechanism
+@sio.event  # type: ignore
+async def ping(sid: str, data: Any = None) -> None:
+    """Handle heartbeat ping from client"""
+    await sio.emit('pong', {'timestamp': time.time()}, room=sid)
+
+# WebRTC-specific Socket.IO events with connection ID tracking
 @sio.event  # type: ignore
 async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
-    """Start WebRTC connection for a profile"""
+    """Start WebRTC connection for a profile with connection ID tracking"""
     try:
         profile_id = data.get('profile_id')
         if not profile_id:
@@ -441,10 +492,27 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
             }, room=sid)
             return
         
-        logger.info(f"Starting WebRTC for profile {profile_id}")
+        # Verify this socket owns this profile
+        if profile_id not in profiles or profiles[profile_id].get("current_socket") != sid:
+            await sio.emit('webrtc_error', {
+                'error': 'Socket not authorized for this profile'
+            }, room=sid)
+            return
         
-        # Create peer connection
-        pc = await create_webrtc_peer_connection(profile_id)
+        # Generate new connection ID
+        connection_id = str(uuid.uuid4())
+        logger.info(f"Starting WebRTC for profile {profile_id}, connection {connection_id}")
+        
+        # Clean up any existing peer connection first
+        if "peer_connection" in profiles[profile_id] and profiles[profile_id]["peer_connection"]:
+            try:
+                await profiles[profile_id]["peer_connection"].close()
+                logger.info(f"Closed existing peer connection for profile {profile_id}")
+            except Exception as e:
+                logger.error(f"Error closing existing peer connection: {e}")
+        
+        # Create new peer connection
+        pc = await create_webrtc_peer_connection(profile_id, connection_id)
         
         # Create offer
         offer = await pc.createOffer()
@@ -453,6 +521,7 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
         # Send offer and ICE config to client
         await sio.emit('webrtc_offer', {
             'profile_id': profile_id,
+            'connection_id': connection_id,
             'offer': {
                 'sdp': offer.sdp,
                 'type': offer.type
@@ -460,7 +529,7 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
             'ice_config': _build_ice_servers()
         }, room=sid)
         
-        logger.info(f"Sent WebRTC offer to profile {profile_id}")
+        logger.info(f"Sent WebRTC offer to profile {profile_id}, connection {connection_id}")
         
     except Exception as e:
         logger.error(f"Error starting WebRTC: {e}")
@@ -470,18 +539,35 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
 
 @sio.event  # type: ignore
 async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
-    """Handle WebRTC answer from client."""
+    """Handle WebRTC answer from client with connection ID validation."""
     profile_id = data.get("profile_id")
-    if not profile_id:
-        logger.warning("Received webrtc_answer without profile_id")
+    connection_id = data.get("connection_id")
+    
+    if not profile_id or not connection_id:
+        logger.warning("Received webrtc_answer without profile_id or connection_id")
         return
 
-    pc = webrtc_peer_connections.get(profile_id)
+    # Verify profile and connection ID
+    if profile_id not in profiles:
+        logger.warning(f"Received webrtc_answer for unknown profile: {profile_id}")
+        return
+        
+    profile_data = profiles[profile_id]
+    if profile_data.get("current_connection_id") != connection_id:
+        logger.warning(f"Received webrtc_answer for stale connection {connection_id}, current is {profile_data.get('current_connection_id')}")
+        return
+        
+    pc = profile_data.get("peer_connection")
     if not pc:
         logger.warning(f"Received webrtc_answer for non-existent peer connection for profile_id: {profile_id}")
         return
+    
+    # State guard: check if peer connection is still valid
+    if pc.signalingState == "closed":
+        logger.info(f"Stale signalling for closed PC {connection_id}, dropping")
+        return
         
-    logger.info(f"Received WebRTC answer from profile {profile_id}")
+    logger.info(f"Received WebRTC answer from profile {profile_id}, connection {connection_id}")
     try:
         answer = data.get('answer')
         if not answer:
@@ -493,12 +579,12 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
         # --- Set the remote description ---
         answer_obj = RTCSessionDescription(sdp=answer["sdp"], type=answer["type"])
         await pc.setRemoteDescription(answer_obj)
-        logger.info(f"Successfully set remote description for profile {profile_id}")
+        logger.info(f"Successfully set remote description for profile {profile_id}, connection {connection_id}")
 
         # --- Process any buffered ICE candidates ---
-        buffered_candidates = webrtc_ice_candidates_buffer.pop(profile_id, [])
+        buffered_candidates = profile_data.get("ice_candidates_buffer", [])
         if buffered_candidates:
-            logger.info(f"Processing {len(buffered_candidates)} buffered ICE candidates for profile {profile_id}")
+            logger.info(f"Processing {len(buffered_candidates)} buffered ICE candidates for profile {profile_id}, connection {connection_id}")
             for candidate in buffered_candidates:
                 try:
                     await pc.addIceCandidate(candidate)
@@ -508,9 +594,14 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
                         f"Error adding buffered ICE candidate for profile {profile_id}: {e}",
                         exc_info=True
                     )
+            # Clear the buffer
+            profile_data["ice_candidates_buffer"] = []
         
-        await sio.emit("webrtc_ready", {"profile_id": profile_id}, room=profile_id)
-        logger.info(f"WebRTC handshake complete, ready for profile {profile_id}")
+        await sio.emit("webrtc_ready", {
+            "profile_id": profile_id, 
+            "connection_id": connection_id
+        }, room=profile_id)
+        logger.info(f"WebRTC handshake complete, ready for profile {profile_id}, connection {connection_id}")
 
     except Exception as e:
         logger.error(f"Error handling WebRTC answer: {e}", exc_info=True)
@@ -518,23 +609,39 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
             'error': f'Failed to process answer: {e}'
         }, room=profile_id)
 
-
 @sio.event  # type: ignore
 async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
-    """Handle incoming ICE candidates from the client."""
+    """Handle incoming ICE candidates from the client with connection ID validation."""
     profile_id = data.get("profile_id")
-    if not profile_id:
-        logger.warning("Received webrtc_ice_candidate without profile_id")
+    connection_id = data.get("connection_id")
+    
+    if not profile_id or not connection_id:
+        logger.warning("Received webrtc_ice_candidate without profile_id or connection_id")
         return
 
-    pc = webrtc_peer_connections.get(profile_id)
+    # Verify profile and connection ID
+    if profile_id not in profiles:
+        logger.warning(f"Received ICE candidate for unknown profile: {profile_id}")
+        return
+        
+    profile_data = profiles[profile_id]
+    if profile_data.get("current_connection_id") != connection_id:
+        logger.warning(f"Received ICE candidate for stale connection {connection_id}, current is {profile_data.get('current_connection_id')}")
+        return
+
+    pc = profile_data.get("peer_connection")
     if not pc:
         logger.warning(f"Received ICE candidate for non-existent peer connection: {profile_id}")
         return
 
+    # State guard: check if peer connection is still valid
+    if pc.signalingState == "closed":
+        logger.info(f"Stale signalling for closed PC {connection_id}, dropping")
+        return
+
     candidate_data = data.get("candidate")
     if not candidate_data:
-        logger.info(f"End of ICE candidates signal received for profile {profile_id}")
+        logger.info(f"End of ICE candidates signal received for profile {profile_id}, connection {connection_id}")
         try:
             # An empty candidate signals the end of trickle ICE
             await pc.addIceCandidate(None)
@@ -550,15 +657,17 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
 
         # Buffer candidate if remote description is not yet set
         if not pc.remoteDescription:
-            logger.info(f"Buffering ICE candidate for {profile_id} (remote description not set)")
-            webrtc_ice_candidates_buffer.setdefault(profile_id, []).append(ice_candidate)
+            logger.info(f"Buffering ICE candidate for {profile_id}, connection {connection_id} (remote description not set)")
+            if "ice_candidates_buffer" not in profile_data:
+                profile_data["ice_candidates_buffer"] = []
+            profile_data["ice_candidates_buffer"].append(ice_candidate)
         else:
             await pc.addIceCandidate(ice_candidate)
-            logger.info(f"Successfully added ICE candidate for {profile_id}")
+            logger.info(f"Successfully added ICE candidate for {profile_id}, connection {connection_id}")
 
     except Exception as e:
         logger.error(
-            f"Failed to process ICE candidate for profile {profile_id}: {e}",
+            f"Failed to process ICE candidate for profile {profile_id}, connection {connection_id}: {e}",
             exc_info=True
         )
 
@@ -566,17 +675,37 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
 async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
     """Signal from client that they are starting to send an audio track, and trigger renegotiation."""
     profile_id = data.get("profile_id")
+    connection_id = data.get("connection_id")
     chat_id = data.get("chat_id")
-    if not profile_id or not chat_id:
-        logger.error("Missing profile_id or chat_id for webrtc_start_audio")
+    
+    if not profile_id or not connection_id or not chat_id:
+        logger.error("Missing profile_id, connection_id, or chat_id for webrtc_start_audio")
         return
 
-    logger.info(f"Client {sid} is starting audio for chat {chat_id}, beginning renegotiation.")
+    logger.info(f"Client {sid} is starting audio for chat {chat_id}, connection {connection_id}, beginning renegotiation.")
     
-    pc = webrtc_peer_connections.get(profile_id)
+    # Verify profile and connection ID
+    if profile_id not in profiles:
+        logger.error(f"No profile found for {profile_id} to start audio.")
+        await sio.emit('webrtc_error', {'error': 'Profile not found.'}, room=sid)
+        return
+        
+    profile_data = profiles[profile_id]
+    if profile_data.get("current_connection_id") != connection_id:
+        logger.error(f"Connection ID mismatch for audio start: {connection_id} vs {profile_data.get('current_connection_id')}")
+        await sio.emit('webrtc_error', {'error': 'Connection ID mismatch.'}, room=sid)
+        return
+    
+    pc = profile_data.get("peer_connection")
     if not pc:
         logger.error(f"No peer connection found for profile {profile_id} to start audio.")
         await sio.emit('webrtc_error', {'error': 'Peer connection not found.'}, room=sid)
+        return
+
+    # State guard: check if peer connection is still valid
+    if pc.signalingState == "closed":
+        logger.info(f"Cannot start audio for closed PC {connection_id}")
+        await sio.emit('webrtc_error', {'error': 'Peer connection is closed.'}, room=sid)
         return
 
     # Associate the next track for this profile with this chat_id.
@@ -590,6 +719,7 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
         # Send the new offer to the client
         await sio.emit('webrtc_offer', {
             'profile_id': profile_id,
+            'connection_id': connection_id,
             'offer': {
                 'sdp': offer.sdp,
                 'type': offer.type
@@ -597,18 +727,19 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
             'ice_config': _build_ice_servers() # Resending config might be needed by client
         }, room=sid)
         
-        logger.info(f"Sent renegotiation offer to profile {profile_id} for chat {chat_id}")
+        logger.info(f"Sent renegotiation offer to profile {profile_id}, connection {connection_id} for chat {chat_id}")
 
     except Exception as e:
-        logger.error(f"Error during audio start renegotiation for profile {profile_id}: {e}", exc_info=True)
+        logger.error(f"Error during audio start renegotiation for profile {profile_id}, connection {connection_id}: {e}", exc_info=True)
         await sio.emit('webrtc_error', {'error': f'Failed to renegotiate for audio: {e}'}, room=sid)
 
 @sio.event  # type: ignore
 async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:
     """Signal from client that they are stopping an audio track."""
     profile_id = data.get("profile_id")
+    connection_id = data.get("connection_id")
     chat_id = data.get("chat_id")
-    logger.info(f"Client {sid} is stopping audio for chat {chat_id}")
+    logger.info(f"Client {sid} is stopping audio for chat {chat_id}, connection {connection_id}")
     # Here you would add logic to signal the audio processing task to stop.
     # For now, we'll just log it. A robust implementation would use an asyncio.Event or similar.
 
