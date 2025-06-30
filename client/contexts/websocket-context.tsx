@@ -49,8 +49,12 @@ interface WebSocketContextType {
     message: string,
     assistantAudioEnabled?: boolean
   ) => void;
-  startAudioStream: (chatId: string, assistantAudioEnabled?: boolean) => Promise<void>;
+  startAudioStream: (
+    chatId: string,
+    assistantAudioEnabled?: boolean
+  ) => Promise<void>;
   stopAudioStream: (chatId: string) => void;
+  playRemoteAudio: () => Promise<void>;
 
   // Simulation event emitters
   emitStartSimulation: (data: {
@@ -1683,6 +1687,24 @@ export function WebSocketProvider({
     [profileId]
   );
 
+  const playRemoteAudio = useCallback(async () => {
+    // This function will be called by a user gesture
+    logInfo("Attempting to play remote audio streams due to user interaction.");
+    for (const audio of remoteAudioStreams.current.values()) {
+      if (audio.paused) {
+        try {
+          await audio.play();
+          logInfo("Successfully started audio playback after user gesture.");
+        } catch (error) {
+          logError("Error attempting to play audio after gesture.", error);
+          toast.error(
+            "Could not start audio. Please check browser permissions."
+          );
+        }
+      }
+    }
+  }, []);
+
   const value: WebSocketContextType = {
     isConnected,
     socket: socketRef.current,
@@ -1708,6 +1730,7 @@ export function WebSocketProvider({
     emitStartAssistant,
     emitSendAssistantMessage,
     emitStopAssistant,
+    playRemoteAudio,
   };
 
   return (

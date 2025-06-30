@@ -48,6 +48,7 @@ export default function AttemptMessages({
     isSendingMessage,
     assistantAudioEnabled,
     setAssistantAudioEnabled,
+    playRemoteAudio,
   } = useSimulation();
 
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -108,6 +109,14 @@ export default function AttemptMessages({
   // Handle starter prompt click
   const handleStarterPromptClick = (prompt: string) => {
     sendMessage(prompt);
+  };
+
+  // Handle audio mode toggle with playback
+  const handleAudioModeToggle = () => {
+    // The user's click event starts here
+    setAssistantAudioEnabled(!assistantAudioEnabled);
+    // Directly call the playback function within the event handler
+    playRemoteAudio();
   };
 
   const scrollToBottom = () => {
@@ -189,7 +198,7 @@ export default function AttemptMessages({
               <Button
                 variant={assistantAudioEnabled ? "default" : "outline"}
                 size="sm"
-                onClick={() => setAssistantAudioEnabled(!assistantAudioEnabled)}
+                onClick={handleAudioModeToggle}
                 className="p-2"
               >
                 <AudioWaveform className="h-4 w-4" />

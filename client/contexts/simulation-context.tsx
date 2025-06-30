@@ -115,6 +115,7 @@ interface SimulationContextType {
   stopRecording: () => void;
   isRecording: boolean;
   isWebRTCSupported: boolean;
+  playRemoteAudio: () => Promise<void>;
 
   // Loading states
   isSendingMessage: boolean;
@@ -184,6 +185,7 @@ export function SimulationProvider({
     sendWebRTCMessage,
     startAudioStream,
     stopAudioStream,
+    playRemoteAudio,
   } = useWebSocket();
 
   // Fetch attempt data
@@ -780,7 +782,13 @@ export function SimulationProvider({
 
     setIsRecording(true);
     await startAudioStream(currentChat.id, assistantAudioEnabled);
-  }, [currentChat?.id, isWebRTCSupported, startAudioStream, isRecording, assistantAudioEnabled]);
+  }, [
+    currentChat?.id,
+    isWebRTCSupported,
+    startAudioStream,
+    isRecording,
+    assistantAudioEnabled,
+  ]);
 
   const stopRecording = useCallback(async () => {
     if (!currentChat?.id) return;
@@ -1018,6 +1026,7 @@ export function SimulationProvider({
     stopRecording,
     isRecording,
     isWebRTCSupported,
+    playRemoteAudio,
 
     // Loading states
     isSendingMessage,
