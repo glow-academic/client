@@ -24,10 +24,11 @@ import socketio  # type: ignore
 import torch
 import webrtcvad  # type: ignore
 from agents import gen_trace_id, trace
-from aiortc import MediaStreamTrack
+from aiortc import MediaStreamTrack, RTCPeerConnection
 from app.config import model_manager
 from app.db import get_session
 from app.extensions import AUDIO_FOLDER
+from app.main import ServerAudioStreamTrack
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations)
 from app.services.agents.collection.grade import run_grade_agent
@@ -51,6 +52,12 @@ def get_sio_instance() -> socketio.AsyncServer:
     from app.main import get_socketio_instance
 
     return get_socketio_instance()
+
+
+def get_profiles_and_track_class() -> tuple[dict[str, Any], type[ServerAudioStreamTrack]]:
+    """Get the profiles dict and ServerAudioStreamTrack class from main.py"""
+    from app.main import profiles
+    return profiles, ServerAudioStreamTrack
 
 
 async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
@@ -453,6 +460,25 @@ async def process_simulation_message_websocket(
 
         # Use pipeline for audio modalities, keep existing flow for TEXT_TEXT
         if audio_mode != Modalities.TEXT_TEXT:
+            # Handle audio modalities - need to add server audio track
+            server_audio_track = None
+            
+            if audio_mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
+                # Get the existing peer connection
+                profiles, ServerAudioStreamTrack = get_profiles_and_track_class()
+                
+                if not profile_id or profile_id not in profiles or not profiles[profile_id].get("peer_connection"):
+                    logger.error(f"No active peer connection for profile {profile_id} to send audio.")
+                    return
+
+                pc: RTCPeerConnection = profiles[profile_id]["peer_connection"]
+                
+                # ** THE CRITICAL FIX **
+                # Create a NEW audio track for this response and add it to the connection
+                server_audio_track = ServerAudioStreamTrack()
+                pc.addTrack(server_audio_track)
+                logger.info(f"Added new ServerAudioStreamTrack to PC for chat {chat_id}")
+
             # Use the new audio pipeline
             pipeline = SimulationPipeline(
                 chat_id=uuid.UUID(chat_id),
@@ -463,7 +489,11 @@ async def process_simulation_message_websocket(
 
             with trace(chat.title, trace_id=chat.trace_id, group_id=str(chat.attempt_id)):
                 # Process through pipeline (it handles all WebSocket emissions and database operations)
-                async for result in pipeline.process_and_stream(audio_data=audio_data, profile_id=profile_id):
+                async for result in pipeline.process_and_stream(
+                    audio_data=audio_data, 
+                    profile_id=profile_id,
+                    server_audio_track=server_audio_track  # Pass the track instance
+                ):
                     # Pipeline handles everything, we just need to consume the stream
                     pass
                 

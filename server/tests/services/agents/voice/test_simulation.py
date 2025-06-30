@@ -18,20 +18,6 @@ def mock_session():
     return MagicMock(spec=Session)
 
 
-class TestGet_Profiles:
-    """Tests for get_profiles function."""
-    
-    def test_get_profiles_success(self):
-        """Test successful get_profiles execution."""
-        # TODO: Implement test for get_profiles
-        assert False, "IMPLEMENT: Test for get_profiles"
-    
-    def test_get_profiles_error(self):
-        """Test get_profiles error handling."""
-        # TODO: Implement error test for get_profiles
-        assert False, "IMPLEMENT: Error test for get_profiles"
-
-
 class TestModel_Name:
     """Tests for model_name function."""
     

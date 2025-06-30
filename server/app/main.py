@@ -230,7 +230,7 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     if not profile_data:
         return
 
-    # End server audio track
+    # End server audio track if one exists
     server_audio_track = profile_data.get("server_audio_track")
     if server_audio_track:
         try:
@@ -269,14 +269,7 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     config = RTCConfiguration(iceServers=ice_servers_list)
     pc = RTCPeerConnection(configuration=config)
     
-    # Prepare to receive an audio track from client
-    pc.addTransceiver("audio", direction="recvonly")
-    
-    # Create and add a server-to-client audio track
-    server_audio_track = ServerAudioStreamTrack()
-    pc.addTrack(server_audio_track)
-    
-    # Store the peer connection with connection tracking
+    # Store the peer connection object immediately
     if profile_id not in profiles:
         profiles[profile_id] = {}
     
@@ -284,9 +277,12 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         "peer_connection": pc,
         "current_connection_id": connection_id,
         "data_channels": {},
-        "ice_candidates_buffer": [],
-        "server_audio_track": server_audio_track
+        "ice_candidates_buffer": []
+        # We will add the server_audio_track later when needed
     })
+
+    # MODIFICATION: Change direction to allow sending and receiving audio
+    pc.addTransceiver("audio", direction="sendrecv")
 
     # ---- ensure at least one negotiated data channel so the initial SDP has an m-section ----
     signalling_dc = pc.createDataChannel("signalling")  # name arbitrary but consistent

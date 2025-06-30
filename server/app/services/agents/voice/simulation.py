@@ -28,12 +28,7 @@ from app.utils.audio import Modalities
 logger = logging.getLogger(__name__)
 from sqlmodel import Session, select
 
-
-# Import profiles from main to access server audio tracks
-def get_profiles() -> Dict[str, Dict[str, Any]]:
-    """Get the profiles dict from main.py"""
-    from app.main import profiles
-    return profiles
+# Note: Server audio tracks are now passed directly to avoid global state dependencies
 
 # Kokoro TTS will be loaded through model_manager
 
@@ -475,7 +470,8 @@ class SimulationPipeline:
     async def process_and_stream(
         self, 
         audio_data: bytes | None = None,
-        profile_id: str | None = None
+        profile_id: str | None = None,
+        server_audio_track: Any | None = None  # Add new parameter
     ) -> AsyncGenerator[dict[str, Any], None]:
         """
         Processes audio/text through the pipeline. The workflow now handles all
@@ -497,15 +493,8 @@ class SimulationPipeline:
             # This call starts the SimulationWorkflow in the background
             result = await pipeline.run(audio_input)
             
-            # Get the server audio track from the profile's connection
-            server_audio_track = None
-            if profile_id:
-                profiles_dict = get_profiles()
-                if profile_id in profiles_dict:
-                    server_audio_track = profiles_dict[profile_id].get("server_audio_track")
-
             if not server_audio_track and self.mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
-                logger.warning(f"Could not find server audio track for profile {profile_id}, audio will be saved but not streamed")
+                logger.warning(f"No server_audio_track provided for profile {profile_id}, audio will be saved but not streamed")
 
             # This loop's ONLY job is to process the final audio stream, if one exists.
             # It will correctly ignore the dummy audio from test.wav.
@@ -518,7 +507,7 @@ class SimulationPipeline:
                             audio_chunk = audio_chunk.tobytes()
                         if audio_chunk:
                             assistant_audio_chunks.append(audio_chunk)
-                            # Stream the audio chunk directly to WebRTC if available
+                            # Stream the audio chunk directly to WebRTC using the passed-in track
                             if server_audio_track:
                                 server_audio_track.add_chunk(audio_chunk)
                             # This yield is for any potential future use, like live WebRTC audio playback
