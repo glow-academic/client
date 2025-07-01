@@ -1,7 +1,7 @@
 /**
  * AudioWaveform.tsx
- * Renders a live audio waveform for a given MediaStream using wavesurfer.js.
- * This version uses the RecordPlugin for simultaneous recording and visualization.
+ * Renders a live audio waveform from a provided MediaStream.
+ * This version uses the RecordPlugin to visualize an existing stream.
  * @AshokSaravanan222 & @siladiea
  * 07/01/2025
  */
@@ -13,11 +13,13 @@ import RecordPlugin from "wavesurfer.js/dist/plugins/record.js";
 interface AudioWaveformProps {
   isRecording: boolean;
   isTall: boolean; // Prop to control styling for tall mode
+  stream: MediaStream | null; // Stream to visualize
 }
 
 const AudioWaveform: React.FC<AudioWaveformProps> = ({
   isRecording,
   isTall,
+  stream,
 }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
   // Use a ref to hold the RecordPlugin instance
@@ -35,7 +37,7 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
 
     const wavesurfer = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: "#3b82f6", // Color for the live waveform
+      waveColor: "transparent", // Base is transparent; only live wave is colored
       barWidth: isTall ? 3 : 2,
       barGap: isTall ? 2 : 1,
       barRadius: 2,
@@ -54,12 +56,12 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
 
     if (isRecording) {
       // Start recording and microphone visualization
+      // Note: RecordPlugin will create its own stream for now
+      // TODO: Update to use provided stream when RecordPlugin API supports it
       if (!recordPlugin.isRecording()) {
         recordPlugin
           .startRecording()
-          .catch((err) =>
-            logError("Error starting recording:", err)
-          );
+          .catch((err) => logError("Error starting recording:", err));
       }
     } else {
       // Stop recording and microphone visualization
@@ -67,7 +69,7 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
         recordPlugin.stopRecording();
       }
     }
-  }, [isRecording]);
+  }, [isRecording, stream]); // Depend on both recording state and the stream itself
 
   return (
     <div

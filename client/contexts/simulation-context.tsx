@@ -101,6 +101,7 @@ interface SimulationContextType {
   // Audio state
   assistantAudioEnabled: boolean;
   setAssistantAudioEnabled: (enabled: boolean) => void;
+  userAudioStream: MediaStream | null;
 
   // Connection state
   isConnected: boolean;
@@ -188,6 +189,7 @@ export function SimulationProvider({
     stopAudioStream,
     playRemoteAudio,
     testAndEnableAudio,
+    userAudioStream,
   } = useWebSocket();
 
   // Fetch attempt data
@@ -1014,6 +1016,7 @@ export function SimulationProvider({
     // Audio state
     assistantAudioEnabled,
     setAssistantAudioEnabled,
+    userAudioStream,
 
     // Connection
     isConnected,

@@ -57,6 +57,9 @@ interface WebSocketContextType {
   playRemoteAudio: () => Promise<void>;
   testAndEnableAudio: () => Promise<void>;
 
+  // User audio stream for waveform visualization
+  userAudioStream: MediaStream | null;
+
   // Simulation event emitters
   emitStartSimulation: (data: {
     simulation_id: string;
@@ -191,6 +194,11 @@ export function WebSocketProvider({
 
   // 💡 1. Add a ref to hold the message queues
   const messageQueues = useRef<Map<string, string[]>>(new Map());
+
+  // State to hold the user audio stream for waveform visualization
+  const [userAudioStream, setUserAudioStream] = useState<MediaStream | null>(
+    null
+  );
 
   // Connection state persistence to prevent React re-render triggers
   const currentConnectionId = useRef<string | null>(null);
@@ -1679,6 +1687,7 @@ export function WebSocketProvider({
             },
           });
           userMediaStream.current = stream;
+          setUserAudioStream(stream);
         }
 
         const audioTrack = userMediaStream.current.getAudioTracks()[0];
@@ -1701,6 +1710,7 @@ export function WebSocketProvider({
       } catch (error) {
         logError("Error starting audio stream", error);
         toast.error("Failed to start microphone. Please check permissions.");
+        setUserAudioStream(null);
       }
     },
     [isWebRTCSupported, profileId]
@@ -1719,6 +1729,7 @@ export function WebSocketProvider({
       if (audioTrackSenders.current.size === 0 && userMediaStream.current) {
         userMediaStream.current.getTracks().forEach((track) => track.stop());
         userMediaStream.current = null;
+        setUserAudioStream(null);
         logInfo("All audio streams stopped. Mic released.");
       }
 
@@ -1824,6 +1835,7 @@ export function WebSocketProvider({
     emitStopAssistant,
     playRemoteAudio,
     testAndEnableAudio,
+    userAudioStream,
   };
 
   return (

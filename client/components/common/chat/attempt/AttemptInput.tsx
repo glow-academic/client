@@ -43,6 +43,7 @@ export default function AttemptInput() {
     isSendingMessage,
     isStoppingMessage,
     endChatLoading,
+    userAudioStream,
   } = useSimulation();
 
   const [newMessage, setNewMessage] = useState("");
@@ -203,7 +204,11 @@ export default function AttemptInput() {
 
                 {/* 👇 2. USE THE SIMPLIFIED WAVEFORM COMPONENT */}
                 {isRecording && (
-                  <AudioWaveform isRecording={isRecording} isTall={isTall} />
+                  <AudioWaveform
+                    isRecording={isRecording}
+                    isTall={isTall}
+                    stream={userAudioStream}
+                  />
                 )}
 
                 <div className="flex gap-2 justify-end">
@@ -333,7 +338,11 @@ export default function AttemptInput() {
 
                 {isRecording && (
                   <div className="w-full h-[40px]">
-                    <AudioWaveform isRecording={isRecording} isTall={isTall} />
+                    <AudioWaveform
+                      isRecording={isRecording}
+                      isTall={isTall}
+                      stream={userAudioStream}
+                    />
                   </div>
                 )}
 
