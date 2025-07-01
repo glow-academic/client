@@ -25,6 +25,7 @@ import {
 
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
+import AudioWaveform from "./AudioWaveform";
 
 export default function AttemptInput() {
   const {
@@ -200,12 +201,9 @@ export default function AttemptInput() {
                   />
                 )}
 
+                {/* 👇 2. USE THE SIMPLIFIED WAVEFORM COMPONENT */}
                 {isRecording && (
-                  <div className="w-full h-full flex items-center justify-center bg-muted rounded-md min-h-[80px]">
-                    <p className="text-sm text-muted-foreground">
-                      Audio input is active...
-                    </p>
-                  </div>
+                  <AudioWaveform isRecording={isRecording} isTall={isTall} />
                 )}
 
                 <div className="flex gap-2 justify-end">
@@ -334,10 +332,8 @@ export default function AttemptInput() {
                 )}
 
                 {isRecording && (
-                  <div className="w-full h-full flex items-center justify-center bg-muted rounded-md">
-                    <p className="text-sm text-muted-foreground">
-                      Audio input is active...
-                    </p>
+                  <div className="w-full h-[40px]">
+                    <AudioWaveform isRecording={isRecording} isTall={isTall} />
                   </div>
                 )}
 

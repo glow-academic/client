@@ -156,7 +156,7 @@ class SimulationTTSModel(TTSModel):
 
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
         """Given a text string, produces a stream of audio bytes, in PCM format."""
-        # MODIFIED: Change the behavior for the generate_audio=False case
+        # If we do not generate audio, return nothing
         if not self.generate_audio:
             return
         
@@ -283,6 +283,10 @@ class SimulationWorkflow(VoiceWorkflowBase):
         try:
             # 1. Process and save the user's message
             message_text = transcription.strip() if transcription.strip() else self.original_message
+
+            if not message_text:
+                logger.warning(f"No message text provided for chat {self.chat_id}")
+                return
             
             user_message = SimulationMessages(
                 chat_id=self.chat_id,

@@ -8894,6 +8894,11 @@ wait-on@^8.0.1:
     minimist "^1.2.8"
     rxjs "^7.8.2"
 
+wavesurfer.js@^7.9.9:
+  version "7.9.9"
+  resolved "https://registry.yarnpkg.com/wavesurfer.js/-/wavesurfer.js-7.9.9.tgz#e59ff6de9b922699360a10eafbaa14fd838bd2f3"
+  integrity sha512-8O/zu+RC7yjikxiuhsXzRZ8vvjV+Qq4PUKZBQsLLcq6fqbrSF3Vh99l7fT8zeEjKjDBNH2Qxsxq5mRJIuBmM3Q==
+
 wcwidth@^1.0.1:
   version "1.0.1"
   resolved "https://registry.npmjs.org/wcwidth/-/wcwidth-1.0.1.tgz"

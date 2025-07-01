@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-01T14:35:56.240Z
+Generated on: 2025-07-01T15:23:35.575Z
 
 ## Summary
-- **Total Components**: 94
-- **Tests Created**: 0
+- **Total Components**: 95
+- **Tests Created**: 1
 - **Tests Updated**: 43
 - **Tests Skipped** (already implemented): 51
 
@@ -43,6 +43,7 @@ Generated on: 2025-07-01T14:35:56.240Z
 | AttemptChat | common/chat/attempt/AttemptChat.tsx | AttemptChat.test.tsx | ❌ Needs Implementation |
 | AttemptInput | common/chat/attempt/AttemptInput.tsx | AttemptInput.test.tsx | ❌ Needs Implementation |
 | AttemptMessages | common/chat/attempt/AttemptMessages.tsx | AttemptMessages.test.tsx | ❌ Needs Implementation |
+| AudioWaveform | common/chat/attempt/AudioWaveform.tsx | AudioWaveform.test.tsx | ❌ Needs Implementation |
 | ClassForm | common/class/ClassForm.tsx | ClassForm.test.tsx | ✅ Implemented |
 | Cohort | common/cohort/Cohort.tsx | Cohort.test.tsx | ✅ Implemented |
 | CarouselSection | common/dashboard/CarouselSection.tsx | CarouselSection.test.tsx | ❌ Needs Implementation |
@@ -152,6 +153,7 @@ __tests__/
 │   │   │   ├── AttemptChat.test.tsx
 │   │   │   ├── AttemptInput.test.tsx
 │   │   │   ├── AttemptMessages.test.tsx
+│   │   │   ├── AudioWaveform.test.tsx
 │   ├── class/
 │   │   ├── ClassForm.test.tsx
 │   ├── cohort/
