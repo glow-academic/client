@@ -5,7 +5,6 @@
  * @AshokSaravanan222 & @siladiea
  * 07/01/2025
  */
-import { logError } from "@/utils/logger";
 import React, { useEffect, useRef } from "react";
 import WaveSurfer from "wavesurfer.js";
 import RecordPlugin from "wavesurfer.js/dist/plugins/record.js";
@@ -22,59 +21,46 @@ const AudioWaveform: React.FC<AudioWaveformProps> = ({
   stream,
 }) => {
   const waveformRef = useRef<HTMLDivElement>(null);
-  // Use a ref to hold the RecordPlugin instance
-  const recordPluginRef = useRef<RecordPlugin | null>(null);
 
   useEffect(() => {
-    if (!waveformRef.current) return;
+    // Ensure the component is mounted and a stream is available
+    if (!waveformRef.current || !stream) return;
 
-    // The Record plugin instance is created once and stored in a ref
-    if (!recordPluginRef.current) {
-      recordPluginRef.current = RecordPlugin.create({
-        scrollingWaveform: true, // Make the waveform scroll as you speak
-      });
-    }
+    // Initialize WaveSurfer and the RecordPlugin
+    const recordPlugin = RecordPlugin.create({
+      scrollingWaveform: true,
+    });
 
-    const wavesurfer = WaveSurfer.create({
+    const ws = WaveSurfer.create({
       container: waveformRef.current,
-      waveColor: "transparent", // Base is transparent; only live wave is colored
+      waveColor: "#3B82F6", // A visible color like blue
       barWidth: isTall ? 3 : 2,
       barGap: isTall ? 2 : 1,
       barRadius: 2,
       height: "auto",
-      plugins: [recordPluginRef.current], // Add the record plugin instance
+      plugins: [recordPlugin],
     });
 
-    return () => {
-      wavesurfer.destroy();
-    };
-  }, [isTall]); // Re-initialize if the 'isTall' layout changes
-
-  useEffect(() => {
-    const recordPlugin = recordPluginRef.current;
-    if (!recordPlugin) return;
-
+    // Start or stop the visualization
     if (isRecording) {
-      // Start recording and microphone visualization
-      // Note: RecordPlugin will create its own stream for now
-      // TODO: Update to use provided stream when RecordPlugin API supports it
-      if (!recordPlugin.isRecording()) {
-        recordPlugin
-          .startRecording()
-          .catch((err) => logError("Error starting recording:", err));
-      }
-    } else {
-      // Stop recording and microphone visualization
-      if (recordPlugin.isRecording()) {
-        recordPlugin.stopRecording();
-      }
+      // ✅ Use renderMicStream to only visualize the audio
+      recordPlugin.renderMicStream(stream);
     }
-  }, [isRecording, stream]); // Depend on both recording state and the stream itself
+
+    // Cleanup function to destroy WaveSurfer and stop the mic visualization
+    return () => {
+      // The plugin might not be active if recording was never started
+      if (recordPlugin.isActive()) {
+        // ✅ Use stopMic() as the counterpart to renderMicStream
+        recordPlugin.stopMic();
+      }
+      ws.destroy();
+    };
+  }, [isRecording, stream, isTall]);
 
   return (
     <div
       ref={waveformRef}
-      // Dynamically set container height based on the 'isTall' prop
       className={`w-full transition-all duration-300 ${isTall ? "h-[80px]" : "h-[40px]"}`}
     />
   );
