@@ -21,6 +21,7 @@ from app.db import get_session, init_db
 from app.models import SimulationChats
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
+from app.routes.audio import router as audio_router
 from app.utils.audio import Modalities
 from av import AudioFrame  # type: ignore
 from dotenv import load_dotenv
@@ -994,6 +995,7 @@ fastapi_app.add_middleware(
 # Include routers
 fastapi_app.include_router(documents_router, prefix="/documents")
 fastapi_app.include_router(scenarios_router, prefix="/scenarios")
+fastapi_app.include_router(audio_router, prefix="/audio")
 # Note: Removed rtc_router as we're migrating to WebSocket-based signaling
 
 # mounting the mcp servers - ensure trailing slashes for proper routing

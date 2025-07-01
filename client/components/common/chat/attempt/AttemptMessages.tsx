@@ -14,7 +14,16 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Icons
-import { ArrowDown, AudioWaveform, Captions } from "lucide-react";
+// --- MODIFICATION START: Added new icons for audio playback ---
+import {
+  ArrowDown,
+  AudioWaveform,
+  Captions,
+  Loader2,
+  Play,
+  Pause,
+} from "lucide-react";
+// --- MODIFICATION END ---
 
 // Tooltip
 import {
@@ -29,6 +38,7 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 import { Simulation, SimulationMessage } from "@/types";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { logError } from "@/utils/logger";
 
 interface AttemptMessagesProps {
   simulation: Simulation | null;
@@ -56,6 +66,17 @@ export default function AttemptMessages({
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+
+  // --- MODIFICATION START: State for managing individual audio playback ---
+  const [audioState, setAudioState] = useState<{
+    playingId: string | null;
+    isLoading: boolean;
+  }>({
+    playingId: null,
+    isLoading: false,
+  });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  // --- MODIFICATION END ---
 
   // Use the provided chatId or fall back to currentChat
   const targetChatId = chatId || currentChat?.id;
@@ -94,7 +115,6 @@ export default function AttemptMessages({
       basePrompts.push(`Are you here for ${classData.classCode}?`);
     }
 
-    // Return 3-4 prompts, prioritizing the class-specific one if available
     if (classData?.classCode) {
       return [
         "Hi, how are you?",
@@ -115,7 +135,6 @@ export default function AttemptMessages({
   const handleAudioModeToggle = () => {
     const newAudioMode = !assistantAudioEnabled;
     setAssistantAudioEnabled(newAudioMode);
-    // We only need to get consent when turning audio ON
     if (newAudioMode) {
       testAndEnableAudio();
     }
@@ -129,11 +148,58 @@ export default function AttemptMessages({
       ) as HTMLElement;
       if (viewport) {
         viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
-        // Hide scroll button after scrolling to bottom with a slight delay
         setTimeout(() => setShowScrollButton(false), 300);
       }
     }
   };
+
+  // --- MODIFICATION START: Function to handle playing/pausing audio ---
+  const handlePlayPauseAudio = async (message: SimulationMessage) => {
+    // If clicking the loading button, do nothing.
+    if (audioState.isLoading) return;
+
+    // If clicking the currently playing message, pause it.
+    if (audioState.playingId === message.id && audioRef.current) {
+      audioRef.current.pause();
+      return;
+    }
+
+    // If another audio is playing, stop it before starting the new one.
+    if (audioRef.current) {
+      audioRef.current.pause();
+    }
+
+    setAudioState({ playingId: message.id, isLoading: true });
+
+    try {
+      const audioUrl = `/api/download/audio/${message.id}`;
+      const newAudio = new Audio(audioUrl);
+      audioRef.current = newAudio;
+
+      newAudio.oncanplaythrough = () => {
+         newAudio.play();
+      };
+      
+      newAudio.onplay = () => {
+        setAudioState({ playingId: message.id, isLoading: false });
+      };
+
+      newAudio.onpause = newAudio.onended = () => {
+        setAudioState({ playingId: null, isLoading: false });
+        audioRef.current = null;
+      };
+
+      newAudio.onerror = (e) => {
+        logError("Error playing audio:", e);
+        setAudioState({ playingId: null, isLoading: false });
+        audioRef.current = null;
+      };
+    } catch (error) {
+      logError("Failed to set up audio:", error);
+      setAudioState({ playingId: null, isLoading: false });
+    }
+  };
+  // --- MODIFICATION END ---
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -144,7 +210,7 @@ export default function AttemptMessages({
     return;
   }, [messages.length]);
 
-  // Set up scroll event listener for the ScrollArea with increased threshold
+  // Set up scroll event listener for the ScrollArea
   useEffect(() => {
     const scrollArea = scrollAreaRef.current;
     if (!scrollArea) return;
@@ -156,22 +222,29 @@ export default function AttemptMessages({
 
     const handleScrollEvent = () => {
       const { scrollTop, scrollHeight, clientHeight } = viewport;
-      // Increased threshold from 20 to 100 pixels for less sensitivity
       const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
       const hasScrollableContent = scrollHeight > clientHeight + 10;
       setShowScrollButton(hasScrollableContent && !isNearBottom);
     };
 
-    // Initial check
     handleScrollEvent();
-
-    // Add scroll listener
     viewport.addEventListener("scroll", handleScrollEvent);
 
     return () => {
       viewport.removeEventListener("scroll", handleScrollEvent);
     };
   }, [messages.length]);
+
+  // --- MODIFICATION START: Cleanup audio on component unmount ---
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+  // --- MODIFICATION END ---
 
   if (messagesLoading) {
     return (
@@ -193,7 +266,6 @@ export default function AttemptMessages({
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
       <TooltipProvider>
-        {/* Audio Mode Toggle Button - Top Left */}
         <div className="absolute top-4 left-4 z-10">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -212,7 +284,6 @@ export default function AttemptMessages({
           </Tooltip>
         </div>
 
-        {/* Captions Toggle Button - Top Right (only visible in audio mode) */}
         {assistantAudioEnabled && (
           <div className="absolute top-4 right-4 z-10">
             <Tooltip>
@@ -233,10 +304,8 @@ export default function AttemptMessages({
           </div>
         )}
 
-        {/* Audio Mode UI */}
         {assistantAudioEnabled ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-0 p-8">
-            {/* Pulsating Circle */}
             <div className="relative mb-8">
               <div
                 className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
@@ -250,7 +319,6 @@ export default function AttemptMessages({
               />
             </div>
 
-            {/* Captions Display */}
             {captionsEnabled && latestAssistantMessage && (
               <div className="w-full max-w-4xl">
                 <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
@@ -262,7 +330,6 @@ export default function AttemptMessages({
             )}
           </div>
         ) : (
-          /* Regular Messages UI */
           <>
             <ScrollArea className="flex-1 px-4 min-h-0" ref={scrollAreaRef}>
               <div className="space-y-4 py-4">
@@ -276,7 +343,6 @@ export default function AttemptMessages({
                     ))}
                   </>
                 ) : messages.length === 0 ? (
-                  /* Starter Prompts - shown when no messages */
                   <div className="flex flex-col items-center justify-center h-full min-h-[400px] space-y-6">
                     <div className="text-center space-y-2">
                       <p className="text-sm text-muted-foreground">
@@ -310,7 +376,6 @@ export default function AttemptMessages({
                     )
                     .map((message: SimulationMessage) => (
                       <div key={message.id} className="space-y-3">
-                        {/* User Message */}
                         {message.type === "query" && (
                           <div className="flex justify-end mb-3">
                             <div className="max-w-[80%]">
@@ -321,11 +386,38 @@ export default function AttemptMessages({
                           </div>
                         )}
 
-                        {/* Assistant Response */}
                         {message.type === "response" &&
                           message.content !== "" && (
-                            <div className="flex justify-start mb-3">
-                              <div className="max-w-[80%]">
+                            // --- MODIFICATION START: Flex container for message and play button ---
+                            <div className="flex items-start gap-2 justify-start mb-3">
+                              {/* NOTE: Assumes `message.audio` is a boolean indicating if audio is available. 
+                                  You may need to adjust the `SimulationMessage` type and your data fetching. */}
+                              {message.audio && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="flex-shrink-0 h-9 w-9 mt-1"
+                                      onClick={() => handlePlayPauseAudio(message)}
+                                      disabled={audioState.isLoading && audioState.playingId !== message.id}
+                                    >
+                                      {audioState.isLoading && audioState.playingId === message.id ? (
+                                        <Loader2 className="h-5 w-5 animate-spin" />
+                                      ) : audioState.playingId === message.id ? (
+                                        <Pause className="h-5 w-5" />
+                                      ) : (
+                                        <Play className="h-5 w-5" />
+                                      )}
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Play Audio</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              <div className="max-w-[calc(100%-44px)]">
                                 <div className="bg-muted rounded-lg p-3">
                                   {message.content === "" ? (
                                     <div className="flex items-center">
@@ -340,6 +432,7 @@ export default function AttemptMessages({
                                 </div>
                               </div>
                             </div>
+                            // --- MODIFICATION END ---
                           )}
                       </div>
                     ))
@@ -348,7 +441,6 @@ export default function AttemptMessages({
               </div>
             </ScrollArea>
 
-            {/* Scroll to bottom button with smooth fade transition */}
             <div
               className={`absolute bottom-2 left-1/2 transform -translate-x-1/2 z-20 transition-all duration-300 ease-in-out ${
                 showScrollButton
