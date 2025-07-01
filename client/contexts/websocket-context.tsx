@@ -205,6 +205,43 @@ export function WebSocketProvider({
     );
   }, []);
 
+  // Helper function to create data channel if it doesn't exist
+  const createDataChannelIfNeeded = useCallback(
+    (channelLabel: string): RTCDataChannel | undefined => {
+      const pc = webRTCPeerConnection.current;
+      if (!pc || pc.connectionState !== "connected") {
+        return undefined;
+      }
+
+      let channel = webRTCDataChannels.current.get(channelLabel);
+      if (!channel || channel.readyState === "closed") {
+        // Create new data channel
+        channel = pc.createDataChannel(channelLabel, {
+          ordered: true,
+        });
+
+        channel.onopen = () => {
+          logInfo(`WebRTC data channel opened: ${channelLabel}`);
+        };
+
+        channel.onclose = () => {
+          logInfo(`WebRTC data channel closed: ${channelLabel}`);
+          webRTCDataChannels.current.delete(channelLabel);
+        };
+
+        channel.onerror = (error) => {
+          logError(`WebRTC data channel error for ${channelLabel}`, error);
+        };
+
+        webRTCDataChannels.current.set(channelLabel, channel);
+        logInfo(`Created WebRTC data channel: ${channelLabel}`);
+      }
+
+      return channel;
+    },
+    []
+  );
+
   // Set up section-specific event handlers
   const setupCommonEventHandlers = useCallback(
     (socket: Socket) => {
@@ -1008,8 +1045,14 @@ export function WebSocketProvider({
           if (currentConnectionId.current === data.connection_id) {
             const pc = webRTCPeerConnection.current;
             if (pc) {
-              // We'll create channels dynamically when needed
               toast.success("WebRTC connection established!");
+
+              // --- 💡 START OF FIX ---
+              // Now that WebRTC is ready, create data channels for any rooms we're already in.
+              currentRoomsRef.current.forEach((roomId) => {
+                createDataChannelIfNeeded(`text-${roomId}`);
+              });
+              // --- END OF FIX ---
             }
           }
         }
@@ -1063,7 +1106,7 @@ export function WebSocketProvider({
         }
       );
     },
-    [queryClient, profileId]
+    [queryClient, profileId, createDataChannelIfNeeded]
   );
 
   // Initialize WebSocket connection when profileId is available
@@ -1258,43 +1301,6 @@ export function WebSocketProvider({
     };
   }, [profileId, setupCommonEventHandlers]);
 
-  // Helper function to create data channel if it doesn't exist
-  const createDataChannelIfNeeded = useCallback(
-    (channelLabel: string): RTCDataChannel | undefined => {
-      const pc = webRTCPeerConnection.current;
-      if (!pc || pc.connectionState !== "connected") {
-        return undefined;
-      }
-
-      let channel = webRTCDataChannels.current.get(channelLabel);
-      if (!channel || channel.readyState === "closed") {
-        // Create new data channel
-        channel = pc.createDataChannel(channelLabel, {
-          ordered: true,
-        });
-
-        channel.onopen = () => {
-          logInfo(`WebRTC data channel opened: ${channelLabel}`);
-        };
-
-        channel.onclose = () => {
-          logInfo(`WebRTC data channel closed: ${channelLabel}`);
-          webRTCDataChannels.current.delete(channelLabel);
-        };
-
-        channel.onerror = (error) => {
-          logError(`WebRTC data channel error for ${channelLabel}`, error);
-        };
-
-        webRTCDataChannels.current.set(channelLabel, channel);
-        logInfo(`Created WebRTC data channel: ${channelLabel}`);
-      }
-
-      return channel;
-    },
-    []
-  );
-
   // Room management
   const joinRoom = useCallback(
     (roomId: string, roomType: "assistant" | "simulation") => {
@@ -1313,10 +1319,15 @@ export function WebSocketProvider({
       });
       currentRoomsRef.current.add(roomId);
 
-      // Create a data channel for this room if it doesn't exist
-      createDataChannelIfNeeded(`text-${roomId}`);
+      // --- 💡 START OF FIX ---
+      // Proactively create a data channel for this room if the WebRTC connection is ready.
+      // This gives the channel time to open before the first message is sent.
+      if (isWebRTCConnected) {
+        createDataChannelIfNeeded(`text-${roomId}`);
+      }
+      // --- END OF FIX ---
     },
-    [isConnected, createDataChannelIfNeeded]
+    [isConnected, isWebRTCConnected, createDataChannelIfNeeded] // Add isWebRTCConnected and createDataChannelIfNeeded to dependencies
   );
 
   const leaveRoom = useCallback(

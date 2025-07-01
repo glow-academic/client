@@ -101,6 +101,21 @@ export default function AttemptMessages({
     enabled: !!targetChatId,
   });
 
+  // Get the latest assistant message for audio mode
+  const latestAssistantMessage = useMemo(() => {
+    return messages
+      .filter((msg: SimulationMessage) => msg.type === "response")
+      .sort(
+        (a: SimulationMessage, b: SimulationMessage) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+  }, [messages]);
+
+  // Check if assistant is currently speaking (streaming)
+  const isAssistantSpeaking = useMemo(() => {
+    return latestAssistantMessage && !latestAssistantMessage.completed;
+  }, [latestAssistantMessage]);
+
   const starterPrompts = useMemo(() => {
     const basePrompts = [
       "Hi, how are you?",
@@ -322,7 +337,28 @@ export default function AttemptMessages({
 
         {assistantAudioEnabled ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-0 p-8">
-            {/* ... (Existing Audio Mode UI) ... */}
+            <div className="relative mb-8">
+              <div
+                className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
+                  isAssistantSpeaking ? "animate-pulse" : ""
+                }`}
+                style={{
+                  background: isAssistantSpeaking
+                    ? "linear-gradient(135deg, #60a5fa, #a855f7, #ec4899)"
+                    : "linear-gradient(135deg, #94a3b8, #64748b, #475569)",
+                }}
+              />
+            </div>
+
+            {captionsEnabled && latestAssistantMessage && (
+              <div className="w-full max-w-4xl">
+                <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
+                  <div className="text-lg leading-relaxed">
+                    <Markdown>{latestAssistantMessage.content}</Markdown>
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
           </div>
         ) : (
           <>
