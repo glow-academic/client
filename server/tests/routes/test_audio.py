@@ -38,3 +38,17 @@ class TestGet_Audio:
         # TODO: Implement error test for get_audio
         assert False, "IMPLEMENT: Error test for get_audio"
 
+
+class TestDelete_Audio:
+    """Tests for delete_audio endpoint."""
+    
+    def test_delete_audio_success(self, client):
+        """Test successful delete_audio request."""
+        # TODO: Implement test for delete_audio
+        assert False, "IMPLEMENT: Test for delete_audio"
+    
+    def test_delete_audio_error(self, client):
+        """Test delete_audio error handling."""
+        # TODO: Implement error test for delete_audio
+        assert False, "IMPLEMENT: Error test for delete_audio"
+

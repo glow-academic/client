@@ -52,6 +52,7 @@ CREATE TABLE simulation_chats (
 CREATE TABLE simulation_messages (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
   chat_id    UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
   content    TEXT        NOT NULL,
   audio     BOOLEAN     NOT NULL           DEFAULT FALSE,

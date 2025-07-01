@@ -391,6 +391,7 @@ export const simulationChats = pgTable("simulation_chats", {
 export const simulationMessages = pgTable("simulation_messages", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	chatId: uuid("chat_id").notNull(),
 	content: text().notNull(),
 	audio: boolean().default(false).notNull(),

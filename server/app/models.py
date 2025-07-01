@@ -553,6 +553,7 @@ class SimulationMessages(_Base, table=True):
     audio: bool = Field(sa_column=Column('audio', Boolean, server_default=text('false')))
     type: str = Field(sa_column=Column('type', Enum('query', 'response', name='simulation_message_type')))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     file_path: Optional[str] = Field(default=None, sa_column=Column('file_path', Text))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')

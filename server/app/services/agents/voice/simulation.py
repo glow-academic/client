@@ -158,37 +158,7 @@ class SimulationTTSModel(TTSModel):
         """Given a text string, produces a stream of audio bytes, in PCM format."""
         # MODIFIED: Change the behavior for the generate_audio=False case
         if not self.generate_audio:
-                return
-                # # In text-only mode, we stream a dummy .wav file to keep the pipeline
-                # # alive, but we will filter this output later so it's never sent to the client.
-                # dummy_audio_path = os.path.join(AUDIO_FOLDER, "test.wav")
-
-                # if not os.path.exists(dummy_audio_path):
-                #     logger.error(
-                #         f"Dummy audio file not found at {dummy_audio_path}. The voice pipeline might fail."
-                #     )
-                #     # Fallback to the previous 'always-on' method if the file is missing
-                #     try:
-                #         while True:
-                #             yield b""
-                #             await asyncio.sleep(0.2)
-                #     except asyncio.CancelledError:
-                #         return
-                
-                # try:
-                #     logger.info(f"Streaming dummy audio from '{dummy_audio_path}' to keep pipeline alive.")
-                #     chunk_size = 1024  # Read in 1KB chunks
-                #     with open(dummy_audio_path, "rb") as f:
-                #         while True:
-                #             chunk = f.read(chunk_size)
-                #             if not chunk:
-                #                 break  # End of file
-                #             yield chunk
-                #     logger.info("Finished streaming dummy audio file.")
-                # except Exception as e:
-                #     logger.error(f"Error streaming dummy audio file: {e}")
-                # finally:
-                #     return
+            return
         
         try:
             if self.model_id is None:
@@ -296,12 +266,13 @@ class SimulationTTSModel(TTSModel):
 
 
 class SimulationWorkflow(VoiceWorkflowBase):
-    def __init__(self, chat_id: uuid.UUID, session: Session, original_message: str = "", *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, mode: Modalities, original_message: str = "", *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.chat_id = chat_id
         self.session = session
         self.original_message = original_message
-    
+        self.mode = mode
+
     async def run(self, transcription: str) -> AsyncIterator[str]:
         """
         Run the voice workflow. Receives transcription and yields text for TTS.
@@ -318,7 +289,7 @@ class SimulationWorkflow(VoiceWorkflowBase):
                 type="query",
                 content=message_text,
                 completed=True,
-                audio=bool(transcription.strip())
+                audio=self.mode == Modalities.AUDIO_AUDIO or self.mode == Modalities.AUDIO_TEXT
             )
             self.session.add(user_message)
             self.session.commit()
@@ -332,8 +303,7 @@ class SimulationWorkflow(VoiceWorkflowBase):
                 type="response",
                 content="",
                 completed=False,
-                # The response audio flag depends on the pipeline's mode, not this workflow
-                audio=False 
+                audio=self.mode == Modalities.AUDIO_AUDIO or self.mode == Modalities.TEXT_AUDIO
             )
             self.session.add(assistant_message)
             self.session.commit()
@@ -443,7 +413,7 @@ class SimulationPipeline:
             )
             config = VoicePipelineConfig(tts_settings=tts_settings, stt_settings=stt_settings)
             
-        workflow = SimulationWorkflow(self.chat_id, self.session, self.original_message)
+        workflow = SimulationWorkflow(self.chat_id, self.session, self.mode, self.original_message)
         
         if self.mode == Modalities.AUDIO_AUDIO:
             return VoicePipeline(
