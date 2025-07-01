@@ -5,12 +5,13 @@
  * 06/27/2025
  */
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 // UI Components
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ImperativePanelGroupHandle } from "react-resizable-panels";
 
 import {
   ResizableHandle,
@@ -65,15 +66,39 @@ export default function AttemptChat() {
     null
   );
 
+  // Create a ref for the panel group
+  const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
+
+  // Define the handler function to change the layout
+  const handleToggleInputSize = (isExpanding: boolean) => {
+    const panelGroup = inputPanelGroupRef.current;
+    if (panelGroup) {
+      // Numbers correspond to the percentages of the panels in the group.
+      // [Upper Panel, Lower Panel]
+      if (isExpanding) {
+        panelGroup.setLayout([60, 40]); // Expands input to its 40% max size
+      } else {
+        panelGroup.setLayout([90, 10]); // Collapses input to its 10% min size
+      }
+    }
+  };
+
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
     if (!selectedChatId || !simulationContext?.chats) return null;
-    return simulationContext?.chats.find((chat: SimulationChat) => chat.id === selectedChatId);
+    return simulationContext?.chats.find(
+      (chat: SimulationChat) => chat.id === selectedChatId
+    );
   }, [selectedChatId, simulationContext?.chats]);
 
   // Auto-select first completed chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
-    if (simulationContext?.showResults && simulationContext?.chats && simulationContext?.chats.length > 0 && !selectedChatId) {
+    if (
+      simulationContext?.showResults &&
+      simulationContext?.chats &&
+      simulationContext?.chats.length > 0 &&
+      !selectedChatId
+    ) {
       const completedChats = simulationContext?.chats.filter(
         (chat: SimulationChat) => chat.completed
       );
@@ -86,12 +111,17 @@ export default function AttemptChat() {
         }
       }
     }
-  }, [simulationContext?.showResults, simulationContext?.chats, selectedChatId]);
+  }, [
+    simulationContext?.showResults,
+    simulationContext?.chats,
+    selectedChatId,
+  ]);
 
   // Set default selected document
   useEffect(() => {
     if (
-      simulationContext?.scenarioDocuments && simulationContext?.scenarioDocuments.length > 0 &&
+      simulationContext?.scenarioDocuments &&
+      simulationContext?.scenarioDocuments.length > 0 &&
       !selectedDocumentId &&
       simulationContext?.scenarioDocuments[0]
     ) {
@@ -137,7 +167,9 @@ export default function AttemptChat() {
           {/* Main Results Area */}
           <ResizablePanel
             defaultSize={
-              showDocuments && simulationContext?.scenarioDocuments.length > 0 ? 70 : 100
+              showDocuments && simulationContext?.scenarioDocuments.length > 0
+                ? 70
+                : 100
             }
           >
             <Card className="h-full flex flex-col py-4">
@@ -149,7 +181,8 @@ export default function AttemptChat() {
                       {/* Show scenario information */}
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {simulationContext?.scenario?.description || "Session Results"}
+                          {simulationContext?.scenario?.description ||
+                            "Session Results"}
                         </span>
                       </div>
                     </div>
@@ -179,33 +212,34 @@ export default function AttemptChat() {
                       </div>
                       <div className="flex items-center gap-2">
                         {/* Documents Toggle */}
-                        {simulationContext?.scenarioDocuments && simulationContext?.scenarioDocuments.length > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant={
-                                    showDocuments ? "default" : "outline"
-                                  }
-                                  size="sm"
-                                  onClick={() =>
-                                    setShowDocuments(!showDocuments)
-                                  }
-                                  className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
-                                >
-                                  <FileText className="h-4 w-4" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>
-                                  {showDocuments
-                                    ? "Hide Documents"
-                                    : "Show Documents"}
-                                </p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
+                        {simulationContext?.scenarioDocuments &&
+                          simulationContext?.scenarioDocuments.length > 0 && (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant={
+                                      showDocuments ? "default" : "outline"
+                                    }
+                                    size="sm"
+                                    onClick={() =>
+                                      setShowDocuments(!showDocuments)
+                                    }
+                                    className={`p-2 ${showDocuments ? "bg-primary text-primary-foreground" : ""}`}
+                                  >
+                                    <FileText className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>
+                                    {showDocuments
+                                      ? "Hide Documents"
+                                      : "Show Documents"}
+                                  </p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
 
                         <TooltipProvider>
                           <Tooltip>
@@ -224,7 +258,8 @@ export default function AttemptChat() {
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
                                     : simulationContext?.aggregatedResults
-                                      ? simulationContext?.aggregatedResults.overallPassed
+                                      ? simulationContext?.aggregatedResults
+                                          .overallPassed
                                         ? "bg-green-100 dark:bg-green-900/30"
                                         : "bg-red-100 dark:bg-red-900/30"
                                       : "bg-muted"
@@ -246,8 +281,12 @@ export default function AttemptChat() {
                                             rubric.chatId === selectedChat.id
                                         )?.timeTaken ?? 0
                                       )
-                                    : simulationContext?.aggregatedResults?.totalTime !== undefined
-                                      ? formatTime(simulationContext?.aggregatedResults.totalTime)
+                                    : simulationContext?.aggregatedResults
+                                          ?.totalTime !== undefined
+                                      ? formatTime(
+                                          simulationContext?.aggregatedResults
+                                            .totalTime
+                                        )
                                       : "No time limit"}
                                 </span>
                               </div>
@@ -284,11 +323,21 @@ export default function AttemptChat() {
                             ) : simulationContext?.aggregatedResults ? (
                               <TooltipContent>
                                 <p>
-                                  {simulationContext?.aggregatedResults.overallPassed
+                                  {simulationContext?.aggregatedResults
+                                    .overallPassed
                                     ? "Passed"
                                     : "Failed"}
-                                  ({simulationContext?.aggregatedResults.passedChats}/
-                                  {simulationContext?.aggregatedResults.totalChats} chats passed)
+                                  (
+                                  {
+                                    simulationContext?.aggregatedResults
+                                      .passedChats
+                                  }
+                                  /
+                                  {
+                                    simulationContext?.aggregatedResults
+                                      .totalChats
+                                  }{" "}
+                                  chats passed)
                                 </p>
                               </TooltipContent>
                             ) : null}
@@ -328,7 +377,9 @@ export default function AttemptChat() {
                   <ScrollArea className="flex-1 px-4 min-h-0">
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
-                      {showGrades && selectedChat && simulationContext?.simulation?.rubricId ? (
+                      {showGrades &&
+                      selectedChat &&
+                      simulationContext?.simulation?.rubricId ? (
                         <div className="space-y-4 py-4">
                           <TableRubric
                             rubricId={simulationContext?.simulation?.rubricId}
@@ -338,9 +389,7 @@ export default function AttemptChat() {
                       ) : selectedChat ? (
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
-                          <AttemptMessages
-                            chatId={selectedChat.id}
-                          />
+                          <AttemptMessages chatId={selectedChat.id} />
                         </div>
                       ) : (
                         /* Fallback content when no chat is selected */
@@ -402,11 +451,19 @@ export default function AttemptChat() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel
-          defaultSize={showDocuments && simulationContext?.scenarioDocuments.length > 0 ? 70 : 100}
+          defaultSize={
+            showDocuments && simulationContext?.scenarioDocuments.length > 0
+              ? 70
+              : 100
+          }
         >
           <Card className="h-full flex flex-col py-4">
             <TooltipProvider>
-              <ResizablePanelGroup direction="vertical" className="h-full">
+              <ResizablePanelGroup
+                ref={inputPanelGroupRef}
+                direction="vertical"
+                className="h-full"
+              >
                 <ResizablePanel defaultSize={88} minSize={60}>
                   <div className="h-full flex flex-col">
                     {/* Timer and Controls Header */}
@@ -415,7 +472,8 @@ export default function AttemptChat() {
                         <div className="flex items-center gap-4">
                           <div className="flex items-start gap-2">
                             <span className="font-medium">
-                              {simulationContext?.scenario?.description || simulationContext?.currentChat?.title}
+                              {simulationContext?.scenario?.description ||
+                                simulationContext?.currentChat?.title}
                             </span>
                           </div>
                         </div>
@@ -451,13 +509,15 @@ export default function AttemptChat() {
                                         (chat: SimulationChat) => chat.completed
                                       ).length
                                     }{" "}
-                                    of {simulationContext?.expectedChatCount} chats completed
+                                    of {simulationContext?.expectedChatCount}{" "}
+                                    chats completed
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
                             )}
 
-                            {simulationContext?.scenarioDocuments.length > 0 && (
+                            {simulationContext?.scenarioDocuments.length >
+                              0 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -491,7 +551,8 @@ export default function AttemptChat() {
                                   className={`flex items-center gap-2 px-3 py-1 rounded-full ${
                                     simulationContext?.currentChat?.completed &&
                                     simulationContext?.currentDynamicRubric
-                                      ? simulationContext?.currentDynamicRubric.passed
+                                      ? simulationContext?.currentDynamicRubric
+                                          .passed
                                         ? "bg-green-100 dark:bg-green-900/30"
                                         : "bg-red-100 dark:bg-red-900/30"
                                       : "bg-muted"
@@ -504,25 +565,39 @@ export default function AttemptChat() {
                                   >
                                     {simulationContext?.simulation?.timeLimit &&
                                     simulationContext?.timer.remaining !== null
-                                      ? formatTime(simulationContext?.timer.remaining)
-                                      : formatTime(simulationContext?.timer.elapsed)}
+                                      ? formatTime(
+                                          simulationContext?.timer.remaining
+                                        )
+                                      : formatTime(
+                                          simulationContext?.timer.elapsed
+                                        )}
                                   </span>
-                                  {simulationContext?.simulation?.timeLimit && simulationContext?.timer.expired && (
-                                    <span className="text-xs text-red-500 ml-1">
-                                      (Expired)
-                                    </span>
-                                  )}
+                                  {simulationContext?.simulation?.timeLimit &&
+                                    simulationContext?.timer.expired && (
+                                      <span className="text-xs text-red-500 ml-1">
+                                        (Expired)
+                                      </span>
+                                    )}
                                 </div>
                               </TooltipTrigger>
                               {simulationContext?.currentChat?.completed &&
                                 simulationContext?.currentDynamicRubric && (
                                   <TooltipContent>
                                     <p>
-                                      {simulationContext?.currentDynamicRubric.passed
+                                      {simulationContext?.currentDynamicRubric
+                                        .passed
                                         ? "Passed"
                                         : "Failed"}
-                                      ({simulationContext?.currentDynamicRubric.score}/
-                                      {simulationContext?.currentDynamicRubric.totalPossiblePoints}
+                                      (
+                                      {
+                                        simulationContext?.currentDynamicRubric
+                                          .score
+                                      }
+                                      /
+                                      {
+                                        simulationContext?.currentDynamicRubric
+                                          .totalPossiblePoints
+                                      }
                                       )
                                     </p>
                                   </TooltipContent>
@@ -534,14 +609,14 @@ export default function AttemptChat() {
                     </div>
 
                     {/* Messages Area */}
-                    <AttemptMessages/>
+                    <AttemptMessages />
                   </div>
                 </ResizablePanel>
 
                 <ResizableHandle />
                 {/* Input Area */}
                 <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
-                  <AttemptInput />
+                  <AttemptInput onToggleSketch={handleToggleInputSize} />
                 </ResizablePanel>
               </ResizablePanelGroup>
             </TooltipProvider>

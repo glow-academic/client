@@ -28,7 +28,11 @@ import {
 import { useSimulation } from "@/contexts/simulation-context";
 import AudioWaveform from "./AudioWaveform";
 
-export default function AttemptInput() {
+export default function AttemptInput({
+  onToggleSketch,
+}: {
+  onToggleSketch: (isExpanding: boolean) => void;
+}) {
   const simulationContext = useSimulation();
 
   const [newMessage, setNewMessage] = useState("");
@@ -39,11 +43,19 @@ export default function AttemptInput() {
   const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
 
   // --- Handlers ---
-  const handleToggleTall = () => setIsTall(!isTall);
-  const handleSendMessage = (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleSendMessage = (
+    e:
+      | React.FormEvent<HTMLFormElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
-    if (!messageToSend || !simulationContext?.currentChat || simulationContext?.isSendingMessage) return;
+    if (
+      !messageToSend ||
+      !simulationContext?.currentChat ||
+      simulationContext?.isSendingMessage
+    )
+      return;
     setNewMessage("");
     simulationContext?.sendMessage(messageToSend);
   };
@@ -62,8 +74,13 @@ export default function AttemptInput() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         !simulationContext?.currentChat?.completed &&
-        (simulationContext?.simulation?.timeLimit ? simulationContext?.isActive : true) &&
-        !e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1 &&
+        (simulationContext?.simulation?.timeLimit
+          ? simulationContext?.isActive
+          : true) &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        e.key.length === 1 &&
         document.activeElement?.tagName !== "INPUT" &&
         document.activeElement?.tagName !== "TEXTAREA" &&
         textareaRef.current
@@ -109,27 +126,46 @@ export default function AttemptInput() {
             <motion.div
               key="sketch-canvas-area"
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="relative w-full flex-1 mb-3"
             >
-              <ReactSketchCanvas ref={sketchCanvasRef} strokeWidth={4} strokeColor="black" className="border rounded-md" />
+              <ReactSketchCanvas
+                ref={sketchCanvasRef}
+                strokeWidth={4}
+                strokeColor="black"
+                className="border rounded-md"
+              />
               <div className="absolute top-2 right-2 flex flex-col gap-2">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" onClick={handleUndo} className="h-8 w-8 bg-white/80 backdrop-blur-sm">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={handleUndo}
+                      className="h-8 w-8 bg-white/80 backdrop-blur-sm"
+                    >
                       <Undo2 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent><p>Undo</p></TooltipContent>
+                  <TooltipContent>
+                    <p>Undo</p>
+                  </TooltipContent>
                 </Tooltip>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size="icon" variant="outline" onClick={handleClear} className="h-8 w-8 bg-white/80 backdrop-blur-sm">
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={handleClear}
+                      className="h-8 w-8 bg-white/80 backdrop-blur-sm"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent><p>Clear</p></TooltipContent>
+                  <TooltipContent>
+                    <p>Clear</p>
+                  </TooltipContent>
                 </Tooltip>
               </div>
             </motion.div>
@@ -140,16 +176,27 @@ export default function AttemptInput() {
         <div className="w-full flex items-center gap-2 shrink-0">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button type="button" variant={isTall ? "default" : "outline"} onClick={handleToggleTall} className="min-h-[40px] h-[40px] px-3">
+              <Button
+                type="button"
+                variant={isTall ? "default" : "outline"}
+                onClick={() => onToggleSketch(!isTall)}
+                className="min-h-[40px] h-[40px] px-3"
+              >
                 <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent><p>{isTall ? "Close Sketch" : "Open Sketch"}</p></TooltipContent>
+            <TooltipContent>
+              <p>{isTall ? "Close Sketch" : "Open Sketch"}</p>
+            </TooltipContent>
           </Tooltip>
 
           <div className="flex-1">
             {simulationContext?.isRecording ? (
-              <AudioWaveform isRecording={false} isTall={false} stream={simulationContext.userAudioStream} />
+              <AudioWaveform
+                isRecording={false}
+                isTall={false}
+                stream={simulationContext.userAudioStream}
+              />
             ) : (
               <Textarea
                 ref={textareaRef}
@@ -168,34 +215,88 @@ export default function AttemptInput() {
           <div className="flex gap-2">
             <AnimatePresence mode="popLayout">
               {!hasTextMessage && !simulationContext?.isRecording && (
-                <motion.div layout key="mic-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                <motion.div
+                  layout
+                  key="mic-btn-short"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button type="button" variant="outline" onClick={handleStartRecording} className="min-h-[40px] h-[40px] px-3"><Mic className="h-4 w-4" /></Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleStartRecording}
+                        className="min-h-[40px] h-[40px] px-3"
+                      >
+                        <Mic className="h-4 w-4" />
+                      </Button>
                     </TooltipTrigger>
-                    <TooltipContent><p>Start audio</p></TooltipContent>
+                    <TooltipContent>
+                      <p>Start audio</p>
+                    </TooltipContent>
                   </Tooltip>
                 </motion.div>
               )}
               {hasTextMessage && !simulationContext?.isRecording && (
-                <motion.div layout key="send-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                  <Button type="submit" className="min-h-[40px] h-[40px] px-3" variant={simulationContext?.isSendingMessage ? 'destructive' : 'default'} onClick={simulationContext?.isSendingMessage ? handleStopMessage : undefined}>
-                    {simulationContext?.isSendingMessage ? <Square className="h-4 w-4" /> : <Send className="h-4 w-4" />}
+                <motion.div
+                  layout
+                  key="send-btn-short"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Button
+                    type="submit"
+                    className="min-h-[40px] h-[40px] px-3"
+                    variant={
+                      simulationContext?.isSendingMessage
+                        ? "destructive"
+                        : "default"
+                    }
+                    onClick={
+                      simulationContext?.isSendingMessage
+                        ? handleStopMessage
+                        : undefined
+                    }
+                  >
+                    {simulationContext?.isSendingMessage ? (
+                      <Square className="h-4 w-4" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </Button>
                 </motion.div>
               )}
               {simulationContext?.isRecording && (
-                <motion.div layout key="stop-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                  <Button type="button" variant="destructive" onClick={handleStopRecording} className="min-h-[40px] h-[40px] px-3"><MicOff className="h-4 w-4" /></Button>
+                <motion.div
+                  layout
+                  key="stop-btn-short"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                >
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={handleStopRecording}
+                    className="min-h-[40px] h-[40px] px-3"
+                  >
+                    <MicOff className="h-4 w-4" />
+                  </Button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
 
-        {simulationContext?.simulation?.timeLimit && !simulationContext?.isActive && (
-          <p className="text-sm text-muted-foreground text-center pt-2">Time's up! The session has ended.</p>
-        )}
+        {simulationContext?.simulation?.timeLimit &&
+          !simulationContext?.isActive && (
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              Time's up! The session has ended.
+            </p>
+          )}
       </CardFooter>
     </TooltipProvider>
   );

@@ -81,7 +81,7 @@ describe('AttemptChat', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useEffect, useMemo, useState, useSimulation
+ * - Uses hooks: useEffect, useMemo, useRef, useState, useSimulation
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false
