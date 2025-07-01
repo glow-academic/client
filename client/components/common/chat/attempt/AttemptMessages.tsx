@@ -177,9 +177,9 @@ export default function AttemptMessages({
       audioRef.current = newAudio;
 
       newAudio.oncanplaythrough = () => {
-         newAudio.play();
+        newAudio.play();
       };
-      
+
       newAudio.onplay = () => {
         setAudioState({ playingId: message.id, isLoading: false });
       };
@@ -388,37 +388,11 @@ export default function AttemptMessages({
 
                         {message.type === "response" &&
                           message.content !== "" && (
-                            // --- MODIFICATION START: Flex container for message and play button ---
-                            <div className="flex items-start gap-2 justify-start mb-3">
-                              {/* NOTE: Assumes `message.audio` is a boolean indicating if audio is available. 
-                                  You may need to adjust the `SimulationMessage` type and your data fetching. */}
-                              {message.audio && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="flex-shrink-0 h-9 w-9 mt-1"
-                                      onClick={() => handlePlayPauseAudio(message)}
-                                      disabled={audioState.isLoading && audioState.playingId !== message.id}
-                                    >
-                                      {audioState.isLoading && audioState.playingId === message.id ? (
-                                        <Loader2 className="h-5 w-5 animate-spin" />
-                                      ) : audioState.playingId === message.id ? (
-                                        <Pause className="h-5 w-5" />
-                                      ) : (
-                                        <Play className="h-5 w-5" />
-                                      )}
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Play Audio</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                              <div className="max-w-[calc(100%-44px)]">
-                                <div className="bg-muted rounded-lg p-3">
+                            // --- MODIFICATION START: Move play button to bottom right ---
+                            <div className="flex justify-start mb-3">
+                              <div className="max-w-[80%]">
+                                <div className="bg-muted rounded-lg p-3 relative">
+                                  {/* The Markdown component comes first */}
                                   {message.content === "" ? (
                                     <div className="flex items-center">
                                       <span className="text-gray-500 mr-2">
@@ -428,6 +402,42 @@ export default function AttemptMessages({
                                     </div>
                                   ) : (
                                     <Markdown>{message.content}</Markdown>
+                                  )}
+
+                                  {/* Play button is now at the bottom right */}
+                                  {message.audio && (
+                                    <div className="absolute bottom-2 right-2">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                            onClick={() =>
+                                              handlePlayPauseAudio(message)
+                                            }
+                                            disabled={
+                                              audioState.isLoading &&
+                                              audioState.playingId !== message.id
+                                            }
+                                          >
+                                            {audioState.isLoading &&
+                                            audioState.playingId ===
+                                              message.id ? (
+                                              <Loader2 className="h-4 w-4 animate-spin" />
+                                            ) : audioState.playingId ===
+                                              message.id ? (
+                                              <Pause className="h-4 w-4" />
+                                            ) : (
+                                              <Play className="h-4 w-4" />
+                                            )}
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Play Audio</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </div>
                                   )}
                                 </div>
                               </div>
