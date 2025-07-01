@@ -189,6 +189,9 @@ export function WebSocketProvider({
   const audioTrackSenders = useRef<Map<string, RTCRtpSender>>(new Map());
   const remoteAudioStreams = useRef<Map<string, HTMLAudioElement>>(new Map());
 
+  // 💡 1. Add a ref to hold the message queues
+  const messageQueues = useRef<Map<string, string[]>>(new Map());
+
   // Connection state persistence to prevent React re-render triggers
   const currentConnectionId = useRef<string | null>(null);
   const webRTCRetryCount = useRef(0);
@@ -205,28 +208,49 @@ export function WebSocketProvider({
     );
   }, []);
 
-  // Helper function to create data channel if it doesn't exist
+  // 💡 2. Enhance createDataChannelIfNeeded to process the queue onopen
   const createDataChannelIfNeeded = useCallback(
     (channelLabel: string): RTCDataChannel | undefined => {
       const pc = webRTCPeerConnection.current;
-      if (!pc || pc.connectionState !== "connected") {
+      if (!pc) {
+        logError("Cannot create data channel, PeerConnection is null.");
+        return undefined;
+      }
+      // Allow channel creation even if PC isn't fully "connected" yet, as long as it's not closed.
+      if (pc.connectionState === "closed" || pc.connectionState === "failed") {
+        logError(
+          `Cannot create data channel, PeerConnection is in state: ${pc.connectionState}`
+        );
         return undefined;
       }
 
       let channel = webRTCDataChannels.current.get(channelLabel);
       if (!channel || channel.readyState === "closed") {
-        // Create new data channel
-        channel = pc.createDataChannel(channelLabel, {
-          ordered: true,
-        });
+        channel = pc.createDataChannel(channelLabel, { ordered: true });
+        logInfo(`Created WebRTC data channel: ${channelLabel}`);
 
         channel.onopen = () => {
           logInfo(`WebRTC data channel opened: ${channelLabel}`);
+          // Now that it's open, drain any messages that were queued for it
+          const queue = messageQueues.current.get(channelLabel);
+          if (queue && queue.length > 0) {
+            logInfo(
+              `Draining ${queue.length} queued messages for ${channelLabel}`
+            );
+            queue.forEach((msg) => {
+              if (channel && channel.readyState === "open") {
+                channel.send(msg);
+              }
+            });
+            messageQueues.current.delete(channelLabel); // Clear the queue
+          }
         };
 
         channel.onclose = () => {
           logInfo(`WebRTC data channel closed: ${channelLabel}`);
           webRTCDataChannels.current.delete(channelLabel);
+          // Clean up any pending messages for this channel
+          messageQueues.current.delete(channelLabel);
         };
 
         channel.onerror = (error) => {
@@ -234,9 +258,7 @@ export function WebSocketProvider({
         };
 
         webRTCDataChannels.current.set(channelLabel, channel);
-        logInfo(`Created WebRTC data channel: ${channelLabel}`);
       }
-
       return channel;
     },
     []
@@ -1547,6 +1569,7 @@ export function WebSocketProvider({
     }
   }, [isConnected, isWebRTCConnected, stopWebRTC]);
 
+  // 💡 3. Modify sendWebRTCMessage to use the queue
   const sendWebRTCMessage = useCallback(
     (
       chatId: string,
@@ -1555,15 +1578,18 @@ export function WebSocketProvider({
     ) => {
       try {
         const channelLabel = `text-${chatId}`;
-        const textChannel =
-          webRTCDataChannels.current.get(channelLabel) ||
-          createDataChannelIfNeeded(channelLabel);
+        let textChannel = webRTCDataChannels.current.get(channelLabel);
 
-        if (!textChannel || textChannel.readyState !== "open") {
+        // Attempt to create the channel if it doesn't exist or is closed
+        if (!textChannel || textChannel.readyState === "closed") {
+          textChannel = createDataChannelIfNeeded(channelLabel);
+        }
+
+        // If channel creation failed (e.g., PC is down), then fall back.
+        if (!textChannel) {
           logError(
-            `WebRTC data channel not available for ${channelLabel}, falling back to WebSocket`
+            `Could not create or get WebRTC channel ${channelLabel}, falling back to WebSocket`
           );
-          // Fallback to WebSocket for text
           if (chatId.includes("simulation")) {
             emitSendSimulationMessage({
               chat_id: chatId,
@@ -1576,18 +1602,44 @@ export function WebSocketProvider({
           return;
         }
 
-        const messageData = {
+        const messagePayload = JSON.stringify({
           chat_id: chatId,
           content: message,
           assistant_audio_enabled: assistantAudioEnabled,
-        };
-
-        textChannel.send(JSON.stringify(messageData));
-        logInfo(`Sent WebRTC message via ${channelLabel}`, {
-          chatId,
-          messageLength: message.length,
-          assistantAudioEnabled,
         });
+
+        // If the channel is open, send immediately.
+        if (textChannel.readyState === "open") {
+          logInfo(
+            `Sending WebRTC message directly via open channel ${channelLabel}`
+          );
+          textChannel.send(messagePayload);
+        }
+        // If it's still connecting, queue the message.
+        else if (textChannel.readyState === "connecting") {
+          logInfo(
+            `WebRTC channel ${channelLabel} is connecting. Queuing message.`
+          );
+          if (!messageQueues.current.has(channelLabel)) {
+            messageQueues.current.set(channelLabel, []);
+          }
+          messageQueues.current.get(channelLabel)?.push(messagePayload);
+        }
+        // As a final safety net, fall back if the channel is in a weird state.
+        else {
+          logError(
+            `WebRTC channel ${channelLabel} in unhandled state: ${textChannel.readyState}. Falling back to WebSocket.`
+          );
+          if (chatId.includes("simulation")) {
+            emitSendSimulationMessage({
+              chat_id: chatId,
+              message,
+              assistant_audio_enabled: assistantAudioEnabled,
+            });
+          } else if (chatId.includes("assistant")) {
+            emitSendAssistantMessage({ chat_id: chatId, message });
+          }
+        }
       } catch (error) {
         logError("Error sending WebRTC message", error);
       }

@@ -51,7 +51,6 @@ import { Simulation, SimulationMessage } from "@/types";
 import { deleteAudio } from "@/utils/api/audio/delete-audio";
 import { logError } from "@/utils/logger";
 import { deleteSimulationMessage } from "@/utils/mutations/simulation_messages/delete-simulation-message";
-import { updateSimulationMessage } from "@/utils/mutations/simulation_messages/update-simulation-message";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
 interface AttemptMessagesProps {
@@ -204,25 +203,19 @@ export default function AttemptMessages({
     setIsSubmittingEdit(true);
 
     try {
-      // 1. Identify messages to delete
+      // 1. Identify messages to delete (all after the editing message)
       const editTimestamp = new Date(editingMessage.updatedAt);
       const messagesToDelete = messages.filter(
         (msg) => new Date(msg.createdAt) > editTimestamp
       );
 
       // 2. Delete subsequent messages and their audio
-      for (const msg of messagesToDelete) {
+      for (const msg of [...messagesToDelete, editingMessage]) {
         if (msg.type === "response" && msg.audio) {
           await deleteAudio(msg.id);
         }
         await deleteSimulationMessage(msg.id);
       }
-
-      // 3. Update the original message (set audio to false)
-      await updateSimulationMessage(editingMessage.id, {
-        content: editText,
-        audio: false,
-      });
 
       // 4. Invalidate query cache to refetch messages
       await queryClient.invalidateQueries({
