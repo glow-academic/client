@@ -35,7 +35,7 @@ export default function AttemptInput() {
 
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  // const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
   // Handle form submission
   const handleSendMessage = async (
@@ -45,7 +45,12 @@ export default function AttemptInput() {
     if (e) e.preventDefault();
 
     const messageToSend = initialMessage || newMessage.trim();
-    if (!messageToSend || !simulationContext?.currentChat || simulationContext?.isSendingMessage) return;
+    if (
+      !messageToSend ||
+      !simulationContext?.currentChat ||
+      simulationContext?.isSendingMessage
+    )
+      return;
 
     setNewMessage("");
     simulationContext?.sendMessage(messageToSend);
@@ -81,7 +86,9 @@ export default function AttemptInput() {
       // 5. Key is a printable character
       if (
         !simulationContext?.currentChat?.completed &&
-        (simulationContext?.simulation?.timeLimit ? simulationContext?.isActive : true) &&
+        (simulationContext?.simulation?.timeLimit
+          ? simulationContext?.isActive
+          : true) &&
         !e.ctrlKey &&
         !e.altKey &&
         !e.metaKey &&
@@ -99,46 +106,43 @@ export default function AttemptInput() {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [simulationContext?.currentChat?.completed, simulationContext?.simulation?.timeLimit, simulationContext?.isActive]);
+  }, [
+    simulationContext?.currentChat?.completed,
+    simulationContext?.simulation?.timeLimit,
+    simulationContext?.isActive,
+  ]);
 
-  // ResizeObserver for input panel height detection
   useEffect(() => {
-    if (!inputPanelRef.current) {
+    const panelElement = inputPanelRef.current;
+    if (!panelElement) {
       return;
     }
 
-    if (resizeObserverRef.current) {
-      return;
-    }
-
-    const ro = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
+    // Create a new observer every time the effect runs.
+    const observer = new ResizeObserver((entries) => {
+      // The `for...of` loop is a robust way to handle entries.
+      for (const entry of entries) {
         const newIsTall = entry.contentRect.height > 160;
-        setIsTall(newIsTall);
+        // Use a functional update to prevent issues with stale state.
+        setIsTall((currentIsTall) => {
+          if (newIsTall !== currentIsTall) {
+            return newIsTall;
+          }
+          return currentIsTall;
+        });
       }
     });
 
-    ro.observe(inputPanelRef.current);
-    resizeObserverRef.current = ro;
+    observer.observe(panelElement);
 
-    // Initial measurement with a small delay to ensure layout is complete
-    const measureTimer = setTimeout(() => {
-      if (inputPanelRef.current) {
-        const rect = inputPanelRef.current.getBoundingClientRect();
-        const initialIsTall = rect.height > 160;
-        setIsTall(initialIsTall);
-      }
-    }, 50);
-
+    // The return function is the cleanup. It runs when the component
+    // unmounts or before the effect re-runs.
     return () => {
-      if (resizeObserverRef.current) {
-        resizeObserverRef.current.disconnect();
-        resizeObserverRef.current = null;
-      }
-      clearTimeout(measureTimer);
+      observer.disconnect();
     };
-  }, []); // Empty dependency array to run only once
+    // Add a dependency. This ensures the effect re-runs if the chat changes,
+    // which might involve a layout reset.
+  }, [simulationContext?.currentChat?.id]);
 
   // Don't render input if chat is completed
   if (simulationContext?.currentChat?.completed) {
@@ -165,7 +169,11 @@ export default function AttemptInput() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    disabled={simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false}
+                    disabled={
+                      simulationContext?.simulation?.timeLimit
+                        ? !simulationContext?.isActive
+                        : false
+                    }
                     className="flex-1 resize-y overflow-y-auto text-md"
                     data-testid="message-input"
                     onKeyDown={(e) => {
@@ -192,29 +200,33 @@ export default function AttemptInput() {
 
                 <div className="flex gap-2 justify-end">
                   {/* Mic Button: Shows when not recording and no text */}
-                  {simulationContext?.isWebRTCSupported && !newMessage.trim() && !simulationContext?.isRecording && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleStartRecording}
-                          disabled={
-                            simulationContext?.currentChat?.completed ||
-                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
-                          }
-                          className="min-h-[40px] h-[40px] px-3"
-                          data-testid="mic-button"
-                        >
-                          <Mic className="h-4 w-4" />
-                          <span className="ml-2">Start Audio</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Start audio recording</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+                  {simulationContext?.isWebRTCSupported &&
+                    !newMessage.trim() &&
+                    !simulationContext?.isRecording && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleStartRecording}
+                            disabled={
+                              simulationContext?.currentChat?.completed ||
+                              (simulationContext?.simulation?.timeLimit
+                                ? !simulationContext?.isActive
+                                : false)
+                            }
+                            className="min-h-[40px] h-[40px] px-3"
+                            data-testid="mic-button"
+                          >
+                            <Mic className="h-4 w-4" />
+                            <span className="ml-2">Start Audio</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Start audio recording</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
 
                   {/* Stop Recording Button: Shows when recording */}
                   {simulationContext?.isRecording && (
@@ -245,12 +257,22 @@ export default function AttemptInput() {
                         simulationContext?.isSendingMessage
                           ? simulationContext?.isStoppingMessage
                           : !newMessage.trim() ||
-                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
+                            (simulationContext?.simulation?.timeLimit
+                              ? !simulationContext?.isActive
+                              : false)
                       }
                       data-testid="send-button"
                       className="min-h-[40px] h-[40px] px-4"
-                      variant={simulationContext?.isSendingMessage ? "destructive" : "default"}
-                      onClick={simulationContext?.isSendingMessage ? handleStopMessage : undefined}
+                      variant={
+                        simulationContext?.isSendingMessage
+                          ? "destructive"
+                          : "default"
+                      }
+                      onClick={
+                        simulationContext?.isSendingMessage
+                          ? handleStopMessage
+                          : undefined
+                      }
                     >
                       {simulationContext?.isSendingMessage ? (
                         simulationContext?.isStoppingMessage ? (
@@ -298,7 +320,11 @@ export default function AttemptInput() {
                     value={newMessage}
                     onChange={(e) => setNewMessage(e.target.value)}
                     placeholder="Type your message..."
-                    disabled={simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false}
+                    disabled={
+                      simulationContext?.simulation?.timeLimit
+                        ? !simulationContext?.isActive
+                        : false
+                    }
                     className="flex-1 resize-none overflow-hidden text-md"
                     data-testid="message-input"
                     onKeyDown={(e) => {
@@ -329,28 +355,31 @@ export default function AttemptInput() {
                   className={`flex gap-2 shrink-0 ${simulationContext?.isRecording ? "hidden" : ""}`}
                 >
                   {/* Mic Button: Shows when not recording and no text */}
-                  {simulationContext?.isWebRTCSupported && !newMessage.trim() && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleStartRecording}
-                          disabled={
-                            simulationContext?.currentChat?.completed ||
-                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
-                          }
-                          className="min-h-[40px] h-[40px] px-3"
-                          data-testid="mic-button"
-                        >
-                          <Mic className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Start audio recording</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
+                  {simulationContext?.isWebRTCSupported &&
+                    !newMessage.trim() && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleStartRecording}
+                            disabled={
+                              simulationContext?.currentChat?.completed ||
+                              (simulationContext?.simulation?.timeLimit
+                                ? !simulationContext?.isActive
+                                : false)
+                            }
+                            className="min-h-[40px] h-[40px] px-3"
+                            data-testid="mic-button"
+                          >
+                            <Mic className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Start audio recording</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
 
                   {/* Send Button: Shows when there is text */}
                   {newMessage.trim() && (
@@ -360,12 +389,22 @@ export default function AttemptInput() {
                         simulationContext?.isSendingMessage
                           ? simulationContext?.isStoppingMessage
                           : !newMessage.trim() ||
-                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
+                            (simulationContext?.simulation?.timeLimit
+                              ? !simulationContext?.isActive
+                              : false)
                       }
                       data-testid="send-button"
                       className="min-h-[40px] h-[40px] px-3"
-                      variant={simulationContext?.isSendingMessage ? "destructive" : "default"}
-                      onClick={simulationContext?.isSendingMessage ? handleStopMessage : undefined}
+                      variant={
+                        simulationContext?.isSendingMessage
+                          ? "destructive"
+                          : "default"
+                      }
+                      onClick={
+                        simulationContext?.isSendingMessage
+                          ? handleStopMessage
+                          : undefined
+                      }
                     >
                       {simulationContext?.isSendingMessage ? (
                         simulationContext?.isStoppingMessage ? (
@@ -378,24 +417,6 @@ export default function AttemptInput() {
                       )}
                     </Button>
                   )}
-
-                  {/* End Chat/Session Button */}
-                  {/* <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleEndChat}
-                    disabled={
-                      endChatLoading ||
-                      (simulation?.timeLimit ? !isActive : false)
-                    }
-                    className="whitespace-nowrap min-h-[40px] h-[40px] px-3 text-sm"
-                  >
-                    {endChatLoading
-                      ? "Ending..."
-                      : isSingleChatAttempt
-                        ? "End Session"
-                        : "End Chat"}
-                  </Button> */}
                 </div>
                 {/* Stop Recording Button for horizontal layout */}
                 {simulationContext?.isRecording && (
@@ -419,11 +440,12 @@ export default function AttemptInput() {
               </div>
             )}
           </form>
-          {simulationContext?.simulation?.timeLimit && !simulationContext?.isActive && (
-            <p className="text-sm text-muted-foreground text-center">
-              Time's up! The session has ended.
-            </p>
-          )}
+          {simulationContext?.simulation?.timeLimit &&
+            !simulationContext?.isActive && (
+              <p className="text-sm text-muted-foreground text-center">
+                Time's up! The session has ended.
+              </p>
+            )}
         </div>
       </CardFooter>
     </TooltipProvider>
