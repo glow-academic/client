@@ -5,9 +5,9 @@
  * 07/01/2025
  */
 "use client";
+import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import { ReactSketchCanvas, ReactSketchCanvasRef } from "react-sketch-canvas";
-import { AnimatePresence, motion } from "framer-motion";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,7 @@ import { CardFooter } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 
 // Icons
-import { Mic, MicOff, Send, Square, Pencil } from "lucide-react";
+import { Mic, MicOff, Pencil, Send, Square, Trash2, Undo2 } from "lucide-react";
 
 // Tooltip
 import {
@@ -28,8 +28,7 @@ import {
 import { useSimulation } from "@/contexts/simulation-context";
 import AudioWaveform from "./AudioWaveform";
 
-// --- STABLE COMPONENT DEFINITION ---
-// Moved outside the main component to prevent re-renders and flickering.
+// --- STABLE COMPONENT DEFINITIONS ---
 const SketchButton = ({
   isTallLayout = false,
   isSketching,
@@ -56,12 +55,62 @@ const SketchButton = ({
         >
           <Pencil className="h-4 w-4" />
           {isTallLayout && (
-            <span className="ml-2">{isSketching ? "Stop Sketch" : "Start Sketch"}</span>
+            <span className="ml-2">
+              {isSketching ? "Stop Sketch" : "Start Sketch"}
+            </span>
           )}
         </Button>
       </TooltipTrigger>
       <TooltipContent>
         <p>{isSketching ? "Stop sketching" : "Start sketching"}</p>
+      </TooltipContent>
+    </Tooltip>
+  </motion.div>
+);
+
+const SketchToolbar = ({
+  onUndo,
+  onClear,
+}: {
+  onUndo: () => void;
+  onClear: () => void;
+}) => (
+  <motion.div
+    key="sketch-toolbar"
+    layout
+    initial={{ opacity: 0, scale: 0.8 }}
+    animate={{ opacity: 1, scale: 1 }}
+    exit={{ opacity: 0, scale: 0.5 }}
+    className="flex gap-2"
+  >
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onUndo}
+          className="min-h-[40px] h-[40px] px-3"
+        >
+          <Undo2 className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Undo</p>
+      </TooltipContent>
+    </Tooltip>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onClear}
+          className="min-h-[40px] h-[40px] px-3"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Clear Canvas</p>
       </TooltipContent>
     </Tooltip>
   </motion.div>
@@ -80,16 +129,27 @@ export default function AttemptInput() {
 
   // --- Handlers ---
   const handleToggleSketch = () => setIsSketching(!isSketching);
-  const handleSendMessage = (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleSendMessage = (
+    e:
+      | React.FormEvent<HTMLFormElement>
+      | React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
-    if (!messageToSend || !simulationContext?.currentChat || simulationContext?.isSendingMessage) return;
+    if (
+      !messageToSend ||
+      !simulationContext?.currentChat ||
+      simulationContext?.isSendingMessage
+    )
+      return;
     setNewMessage("");
     simulationContext?.sendMessage(messageToSend);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
   const handleStartRecording = () => simulationContext?.startRecording();
   const handleStopRecording = () => simulationContext?.stopRecording();
+  const handleUndo = () => sketchCanvasRef.current?.undo();
+  const handleClear = () => sketchCanvasRef.current?.clearCanvas();
 
   // --- Effects ---
   useEffect(() => {
@@ -101,8 +161,13 @@ export default function AttemptInput() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
         !simulationContext?.currentChat?.completed &&
-        (simulationContext?.simulation?.timeLimit ? simulationContext?.isActive : true) &&
-        !e.ctrlKey && !e.altKey && !e.metaKey && e.key.length === 1 &&
+        (simulationContext?.simulation?.timeLimit
+          ? simulationContext?.isActive
+          : true) &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        !e.metaKey &&
+        e.key.length === 1 &&
         !isSketching &&
         document.activeElement?.tagName !== "INPUT" &&
         document.activeElement?.tagName !== "TEXTAREA" &&
@@ -155,78 +220,139 @@ export default function AttemptInput() {
               <div className="flex-1 w-full min-h-0 flex flex-col gap-3">
                 {isSketching ? (
                   <>
-                    {/* Sketch canvas appears on top and takes 3/4 space */}
+                    {/* Sketch canvas appears on top and takes up available space */}
                     <motion.div
                       key="sketch-canvas-tall"
                       initial={{ opacity: 0, flex: 0 }}
-                      animate={{ opacity: 1, flex: 3 }}
+                      animate={{ opacity: 1, flex: 1 }}
                       exit={{ opacity: 0, flex: 0 }}
                       className="border rounded-md overflow-hidden"
                     >
-                      <ReactSketchCanvas ref={sketchCanvasRef} strokeWidth={4} strokeColor="black" />
+                      <ReactSketchCanvas
+                        ref={sketchCanvasRef}
+                        strokeWidth={4}
+                        strokeColor="black"
+                      />
                     </motion.div>
-                    {/* Text/Audio input takes 1/4 space */}
-                    <div className="flex-[1]">
-                      {simulationContext?.isRecording ? (
-                        <AudioWaveform isRecording isTall stream={simulationContext.userAudioStream} />
-                      ) : (
-                        <Textarea
-                          ref={textareaRef}
-                          value={newMessage}
-                          onChange={(e) => setNewMessage(e.target.value)}
-                          placeholder="Type your message..."
-                          disabled={!simulationContext?.isActive}
-                          className="w-full h-full text-md resize-y overflow-y-auto"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
-                          }}
-                        />
-                      )}
-                    </div>
                   </>
+                ) : // Default view: Text/Audio input takes full space
+                simulationContext?.isRecording ? (
+                  <AudioWaveform
+                    isRecording
+                    isTall
+                    stream={simulationContext.userAudioStream}
+                  />
                 ) : (
-                  // Default view: Text/Audio input takes full space
-                  simulationContext?.isRecording ? (
-                    <AudioWaveform isRecording isTall stream={simulationContext.userAudioStream} />
-                  ) : (
-                    <Textarea
-                      ref={textareaRef}
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      placeholder="Type your message..."
-                      disabled={!simulationContext?.isActive}
-                      className="w-full text-md resize-y overflow-y-auto flex-1"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
-                      }}
-                    />
-                  )
+                  <Textarea
+                    ref={textareaRef}
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    placeholder="Type your message..."
+                    disabled={!simulationContext?.isActive}
+                    className="w-full text-md resize-y overflow-y-auto flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey)
+                        handleSendMessage(e);
+                    }}
+                  />
                 )}
               </div>
 
               {/* Button Row */}
               <div className="w-full flex justify-between items-center pt-3">
-                <SketchButton isTallLayout isSketching={isSketching} onClick={handleToggleSketch} />
+                <SketchButton
+                  isTallLayout
+                  isSketching={isSketching}
+                  onClick={handleToggleSketch}
+                />
+                <div className="flex-1 flex justify-center">
+                  {isSketching && (
+                    <SketchToolbar onUndo={handleUndo} onClear={handleClear} />
+                  )}
+                </div>
                 <div className="flex gap-2">
                   <AnimatePresence mode="popLayout">
                     {!hasTextMessage && !simulationContext?.isRecording && (
-                      <motion.div layout key="mic-btn-tall" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
+                      <motion.div
+                        layout
+                        key="mic-btn-tall"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                      >
                         <Tooltip>
-                          <TooltipTrigger asChild><Button type="button" variant="outline" onClick={handleStartRecording} className="min-h-[40px] h-[40px] px-3"><Mic className="h-4 w-4" /><span className="ml-2">Start Audio</span></Button></TooltipTrigger>
-                          <TooltipContent><p>Start audio recording</p></TooltipContent>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={handleStartRecording}
+                              className="min-h-[40px] h-[40px] px-3"
+                            >
+                              <Mic className="h-4 w-4" />
+                              <span className="ml-2">Start Audio</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Start audio recording</p>
+                          </TooltipContent>
                         </Tooltip>
                       </motion.div>
                     )}
                     {simulationContext?.isRecording && (
-                      <motion.div layout key="stop-mic-btn-tall" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                         <Button type="button" variant="destructive" onClick={handleStopRecording} className="min-h-[40px] h-[40px] px-3"><MicOff className="h-4 w-4" /><span className="ml-2">Stop Audio</span></Button>
+                      <motion.div
+                        layout
+                        key="stop-mic-btn-tall"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                      >
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={handleStopRecording}
+                          className="min-h-[40px] h-[40px] px-3"
+                        >
+                          <MicOff className="h-4 w-4" />
+                          <span className="ml-2">Stop Audio</span>
+                        </Button>
                       </motion.div>
                     )}
-                     {hasTextMessage && (
-                        <motion.div layout key="send-btn-tall" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                           <Button type="submit" className="min-h-[40px] h-[40px] px-4" variant={simulationContext?.isSendingMessage ? 'destructive' : 'default'} onClick={simulationContext?.isSendingMessage ? handleStopMessage : undefined}>{simulationContext?.isSendingMessage ? (<><Square className="h-4 w-4 mr-2" />Stop</>) : (<><Send className="h-4 w-4 mr-2" />Send</>)}</Button>
-                        </motion.div>
-                     )}
+                    {hasTextMessage && (
+                      <motion.div
+                        layout
+                        key="send-btn-tall"
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.5 }}
+                      >
+                        <Button
+                          type="submit"
+                          className="min-h-[40px] h-[40px] px-4"
+                          variant={
+                            simulationContext?.isSendingMessage
+                              ? "destructive"
+                              : "default"
+                          }
+                          onClick={
+                            simulationContext?.isSendingMessage
+                              ? handleStopMessage
+                              : undefined
+                          }
+                        >
+                          {simulationContext?.isSendingMessage ? (
+                            <>
+                              <Square className="h-4 w-4 mr-2" />
+                              Stop
+                            </>
+                          ) : (
+                            <>
+                              <Send className="h-4 w-4 mr-2" />
+                              Send
+                            </>
+                          )}
+                        </Button>
+                      </motion.div>
+                    )}
                   </AnimatePresence>
                 </div>
               </div>
@@ -234,24 +360,17 @@ export default function AttemptInput() {
           ) : (
             // --- HORIZONTAL LAYOUT ---
             <div className="w-full flex items-center gap-2">
-              <SketchButton isSketching={isSketching} onClick={handleToggleSketch} />
-              <AnimatePresence>
-                {isSketching && (
-                  <motion.div
-                    key="sketch-canvas-short"
-                    initial={{ opacity: 0, width: 0 }}
-                    animate={{ opacity: 1, width: '33.33%' }}
-                    exit={{ opacity: 0, width: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="border rounded-md overflow-hidden h-12"
-                  >
-                    <ReactSketchCanvas ref={sketchCanvasRef} strokeWidth={4} strokeColor="black" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <SketchButton
+                isSketching={isSketching}
+                onClick={handleToggleSketch}
+              />
               <div className="flex-1">
                 {simulationContext?.isRecording ? (
-                  <AudioWaveform isRecording isTall={false} stream={simulationContext.userAudioStream} />
+                  <AudioWaveform
+                    isRecording
+                    isTall={false}
+                    stream={simulationContext.userAudioStream}
+                  />
                 ) : (
                   <Textarea
                     ref={textareaRef}
@@ -261,7 +380,8 @@ export default function AttemptInput() {
                     disabled={!simulationContext?.isActive}
                     className="w-full text-md resize-none overflow-hidden h-10 min-h-10"
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey) handleSendMessage(e);
+                      if (e.key === "Enter" && !e.shiftKey)
+                        handleSendMessage(e);
                     }}
                   />
                 )}
@@ -269,28 +389,89 @@ export default function AttemptInput() {
               <div className="flex gap-2">
                 <AnimatePresence mode="popLayout">
                   {!hasTextMessage && !simulationContext?.isRecording && (
-                    <motion.div layout key="mic-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                       <Tooltip><TooltipTrigger asChild><Button type="button" variant="outline" onClick={handleStartRecording} className="min-h-[40px] h-[40px] px-3"><Mic className="h-4 w-4" /></Button></TooltipTrigger><TooltipContent><p>Start audio</p></TooltipContent></Tooltip>
+                    <motion.div
+                      layout
+                      key="mic-btn-short"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                    >
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleStartRecording}
+                            className="min-h-[40px] h-[40px] px-3"
+                          >
+                            <Mic className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Start audio</p>
+                        </TooltipContent>
+                      </Tooltip>
                     </motion.div>
                   )}
-                   {hasTextMessage && (
-                     <motion.div layout key="send-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                        <Button type="submit" className="min-h-[40px] h-[40px] px-3" variant={simulationContext?.isSendingMessage ? 'destructive' : 'default'} onClick={simulationContext?.isSendingMessage ? handleStopMessage : undefined}>{simulationContext?.isSendingMessage ? <Square className="h-4 w-4" /> : <Send className="h-4 w-4" />}</Button>
-                     </motion.div>
+                  {hasTextMessage && (
+                    <motion.div
+                      layout
+                      key="send-btn-short"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                    >
+                      <Button
+                        type="submit"
+                        className="min-h-[40px] h-[40px] px-3"
+                        variant={
+                          simulationContext?.isSendingMessage
+                            ? "destructive"
+                            : "default"
+                        }
+                        onClick={
+                          simulationContext?.isSendingMessage
+                            ? handleStopMessage
+                            : undefined
+                        }
+                      >
+                        {simulationContext?.isSendingMessage ? (
+                          <Square className="h-4 w-4" />
+                        ) : (
+                          <Send className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </motion.div>
                   )}
-                   {simulationContext?.isRecording && (
-                     <motion.div layout key="stop-btn-short" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                        <Button type="button" variant="destructive" onClick={handleStopRecording} className="min-h-[40px] h-[40px] px-3"><MicOff className="h-4 w-4" /></Button>
-                     </motion.div>
+                  {simulationContext?.isRecording && (
+                    <motion.div
+                      layout
+                      key="stop-btn-short"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.5 }}
+                    >
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={handleStopRecording}
+                        className="min-h-[40px] h-[40px] px-3"
+                      >
+                        <MicOff className="h-4 w-4" />
+                      </Button>
+                    </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             </div>
           )}
         </form>
-        {simulationContext?.simulation?.timeLimit && !simulationContext?.isActive && (
-          <p className="text-sm text-muted-foreground text-center pt-2">Time's up! The session has ended.</p>
-        )}
+        {simulationContext?.simulation?.timeLimit &&
+          !simulationContext?.isActive && (
+            <p className="text-sm text-muted-foreground text-center pt-2">
+              Time's up! The session has ended.
+            </p>
+          )}
       </CardFooter>
     </TooltipProvider>
   );
