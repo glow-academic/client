@@ -776,16 +776,26 @@ export function WebSocketProvider({
 
       socket.on(
         "simulation_continued",
-        (data: { chat_id: string; success: boolean; message: string }) => {
+        (data: {
+          success: boolean;
+          message: string;
+          completed_chat_id: string;
+          next_chat_id: string;
+          is_attempt_finished: boolean;
+        }) => {
           logInfo("Simulation continued", data);
           setIsContinuingSimulation(false);
 
           if (data.success) {
             toast.success(data.message);
-            // Dispatch a custom event with the chat ID for the context to hear
+            // Dispatch a custom event with the new, richer detail object
             window.dispatchEvent(
               new CustomEvent("simulationChatEnded", {
-                detail: { chatId: data.chat_id },
+                detail: {
+                  completedChatId: data.completed_chat_id,
+                  nextChatId: data.next_chat_id,
+                  isAttemptFinished: data.is_attempt_finished,
+                },
               })
             );
           } else {

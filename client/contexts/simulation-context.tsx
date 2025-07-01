@@ -888,26 +888,28 @@ export function SimulationProvider({
 
     // This is the new, enhanced handler for when a chat has successfully ended
     const handleChatEnded = (event: CustomEvent) => {
-      // Check if the event is for the chat we are currently on
-      if (event.detail.chatId === currentChatIdRef.current) {
+      // THE FIX: Check if the event's completedChatId matches the current one.
+      if (event.detail.completedChatId === currentChatIdRef.current) {
         logInfo(
-          `Chat ${event.detail.chatId} ended. Invalidating data and resetting state.`
+          `Chat ${event.detail.completedChatId} ended. Invalidating data to fetch next state.`
         );
 
-        // 1. Mark the chat as freshly completed so the UI can auto-advance
+        // Mark the chat as freshly completed so the UI can auto-advance
         setFreshlyCompletedChats((prev) =>
-          new Set(prev).add(event.detail.chatId)
+          new Set(prev).add(event.detail.completedChatId)
         );
+        freshlyCompletedChatsRef.current.add(event.detail.completedChatId);
 
-        // 2. Invalidate all relevant queries to refetch the updated simulation state
-        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+        // Invalidate queries. This will refetch the list of chats, which now
+        // includes the new chat, and will mark the old one as "completed".
         queryClient.invalidateQueries({
           queryKey: ["simulationChats", attemptId],
         });
+        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
         queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
         queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
 
-        // 3. Turn off the loading indicator for the "End Chat" button
+        // Turn off the loading indicator for the "End Chat" button
         setEndChatLoading(false);
       }
     };

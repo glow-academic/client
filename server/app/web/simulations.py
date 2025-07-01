@@ -386,25 +386,31 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
                     db_session.refresh(next_chat)
                     next_chat_id = next_chat.id
 
-            # Run grading logic for the current chat
-            simulation_grade_id = await run_grade_agent(chat_id, db_session)
+            # Explicitly define which chat was completed and which is next
+            completed_chat_id = chat_id
+            new_chat_id = next_chat_id
+            is_attempt_finished = (new_chat_id == completed_chat_id)
 
-            # Emit success response
+            # Run grading logic for the chat that was just completed
+            simulation_grade_id = await run_grade_agent(completed_chat_id, db_session)
+
+            # Emit the new, more descriptive success response
             sio_instance = get_sio_instance()
             await sio_instance.emit(
                 "simulation_continued",
                 {
                     "success": True,
                     "message": "Simulation continued successfully",
-                    "chat_id": str(next_chat_id),
+                    "completed_chat_id": str(completed_chat_id),
+                    "next_chat_id": str(new_chat_id),
+                    "is_attempt_finished": is_attempt_finished,
                     "simulation_grade_id": simulation_grade_id,
-                    "completed": next_chat_id == chat_id,
                 },
                 room=sid,
             )
 
             logger.info(
-                f"Simulation continued successfully: next_chat={next_chat_id}, completed={next_chat_id == chat_id}"
+                f"Simulation continued successfully: completed_chat={completed_chat_id}, next_chat={new_chat_id}"
             )
 
         finally:
