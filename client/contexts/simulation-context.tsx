@@ -750,26 +750,16 @@ export function SimulationProvider({
     setEndChatLoading(true);
 
     try {
+      // This just sends the request. The response will be handled by the event listener.
       emitContinueSimulation({
         chat_id: currentChat.id,
         attempt_id: attemptId,
       });
-
-      setFreshlyCompletedChats((prev) => new Set(prev).add(currentChat.id));
-
-      queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
-      queryClient.invalidateQueries({
-        queryKey: ["simulationChats", attemptId],
-      });
-      queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
-      queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
-      toast.success("Chat ended successfully");
     } catch (error) {
       toast.error(`Failed to end chat: ${error}`);
-    } finally {
-      setEndChatLoading(false);
+      setEndChatLoading(false); // Reset loading state only on an immediate emit error
     }
-  }, [currentChat, emitContinueSimulation, queryClient, attemptId]);
+  }, [currentChat, emitContinueSimulation, attemptId]);
 
   // WebRTC Audio handlers
   const startRecording = useCallback(async () => {
@@ -896,8 +886,28 @@ export function SimulationProvider({
       }
     };
 
-    const handleSimulationContinued = (event: CustomEvent) => {
+    // This is the new, enhanced handler for when a chat has successfully ended
+    const handleChatEnded = (event: CustomEvent) => {
+      // Check if the event is for the chat we are currently on
       if (event.detail.chatId === currentChatIdRef.current) {
+        logInfo(
+          `Chat ${event.detail.chatId} ended. Invalidating data and resetting state.`
+        );
+
+        // 1. Mark the chat as freshly completed so the UI can auto-advance
+        setFreshlyCompletedChats((prev) =>
+          new Set(prev).add(event.detail.chatId)
+        );
+
+        // 2. Invalidate all relevant queries to refetch the updated simulation state
+        queryClient.invalidateQueries({ queryKey: ["attempt", attemptId] });
+        queryClient.invalidateQueries({
+          queryKey: ["simulationChats", attemptId],
+        });
+        queryClient.invalidateQueries({ queryKey: ["simulationGrades"] });
+        queryClient.invalidateQueries({ queryKey: ["simulationFeedbacks"] });
+
+        // 3. Turn off the loading indicator for the "End Chat" button
         setEndChatLoading(false);
       }
     };
@@ -930,9 +940,10 @@ export function SimulationProvider({
       "simulationStopped",
       handleSimulationStopped as EventListener
     );
+    // Listen for the custom event dispatched from the WebSocketProvider
     window.addEventListener(
-      "simulationContinued",
-      handleSimulationContinued as EventListener
+      "simulationChatEnded",
+      handleChatEnded as EventListener
     );
     window.addEventListener(
       "simulationError",
@@ -961,15 +972,15 @@ export function SimulationProvider({
         handleSimulationStopped as EventListener
       );
       window.removeEventListener(
-        "simulationContinued",
-        handleSimulationContinued as EventListener
+        "simulationChatEnded",
+        handleChatEnded as EventListener
       );
       window.removeEventListener(
         "simulationError",
         handleSimulationError as EventListener
       );
     };
-  }, []);
+  }, [queryClient, attemptId]); // Add queryClient and attemptId to the dependency array
 
   // Reset assistant audio state when moving to next chat
   useEffect(() => {
