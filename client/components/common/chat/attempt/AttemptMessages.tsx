@@ -47,32 +47,20 @@ import {
 import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
-import { Simulation, SimulationMessage } from "@/types";
+import { SimulationMessage } from "@/types";
 import { deleteAudio } from "@/utils/api/audio/delete-audio";
 import { logError } from "@/utils/logger";
 import { deleteSimulationMessage } from "@/utils/mutations/simulation_messages/delete-simulation-message";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
 interface AttemptMessagesProps {
-  simulation: Simulation | null;
-  isActive: boolean;
   chatId?: string;
 }
 
 export default function AttemptMessages({
-  simulation,
-  isActive,
   chatId,
 }: AttemptMessagesProps) {
-  const {
-    currentChat,
-    classData,
-    sendMessage,
-    isSendingMessage,
-    assistantAudioEnabled,
-    setAssistantAudioEnabled,
-    testAndEnableAudio,
-  } = useSimulation();
+  const simulationContext = useSimulation();
 
   // --- MODIFICATION START: State for editing functionality ---
   const queryClient = useQueryClient();
@@ -92,7 +80,7 @@ export default function AttemptMessages({
     isLoading: boolean;
   }>({ playingId: null, isLoading: false });
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const targetChatId = chatId || currentChat?.id;
+  const targetChatId = chatId || simulationContext?.currentChat?.id;
 
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["simulationMessages", targetChatId],
@@ -121,22 +109,22 @@ export default function AttemptMessages({
       "What can I help you with?",
       "I'm ready to assist you today",
     ];
-    if (classData?.classCode) {
-      basePrompts.push(`Are you here for ${classData.classCode}?`);
+    if (simulationContext?.classData?.classCode) {
+      basePrompts.push(`Are you here for ${simulationContext?.classData.classCode}?`);
       return [
         "Hi, how are you?",
         "What can I help you with?",
-        `Are you here for ${classData.classCode}?`,
+        `Are you here for ${simulationContext?.classData.classCode}?`,
       ];
     }
     return basePrompts.slice(0, 3);
-  }, [classData?.classCode]);
+  }, [simulationContext?.classData?.classCode]);
 
-  const handleStarterPromptClick = (prompt: string) => sendMessage(prompt);
+  const handleStarterPromptClick = (prompt: string) => simulationContext?.sendMessage(prompt);
   const handleAudioModeToggle = () => {
-    const newAudioMode = !assistantAudioEnabled;
-    setAssistantAudioEnabled(newAudioMode);
-    if (newAudioMode) testAndEnableAudio();
+    const newAudioMode = !simulationContext?.assistantAudioEnabled;
+    simulationContext?.setAssistantAudioEnabled(newAudioMode);
+    if (newAudioMode) simulationContext?.testAndEnableAudio();
   };
 
   const scrollToBottom = () => {
@@ -223,7 +211,7 @@ export default function AttemptMessages({
       });
 
       // 5. Send the new message to get a new response
-      sendMessage(editText);
+      simulationContext?.sendMessage(editText);
     } catch (error) {
       logError("Failed to edit and resubmit message", error);
     } finally {
@@ -294,7 +282,7 @@ export default function AttemptMessages({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={assistantAudioEnabled ? "default" : "outline"}
+                variant={simulationContext?.assistantAudioEnabled ? "default" : "outline"}
                 size="sm"
                 onClick={handleAudioModeToggle}
                 className="p-2"
@@ -308,7 +296,7 @@ export default function AttemptMessages({
           </Tooltip>
         </div>
 
-        {assistantAudioEnabled && (
+        {simulationContext?.assistantAudioEnabled && (
           <div className="absolute top-4 right-4 z-10">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -328,7 +316,7 @@ export default function AttemptMessages({
           </div>
         )}
 
-        {assistantAudioEnabled ? (
+        {simulationContext?.assistantAudioEnabled ? (
           <div className="flex-1 flex flex-col items-center justify-center min-h-0 p-8">
             <div className="relative mb-8">
               <div
@@ -372,9 +360,9 @@ export default function AttemptMessages({
                           className="h-auto p-4 text-left justify-start whitespace-normal"
                           onClick={() => handleStarterPromptClick(prompt)}
                           disabled={
-                            currentChat?.completed ||
-                            isSendingMessage ||
-                            (simulation?.timeLimit ? !isActive : false)
+                            simulationContext?.currentChat?.completed ||
+                            simulationContext?.isSendingMessage ||
+                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
                           }
                         >
                           <span className="text-sm">{prompt}</span>
@@ -415,14 +403,14 @@ export default function AttemptMessages({
                                       Cancel
                                     </Button>
                                     <Button size="sm" onClick={handleSaveEdit}>
-                                      Save
+                                      Send
                                     </Button>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                   {/* Edit button floated right, visible only on the LAST message */}
-                                  {message.audio && !isSendingMessage && (
+                                  {message.audio && !simulationContext?.isSendingMessage && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
                                         <Button
@@ -437,7 +425,7 @@ export default function AttemptMessages({
                                         </Button>
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Edit & Resubmit</p>
+                                        <p>Edit Transcript</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
@@ -555,7 +543,7 @@ export default function AttemptMessages({
               className="bg-red-600 hover:bg-red-700"
               disabled={isSubmittingEdit}
             >
-              {isSubmittingEdit ? "Submitting..." : "Confirm & Resubmit"}
+              {isSubmittingEdit ? "Sending..." : "Confirm"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

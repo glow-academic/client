@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Pencil, Plus } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import React from "react";
+import React, { useMemo } from "react";
 
 import ChatDialog from "@/components/common/home/ChatDialog";
 import ChatFab from "@/components/common/home/ChatFab";
@@ -27,6 +27,10 @@ import {
   getActiveSectionFromPath,
 } from "@/utils/breadcrumb-utils";
 import { createSectionChangeHandler } from "@/utils/navigation-utils";
+import {
+  SimulationProvider,
+  useSimulation,
+} from "@/contexts/simulation-context";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
@@ -37,6 +41,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
   >([]);
+  const simulationContext = useSimulation();
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -59,6 +64,35 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       pathname.includes("/u/")
     ) {
       return null;
+    }
+
+    if (simulationContext) {
+      // Destructure values from the context
+      const {
+        endChat,
+        endChatLoading,
+        isSingleChatAttempt,
+        simulation,
+        isActive,
+      } = simulationContext;
+
+      return (
+        <Button
+          type="button"
+          variant="outline"
+          onClick={endChat}
+          disabled={
+            endChatLoading || (simulation?.timeLimit ? !isActive : false)
+          }
+          className="whitespace-nowrap min-h-[40px] h-[40px] px-4 text-sm"
+        >
+          {endChatLoading
+            ? "Ending..."
+            : isSingleChatAttempt
+              ? "End Session"
+              : "End Chat"}
+        </Button>
+      );
     }
 
     if (pathname === "/analytics/dashboard") {
@@ -251,5 +285,22 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <MainLayoutContent>{children}</MainLayoutContent>;
+  const pathname = usePathname();
+  const attemptId = useMemo(() => {
+    const match = pathname?.match(/^\/home\/a\/([^\/]+)/);
+    return match ? match[1] : null;
+  }, [pathname]);
+  // If we have an attemptId, wrap the content in the provider.
+  // Otherwise, render the content directly.
+  return (
+    <>
+      {attemptId ? (
+        <SimulationProvider attemptId={attemptId}>
+          <MainLayoutContent>{children}</MainLayoutContent>
+        </SimulationProvider>
+      ) : (
+        <MainLayoutContent>{children}</MainLayoutContent>
+      )}
+    </>
+  );
 }

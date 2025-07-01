@@ -131,11 +131,7 @@ interface SimulationContextType {
 const SimulationContext = createContext<SimulationContextType | null>(null);
 
 export const useSimulation = () => {
-  const context = useContext(SimulationContext);
-  if (!context) {
-    throw new Error("useSimulation must be used within SimulationProvider");
-  }
-  return context;
+  return useContext(SimulationContext);
 };
 
 interface SimulationProviderProps {

@@ -6,11 +6,9 @@
  */
 
 import AttemptChat from "@/components/common/chat/attempt/AttemptChat";
-import { SimulationProvider } from "@/contexts/simulation-context";
 import { getSimulationAttempt } from "@/utils/queries/simulation_attempts/get-simulation-attempt";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
 import { Metadata, ResolvingMetadata } from "next";
-import { use } from "react";
 
 export async function generateMetadata(
   { params }: { params: Promise<{ attemptId: string }> },
@@ -36,16 +34,12 @@ export async function generateMetadata(
 }
 
 export default function AttemptPage({
-  params,
 }: {
   params: Promise<{ attemptId: string }>;
 }) {
-  const { attemptId } = use(params);
   return (
     <div className="space-y-6">
-      <SimulationProvider attemptId={attemptId}>
         <AttemptChat />
-      </SimulationProvider>
     </div>
   );
 }

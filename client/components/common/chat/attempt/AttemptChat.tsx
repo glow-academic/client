@@ -56,22 +56,7 @@ import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
 
 export default function AttemptChat() {
-  const {
-    simulation,
-    scenario,
-    scenarioDocuments,
-    currentChat,
-    chats,
-    isLoadingChats,
-    currentDynamicRubric,
-    allDynamicRubrics,
-    aggregatedResults,
-    timer,
-    isActive,
-    showResults,
-    isSingleChatAttempt,
-    expectedChatCount,
-  } = useSimulation();
+  const simulationContext = useSimulation();
 
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [showGrades, setShowGrades] = useState(false);
@@ -82,39 +67,39 @@ export default function AttemptChat() {
 
   // Get selected chat for rubric display
   const selectedChat = useMemo(() => {
-    if (!selectedChatId || !chats) return null;
-    return chats.find((chat: SimulationChat) => chat.id === selectedChatId);
-  }, [selectedChatId, chats]);
+    if (!selectedChatId || !simulationContext?.chats) return null;
+    return simulationContext?.chats.find((chat: SimulationChat) => chat.id === selectedChatId);
+  }, [selectedChatId, simulationContext?.chats]);
 
   // Auto-select first completed chat when results show and default to showing rubric if all chats completed
   useEffect(() => {
-    if (showResults && chats && chats.length > 0 && !selectedChatId) {
-      const completedChats = chats.filter(
+    if (simulationContext?.showResults && simulationContext?.chats && simulationContext?.chats.length > 0 && !selectedChatId) {
+      const completedChats = simulationContext?.chats.filter(
         (chat: SimulationChat) => chat.completed
       );
       if (completedChats.length > 0 && completedChats[0]) {
         setSelectedChatId(completedChats[0].id);
 
         // If all chats are completed, default to showing rubric
-        if (completedChats.length === chats.length) {
+        if (completedChats.length === simulationContext?.chats.length) {
           setShowGrades(true);
         }
       }
     }
-  }, [showResults, chats, selectedChatId]);
+  }, [simulationContext?.showResults, simulationContext?.chats, selectedChatId]);
 
   // Set default selected document
   useEffect(() => {
     if (
-      scenarioDocuments.length > 0 &&
+      simulationContext?.scenarioDocuments && simulationContext?.scenarioDocuments.length > 0 &&
       !selectedDocumentId &&
-      scenarioDocuments[0]
+      simulationContext?.scenarioDocuments[0]
     ) {
-      setSelectedDocumentId(scenarioDocuments[0].id);
+      setSelectedDocumentId(simulationContext?.scenarioDocuments[0].id);
     }
-  }, [scenarioDocuments, selectedDocumentId]);
+  }, [simulationContext?.scenarioDocuments, selectedDocumentId]);
 
-  if (isLoadingChats) {
+  if (simulationContext?.isLoadingChats) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <div className="text-center space-y-4">
@@ -125,7 +110,7 @@ export default function AttemptChat() {
     );
   }
 
-  if (!chats || chats.length === 0) {
+  if (!simulationContext?.chats || simulationContext?.chats.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center p-4">
         <Card>
@@ -145,14 +130,14 @@ export default function AttemptChat() {
   }
 
   // Show results screen
-  if (showResults) {
+  if (simulationContext?.showResults) {
     return (
       <div className="h-[calc(100vh-4rem)]">
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Main Results Area */}
           <ResizablePanel
             defaultSize={
-              showDocuments && scenarioDocuments.length > 0 ? 70 : 100
+              showDocuments && simulationContext?.scenarioDocuments.length > 0 ? 70 : 100
             }
           >
             <Card className="h-full flex flex-col py-4">
@@ -164,7 +149,7 @@ export default function AttemptChat() {
                       {/* Show scenario information */}
                       <div className="flex items-center gap-2">
                         <span className="font-medium">
-                          {scenario?.description || "Session Results"}
+                          {simulationContext?.scenario?.description || "Session Results"}
                         </span>
                       </div>
                     </div>
@@ -194,7 +179,7 @@ export default function AttemptChat() {
                       </div>
                       <div className="flex items-center gap-2">
                         {/* Documents Toggle */}
-                        {scenarioDocuments.length > 0 && (
+                        {simulationContext?.scenarioDocuments && simulationContext?.scenarioDocuments.length > 0 && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -228,18 +213,18 @@ export default function AttemptChat() {
                               <div
                                 className={`flex items-center gap-2 px-3 py-1 rounded-full ${
                                   selectedChat &&
-                                  allDynamicRubrics.find(
+                                  simulationContext?.allDynamicRubrics.find(
                                     (rubric) =>
                                       rubric.chatId === selectedChat.id
                                   )
-                                    ? allDynamicRubrics.find(
+                                    ? simulationContext?.allDynamicRubrics.find(
                                         (rubric) =>
                                           rubric.chatId === selectedChat.id
                                       )?.passed
                                       ? "bg-green-100 dark:bg-green-900/30"
                                       : "bg-red-100 dark:bg-red-900/30"
-                                    : aggregatedResults
-                                      ? aggregatedResults.overallPassed
+                                    : simulationContext?.aggregatedResults
+                                      ? simulationContext?.aggregatedResults.overallPassed
                                         ? "bg-green-100 dark:bg-green-900/30"
                                         : "bg-red-100 dark:bg-red-900/30"
                                       : "bg-muted"
@@ -251,29 +236,29 @@ export default function AttemptChat() {
                                   data-testid="timer"
                                 >
                                   {selectedChat &&
-                                  allDynamicRubrics.find(
+                                  simulationContext?.allDynamicRubrics.find(
                                     (rubric) =>
                                       rubric.chatId === selectedChat.id
                                   )?.timeTaken !== undefined
                                     ? formatTime(
-                                        allDynamicRubrics.find(
+                                        simulationContext?.allDynamicRubrics.find(
                                           (rubric) =>
                                             rubric.chatId === selectedChat.id
                                         )?.timeTaken ?? 0
                                       )
-                                    : aggregatedResults?.totalTime !== undefined
-                                      ? formatTime(aggregatedResults.totalTime)
+                                    : simulationContext?.aggregatedResults?.totalTime !== undefined
+                                      ? formatTime(simulationContext?.aggregatedResults.totalTime)
                                       : "No time limit"}
                                 </span>
                               </div>
                             </TooltipTrigger>
                             {selectedChat &&
-                            allDynamicRubrics.find(
+                            simulationContext?.allDynamicRubrics.find(
                               (rubric) => rubric.chatId === selectedChat.id
                             ) ? (
                               <TooltipContent>
                                 <p>
-                                  {allDynamicRubrics.find(
+                                  {simulationContext?.allDynamicRubrics.find(
                                     (rubric) =>
                                       rubric.chatId === selectedChat.id
                                   )?.passed
@@ -281,14 +266,14 @@ export default function AttemptChat() {
                                     : "Failed"}
                                   (
                                   {
-                                    allDynamicRubrics.find(
+                                    simulationContext?.allDynamicRubrics.find(
                                       (rubric) =>
                                         rubric.chatId === selectedChat.id
                                     )?.score
                                   }
                                   /
                                   {
-                                    allDynamicRubrics.find(
+                                    simulationContext?.allDynamicRubrics.find(
                                       (rubric) =>
                                         rubric.chatId === selectedChat.id
                                     )?.totalPossiblePoints
@@ -296,14 +281,14 @@ export default function AttemptChat() {
                                   )
                                 </p>
                               </TooltipContent>
-                            ) : aggregatedResults ? (
+                            ) : simulationContext?.aggregatedResults ? (
                               <TooltipContent>
                                 <p>
-                                  {aggregatedResults.overallPassed
+                                  {simulationContext?.aggregatedResults.overallPassed
                                     ? "Passed"
                                     : "Failed"}
-                                  ({aggregatedResults.passedChats}/
-                                  {aggregatedResults.totalChats} chats passed)
+                                  ({simulationContext?.aggregatedResults.passedChats}/
+                                  {simulationContext?.aggregatedResults.totalChats} chats passed)
                                 </p>
                               </TooltipContent>
                             ) : null}
@@ -314,7 +299,7 @@ export default function AttemptChat() {
                   </div>
 
                   {/* Show completion status for completed attempts */}
-                  {!isSingleChatAttempt && (
+                  {!simulationContext?.isSingleChatAttempt && (
                     <div className="flex justify-end">
                       <Select
                         value={selectedChatId || ""}
@@ -324,7 +309,7 @@ export default function AttemptChat() {
                           <SelectValue placeholder="Select chat to view results" />
                         </SelectTrigger>
                         <SelectContent>
-                          {chats
+                          {simulationContext?.chats
                             ?.filter((chat: SimulationChat) => chat.completed)
                             .map((chat: SimulationChat) => (
                               <SelectItem key={chat.id} value={chat.id}>
@@ -343,10 +328,10 @@ export default function AttemptChat() {
                   <ScrollArea className="flex-1 px-4 min-h-0">
                     <div className="space-y-4 py-4">
                       {/* Show rubric when toggle is on */}
-                      {showGrades && selectedChat && simulation?.rubricId ? (
+                      {showGrades && selectedChat && simulationContext?.simulation?.rubricId ? (
                         <div className="space-y-4 py-4">
                           <TableRubric
-                            rubricId={simulation?.rubricId}
+                            rubricId={simulationContext?.simulation?.rubricId}
                             simulationChatId={selectedChatId || ""}
                           />
                         </div>
@@ -354,8 +339,6 @@ export default function AttemptChat() {
                         /* Show chat messages for both single and multi-chat attempts */
                         <div className="space-y-4">
                           <AttemptMessages
-                            simulation={simulation}
-                            isActive={true}
                             chatId={selectedChat.id}
                           />
                         </div>
@@ -375,17 +358,17 @@ export default function AttemptChat() {
           </ResizablePanel>
 
           {/* Right Panel - Documents */}
-          {showDocuments && scenarioDocuments.length > 0 && (
+          {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
             <>
               <ResizableHandle />
               <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
                 <Card className="h-full flex flex-col ml-4 p-0">
                   <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                     {/* Select dropdown directly above document */}
-                    {scenarioDocuments.length > 1 && (
+                    {simulationContext?.scenarioDocuments.length > 1 && (
                       <div className="p-3 pb-2 border-b">
                         <DocumentSelect
-                          documents={scenarioDocuments}
+                          documents={simulationContext?.scenarioDocuments}
                           selectedDocumentId={selectedDocumentId}
                           onDocumentSelect={setSelectedDocumentId}
                         />
@@ -397,7 +380,7 @@ export default function AttemptChat() {
                         <DocumentViewer
                           key={selectedDocumentId}
                           document={
-                            scenarioDocuments.find(
+                            simulationContext.scenarioDocuments.find(
                               (doc) => doc.id === selectedDocumentId
                             )!
                           }
@@ -419,7 +402,7 @@ export default function AttemptChat() {
       <ResizablePanelGroup direction="horizontal" className="h-full">
         {/* Main Chat Area */}
         <ResizablePanel
-          defaultSize={showDocuments && scenarioDocuments.length > 0 ? 70 : 100}
+          defaultSize={showDocuments && simulationContext?.scenarioDocuments.length > 0 ? 70 : 100}
         >
           <Card className="h-full flex flex-col py-4">
             <TooltipProvider>
@@ -432,29 +415,29 @@ export default function AttemptChat() {
                         <div className="flex items-center gap-4">
                           <div className="flex items-start gap-2">
                             <span className="font-medium">
-                              {scenario?.description || currentChat?.title}
+                              {simulationContext?.scenario?.description || simulationContext?.currentChat?.title}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-start justify-end gap-2">
                           <div className="flex items-center gap-4">
-                            {currentChat?.completed && (
+                            {simulationContext?.currentChat?.completed && (
                               <Badge variant="default">Completed</Badge>
                             )}
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {expectedChatCount > 1 && (
+                            {simulationContext?.expectedChatCount > 1 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <div className="text-sm text-muted-foreground flex items-center gap-2">
                                     <CircularProgress
                                       progress={
-                                        (chats.filter(
+                                        (simulationContext?.chats.filter(
                                           (chat: SimulationChat) =>
                                             chat.completed
                                         ).length /
-                                          expectedChatCount) *
+                                          simulationContext?.expectedChatCount) *
                                         100
                                       }
                                       size={64}
@@ -464,17 +447,17 @@ export default function AttemptChat() {
                                 <TooltipContent>
                                   <p>
                                     {
-                                      chats.filter(
+                                      simulationContext?.chats.filter(
                                         (chat: SimulationChat) => chat.completed
                                       ).length
                                     }{" "}
-                                    of {expectedChatCount} chats completed
+                                    of {simulationContext?.expectedChatCount} chats completed
                                   </p>
                                 </TooltipContent>
                               </Tooltip>
                             )}
 
-                            {scenarioDocuments.length > 0 && (
+                            {simulationContext?.scenarioDocuments.length > 0 && (
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
@@ -506,9 +489,9 @@ export default function AttemptChat() {
                               <TooltipTrigger asChild>
                                 <div
                                   className={`flex items-center gap-2 px-3 py-1 rounded-full ${
-                                    currentChat?.completed &&
-                                    currentDynamicRubric
-                                      ? currentDynamicRubric.passed
+                                    simulationContext?.currentChat?.completed &&
+                                    simulationContext?.currentDynamicRubric
+                                      ? simulationContext?.currentDynamicRubric.passed
                                         ? "bg-green-100 dark:bg-green-900/30"
                                         : "bg-red-100 dark:bg-red-900/30"
                                       : "bg-muted"
@@ -519,27 +502,27 @@ export default function AttemptChat() {
                                     className="text-sm font-medium"
                                     data-testid="timer"
                                   >
-                                    {simulation?.timeLimit &&
-                                    timer.remaining !== null
-                                      ? formatTime(timer.remaining)
-                                      : formatTime(timer.elapsed)}
+                                    {simulationContext?.simulation?.timeLimit &&
+                                    simulationContext?.timer.remaining !== null
+                                      ? formatTime(simulationContext?.timer.remaining)
+                                      : formatTime(simulationContext?.timer.elapsed)}
                                   </span>
-                                  {simulation?.timeLimit && timer.expired && (
+                                  {simulationContext?.simulation?.timeLimit && simulationContext?.timer.expired && (
                                     <span className="text-xs text-red-500 ml-1">
                                       (Expired)
                                     </span>
                                   )}
                                 </div>
                               </TooltipTrigger>
-                              {currentChat?.completed &&
-                                currentDynamicRubric && (
+                              {simulationContext?.currentChat?.completed &&
+                                simulationContext?.currentDynamicRubric && (
                                   <TooltipContent>
                                     <p>
-                                      {currentDynamicRubric.passed
+                                      {simulationContext?.currentDynamicRubric.passed
                                         ? "Passed"
                                         : "Failed"}
-                                      ({currentDynamicRubric.score}/
-                                      {currentDynamicRubric.totalPossiblePoints}
+                                      ({simulationContext?.currentDynamicRubric.score}/
+                                      {simulationContext?.currentDynamicRubric.totalPossiblePoints}
                                       )
                                     </p>
                                   </TooltipContent>
@@ -551,10 +534,7 @@ export default function AttemptChat() {
                     </div>
 
                     {/* Messages Area */}
-                    <AttemptMessages
-                      simulation={simulation}
-                      isActive={isActive}
-                    />
+                    <AttemptMessages/>
                   </div>
                 </ResizablePanel>
 
@@ -569,17 +549,17 @@ export default function AttemptChat() {
         </ResizablePanel>
 
         {/* Right Panel - Documents */}
-        {showDocuments && scenarioDocuments.length > 0 && (
+        {showDocuments && simulationContext?.scenarioDocuments.length > 0 && (
           <>
             <ResizableHandle />
             <ResizablePanel defaultSize={30} minSize={20} maxSize={50}>
               <Card className="h-full flex flex-col ml-4 p-0">
                 <CardContent className="flex-1 p-0 min-h-0 flex flex-col">
                   {/* Select dropdown directly above document */}
-                  {scenarioDocuments.length > 1 && (
+                  {simulationContext?.scenarioDocuments.length > 1 && (
                     <div className="p-3 pb-2 border-b">
                       <DocumentSelect
-                        documents={scenarioDocuments}
+                        documents={simulationContext?.scenarioDocuments}
                         selectedDocumentId={selectedDocumentId}
                         onDocumentSelect={setSelectedDocumentId}
                       />
@@ -591,7 +571,7 @@ export default function AttemptChat() {
                       <DocumentViewer
                         key={selectedDocumentId}
                         document={
-                          scenarioDocuments.find(
+                          simulationContext.scenarioDocuments.find(
                             (doc) => doc.id === selectedDocumentId
                           )!
                         }
