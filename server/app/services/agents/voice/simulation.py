@@ -126,12 +126,13 @@ class SimulationSTTModel(STTModel):
 
 
 class SimulationTTSModel(TTSModel):
-    def __init__(self, chat_id: uuid.UUID, session: Session, model_id: uuid.UUID | None = None,  generate_audio: bool = True, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, model_id: uuid.UUID | None = None, generate_audio: bool = True, profile_id: str | None = None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.generate_audio = generate_audio
         self.chat_id = chat_id
         self.session = session
         self.model_id = model_id
+        self.profile_id = profile_id  # NEW: Store profile_id for data-channel access
 
         if model_id is None:
             self.name = "kokoro" # using open source model
@@ -158,37 +159,74 @@ class SimulationTTSModel(TTSModel):
     
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
         """
-        Streams audio frames **and**, once streaming is done,
-        writes those frames to <AUDIO_FOLDER>/<message_id>.wav
-        and updates the row that was just inserted.
+        Streams audio frames **and** handles data channel text streaming.
+        This method now pairs text token streaming with audio generation.
         """
         from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
+
+        # we will need to handle splitting the text into tokens that correspond to the audio chunks
+
+        token_sent = False
+        if self.profile_id:
+            from app.main import send_text_dc
+            token_sent = await send_text_dc(self.profile_id, {
+                "type": "token",
+                "chat_id": str(self.chat_id),
+                "token": text[:100], # TODO: split the text into tokens that correspond to the audio chunks
+                "accumulated_content": text,
+            })
         
+        # Fallback to WebSocket if data-channel unavailable
+        if not token_sent:
+            await sio_instance.emit(
+                "simulation_message_token",
+                {
+                    "chat_id": str(self.chat_id),
+                    "token": text[:100], # TODO: split the text into tokens that correspond to the audio chunks
+                    "accumulated_content": text,
+                },
+                room=f"simulation_{self.chat_id}",
+            )
+        
+        # Create the assistant message with the final accumulated content
         assistant_message = SimulationMessages(
             chat_id=self.chat_id,
             type="response",
             content=text,
-            completed=True,  # Mark as completed immediately since we have the full chunk
+            completed=True,  # Mark as completed since we have the full content
             audio=self.generate_audio
         )
         self.session.add(assistant_message)
         self.session.commit()
         self.session.refresh(assistant_message)
 
-        await sio_instance.emit(
-            "simulation_new_message",
-            {
-                "message_id": str(assistant_message.id),
+        # Send completion notification through data channel or WebSocket
+        completion_sent = False
+        if self.profile_id:
+            from app.main import send_text_dc
+            completion_sent = await send_text_dc(self.profile_id, {
+                "type": "complete",
                 "chat_id": str(self.chat_id),
-                "role": "assistant",
-                "content": text,
-                "completed": True,
+                "message_id": str(assistant_message.id),
+                "final_content": text,
                 "audio": assistant_message.audio,
-                "created_at": assistant_message.created_at.isoformat(),
-            },
-            room=f"simulation_{self.chat_id}",
-        )
+            })
+        
+        if not completion_sent:
+            await sio_instance.emit(
+                "simulation_message_complete",
+                {
+                    "message_id": str(assistant_message.id),
+                    "chat_id": str(self.chat_id),
+                    "role": "assistant",
+                    "content": text,
+                    "completed": True,
+                    "audio": assistant_message.audio,
+                    "created_at": assistant_message.created_at.isoformat(),
+                },
+                room=f"simulation_{self.chat_id}",
+            )
         
         if not self.generate_audio:
             return                      # text-only message finishes here
@@ -283,6 +321,7 @@ class SimulationWorkflow(VoiceWorkflowBase):
     async def run(self, transcription: str) -> AsyncIterator[str]:
         """
         Run the voice workflow. Receives transcription and yields text for TTS.
+        Note: Text token streaming is now handled in the TTS model to pair with audio.
         """
         from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
@@ -372,21 +411,21 @@ class SimulationPipeline:
             return VoicePipeline(
                 workflow=workflow,
                 stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=True),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True, profile_id=self.profile_id),
                 config=config,
             )
         elif self.mode == Modalities.AUDIO_TEXT:
             return VoicePipeline(
                 workflow=workflow,
                 stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=True),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=False),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=False, profile_id=self.profile_id),
                 config=config,
             )
         elif self.mode == Modalities.TEXT_AUDIO:
             return VoicePipeline(
                 workflow=workflow,
                 stt_model=SimulationSTTModel(chat_id=self.chat_id, session=self.session, model_id=self.stt_model_id, generate_text=False),
-                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True),
+                tts_model=SimulationTTSModel(chat_id=self.chat_id, session=self.session, model_id=self.tts_model_id, generate_audio=True, profile_id=self.profile_id),
                 config=config,
             )
         else:
