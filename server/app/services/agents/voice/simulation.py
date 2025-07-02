@@ -157,6 +157,11 @@ class SimulationTTSModel(TTSModel):
         return self.description
     
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
+        """
+        Streams audio frames **and**, once streaming is done,
+        writes those frames to <AUDIO_FOLDER>/<message_id>.wav
+        and updates the row that was just inserted.
+        """
         from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
         
@@ -186,9 +191,11 @@ class SimulationTTSModel(TTSModel):
         )
         
         if not self.generate_audio:
-            return
+            return                      # text-only message finishes here
 
-        try:
+        wav_frames: list[bytes] = []    # <-- buffer we'll flush in finally{}
+
+        try:                            # ↑ collect frames while streaming
             if self.model_id is None:
                 # ---- Kokoro path ----
                 kokoro_pipeline = model_manager.get_kokoro_pipeline()
@@ -215,7 +222,9 @@ class SimulationTTSModel(TTSModel):
                         frame = int16[i:i + 960]
                         if len(frame) < 960:                    # pad final partial frame
                             frame = np.pad(frame, (0, 960 - len(frame)))
-                        yield frame.tobytes()
+                        frame_bytes = frame.tobytes()
+                        yield frame_bytes
+                        wav_frames.append(frame_bytes)
 
                 logger.info(f"TTS completed for text length: {len(text)}")
             else:
@@ -239,12 +248,28 @@ class SimulationTTSModel(TTSModel):
                     tts_chunk = audio_data[i:i + chunk_size]
                     if tts_chunk:
                         yield tts_chunk
+                        wav_frames.append(tts_chunk)
                         
                 logger.info(f"TTS completed for text length: {len(text)}")
-
         except Exception as e:
             logger.error(f"TTS generation or resampling failed: {e}", exc_info=True)
             return
+
+        finally:
+            # 🔻 write .wav & update row once streaming is done
+            if wav_frames:
+                path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
+                with wave.open(path, "wb") as wf:
+                    wf.setnchannels(1)
+                    wf.setsampwidth(2)
+                    wf.setframerate(48_000)
+                    wf.writeframes(b"".join(wav_frames))
+
+                assistant_message.audio = True
+                assistant_message.file_path = path
+                self.session.add(assistant_message)
+                self.session.commit()
+                logger.info("Saved assistant audio ➜ %s", path)
 
 class SimulationWorkflow(VoiceWorkflowBase):
     def __init__(self, chat_id: uuid.UUID, session: Session, mode: Modalities, original_message: str = "", *args: Any, **kwargs: Any) -> None:
@@ -396,7 +421,6 @@ class SimulationPipeline:
             # This loop's ONLY job is to process the final audio stream, if one exists.
             # It will correctly ignore the dummy audio from test.wav.
             stream_frames: list[bytes] = []  # For WebRTC streaming (individual 20ms frames)
-            wav_frames: list[bytes] = []     # For .wav file archive
 
             async for event in result.stream():
                 if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
@@ -407,7 +431,6 @@ class SimulationPipeline:
                         if audio_chunk:
                             # Separate tracking for streaming vs archival
                             stream_frames.append(audio_chunk)
-                            wav_frames.append(audio_chunk)
 
                             # 👇 THE KEY CHANGE: Add the pre-chunked audio directly
                             if server_audio_track:
@@ -418,49 +441,8 @@ class SimulationPipeline:
 
             # SPEC CHANGE: DO NOT end the stream. It must be kept alive for future messages.
             # The persistent track will continue to be available for the next TTS response.
-            if wav_frames:
+            if stream_frames:
                 logger.info(f"Audio streaming completed for profile {profile_id}, track remains active")
-
-            # If real audio was generated, find the message the workflow created and save the file.
-            if wav_frames:
-                logger.info("Real TTS audio was generated. Saving to file.")
-                
-                # --- THIS IS THE MODIFIED BLOCK ---
-                # CHANGE THIS.
-                # Find the message the workflow just created using a manual sort.
-                assistant_messages = self.session.exec(
-                    select(SimulationMessages)
-                    .where(SimulationMessages.chat_id == self.chat_id, SimulationMessages.type == "response")
-                ).all()
-
-                if assistant_messages:
-                    # Sort the messages by creation date in descending order
-                    sorted_messages = sorted(assistant_messages, key=lambda x: x.created_at, reverse=True)
-                    # The most recent message is the first one
-                    assistant_message = sorted_messages[0]
-
-                    # Update the message with the audio file details
-                    assistant_message.audio = True # Correct the audio flag as the workflow assumes False
-                    path = os.path.join(AUDIO_FOLDER, f"{assistant_message.id}.wav")
-
-                    # --- 👇 THIS IS THE FIX 👇 ---
-                    # Replace the simple `open()` with the `wave` module to write a proper WAV file
-                    
-                    full_audio_data = b"".join(wav_frames)
-                    
-                    with wave.open(path, 'wb') as wf:
-                        wf.setnchannels(1)  # Mono audio
-                        wf.setsampwidth(2)  # 16-bit PCM --> 2 bytes per sample
-                        wf.setframerate(48000) # 48kHz after resampling from Kokoro's 24kHz
-                        wf.writeframes(full_audio_data)
-                    # ------------------------------------
-
-                    assistant_message.file_path = path
-                    self.session.add(assistant_message)
-                    self.session.commit()
-                    logger.info(f"Saved assistant audio to {path}")
-                else:
-                    logger.error(f"Could not find assistant message for chat {self.chat_id} to attach audio file.")
             
             # We are done. The workflow has already sent all necessary WebSocket events.
             yield {"type": "complete", "data": "finished"}
