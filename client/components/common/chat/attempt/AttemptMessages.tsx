@@ -343,19 +343,23 @@ function StreamingCaptions({
         }
       }
 
-      // Only update React state if the visible words have actually changed
-      if (JSON.stringify(newVisibleWords) !== JSON.stringify(visibleWords)) {
-        setVisibleWords(newVisibleWords);
-      }
+      // Use a state updater function to avoid depending on `visibleWords`.
+      // This check prevents re-renders if the array hasn't changed.
+      setVisibleWords((prev) =>
+        JSON.stringify(prev) !== JSON.stringify(newVisibleWords)
+          ? newVisibleWords
+          : prev
+      );
 
       // Continue the animation loop if we haven't shown all the words yet
       if (newVisibleWords.length < allWords.length) {
         animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
       } else {
         // If all words are visible, ensure the full, final content is set
-        if (visibleWords.join(" ") !== message.content) {
-          setVisibleWords(message.content.split(/\s+/));
-        }
+        setVisibleWords((prev) => {
+          const fullWords = message.content.split(/\s+/);
+          return prev.join(" ") !== message.content ? fullWords : prev;
+        });
       }
     };
 
@@ -376,7 +380,7 @@ function StreamingCaptions({
     message.content,
     message.completed,
     message.id,
-    visibleWords, // Re-run if visibleWords changes to check if we're done
+    // ✅ REMOVED `visibleWords` to prevent infinite loop
   ]);
 
   // Display all words if not streaming or no timings are available

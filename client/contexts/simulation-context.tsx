@@ -170,6 +170,8 @@ export function SimulationProvider({
   const currentRoomRef = useRef<string | null>(null);
   const currentChatIdRef = useRef<string | null>(null);
   const freshlyCompletedChatsRef = useRef<Set<string>>(new Set());
+  const onSimulationFinishedRef = useRef(onSimulationFinished);
+  const simulationRef = useRef<Simulation | null>(null);
 
   // Use the global WebSocket context
   const {
@@ -479,9 +481,18 @@ export function SimulationProvider({
     };
   }, [elapsedTime, timeRemaining, simulation?.timeLimit]);
 
+  // Update simulation ref when simulation changes
+  useEffect(() => {
+    simulationRef.current = simulation || null;
+  }, [simulation]);
+
   // Timer logic - Update timer values every second based on actual attempt creation timestamp
   useEffect(() => {
-    if (!attempt?.createdAt || !simulation || showResults) return;
+    // Update the ref to the latest callback
+    onSimulationFinishedRef.current = onSimulationFinished;
+
+    const currentSimulation = simulationRef.current;
+    if (!attempt?.createdAt || !currentSimulation || showResults) return;
 
     const calculateTimerValues = () => {
       const attemptStartTime = new Date(attempt.createdAt);
@@ -490,8 +501,8 @@ export function SimulationProvider({
         (currentTime.getTime() - attemptStartTime.getTime()) / 1000
       );
 
-      if (simulation.timeLimit) {
-        const totalTimeSeconds = simulation.timeLimit * 60;
+      if (currentSimulation.timeLimit) {
+        const totalTimeSeconds = currentSimulation.timeLimit * 60;
         const remainingSeconds = Math.max(0, totalTimeSeconds - elapsedSeconds);
         return { elapsedTime: elapsedSeconds, timeRemaining: remainingSeconds };
       } else {
@@ -504,13 +515,13 @@ export function SimulationProvider({
     setElapsedTime(initialElapsed);
     setTimeRemaining(initialRemaining);
 
-    if (simulation.timeLimit && initialRemaining === 0) {
+    if (currentSimulation.timeLimit && initialRemaining === 0) {
       setIsActive(false);
       setShowResults(true);
       toast.success(
         isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
       );
-      onSimulationFinished?.();
+      onSimulationFinishedRef.current?.();
       return;
     }
 
@@ -520,25 +531,24 @@ export function SimulationProvider({
       setElapsedTime(newElapsed);
       setTimeRemaining(newRemaining);
 
-      if (simulation.timeLimit && newRemaining === 0 && isActive) {
+      if (currentSimulation.timeLimit && newRemaining === 0 && isActive) {
         setIsActive(false);
         setShowResults(true);
         toast.success(
           isSingleChatAttempt ? "Session completed!" : "Attempt completed!"
         );
-        onSimulationFinished?.();
+        onSimulationFinishedRef.current?.(); // Call the latest version of the function
       }
     }, 1000);
 
     return () => clearInterval(timerInterval);
   }, [
     attempt?.createdAt,
-    simulation?.timeLimit,
     showResults,
     isActive,
     isSingleChatAttempt,
-    simulation,
     onSimulationFinished,
+    simulation?.id, // Only depend on simulation ID to trigger re-run when simulation changes
   ]);
 
   // Initialize to first incomplete chat when data loads
