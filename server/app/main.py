@@ -70,6 +70,10 @@ class ServerAudioStreamTrack(MediaStreamTrack):
 
     def add_chunk(self, chunk: bytes) -> None:
         """Adds a pre-chunked 20ms audio chunk to the queue."""
+        # Safety check: ensure chunk is exactly 1920 bytes (960 samples × 2 bytes)
+        if len(chunk) != 960 * 2:
+            logger.warning(f"Dropping malformed chunk size={len(chunk)}, expected 1920 bytes")
+            return
         self.queue.put_nowait(chunk)
 
     def end_stream(self) -> None:

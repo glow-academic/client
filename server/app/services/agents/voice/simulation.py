@@ -447,7 +447,8 @@ class SimulationPipeline:
 
             # This loop's ONLY job is to process the final audio stream, if one exists.
             # It will correctly ignore the dummy audio from test.wav.
-            assistant_audio_chunks = []
+            stream_frames: list[bytes] = []  # For WebRTC streaming (individual 20ms frames)
+            wav_frames: list[bytes] = []     # For .wav file archive
 
             async for event in result.stream():
                 if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
@@ -456,7 +457,9 @@ class SimulationPipeline:
                         if isinstance(audio_chunk, np.ndarray):
                             audio_chunk = audio_chunk.tobytes()
                         if audio_chunk:
-                            assistant_audio_chunks.append(audio_chunk)
+                            # Separate tracking for streaming vs archival
+                            stream_frames.append(audio_chunk)
+                            wav_frames.append(audio_chunk)
 
                             # 👇 THE KEY CHANGE: Add the pre-chunked audio directly
                             if server_audio_track:
@@ -467,11 +470,11 @@ class SimulationPipeline:
 
             # SPEC CHANGE: DO NOT end the stream. It must be kept alive for future messages.
             # The persistent track will continue to be available for the next TTS response.
-            if assistant_audio_chunks:
+            if wav_frames:
                 logger.info(f"Audio streaming completed for profile {profile_id}, track remains active")
 
             # If real audio was generated, find the message the workflow created and save the file.
-            if assistant_audio_chunks:
+            if wav_frames:
                 logger.info("Real TTS audio was generated. Saving to file.")
                 
                 # --- THIS IS THE MODIFIED BLOCK ---
@@ -494,12 +497,12 @@ class SimulationPipeline:
                     # --- 👇 THIS IS THE FIX 👇 ---
                     # Replace the simple `open()` with the `wave` module to write a proper WAV file
                     
-                    full_audio_data = b"".join(assistant_audio_chunks)
+                    full_audio_data = b"".join(wav_frames)
                     
                     with wave.open(path, 'wb') as wf:
                         wf.setnchannels(1)  # Mono audio
                         wf.setsampwidth(2)  # 16-bit PCM --> 2 bytes per sample
-                        wf.setframerate(24000) # The sample rate of your Kokoro TTS model
+                        wf.setframerate(48000) # 48kHz after resampling from Kokoro's 24kHz
                         wf.writeframes(full_audio_data)
                     # ------------------------------------
 
