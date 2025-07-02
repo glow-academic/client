@@ -254,72 +254,78 @@ class SimulationWorkflow(VoiceWorkflowBase):
             
             logger.info(f"Created user message {user_message.id} for chat {self.chat_id}")
 
-            # 2. Create the assistant message placeholder IN THE DATABASE
-            assistant_message = SimulationMessages(
-                chat_id=self.chat_id,
-                type="response",
-                content="",
-                completed=False,
-                audio=self.mode == Modalities.AUDIO_AUDIO or self.mode == Modalities.TEXT_AUDIO
-            )
-            self.session.add(assistant_message)
-            self.session.commit()
-            self.session.refresh(assistant_message)
-
-            # 3. Emit the placeholder to the client
-            await sio_instance.emit(
-                "simulation_new_message",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(self.chat_id),
-                    "role": "assistant",
-                    "content": "",
-                    "completed": False,
-                    "audio": assistant_message.audio,
-                    "created_at": assistant_message.created_at.isoformat(),
-                },
-                room=f"simulation_{self.chat_id}",
-            )
-
-            # 4. Run the agent and stream the response
-            accumulated_content = ""
+            # 2. Stream the agent response, creating a new message for each sentence/chunk
             buf, splitter = "", get_sentence_based_splitter(min_sentence_length=20)
+            want_audio = self.mode == Modalities.AUDIO_AUDIO or self.mode == Modalities.TEXT_AUDIO
+            
             async for token in run_simulation_agent(self.chat_id, self.session):
                 buf += token
 
-                chunk, buf = splitter(buf)          # ⇐ decide if we have a full sentence
+                chunk, buf = splitter(buf)          # decide if we have a full sentence
                 if chunk:
-                   yield chunk                           # go to TTS
-                   accumulated_content += chunk          # grow DB/UI copy
-                   await sio_instance.emit(              # tell UI a *sentence* landed
-                       "simulation_message_token",
-                       {"message_id": str(assistant_message.id),
-                        "chat_id": str(self.chat_id),
-                        "token": chunk,                  # full sentence
-                        "accumulated_content": accumulated_content},
+                    # Create a new message for this chunk
+                    assistant_message = SimulationMessages(
+                        chat_id=self.chat_id,
+                        type="response",
+                        content=chunk,
+                        completed=True,  # Mark as completed immediately since we have the full chunk
+                        audio=want_audio
+                    )
+                    self.session.add(assistant_message)
+                    self.session.commit()
+                    self.session.refresh(assistant_message)
+                    
+                    logger.info(f"Created assistant message {assistant_message.id} for chat {self.chat_id} with content: {chunk[:50]}...")
+
+                    # Emit the new message to the client
+                    await sio_instance.emit(
+                        "simulation_new_message",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(self.chat_id),
+                            "role": "assistant",
+                            "content": chunk,
+                            "completed": True,
+                            "audio": assistant_message.audio,
+                            "created_at": assistant_message.created_at.isoformat(),
+                        },
                         room=f"simulation_{self.chat_id}",
                     )
+                    
+                    yield chunk  # Send to TTS
             
+            # Handle any remaining content in the buffer
             if buf.strip():
-                yield buf
-                accumulated_content += buf
+                # Create a final message for the remaining content
+                assistant_message = SimulationMessages(
+                    chat_id=self.chat_id,
+                    type="response",
+                    content=buf,
+                    completed=True,
+                    audio=want_audio
+                )
+                self.session.add(assistant_message)
+                self.session.commit()
+                self.session.refresh(assistant_message)
+                
+                logger.info(f"Created final assistant message {assistant_message.id} for chat {self.chat_id} with remaining content: {buf[:50]}...")
 
-            # 5. Finalize the message in the DB and emit completion
-            assistant_message.content = accumulated_content
-            assistant_message.completed = True
-            self.session.add(assistant_message)
-            self.session.commit()
-
-            await sio_instance.emit(
-                "simulation_message_complete",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(self.chat_id),
-                    "final_content": accumulated_content,
-                    "audio": assistant_message.audio,
-                },
-                room=f"simulation_{self.chat_id}",
-            )
+                # Emit the final message to the client
+                await sio_instance.emit(
+                    "simulation_new_message",
+                    {
+                        "message_id": str(assistant_message.id),
+                        "chat_id": str(self.chat_id),
+                        "role": "assistant",
+                        "content": buf,
+                        "completed": True,
+                        "audio": assistant_message.audio,
+                        "created_at": assistant_message.created_at.isoformat(),
+                    },
+                    room=f"simulation_{self.chat_id}",
+                )
+                
+                yield buf  # Send to TTS
                 
         except Exception as e:
             logger.exception("Critical error in SimulationWorkflow")
