@@ -267,6 +267,118 @@ function CaptionedAudio({
   );
 }
 
+// Component for streaming word-by-word captions in audio mode
+function StreamingCaptions({
+  message,
+  timings,
+  isStreaming,
+}: {
+  message: SimulationMessage;
+  timings: WordTiming[];
+  isStreaming: boolean;
+}) {
+  const [visibleWords, setVisibleWords] = useState<string[]>([]);
+  const [audioStartTime, setAudioStartTime] = useState<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Reset visible words when message changes
+  useEffect(() => {
+    setVisibleWords([]);
+    setAudioStartTime(null);
+  }, [message.id]);
+
+  // Start timing when streaming begins
+  useEffect(() => {
+    if (isStreaming && !audioStartTime) {
+      setAudioStartTime(Date.now());
+      logInfo(
+        `Started word timing for streaming captions - message: ${message.id}, timings: ${timings.length}`
+      );
+    } else if (!isStreaming) {
+      setAudioStartTime(null);
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    }
+  }, [isStreaming, audioStartTime, message.id, timings.length]);
+
+  // Update visible words based on timing
+  useEffect(() => {
+    if (!isStreaming || !audioStartTime || timings.length === 0) return;
+
+    const updateVisibleWords = () => {
+      const currentTime = (Date.now() - audioStartTime) / 1000; // Convert to seconds
+      const words = message.content.split(/\s+/);
+      const newVisibleWords: string[] = [];
+
+      for (let i = 0; i < timings.length && i < words.length; i++) {
+        const timing = timings[i];
+        const word = words[i];
+        if (timing && word && currentTime >= timing.start) {
+          newVisibleWords.push(word);
+        } else {
+          break; // Stop at first word that shouldn't be visible yet
+        }
+      }
+
+      // If we have more words in content than timings, show them all once we're past the last timing
+      if (
+        timings.length > 0 &&
+        words.length > timings.length &&
+        timings[timings.length - 1] &&
+        currentTime >= timings[timings.length - 1]!.end
+      ) {
+        newVisibleWords.push(...words.slice(timings.length));
+      }
+
+      // Only update if changed to avoid unnecessary re-renders
+      if (JSON.stringify(newVisibleWords) !== JSON.stringify(visibleWords)) {
+        setVisibleWords(newVisibleWords);
+        logInfo(
+          `Showing ${newVisibleWords.length}/${words.length} words at ${currentTime.toFixed(2)}s`
+        );
+      }
+
+      // Continue animation if we haven't shown all words yet
+      if (newVisibleWords.length < words.length) {
+        animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, [isStreaming, audioStartTime, timings, message.content, visibleWords]);
+
+  // Show all words if not streaming or no timings
+  const displayText =
+    !isStreaming || timings.length === 0
+      ? message.content
+      : visibleWords.join(" ");
+
+  return (
+    <div className="text-lg leading-relaxed">
+      {!message.completed && message.content === "" ? (
+        <div className="flex items-center text-muted-foreground">
+          <span className="mr-2">Thinking...</span>
+          <LoadingDots />
+        </div>
+      ) : (
+        <>
+          <Markdown>{displayText}</Markdown>
+          {!message.completed && (
+            <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
 
@@ -625,22 +737,11 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
             {captionsEnabled && currentDisplayMessage && (
               <div className="w-full max-w-4xl">
                 <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
-                  <div className="text-lg leading-relaxed">
-                    {!currentDisplayMessage.completed &&
-                    currentDisplayMessage.content === "" ? (
-                      <div className="flex items-center text-muted-foreground">
-                        <span className="mr-2">Thinking...</span>
-                        <LoadingDots />
-                      </div>
-                    ) : (
-                      <>
-                        <Markdown>{currentDisplayMessage.content}</Markdown>
-                        {!currentDisplayMessage.completed && (
-                          <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <StreamingCaptions
+                    message={currentDisplayMessage}
+                    timings={timingsByMsg[currentDisplayMessage.id] || []}
+                    isStreaming={!!isAssistantSpeaking}
+                  />
                 </ScrollArea>
               </div>
             )}
@@ -757,7 +858,10 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                     <LoadingDots />
                                   </div>
                                 </div>
-                              ) : message.audio ? (
+                              ) : message.audio &&
+                                !simulationContext?.assistantAudioEnabled ? (
+                                // Show individual message audio controls only when audio mode is OFF
+                                // to prevent duplicate audio with WebRTC persistent stream
                                 <CaptionedAudio
                                   message={message}
                                   timings={timingsByMsg[message.id] || []}
