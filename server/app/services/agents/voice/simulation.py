@@ -160,80 +160,99 @@ class SimulationTTSModel(TTSModel):
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
         """
         Streams audio frames **and** handles data channel text streaming.
-        This method now pairs text token streaming with audio generation.
+        This method now pairs text token streaming with audio generation using drip logic.
         """
+        import math
+
         from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
 
-        # we will need to handle splitting the text into tokens that correspond to the audio chunks
-
-        token_sent = False
-        if self.profile_id:
-            from app.main import send_text_dc
-            token_sent = await send_text_dc(self.profile_id, {
-                "type": "token",
-                "chat_id": str(self.chat_id),
-                "token": text[:100], # TODO: split the text into tokens that correspond to the audio chunks
-                "accumulated_content": text,
-            })
-        
-        # Fallback to WebSocket if data-channel unavailable
-        if not token_sent:
-            await sio_instance.emit(
-                "simulation_message_token",
-                {
-                    "chat_id": str(self.chat_id),
-                    "token": text[:100], # TODO: split the text into tokens that correspond to the audio chunks
-                    "accumulated_content": text,
-                },
-                room=f"simulation_{self.chat_id}",
-            )
-        
-        # Create the assistant message with the final accumulated content
+        # 1. Create the assistant message first, empty & in-flight
         assistant_message = SimulationMessages(
             chat_id=self.chat_id,
             type="response",
-            content=text,
-            completed=True,  # Mark as completed since we have the full content
+            content="",          # will be filled incrementally
+            completed=False,
             audio=self.generate_audio
         )
         self.session.add(assistant_message)
         self.session.commit()
         self.session.refresh(assistant_message)
 
-        # Send completion notification through data channel or WebSocket
-        completion_sent = False
-        if self.profile_id:
-            from app.main import send_text_dc
-            completion_sent = await send_text_dc(self.profile_id, {
+        if not self.generate_audio:
+            # For text-only mode, just send the complete message immediately
+            assistant_message.content = text
+            assistant_message.completed = True
+            self.session.add(assistant_message)
+            self.session.commit()
+            
+            complete_payload = {
                 "type": "complete",
                 "chat_id": str(self.chat_id),
                 "message_id": str(assistant_message.id),
                 "final_content": text,
                 "audio": assistant_message.audio,
-            })
-        
-        if not completion_sent:
-            await sio_instance.emit(
-                "simulation_message_complete",
-                {
-                    "message_id": str(assistant_message.id),
-                    "chat_id": str(self.chat_id),
-                    "role": "assistant",
-                    "content": text,
-                    "completed": True,
-                    "audio": assistant_message.audio,
-                    "created_at": assistant_message.created_at.isoformat(),
-                },
-                room=f"simulation_{self.chat_id}",
-            )
-        
-        if not self.generate_audio:
-            return                      # text-only message finishes here
+            }
 
-        wav_frames: list[bytes] = []    # <-- buffer we'll flush in finally{}
+            sent = False
+            if self.profile_id:
+                from app.main import send_text_dc
+                sent = await send_text_dc(self.profile_id, complete_payload)
 
-        try:                            # ↑ collect frames while streaming
+            if not sent:
+                await sio_instance.emit(
+                    "simulation_message_complete",
+                    complete_payload,
+                    room=f"simulation_{self.chat_id}",
+                )
+            return
+
+        # 2. Pre-compute the "token schedule"
+        words = text.split()
+        total_words = len(words)
+        approx_frames = math.ceil(len(text) / 4.5)  # ~1 word ⇒ 200 ms speech
+        words_per_frame = max(1, total_words // approx_frames) if approx_frames > 0 else 1
+        next_word_index = 0
+        accum = ""
+
+        # 3. Helper to push a token batch through the data-channel (fallback → WS)
+        async def push_tokens(batch: list[str]) -> None:
+            nonlocal accum, next_word_index
+
+            if not batch:
+                return
+
+            accum += (" " if accum else "") + " ".join(batch)
+            next_word_index += len(batch)
+
+            payload = {
+                "type": "token",
+                "chat_id": str(self.chat_id),
+                "message_id": str(assistant_message.id),
+                "token": " ".join(batch),
+                "accumulated_content": accum,
+            }
+
+            pushed = False
+            if self.profile_id:
+                from app.main import send_text_dc
+                pushed = await send_text_dc(self.profile_id, payload)
+
+            if not pushed:
+                await sio_instance.emit(
+                    "simulation_message_token",
+                    payload,
+                    room=f"simulation_{self.chat_id}",
+                )
+
+            # Light DB touch so the page reload is always consistent
+            assistant_message.content = accum
+            self.session.add(assistant_message)
+            self.session.commit()
+
+        wav_frames: list[bytes] = []
+
+        try:
             if self.model_id is None:
                 # ---- Kokoro path ----
                 kokoro_pipeline = model_manager.get_kokoro_pipeline()
@@ -244,6 +263,12 @@ class SimulationTTSModel(TTSModel):
                 voice = random.choice(model_manager.kokoro_voices)
                 logger.info(f"Kokoro voice={voice}  text='{text[:40]}…'")
 
+                # 5. Second pass to discover real_frame_total
+                pcm24_total = torch.cat([c for _, _, c in kokoro_pipeline(text, voice=voice)], dim=-1)
+                real_frame_total = math.ceil(pcm24_total.numel() / 960)  # 960 samples → 20 ms
+
+                # 4. Stream audio and drip tokens proportionally
+                frames_sent = 0
                 for _, _, chunk24 in kokoro_pipeline(text, voice=voice):
                     # Guard against empty chunks
                     if chunk24.size == 0:
@@ -264,6 +289,17 @@ class SimulationTTSModel(TTSModel):
                         yield frame_bytes
                         wav_frames.append(frame_bytes)
 
+                        frames_sent += 1
+
+                        # ----- decide how many words should have been seen by now -----
+                        if real_frame_total > 0:
+                            target_words = math.floor(frames_sent / real_frame_total * total_words)
+                        else:
+                            target_words = frames_sent * words_per_frame
+
+                        if target_words > next_word_index and next_word_index < total_words:
+                            await push_tokens(words[next_word_index:min(target_words, total_words)])
+
                 logger.info(f"TTS completed for text length: {len(text)}")
             else:
                 logger.info(f"TTS generating audio for text: {text[:50]}...")
@@ -279,16 +315,57 @@ class SimulationTTSModel(TTSModel):
                 # Note: LiteLLM may return the full audio at once, so we'll chunk it
                 audio_data = response.content if hasattr(response, 'content') else b""
                 
-                # For external TTS, assume it's already in the correct format or resample if needed
-                # This is a simplified approach - you may need to detect the actual sample rate
+                # Calculate total frames for drip logic
                 chunk_size = 1920  # 960 samples * 2 bytes per sample for 20ms at 48kHz
+                total_chunks = math.ceil(len(audio_data) / chunk_size)
+                frames_sent = 0
+                
                 for i in range(0, len(audio_data), chunk_size):
                     tts_chunk = audio_data[i:i + chunk_size]
                     if tts_chunk:
                         yield tts_chunk
                         wav_frames.append(tts_chunk)
+                        frames_sent += 1
+
+                        # Drip tokens proportionally for LiteLLM
+                        if total_chunks > 0:
+                            target_words = math.floor(frames_sent / total_chunks * total_words)
+                        else:
+                            target_words = frames_sent * words_per_frame
+
+                        if target_words > next_word_index and next_word_index < total_words:
+                            await push_tokens(words[next_word_index:min(target_words, total_words)])
                         
                 logger.info(f"TTS completed for text length: {len(text)}")
+
+            # 6. Flush the tail & mark complete
+            await push_tokens(words[next_word_index:])  # any stragglers
+
+            assistant_message.content = text
+            assistant_message.completed = True
+            self.session.add(assistant_message)
+            self.session.commit()
+
+            complete_payload = {
+                "type": "complete",
+                "chat_id": str(self.chat_id),
+                "message_id": str(assistant_message.id),
+                "final_content": text,
+                "audio": assistant_message.audio,
+            }
+
+            sent = False
+            if self.profile_id:
+                from app.main import send_text_dc
+                sent = await send_text_dc(self.profile_id, complete_payload)
+
+            if not sent:
+                await sio_instance.emit(
+                    "simulation_message_complete",
+                    complete_payload,
+                    room=f"simulation_{self.chat_id}",
+                )
+
         except Exception as e:
             logger.error(f"TTS generation or resampling failed: {e}", exc_info=True)
             return
