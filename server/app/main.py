@@ -58,45 +58,54 @@ profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, curre
 
 class ServerAudioStreamTrack(MediaStreamTrack):
     """
-    A robust audio track for sending server-generated audio.
-    It sends silence when the queue is empty to keep the track alive.
+    Receives pre-chunked 20ms, 48kHz PCM audio and wraps it in a timed AudioFrame.
     """
     kind = "audio"
 
     def __init__(self) -> None:
         super().__init__()
-        self.queue: asyncio.Queue[Optional[AudioFrame]] = asyncio.Queue()
-        self._ended = False
+        self.queue: asyncio.Queue[Optional[bytes]] = asyncio.Queue()
         self._pts = 0
-        self._sample_rate = 24000  # Your TTS model's sample rate
+        self._time_base = fractions.Fraction(1, 48000)
 
-    async def recv(self) -> AudioFrame:
-        """Pulls the next AudioFrame from the queue or returns silence."""
-        frame = await self.queue.get()
-        if frame is None:
-            self._ended = True
-            raise asyncio.CancelledError("Audio stream ended cleanly")
-
-        # 👇 THE CRITICAL FIX IS HERE 👇
-        # We must set the presentation timestamp (pts) AND the time_base
-        # for the receiver to correctly interpret the stream's timing.
-        frame.pts = self._pts
-        frame.time_base = fractions.Fraction(1, self._sample_rate)
-        self._pts += frame.samples
-        return frame
-
-    def add_frame(self, frame: AudioFrame) -> None:
-        """Adds a new AudioFrame to the queue for sending."""
-        if not self._ended:
-            self.queue.put_nowait(frame)
+    def add_chunk(self, chunk: bytes) -> None:
+        """Adds a pre-chunked 20ms audio chunk to the queue."""
+        self.queue.put_nowait(chunk)
 
     def end_stream(self) -> None:
         """Signals the end of the stream by adding a None sentinel."""
-        if not self._ended:
-            logger.info("Signaling end of server audio stream.")
-            # Set the ended flag before putting None in the queue
-            self._ended = True
-            self.queue.put_nowait(None)
+        logger.info("Ending persistent server audio stream.")
+        self.queue.put_nowait(None)
+
+    async def recv(self) -> AudioFrame:
+        """Pulls the next PCM chunk and wraps it in a timed AudioFrame."""
+        chunk = await self.queue.get()
+        if chunk is None:
+            self.stop()
+            raise asyncio.CancelledError("Audio stream ended.")
+
+        # Create the AudioFrame directly from the 20ms chunk
+        frame = AudioFrame(format="s16", layout="mono", samples=960)
+        frame.planes[0].update(chunk)
+
+        # Set the presentation timestamp
+        frame.sample_rate = 48000
+        frame.pts = self._pts
+        frame.time_base = self._time_base
+        self._pts += frame.samples
+        
+        # Add debugging for the first ~2 seconds of frames
+        if self._pts < (48000 * 2):
+            logger.info(
+                f"DEBUG_AUDIO_FRAME: "
+                f"pts={frame.pts}, "
+                f"samples={frame.samples}, "
+                f"sample_rate={frame.sample_rate}, "
+                f"time_base={frame.time_base}, "
+                f"duration_ms={frame.samples / 48.0:.2f}"
+            )
+        
+        return frame
 
 # Add this helper function to the top of the file
 def force_opus_codec(sdp: str) -> str:

@@ -7,8 +7,10 @@ import uuid
 import wave
 from typing import Any, AsyncGenerator, AsyncIterator, Callable, Dict
 
+import librosa
 import litellm
 import numpy as np
+import torch
 from agents import trace
 from agents.voice.input import AudioInput, StreamedAudioInput
 from agents.voice.model import (StreamedTranscriptionSession, STTModel,
@@ -153,90 +155,61 @@ class SimulationTTSModel(TTSModel):
     def model_name(self) -> str:
         """The name of the TTS model."""
         return self.description
-
+    
     async def run(self, text: str, settings: TTSModelSettings) -> AsyncIterator[bytes]:
-        """Given a text string, produces a stream of audio bytes, in PCM format."""
-        # If we do not generate audio, return nothing
         if not self.generate_audio:
             return
-        
+
         try:
+
             if self.model_id is None:
-                # Use Kokoro TTS for open source inference
-                # Kokoro is a lightweight 82M parameter TTS model with high quality output
-                # It supports multiple voices and languages with CPU inference
-                
-                # Get Kokoro pipeline from model manager
                 kokoro_pipeline = model_manager.get_kokoro_pipeline()
-                if kokoro_pipeline is None:
-                    logger.error("Kokoro TTS not available, returning empty audio")
-                    yield b""
+                if not kokoro_pipeline:
+                    logger.error("Kokoro TTS not available.")
                     return
                 
-                # Randomly select between male and female voices
                 selected_voice = random.choice(model_manager.kokoro_voices)
+                logger.info(f"TTS generating with Kokoro voice: {selected_voice} for text: '{text[:30]}...'")
+
+                # 1. Generate the full audio clip in memory
+                audio_chunks_24k = [chunk.cpu() for _, _, chunk in kokoro_pipeline(text, voice=selected_voice)]
+                if not audio_chunks_24k:
+                    logger.warning("TTS model produced no audio chunks.")
+                    return
+                raw_pcm_24k = torch.cat(audio_chunks_24k, dim=-1).numpy().flatten()
+
+                # 2. Normalize to float32 in range [-1.0, 1.0] for high-quality resampling
+                audio_float = raw_pcm_24k.astype(np.float32)
+                if np.max(np.abs(audio_float)) > 1.0:
+                    audio_float_normalized = audio_float / 32767.0
+                else:
+                    audio_float_normalized = audio_float
                 
-                logger.info(f"TTS generating audio with Kokoro using voice: {selected_voice} for text: {text[:50]}...")
+                # 3. Resample from 24kHz to the required 48kHz
+                logger.info(f"Resampling audio from 24kHz to 48kHz...")
+                pcm_48k = librosa.resample(y=audio_float_normalized, orig_sr=24000, target_sr=48000)
+                logger.info(f"Resampling complete.")
+
+                # 4. Convert back to 16-bit PCM for transmission
+                audio_int16 = (pcm_48k * 32767).astype(np.int16)
+
+                # 5. *** THIS IS THE CRITICAL FIX ***
+                #    Chunk the final audio into properly sized 20ms frames and yield each one.
+                frame_size = 960  # 960 samples = 20ms at 48kHz
+                total_frames = 0
                 
-                try:
-                    # Generate audio using Kokoro pipeline from model manager
-                    generator = kokoro_pipeline(text, voice=selected_voice)
+                for i in range(0, len(audio_int16), frame_size):
+                    chunk = audio_int16[i:i + frame_size]
                     
-                    # Process the generator results
-                    audio_chunks_generated = 0
-                    for i, (gs, ps, audio) in enumerate(generator):
-                        logger.info(f"Kokoro TTS chunk {i}: graphemes={len(gs)}, phonemes={len(ps)}, audio_shape={audio.shape if hasattr(audio, 'shape') else 'unknown'}")
-                        
-                        # Convert numpy array or torch tensor to bytes if needed
-                        if isinstance(audio, np.ndarray) and audio.size > 0:
-                            audio_np = audio
-                        elif hasattr(audio, 'detach') and hasattr(audio, 'cpu') and hasattr(audio, 'numpy'):
-                            # Handle PyTorch tensors
-                            audio_np = audio.detach().cpu().numpy()
-                        else:
-                            audio_np = None
-                        
-                        if audio_np is not None and audio_np.size > 0:
-                            # Kokoro outputs float32 audio at 24kHz, convert to int16 PCM
-                            if audio_np.dtype == np.float32:
-                                # Clip to [-1, 1] range and convert to int16
-                                audio_int16 = (np.clip(audio_np, -1.0, 1.0) * 32767).astype(np.int16)
-                            elif audio_np.dtype == np.int16:
-                                audio_int16 = audio_np
-                            else:
-                                # Convert other types to int16
-                                audio_normalized = audio_np.astype(np.float32)
-                                if np.max(np.abs(audio_normalized)) > 1.0:
-                                    audio_normalized = audio_normalized / np.max(np.abs(audio_normalized))
-                                audio_int16 = (audio_normalized * 32767).astype(np.int16)
-                            
-                            # Convert to bytes
-                            audio_bytes = audio_int16.tobytes()
-                            
-                            # Stream in chunks for better real-time performance
-                            chunk_size = 16384  # 16KB chunks
-                            for j in range(0, len(audio_bytes), chunk_size):
-                                chunk = audio_bytes[j:j + chunk_size]
-                                if chunk:
-                                    audio_chunks_generated += 1
-                                    yield chunk
-                        elif isinstance(audio, bytes) and len(audio) > 0:
-                            # If audio is already bytes, stream it directly
-                            audio_chunks_generated += 1
-                            yield audio
-                        else:
-                            logger.info(f"Skipping empty or invalid audio chunk {i}")
-                    
-                    if audio_chunks_generated == 0:
-                        logger.error("No audio chunks were generated by Kokoro TTS")
-                        yield b""
-                    
-                    logger.info(f"Kokoro TTS completed for text length: {len(text)}")
-                    
-                except Exception as kokoro_error:
-                    logger.error(f"Kokoro TTS generation failed: {kokoro_error}")
-                    yield b""
-                    
+                    # Pad the final chunk with silence if it's too short
+                    if len(chunk) < frame_size:
+                        chunk = np.pad(chunk, (0, frame_size - len(chunk)), 'constant')
+
+                    # Yield the raw bytes of the 20ms chunk
+                    yield chunk.tobytes()
+                    total_frames += 1
+
+                logger.info(f"TTS completed: yielded {total_frames} frames of 20ms each.")
             else:
                 logger.info(f"TTS generating audio for text: {text[:50]}...")
                 
@@ -251,19 +224,19 @@ class SimulationTTSModel(TTSModel):
                 # Note: LiteLLM may return the full audio at once, so we'll chunk it
                 audio_data = response.content if hasattr(response, 'content') else b""
                 
-                # Chunk the audio data for streaming (16KB chunks)
-                chunk_size = 16384
+                # For external TTS, assume it's already in the correct format or resample if needed
+                # This is a simplified approach - you may need to detect the actual sample rate
+                chunk_size = 1920  # 960 samples * 2 bytes per sample for 20ms at 48kHz
                 for i in range(0, len(audio_data), chunk_size):
-                    chunk = audio_data[i:i + chunk_size]
-                    if chunk:
-                        yield chunk
+                    tts_chunk = audio_data[i:i + chunk_size]
+                    if tts_chunk:
+                        yield tts_chunk
                         
                 logger.info(f"TTS completed for text length: {len(text)}")
-            
-        except Exception as e:
-            logger.error(f"TTS generation failed: {e}")
-            yield b""
 
+        except Exception as e:
+            logger.error(f"TTS generation or resampling failed: {e}", exc_info=True)
+            return
 
 class SimulationWorkflow(VoiceWorkflowBase):
     def __init__(self, chat_id: uuid.UUID, session: Session, mode: Modalities, original_message: str = "", *args: Any, **kwargs: Any) -> None:
@@ -475,8 +448,6 @@ class SimulationPipeline:
             # This loop's ONLY job is to process the final audio stream, if one exists.
             # It will correctly ignore the dummy audio from test.wav.
             assistant_audio_chunks = []
-            pts = 0  # Presentation timestamp starts at 0
-            sample_rate = 24000  # Your TTS model's sample rate
 
             async for event in result.stream():
                 if hasattr(event, 'data') and isinstance(event.data, (bytes, np.ndarray)):
@@ -487,14 +458,9 @@ class SimulationPipeline:
                         if audio_chunk:
                             assistant_audio_chunks.append(audio_chunk)
 
-                            # 👇 THE KEY CHANGE: Create and queue an AudioFrame
+                            # 👇 THE KEY CHANGE: Add the pre-chunked audio directly
                             if server_audio_track:
-                                new_frame = AudioFrame(format='s16', layout='mono', samples=len(audio_chunk) // 2)
-                                new_frame.planes[0].update(audio_chunk)
-                                new_frame.sample_rate = sample_rate
-                                new_frame.pts = pts
-                                pts += new_frame.samples  # Increment timestamp
-                                server_audio_track.add_frame(new_frame)
+                                server_audio_track.add_chunk(audio_chunk)
                             
                             # This yield is for any potential future use, like live WebRTC audio playback
                             yield {"type": "audio", "data": audio_chunk}
