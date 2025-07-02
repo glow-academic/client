@@ -57,9 +57,7 @@ interface AttemptMessagesProps {
   chatId?: string;
 }
 
-export default function AttemptMessages({
-  chatId,
-}: AttemptMessagesProps) {
+export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
 
   // --- MODIFICATION START: State for editing functionality ---
@@ -88,20 +86,33 @@ export default function AttemptMessages({
     enabled: !!targetChatId,
   });
 
-  // Get the latest assistant message for audio mode
-  const latestAssistantMessage = useMemo(() => {
-    return messages
-      .filter((msg: SimulationMessage) => msg.type === "response")
-      .sort(
-        (a: SimulationMessage, b: SimulationMessage) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-      )[0];
+  // Get the current streaming message or the latest completed assistant message for audio mode
+  const currentDisplayMessage = useMemo(() => {
+    const responseMessages = messages.filter(
+      (msg: SimulationMessage) => msg.type === "response"
+    );
+
+    // First, check if there's a message currently streaming (not completed)
+    const streamingMessage = responseMessages.find((msg) => !msg.completed);
+    if (streamingMessage) {
+      return streamingMessage;
+    }
+
+    // If no streaming message, return the latest completed message
+    return (
+      responseMessages
+        .filter((msg) => msg.completed)
+        .sort(
+          (a: SimulationMessage, b: SimulationMessage) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0] || null
+    );
   }, [messages]);
 
   // Check if assistant is currently speaking (streaming)
   const isAssistantSpeaking = useMemo(() => {
-    return latestAssistantMessage && !latestAssistantMessage.completed;
-  }, [latestAssistantMessage]);
+    return currentDisplayMessage && !currentDisplayMessage.completed;
+  }, [currentDisplayMessage]);
 
   const starterPrompts = useMemo(() => {
     const basePrompts = [
@@ -110,7 +121,9 @@ export default function AttemptMessages({
       "I'm ready to assist you today",
     ];
     if (simulationContext?.classData?.classCode) {
-      basePrompts.push(`Are you here for ${simulationContext?.classData.classCode}?`);
+      basePrompts.push(
+        `Are you here for ${simulationContext?.classData.classCode}?`
+      );
       return [
         "Hi, how are you?",
         "What can I help you with?",
@@ -120,7 +133,8 @@ export default function AttemptMessages({
     return basePrompts.slice(0, 3);
   }, [simulationContext?.classData?.classCode]);
 
-  const handleStarterPromptClick = (prompt: string) => simulationContext?.sendMessage(prompt);
+  const handleStarterPromptClick = (prompt: string) =>
+    simulationContext?.sendMessage(prompt);
   const handleAudioModeToggle = () => {
     const newAudioMode = !simulationContext?.assistantAudioEnabled;
     simulationContext?.setAssistantAudioEnabled(newAudioMode);
@@ -229,7 +243,7 @@ export default function AttemptMessages({
       return () => clearTimeout(timer);
     }
     return () => {};
-  }, [messages.length]);
+  }, [messages.length, messages]);
 
   useEffect(() => {
     const scrollArea = scrollAreaRef.current;
@@ -247,7 +261,7 @@ export default function AttemptMessages({
     handleScrollEvent();
     viewport.addEventListener("scroll", handleScrollEvent);
     return () => viewport.removeEventListener("scroll", handleScrollEvent);
-  }, [messages.length]);
+  }, [messages.length, messages]);
 
   useEffect(() => {
     return () => {
@@ -282,7 +296,11 @@ export default function AttemptMessages({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={simulationContext?.assistantAudioEnabled ? "default" : "outline"}
+                variant={
+                  simulationContext?.assistantAudioEnabled
+                    ? "default"
+                    : "outline"
+                }
                 size="sm"
                 onClick={handleAudioModeToggle}
                 className="p-2"
@@ -331,11 +349,24 @@ export default function AttemptMessages({
               />
             </div>
 
-            {captionsEnabled && latestAssistantMessage && (
+            {captionsEnabled && currentDisplayMessage && (
               <div className="w-full max-w-4xl">
                 <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
                   <div className="text-lg leading-relaxed">
-                    <Markdown>{latestAssistantMessage.content}</Markdown>
+                    {!currentDisplayMessage.completed &&
+                    currentDisplayMessage.content === "" ? (
+                      <div className="flex items-center text-muted-foreground">
+                        <span className="mr-2">Thinking...</span>
+                        <LoadingDots />
+                      </div>
+                    ) : (
+                      <>
+                        <Markdown>{currentDisplayMessage.content}</Markdown>
+                        {!currentDisplayMessage.completed && (
+                          <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
+                        )}
+                      </>
+                    )}
                   </div>
                 </ScrollArea>
               </div>
@@ -362,7 +393,9 @@ export default function AttemptMessages({
                           disabled={
                             simulationContext?.currentChat?.completed ||
                             simulationContext?.isSendingMessage ||
-                            (simulationContext?.simulation?.timeLimit ? !simulationContext?.isActive : false)
+                            (simulationContext?.simulation?.timeLimit
+                              ? !simulationContext?.isActive
+                              : false)
                           }
                         >
                           <span className="text-sm">{prompt}</span>
@@ -410,25 +443,26 @@ export default function AttemptMessages({
                               ) : (
                                 <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                   {/* Edit button floated right, visible only on the LAST message */}
-                                  {message.audio && !simulationContext?.isSendingMessage && (
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="float-right ml-2 mb-1 h-7 w-7 hover:bg-primary-foreground/20"
-                                          onClick={() =>
-                                            handleEditClick(message)
-                                          }
-                                        >
-                                          <Pencil className="h-4 w-4" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Edit Transcript</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
+                                  {message.audio &&
+                                    !simulationContext?.isSendingMessage && (
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="float-right ml-2 mb-1 h-7 w-7 hover:bg-primary-foreground/20"
+                                            onClick={() =>
+                                              handleEditClick(message)
+                                            }
+                                          >
+                                            <Pencil className="h-4 w-4" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Edit Transcript</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    )}
                                   <Markdown>{message.content}</Markdown>
                                 </div>
                               )}
@@ -437,63 +471,62 @@ export default function AttemptMessages({
                           </div>
                         )}
 
-                        {message.type === "response" &&
-                          message.content !== "" && (
-                            <div className="flex justify-start mb-3">
-                              <div className="max-w-[80%]">
-                                <div className="bg-muted rounded-lg p-3 relative">
-                                  {/* The Markdown component comes first */}
-                                  {message.content === "" ? (
-                                    <div className="flex items-center">
-                                      <span className="text-gray-500 mr-2">
-                                        Analyzing
-                                      </span>
-                                      <LoadingDots />
-                                    </div>
-                                  ) : (
-                                    <Markdown>{message.content}</Markdown>
-                                  )}
+                        {message.type === "response" && (
+                          <div className="flex justify-start mb-3">
+                            <div className="max-w-[80%]">
+                              <div className="bg-muted rounded-lg p-3 relative">
+                                {/* Show loading state for empty/incomplete messages, otherwise show content */}
+                                {!message.completed &&
+                                message.content === "" ? (
+                                  <div className="flex items-center">
+                                    <span className="text-gray-500 mr-2">
+                                      Analyzing
+                                    </span>
+                                    <LoadingDots />
+                                  </div>
+                                ) : (
+                                  <Markdown>{message.content}</Markdown>
+                                )}
 
-                                  {/* Play button is now at the bottom right */}
-                                  {message.audio && (
-                                    <div className="absolute bottom-2 right-2">
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                            onClick={() =>
-                                              handlePlayPauseAudio(message)
-                                            }
-                                            disabled={
-                                              audioState.isLoading &&
-                                              audioState.playingId !==
-                                                message.id
-                                            }
-                                          >
-                                            {audioState.isLoading &&
-                                            audioState.playingId ===
-                                              message.id ? (
-                                              <Loader2 className="h-4 w-4 animate-spin" />
-                                            ) : audioState.playingId ===
-                                              message.id ? (
-                                              <Pause className="h-4 w-4" />
-                                            ) : (
-                                              <Play className="h-4 w-4" />
-                                            )}
-                                          </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Play Audio</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </div>
-                                  )}
-                                </div>
+                                {/* Play button is now at the bottom right */}
+                                {message.audio && (
+                                  <div className="absolute bottom-2 right-2">
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                                          onClick={() =>
+                                            handlePlayPauseAudio(message)
+                                          }
+                                          disabled={
+                                            audioState.isLoading &&
+                                            audioState.playingId !== message.id
+                                          }
+                                        >
+                                          {audioState.isLoading &&
+                                          audioState.playingId ===
+                                            message.id ? (
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                          ) : audioState.playingId ===
+                                            message.id ? (
+                                            <Pause className="h-4 w-4" />
+                                          ) : (
+                                            <Play className="h-4 w-4" />
+                                          )}
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Play Audio</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          )}
+                          </div>
+                        )}
                       </div>
                     ))
                 )}

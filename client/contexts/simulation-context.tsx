@@ -869,7 +869,7 @@ export function SimulationProvider({
     // Handle data channel token events
     const handleSimulationMessageToken = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
-        // Update React Query cache with token data
+        // Update React Query cache with token data immediately
         queryClient.setQueryData(
           ["simulationMessages", event.detail.chatId],
           (old: SimulationMessage[] = []) => {

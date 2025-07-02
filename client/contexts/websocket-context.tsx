@@ -408,6 +408,18 @@ export function WebSocketProvider({
             }
           );
 
+          // Dispatch simulationMessageStart event for response messages to trigger immediate UI display
+          if (data.role === "assistant" || data.role === "response") {
+            window.dispatchEvent(
+              new CustomEvent("simulationMessageStart", {
+                detail: {
+                  messageId: data.message_id,
+                  chatId: data.chat_id,
+                },
+              })
+            );
+          }
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
@@ -472,12 +484,6 @@ export function WebSocketProvider({
               );
             }
           );
-
-          setTimeout(() => {
-            queryClient.invalidateQueries({
-              queryKey: ["simulationMessages", data.chat_id],
-            });
-          }, 0);
         }
       );
 
