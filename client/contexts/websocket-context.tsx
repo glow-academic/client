@@ -287,6 +287,17 @@ export function WebSocketProvider({
                   },
                 })
               );
+            } else if (data.type === "word_timings") {
+              // Handle word timing data
+              window.dispatchEvent(
+                new CustomEvent("simulationWordTimings", {
+                  detail: {
+                    messageId: data.message_id,
+                    chatId: data.chat_id,
+                    timings: data.timings,
+                  },
+                })
+              );
             } else {
               logInfo("Unknown data channel payload type:", data.type);
             }
@@ -672,6 +683,33 @@ export function WebSocketProvider({
                 chatId: data.chat_id,
                 transcribedText: data.transcribed_text,
                 status: data.status,
+              },
+            })
+          );
+        }
+      );
+
+      // Word timing events from WebSocket
+      socket.on(
+        "simulation_word_timings",
+        (data: {
+          message_id: string;
+          chat_id: string;
+          timings: Array<{ word: string; start: number; end: number }>;
+        }) => {
+          logInfo("Received simulation_word_timings event", {
+            messageId: data.message_id,
+            chatId: data.chat_id,
+            timingsCount: data.timings.length,
+          });
+
+          // Dispatch custom event for components to consume
+          window.dispatchEvent(
+            new CustomEvent("simulationWordTimings", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                timings: data.timings,
               },
             })
           );
@@ -1121,6 +1159,17 @@ export function WebSocketProvider({
                             chatId: data.chat_id,
                             finalContent: data.final_content,
                             audio: data.audio,
+                          },
+                        })
+                      );
+                    } else if (data.type === "word_timings") {
+                      // Handle word timing data from server data channel
+                      window.dispatchEvent(
+                        new CustomEvent("simulationWordTimings", {
+                          detail: {
+                            messageId: data.message_id,
+                            chatId: data.chat_id,
+                            timings: data.timings,
                           },
                         })
                       );

@@ -167,6 +167,11 @@ class SimulationTTSModel(TTSModel):
         from app.web.simulations import get_sio_instance
         sio_instance = get_sio_instance()
 
+        # ✂︎ Word timing tracking variables
+        FRAME_SEC = 0.02  # 960 samples @48 kHz ⇒ 20 ms
+        word_timings: list[dict[str, Any]] = []  # [{word,start,end}, …]
+        current_time = 0.0  # seconds since first frame
+
         # 1. Create the assistant message first, empty & in-flight
         assistant_message = SimulationMessages(
             chat_id=self.chat_id,
@@ -224,6 +229,10 @@ class SimulationTTSModel(TTSModel):
 
             accum += (" " if accum else "") + " ".join(batch)
             next_word_index += len(batch)
+
+            # ➜ add timing capture here
+            for w in batch:
+                word_timings.append({"word": w, "start": current_time})   # no end yet
 
             payload = {
                 "type": "token",
@@ -292,6 +301,9 @@ class SimulationTTSModel(TTSModel):
                         wav_frames.append(frame_bytes)
                         frames_sent += 1
                         
+                        # ── inside the inner audio-frame loop, right after you yield the frame ──
+                        current_time += FRAME_SEC
+                        
                         logger.info(f"AUDIO  sent frame {frames_sent}")
 
                         # Update our estimate as we go - assume 50 more frames ahead
@@ -335,6 +347,9 @@ class SimulationTTSModel(TTSModel):
                         wav_frames.append(tts_chunk)
                         frames_sent += 1
                         
+                        # ── inside the inner audio-frame loop, right after you yield the frame ──
+                        current_time += FRAME_SEC
+                        
                         logger.info(f"AUDIO  sent frame {frames_sent}")
 
                         # THEN TEXT: Drip tokens proportionally for LiteLLM
@@ -351,6 +366,28 @@ class SimulationTTSModel(TTSModel):
 
             # 6. Flush the tail & mark complete
             await push_tokens(words[next_word_index:])  # any stragglers
+
+            # ── after the streaming loop finishes ──
+            total_dur = len(wav_frames) * FRAME_SEC
+            for i, t in enumerate(word_timings):
+                nxt = word_timings[i+1]["start"] if i+1 < len(word_timings) else total_dur
+                t["end"] = nxt
+
+            # send the timings blob once per message
+            timings_payload = {
+                "type": "word_timings",
+                "chat_id": str(self.chat_id),
+                "message_id": str(assistant_message.id),
+                "timings": word_timings,
+            }
+            sent = False
+            if self.profile_id:
+                from app.main import send_text_dc
+                sent = await send_text_dc(self.profile_id, timings_payload)
+
+            if not sent:
+                await sio_instance.emit("simulation_word_timings", timings_payload,
+                                        room=f"simulation_{self.chat_id}")
 
             assistant_message.content = text
             assistant_message.completed = True

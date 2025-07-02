@@ -49,12 +49,153 @@ import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationMessage } from "@/types";
 import { deleteAudio } from "@/utils/api/audio/delete-audio";
-import { logError } from "@/utils/logger";
+import { logError, logInfo } from "@/utils/logger";
 import { deleteSimulationMessage } from "@/utils/mutations/simulation_messages/delete-simulation-message";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
 
+// Word timing interface
+interface WordTiming {
+  word: string;
+  start: number;
+  end: number;
+}
+
 interface AttemptMessagesProps {
   chatId?: string;
+}
+
+// Component for audio with synchronized captions
+function CaptionedAudio({
+  message,
+  timings,
+  onPlayPause,
+  isPlaying,
+  isLoading,
+}: {
+  message: SimulationMessage;
+  timings: WordTiming[];
+  onPlayPause: () => void;
+  isPlaying: boolean;
+  isLoading: boolean;
+}) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [activeIdx, setActiveIdx] = useState<number>(-1);
+
+  // keep `activeIdx` in sync with playback position
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || timings.length === 0) return;
+
+    const handler = () => {
+      const t = audio.currentTime;
+      const idx = timings.findIndex((w) => w.start <= t && t < w.end);
+      if (idx !== -1 && idx !== activeIdx) {
+        setActiveIdx(idx);
+      }
+    };
+
+    audio.addEventListener("timeupdate", handler);
+    return () => audio.removeEventListener("timeupdate", handler);
+  }, [timings, activeIdx]);
+
+  // Sync audio element with external play/pause state
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying && audio.paused) {
+      audio.play().catch((error) => {
+        logError("Error playing audio:", error);
+      });
+    } else if (!isPlaying && !audio.paused) {
+      audio.pause();
+    }
+  }, [isPlaying]);
+
+  // Handle audio events
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    const handlePlay = () => {
+      // Audio started playing naturally
+    };
+
+    const handlePause = () => {
+      setActiveIdx(-1); // Clear highlighting when paused
+    };
+
+    const handleEnded = () => {
+      setActiveIdx(-1); // Clear highlighting when ended
+    };
+
+    audio.addEventListener("play", handlePlay);
+    audio.addEventListener("pause", handlePause);
+    audio.addEventListener("ended", handleEnded);
+
+    return () => {
+      audio.removeEventListener("play", handlePlay);
+      audio.removeEventListener("pause", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+    };
+  }, []);
+
+  return (
+    <div className="bg-muted rounded-lg p-3 relative">
+      <audio
+        ref={audioRef}
+        src={`/api/download/audio/${message.id}`}
+        preload="metadata"
+      />
+
+      {/* Content with word highlighting */}
+      <div className="pr-10">
+        {timings.length > 0 ? (
+          <p className="whitespace-pre-wrap leading-relaxed">
+            {message.content.split(/\s+/).map((word, i) => {
+              const isActive = i === activeIdx;
+              return (
+                <span
+                  key={i}
+                  className={`${isActive ? "bg-yellow-200 dark:bg-yellow-800 rounded px-1" : ""} transition-colors duration-150`}
+                >
+                  {word + " "}
+                </span>
+              );
+            })}
+          </p>
+        ) : (
+          <Markdown>{message.content}</Markdown>
+        )}
+      </div>
+
+      {/* Play button */}
+      <div className="absolute bottom-2 right-2">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={onPlayPause}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isPlaying ? (
+                <Pause className="h-4 w-4" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Play Audio</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+    </div>
+  );
 }
 
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
@@ -68,6 +209,11 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const [isConfirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
   // --- MODIFICATION END ---
+
+  // Word timing state
+  const [timingsByMsg, setTimingsByMsg] = useState<
+    Record<string, WordTiming[]>
+  >({});
 
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
@@ -85,6 +231,34 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     queryFn: () => getSimulationMessagesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
+
+  // Listen for word timing events
+  useEffect(() => {
+    function handleTimings(
+      e: CustomEvent<{
+        message_id: string;
+        chat_id: string;
+        timings: WordTiming[];
+      }>
+    ) {
+      const { message_id, timings } = e.detail;
+      logInfo(
+        `Received word timings for message: ${message_id} with ${timings?.length || 0} words`
+      );
+      setTimingsByMsg((prev) => ({ ...prev, [message_id]: timings }));
+    }
+
+    window.addEventListener(
+      "simulationWordTimings",
+      handleTimings as EventListener
+    );
+
+    return () =>
+      window.removeEventListener(
+        "simulationWordTimings",
+        handleTimings as EventListener
+      );
+  }, []);
 
   // Get the current streaming message or the latest completed assistant message for audio mode
   const currentDisplayMessage = useMemo(() => {
@@ -474,56 +648,36 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                         {message.type === "response" && (
                           <div className="flex justify-start mb-3">
                             <div className="max-w-[80%]">
-                              <div className="bg-muted rounded-lg p-3 relative">
-                                {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                                {!message.completed &&
-                                message.content === "" ? (
+                              {/* Show loading state for empty/incomplete messages, otherwise show content */}
+                              {!message.completed && message.content === "" ? (
+                                <div className="bg-muted rounded-lg p-3">
                                   <div className="flex items-center">
                                     <span className="text-gray-500 mr-2">
                                       Analyzing
                                     </span>
                                     <LoadingDots />
                                   </div>
-                                ) : (
+                                </div>
+                              ) : message.audio ? (
+                                <CaptionedAudio
+                                  message={message}
+                                  timings={timingsByMsg[message.id] || []}
+                                  onPlayPause={() =>
+                                    handlePlayPauseAudio(message)
+                                  }
+                                  isPlaying={
+                                    audioState.playingId === message.id
+                                  }
+                                  isLoading={
+                                    audioState.isLoading &&
+                                    audioState.playingId === message.id
+                                  }
+                                />
+                              ) : (
+                                <div className="bg-muted rounded-lg p-3 relative">
                                   <Markdown>{message.content}</Markdown>
-                                )}
-
-                                {/* Play button is now at the bottom right */}
-                                {message.audio && (
-                                  <div className="absolute bottom-2 right-2">
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                          onClick={() =>
-                                            handlePlayPauseAudio(message)
-                                          }
-                                          disabled={
-                                            audioState.isLoading &&
-                                            audioState.playingId !== message.id
-                                          }
-                                        >
-                                          {audioState.isLoading &&
-                                          audioState.playingId ===
-                                            message.id ? (
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                          ) : audioState.playingId ===
-                                            message.id ? (
-                                            <Pause className="h-4 w-4" />
-                                          ) : (
-                                            <Play className="h-4 w-4" />
-                                          )}
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Play Audio</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </div>
-                                )}
-                              </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}

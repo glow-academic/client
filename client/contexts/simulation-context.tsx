@@ -915,6 +915,9 @@ export function SimulationProvider({
       }
     };
 
+    // Note: Word timing events (simulationWordTimings) are handled directly
+    // in AttemptMessages component for better separation of concerns
+
     const handleSimulationMessageCancelled = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
         setIsSendingMessage(false);
