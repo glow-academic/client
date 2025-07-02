@@ -17,6 +17,7 @@ from agents.voice.model import (StreamedTranscriptionSession, STTModel,
                                 STTModelSettings, TTSModel, TTSModelSettings)
 from agents.voice.pipeline import VoicePipeline
 from agents.voice.pipeline_config import VoicePipelineConfig
+from agents.voice.utils import get_sentence_based_splitter
 from agents.voice.workflow import VoiceWorkflowBase
 from app.config import model_manager
 from app.db import get_session
@@ -282,22 +283,26 @@ class SimulationWorkflow(VoiceWorkflowBase):
 
             # 4. Run the agent and stream the response
             accumulated_content = ""
+            buf, splitter = "", get_sentence_based_splitter(min_sentence_length=20)
             async for token in run_simulation_agent(self.chat_id, self.session):
-                if token:
-                    accumulated_content += token
-                    # A. Emit the token to the client
-                    await sio_instance.emit(
-                        "simulation_message_token",
-                        {
-                            "message_id": str(assistant_message.id),
-                            "chat_id": str(self.chat_id),
-                            "token": token,
-                            "accumulated_content": accumulated_content,
-                        },
+                buf += token
+
+                chunk, buf = splitter(buf)          # ⇐ decide if we have a full sentence
+                if chunk:
+                   yield chunk                           # go to TTS
+                   accumulated_content += chunk          # grow DB/UI copy
+                   await sio_instance.emit(              # tell UI a *sentence* landed
+                       "simulation_message_token",
+                       {"message_id": str(assistant_message.id),
+                        "chat_id": str(self.chat_id),
+                        "token": chunk,                  # full sentence
+                        "accumulated_content": accumulated_content},
                         room=f"simulation_{self.chat_id}",
                     )
-                    # B. YIELD the token to the VoicePipeline to keep it running
-                    yield token
+            
+            if buf.strip():
+                yield buf
+                accumulated_content += buf
 
             # 5. Finalize the message in the DB and emit completion
             assistant_message.content = accumulated_content
@@ -360,7 +365,7 @@ class SimulationPipeline:
         if config is None:
             # no_split = lambda t: (t, "") # using the default split
             tts_settings = TTSModelSettings(
-                instructions="Read exactly what you receive.",
+                instructions="Read exactly what you receive."
             )
             
             # getting stt settings

@@ -39,6 +39,9 @@ RUN apt-get update && \
 # Copy the pre-built Python deps — no `pip install` here
 COPY --from=deps /install /usr/local
 
+# # Download the SpaCy model needed by Kokoro
+# RUN python -m spacy download en_core_web_sm
+
 # Run unit tests as part of the build process (COMMENTED OUT FOR NOW)
 # Uncomment the lines below when you want to enable testing in the build
 # COPY requirements.txt .
