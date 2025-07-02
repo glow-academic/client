@@ -292,8 +292,8 @@ export function WebSocketProvider({
               window.dispatchEvent(
                 new CustomEvent("simulationWordTimings", {
                   detail: {
-                    messageId: data.message_id,
-                    chatId: data.chat_id,
+                    message_id: data.message_id,
+                    chat_id: data.chat_id,
                     timings: data.timings,
                   },
                 })
@@ -707,8 +707,8 @@ export function WebSocketProvider({
           window.dispatchEvent(
             new CustomEvent("simulationWordTimings", {
               detail: {
-                messageId: data.message_id,
-                chatId: data.chat_id,
+                message_id: data.message_id,
+                chat_id: data.chat_id,
                 timings: data.timings,
               },
             })
@@ -1167,8 +1167,8 @@ export function WebSocketProvider({
                       window.dispatchEvent(
                         new CustomEvent("simulationWordTimings", {
                           detail: {
-                            messageId: data.message_id,
-                            chatId: data.chat_id,
+                            message_id: data.message_id,
+                            chat_id: data.chat_id,
                             timings: data.timings,
                           },
                         })

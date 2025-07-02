@@ -245,6 +245,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       logInfo(
         `Received word timings for message: ${message_id} with ${timings?.length || 0} words`
       );
+      logInfo(`Timings: ${JSON.stringify(timings)}`);
       setTimingsByMsg((prev) => ({ ...prev, [message_id]: timings }));
     }
 
