@@ -69,12 +69,29 @@ class ServerAudioStreamTrack(MediaStreamTrack):
         self._time_base = fractions.Fraction(1, 48000)
 
     def add_chunk(self, chunk: bytes) -> None:
-        """Adds a pre-chunked 20ms audio chunk to the queue."""
-        # Safety check: ensure chunk is exactly 1920 bytes (960 samples × 2 bytes)
-        if len(chunk) != 960 * 2:
-            logger.warning(f"Dropping malformed chunk size={len(chunk)}, expected 1920 bytes")
+        """Adds audio chunk(s) to the queue, automatically splitting oversized buffers."""
+        frame_size = 960 * 2  # 960 samples × 2 bytes = 1920 bytes per 20ms frame
+        
+        # Fast path: correctly sized chunk
+        if len(chunk) == frame_size:
+            self.queue.put_nowait(chunk)
             return
-        self.queue.put_nowait(chunk)
+        
+        # Handle oversized buffers by splitting them into proper frames
+        if len(chunk) > frame_size:
+            # Warn about non-multiple remainders that will be truncated
+            if len(chunk) % frame_size != 0:
+                logger.warning(f"Non-multiple buffer {len(chunk)} bytes – truncating remainder")
+            
+            # Split into 1920-byte frames
+            for i in range(0, len(chunk) - (len(chunk) % frame_size), frame_size):
+                self.queue.put_nowait(chunk[i:i + frame_size])
+            return
+        
+        # Handle undersized chunks (shouldn't happen but just in case)
+        logger.warning(f"Undersized chunk {len(chunk)} bytes – padding to frame size")
+        padded_chunk = chunk + b'\x00' * (frame_size - len(chunk))
+        self.queue.put_nowait(padded_chunk)
 
     def end_stream(self) -> None:
         """Signals the end of the stream by adding a None sentinel."""
