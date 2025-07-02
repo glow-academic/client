@@ -303,8 +303,11 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     pc.addTrack(server_audio_track)
     logger.info(f"Added persistent audio track to peer connection for profile {profile_id}")
 
-    # MODIFICATION: Change direction to allow sending and receiving audio
-    pc.addTransceiver("audio", direction="sendrecv")
+    # SPEC CHANGE: Use a separate transceiver for receiving user audio to avoid duplicate tracks
+    # This creates one track for receiving user's mic and one for sending server's TTS
+    pc.addTransceiver("audio", direction="recvonly")  # For receiving user's mic audio
+    
+    logger.info(f"WebRTC peer connection setup complete for profile {profile_id}: 1 outgoing audio track, 1 incoming audio track")
 
     # ---- ensure at least one negotiated data channel so the initial SDP has an m-section ----
     signalling_dc = pc.createDataChannel("signalling")  # name arbitrary but consistent
@@ -618,6 +621,10 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
         # Create offer
         offer = await pc.createOffer()
         await pc.setLocalDescription(offer)
+        
+        # Debug: Log SDP structure to verify single audio track
+        audio_lines = [line for line in offer.sdp.splitlines() if line.startswith('m=audio')]
+        logger.info(f"SDP contains {len(audio_lines)} audio tracks for profile {profile_id}")
         
         # Send offer and ICE config to client
         await sio.emit('webrtc_offer', {

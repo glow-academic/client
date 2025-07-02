@@ -966,11 +966,24 @@ export function WebSocketProvider({
                   return;
                 }
 
+                // SPEC CHANGE: Prevent duplicate audio elements
+                if (remoteAudioStreams.current.has("persistent")) {
+                  logInfo(
+                    "Persistent audio track already exists, skipping duplicate"
+                  );
+                  return;
+                }
+
                 // Create a single audio element for the persistent track
                 // This will handle all TTS audio for this WebRTC connection
                 const audio = new Audio();
                 audio.srcObject = stream;
                 audio.autoplay = true; // The browser may still block this initially
+
+                // SPEC CHANGE: Add explicit audio properties to prevent silent playback
+                audio.volume = 1.0;
+                audio.muted = false;
+                audio.setAttribute("playsinline", "true"); // Good practice for mobile browsers
 
                 audio.addEventListener("play", () =>
                   logInfo("Persistent audio track playback started")
@@ -982,7 +995,13 @@ export function WebSocketProvider({
                 // Store the audio element with a global key since it handles all rooms
                 remoteAudioStreams.current.set("persistent", audio);
                 logInfo(
-                  "Created persistent audio element for all TTS responses"
+                  "Created persistent audio element for all TTS responses",
+                  {
+                    volume: audio.volume,
+                    muted: audio.muted,
+                    autoplay: audio.autoplay,
+                    totalAudioElements: remoteAudioStreams.current.size,
+                  }
                 );
 
                 // Attempt to play it. If it fails, our `playRemoteAudio` function will handle it later.
