@@ -132,7 +132,7 @@ describe('AttemptMessages', () => {
  * - Has props: true
  * - Props interface: AttemptMessagesProps
  * - Client component: true
- * - Uses hooks: user, useQuery, useQueryClient, useEffect, useMemo, useRef, useState, useSimulation, used, useAudio
+ * - Uses hooks: user, useQuery, useQueryClient, useEffect, useMemo, useRef, useState, useSimulation, useWebSocket, used, useAudio
  * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false

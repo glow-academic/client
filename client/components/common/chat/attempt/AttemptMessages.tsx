@@ -47,6 +47,7 @@ import {
 import Markdown from "@/components/common/chat/Markdown";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { useSimulation } from "@/contexts/simulation-context";
+import { useWebSocket } from "@/contexts/websocket-context";
 import { SimulationMessage } from "@/types";
 import { deleteAudio } from "@/utils/api/audio/delete-audio";
 import { logError, logInfo } from "@/utils/logger";
@@ -277,84 +278,108 @@ function StreamingCaptions({
   timings: WordTiming[];
   isStreaming: boolean;
 }) {
+  const { persistentAudioElement } = useWebSocket(); // Get the audio element from context
   const [visibleWords, setVisibleWords] = useState<string[]>([]);
-  const [audioStartTime, setAudioStartTime] = useState<number | null>(null);
+  const messageAudioStartTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
-  // Reset visible words when message changes
+  // Reset state when the message we are displaying changes
   useEffect(() => {
     setVisibleWords([]);
-    setAudioStartTime(null);
+    messageAudioStartTimeRef.current = null;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+    }
   }, [message.id]);
 
-  // Start timing when streaming begins
+  // The main animation and synchronization effect
   useEffect(() => {
-    if (isStreaming && !audioStartTime) {
-      setAudioStartTime(Date.now());
-      logInfo(
-        `Started word timing for streaming captions - message: ${message.id}, timings: ${timings.length}`
-      );
-    } else if (!isStreaming) {
-      setAudioStartTime(null);
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
+    // Exit if we aren't in a state to stream captions
+    if (!isStreaming || !persistentAudioElement || timings.length === 0) {
+      // Ensure full text is visible if streaming has just ended
+      if (!isStreaming && message.completed) {
+        setVisibleWords(message.content.split(/\s+/));
       }
+      return;
     }
-  }, [isStreaming, audioStartTime, message.id, timings.length]);
 
-  // Update visible words based on timing
-  useEffect(() => {
-    if (!isStreaming || !audioStartTime || timings.length === 0) return;
+    const allWords = message.content.split(/\s+/);
 
     const updateVisibleWords = () => {
-      const currentTime = (Date.now() - audioStartTime) / 1000; // Convert to seconds
-      const words = message.content.split(/\s+/);
-      const newVisibleWords: string[] = [];
-
-      for (let i = 0; i < timings.length && i < words.length; i++) {
-        const timing = timings[i];
-        const word = words[i];
-        if (timing && word && currentTime >= timing.start) {
-          newVisibleWords.push(word);
-        } else {
-          break; // Stop at first word that shouldn't be visible yet
-        }
-      }
-
-      // If we have more words in content than timings, show them all once we're past the last timing
       if (
-        timings.length > 0 &&
-        words.length > timings.length &&
-        timings[timings.length - 1] &&
-        currentTime >= timings[timings.length - 1]!.end
+        !isStreaming ||
+        !persistentAudioElement ||
+        animationFrameRef.current === null
       ) {
-        newVisibleWords.push(...words.slice(timings.length));
+        return; // Stop the loop if conditions change
       }
 
-      // Only update if changed to avoid unnecessary re-renders
-      if (JSON.stringify(newVisibleWords) !== JSON.stringify(visibleWords)) {
-        setVisibleWords(newVisibleWords);
+      // On the very first frame of a new message, capture the stream's current time.
+      // This becomes the "zero point" for this message's timings.
+      if (messageAudioStartTimeRef.current === null) {
+        messageAudioStartTimeRef.current = persistentAudioElement.currentTime;
         logInfo(
-          `Showing ${newVisibleWords.length}/${words.length} words at ${currentTime.toFixed(2)}s`
+          `Captured audio start time for message ${
+            message.id
+          }: ${messageAudioStartTimeRef.current?.toFixed(2)}s`
         );
       }
 
-      // Continue animation if we haven't shown all words yet
-      if (newVisibleWords.length < words.length) {
+      // Calculate time elapsed since this specific message's audio started playing
+      const messageRelativeTime =
+        persistentAudioElement.currentTime -
+        (messageAudioStartTimeRef.current || 0);
+
+      const newVisibleWords: string[] = [];
+
+      // Find all words that should be visible based on their start time
+      for (let i = 0; i < timings.length && i < allWords.length; i++) {
+        const timing = timings[i];
+        if (timing && messageRelativeTime >= timing.start) {
+          newVisibleWords.push(allWords[i] || "");
+        } else {
+          // Timings are sorted, so we can break early
+          break;
+        }
+      }
+
+      // Only update React state if the visible words have actually changed
+      if (JSON.stringify(newVisibleWords) !== JSON.stringify(visibleWords)) {
+        setVisibleWords(newVisibleWords);
+      }
+
+      // Continue the animation loop if we haven't shown all the words yet
+      if (newVisibleWords.length < allWords.length) {
         animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+      } else {
+        // If all words are visible, ensure the full, final content is set
+        if (visibleWords.join(" ") !== message.content) {
+          setVisibleWords(message.content.split(/\s+/));
+        }
       }
     };
 
+    // Start the animation loop
     animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
 
+    // Cleanup function to cancel the animation frame
     return () => {
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
-  }, [isStreaming, audioStartTime, timings, message.content, visibleWords]);
+  }, [
+    isStreaming,
+    persistentAudioElement,
+    timings,
+    message.content,
+    message.completed,
+    message.id,
+    visibleWords, // Re-run if visibleWords changes to check if we're done
+  ]);
 
-  // Show all words if not streaming or no timings
+  // Display all words if not streaming or no timings are available
   const displayText =
     !isStreaming || timings.length === 0
       ? message.content
@@ -369,8 +394,10 @@ function StreamingCaptions({
         </div>
       ) : (
         <>
+          {/* Use a key to force re-render on new display text if needed, though Markdown should handle it */}
           <Markdown>{displayText}</Markdown>
-          {!message.completed && (
+          {/* Show cursor only when streaming and not yet complete */}
+          {isStreaming && !message.completed && (
             <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
           )}
         </>

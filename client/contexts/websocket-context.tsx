@@ -60,6 +60,9 @@ interface WebSocketContextType {
   // User audio stream for waveform visualization
   userAudioStream: MediaStream | null;
 
+  // Persistent audio element for streaming captions synchronization
+  persistentAudioElement: HTMLAudioElement | null;
+
   // Simulation event emitters
   emitStartSimulation: (data: {
     simulation_id: string;
@@ -199,6 +202,10 @@ export function WebSocketProvider({
   const [userAudioStream, setUserAudioStream] = useState<MediaStream | null>(
     null
   );
+
+  // State to hold the persistent audio element for streaming captions synchronization
+  const [persistentAudioElement, setPersistentAudioElement] =
+    useState<HTMLAudioElement | null>(null);
 
   // Connection state persistence to prevent React re-render triggers
   const currentConnectionId = useRef<string | null>(null);
@@ -1082,6 +1089,7 @@ export function WebSocketProvider({
 
                 // Store the audio element with a global key since it handles all rooms
                 remoteAudioStreams.current.set("persistent", audio);
+                setPersistentAudioElement(audio); // Expose to context
                 logInfo(
                   "Created persistent audio element for all TTS responses",
                   {
@@ -1708,6 +1716,7 @@ export function WebSocketProvider({
         persistentAudio.pause();
         persistentAudio.srcObject = null;
         remoteAudioStreams.current.delete("persistent");
+        setPersistentAudioElement(null); // Clear from context
         logInfo("Cleaned up persistent audio element");
       }
 
@@ -2023,6 +2032,7 @@ export function WebSocketProvider({
     playRemoteAudio,
     testAndEnableAudio,
     userAudioStream,
+    persistentAudioElement,
   };
 
   return (
