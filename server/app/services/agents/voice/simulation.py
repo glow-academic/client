@@ -263,12 +263,10 @@ class SimulationTTSModel(TTSModel):
                 voice = random.choice(model_manager.kokoro_voices)
                 logger.info(f"Kokoro voice={voice}  text='{text[:40]}…'")
 
-                # 5. Second pass to discover real_frame_total
-                pcm24_total = torch.cat([c for _, _, c in kokoro_pipeline(text, voice=voice)], dim=-1)
-                real_frame_total = math.ceil(pcm24_total.numel() / 960)  # 960 samples → 20 ms
-
-                # 4. Stream audio and drip tokens proportionally
+                # Stream audio and drip tokens proportionally - single pass with estimation
                 frames_sent = 0
+                est_total_frames = approx_frames  # Start with our initial estimate
+                
                 for _, _, chunk24 in kokoro_pipeline(text, voice=voice):
                     # Guard against empty chunks
                     if chunk24.size == 0:
@@ -280,25 +278,34 @@ class SimulationTTSModel(TTSModel):
                     pcm48 = librosa.resample(pcm24, orig_sr=24_000, target_sr=48_000)
                     # 3. clip & int16
                     int16 = np.rint(np.clip(pcm48, -1, 1) * 32767).astype(np.int16)
+                    
                     # 4. slice into 20 ms (960-sample) frames
+                    chunk_frames = len(int16) // 960
                     for i in range(0, len(int16), 960):
                         frame = int16[i:i + 960]
                         if len(frame) < 960:                    # pad final partial frame
                             frame = np.pad(frame, (0, 960 - len(frame)))
                         frame_bytes = frame.tobytes()
+                        
+                        # AUDIO FIRST: yield the frame immediately
                         yield frame_bytes
                         wav_frames.append(frame_bytes)
-
                         frames_sent += 1
+                        
+                        logger.info(f"AUDIO  sent frame {frames_sent}")
 
-                        # ----- decide how many words should have been seen by now -----
-                        if real_frame_total > 0:
-                            target_words = math.floor(frames_sent / real_frame_total * total_words)
+                        # Update our estimate as we go - assume 50 more frames ahead
+                        est_total_frames = max(est_total_frames, frames_sent + 50)
+
+                        # THEN TEXT: decide how many words should have been seen by now
+                        if est_total_frames > 0:
+                            target_words = math.floor(frames_sent / est_total_frames * total_words)
                         else:
                             target_words = frames_sent * words_per_frame
 
                         if target_words > next_word_index and next_word_index < total_words:
                             await push_tokens(words[next_word_index:min(target_words, total_words)])
+                            logger.info(f"TOKEN  sent word {next_word_index}")
 
                 logger.info(f"TTS completed for text length: {len(text)}")
             else:
@@ -323,11 +330,14 @@ class SimulationTTSModel(TTSModel):
                 for i in range(0, len(audio_data), chunk_size):
                     tts_chunk = audio_data[i:i + chunk_size]
                     if tts_chunk:
+                        # AUDIO FIRST: yield the chunk immediately
                         yield tts_chunk
                         wav_frames.append(tts_chunk)
                         frames_sent += 1
+                        
+                        logger.info(f"AUDIO  sent frame {frames_sent}")
 
-                        # Drip tokens proportionally for LiteLLM
+                        # THEN TEXT: Drip tokens proportionally for LiteLLM
                         if total_chunks > 0:
                             target_words = math.floor(frames_sent / total_chunks * total_words)
                         else:
@@ -335,6 +345,7 @@ class SimulationTTSModel(TTSModel):
 
                         if target_words > next_word_index and next_word_index < total_words:
                             await push_tokens(words[next_word_index:min(target_words, total_words)])
+                            logger.info(f"TOKEN  sent word {next_word_index}")
                         
                 logger.info(f"TTS completed for text length: {len(text)}")
 
