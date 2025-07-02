@@ -254,6 +254,47 @@ export function WebSocketProvider({
           }
         };
 
+        // Handle incoming messages on data channels
+        channel.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            logInfo(
+              `Received data channel message: ${data.type} for ${channelLabel}`
+            );
+
+            // Route data channel messages to appropriate handlers
+            if (data.type === "token") {
+              // Reuse existing token handling logic
+              window.dispatchEvent(
+                new CustomEvent("simulationMessageToken", {
+                  detail: {
+                    messageId: data.message_id,
+                    chatId: data.chat_id,
+                    token: data.token,
+                    accumulatedContent: data.accumulated_content,
+                  },
+                })
+              );
+            } else if (data.type === "complete") {
+              // Reuse existing completion handling logic
+              window.dispatchEvent(
+                new CustomEvent("simulationMessageComplete", {
+                  detail: {
+                    messageId: data.message_id,
+                    chatId: data.chat_id,
+                    finalContent: data.final_content,
+                    audio: data.audio,
+                  },
+                })
+              );
+            } else {
+              logInfo("Unknown data channel payload type:", data.type);
+            }
+          } catch (error) {
+            logError("Error parsing data channel message:", error);
+          }
+        };
+
         channel.onclose = () => {
           logInfo(`WebRTC data channel closed: ${channelLabel}`);
           webRTCDataChannels.current.delete(channelLabel);
@@ -1018,6 +1059,79 @@ export function WebSocketProvider({
                   );
                 });
               };
+
+              // Handle incoming data channels from server (like the persistent text channel)
+              pc.ondatachannel = (event) => {
+                const channel = event.channel;
+                logInfo(`Received data channel from server: ${channel.label}`);
+
+                // Store the channel for easy access
+                webRTCDataChannels.current.set(channel.label, channel);
+
+                // Set up event handlers for the server-created channel
+                channel.onopen = () => {
+                  logInfo(`Server data channel opened: ${channel.label}`);
+                };
+
+                channel.onclose = () => {
+                  logInfo(`Server data channel closed: ${channel.label}`);
+                  webRTCDataChannels.current.delete(channel.label);
+                };
+
+                channel.onerror = (error) => {
+                  logError(
+                    `Server data channel error for ${channel.label}:`,
+                    error
+                  );
+                };
+
+                // Handle incoming messages from server (tokens, completions, etc.)
+                channel.onmessage = (event) => {
+                  try {
+                    const data = JSON.parse(event.data);
+                    logInfo(
+                      `Received server data channel message: ${data.type} on ${channel.label}`
+                    );
+
+                    // Route data channel messages to appropriate handlers
+                    if (data.type === "token") {
+                      // Reuse existing token handling logic
+                      window.dispatchEvent(
+                        new CustomEvent("simulationMessageToken", {
+                          detail: {
+                            messageId: data.message_id,
+                            chatId: data.chat_id,
+                            token: data.token,
+                            accumulatedContent: data.accumulated_content,
+                          },
+                        })
+                      );
+                    } else if (data.type === "complete") {
+                      // Reuse existing completion handling logic
+                      window.dispatchEvent(
+                        new CustomEvent("simulationMessageComplete", {
+                          detail: {
+                            messageId: data.message_id,
+                            chatId: data.chat_id,
+                            finalContent: data.final_content,
+                            audio: data.audio,
+                          },
+                        })
+                      );
+                    } else {
+                      logInfo(
+                        "Unknown server data channel payload type:",
+                        data.type
+                      );
+                    }
+                  } catch (error) {
+                    logError(
+                      "Error parsing server data channel message:",
+                      error
+                    );
+                  }
+                };
+              };
             } else {
               logInfo("Using existing PeerConnection for renegotiation.");
             }
@@ -1580,16 +1694,32 @@ export function WebSocketProvider({
       assistantAudioEnabled: boolean = false
     ) => {
       try {
+        // Try to use the persistent text data channel first
+        const textChannel = webRTCDataChannels.current.get("text");
+
+        if (textChannel && textChannel.readyState === "open") {
+          const messagePayload = JSON.stringify({
+            chat_id: chatId,
+            content: message,
+            assistant_audio_enabled: assistantAudioEnabled,
+          });
+
+          logInfo(`Sending message via persistent text data channel`);
+          textChannel.send(messagePayload);
+          return;
+        }
+
+        // Fallback to the old per-chat channel approach if persistent channel unavailable
         const channelLabel = `text-${chatId}`;
-        let textChannel = webRTCDataChannels.current.get(channelLabel);
+        let legacyTextChannel = webRTCDataChannels.current.get(channelLabel);
 
         // Attempt to create the channel if it doesn't exist or is closed
-        if (!textChannel || textChannel.readyState === "closed") {
-          textChannel = createDataChannelIfNeeded(channelLabel);
+        if (!legacyTextChannel || legacyTextChannel.readyState === "closed") {
+          legacyTextChannel = createDataChannelIfNeeded(channelLabel);
         }
 
         // If channel creation failed (e.g., PC is down), then fall back.
-        if (!textChannel) {
+        if (!legacyTextChannel) {
           logError(
             `Could not create or get WebRTC channel ${channelLabel}, falling back to WebSocket`
           );
@@ -1612,14 +1742,14 @@ export function WebSocketProvider({
         });
 
         // If the channel is open, send immediately.
-        if (textChannel.readyState === "open") {
+        if (legacyTextChannel.readyState === "open") {
           logInfo(
             `Sending WebRTC message directly via open channel ${channelLabel}`
           );
-          textChannel.send(messagePayload);
+          legacyTextChannel.send(messagePayload);
         }
         // If it's still connecting, queue the message.
-        else if (textChannel.readyState === "connecting") {
+        else if (legacyTextChannel.readyState === "connecting") {
           logInfo(
             `WebRTC channel ${channelLabel} is connecting. Queuing message.`
           );
@@ -1631,7 +1761,7 @@ export function WebSocketProvider({
         // As a final safety net, fall back if the channel is in a weird state.
         else {
           logError(
-            `WebRTC channel ${channelLabel} in unhandled state: ${textChannel.readyState}. Falling back to WebSocket.`
+            `WebRTC channel ${channelLabel} in unhandled state: ${legacyTextChannel.readyState}. Falling back to WebSocket.`
           );
           if (chatId.includes("simulation")) {
             emitSendSimulationMessage({

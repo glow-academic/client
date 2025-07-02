@@ -272,12 +272,13 @@ class SimulationTTSModel(TTSModel):
                 logger.info("Saved assistant audio ➜ %s", path)
 
 class SimulationWorkflow(VoiceWorkflowBase):
-    def __init__(self, chat_id: uuid.UUID, session: Session, mode: Modalities, original_message: str = "", *args: Any, **kwargs: Any) -> None:
+    def __init__(self, chat_id: uuid.UUID, session: Session, mode: Modalities, original_message: str = "", profile_id: str | None = None, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
         self.chat_id = chat_id
         self.session = session
         self.original_message = original_message
         self.mode = mode
+        self.profile_id = profile_id  # NEW: Store profile_id for data-channel access
 
     async def run(self, transcription: str) -> AsyncIterator[str]:
         """
@@ -317,18 +318,20 @@ class SimulationWorkflow(VoiceWorkflowBase):
 
 
 class SimulationPipeline:
-    def __init__(self, chat_id: uuid.UUID, mode: Modalities, session: Session, original_message: str = "") -> None:
+    def __init__(self, chat_id: uuid.UUID, mode: Modalities, session: Session, original_message: str = "", profile_id: str | None = None) -> None:
         """
         Args:
             chat_id: The ID of the chat session.
             mode: The modality of the pipeline.
             session: The database session.
             original_message: Original text message (for TEXT_AUDIO mode).
+            profile_id: The profile ID for data-channel access.
         """
         self.mode = mode
         self.chat_id = chat_id
         self.session = session
         self.original_message = original_message
+        self.profile_id = profile_id
 
         # Find the chat first
         chat = self.session.exec(select(SimulationChats).where(SimulationChats.id == chat_id)).one()
@@ -363,7 +366,7 @@ class SimulationPipeline:
             )
             config = VoicePipelineConfig(tts_settings=tts_settings, stt_settings=stt_settings)
             
-        workflow = SimulationWorkflow(self.chat_id, self.session, self.mode, self.original_message)
+        workflow = SimulationWorkflow(self.chat_id, self.session, self.mode, self.original_message, self.profile_id)
         
         if self.mode == Modalities.AUDIO_AUDIO:
             return VoicePipeline(

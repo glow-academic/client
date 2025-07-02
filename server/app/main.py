@@ -54,7 +54,7 @@ active_connections: dict[str, str] = {}
 active_runs: dict[str, Any] = {}
 
 # Profile-based connection management (one socket + one WebRTC per profile)
-profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer}
+profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer, text_channel}
 
 class ServerAudioStreamTrack(MediaStreamTrack):
     """
@@ -298,6 +298,22 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
         except Exception as e:
             logger.error(f"Error closing peer connection for profile {profile_id}: {e}")
 
+async def send_text_dc(profile_id: str, payload: Dict[str, Any]) -> bool:
+    """Try to push JSON over the text data-channel, return True if it worked."""
+    if profile_id not in profiles:
+        return False
+        
+    dc = profiles[profile_id].get("text_channel")
+    if dc and dc.readyState == "open":
+        try:
+            dc.send(json.dumps(payload))
+            logger.debug(f"Sent data-channel message to {profile_id}: {payload.get('type', 'unknown')}")
+            return True
+        except Exception as e:
+            logger.error(f"Error sending data-channel message to {profile_id}: {e}")
+            return False
+    return False          # caller can fall back to socket.emit
+
 async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> RTCPeerConnection:
     """Create a new WebRTC peer connection for a profile with connection ID."""
     logger.info(f"Creating WebRTC peer connection for profile {profile_id}, connection {connection_id}")
@@ -348,6 +364,31 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     @signalling_dc.on("open")  # type: ignore
     def _() -> None:
         logger.info(f"Signalling data channel open for profile {profile_id}, connection {connection_id}")
+    
+    # NEW: Create persistent text data channel for high-frequency token streaming
+    text_dc = pc.createDataChannel("text", ordered=True)  # ordered, reliable
+    profiles[profile_id]["text_channel"] = text_dc  # store for easy lookup
+    
+    @text_dc.on("open")  # type: ignore
+    def _() -> None:
+        logger.info(f"Text data-channel open for profile {profile_id}")
+    
+    @text_dc.on("close")  # type: ignore
+    def _() -> None:
+        logger.info(f"Text data-channel closed for profile {profile_id}")
+        # Clean up the reference
+        if profile_id in profiles and "text_channel" in profiles[profile_id]:
+            profiles[profile_id]["text_channel"] = None
+    
+    @text_dc.on("error")  # type: ignore
+    def on_error(error: Any) -> None:
+        logger.error(f"Text data-channel error for profile {profile_id}: {error}")
+    
+    @text_dc.on("message")  # type: ignore
+    def on_message(message: Any) -> None:
+        # Handle incoming text data channel messages (user messages)
+        asyncio.create_task(handle_text_dc_message(profile_id, message))
+    
     # ------------------------------------------------------------------------------------------
     
     # Set up peer connection event handlers
@@ -482,6 +523,48 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
         
     except Exception as e:
         logger.error(f"Error handling WebRTC data message: {e}")
+
+async def handle_text_dc_message(profile_id: str, message: Any) -> None:
+    """Handle incoming text data channel messages from client."""
+    try:
+        logger.info(f"Received text data-channel message for profile {profile_id}")
+        
+        # Parse the message
+        if isinstance(message, bytes):
+            data = json.loads(message.decode('utf-8'))
+        else:
+            data = json.loads(message) if isinstance(message, str) else message
+        
+        chat_id = data.get('chat_id')
+        content = data.get('content', '')
+        assistant_audio_enabled = data.get('assistant_audio_enabled', False)
+        
+        if not chat_id:
+            logger.error(f"No chat_id in text data-channel message: {data}")
+            return
+        
+        # Determine chat type and route appropriately
+        if 'assistant' in chat_id or 'asst' in chat_id:
+            from app.web.assistants import process_assistant_message_websocket
+            await process_assistant_message_websocket(
+                chat_id=uuid.UUID(chat_id),
+                message=content,
+                session=None
+            )
+        else:
+            # Assume simulation chat
+            from app.web.simulations import \
+                process_simulation_message_websocket
+            await process_simulation_message_websocket(
+                chat_id=chat_id,
+                message=content,
+                profile_id=profile_id,
+                assistant_audio_enabled=assistant_audio_enabled,
+                session=None
+            )
+        
+    except Exception as e:
+        logger.error(f"Error handling text data-channel message: {e}")
 
 # Create Socket.IO server instance globally
 sio = socketio.AsyncServer(

@@ -12,6 +12,7 @@ import {
   Simulation,
   SimulationAttempt,
   SimulationChat,
+  SimulationMessage,
 } from "@/types";
 import { logError, logInfo } from "@/utils/logger";
 import { getClass } from "@/utils/queries/classes/get-class";
@@ -865,6 +866,55 @@ export function SimulationProvider({
       }
     };
 
+    // Handle data channel token events
+    const handleSimulationMessageToken = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        // Update React Query cache with token data
+        queryClient.setQueryData(
+          ["simulationMessages", event.detail.chatId],
+          (old: SimulationMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === event.detail.messageId
+                ? { ...msg, content: event.detail.accumulatedContent }
+                : msg
+            );
+          }
+        );
+      }
+    };
+
+    // Handle data channel completion events
+    const handleSimulationMessageCompleteFromDC = (event: CustomEvent) => {
+      if (event.detail.chatId === currentChatIdRef.current) {
+        // Update React Query cache with final content
+        queryClient.setQueryData(
+          ["simulationMessages", event.detail.chatId],
+          (old: SimulationMessage[] = []) => {
+            return old.map((msg) =>
+              msg.id === event.detail.messageId
+                ? {
+                    ...msg,
+                    content: event.detail.finalContent,
+                    completed: true,
+                    audio: event.detail.audio,
+                  }
+                : msg
+            );
+          }
+        );
+
+        // Reset loading states
+        setIsSendingMessage(false);
+
+        // Invalidate queries for fresh data
+        setTimeout(() => {
+          queryClient.invalidateQueries({
+            queryKey: ["simulationMessages", event.detail.chatId],
+          });
+        }, 0);
+      }
+    };
+
     const handleSimulationMessageCancelled = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
         setIsSendingMessage(false);
@@ -951,6 +1001,15 @@ export function SimulationProvider({
       "simulationError",
       handleSimulationError as EventListener
     );
+    // Listen for data channel events
+    window.addEventListener(
+      "simulationMessageToken",
+      handleSimulationMessageToken as EventListener
+    );
+    window.addEventListener(
+      "simulationMessageComplete",
+      handleSimulationMessageCompleteFromDC as EventListener
+    );
 
     return () => {
       window.removeEventListener(
@@ -980,6 +1039,15 @@ export function SimulationProvider({
       window.removeEventListener(
         "simulationError",
         handleSimulationError as EventListener
+      );
+      // Remove data channel event listeners
+      window.removeEventListener(
+        "simulationMessageToken",
+        handleSimulationMessageToken as EventListener
+      );
+      window.removeEventListener(
+        "simulationMessageComplete",
+        handleSimulationMessageCompleteFromDC as EventListener
       );
     };
   }, [queryClient, attemptId]); // Add queryClient and attemptId to the dependency array

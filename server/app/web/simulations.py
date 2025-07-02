@@ -491,7 +491,8 @@ async def process_simulation_message_websocket(
                 chat_id=uuid.UUID(chat_id),
                 mode=audio_mode,
                 session=db_session,
-                original_message=message
+                original_message=message,
+                profile_id=profile_id
             )
 
             with trace(chat.title, trace_id=chat.trace_id, group_id=str(chat.attempt_id)):
@@ -576,20 +577,33 @@ async def process_simulation_message_websocket(
                     db_session.add(assistant_message)
                     db_session.commit()
 
-                    # Emit token update to connected clients
-                    logger.info(
-                        f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
-                    )
-                    await sio_instance.emit(
-                        "simulation_message_token",
-                        {
-                            "message_id": str(assistant_message.id),
+                    # Try data-channel first, fallback to WebSocket
+                    token_sent = False
+                    if profile_id:
+                        from app.main import send_text_dc
+                        token_sent = await send_text_dc(profile_id, {
+                            "type": "token",
                             "chat_id": str(chat_id),
+                            "message_id": str(assistant_message.id),
                             "token": token,
                             "accumulated_content": accumulated_content,
-                        },
-                        room=f"simulation_{chat_id}",
-                    )
+                        })
+
+                    # Fallback to WebSocket if data-channel unavailable
+                    if not token_sent:
+                        logger.info(
+                            f"Emitting token to room simulation_{chat_id}: {token[:20]}..."
+                        )
+                        await sio_instance.emit(
+                            "simulation_message_token",
+                            {
+                                "message_id": str(assistant_message.id),
+                                "chat_id": str(chat_id),
+                                "token": token,
+                                "accumulated_content": accumulated_content,
+                            },
+                            room=f"simulation_{chat_id}",
+                        )
             except Exception as e:
                 if "cancelled" in str(e).lower() or "canceled" in str(e).lower():
                     # Handle cancellation gracefully
@@ -628,17 +642,31 @@ async def process_simulation_message_websocket(
 
             # 7. Emit completion signal (only if not cancelled)
             if not cancelled:
-                logger.info(f"Emitting completion to room simulation_{chat_id}")
-                await sio_instance.emit(
-                    "simulation_message_complete",
-                    {
-                        "message_id": str(assistant_message.id),
+                # Try data-channel first, fallback to WebSocket
+                completion_sent = False
+                if profile_id:
+                    from app.main import send_text_dc
+                    completion_sent = await send_text_dc(profile_id, {
+                        "type": "complete",
                         "chat_id": str(chat_id),
+                        "message_id": str(assistant_message.id),
                         "final_content": accumulated_content,
                         "audio": assistant_message.audio,
-                    },
-                    room=f"simulation_{chat_id}",
-                )
+                    })
+
+                # Fallback to WebSocket if data-channel unavailable
+                if not completion_sent:
+                    logger.info(f"Emitting completion to room simulation_{chat_id}")
+                    await sio_instance.emit(
+                        "simulation_message_complete",
+                        {
+                            "message_id": str(assistant_message.id),
+                            "chat_id": str(chat_id),
+                            "final_content": accumulated_content,
+                            "audio": assistant_message.audio,
+                        },
+                        room=f"simulation_{chat_id}",
+                    )
 
     except Exception as e:
         logger.error(f"Error in process_simulation_message_websocket: {str(e)}")
