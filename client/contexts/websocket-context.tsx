@@ -960,24 +960,27 @@ export function WebSocketProvider({
                   return;
                 }
 
-                const stream = event.streams[0];
-                if (!stream) {
-                  logError("No stream received with audio track");
-                  return;
-                }
+                // SPEC CHANGE: Create a new MediaStream and add the specific track to it
+                const newStream = new MediaStream();
+                newStream.addTrack(event.track);
 
-                // SPEC CHANGE: Prevent duplicate audio elements
+                // Prevent duplicate audio elements if ontrack fires unexpectedly
                 if (remoteAudioStreams.current.has("persistent")) {
                   logInfo(
-                    "Persistent audio track already exists, skipping duplicate"
+                    "Persistent audio element already exists, updating stream."
                   );
+                  const persistentAudio =
+                    remoteAudioStreams.current.get("persistent");
+                  if (persistentAudio) {
+                    persistentAudio.srcObject = newStream;
+                  }
                   return;
                 }
 
                 // Create a single audio element for the persistent track
                 // This will handle all TTS audio for this WebRTC connection
                 const audio = new Audio();
-                audio.srcObject = stream;
+                audio.srcObject = newStream; // Assign the new, clean stream
                 audio.autoplay = true; // The browser may still block this initially
 
                 // SPEC CHANGE: Add explicit audio properties to prevent silent playback
