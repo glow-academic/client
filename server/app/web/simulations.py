@@ -465,44 +465,26 @@ async def process_simulation_message_websocket(
 
         # Use pipeline for audio modalities, keep existing flow for TEXT_TEXT
         if audio_mode != Modalities.TEXT_TEXT:
-            # Handle audio modalities - need to add server audio track
+            # SPEC CHANGE: Retrieve the existing, persistent audio track
             server_audio_track = None
             
             if audio_mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
                 # Get the existing peer connection
-                profiles, ServerAudioStreamTrack = get_profiles_and_track_class()
-                sio_instance = get_sio_instance()
+                profiles, _ = get_profiles_and_track_class()
                 
-                if not profile_id or profile_id not in profiles or not profiles[profile_id].get("peer_connection"):
-                    logger.error(f"No active peer connection for profile {profile_id} to send audio.")
+                if profile_id and profile_id in profiles:
+                    # RETRIEVE the track, don't create a new one
+                    server_audio_track = profiles[profile_id].get("server_audio_track")
+                    if not server_audio_track:
+                        logger.error(f"No persistent audio track found for profile {profile_id}")
+                        return
+                    logger.info(f"Retrieved persistent audio track for profile {profile_id}")
+                else:
+                    logger.error(f"Could not find profile or audio track for {profile_id}")
                     return
 
-                pc: RTCPeerConnection = profiles[profile_id]["peer_connection"]
-                
-                # ** THE CRITICAL FIX **
-                # Create a NEW audio track for this response and add it to the connection
-                server_audio_track = ServerAudioStreamTrack()
-                pc.addTrack(server_audio_track)
-                logger.info(f"Added new ServerAudioStreamTrack to PC for chat {chat_id}")
-
-                # --------------------------------------------------
-                # 👇 THE CRITICAL RENEGOTIATION FIX
-                # --------------------------------------------------
-                # 1. Create a new offer that includes the new track
-                offer = await pc.createOffer()
-                
-                # 2. Set the server's local description to this new offer
-                await pc.setLocalDescription(offer)
-                
-                # 3. Emit this new offer to the specific client
-                await sio_instance.emit('webrtc_renegotiation_offer', {
-                    'profile_id': profile_id,
-                    'connection_id': profiles[profile_id].get("current_connection_id"),
-                    'offer': {'sdp': offer.sdp, 'type': offer.type}
-                }, room=profiles[profile_id].get("current_socket"))
-                
-                logger.info(f"Sent renegotiation offer to client for new audio track.")
-                # --------------------------------------------------
+                # SPEC CHANGE: The entire renegotiation block is DELETED
+                # No more pc.addTrack(), pc.createOffer(), or emitting 'webrtc_renegotiation_offer'
 
             # Use the new audio pipeline
             pipeline = SimulationPipeline(

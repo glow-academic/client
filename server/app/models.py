@@ -95,16 +95,6 @@ class Components(_Base, table=True):
     default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
 
 
-class Migrations(_Base, table=True):
-    __table_args__ = (
-        PrimaryKeyConstraint('id', name='migrations_pkey'),
-    )
-
-    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
-    hash: str = Field(sa_column=Column('hash', Text))
-    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
-
-
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -548,12 +538,12 @@ class SimulationMessages(_Base, table=True):
 
     id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
     content: str = Field(sa_column=Column('content', Text))
     audio: bool = Field(sa_column=Column('audio', Boolean, server_default=text('false')))
     type: str = Field(sa_column=Column('type', Enum('query', 'response', name='simulation_message_type')))
     completed: bool = Field(sa_column=Column('completed', Boolean, server_default=text('false')))
-    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
     file_path: Optional[str] = Field(default=None, sa_column=Column('file_path', Text))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')

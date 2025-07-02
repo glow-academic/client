@@ -192,7 +192,7 @@ export function WebSocketProvider({
   const audioTrackSenders = useRef<Map<string, RTCRtpSender>>(new Map());
   const remoteAudioStreams = useRef<Map<string, HTMLAudioElement>>(new Map());
 
-  // 💡 1. Add a ref to hold the message queues
+  // Message queues for data channels (text messages)
   const messageQueues = useRef<Map<string, string[]>>(new Map());
 
   // State to hold the user audio stream for waveform visualization
@@ -216,7 +216,7 @@ export function WebSocketProvider({
     );
   }, []);
 
-  // 💡 2. Enhance createDataChannelIfNeeded to process the queue onopen
+  // Create data channels for text messaging and process queued messages when they open
   const createDataChannelIfNeeded = useCallback(
     (channelLabel: string): RTCDataChannel | undefined => {
       const pc = webRTCPeerConnection.current;
@@ -948,9 +948,9 @@ export function WebSocketProvider({
                 }
               };
 
-              // ... inside the pc.ontrack handler ...
+              // SPEC CHANGE: This handler now fires only once per connection for the persistent audio track
               pc.ontrack = (event) => {
-                logInfo("Received remote track", {
+                logInfo("Received persistent remote audio track", {
                   streamId: event.streams[0]?.id,
                   trackKind: event.track.kind,
                 });
@@ -966,51 +966,29 @@ export function WebSocketProvider({
                   return;
                 }
 
-                // THIS IS THE KEY CHANGE:
-                // The server doesn't tell us which chat this track is for.
-                // We'll assume it's for the most recently joined room that doesn't have an audio element yet.
-                const lastJoinedRoom = Array.from(
-                  currentRoomsRef.current
-                ).pop();
-
-                if (!lastJoinedRoom) {
-                  logError("No room to associate incoming audio track with.");
-                  return;
-                }
-
-                // Clean up any old audio element for this specific room
-                const existingAudio =
-                  remoteAudioStreams.current.get(lastJoinedRoom);
-                if (existingAudio) {
-                  existingAudio.pause();
-                  existingAudio.srcObject = null;
-                  remoteAudioStreams.current.delete(lastJoinedRoom);
-                  logInfo(
-                    `Cleaned up old audio element for room: ${lastJoinedRoom}`
-                  );
-                }
-
-                // Create and configure the new audio element
+                // Create a single audio element for the persistent track
+                // This will handle all TTS audio for this WebRTC connection
                 const audio = new Audio();
                 audio.srcObject = stream;
                 audio.autoplay = true; // The browser may still block this initially
+
                 audio.addEventListener("play", () =>
-                  logInfo(`Audio playback started for ${lastJoinedRoom}`)
+                  logInfo("Persistent audio track playback started")
                 );
                 audio.addEventListener("error", (e) =>
-                  logError(`Audio element error for ${lastJoinedRoom}`, e)
+                  logError("Persistent audio track error", e)
                 );
 
-                // Store the new audio element with its room ID
-                remoteAudioStreams.current.set(lastJoinedRoom, audio);
+                // Store the audio element with a global key since it handles all rooms
+                remoteAudioStreams.current.set("persistent", audio);
                 logInfo(
-                  `Created and stored new audio element for room: ${lastJoinedRoom}`
+                  "Created persistent audio element for all TTS responses"
                 );
 
                 // Attempt to play it. If it fails, our `playRemoteAudio` function will handle it later.
                 audio.play().catch((error) => {
                   logError(
-                    `Autoplay was blocked for room ${lastJoinedRoom}. User interaction is required.`,
+                    "Autoplay was blocked for persistent audio track. User interaction is required.",
                     error
                   );
                   toast.info(
@@ -1094,12 +1072,11 @@ export function WebSocketProvider({
             if (pc) {
               toast.success("WebRTC connection established!");
 
-              // --- 💡 START OF FIX ---
               // Now that WebRTC is ready, create data channels for any rooms we're already in.
+              // The persistent audio track is already established and ready to receive TTS audio.
               currentRoomsRef.current.forEach((roomId) => {
                 createDataChannelIfNeeded(`text-${roomId}`);
               });
-              // --- END OF FIX ---
             }
           }
         }
@@ -1120,38 +1097,8 @@ export function WebSocketProvider({
         setIsWebRTCConnected(false);
       });
 
-      // 👇 ADD THIS NEW EVENT HANDLER FOR RENEGOTIATION
-      socket.on(
-        "webrtc_renegotiation_offer",
-        async (data: {
-          profile_id: string;
-          connection_id: string;
-          offer: { sdp: string; type: string };
-        }) => {
-          logInfo("Received renegotiation offer from server", data);
-          const pc = webRTCPeerConnection.current;
-
-          if (pc && pc.signalingState !== "closed") {
-            try {
-              await pc.setRemoteDescription({
-                sdp: data.offer.sdp,
-                type: data.offer.type as RTCSdpType,
-              });
-              const answer = await pc.createAnswer();
-              await pc.setLocalDescription(answer);
-
-              socket.emit("webrtc_renegotiation_answer", {
-                profile_id: data.profile_id,
-                connection_id: data.connection_id,
-                answer: { sdp: answer.sdp, type: answer.type },
-              });
-              logInfo("Sent renegotiation answer to server.");
-            } catch (error) {
-              logError("Error handling renegotiation offer", error);
-            }
-          }
-        }
-      );
+      // SPEC CHANGE: Renegotiation handler is no longer needed
+      // The server now uses a persistent audio track, eliminating the need for renegotiation
     },
     [queryClient, profileId, createDataChannelIfNeeded]
   );
@@ -1366,13 +1313,11 @@ export function WebSocketProvider({
       });
       currentRoomsRef.current.add(roomId);
 
-      // --- 💡 START OF FIX ---
       // Proactively create a data channel for this room if the WebRTC connection is ready.
-      // This gives the channel time to open before the first message is sent.
+      // The persistent audio track is already available for TTS responses.
       if (isWebRTCConnected) {
         createDataChannelIfNeeded(`text-${roomId}`);
       }
-      // --- END OF FIX ---
     },
     [isConnected, isWebRTCConnected, createDataChannelIfNeeded] // Add isWebRTCConnected and createDataChannelIfNeeded to dependencies
   );
@@ -1402,6 +1347,8 @@ export function WebSocketProvider({
         webRTCDataChannels.current.delete(channelLabel);
         logInfo(`Closed and removed WebRTC data channel: ${channelLabel}`);
       }
+
+      // Note: We don't remove the persistent audio track here as it's shared across all rooms
     },
     []
   );
@@ -1564,6 +1511,15 @@ export function WebSocketProvider({
       });
       webRTCDataChannels.current.clear();
 
+      // Clean up persistent audio element
+      const persistentAudio = remoteAudioStreams.current.get("persistent");
+      if (persistentAudio) {
+        persistentAudio.pause();
+        persistentAudio.srcObject = null;
+        remoteAudioStreams.current.delete("persistent");
+        logInfo("Cleaned up persistent audio element");
+      }
+
       // Close peer connection
       if (webRTCPeerConnection.current) {
         webRTCPeerConnection.current.close();
@@ -1594,7 +1550,7 @@ export function WebSocketProvider({
     }
   }, [isConnected, isWebRTCConnected, stopWebRTC]);
 
-  // 💡 3. Modify sendWebRTCMessage to use the queue
+  // Send messages via WebRTC data channels with queuing for unopened channels
   const sendWebRTCMessage = useCallback(
     (
       chatId: string,
@@ -1763,19 +1719,27 @@ export function WebSocketProvider({
 
   const playRemoteAudio = useCallback(async () => {
     // This function will be called by a user gesture
-    logInfo("Attempting to play remote audio streams due to user interaction.");
-    for (const audio of remoteAudioStreams.current.values()) {
-      if (audio.paused) {
-        try {
-          await audio.play();
-          logInfo("Successfully started audio playback after user gesture.");
-        } catch (error) {
-          logError("Error attempting to play audio after gesture.", error);
-          toast.error(
-            "Could not start audio. Please check browser permissions."
-          );
-        }
+    logInfo(
+      "Attempting to play persistent audio stream due to user interaction."
+    );
+    const persistentAudio = remoteAudioStreams.current.get("persistent");
+    if (persistentAudio && persistentAudio.paused) {
+      try {
+        await persistentAudio.play();
+        logInfo(
+          "Successfully started persistent audio track playback after user gesture."
+        );
+      } catch (error) {
+        logError(
+          "Error attempting to play persistent audio after gesture.",
+          error
+        );
+        toast.error("Could not start audio. Please check browser permissions.");
       }
+    } else if (persistentAudio) {
+      logInfo("Persistent audio track is already playing.");
+    } else {
+      logInfo("No persistent audio track available to play.");
     }
   }, []);
 
@@ -1804,12 +1768,11 @@ export function WebSocketProvider({
         description: "Your browser has granted audio playback permission.",
       });
 
-      // 2. Now, immediately try to play any REAL audio streams that have arrived
-      for (const audio of remoteAudioStreams.current.values()) {
-        if (audio.paused) {
-          await audio.play();
-          logInfo("Played a queued remote audio stream.");
-        }
+      // 2. Now, immediately try to play the persistent audio stream if available
+      const persistentAudio = remoteAudioStreams.current.get("persistent");
+      if (persistentAudio && persistentAudio.paused) {
+        await persistentAudio.play();
+        logInfo("Played the persistent audio stream.");
       }
     } catch (error) {
       logError("Audio consent was denied by the browser.", error);

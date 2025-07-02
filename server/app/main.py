@@ -19,9 +19,9 @@ from aiortc import (MediaStreamTrack, RTCConfiguration,  # type: ignore
 from aiortc.sdp import candidate_from_sdp  # type: ignore
 from app.db import get_session, init_db
 from app.models import SimulationChats
+from app.routes.audio import router as audio_router
 from app.routes.documents import router as documents_router
 from app.routes.scenarios import router as scenarios_router
-from app.routes.audio import router as audio_router
 from app.utils.audio import Modalities
 from av import AudioFrame  # type: ignore
 from dotenv import load_dotenv
@@ -245,12 +245,12 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     if not profile_data:
         return
 
-    # End server audio track if one exists
+    # End server audio track if one exists (only when connection is being cleaned up)
     server_audio_track = profile_data.get("server_audio_track")
     if server_audio_track:
         try:
             server_audio_track.end_stream()
-            logger.info(f"Signaled end for server audio track for profile {profile_id}")
+            logger.info(f"Ended persistent server audio track for profile {profile_id}")
         except Exception as e:
             logger.error(f"Error ending server audio track for profile {profile_id}: {e}")
 
@@ -284,6 +284,9 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     config = RTCConfiguration(iceServers=ice_servers_list)
     pc = RTCPeerConnection(configuration=config)
     
+    # SPEC CHANGE: Create and store a persistent audio track upfront
+    server_audio_track = ServerAudioStreamTrack()
+    
     # Store the peer connection object immediately
     if profile_id not in profiles:
         profiles[profile_id] = {}
@@ -292,9 +295,13 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         "peer_connection": pc,
         "current_connection_id": connection_id,
         "data_channels": {},
-        "ice_candidates_buffer": []
-        # We will add the server_audio_track later when needed
+        "ice_candidates_buffer": [],
+        "server_audio_track": server_audio_track  # Store the persistent track
     })
+    
+    # Add the persistent track to the peer connection immediately
+    pc.addTrack(server_audio_track)
+    logger.info(f"Added persistent audio track to peer connection for profile {profile_id}")
 
     # MODIFICATION: Change direction to allow sending and receiving audio
     pc.addTransceiver("audio", direction="sendrecv")
@@ -844,31 +851,8 @@ async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:
     # Here you would add logic to signal the audio processing task to stop.
     # For now, we'll just log it. A robust implementation would use an asyncio.Event or similar.
 
-@sio.event  # type: ignore
-async def webrtc_renegotiation_answer(sid: str, data: Dict[str, Any]) -> None:
-    """Handle the client's answer to a server-initiated renegotiation."""
-    profile_id = data.get("profile_id")
-    connection_id = data.get("connection_id")
-    answer_data = data.get("answer")
-
-    if not all([profile_id, connection_id, answer_data]):
-        logger.warning("Invalid renegotiation answer received.")
-        return
-        
-    logger.info(f"Received renegotiation answer from client {sid}")
-
-    if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
-        pc = profiles[profile_id].get("peer_connection")
-        if pc and pc.signalingState != "closed":
-            try:
-                if isinstance(answer_data, dict) and "sdp" in answer_data and "type" in answer_data:
-                    answer_obj = RTCSessionDescription(sdp=str(answer_data["sdp"]), type=str(answer_data["type"]))
-                    await pc.setRemoteDescription(answer_obj)
-                    logger.info("Renegotiation complete. New audio track should be active.")
-                else:
-                    logger.error("Invalid answer data format in renegotiation response")
-            except Exception as e:
-                logger.error(f"Error setting remote description during renegotiation: {e}")
+# SPEC CHANGE: Renegotiation answer handler is no longer needed
+# The server now uses a persistent audio track, eliminating the need for renegotiation
 
 @sio.event  # type: ignore
 async def join_chat(sid: str, data: dict[str, Any]) -> None:

@@ -499,10 +499,10 @@ class SimulationPipeline:
                             # This yield is for any potential future use, like live WebRTC audio playback
                             yield {"type": "audio", "data": audio_chunk}
 
-            # Signal end of audio stream if we were streaming
-            if server_audio_track and assistant_audio_chunks:
-                server_audio_track.end_stream()
-                logger.info(f"Signaled end of audio stream for profile {profile_id}")
+            # SPEC CHANGE: DO NOT end the stream. It must be kept alive for future messages.
+            # The persistent track will continue to be available for the next TTS response.
+            if assistant_audio_chunks:
+                logger.info(f"Audio streaming completed for profile {profile_id}, track remains active")
 
             # If real audio was generated, find the message the workflow created and save the file.
             if assistant_audio_chunks:
