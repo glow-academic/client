@@ -79,24 +79,62 @@ function CaptionedAudio({
   isLoading: boolean;
 }) {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [activeIdx, setActiveIdx] = useState<number>(-1);
+  const [activeWordIndices, setActiveWordIndices] = useState<number[]>([]);
 
-  // keep `activeIdx` in sync with playback position
+  // keep `activeWordIndices` in sync with playback position
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || timings.length === 0) return;
 
     const handler = () => {
-      const t = audio.currentTime;
-      const idx = timings.findIndex((w) => w.start <= t && t < w.end);
-      if (idx !== -1 && idx !== activeIdx) {
-        setActiveIdx(idx);
+      const currentTime = audio.currentTime;
+
+      // Find all words that should be highlighted at the current time
+      const activeIndices: number[] = [];
+
+      timings.forEach((timing, index) => {
+        // Check if current time falls within this word's timing window
+        // Add a small buffer (50ms) to make highlighting more visible
+        const bufferTime = 0.05;
+        if (
+          currentTime >= timing.start - bufferTime &&
+          currentTime <= timing.end + bufferTime
+        ) {
+          activeIndices.push(index);
+        }
+      });
+
+      // Only update if the active indices have changed
+      if (JSON.stringify(activeIndices) !== JSON.stringify(activeWordIndices)) {
+        setActiveWordIndices(activeIndices);
+
+        // Log for debugging
+        if (activeIndices.length > 0) {
+          const activeWords = activeIndices
+            .map((i) => timings[i]?.word)
+            .join(" ");
+          logInfo(
+            `Highlighting words at ${currentTime.toFixed(2)}s: "${activeWords}"`
+          );
+        }
       }
     };
 
+    // Update more frequently for smoother highlighting
     audio.addEventListener("timeupdate", handler);
-    return () => audio.removeEventListener("timeupdate", handler);
-  }, [timings, activeIdx]);
+
+    // Also check on play/pause for immediate feedback
+    audio.addEventListener("play", handler);
+    audio.addEventListener("pause", handler);
+    audio.addEventListener("seeked", handler);
+
+    return () => {
+      audio.removeEventListener("timeupdate", handler);
+      audio.removeEventListener("play", handler);
+      audio.removeEventListener("pause", handler);
+      audio.removeEventListener("seeked", handler);
+    };
+  }, [timings, activeWordIndices]);
 
   // Sync audio element with external play/pause state
   useEffect(() => {
@@ -118,27 +156,47 @@ function CaptionedAudio({
     if (!audio) return;
 
     const handlePlay = () => {
-      // Audio started playing naturally
+      logInfo("Audio playback started - word highlighting enabled");
     };
 
     const handlePause = () => {
-      setActiveIdx(-1); // Clear highlighting when paused
+      setActiveWordIndices([]); // Clear highlighting when paused
+      logInfo("Audio paused - word highlighting cleared");
     };
 
     const handleEnded = () => {
-      setActiveIdx(-1); // Clear highlighting when ended
+      setActiveWordIndices([]); // Clear highlighting when ended
+      logInfo("Audio ended - word highlighting cleared");
+    };
+
+    const handleLoadedMetadata = () => {
+      logInfo(
+        `Audio loaded: duration=${audio.duration?.toFixed(2)}s, timings=${timings.length} words`
+      );
+
+      // Validate that timings don't exceed audio duration
+      if (timings.length > 0 && audio.duration) {
+        const maxTimingEnd = Math.max(...timings.map((t) => t.end));
+        if (maxTimingEnd > audio.duration) {
+          logError(
+            `Word timings extend beyond audio duration: ${maxTimingEnd}s > ${audio.duration}s`
+          );
+        }
+      }
     };
 
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
     audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
 
     return () => {
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
       audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
     };
-  }, []);
+  }, [timings]);
 
   return (
     <div className="bg-muted rounded-lg p-3 relative">
@@ -153,11 +211,22 @@ function CaptionedAudio({
         {timings.length > 0 ? (
           <p className="whitespace-pre-wrap leading-relaxed">
             {message.content.split(/\s+/).map((word, i) => {
-              const isActive = i === activeIdx;
+              const isActive = activeWordIndices.includes(i);
+              const timing = timings[i];
+
               return (
                 <span
                   key={i}
-                  className={`${isActive ? "bg-yellow-200 dark:bg-yellow-800 rounded px-1" : ""} transition-colors duration-150`}
+                  className={`${
+                    isActive
+                      ? "bg-yellow-200 dark:bg-yellow-800 rounded px-1"
+                      : ""
+                  } transition-colors duration-150`}
+                  title={
+                    timing
+                      ? `${timing.start.toFixed(2)}s - ${timing.end.toFixed(2)}s`
+                      : undefined
+                  }
                 >
                   {word + " "}
                 </span>
@@ -245,7 +314,36 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       logInfo(
         `Received word timings for message: ${message_id} with ${timings?.length || 0} words`
       );
-      logInfo(`Timings: ${JSON.stringify(timings)}`);
+
+      // Enhanced logging for debugging
+      if (timings && timings.length > 0) {
+        const totalDuration = Math.max(...timings.map((t) => t.end));
+        const avgWordDuration =
+          timings.reduce((sum, t) => sum + (t.end - t.start), 0) /
+          timings.length;
+
+        logInfo(
+          `Word timing stats: total_duration=${totalDuration.toFixed(2)}s, avg_word_duration=${avgWordDuration.toFixed(3)}s`
+        );
+
+        // Log first few and last few words for debugging
+        const debugWords = [
+          ...timings.slice(0, 3),
+          ...(timings.length > 6 ? [{ word: "...", start: 0, end: 0 }] : []),
+          ...timings.slice(-3),
+        ];
+
+        logInfo(
+          `Word timings preview: ${JSON.stringify(
+            debugWords.map((t) =>
+              t.word === "..."
+                ? "..."
+                : `${t.word}(${t.start.toFixed(2)}-${t.end.toFixed(2)}s)`
+            )
+          )}`
+        );
+      }
+
       setTimingsByMsg((prev) => ({ ...prev, [message_id]: timings }));
     }
 

@@ -171,6 +171,12 @@ class SimulationTTSModel(TTSModel):
         FRAME_SEC = 0.02  # 960 samples @48 kHz ⇒ 20 ms
         word_timings: list[dict[str, Any]] = []  # [{word,start,end}, …]
         current_time = 0.0  # seconds since first frame
+        
+        # NEW: Track silence detection and actual audio start
+        silence_threshold = 0.01  # Amplitude threshold for detecting silence
+        audio_started = False
+        audio_start_time = 0.0
+        pre_audio_frames = 0  # Count frames before actual audio starts
 
         # 1. Create the assistant message first, empty & in-flight
         assistant_message = SimulationMessages(
@@ -212,27 +218,43 @@ class SimulationTTSModel(TTSModel):
                 )
             return
 
-        # 2. Pre-compute the "token schedule"
+        # 2. Pre-compute the "token schedule" - but we'll adjust this based on actual audio timing
         words = text.split()
         total_words = len(words)
-        approx_frames = math.ceil(len(text) / 4.5)  # ~1 word ⇒ 200 ms speech
-        words_per_frame = max(1, total_words // approx_frames) if approx_frames > 0 else 1
         next_word_index = 0
         accum = ""
+        
+        # NEW: Track actual audio duration for better word timing distribution
+        actual_audio_frames = 0
+        total_audio_duration = 0.0
 
         # 3. Helper to push a token batch through the data-channel (fallback → WS)
-        async def push_tokens(batch: list[str]) -> None:
+        async def push_tokens(batch: list[str], timing_offset: float = 0.0) -> None:
             nonlocal accum, next_word_index
 
             if not batch:
                 return
 
             accum += (" " if accum else "") + " ".join(batch)
+            
+            # ➜ Calculate timing for each word in the batch based on actual audio progress
+            words_in_batch = len(batch)
+            if words_in_batch > 0 and total_audio_duration > 0:
+                # Distribute words evenly across the current audio segment
+                time_per_word = (current_time - timing_offset) / words_in_batch if words_in_batch > 1 else 0.0
+                
+                for i, w in enumerate(batch):
+                    word_start_time = timing_offset + (i * time_per_word)
+                    # Adjust for silence at the beginning
+                    adjusted_start_time = max(0, word_start_time - audio_start_time)
+                    word_timings.append({"word": w, "start": adjusted_start_time})
+            else:
+                # Fallback to simple timing if no audio duration calculated yet
+                for w in batch:
+                    adjusted_start_time = max(0, current_time - audio_start_time)
+                    word_timings.append({"word": w, "start": adjusted_start_time})
+            
             next_word_index += len(batch)
-
-            # ➜ add timing capture here
-            for w in batch:
-                word_timings.append({"word": w, "start": current_time})   # no end yet
 
             payload = {
                 "type": "token",
@@ -272,12 +294,12 @@ class SimulationTTSModel(TTSModel):
                 voice = random.choice(model_manager.kokoro_voices)
                 logger.info(f"Kokoro voice={voice}  text='{text[:40]}…'")
 
-                # Stream audio and drip tokens proportionally - single pass with estimation
-                frames_sent = 0
-                est_total_frames = approx_frames  # Start with our initial estimate
+                # NEW: Collect all audio first to calculate proper timing distribution
+                all_audio_chunks = []
+                total_samples = 0
                 
+                # Generate all audio chunks first
                 for _, _, chunk24 in kokoro_pipeline(text, voice=voice):
-                    # Guard against empty chunks
                     if chunk24.size == 0:
                         continue
                         
@@ -288,12 +310,48 @@ class SimulationTTSModel(TTSModel):
                     # 3. clip & int16
                     int16 = np.rint(np.clip(pcm48, -1, 1) * 32767).astype(np.int16)
                     
+                    all_audio_chunks.append(int16)
+                    total_samples += len(int16)
+                
+                # Calculate total audio duration
+                total_audio_duration = total_samples / 48000.0
+                logger.info(f"Total audio duration: {total_audio_duration:.2f} seconds")
+                
+                # NEW: Detect silence at the beginning
+                combined_audio = np.concatenate(all_audio_chunks) if all_audio_chunks else np.array([])
+                
+                # Find the first non-silent frame
+                frame_size = 960
+                for frame_idx in range(0, len(combined_audio), frame_size):
+                    frame_data = combined_audio[frame_idx:frame_idx + frame_size]
+                    if len(frame_data) == 0:
+                        continue
+                        
+                    # Calculate RMS amplitude for silence detection
+                    rms = np.sqrt(np.mean(frame_data.astype(np.float32) ** 2)) / 32767.0
+                    
+                    if not audio_started and rms > silence_threshold:
+                        audio_started = True
+                        audio_start_time = frame_idx / 48000.0  # Convert to seconds
+                        pre_audio_frames = frame_idx // frame_size
+                        logger.info(f"Audio starts at {audio_start_time:.3f}s (frame {pre_audio_frames})")
+                        break
+                
+                # If no audio detected, assume it starts immediately
+                if not audio_started:
+                    audio_start_time = 0.0
+                    pre_audio_frames = 0
+                
+                # Now stream the audio with proper timing
+                frames_sent = 0
+                current_chunk_idx = 0
+                
+                for audio_chunk in all_audio_chunks:
                     # 4. slice into 20 ms (960-sample) frames
-                    chunk_frames = len(int16) // 960
-                    for i in range(0, len(int16), 960):
-                        frame = int16[i:i + 960]
-                        if len(frame) < 960:                    # pad final partial frame
-                            frame = np.pad(frame, (0, 960 - len(frame)))
+                    for i in range(0, len(audio_chunk), frame_size):
+                        frame = audio_chunk[i:i + frame_size]
+                        if len(frame) < frame_size:  # pad final partial frame
+                            frame = np.pad(frame, (0, frame_size - len(frame)))
                         frame_bytes = frame.tobytes()
                         
                         # AUDIO FIRST: yield the frame immediately
@@ -301,77 +359,120 @@ class SimulationTTSModel(TTSModel):
                         wav_frames.append(frame_bytes)
                         frames_sent += 1
                         
-                        # ── inside the inner audio-frame loop, right after you yield the frame ──
-                        current_time += FRAME_SEC
+                        # Update current time
+                        current_time = frames_sent * FRAME_SEC
                         
-                        logger.info(f"AUDIO  sent frame {frames_sent}")
-
-                        # Update our estimate as we go - assume 50 more frames ahead
-                        est_total_frames = max(est_total_frames, frames_sent + 50)
-
-                        # THEN TEXT: decide how many words should have been seen by now
-                        if est_total_frames > 0:
-                            target_words = math.floor(frames_sent / est_total_frames * total_words)
-                        else:
-                            target_words = frames_sent * words_per_frame
-
-                        if target_words > next_word_index and next_word_index < total_words:
-                            await push_tokens(words[next_word_index:min(target_words, total_words)])
-                            logger.info(f"TOKEN  sent word {next_word_index}")
+                        # Calculate audio progress (excluding silence)
+                        audio_progress = max(0, current_time - audio_start_time)
+                        
+                        # NEW: More accurate word timing distribution
+                        if audio_started and total_audio_duration > 0:
+                            # Calculate how many words should have been spoken by now
+                            progress_ratio = audio_progress / (total_audio_duration - audio_start_time)
+                            target_words = min(int(progress_ratio * total_words), total_words)
+                            
+                            if target_words > next_word_index and next_word_index < total_words:
+                                # Calculate timing offset for this batch
+                                batch_start_time = (next_word_index / total_words) * (total_audio_duration - audio_start_time)
+                                words_to_send = words[next_word_index:target_words]
+                                await push_tokens(words_to_send, batch_start_time)
+                                logger.info(f"TOKEN sent words {next_word_index}-{target_words-1} at {current_time:.3f}s")
+                        
+                        # Add small delay to maintain real-time pacing
+                        await asyncio.sleep(0.001)
 
                 logger.info(f"TTS completed for text length: {len(text)}")
             else:
+                # LiteLLM path - similar improvements
                 logger.info(f"TTS generating audio for text: {text[:50]}...")
                 
-                # Use LiteLLM with configured TTS model
                 response = await litellm.aspeech(
                     model=self.name,
                     input=text,
                     instructions=settings.instructions,
                 )
                 
-                # Stream the audio response
-                # Note: LiteLLM may return the full audio at once, so we'll chunk it
                 audio_data = response.content if hasattr(response, 'content') else b""
                 
-                # Calculate total frames for drip logic
+                # Convert to numpy for silence detection
+                audio_np = np.frombuffer(audio_data, dtype=np.int16)
+                total_samples = len(audio_np)
+                total_audio_duration = total_samples / 48000.0
+                
+                # Detect silence at the beginning
+                frame_size = 960
+                for frame_idx in range(0, len(audio_np), frame_size):
+                    frame_data = audio_np[frame_idx:frame_idx + frame_size]
+                    if len(frame_data) == 0:
+                        continue
+                        
+                    rms = np.sqrt(np.mean(frame_data.astype(np.float32) ** 2)) / 32767.0
+                    
+                    if not audio_started and rms > silence_threshold:
+                        audio_started = True
+                        audio_start_time = frame_idx / 48000.0
+                        pre_audio_frames = frame_idx // frame_size
+                        logger.info(f"Audio starts at {audio_start_time:.3f}s (frame {pre_audio_frames})")
+                        break
+                
+                if not audio_started:
+                    audio_start_time = 0.0
+                    pre_audio_frames = 0
+                
+                # Stream the audio with proper timing
                 chunk_size = 1920  # 960 samples * 2 bytes per sample for 20ms at 48kHz
-                total_chunks = math.ceil(len(audio_data) / chunk_size)
                 frames_sent = 0
                 
                 for i in range(0, len(audio_data), chunk_size):
                     tts_chunk = audio_data[i:i + chunk_size]
                     if tts_chunk:
-                        # AUDIO FIRST: yield the chunk immediately
                         yield tts_chunk
                         wav_frames.append(tts_chunk)
                         frames_sent += 1
                         
-                        # ── inside the inner audio-frame loop, right after you yield the frame ──
-                        current_time += FRAME_SEC
+                        current_time = frames_sent * FRAME_SEC
+                        audio_progress = max(0, current_time - audio_start_time)
                         
-                        logger.info(f"AUDIO  sent frame {frames_sent}")
-
-                        # THEN TEXT: Drip tokens proportionally for LiteLLM
-                        if total_chunks > 0:
-                            target_words = math.floor(frames_sent / total_chunks * total_words)
-                        else:
-                            target_words = frames_sent * words_per_frame
-
-                        if target_words > next_word_index and next_word_index < total_words:
-                            await push_tokens(words[next_word_index:min(target_words, total_words)])
-                            logger.info(f"TOKEN  sent word {next_word_index}")
+                        if audio_started and total_audio_duration > 0:
+                            progress_ratio = audio_progress / (total_audio_duration - audio_start_time)
+                            target_words = min(int(progress_ratio * total_words), total_words)
+                            
+                            if target_words > next_word_index and next_word_index < total_words:
+                                batch_start_time = (next_word_index / total_words) * (total_audio_duration - audio_start_time)
+                                words_to_send = words[next_word_index:target_words]
+                                await push_tokens(words_to_send, batch_start_time)
+                                logger.info(f"TOKEN sent words {next_word_index}-{target_words-1} at {current_time:.3f}s")
                         
+                        await asyncio.sleep(0.001)
+                
                 logger.info(f"TTS completed for text length: {len(text)}")
 
-            # 6. Flush the tail & mark complete
-            await push_tokens(words[next_word_index:])  # any stragglers
+            # 6. Flush any remaining words
+            if next_word_index < total_words:
+                remaining_words = words[next_word_index:]
+                final_timing_offset = total_audio_duration - audio_start_time
+                await push_tokens(remaining_words, final_timing_offset)
 
-            # ── after the streaming loop finishes ──
-            total_dur = len(wav_frames) * FRAME_SEC
-            for i, t in enumerate(word_timings):
-                nxt = word_timings[i+1]["start"] if i+1 < len(word_timings) else total_dur
-                t["end"] = nxt
+            # ── Calculate final word end times based on actual audio duration ──
+            actual_audio_duration = max(0, total_audio_duration - audio_start_time)
+            
+            if word_timings and actual_audio_duration > 0:
+                # Redistribute word timings more evenly across the actual audio duration
+                for i, timing in enumerate(word_timings):
+                    # Calculate proportional position within the audio
+                    word_position = i / len(word_timings) if len(word_timings) > 1 else 0
+                    
+                    # Adjust start time to be proportional to actual audio duration
+                    timing["start"] = word_position * actual_audio_duration
+                    
+                    # Calculate end time (start of next word or end of audio)
+                    if i + 1 < len(word_timings):
+                        next_position = (i + 1) / len(word_timings)
+                        timing["end"] = next_position * actual_audio_duration
+                    else:
+                        timing["end"] = actual_audio_duration
+                
+                logger.info(f"Adjusted {len(word_timings)} word timings for {actual_audio_duration:.2f}s audio duration")
 
             # send the timings blob once per message
             timings_payload = {
@@ -427,6 +528,19 @@ class SimulationTTSModel(TTSModel):
                     wf.setsampwidth(2)
                     wf.setframerate(48_000)
                     wf.writeframes(b"".join(wav_frames))
+
+                # Validate audio file duration against our timing calculations
+                actual_file_duration = len(wav_frames) * FRAME_SEC
+                logger.info(f"Audio file stats: frames={len(wav_frames)}, duration={actual_file_duration:.2f}s")
+                
+                if word_timings:
+                    max_timing_end = max(t["end"] for t in word_timings)
+                    timing_duration_diff = abs(actual_file_duration - max_timing_end)
+                    
+                    if timing_duration_diff > 0.1:  # More than 100ms difference
+                        logger.warning(f"Timing mismatch: file_duration={actual_file_duration:.2f}s, max_timing={max_timing_end:.2f}s, diff={timing_duration_diff:.2f}s")
+                    else:
+                        logger.info(f"Timing validation passed: file_duration={actual_file_duration:.2f}s, max_timing={max_timing_end:.2f}s")
 
                 assistant_message.audio = True
                 assistant_message.file_path = path
