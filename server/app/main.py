@@ -126,6 +126,9 @@ class ServerAudioStreamTrack(MediaStreamTrack):
                 f"duration_ms={frame.samples / 48.0:.2f}"
             )
         
+        # Keep real-time pace (important when queue is full)
+        await asyncio.sleep(frame.samples / 48000)
+        
         return frame
 
 # Add this helper function to the top of the file

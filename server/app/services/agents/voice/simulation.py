@@ -25,7 +25,6 @@ from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
-from av import AudioFrame
 
 # Removed custom logger import - using standard logging
 
@@ -161,55 +160,35 @@ class SimulationTTSModel(TTSModel):
             return
 
         try:
-
             if self.model_id is None:
+                # ---- Kokoro path ----
                 kokoro_pipeline = model_manager.get_kokoro_pipeline()
-                if not kokoro_pipeline:
+                if kokoro_pipeline is None:
                     logger.error("Kokoro TTS not available.")
                     return
-                
-                selected_voice = random.choice(model_manager.kokoro_voices)
-                logger.info(f"TTS generating with Kokoro voice: {selected_voice} for text: '{text[:30]}...'")
 
-                # 1. Generate the full audio clip in memory
-                audio_chunks_24k = [chunk.cpu() for _, _, chunk in kokoro_pipeline(text, voice=selected_voice)]
-                if not audio_chunks_24k:
-                    logger.warning("TTS model produced no audio chunks.")
-                    return
-                raw_pcm_24k = torch.cat(audio_chunks_24k, dim=-1).numpy().flatten()
+                voice = random.choice(model_manager.kokoro_voices)
+                logger.info(f"Kokoro voice={voice}  text='{text[:40]}…'")
 
-                # 2. Normalize to float32 in range [-1.0, 1.0] for high-quality resampling
-                audio_float = raw_pcm_24k.astype(np.float32)
-                if np.max(np.abs(audio_float)) > 1.0:
-                    audio_float_normalized = audio_float / 32767.0
-                else:
-                    audio_float_normalized = audio_float
-                
-                # 3. Resample from 24kHz to the required 48kHz
-                logger.info(f"Resampling audio from 24kHz to 48kHz...")
-                pcm_48k = librosa.resample(y=audio_float_normalized, orig_sr=24000, target_sr=48000)
-                logger.info(f"Resampling complete.")
+                for _, _, chunk24 in kokoro_pipeline(text, voice=voice):
+                    # Guard against empty chunks
+                    if chunk24.size == 0:
+                        continue
+                        
+                    # 1. tensor → float32 numpy in [-1,1]
+                    pcm24 = chunk24.cpu().numpy().astype(np.float32)
+                    # 2. resample 24 kHz → 48 kHz (high-quality sinc)
+                    pcm48 = librosa.resample(pcm24, orig_sr=24_000, target_sr=48_000)
+                    # 3. clip & int16
+                    int16 = np.rint(np.clip(pcm48, -1, 1) * 32767).astype(np.int16)
+                    # 4. slice into 20 ms (960-sample) frames
+                    for i in range(0, len(int16), 960):
+                        frame = int16[i:i + 960]
+                        if len(frame) < 960:                    # pad final partial frame
+                            frame = np.pad(frame, (0, 960 - len(frame)))
+                        yield frame.tobytes()
 
-                # 4. Convert back to 16-bit PCM for transmission
-                audio_int16 = (pcm_48k * 32767).astype(np.int16)
-
-                # 5. *** THIS IS THE CRITICAL FIX ***
-                #    Chunk the final audio into properly sized 20ms frames and yield each one.
-                frame_size = 960  # 960 samples = 20ms at 48kHz
-                total_frames = 0
-                
-                for i in range(0, len(audio_int16), frame_size):
-                    chunk = audio_int16[i:i + frame_size]
-                    
-                    # Pad the final chunk with silence if it's too short
-                    if len(chunk) < frame_size:
-                        chunk = np.pad(chunk, (0, frame_size - len(chunk)), 'constant')
-
-                    # Yield the raw bytes of the 20ms chunk
-                    yield chunk.tobytes()
-                    total_frames += 1
-
-                logger.info(f"TTS completed: yielded {total_frames} frames of 20ms each.")
+                logger.info(f"TTS completed for text length: {len(text)}")
             else:
                 logger.info(f"TTS generating audio for text: {text[:50]}...")
                 
