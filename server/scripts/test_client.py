@@ -26,35 +26,7 @@ pc = RTCPeerConnection()
 # Global state to hold the chat ID from the server
 simulation_chat_id = None
 
-class AudioPlayerTrack(MediaStreamTrack):
-    """A media track that receives audio and plays it using PyAudio."""
-    kind = "audio"
-
-    def __init__(self, track):
-        super().__init__()
-        self.track = track
-        self.p = pyaudio.PyAudio()
-        self.stream = self.p.open(
-            format=pyaudio.paInt16,
-            channels=1,
-            rate=48000,
-            output=True,
-            frames_per_buffer=960, # 20ms at 48kHz
-        )
-
-    async def recv(self):
-        frame = await self.track.recv()
-        # The frame contains raw audio data, write it directly to the speaker
-        self.stream.write(frame.to_ndarray().tobytes())
-        return frame
-
-    def stop(self):
-        super().stop()
-        if self.stream.is_active():
-            self.stream.stop_stream()
-        self.stream.close()
-        self.p.terminate()
-        logger.info("PyAudio stream closed.")
+# AudioPlayerTrack class removed - no longer needed
 
 @sio.event
 async def connect():
@@ -117,15 +89,43 @@ async def simulation_started(data):
 def simulation_message_token(data):
     print(data.get("token", ""), end="", flush=True)
 
+async def graceful_shutdown():
+    await asyncio.sleep(0.5)  # Let the last audio frames arrive
+    await pc.close()
+    await sio.disconnect()
+
 @sio.event
 def simulation_message_complete(data):
     print("\n✅ Assistant message complete.")
+    asyncio.create_task(graceful_shutdown())
 
 @pc.on("track")
 def on_track(track):
-    logger.info(f"🔊 Received remote audio track! Starting playback...")
-    player = AudioPlayerTrack(track)
-    # The player will automatically start consuming frames from the track
+    logger.info("🔊 Remote audio track received – starting playback …")
+
+    async def play_audio():
+        p = pyaudio.PyAudio()
+        stream = p.open(
+            format=pyaudio.paInt16,
+            channels=1,
+            rate=48000,
+            output=True,
+            frames_per_buffer=960  # 20ms at 48kHz
+        )
+        try:
+            while True:
+                frame = await track.recv()
+                stream.write(frame.planes[0].to_bytes())
+        except (asyncio.CancelledError, Exception):
+            # Handle both cancellation and MediaStreamError when track ends
+            pass
+        finally:
+            stream.stop_stream()
+            stream.close()
+            p.terminate()
+            logger.info("🔇 Audio playback stopped.")
+
+    asyncio.create_task(play_audio())
 
 async def main():
     try:
@@ -138,7 +138,7 @@ async def main():
             socketio_path="/socket.io",
             transports=['websocket'] # Prefer websocket for testing
         )
-        await sio.wait()
+        await asyncio.wait_for(sio.wait(), timeout=30)
     except Exception as e:
         logger.error(f"Connection failed: {e}")
     finally:
