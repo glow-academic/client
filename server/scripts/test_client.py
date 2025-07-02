@@ -89,15 +89,7 @@ async def simulation_started(data):
 def simulation_message_token(data):
     print(data.get("token", ""), end="", flush=True)
 
-async def graceful_shutdown():
-    await asyncio.sleep(0.5)  # Let the last audio frames arrive
-    await pc.close()
-    await sio.disconnect()
-
-@sio.event
-def simulation_message_complete(data):
-    print("\n✅ Assistant message complete.")
-    asyncio.create_task(graceful_shutdown())
+playback_done = asyncio.Event() 
 
 @pc.on("track")
 def on_track(track):
@@ -115,7 +107,7 @@ def on_track(track):
         try:
             while True:
                 frame = await track.recv()
-                stream.write(frame.planes[0].to_bytes())
+                stream.write(frame.to_ndarray().tobytes())
         except (asyncio.CancelledError, Exception):
             # Handle both cancellation and MediaStreamError when track ends
             pass
@@ -124,8 +116,22 @@ def on_track(track):
             stream.close()
             p.terminate()
             logger.info("🔇 Audio playback stopped.")
+            playback_done.set()
 
     asyncio.create_task(play_audio())
+
+
+@sio.event
+def simulation_message_complete(data):
+    print("\n✅ Assistant message complete.")
+    asyncio.create_task(shutdown_after_playback())  # no immediate hang-up
+
+async def shutdown_after_playback():
+    await playback_done.wait()          # wait until track really ends
+    await asyncio.sleep(0.2)            # let the last packet flush
+    await pc.close()
+    await sio.disconnect()
+
 
 async def main():
     try:

@@ -393,7 +393,7 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
                 },
                 room=profile_id,
             )
-    
+            
     @pc.on("track")
     async def on_track(track: Any) -> None:
         logger.info(f"Received track: {track.kind} for profile {profile_id}, connection {connection_id}")
