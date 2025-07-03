@@ -50,6 +50,7 @@ export default function AttemptInput({
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
+    const image = sketchCanvasRef.current?.exportImage("png"); // Export the sketch canvas as an image
     if (
       !messageToSend ||
       !simulationContext?.currentChat ||

@@ -411,6 +411,19 @@ export const simulationMessages = pgTable("simulation_messages", {
 		}).onDelete("cascade"),
 ]);
 
+export const simulationSketches = pgTable("simulation_sketches", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	chatId: uuid("chat_id").notNull(),
+	filePath: text("file_path").notNull()}, (table) => [
+	foreignKey({
+			columns: [table.chatId],
+			foreignColumns: [simulationChats.id],
+			name: "simulation_sketches_chat_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const simulationChatGrades = pgTable("simulation_chat_grades", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),

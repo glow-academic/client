@@ -519,6 +519,7 @@ class SimulationChats(_Base, table=True):
     scenario: Optional['Scenarios'] = Relationship(back_populates='simulation_chats')
     simulation_chat_grades: List['SimulationChatGrades'] = Relationship(back_populates='simulation_chat')
     simulation_messages: List['SimulationMessages'] = Relationship(back_populates='chat')
+    simulation_sketches: List['SimulationSketches'] = Relationship(back_populates='chat')
 
 
 class SimulationChatGrades(_Base, table=True):
@@ -560,6 +561,22 @@ class SimulationMessages(_Base, table=True):
     file_path: Optional[str] = Field(default=None, sa_column=Column('file_path', Text))
 
     chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_messages')
+
+
+class SimulationSketches(_Base, table=True):
+    __tablename__ = 'simulation_sketches'
+    __table_args__ = (
+        ForeignKeyConstraint(['chat_id'], ['simulation_chats.id'], ondelete='CASCADE', name='simulation_sketches_chat_id_fkey'),
+        PrimaryKeyConstraint('id', name='simulation_sketches_pkey')
+    )
+
+    id: Mapped[uuid.UUID] = Field(sa_column=Column('id', Uuid, primary_key=True, server_default=text('gen_random_uuid()')))
+    created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    updated_at: datetime = Field(sa_column=Column('updated_at', DateTime(True), server_default=text('now()')))
+    chat_id: Mapped[uuid.UUID] = Field(sa_column=Column('chat_id', Uuid(as_uuid=True)))
+    file_path: str = Field(sa_column=Column('file_path', Text))
+
+    chat: Optional['SimulationChats'] = Relationship(back_populates='simulation_sketches')
 
 
 class SimulationChatFeedbacks(_Base, table=True):

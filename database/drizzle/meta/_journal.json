@@ -197,6 +197,13 @@
       "when": 1751502505283,
       "tag": "0027_good_phalanx",
       "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1751547266371,
+      "tag": "0028_unknown_sally_floyd",
+      "breakpoints": true
     }
   ]
 }

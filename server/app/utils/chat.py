@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import random
@@ -6,8 +7,11 @@ from typing import Any, Dict, List, Union
 
 from agents.items import TResponseInputItem
 from app.models import (Agents, AssistantMessages, AssistantToolCalls,
-                        Scenarios, SimulationChats, SimulationMessages)
-from openai.types.responses import ResponseFunctionToolCallParam
+                        Scenarios, SimulationChats, SimulationMessages,
+                        SimulationSketches)
+from openai.types.responses import (EasyInputMessageParam,
+                                    ResponseFunctionToolCallParam,
+                                    ResponseInputImageParam)
 from sqlmodel import Session, select
 
 logger = logging.getLogger(__name__)
@@ -15,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 def get_simulation_conversation_history(
     messages: List[SimulationMessages],
+    sketches: List[SimulationSketches],
 ) -> list[TResponseInputItem]:
     """
     Get the conversation history for a given list of messages.
@@ -27,13 +32,44 @@ def get_simulation_conversation_history(
     """
     conversation_history: list[TResponseInputItem] = []
 
-    for message in messages:
-        if message.type == "query":
-            user_message_item: TResponseInputItem = {"role": "user", "content": message.content}
-            conversation_history.append(user_message_item)
-        if message.type == "response":
-            assistant_message_item: TResponseInputItem = {"role": "assistant", "content": message.content}
-            conversation_history.append(assistant_message_item)
+    # make a list of all items
+    items = messages + sketches
+
+    # sort items by created_at
+    items = sorted(items, key=lambda x: x.created_at)
+
+    for item in items:
+        if isinstance(item, SimulationMessages):
+            if item.type == "query":
+                user_message_item: TResponseInputItem = {"role": "user", "content": item.content}
+                conversation_history.append(user_message_item)
+            if item.type == "response":
+                assistant_message_item: TResponseInputItem = {"role": "assistant", "content": item.content}
+                conversation_history.append(assistant_message_item)
+        elif isinstance(item, SimulationSketches):
+            # ge the file path from the item
+            file_path = item.file_path
+            if not file_path or file_path == "":
+                logger.warning(f"Sketch {item.id} has no file path")
+                continue
+
+            # get the file content
+            with open(file_path, "rb") as file:
+                file_content = file.read()
+
+            # encode the file content to base64
+            file_content = base64.b64encode(file_content)
+            
+            # get the file content
+            user_sketch_item: EasyInputMessageParam = EasyInputMessageParam(
+                role="user",
+                content=[ResponseInputImageParam(
+                    detail="low",
+                    type="input_image",
+                    image_url=f"data:image/png;base64,{file_content.decode('utf-8')}"
+                )]
+            )
+            conversation_history.append(user_sketch_item)
 
     return conversation_history
 

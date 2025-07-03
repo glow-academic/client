@@ -26,6 +26,7 @@ import {
   simulationAttempts as SimulationAttempts,
   simulationChats as SimulationChats,
   simulationMessages as SimulationMessages,
+  simulationSketches as SimulationSketches,
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
   verificationToken as VerificationToken,
@@ -60,6 +61,7 @@ type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
 type SimulationChat = typeof SimulationChats.$inferSelect;
 type SimulationMessage = typeof SimulationMessages.$inferSelect;
+type SimulationSketche = typeof SimulationSketches.$inferSelect;
 type SimulationChatGrade = typeof SimulationChatGrades.$inferSelect;
 type SimulationChatFeedback = typeof SimulationChatFeedbacks.$inferSelect;
 type VerificationToken = typeof VerificationToken.$inferSelect;
@@ -105,6 +107,7 @@ export type {
   SimulationAttempt,
   SimulationChat,
   SimulationMessage,
+  SimulationSketche,
   SimulationChatGrade,
   SimulationChatFeedback,
   VerificationToken,

@@ -18,5 +18,8 @@ UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True) # saving each document as uploa
 AUDIO_FOLDER = BASE_FOLDER / "audio"
 AUDIO_FOLDER.mkdir(parents=True, exist_ok=True) # saving each audio file as audio/message_id.ext
 
+SKETCH_FOLDER = BASE_FOLDER / "sketches"
+SKETCH_FOLDER.mkdir(parents=True, exist_ok=True) # saving each sketch as sketches/message_id.ext
+
 MODEL_CACHE_DIR = BASE_FOLDER / "cache"
 MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True) # for whisper model

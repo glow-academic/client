@@ -61,6 +61,14 @@ CREATE TABLE simulation_messages (
   completed  BOOLEAN     NOT NULL           DEFAULT FALSE
 );
 
+CREATE TABLE simulation_sketches (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),
+  chat_id    UUID        NOT NULL REFERENCES simulation_chats(id)  ON DELETE CASCADE,
+  file_path  TEXT        NOT NULL
+);
+
 CREATE TABLE simulation_chat_grades (
     id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
     created_at TIMESTAMPTZ NOT NULL           DEFAULT NOW(),

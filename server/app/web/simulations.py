@@ -27,9 +27,10 @@ from agents import gen_trace_id, trace
 from aiortc import MediaStreamTrack, RTCPeerConnection
 from app.config import model_manager
 from app.db import get_session
+from app.extensions import SKETCH_FOLDER
 from app.main import ServerAudioStreamTrack
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
-                        SimulationMessages, Simulations)
+                        SimulationMessages, Simulations, SimulationSketches)
 from app.services.agents.collection.grade import run_grade_agent
 from app.services.agents.collection.scenario import run_scenario_agent
 from app.services.agents.collection.simulation import (cancel_simulation_run,
@@ -424,6 +425,7 @@ async def handle_continue_simulation(sid: str, data: Dict[str, Any]) -> None:
 async def process_simulation_message_websocket(
     chat_id: str,
     message: str = "",
+    sketch_data: Optional[bytes] = None,
     audio_data: Optional[bytes] = None,
     session: Optional[Session] = None,
     profile_id: Optional[str] = None,
@@ -447,6 +449,26 @@ async def process_simulation_message_websocket(
         ).one_or_none()
         if not chat:
             raise ValueError(f"Chat {chat_id} not found")
+        
+
+
+        if sketch_data:
+            # create new sketch to get the id
+            sketch = SimulationSketches(
+                chat_id=chat_id,
+                file_path="",
+            )
+
+            # persist the sketch to the file system
+            sketch_file_path = os.path.join(SKETCH_FOLDER, f"{sketch.id}.png")
+            with open(sketch_file_path, "wb") as f:
+                f.write(sketch_data)
+
+            # update the sketch with the file path
+            sketch.file_path = sketch_file_path
+            db_session.add(sketch)
+            db_session.commit()
+            db_session.refresh(sketch)
 
         # Auto-determine modality based on input parameters
         has_audio_input = audio_data is not None and len(audio_data) > 0
