@@ -458,7 +458,10 @@ async def process_simulation_message_websocket(
                 chat_id=chat_id,
                 file_path="",
             )
-
+            db_session.add(sketch)
+            db_session.commit()
+            db_session.refresh(sketch)
+            
             # persist the sketch to the file system
             sketch_file_path = os.path.join(SKETCH_FOLDER, f"{sketch.id}.png")
             with open(sketch_file_path, "wb") as f:
