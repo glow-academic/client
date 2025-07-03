@@ -5,7 +5,7 @@
  * 06/18/2025
  */
 import Logs from "@/components/management/logs/Logs";
-
+import ConnectionStatusIndicator from "@/components/management/logs/ConnectionStatusIndicator";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 export default function LogsPage() {
   return (
     <div className="space-y-6">
+      <ConnectionStatusIndicator />
       <Logs />
     </div>
   );

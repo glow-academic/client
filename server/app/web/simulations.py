@@ -530,30 +530,31 @@ async def process_simulation_message_websocket(
         else:
             # Keep existing TEXT_TEXT flow unchanged
             # 1. Add the user message to the chat
-            user_message = SimulationMessages(
-                chat_id=chat_id, type="query", content=message, completed=True, audio=False
-            )
-
-            db_session.add(user_message)
-            db_session.commit()
-            db_session.refresh(user_message)
-
-            # 2. Emit user message to connected clients
             sio_instance = get_sio_instance()
-            logger.info(f"Emitting user message to room simulation_{chat_id}")
-            await sio_instance.emit(
-                "simulation_new_message",
-                {
-                    "message_id": str(user_message.id),
-                    "chat_id": str(chat_id),
-                    "role": "user",
-                    "content": message,
-                    "completed": True,
-                    "audio": False,
-                    "created_at": user_message.created_at.isoformat(),
-                },
-                room=f"simulation_{chat_id}",
-            )
+            if message and message.strip() != "":
+                user_message = SimulationMessages(
+                    chat_id=chat_id, type="query", content=message, completed=True, audio=False
+                )
+
+                db_session.add(user_message)
+                db_session.commit()
+                db_session.refresh(user_message)
+
+                # 2. Emit user message to connected clients
+                logger.info(f"Emitting user message to room simulation_{chat_id}")
+                await sio_instance.emit(
+                    "simulation_new_message",
+                    {
+                        "message_id": str(user_message.id),
+                        "chat_id": str(chat_id),
+                        "role": "user",
+                        "content": message,
+                        "completed": True,
+                        "audio": False,
+                        "created_at": user_message.created_at.isoformat(),
+                    },
+                    room=f"simulation_{chat_id}",
+                )
 
             # 3. Create placeholder assistant message
             assistant_message = SimulationMessages(

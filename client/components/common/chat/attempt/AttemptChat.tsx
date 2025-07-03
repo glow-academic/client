@@ -458,21 +458,6 @@ export default function AttemptChat() {
           }
         >
           <Card className="h-full flex flex-col py-4">
-            {/* Progress Bar at the very top */}
-            {simulationContext?.expectedChatCount > 1 && (
-              <div className="px-4 pb-2">
-                <Progress
-                  value={
-                    (simulationContext?.chats.filter(
-                      (chat: SimulationChat) => chat.completed
-                    ).length /
-                      simulationContext?.expectedChatCount) *
-                    100
-                  }
-                  className="w-full bg-transparent"
-                />
-              </div>
-            )}
             <TooltipProvider>
               <ResizablePanelGroup
                 ref={inputPanelGroupRef}
@@ -593,6 +578,21 @@ export default function AttemptChat() {
                     </div>
 
                     {/* Messages Area */}
+                    {/* Progress Bar at the very top */}
+                    {simulationContext?.expectedChatCount > 1 && (
+                      <div className="p-0">
+                        <Progress
+                          value={
+                            (simulationContext?.chats.filter(
+                              (chat: SimulationChat) => chat.completed
+                            ).length /
+                              simulationContext?.expectedChatCount) *
+                            100
+                          }
+                          className="w-full bg-transparent rounded-none [&>div]:rounded-none [&>div]:bg-gradient-to-r [&>div]:from-blue-500 [&>div]:to-purple-500"
+                        />
+                      </div>
+                    )}
                     <AttemptMessages />
                   </div>
                 </ResizablePanel>

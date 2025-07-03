@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-03T01:17:42.652Z
+Generated on: 2025-07-03T14:41:00.794Z
 
 ## Summary
-- **Total Components**: 95
-- **Tests Created**: 0
+- **Total Components**: 96
+- **Tests Created**: 1
 - **Tests Updated**: 44
 - **Tests Skipped** (already implemented): 51
 
@@ -99,6 +99,7 @@ Generated on: 2025-07-03T01:17:42.652Z
 | CohortEdit | management/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
 | Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
 | NewCohort | management/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
+| ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ❌ Needs Implementation |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
 | Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
@@ -230,6 +231,7 @@ __tests__/
 │   │   ├── Cohorts.test.tsx
 │   │   ├── NewCohort.test.tsx
 │   ├── logs/
+│   │   ├── ConnectionStatusIndicator.test.tsx
 │   │   ├── Logs.test.tsx
 │   ├── models/
 │   │   ├── ModelEdit.test.tsx

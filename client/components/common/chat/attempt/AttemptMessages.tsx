@@ -683,6 +683,9 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       await queryClient.invalidateQueries({
         queryKey: ["simulationMessages", targetChatId],
       });
+      await queryClient.invalidateQueries({
+        queryKey: ["simulationSketches", targetChatId],
+      });
 
       // 5. Send the new message to get a new response
       simulationContext?.sendMessage(editText);

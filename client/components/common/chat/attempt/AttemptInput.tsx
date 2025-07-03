@@ -48,6 +48,7 @@ export default function AttemptInput({
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
+      | React.MouseEvent<HTMLButtonElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
@@ -282,7 +283,7 @@ export default function AttemptInput({
                       onClick={
                         simulationContext?.isSendingMessage
                           ? handleStopMessage
-                          : undefined
+                          : (e) => handleSendMessage(e)
                       }
                     >
                       {simulationContext?.isSendingMessage ? (

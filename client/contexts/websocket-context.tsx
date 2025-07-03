@@ -108,52 +108,6 @@ interface WebSocketProviderProps {
   profileId?: string | undefined;
 }
 
-// Connection Status Indicator Component
-function ConnectionStatusIndicator({
-  wsConnected,
-  webRTCConnected,
-}: {
-  wsConnected: boolean;
-  webRTCConnected: boolean;
-}) {
-  return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2">
-      <div
-        className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg transition-all duration-300 ${
-          wsConnected
-            ? "bg-green-100 text-green-800 border border-green-200"
-            : "bg-red-100 text-red-800 border border-red-200"
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              wsConnected ? "bg-green-500" : "bg-red-500"
-            } ${wsConnected ? "animate-pulse" : ""}`}
-          />
-          {wsConnected ? "WebSocket Connected" : "WebSocket Disconnected"}
-        </div>
-      </div>
-      <div
-        className={`px-3 py-1 rounded-full text-xs font-medium shadow-lg transition-all duration-300 ${
-          webRTCConnected
-            ? "bg-green-100 text-green-800 border border-green-200"
-            : "bg-red-100 text-red-800 border border-red-200"
-        }`}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-2 h-2 rounded-full ${
-              webRTCConnected ? "bg-green-500" : "bg-red-500"
-            } ${webRTCConnected ? "animate-pulse" : ""}`}
-          />
-          {webRTCConnected ? "WebRTC Connected" : "WebRTC Disconnected"}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ADD THIS HELPER FUNCTION
 // Creates a short, silent audio buffer. This is a reliable way to
 // get audio playback consent from the browser without needing an MP3 file.
@@ -611,6 +565,9 @@ export function WebSocketProvider({
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
             });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationSketches", data.chat_id],
+            });
           }, 0);
         }
       );
@@ -646,6 +603,9 @@ export function WebSocketProvider({
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ["simulationSketches", data.chat_id],
             });
           }, 0);
         }
@@ -2046,10 +2006,6 @@ export function WebSocketProvider({
 
   return (
     <WebSocketContext.Provider value={value}>
-      <ConnectionStatusIndicator
-        wsConnected={isConnected}
-        webRTCConnected={isWebRTCConnected}
-      />
       {children}
     </WebSocketContext.Provider>
   );
