@@ -11,7 +11,8 @@ from app.utils.agents import get_agent_info
 from app.utils.classes import get_class_info
 from app.utils.document import get_document_info
 from app.utils.scenario import (get_crowdedness_info, get_intensity_info,
-                                get_seniority_info)
+                                get_location_info, get_seniority_info,
+                                get_time_of_day_info, get_urgency_info)
 from fastapi import Depends
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -30,6 +31,9 @@ async def run_scenario_agent(
     seniority: str | None = None,
     crowdedness: int | None = None,
     intensity: int | None = None,
+    location: str | None = None,
+    tod: str | None = None,
+    urgency: str | None = None,
     group_id: uuid.UUID | None = None,
     session: Session = Depends(get_session),
 ) -> Tuple[str, str, str]:
@@ -43,6 +47,9 @@ async def run_scenario_agent(
         seniority: The seniority of the student
         crowdedness: The crowdedness of the class
         intensity: The intensity of the class
+        location: The location of the class
+        tod: The time of day of the class
+        urgency: The urgency of the class
         group_id: The ID of the group
         session: The database session
     Returns:
@@ -88,6 +95,21 @@ async def run_scenario_agent(
     else:
         document_info = get_document_info(document_ids, session)
 
+    if location is None:
+        location_info = None
+    else:
+        location_info = get_location_info(location)
+
+    if tod is None:
+        tod_info = None
+    else:
+        tod_info = get_time_of_day_info(tod)
+
+    if urgency is None:
+        urgency_info = None
+    else:
+        urgency_info = get_urgency_info(urgency)
+
     # find agent with name of "Scenario"
     agent = session.exec(select(Agents).where(Agents.name == "Scenario")).one()
     if not agent:
@@ -124,6 +146,9 @@ async def run_scenario_agent(
         seniority_info,
         crowdedness_info,
         intensity_info,
+        location_info,
+        tod_info,
+        urgency_info,
     ]
     clean_input_items = [item for item in input_items if item is not None]
     logger.info(f"Input items: {clean_input_items}")

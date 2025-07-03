@@ -15,6 +15,9 @@ export interface NewScenarioParams {
   crowdedness?: number | null;
   intensity?: number | null;
   seniority?: string | null;
+  location?: string | null;
+  tod?: string | null;
+  urgency?: string | null;
 }
 
 export interface NewScenarioResponse {
@@ -53,6 +56,15 @@ export async function newScenario(
     }
     if (params.intensity !== null && params.intensity !== undefined) {
       formData.append("intensity", params.intensity.toString());
+    }
+    if (params.location) {
+      formData.append("location", params.location);
+    }
+    if (params.tod) {
+      formData.append("tod", params.tod);
+    }
+    if (params.urgency) {
+      formData.append("urgency", params.urgency);
     }
 
     const response = await fetch(`${getApiBase()}/scenarios/new`, {

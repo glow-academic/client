@@ -1,32 +1,34 @@
 /**
- * Scenario.tsx
- * Enhanced scenario component for creating and editing scenarios
+ * ScenarioWizard.tsx
+ * Progressive step-by-step scenario creation flow
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, RotateCcw, Sparkles, X } from "lucide-react";
+import { Check, ChevronRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
 // Custom Components
@@ -36,7 +38,6 @@ import { ScenarioSlider } from "./ScenarioSlider";
 // Types and API functions
 import { Agent, Class, Document, Scenario as ScenarioType } from "@/types";
 import { newScenario } from "@/utils/api/scenarios/new-scenario";
-import { testScenario } from "@/utils/api/scenarios/test-scenario";
 import { logError } from "@/utils/logger";
 import { createScenario } from "@/utils/mutations/scenarios/create-scenario";
 import { updateScenario } from "@/utils/mutations/scenarios/update-scenario";
@@ -50,24 +51,14 @@ interface ScenarioProps {
   mode?: "create" | "edit";
 }
 
-interface ScenarioFormData {
-  name: string;
-  description: string;
-  agentId: string | null;
-  classId: string | null;
-  documents: string[];
-  crowdedness: number | null;
-  intensity: number | null;
-  seniority: "freshman" | "sophomore" | "junior" | "senior" | null;
-}
+type StepStatus = "pending" | "active" | "completed";
 
-interface FormErrors {
-  name?: string;
-  description?: string;
-  agentId?: string;
-  documents?: string;
-  crowdedness?: string;
-  intensity?: string;
+interface Step {
+  id: string;
+  title: string;
+  description: string;
+  status: StepStatus;
+  optional?: boolean;
 }
 
 export default function Scenario({
@@ -78,34 +69,25 @@ export default function Scenario({
   const queryClient = useQueryClient();
   const isEditMode = mode === "edit" && !!scenarioId;
 
-  // State management
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDocumentModal, setShowDocumentModal] = useState(false);
-  const [previewDocument] = useState<Document | null>(null);
-  const [editingScenarioId, setEditingScenarioId] = useState<string | null>(
-    null
-  );
-
-  const initialFormData: ScenarioFormData = {
-    name: "",
-    description: "",
-    agentId: null,
+  // Form data state
+  const initialFormData: Partial<ScenarioType> = {
     classId: null,
     documents: [],
+    agentId: null,
+    seniority: null,
     crowdedness: null,
     intensity: null,
-    seniority: null,
+    location: null,
+    tod: null,
+    urgency: null,
+    name: "",
+    description: "",
   };
 
-  const [formData, setFormData] = useState<ScenarioFormData>(initialFormData);
-  const [errors, setErrors] = useState<FormErrors>({});
-
-  // State for playground functionality
-  const [query, setQuery] = useState("");
-  const [response, setResponse] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [formData, setFormData] =
+    useState<Partial<ScenarioType>>(initialFormData);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingScenario, setIsGeneratingScenario] = useState(false);
-  const [seniorityExplicitlySet, setSeniorityExplicitlySet] = useState(false);
 
   // Data fetching
   const { data: documents = [] } = useQuery({
@@ -130,14 +112,108 @@ export default function Scenario({
     enabled: isEditMode,
   });
 
-  // Convert database data to model format for pickers
-  const agentModels: Model[] = agents.map((agent: Agent) => ({
-    id: agent.id,
-    name: agent.name,
-    description: agent.description,
-    type: "Agents" as const,
-  }));
+  // Load scenario data if editing
+  useEffect(() => {
+    if (isEditMode && scenario) {
+      setFormData({
+        classId: scenario.classId,
+        documents: scenario.documents || [],
+        agentId: scenario.agentId,
+        seniority: scenario.seniority,
+        crowdedness: scenario.crowdedness,
+        intensity: scenario.intensity,
+        location: scenario.location,
+        tod: scenario.tod,
+        urgency: scenario.urgency,
+        name: scenario.name || "",
+        description: scenario.description || "",
+      });
+    }
+  }, [isEditMode, scenario]);
 
+  // Calculate step status
+  const getStepStatus = (stepId: string): StepStatus => {
+    switch (stepId) {
+      case "class":
+        return formData.classId ? "completed" : "active";
+      case "documents":
+        return !formData.classId
+          ? "pending"
+          : formData.documents && formData.documents.length > 0
+            ? "completed"
+            : "active";
+      case "agent":
+        return !formData.classId
+          ? "pending"
+          : formData.agentId
+            ? "completed"
+            : "active";
+      case "context":
+        return !formData.agentId
+          ? "pending"
+          : formData.seniority || formData.crowdedness || formData.intensity
+            ? "completed"
+            : "active";
+      case "environment":
+        return !formData.agentId
+          ? "pending"
+          : formData.location || formData.tod || formData.urgency
+            ? "completed"
+            : "active";
+      case "content":
+        return !formData.agentId
+          ? "pending"
+          : formData.description
+            ? "completed"
+            : "active";
+      default:
+        return "pending";
+    }
+  };
+
+  const steps: Step[] = [
+    {
+      id: "class",
+      title: "Select Class",
+      description: "Choose the class this scenario will be used in",
+      status: getStepStatus("class"),
+    },
+    {
+      id: "documents",
+      title: "Choose Documents",
+      description: "Select relevant documents for this scenario",
+      status: getStepStatus("documents"),
+      optional: true,
+    },
+    {
+      id: "agent",
+      title: "Select Agent Type",
+      description: "Choose the type of AI agent for this scenario",
+      status: getStepStatus("agent"),
+    },
+    {
+      id: "context",
+      title: "Set Context",
+      description: "Configure student level and scenario parameters",
+      status: getStepStatus("context"),
+      optional: true,
+    },
+    {
+      id: "environment",
+      title: "Environment Details",
+      description: "Set location, timing, and urgency",
+      status: getStepStatus("environment"),
+      optional: true,
+    },
+    {
+      id: "content",
+      title: "Generate Content",
+      description: "AI will create a realistic scenario description",
+      status: getStepStatus("content"),
+    },
+  ];
+
+  // Convert database data to model format
   const classModels: Model[] = classes.map((cls: Class) => ({
     id: cls.id,
     name: cls.classCode || cls.name,
@@ -146,199 +222,52 @@ export default function Scenario({
     strengths: cls.description || "",
   }));
 
-  const documentModels: Model[] = documents.map((doc: Document) => ({
-    id: doc.id,
-    name: doc.name,
-    description: `${doc.type} document`,
-    type: "Documents" as const,
-    strengths: doc.mimeType,
-  }));
+  const documentModels: Model[] = documents
+    .filter((doc) => !formData.classId || doc.classId === formData.classId)
+    .map((doc: Document) => ({
+      id: doc.id,
+      name: doc.name,
+      description: `${doc.type} document`,
+      type: "Documents" as const,
+      strengths: doc.mimeType,
+    }));
 
-  // Seniority models for picker
-  const seniorityModels: Model[] = [
-    {
-      id: "freshman",
-      name: "Freshman",
-      description: "First-year student level",
-      type: "Seniority" as const,
-      strengths: "Basic understanding, eager to learn",
-    },
-    {
-      id: "sophomore",
-      name: "Sophomore",
-      description: "Second-year student level",
-      type: "Seniority" as const,
-      strengths: "Some foundation knowledge, building confidence",
-    },
-    {
-      id: "junior",
-      name: "Junior",
-      description: "Third-year student level",
-      type: "Seniority" as const,
-      strengths: "Solid foundation, more independent learning",
-    },
-    {
-      id: "senior",
-      name: "Senior",
-      description: "Fourth-year student level",
-      type: "Seniority" as const,
-      strengths: "Advanced knowledge, preparing for career",
-    },
-  ];
-
-  // Load scenario data if editing
-  useEffect(() => {
-    const targetScenarioId = scenarioId || editingScenarioId;
-    if (targetScenarioId && scenario) {
-      const scenarioData = scenario as ScenarioType;
-      setFormData({
-        name: scenarioData.name || "",
-        description: scenarioData.description || "",
-        agentId: scenarioData.agentId,
-        classId: scenarioData.classId,
-        documents: scenarioData.documents || [],
-        crowdedness: scenarioData.crowdedness,
-        intensity: scenarioData.intensity,
-        seniority: scenarioData.seniority,
-      });
-      // Mark seniority as explicitly set if we're loading existing data and seniority is not null
-      setSeniorityExplicitlySet(!!scenarioData.seniority);
-    }
-  }, [scenarioId, editingScenarioId, scenario]);
+  const agentModels: Model[] = agents
+    .filter(
+      (agent: Agent) =>
+        agent.name.toLowerCase() === "aggressive" ||
+        agent.name.toLowerCase() === "happy" ||
+        agent.name.toLowerCase() === "confused"
+    )
+    .map((agent: Agent) => ({
+      id: agent.id,
+      name: agent.name,
+      description: agent.description,
+      type: "Agents" as const,
+    }));
 
   // Event handlers
   const handleInputChange = (
-    field: keyof ScenarioFormData,
-    value: string | number | boolean | string[] | null | undefined
+    field: keyof Partial<ScenarioType>,
+    value: string | number | string[] | null
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof FormErrors]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    }
-  };
-
-  const handleAgentSelect = (model: Model) => {
-    handleInputChange("agentId", model.id === "" ? "" : model.id);
-  };
-
-  const handleClassSelect = (model: Model) => {
-    handleInputChange("classId", model.id === "" ? "" : model.id);
-  };
-
-  const handleDocumentSelect = (models: Model[]) => {
-    const documentIds = models
-      .map((model) => model.id)
-      .filter((id) => id !== "");
-    handleInputChange("documents", documentIds);
-  };
-
-  const handleSenioritySelect = (model: Model) => {
-    if (model.id === "") {
-      // Clearing selection - reset to default but mark as not explicitly set
-      handleInputChange("seniority", "freshman");
-      setSeniorityExplicitlySet(false);
-    } else {
-      handleInputChange(
-        "seniority",
-        model.id as "freshman" | "sophomore" | "junior" | "senior"
-      );
-      setSeniorityExplicitlySet(true);
-    }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: FormErrors = {};
-
-    // All fields are now optional, so we only validate format/range constraints
-    if (
-      formData.crowdedness &&
-      (formData.crowdedness < 1 || formData.crowdedness > 10)
-    ) {
-      newErrors.crowdedness = "Crowdedness must be between 1 and 10";
-    }
-
-    if (
-      formData.intensity &&
-      (formData.intensity < 1 || formData.intensity > 10)
-    ) {
-      newErrors.intensity = "Intensity must be between 1 and 10";
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  // Separate validation for testing - more permissive
-  const validateForTesting = (): boolean => {
-    return !!query.trim();
-  };
-
-  const resetFormAndState = () => {
-    setFormData(initialFormData);
-    setEditingScenarioId(null);
-    setErrors({});
-    setSeniorityExplicitlySet(false);
-  };
-
-  const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      const payload = {
-        name: formData.name.trim() || "",
-        description: formData.description.trim() || "",
-        agentId: formData.agentId || null,
-        classId: formData.classId || null,
-        documents: formData.documents,
-        crowdedness: formData.crowdedness || null,
-        intensity: formData.intensity || null,
-        seniority: formData.seniority || null,
-      };
-
-      const targetScenarioId = scenarioId || editingScenarioId;
-      if (targetScenarioId) {
-        await updateScenario(targetScenarioId, {
-          ...payload,
-          updatedAt: new Date().toISOString(),
-        });
-        toast.success("Scenario updated successfully!");
-      } else {
-        await createScenario(payload);
-        toast.success("Scenario created successfully!");
-      }
-
-      resetFormAndState();
-      queryClient.invalidateQueries({ queryKey: ["scenarios"] });
-
-      // Navigate back to scenarios list
-      router.push("/create/scenarios");
-    } catch (error) {
-      const targetScenarioId = scenarioId || editingScenarioId;
-      toast.error(
-        `Failed to ${targetScenarioId ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleGenerateScenario = async () => {
-    // Allow generation with incomplete data - the AI can work with what's available
     setIsGeneratingScenario(true);
 
     try {
       const result = await newScenario({
-        agentId: formData.agentId,
-        classId: formData.classId,
-        documentIds: formData.documents,
-        seniority: formData.seniority,
-        crowdedness: formData.crowdedness,
-        intensity: formData.intensity,
+        agentId: formData.agentId || null,
+        classId: formData.classId || null,
+        documentIds: formData.documents || [],
+        seniority: formData.seniority || null,
+        crowdedness: formData.crowdedness || null,
+        intensity: formData.intensity || null,
+        location: formData.location || null,
+        tod: formData.tod || null,
+        urgency: formData.urgency || null,
       });
 
       if (!result.success) {
@@ -348,8 +277,8 @@ export default function Scenario({
       if (result.title || result.description) {
         setFormData((prev) => ({
           ...prev,
-          name: result.title || prev.name,
-          description: result.description || prev.description,
+          name: result.title || prev.name || "",
+          description: result.description || prev.description || "",
         }));
         toast.success("Scenario generated successfully!");
       } else {
@@ -365,74 +294,43 @@ export default function Scenario({
     }
   };
 
-  const handleTestQuery = async () => {
-    if (!query.trim()) {
-      toast.error("Please enter a query to test");
-      return;
-    }
-
-    if (!formData.agentId) {
-      toast.error("Please select an agent to test with");
-      return;
-    }
-
-    setIsGenerating(true);
-    setResponse("");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
 
     try {
-      const result = await testScenario({
+      const payload = {
+        name: formData.name?.trim() || "",
+        description: formData.description?.trim() || "",
         agentId: formData.agentId,
-        description: formData.description || "",
-        query: query,
-      });
+        classId: formData.classId,
+        documents: formData.documents,
+        crowdedness: formData.crowdedness,
+        intensity: formData.intensity,
+        seniority: formData.seniority,
+        location: formData.location,
+        tod: formData.tod,
+        urgency: formData.urgency,
+      };
 
-      if (!result.success) {
-        throw new Error(result.message);
+      if (isEditMode) {
+        await updateScenario(scenarioId!, {
+          ...payload,
+          updatedAt: new Date().toISOString(),
+        });
+        toast.success("Scenario updated successfully!");
+      } else {
+        await createScenario(payload);
+        toast.success("Scenario created successfully!");
       }
 
-      const reader = result.reader;
-      if (!reader) {
-        throw new Error("No response reader available");
-      }
-
-      let fullResponse = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split("\n");
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.text) {
-                fullResponse += data.text;
-                setResponse(fullResponse);
-              } else if (data.error) {
-                throw new Error(data.error);
-              } else if (data.done) {
-                // Stream completed successfully
-                break;
-              }
-            } catch (parseError) {
-              logError("Error parsing JSON:", parseError);
-              // Skip malformed JSON lines
-              continue;
-            }
-          }
-        }
-      }
+      queryClient.invalidateQueries({ queryKey: ["scenarios"] });
+      router.push("/create/scenarios");
     } catch (error) {
-      logError("Error testing scenario:", error);
       toast.error(
-        `Failed to test scenario: ${error instanceof Error ? error.message : "Unknown error"}`
+        `Failed to ${isEditMode ? "update" : "create"} scenario: ${error instanceof Error ? error.message : "Unknown error"}`
       );
-      setResponse("Error: Failed to generate response. Please try again.");
     } finally {
-      setIsGenerating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -450,462 +348,532 @@ export default function Scenario({
     );
   }
 
-  // Error state for edit mode when scenario not found
-  if (isEditMode && !isLoading && !scenario) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Scenario Not Found</h1>
-          <p className="text-muted-foreground">
-            The scenario you're looking for doesn't exist.
-          </p>
-        </div>
-        <Button onClick={() => router.push("/create/scenarios")}>
-          Back to Scenarios
-        </Button>
-      </div>
-    );
-  }
-
-  const selectedAgent = agents.find((agent) => agent.id === formData.agentId);
   const selectedClass = classes.find((cls) => cls.id === formData.classId);
   const selectedDocuments = documents.filter((doc) =>
-    formData.documents.includes(doc.id)
+    formData.documents?.includes(doc.id)
   );
+  const selectedAgent = agents.find((agent) => agent.id === formData.agentId);
 
-  // Create/Edit mode - render the playground-style layout with insert mode
   return (
-    <>
-      <div className="h-full flex flex-col">
-        <div className="container h-full px-2 py-2">
-          <div className="grid h-full items-stretch gap-6 lg:grid-cols-[1fr_280px]">
-            {/* Configuration Sidebar */}
-            <div className="hidden flex-col space-y-4 lg:flex lg:order-2 pt-3">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
-                  placeholder="e.g., Office Hours Help Session"
-                  className={errors.name ? "border-destructive" : ""}
-                />
-                {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
-                )}
-              </div>
-
-              {/* Agent Selection */}
-              <ScenarioPicker
-                models={agentModels}
-                types={["Agents"]}
-                label="Agent"
-                placeholder="Select an agent..."
-                description="Choose the AI agent that will interact with students in this scenario."
-                onSelect={handleAgentSelect}
-                selectedModel={
-                  selectedAgent
-                    ? {
-                        id: selectedAgent.id,
-                        name: selectedAgent.name,
-                        description: selectedAgent.description,
-                        type: "Agents" as const,
-                      }
-                    : undefined
-                }
-              />
-              {errors.agentId && (
-                <p className="text-sm text-destructive">{errors.agentId}</p>
-              )}
-
-              {/* Class Selection */}
-              <ScenarioPicker
-                models={classModels}
-                types={["Classes"]}
-                label="Class"
-                placeholder="Select a class..."
-                description="Choose the class that this scenario will be used in. If no class is selected, the scenario will be available globally across all classes."
-                onSelect={handleClassSelect}
-                selectedModel={
-                  selectedClass
-                    ? {
-                        id: selectedClass.id,
-                        name: selectedClass.classCode || selectedClass.name,
-                        description: `${selectedClass.name} - ${selectedClass.term} ${selectedClass.year}`,
-                        type: "Classes" as const,
-                        strengths: selectedClass.description || "",
-                      }
-                    : undefined
-                }
-              />
-
-              {/* Document Selection */}
-              <div className="space-y-2">
-                <ScenarioPicker
-                  models={documentModels}
-                  types={["Documents"]}
-                  label="Documents"
-                  placeholder="Select documents..."
-                  description="Choose documents that will be available during this scenario."
-                  multiSelect={true}
-                  hideSelectedChips={true}
-                  selectedModels={selectedDocuments.map((doc) => ({
-                    id: doc.id,
-                    name: doc.name,
-                    description: `${doc.type} document`,
-                    type: "Documents" as const,
-                    strengths: doc.mimeType,
-                  }))}
-                  onMultiSelect={handleDocumentSelect}
-                />
-
-                {/* Document Selection Preview */}
-                {selectedDocuments.length > 0 && (
-                  <HoverCard openDelay={200}>
-                    <HoverCardTrigger asChild>
-                      <div className="flex items-center gap-2 px-3 py-2 bg-secondary/50 rounded-md border border-dashed cursor-pointer hover:bg-secondary/70 transition-colors">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                          <span className="text-sm font-medium">
-                            {selectedDocuments[0]?.name} +{" "}
-                            {selectedDocuments.length - 1} more
-                          </span>
-                        </div>
-                      </div>
-                    </HoverCardTrigger>
-                    <HoverCardContent
-                      align="start"
-                      className="w-80 max-h-60 overflow-y-auto"
-                      side="right"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium text-sm">
-                            Selected Documents
-                          </h4>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground">
-                              {selectedDocuments.length} item
-                              {selectedDocuments.length !== 1 ? "s" : ""}
-                            </span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleInputChange("documents", [])}
-                              className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                              title="Remove all documents"
-                            >
-                              <X className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          {selectedDocuments.map((doc, index) => (
-                            <div
-                              key={doc.id}
-                              className="flex items-start gap-3 p-2 rounded-md bg-muted/50 hover:bg-muted transition-colors group"
-                            >
-                              <div className="flex-shrink-0 w-6 h-6 bg-blue-100 rounded flex items-center justify-center mt-0.5">
-                                <span className="text-xs font-medium text-blue-700">
-                                  {index + 1}
-                                </span>
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div
-                                  className="font-medium text-sm truncate"
-                                  title={doc.name}
-                                >
-                                  {doc.name}
-                                </div>
-                                <div className="text-xs text-muted-foreground mt-0.5">
-                                  {doc.type} • {doc.mimeType}
-                                </div>
-                              </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  const newDocuments = selectedDocuments.filter(
-                                    (d) => d.id !== doc.id
-                                  );
-                                  handleInputChange(
-                                    "documents",
-                                    newDocuments.map((d) => d.id)
-                                  );
-                                }}
-                                className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
-                                title={`Remove ${doc.name}`}
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ))}
-                        </div>
-                        {selectedDocuments.length > 5 && (
-                          <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                            Showing all {selectedDocuments.length} documents
-                          </div>
-                        )}
-                      </div>
-                    </HoverCardContent>
-                  </HoverCard>
-                )}
-              </div>
-
-              {/* Seniority Selection */}
-              <ScenarioPicker
-                models={seniorityModels}
-                types={["Seniority"]}
-                label="Seniority"
-                placeholder="Select student seniority"
-                description="Choose the academic level of the student"
-                onSelect={handleSenioritySelect}
-                selectedModel={
-                  seniorityExplicitlySet
-                    ? seniorityModels.find(
-                        (model) => model.id === formData.seniority
-                      )
-                    : undefined
-                }
-              />
-
-              {/* Scenario Parameters */}
-              <div className="space-y-4">
-                <div className="space-y-2 items-start">
-                  {formData.crowdedness === null && <Label>Crowdedness</Label>}
-                  {formData.crowdedness !== null ? (
-                    <ScenarioSlider
-                      leftContent={<Label>Crowdedness</Label>}
-                      rightContent={
-                        formData.crowdedness !== null && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              handleInputChange("crowdedness", null)
-                            }
-                            className={`p-2`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )
-                      }
-                      label=""
-                      description="How busy or crowded the scenario environment should be"
-                      min={1}
-                      max={10}
-                      step={1}
-                      defaultValue={[formData.crowdedness]}
-                      value={[formData.crowdedness]}
-                      onValueChange={(value) =>
-                        handleInputChange("crowdedness", value[0])
-                      }
-                    />
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleInputChange("crowdedness", 1)}
-                      className="w-full"
-                    >
-                      Set Crowdedness
-                    </Button>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  {formData.intensity === null && <Label>Intensity</Label>}
-                  {formData.intensity !== null ? (
-                    <ScenarioSlider
-                      leftContent={<Label>Intensity</Label>}
-                      rightContent={
-                        formData.intensity !== null && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleInputChange("intensity", null)}
-                            className={`p-2`}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        )
-                      }
-                      label=""
-                      description="How intense or challenging the scenario should be"
-                      min={1}
-                      max={10}
-                      step={1}
-                      defaultValue={[formData.intensity]}
-                      value={[formData.intensity]}
-                      onValueChange={(value) =>
-                        handleInputChange("intensity", value[0])
-                      }
-                    />
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => handleInputChange("intensity", 1)}
-                      className="w-full"
-                    >
-                      Set Intensity
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Main Content Area */}
-            <div className="lg:order-1">
-              <div className="flex flex-col space-y-4 h-full">
-                {/* Description */}
-                <div className="space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Label htmlFor="description">Scenario</Label>
-                      <HoverCard openDelay={200}>
-                        <HoverCardTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={handleGenerateScenario}
-                            disabled={isGeneratingScenario}
-                            className="h-6 w-6 p-0"
-                            title="Generate scenario with AI"
-                          >
-                            {isGeneratingScenario ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Sparkles className="h-4 w-4" />
-                            )}
-                          </Button>
-                        </HoverCardTrigger>
-                        <HoverCardContent
-                          align="start"
-                          className="w-[280px] text-sm"
-                          side="right"
-                        >
-                          <div className="space-y-2">
-                            <h4 className="font-medium">
-                              AI Scenario Generator
-                            </h4>
-                            <p className="text-muted-foreground">
-                              Generate a realistic scenario title and
-                              description based on your selected agent, class,
-                              documents, and parameters. The AI will create
-                              contextually appropriate scenarios for student-GTA
-                              interactions.
-                            </p>
-                          </div>
-                        </HoverCardContent>
-                      </HoverCard>
-                    </div>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange("description", e.target.value)
-                      }
-                      placeholder="Describe the scenario context, setting, and expected interactions... If left blank, the AI will generate a scenario for you."
-                      className="min-h-[80px] resize-none"
-                      rows={3}
-                    />
-                  </div>
-                </div>
-
-                {/* Playground Area - Match sidebar height */}
-                <div className="flex-1 flex flex-col space-y-4">
-                  <div className="grid h-full gap-4 grid-rows-2 lg:grid-cols-2 lg:grid-rows-1">
-                    {/* Query Input */}
-                    <div className="flex flex-col space-y-2">
-                      <Textarea
-                        id="query"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Enter a question or prompt to test how the agent responds in this scenario..."
-                        className="h-full resize-none"
-                      />
-                    </div>
-
-                    {/* Response Output */}
-                    <div className="flex flex-col space-y-2">
-                      <div className="h-full rounded-md border bg-muted p-4 overflow-auto">
-                        {isGenerating ? (
-                          <div className="flex items-center justify-center h-full">
-                            <div className="text-sm text-muted-foreground">
-                              Generating response...
-                            </div>
-                          </div>
-                        ) : response ? (
-                          <div className="text-sm whitespace-pre-wrap">
-                            {response}
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <div className="text-sm text-muted-foreground">
-                              Agent response will appear here after you submit a
-                              query
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons - Aligned horizontally */}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center justify-between mt-4">
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={handleTestQuery}
-                disabled={isGenerating || !validateForTesting()}
-              >
-                {isGenerating ? "Generating..." : "Test Query"}
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setQuery("");
-                  setResponse("");
-                }}
-                disabled={isGenerating}
-              >
-                <span className="sr-only">Clear</span>
-                <RotateCcw />
-              </Button>
-            </div>
-            <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting
-                ? isEditMode
-                  ? "Updating..."
-                  : "Creating..."
-                : isEditMode
-                  ? "Update Scenario"
-                  : "Save Scenario"}
-            </Button>
-          </div>
-        </div>
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">
+          {isEditMode ? "Edit Scenario" : "Create New Scenario"}
+        </h1>
+        <p className="text-muted-foreground">
+          Follow the steps below to create a realistic training scenario for
+          GTAs
+        </p>
       </div>
 
-      {/* Document Preview Modal */}
-      <Dialog open={showDocumentModal} onOpenChange={setShowDocumentModal}>
-        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
-          <DialogHeader>
-            <DialogTitle>Document Preview: {previewDocument?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-hidden">
-            {previewDocument && (
-              <div className="p-4 bg-muted rounded-md">
-                <p className="text-sm text-muted-foreground">
-                  Document preview would be displayed here
-                </p>
+      {/* Progress Flow */}
+      <div className="space-y-6">
+        {/* Step 1: Class Selection */}
+        <Card
+          className={`transition-all ${getStepStatus("class") === "active" ? "ring-2 ring-primary" : ""} ${
+            getStepStatus("class") === "pending" ? "opacity-50" : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("class") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("class") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("class") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "1"
+                )}
+              </div>
+              <div>
+                <CardTitle className="text-lg">
+                  {steps[0]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[0]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("class") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <ScenarioPicker
+              models={classModels}
+              types={["Classes"]}
+              label=""
+              placeholder="Select a class..."
+              description="This determines which students and documents are available for the scenario."
+              onSelect={(model) => handleInputChange("classId", model.id)}
+              selectedModel={
+                selectedClass
+                  ? {
+                      id: selectedClass.id,
+                      name: selectedClass.classCode || selectedClass.name,
+                      description: `${selectedClass.name} - ${selectedClass.term} ${selectedClass.year}`,
+                      type: "Classes" as const,
+                    }
+                  : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Step 2: Documents */}
+        <Card
+          className={`transition-all ${getStepStatus("documents") === "active" ? "ring-2 ring-primary" : ""} ${
+            getStepStatus("documents") === "pending" ? "opacity-50" : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("documents") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("documents") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("documents") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "2"
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">
+                    {steps[1]?.title || ""}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    Optional
+                  </Badge>
+                </div>
+                <CardDescription>{steps[1]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("documents") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <ScenarioPicker
+              models={documentModels}
+              types={["Documents"]}
+              label=""
+              placeholder="Select documents..."
+              description="Choose documents that will be available during this scenario."
+              multiSelect={true}
+              selectedModels={selectedDocuments.map((doc) => ({
+                id: doc.id,
+                name: doc.name,
+                description: `${doc.type} document`,
+                type: "Documents" as const,
+              }))}
+              onMultiSelect={(models) =>
+                handleInputChange(
+                  "documents",
+                  models.map((m) => m.id)
+                )
+              }
+            />
+            {selectedDocuments.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {selectedDocuments.map((doc) => (
+                  <Badge key={doc.id} variant="outline">
+                    {doc.name}
+                  </Badge>
+                ))}
               </div>
             )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          </CardContent>
+        </Card>
+
+        {/* Step 3: Agent Selection */}
+        <Card
+          className={`transition-all ${getStepStatus("agent") === "active" ? "ring-2 ring-primary" : ""} ${
+            getStepStatus("agent") === "pending" ? "opacity-50" : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("agent") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("agent") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("agent") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "3"
+                )}
+              </div>
+              <div>
+                <CardTitle className="text-lg">
+                  {steps[2]?.title || ""}
+                </CardTitle>
+                <CardDescription>{steps[2]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("agent") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent>
+            <ScenarioPicker
+              models={agentModels}
+              types={["Agents"]}
+              label=""
+              placeholder="Select an agent..."
+              description="Choose the AI agent that will interact with students in this scenario."
+              onSelect={(model) => handleInputChange("agentId", model.id)}
+              selectedModel={
+                selectedAgent
+                  ? {
+                      id: selectedAgent.id,
+                      name: selectedAgent.name,
+                      description: selectedAgent.description,
+                      type: "Agents" as const,
+                    }
+                  : undefined
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Step 4: Context Parameters */}
+        <Card
+          className={`transition-all ${getStepStatus("context") === "active" ? "ring-2 ring-primary" : ""} ${
+            getStepStatus("context") === "pending" ? "opacity-50" : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("context") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("context") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("context") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "4"
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">
+                    {steps[3]?.title || ""}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    Optional
+                  </Badge>
+                </div>
+                <CardDescription>{steps[3]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("context") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Seniority */}
+            <div className="space-y-2">
+              <Label>Student Seniority</Label>
+              <Select
+                value={formData.seniority || "none"}
+                onValueChange={(value) =>
+                  handleInputChange(
+                    "seniority",
+                    value === "none" ? null : value
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select student level" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No preference</SelectItem>
+                  <SelectItem value="freshman">Freshman</SelectItem>
+                  <SelectItem value="sophomore">Sophomore</SelectItem>
+                  <SelectItem value="junior">Junior</SelectItem>
+                  <SelectItem value="senior">Senior</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Crowdedness */}
+            <div className="space-y-2">
+              <Label>Crowdedness Level</Label>
+              {formData.crowdedness !== null ? (
+                <ScenarioSlider
+                  label=""
+                  defaultValue={[5]}
+                  description="How busy or crowded the environment should be (1-10)"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={[formData.crowdedness || 5]}
+                  onValueChange={(value) =>
+                    handleInputChange("crowdedness", value[0] || 5)
+                  }
+                />
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => handleInputChange("crowdedness", 5)}
+                  className="w-full justify-start"
+                >
+                  Set crowdedness level
+                </Button>
+              )}
+            </div>
+
+            {/* Intensity */}
+            <div className="space-y-2">
+              <Label>Intensity Level</Label>
+              {formData.intensity !== null ? (
+                <ScenarioSlider
+                  label=""
+                  description="How intense or challenging the scenario should be (1-10)"
+                  min={1}
+                  max={10}
+                  step={1}
+                  defaultValue={[5]}
+                  value={[formData.intensity || 5]}
+                  onValueChange={(value) =>
+                    handleInputChange("intensity", value[0] || 5)
+                  }
+                />
+              ) : (
+                <Button
+                  variant="outline"
+                  onClick={() => handleInputChange("intensity", 5)}
+                  className="w-full justify-start"
+                >
+                  Set intensity level
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Step 5: Environment Details */}
+        <Card
+          className={`transition-all ${getStepStatus("environment") === "active" ? "ring-2 ring-primary" : ""} ${
+            getStepStatus("environment") === "pending" ? "opacity-50" : ""
+          }`}
+        >
+          <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+            <div className="flex items-center space-x-3">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                  getStepStatus("environment") === "completed"
+                    ? "bg-green-500 text-white"
+                    : getStepStatus("environment") === "active"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted"
+                }`}
+              >
+                {getStepStatus("environment") === "completed" ? (
+                  <Check className="w-4 h-4" />
+                ) : (
+                  "5"
+                )}
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <CardTitle className="text-lg">
+                    {steps[4]?.title || ""}
+                  </CardTitle>
+                  <Badge variant="secondary" className="text-xs">
+                    Optional
+                  </Badge>
+                </div>
+                <CardDescription>{steps[4]?.description || ""}</CardDescription>
+              </div>
+            </div>
+            {getStepStatus("environment") === "completed" && (
+              <ChevronRight className="w-5 h-5 text-muted-foreground ml-auto" />
+            )}
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Location */}
+            <div className="space-y-2">
+              <Label>Location</Label>
+              <Select
+                value={formData.location || "none"}
+                onValueChange={(value) =>
+                  handleInputChange("location", value === "none" ? null : value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select location" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No preference</SelectItem>
+                  <SelectItem value="haas">HAAS Basement</SelectItem>
+                  <SelectItem value="lawson">Lawson Commons</SelectItem>
+                  <SelectItem value="dsai">DS/AI Basement</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Time of Day */}
+            <div className="space-y-2">
+              <Label>Time of Day</Label>
+              <Select
+                value={formData.tod || "none"}
+                onValueChange={(value) =>
+                  handleInputChange("tod", value === "none" ? null : value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No preference</SelectItem>
+                  <SelectItem value="9AM">9:00 AM</SelectItem>
+                  <SelectItem value="10AM">10:00 AM</SelectItem>
+                  <SelectItem value="11AM">11:00 AM</SelectItem>
+                  <SelectItem value="12PM">12:00 PM</SelectItem>
+                  <SelectItem value="1PM">1:00 PM</SelectItem>
+                  <SelectItem value="2PM">2:00 PM</SelectItem>
+                  <SelectItem value="3PM">3:00 PM</SelectItem>
+                  <SelectItem value="4PM">4:00 PM</SelectItem>
+                  <SelectItem value="5PM">5:00 PM</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Urgency */}
+            <div className="space-y-2">
+              <Label>Urgency</Label>
+              <Select
+                value={formData.urgency || "none"}
+                onValueChange={(value) =>
+                  handleInputChange("urgency", value === "none" ? null : value)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select urgency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No preference</SelectItem>
+                  <SelectItem value="hour">Few hours</SelectItem>
+                  <SelectItem value="day">Next day</SelectItem>
+                  <SelectItem value="days">Couple of days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Step 6: Generated Content - Only show after generation is triggered */}
+        {formData.description && (
+          <Card
+            className={`transition-all ${getStepStatus("content") === "active" ? "ring-2 ring-primary" : ""}`}
+          >
+            <CardHeader className="flex flex-row items-center space-y-0 pb-4">
+              <div className="flex items-center space-x-3">
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                    getStepStatus("content") === "completed"
+                      ? "bg-green-500 text-white"
+                      : getStepStatus("content") === "active"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted"
+                  }`}
+                >
+                  {getStepStatus("content") === "completed" ? (
+                    <Check className="w-4 h-4" />
+                  ) : (
+                    "6"
+                  )}
+                </div>
+                <div className="flex-1">
+                  <CardTitle className="text-lg">
+                    {steps[5]?.title || ""}
+                  </CardTitle>
+                  <CardDescription>
+                    {steps[5]?.description || ""}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="description">
+                  Generated Scenario Description
+                </Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange("description", e.target.value)
+                  }
+                  placeholder="Generated scenario description will appear here..."
+                  className="min-h-[120px]"
+                />
+                <p className="text-xs text-muted-foreground">
+                  You can edit the generated description if needed.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex items-center justify-between pt-6 border-t">
+        <Button
+          variant="outline"
+          onClick={() => router.push("/create/scenarios")}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={formData.description ? handleSubmit : handleGenerateScenario}
+          disabled={isSubmitting || isGeneratingScenario}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              {isEditMode ? "Updating..." : "Saving..."}
+            </>
+          ) : isGeneratingScenario ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Generating...
+            </>
+          ) : formData.description ? (
+            isEditMode ? (
+              "Update Scenario"
+            ) : (
+              "Save Scenario"
+            )
+          ) : (
+            "Create Scenario"
+          )}
+        </Button>
+      </div>
+    </div>
   );
 }

@@ -6,6 +6,9 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 -- ============================================================================
 
 CREATE TYPE seniority_levels AS ENUM ('freshman', 'sophomore', 'junior', 'senior');
+CREATE TYPE locations AS ENUM ('lawson', 'haas', 'dsai');
+CREATE TYPE time_of_day AS ENUM ('9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM');
+CREATE TYPE urgency_type AS ENUM ('hour', 'day', 'days');
   
 CREATE TABLE scenarios (
   id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -18,6 +21,9 @@ CREATE TABLE scenarios (
   crowdedness INTEGER     NULL,
   intensity INTEGER     NULL,
   seniority seniority_levels NULL,
+  location locations NULL,
+  tod time_of_day NULL,
+  urgency urgency_type NULL,
   documents UUID[]       NULL,
   default_scenario BOOLEAN     NOT NULL DEFAULT FALSE
 );

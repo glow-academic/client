@@ -25,6 +25,9 @@ async def new_scenario(
     seniority: str | None = Form(None),
     crowdedness: int | None = Form(None),
     intensity: int | None = Form(None),
+    location: str | None = Form(None),
+    tod: str | None = Form(None),
+    urgency: str | None = Form(None),
     session: Session = Depends(get_session),
 ) -> JSONResponse:
     """
@@ -35,6 +38,9 @@ async def new_scenario(
         agent_id = agent_id if agent_id else None
         class_id = class_id if class_id else None
         seniority = seniority if seniority else None
+        location = location if location else None
+        tod = tod if tod else None
+        urgency = urgency if urgency else None
 
         # Filter out empty document IDs
         if document_ids:
@@ -52,6 +58,9 @@ async def new_scenario(
             seniority=seniority,
             crowdedness=crowdedness,
             intensity=intensity,
+            location=location,
+            tod=tod,
+            urgency=urgency,
             group_id=None, # no group id for scenarios
             session=session,
         )

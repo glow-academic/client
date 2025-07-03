@@ -95,6 +95,16 @@ class Components(_Base, table=True):
     default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
 
 
+class Migrations(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
+
+
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -403,6 +413,9 @@ class Scenarios(_Base, table=True):
     intensity: Optional[int] = Field(default=None, sa_column=Column('intensity', Integer))
     seniority: Optional[str] = Field(default=None, sa_column=Column('seniority', Enum('freshman', 'sophomore', 'junior', 'senior', name='seniority_levels')))
     documents: Optional[List[uuid.UUID]] = Field(default=None, sa_column=Column('documents', ARRAY(Uuid(as_uuid=True))))
+    location: Optional[str] = Field(default=None, sa_column=Column('location', Enum('lawson', 'haas', 'dsai', name='locations')))
+    tod: Optional[str] = Field(default=None, sa_column=Column('tod', Enum('9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', name='time_of_day')))
+    urgency: Optional[str] = Field(default=None, sa_column=Column('urgency', Enum('hour', 'day', 'days', name='urgency_type')))
 
     agent: Optional['Agents'] = Relationship(back_populates='scenarios')
     class_: Optional['Classes'] = Relationship(back_populates='scenarios')

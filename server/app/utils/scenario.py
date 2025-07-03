@@ -49,6 +49,69 @@ def get_intensity_info(intensity: int) -> TResponseInputItem:
     }
 
 
+def get_location_info(location: str) -> TResponseInputItem:
+    """
+    Get the location information for a given location.
+    """
+    
+    location_descriptions = {
+        "haas": "HAAS basement - a quiet, focused study environment in the lower level of the HAAS building",
+        "lawson": "Lawson Commons - an open, collaborative space in the Lawson building with high foot traffic",
+        "dsai": "DS/AI basement - a specialized tech-focused lab environment in the basement of the Data Science/AI building"
+    }
+    
+    location_description = location_descriptions.get(location, f"Location: {location}")
+
+    return {
+        "role": "user",
+        "content": f"The following is the location information: The interaction takes place in the {location_description}.",
+    }
+
+
+def get_time_of_day_info(time_of_day: str) -> TResponseInputItem:
+    """
+    Get the time of day information for a given time.
+    """
+    
+    time_descriptions = {
+        "9AM": "9:00 AM - early morning session, students may be tired but focused",
+        "10AM": "10:00 AM - mid-morning session, good energy levels",
+        "11AM": "11:00 AM - late morning session, students are alert and engaged",
+        "12PM": "12:00 PM - lunch time session, students may be hungry or rushed",
+        "1PM": "1:00 PM - early afternoon session, post-lunch energy dip possible",
+        "2PM": "2:00 PM - mid-afternoon session, good focus time",
+        "3PM": "3:00 PM - late afternoon session, sustained energy needed",
+        "4PM": "4:00 PM - evening session, students may be tired from the day",
+        "5PM": "5:00 PM - end of day session, students eager to finish"
+    }
+    
+    time_description = time_descriptions.get(time_of_day, f"Time: {time_of_day}")
+
+    return {
+        "role": "user",
+        "content": f"The following is the time information: This interaction occurs at {time_description}.",
+    }
+
+
+def get_urgency_info(urgency: str) -> TResponseInputItem:
+    """
+    Get the urgency information for a given urgency level.
+    """
+    
+    urgency_descriptions = {
+        "hour": "The assignment is due in a few hours - this is a high-stress situation requiring immediate help",
+        "day": "The assignment is due tomorrow - moderate stress, student is planning ahead",
+        "days": "The assignment is due in a couple of days - low stress, plenty of time to work through problems"
+    }
+    
+    urgency_description = urgency_descriptions.get(urgency, f"Urgency: {urgency}")
+
+    return {
+        "role": "user",
+        "content": f"The following is the urgency information: {urgency_description}.",
+    }
+
+
 async def randomly_fill_scenario_attributes(
     scenario: Scenarios, session: Session
 ) -> Scenarios:
@@ -134,6 +197,30 @@ async def randomly_fill_scenario_attributes(
     else:
         scenario_intensity = scenario.intensity
 
+    # Random location selection if location is null
+    if scenario.location is None:
+        location_options = ["haas", "lawson", "dsai"]
+        scenario_location = random.choice(location_options)
+        logger.info(f"Randomly selected location: {scenario_location}")
+    else:
+        scenario_location = scenario.location
+
+    # Random time of day selection if time of day is null
+    if scenario.tod is None:
+        tod_options = ["9AM", "10AM", "11AM", "12PM", "1PM", "2PM", "3PM", "4PM", "5PM"]
+        scenario_tod = random.choice(tod_options)
+        logger.info(f"Randomly selected time of day: {scenario_tod}")
+    else:
+        scenario_tod = scenario.tod
+
+    # Random urgency selection if urgency is null
+    if scenario.urgency is None:
+        urgency_options = ["hour", "day", "days"]
+        scenario_urgency = random.choice(urgency_options)
+        logger.info(f"Randomly selected urgency: {scenario_urgency}")
+    else:
+        scenario_urgency = scenario.urgency
+
     return Scenarios(
         name=scenario.name,
         description=scenario.description,
@@ -143,6 +230,7 @@ async def randomly_fill_scenario_attributes(
         seniority=scenario_seniority,
         crowdedness=scenario_crowdedness,
         intensity=scenario_intensity,
+        location=scenario_location,
+        tod=scenario_tod,
+        urgency=scenario_urgency,
     )
-
-
