@@ -268,144 +268,101 @@ function CaptionedAudio({
   );
 }
 
-// Component for streaming word-by-word captions in audio mode
+// A leaner, single-responsibility component for streaming captions
 function StreamingCaptions({
-  message,
   timings,
   isStreaming,
 }: {
-  message: SimulationMessage;
   timings: WordTiming[];
   isStreaming: boolean;
 }) {
-  const { persistentAudioElement } = useWebSocket(); // Get the audio element from context
+  const { persistentAudioElement } = useWebSocket();
   const [visibleWords, setVisibleWords] = useState<string[]>([]);
   const messageAudioStartTimeRef = useRef<number | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  // Define the delay you want to test with at the top of the component
-  const MANUAL_DELAY_MS = 15000; // 15000ms delay, adjust as needed
 
-  // Reset state when the message we are displaying changes
+  // 🧠 DERIVE CONTENT FROM TIMINGS:
+  // Reconstruct the full sentence and word array directly from the timings prop.
+  // This removes the need for `message.content`.
+  const allWords = useMemo(() => {
+    if (!timings || timings.length === 0) {
+      return [];
+    }
+    return timings.map((t) => t.word);
+  }, [timings]);
+
+  // This effect now resets state whenever a new set of timings arrives.
   useEffect(() => {
     setVisibleWords([]);
     messageAudioStartTimeRef.current = null;
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
-  }, [message.id]);
+  }, [timings]); // Dependency is now just on the timings array itself.
 
-  // The main animation and synchronization effect
+  // The main animation and synchronization effect (logic is the same)
   useEffect(() => {
-    // Exit if we aren't in a state to stream captions
     if (!isStreaming || !persistentAudioElement || timings.length === 0) {
-      // Ensure full text is visible if streaming has just ended
-      if (!isStreaming && message.completed) {
-        setVisibleWords(message.content.split(/\s+/));
+      if (!isStreaming) {
+        // When streaming ends, ensure the full text is displayed.
+        setVisibleWords(allWords);
       }
       return;
     }
 
-    // Wrap the animation logic in a timeout to add a manual delay
-    const delayTimeout = setTimeout(() => {
-      const allWords = message.content.split(/\s+/);
-
-      const updateVisibleWords = () => {
-        if (
-          !isStreaming ||
-          !persistentAudioElement ||
-          animationFrameRef.current === null
-        ) {
-          return; // Stop the loop if conditions change
-        }
-
-        // On the very first frame of a new message, capture the stream's current time.
-        // This becomes the "zero point" for this message's timings.
-        if (messageAudioStartTimeRef.current === null) {
-          messageAudioStartTimeRef.current = persistentAudioElement.currentTime;
-          logInfo(
-            `Captured audio start time for message ${
-              message.id
-            }: ${messageAudioStartTimeRef.current?.toFixed(2)}s`
-          );
-        }
-
-        // Calculate time elapsed since this specific message's audio started playing
-        const messageRelativeTime =
-          persistentAudioElement.currentTime -
-          (messageAudioStartTimeRef.current || 0);
-
-        const newVisibleWords: string[] = [];
-
-        // Find all words that should be visible based on their start time
-        for (let i = 0; i < timings.length && i < allWords.length; i++) {
-          const timing = timings[i];
-          if (timing && messageRelativeTime >= timing.start) {
-            newVisibleWords.push(allWords[i] || "");
-          } else {
-            // Timings are sorted, so we can break early
-            break;
-          }
-        }
-
-        // Use a state updater function to avoid depending on `visibleWords`.
-        // This check prevents re-renders if the array hasn't changed.
-        setVisibleWords((prev) =>
-          JSON.stringify(prev) !== JSON.stringify(newVisibleWords)
-            ? newVisibleWords
-            : prev
+    const updateVisibleWords = () => {
+      if (messageAudioStartTimeRef.current === null) {
+        messageAudioStartTimeRef.current = persistentAudioElement.currentTime;
+        logInfo(
+          `Captured audio start time: ${messageAudioStartTimeRef.current?.toFixed(2)}s`
         );
+      }
+      const messageRelativeTime =
+        persistentAudioElement.currentTime -
+        (messageAudioStartTimeRef.current || 0);
 
-        // Continue the animation loop if we haven't shown all the words yet
-        if (newVisibleWords.length < allWords.length) {
-          animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+      const newVisibleWords: string[] = [];
+      for (let i = 0; i < timings.length; i++) {
+        const timing = timings[i];
+        if (timing && messageRelativeTime >= timing.start) {
+          newVisibleWords.push(allWords[i] || "");
         } else {
-          // If all words are visible, ensure the full, final content is set
-          setVisibleWords((prev) => {
-            const fullWords = message.content.split(/\s+/);
-            return prev.join(" ") !== message.content ? fullWords : prev;
-          });
+          break;
         }
-      };
+      }
 
-      // Start the animation loop after the delay
-      animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
-    }, MANUAL_DELAY_MS); // Apply the testing delay
+      setVisibleWords(newVisibleWords);
 
-    // Cleanup function to clear both the timeout and the animation frame
+      if (newVisibleWords.length < allWords.length) {
+        animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+      } else {
+        setVisibleWords(allWords); // Final consistency check
+      }
+    };
+
+    animationFrameRef.current = requestAnimationFrame(updateVisibleWords);
+
     return () => {
-      clearTimeout(delayTimeout);
-      if (animationFrameRef.current !== null) {
+      if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
     };
-  }, [
-    isStreaming,
-    persistentAudioElement,
-    timings,
-    message.content,
-    message.completed,
-    message.id,
-    // ✅ REMOVED `visibleWords` to prevent infinite loop
-  ]);
+  }, [isStreaming, persistentAudioElement, timings, allWords]);
 
-  // Determine the display text based on streaming state and availability of timings
-  const visibleText = visibleWords.join(" ");
-
+  // The render logic is now much simpler.
   return (
     <div className="text-lg leading-relaxed">
-      {/* 1. Show a loading state if we are streaming but have NO timings yet */}
-      {isStreaming && timings.length === 0 ? (
+      {timings.length === 0 ? (
         <div className="flex items-center text-muted-foreground">
           <span className="mr-2">Syncing audio...</span>
           <LoadingDots />
         </div>
       ) : (
         <>
-          {/* 2. Render the full message content if not streaming, otherwise render the synced words */}
-          <Markdown>{!isStreaming ? message.content : visibleText}</Markdown>
-          {/* 3. Show the blinking cursor only when actively streaming captions */}
-          {isStreaming && !message.completed && (
+          <Markdown>{visibleWords.join(" ")}</Markdown>
+          {isStreaming && visibleWords.length < allWords.length && (
             <span className="inline-block w-2 h-5 bg-primary animate-pulse ml-1" />
           )}
         </>
@@ -506,33 +463,14 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
       );
   }, []);
 
-  // Get the current streaming message or the latest completed assistant message for audio mode
-  const currentDisplayMessage = useMemo(() => {
-    const responseMessages = messages.filter(
-      (msg: SimulationMessage) => msg.type === "response"
-    );
-
-    // First, check if there's a message currently streaming (not completed)
-    const streamingMessage = responseMessages.find((msg) => !msg.completed);
-    if (streamingMessage) {
-      return streamingMessage;
-    }
-
-    // If no streaming message, return the latest completed message
-    return (
-      responseMessages
-        .filter((msg) => msg.completed)
-        .sort(
-          (a: SimulationMessage, b: SimulationMessage) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0] || null
-    );
-  }, [messages]);
-
-  // Check if assistant is currently speaking (streaming)
-  const isAssistantSpeaking = useMemo(() => {
-    return currentDisplayMessage && !currentDisplayMessage.completed;
-  }, [currentDisplayMessage]);
+  // ✅ ADD THIS: A new variable that ONLY finds an in-progress message.
+  const streamingMessage = useMemo(
+    () =>
+      messages.find(
+        (msg: SimulationMessage) => msg.type === "response" && !msg.completed
+      ),
+    [messages]
+  );
 
   const starterPrompts = useMemo(() => {
     const basePrompts = [
@@ -759,23 +697,23 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
             <div className="relative mb-8">
               <div
                 className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
-                  isAssistantSpeaking ? "animate-pulse" : ""
+                  streamingMessage ? "animate-pulse" : ""
                 }`}
                 style={{
-                  background: isAssistantSpeaking
+                  background: streamingMessage
                     ? "linear-gradient(135deg, #60a5fa, #a855f7, #ec4899)"
                     : "linear-gradient(135deg, #94a3b8, #64748b, #475569)",
                 }}
               />
             </div>
 
-            {captionsEnabled && currentDisplayMessage && (
+            {captionsEnabled && streamingMessage && (
               <div className="w-full max-w-4xl">
                 <ScrollArea className="h-32 w-full border rounded-lg p-4 bg-background/80 backdrop-blur-sm">
+                  {/* The component call is now simpler and more robust */}
                   <StreamingCaptions
-                    message={currentDisplayMessage}
-                    timings={timingsByMsg[currentDisplayMessage.id] || []}
-                    isStreaming={!!isAssistantSpeaking}
+                    timings={timingsByMsg[streamingMessage.id] || []}
+                    isStreaming={true}
                   />
                 </ScrollArea>
               </div>
