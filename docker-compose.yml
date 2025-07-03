@@ -25,7 +25,7 @@ services:
       # Required for model generation script
       - SECRET_KEY=${SECRET_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./client/components:/client/components  # Mount client components with write access for analytics generation
