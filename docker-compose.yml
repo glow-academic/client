@@ -169,33 +169,6 @@ services:
       - internal        # to reach client+server
       - public_net      # to be reachable from outside
 
-  # --------------------
-  # Realtime Services (TURN/STUN)
-  # --------------------
-  realtime:
-    build: ./realtime          # <-- NEW: build the tiny wrapper image
-    container_name: glow-realtime
-    restart: unless-stopped
-
-    # Advertise TURN on both UDP & TCP + relay port range
-    ports:
-      - "3478:3478/udp"
-      - "3478:3478/tcp"
-      - "49160-49200:49160-49200/udp"
-      - "49160-49200:49160-49200/tcp"
-
-    environment:
-      # Public IP or hostname that browsers on the Internet must dial
-      - TURN_PUBLIC_IP=${TURN_PUBLIC_IP}
-      # Usual auth / realm values (already in your .env)
-      - TURN_REALM=${TURN_REALM:-localhost}
-      - TURN_USERNAME=${TURN_USERNAME:-localuser}
-      - TURN_PASSWORD=${TURN_PASSWORD:-localpass}
-
-    networks:
-      internal:       # let API / Next.js containers reach it at 'realtime:3478'
-      public_net:     # route traffic from outside world
-
 volumes:
   pgdata:
   uploads-data:

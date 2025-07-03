@@ -191,78 +191,38 @@ def _get_public_ip() -> str:
     return "127.0.0.1"
 
 def _build_ice_servers() -> List[Dict[str, Any]]:
-    """Return ICE server configuration for WebRTC connections."""
-    # First, try to use the URIs directly if they're set (from setup.sh)
-    turn_uri = os.getenv("TURN_URI")
-    stun_uri = os.getenv("STUN_URI")
-    
-    if turn_uri and stun_uri:
-        # Use the URIs directly from environment (setup.sh sets these)
-        user = os.getenv("TURN_USERNAME")
-        pwd = os.getenv("TURN_PASSWORD")
-        
-        ice_servers: List[Dict[str, Any]] = [
-            {
-                "urls": [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    stun_uri,
-                ]
-            }
-        ]
-        
-        if user and pwd:
-            ice_servers.append(
-                {
-                    "urls": [turn_uri],
-                    "username": user,
-                    "credential": pwd,
-                }
-            )
-        
-        logger.info(f"Using ICE configuration from environment variables (TURN_URI/STUN_URI)")
-    else:
-        # Fallback to building from components
-        host = os.getenv("TURN_PUBLIC_IP")
-        if not host:
-            # Auto-detect public IP
-            host = _get_public_ip()
-            logger.info(f"Auto-detected public IP: {host}")
-        
-        user = os.getenv("TURN_USERNAME")
-        pwd = os.getenv("TURN_PASSWORD")
+    turn_uri = os.getenv("TURN_URI", "")
+    stun_uri = os.getenv("STUN_URI", "")
+    user = os.getenv("TURN_USERNAME")
+    pwd  = os.getenv("TURN_PASSWORD")
 
-        # Baseline public Google STUN servers + local STUN on the TURN host.
-        ice_servers = [
-            {
-                "urls": [
-                    "stun:stun.l.google.com:19302",
-                    "stun:stun1.l.google.com:19302",
-                    f"stun:{host}:3478",
-                ]
-            }
-        ]
+    if not (turn_uri and stun_uri):
+        raise ValueError(
+            "No ICE servers found in environment variables (TURN_URI/STUN_URI)."
+        )
 
-        # Add TURN entries only if credentials are present.
-        if user and pwd:
-            ice_servers.append(
-                {
-                    "urls": [
-                        f"turn:{host}:3478?transport=udp",
-                        f"turn:{host}:3478?transport=tcp",
-                    ],
-                    "username": user,
-                    "credential": pwd,
-                }
-            )
-        
-        logger.info(f"Using ICE configuration built from components (host: {host})")
+    # split on commas (and strip any whitespace)
+    stun_uris = [u.strip() for u in stun_uri.split(",")]
+    turn_uris = [u.strip() for u in turn_uri.split(",")]
+
+    ice_servers: List[Dict[str, Any]] = [
+        {
+            "urls": stun_uris
+        }
+    ]
+
+    if user and pwd:
+        ice_servers.append(
+            {
+                "urls": turn_uris,
+                "username": user,
+                "credential": pwd,
+            }
+        )
 
     logger.info(
         "Using ICE servers for WebRTC: %s",
-        ", ".join(
-            [url for s in ice_servers for url in (s["urls"] if isinstance(s["urls"], list) else [s["urls"]])]
-        ),
+        ", ".join(stun_uris + (turn_uris if user and pwd else [])),
     )
 
     return ice_servers
@@ -1059,8 +1019,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         
         # Log WebRTC configuration
         logger.info("WebRTC Configuration:")
-        logger.info(f"  TURN_PUBLIC_IP: {os.getenv('TURN_PUBLIC_IP', 'not set')}")
-        logger.info(f"  TURN_REALM: {os.getenv('TURN_REALM', 'not set')}")
         logger.info(f"  TURN_USERNAME: {os.getenv('TURN_USERNAME', 'not set')}")
         logger.info(f"  TURN_PASSWORD: {'***' if os.getenv('TURN_PASSWORD') else 'not set'}")
         logger.info(f"  TURN_URI: {os.getenv('TURN_URI', 'not set')}")
