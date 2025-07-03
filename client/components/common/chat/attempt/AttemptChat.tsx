@@ -47,7 +47,6 @@ import {
 
 import DocumentSelect from "@/components/common/chat/DocumentSelect";
 import DocumentViewer from "@/components/common/chat/DocumentViewer";
-import { CircularProgress } from "@/components/ui/circular-progress";
 import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationChat } from "@/types";
 import { formatTime } from "@/utils/time";
@@ -55,6 +54,7 @@ import { formatTime } from "@/utils/time";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
+import { Progress } from "@/components/ui/progress";
 
 export default function AttemptChat() {
   const simulationContext = useSimulation();
@@ -458,6 +458,21 @@ export default function AttemptChat() {
           }
         >
           <Card className="h-full flex flex-col py-4">
+            {/* Progress Bar at the very top */}
+            {simulationContext?.expectedChatCount > 1 && (
+              <div className="px-4 pb-2">
+                <Progress
+                  value={
+                    (simulationContext?.chats.filter(
+                      (chat: SimulationChat) => chat.completed
+                    ).length /
+                      simulationContext?.expectedChatCount) *
+                    100
+                  }
+                  className="w-full bg-transparent"
+                />
+              </div>
+            )}
             <TooltipProvider>
               <ResizablePanelGroup
                 ref={inputPanelGroupRef}
@@ -485,37 +500,6 @@ export default function AttemptChat() {
                           </div>
 
                           <div className="flex items-center gap-2">
-                            {simulationContext?.expectedChatCount > 1 && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="text-sm text-muted-foreground flex items-center gap-2">
-                                    <CircularProgress
-                                      progress={
-                                        (simulationContext?.chats.filter(
-                                          (chat: SimulationChat) =>
-                                            chat.completed
-                                        ).length /
-                                          simulationContext?.expectedChatCount) *
-                                        100
-                                      }
-                                      size={64}
-                                    />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {
-                                      simulationContext?.chats.filter(
-                                        (chat: SimulationChat) => chat.completed
-                                      ).length
-                                    }{" "}
-                                    of {simulationContext?.expectedChatCount}{" "}
-                                    chats completed
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
-
                             {simulationContext?.scenarioDocuments.length >
                               0 && (
                               <Tooltip>
