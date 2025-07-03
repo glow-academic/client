@@ -201,12 +201,6 @@ function CaptionedAudio({
 
   return (
     <div className="bg-muted rounded-lg p-3 relative">
-      <audio
-        ref={audioRef}
-        src={`/api/download/audio/${message.id}`}
-        preload="metadata"
-      />
-
       {/* Content with word highlighting */}
       <div className="pr-10">
         {timings.length > 0 ? (
@@ -472,6 +466,63 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
     [messages]
   );
 
+  // Track audio playback state for visual feedback
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
+
+  // Get the WebSocket context to access the persistent audio element
+  const { persistentAudioElement } = useWebSocket();
+
+  // Monitor the persistent audio element for play/pause events
+  useEffect(() => {
+    if (!persistentAudioElement) return;
+
+    const handlePlay = () => {
+      setIsAudioPlaying(true);
+      logInfo("Persistent audio started playing - activating visual feedback");
+    };
+
+    const handlePause = () => {
+      setIsAudioPlaying(false);
+      logInfo("Persistent audio paused - deactivating visual feedback");
+    };
+
+    const handleEnded = () => {
+      setIsAudioPlaying(false);
+      logInfo("Persistent audio ended - deactivating visual feedback");
+    };
+
+    persistentAudioElement.addEventListener("play", handlePlay);
+    persistentAudioElement.addEventListener("pause", handlePause);
+    persistentAudioElement.addEventListener("ended", handleEnded);
+
+    // Check initial state
+    if (!persistentAudioElement.paused) {
+      setIsAudioPlaying(true);
+    }
+
+    return () => {
+      persistentAudioElement.removeEventListener("play", handlePlay);
+      persistentAudioElement.removeEventListener("pause", handlePause);
+      persistentAudioElement.removeEventListener("ended", handleEnded);
+    };
+  }, [persistentAudioElement]);
+
+  // Check if we have word timings for the current streaming message
+  const hasWordTimings = useMemo(() => {
+    if (!streamingMessage) return false;
+    const timings = timingsByMsg[streamingMessage.id];
+    return timings && timings.length > 0;
+  }, [streamingMessage, timingsByMsg]);
+
+  // Determine if we should show the active (pink) background
+  const isAssistantActive = useMemo(() => {
+    // Show pink background when:
+    // 1. There's a streaming message (assistant is generating text), OR
+    // 2. Audio is actively playing (assistant is speaking), OR
+    // 3. We have word timings ready for a streaming message (about to play audio)
+    return !!streamingMessage || isAudioPlaying || hasWordTimings;
+  }, [streamingMessage, isAudioPlaying, hasWordTimings]);
+
   const starterPrompts = useMemo(() => {
     const basePrompts = [
       "Hi, how are you?",
@@ -697,10 +748,10 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
             <div className="relative mb-8">
               <div
                 className={`w-[300px] h-[300px] rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 ${
-                  streamingMessage ? "animate-pulse" : ""
+                  isAssistantActive ? "animate-pulse" : ""
                 }`}
                 style={{
-                  background: streamingMessage
+                  background: isAssistantActive
                     ? "linear-gradient(135deg, #60a5fa, #a855f7, #ec4899)"
                     : "linear-gradient(135deg, #94a3b8, #64748b, #475569)",
                 }}
