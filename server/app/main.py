@@ -1,5 +1,6 @@
 # server/app/main.py
 import asyncio
+import base64
 import contextlib
 import fractions
 import json
@@ -499,10 +500,24 @@ async def handle_text_dc_message(profile_id: str, message: Any) -> None:
         chat_id = data.get('chat_id')
         content = data.get('content', '')
         assistant_audio_enabled = data.get('assistant_audio_enabled', False)
+        sketch_data = data.get('sketch_data')
         
         if not chat_id:
             logger.error(f"No chat_id in text data-channel message: {data}")
             return
+        
+        # Convert base64 sketch data to bytes if present
+        sketch_bytes = None
+        if sketch_data:
+            try:
+                # Remove data URL prefix if present (data:image/png;base64,)
+                if sketch_data.startswith('data:'):
+                    sketch_data = sketch_data.split(',', 1)[1]
+                sketch_bytes = base64.b64decode(sketch_data)
+                logger.info(f"Decoded sketch data from WebRTC: {len(sketch_bytes)} bytes")
+            except Exception as e:
+                logger.error(f"Error decoding sketch data from WebRTC: {e}")
+                sketch_bytes = None
         
         # Determine chat type and route appropriately
         if 'assistant' in chat_id or 'asst' in chat_id:
@@ -519,6 +534,7 @@ async def handle_text_dc_message(profile_id: str, message: Any) -> None:
             await process_simulation_message_websocket(
                 chat_id=chat_id,
                 message=content,
+                sketch_data=sketch_bytes,
                 profile_id=profile_id,
                 assistant_audio_enabled=assistant_audio_enabled,
                 session=None
@@ -564,19 +580,34 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         chat_id = data.get("chat_id")
         message = data.get("message")
         assistant_audio_enabled = data.get("assistant_audio_enabled", False)
+        sketch_data = data.get("sketch_data")
 
-        if not chat_id or not message:
-            logger.error(f"Missing chat_id or message in request from {sid}")
+        if not chat_id or (not message and not sketch_data):
+            logger.error(f"Missing chat_id or both message and sketch_data in request from {sid}")
             return
 
-        logger.info(f"Processing send_simulation_message from {sid}: {chat_id} (audio: {assistant_audio_enabled})")
+        # Convert base64 sketch data to bytes if present
+        sketch_bytes = None
+        if sketch_data:
+            try:
+                # Remove data URL prefix if present (data:image/png;base64,)
+                if sketch_data.startswith('data:'):
+                    sketch_data = sketch_data.split(',', 1)[1]
+                sketch_bytes = base64.b64decode(sketch_data)
+                logger.info(f"Decoded sketch data: {len(sketch_bytes)} bytes")
+            except Exception as e:
+                logger.error(f"Error decoding sketch data: {e}")
+                sketch_bytes = None
+
+        logger.info(f"Processing send_simulation_message from {sid}: {chat_id} (audio: {assistant_audio_enabled}, sketch: {sketch_bytes is not None})")
 
         # Process the message via WebSocket
         from app.web.simulations import process_simulation_message_websocket
 
         await process_simulation_message_websocket(
             chat_id=chat_id, 
-            message=message, 
+            message=message or "", 
+            sketch_data=sketch_bytes,
             assistant_audio_enabled=assistant_audio_enabled,
             session=None
         )

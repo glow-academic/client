@@ -108,7 +108,7 @@ interface SimulationContextType {
   isConnected: boolean;
 
   // WebSocket operations
-  sendMessage: (message: string) => void;
+  sendMessage: (message: string, sketchData?: string | null) => void;
   stopMessage: () => void;
   endChat: () => void;
 
@@ -708,19 +708,26 @@ export function SimulationProvider({
 
   // WebSocket-based message handler
   const sendMessage = useCallback(
-    async (message: string) => {
-      if (!message.trim() || !currentChat || isSendingMessage) return;
+    async (message: string, sketchData?: string | null) => {
+      if ((!message.trim() && !sketchData) || !currentChat || isSendingMessage)
+        return;
 
       setIsSendingMessage(true);
 
       try {
         if (isWebRTCConnected) {
-          sendWebRTCMessage(currentChat.id, message, assistantAudioEnabled);
+          sendWebRTCMessage(
+            currentChat.id,
+            message,
+            assistantAudioEnabled,
+            sketchData
+          );
         } else {
           emitSendSimulationMessage({
             chat_id: currentChat.id,
             message: message,
             assistant_audio_enabled: assistantAudioEnabled,
+            sketch_data: sketchData || null,
           });
         }
       } catch (err) {

@@ -53,6 +53,8 @@ import { deleteAudio } from "@/utils/api/audio/delete-audio";
 import { logError, logInfo } from "@/utils/logger";
 import { deleteSimulationMessage } from "@/utils/mutations/simulation_messages/delete-simulation-message";
 import { getSimulationMessagesByChat } from "@/utils/queries/simulation_messages/get-simulation-messages-by-chat";
+import { getSimulationSketchesByChat } from "@/utils/queries/simulation_sketches/get-simulation-sketches-by-chat";
+import Image from "next/image";
 
 // Word timing interface
 interface WordTiming {
@@ -365,6 +367,48 @@ function StreamingCaptions({
   );
 }
 
+// Component for displaying sketches
+function SketchDisplay({ sketchId }: { sketchId: string }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const handleImageLoad = () => {
+    setIsLoading(false);
+  };
+
+  const handleImageError = () => {
+    setIsLoading(false);
+    setHasError(true);
+  };
+
+  return (
+    <div className="bg-muted rounded-lg p-3 max-w-[400px]">
+      <div className="relative">
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted rounded">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
+        {hasError ? (
+          <div className="flex items-center justify-center p-8 text-muted-foreground">
+            <span className="text-sm">Failed to load sketch</span>
+          </div>
+        ) : (
+          <Image
+            src={`/api/download/sketch/${sketchId}`}
+            alt="User sketch"
+            width={400}
+            height={300}
+            className="rounded max-w-full h-auto"
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
 
@@ -396,6 +440,13 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const { data: messages = [], isLoading: messagesLoading } = useQuery({
     queryKey: ["simulationMessages", targetChatId],
     queryFn: () => getSimulationMessagesByChat(targetChatId!),
+    enabled: !!targetChatId,
+  });
+
+  // Get sketches for the current chat
+  const { data: sketches = [] } = useQuery({
+    queryKey: ["simulationSketches", targetChatId],
+    queryFn: () => getSimulationSketchesByChat(targetChatId!),
     enabled: !!targetChatId,
   });
 
@@ -802,19 +853,27 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                     </div>
                   </div>
                 ) : (
-                  messages
+                  // Create a combined timeline of messages and sketches
+                  [
+                    ...messages,
+                    ...sketches.map((sketch) => ({
+                      ...sketch,
+                      type: "sketch" as const,
+                      createdAt: sketch.createdAt,
+                    })),
+                  ]
                     .sort(
                       (a, b) =>
                         new Date(a.createdAt).getTime() -
                         new Date(b.createdAt).getTime()
                     )
-                    .map((message: SimulationMessage) => (
-                      <div key={message.id} className="space-y-3">
-                        {message.type === "query" && (
+                    .map((item) => (
+                      <div key={item.id} className="space-y-3">
+                        {item.type === "query" && (
                           <div className="flex justify-end mb-3">
                             <div className="max-w-[80%]">
                               {/* --- MODIFICATION START: Conditional rendering for edit mode --- */}
-                              {editingMessage?.id === message.id ? (
+                              {editingMessage?.id === item.id ? (
                                 <div className="bg-primary/90 text-primary-foreground rounded-lg p-3 w-full">
                                   <Textarea
                                     value={editText}
@@ -841,7 +900,7 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                               ) : (
                                 <div className="bg-primary text-primary-foreground rounded-lg p-3">
                                   {/* Edit button floated right, visible only on the LAST message */}
-                                  {message.audio &&
+                                  {(item as SimulationMessage).audio &&
                                     !simulationContext?.isSendingMessage && (
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -850,7 +909,9 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                             variant="ghost"
                                             className="float-right ml-2 mb-1 h-7 w-7 hover:bg-primary-foreground/20"
                                             onClick={() =>
-                                              handleEditClick(message)
+                                              handleEditClick(
+                                                item as SimulationMessage
+                                              )
                                             }
                                           >
                                             <Pencil className="h-4 w-4" />
@@ -861,7 +922,9 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                         </TooltipContent>
                                       </Tooltip>
                                     )}
-                                  <Markdown>{message.content}</Markdown>
+                                  <Markdown>
+                                    {(item as SimulationMessage).content}
+                                  </Markdown>
                                 </div>
                               )}
                               {/* --- MODIFICATION END --- */}
@@ -869,11 +932,20 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                           </div>
                         )}
 
-                        {message.type === "response" && (
+                        {item.type === "sketch" && (
+                          <div className="flex justify-end mb-3">
+                            <div className="max-w-[80%]">
+                              <SketchDisplay sketchId={item.id} />
+                            </div>
+                          </div>
+                        )}
+
+                        {item.type === "response" && (
                           <div className="flex justify-start mb-3">
                             <div className="max-w-[80%]">
                               {/* Show loading state for empty/incomplete messages, otherwise show content */}
-                              {!message.completed && message.content === "" ? (
+                              {!(item as SimulationMessage).completed &&
+                              (item as SimulationMessage).content === "" ? (
                                 <div className="bg-muted rounded-lg p-3">
                                   <div className="flex items-center">
                                     <span className="text-gray-500 mr-2">
@@ -882,27 +954,29 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                     <LoadingDots />
                                   </div>
                                 </div>
-                              ) : message.audio &&
+                              ) : (item as SimulationMessage).audio &&
                                 !simulationContext?.assistantAudioEnabled ? (
                                 // Show individual message audio controls only when audio mode is OFF
                                 // to prevent duplicate audio with WebRTC persistent stream
                                 <CaptionedAudio
-                                  message={message}
-                                  timings={timingsByMsg[message.id] || []}
+                                  message={item as SimulationMessage}
+                                  timings={timingsByMsg[item.id] || []}
                                   onPlayPause={() =>
-                                    handlePlayPauseAudio(message)
+                                    handlePlayPauseAudio(
+                                      item as SimulationMessage
+                                    )
                                   }
-                                  isPlaying={
-                                    audioState.playingId === message.id
-                                  }
+                                  isPlaying={audioState.playingId === item.id}
                                   isLoading={
                                     audioState.isLoading &&
-                                    audioState.playingId === message.id
+                                    audioState.playingId === item.id
                                   }
                                 />
                               ) : (
                                 <div className="bg-muted rounded-lg p-3 relative">
-                                  <Markdown>{message.content}</Markdown>
+                                  <Markdown>
+                                    {(item as SimulationMessage).content}
+                                  </Markdown>
                                 </div>
                               )}
                             </div>

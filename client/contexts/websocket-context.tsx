@@ -47,7 +47,8 @@ interface WebSocketContextType {
   sendWebRTCMessage: (
     chatId: string,
     message: string,
-    assistantAudioEnabled?: boolean
+    assistantAudioEnabled?: boolean,
+    sketchData?: string | null
   ) => void;
   startAudioStream: (
     chatId: string,
@@ -72,6 +73,7 @@ interface WebSocketContextType {
     chat_id: string;
     message: string; // sending a message here would be fallback if webRTC is not supported.
     assistant_audio_enabled?: boolean;
+    sketch_data?: string | null;
   }) => void; // this should be modified to send over webRTC data channel (for text)
   emitStopSimulation: (data: { chat_id: string }) => void;
   emitContinueSimulation: (data: {
@@ -1573,6 +1575,7 @@ export function WebSocketProvider({
       chat_id: string;
       message: string;
       assistant_audio_enabled?: boolean;
+      sketch_data?: string | null;
     }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot send simulation message - WebSocket not connected");
@@ -1584,6 +1587,7 @@ export function WebSocketProvider({
       logInfo("Emitting send_simulation_message", {
         chatId: data.chat_id,
         assistantAudioEnabled: data.assistant_audio_enabled,
+        sketchData: data.sketch_data,
       });
       socketRef.current.emit("send_simulation_message", data);
     },
@@ -1755,7 +1759,8 @@ export function WebSocketProvider({
     (
       chatId: string,
       message: string,
-      assistantAudioEnabled: boolean = false
+      assistantAudioEnabled: boolean = false,
+      sketchData?: string | null
     ) => {
       try {
         // Try to use the persistent text data channel first
@@ -1766,6 +1771,7 @@ export function WebSocketProvider({
             chat_id: chatId,
             content: message,
             assistant_audio_enabled: assistantAudioEnabled,
+            ...(sketchData !== undefined && { sketch_data: sketchData }),
           });
 
           logInfo(`Sending message via persistent text data channel`);
@@ -1792,6 +1798,7 @@ export function WebSocketProvider({
               chat_id: chatId,
               message,
               assistant_audio_enabled: assistantAudioEnabled,
+              ...(sketchData !== undefined && { sketch_data: sketchData }),
             });
           } else if (chatId.includes("assistant")) {
             emitSendAssistantMessage({ chat_id: chatId, message });
@@ -1803,6 +1810,7 @@ export function WebSocketProvider({
           chat_id: chatId,
           content: message,
           assistant_audio_enabled: assistantAudioEnabled,
+          ...(sketchData !== undefined && { sketch_data: sketchData }),
         });
 
         // If the channel is open, send immediately.
@@ -1832,6 +1840,7 @@ export function WebSocketProvider({
               chat_id: chatId,
               message,
               assistant_audio_enabled: assistantAudioEnabled,
+              ...(sketchData !== undefined && { sketch_data: sketchData }),
             });
           } else if (chatId.includes("assistant")) {
             emitSendAssistantMessage({ chat_id: chatId, message });

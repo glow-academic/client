@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useSimulation } from "@/contexts/simulation-context";
+import { logError } from "@/utils/logger";
 import AudioWaveform from "./AudioWaveform";
 
 export default function AttemptInput({
@@ -43,22 +44,42 @@ export default function AttemptInput({
   const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
 
   // --- Handlers ---
-  const handleSendMessage = (
+  const handleSendMessage = async (
     e:
       | React.FormEvent<HTMLFormElement>
       | React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
     e.preventDefault();
     const messageToSend = newMessage.trim();
-    const image = sketchCanvasRef.current?.exportImage("png"); // Export the sketch canvas as an image
+
+    // Export sketch if canvas is available and has content
+    let sketchData: string | null = null;
+    if (isTall && sketchCanvasRef.current) {
+      try {
+        // Export canvas as base64 PNG with cropping
+        sketchData = await sketchCanvasRef.current.exportImage("png");
+      } catch (error) {
+        logError("Failed to export sketch:", error);
+        // Continue without sketch if export fails
+      }
+    }
+
+    // Require either text message or sketch to send
     if (
-      !messageToSend ||
+      (!messageToSend && !sketchData) ||
       !simulationContext?.currentChat ||
       simulationContext?.isSendingMessage
     )
       return;
+
     setNewMessage("");
-    simulationContext?.sendMessage(messageToSend);
+
+    // Clear the canvas after sending
+    if (sketchData && sketchCanvasRef.current) {
+      sketchCanvasRef.current.clearCanvas();
+    }
+
+    simulationContext?.sendMessage(messageToSend, sketchData);
   };
   const handleStopMessage = () => simulationContext?.stopMessage();
   const handleStartRecording = () => simulationContext?.startRecording();
@@ -115,6 +136,7 @@ export default function AttemptInput({
   if (simulationContext?.currentChat?.completed) return null;
 
   const hasTextMessage = newMessage.trim().length > 0;
+  const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
 
   return (
     <TooltipProvider>
@@ -240,36 +262,37 @@ export default function AttemptInput({
                   </Tooltip>
                 </motion.div>
               )}
-              {hasTextMessage && !simulationContext?.isRecording && (
-                <motion.div
-                  layout
-                  key="send-btn-short"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                >
-                  <Button
-                    type="submit"
-                    className="min-h-[40px] h-[40px] px-3"
-                    variant={
-                      simulationContext?.isSendingMessage
-                        ? "destructive"
-                        : "default"
-                    }
-                    onClick={
-                      simulationContext?.isSendingMessage
-                        ? handleStopMessage
-                        : undefined
-                    }
+              {(hasTextMessage || hasSketchContent) &&
+                !simulationContext?.isRecording && (
+                  <motion.div
+                    layout
+                    key="send-btn-short"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
                   >
-                    {simulationContext?.isSendingMessage ? (
-                      <Square className="h-4 w-4" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </motion.div>
-              )}
+                    <Button
+                      type="submit"
+                      className="min-h-[40px] h-[40px] px-3"
+                      variant={
+                        simulationContext?.isSendingMessage
+                          ? "destructive"
+                          : "default"
+                      }
+                      onClick={
+                        simulationContext?.isSendingMessage
+                          ? handleStopMessage
+                          : undefined
+                      }
+                    >
+                      {simulationContext?.isSendingMessage ? (
+                        <Square className="h-4 w-4" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </motion.div>
+                )}
               {simulationContext?.isRecording && (
                 <motion.div
                   layout
