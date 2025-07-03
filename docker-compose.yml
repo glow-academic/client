@@ -54,6 +54,8 @@ services:
       - DOCKER_ENV=1
     volumes:
       - uploads-data:/app/uploads   # makes /app/uploads writable
+      - audio-data:/app/audio
+      - sketch-data:/app/sketch
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -172,5 +174,7 @@ services:
 volumes:
   pgdata:
   uploads-data:
+  audio-data:
+  sketch-data:
   history-data:
 
