@@ -489,6 +489,17 @@ export function WebSocketProvider({
           // Reset loading states
           setIsSendingAssistantMessage(false);
 
+          // Dispatch custom event for assistant context
+          window.dispatchEvent(
+            new CustomEvent("assistant_message_complete", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                finalContent: data.final_content,
+              },
+            })
+          );
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["assistantMessages", data.chat_id],
@@ -524,6 +535,17 @@ export function WebSocketProvider({
           // Reset loading states
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
+
+          // Dispatch custom event for assistant context
+          window.dispatchEvent(
+            new CustomEvent("assistant_message_cancelled", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                finalContent: data.final_content,
+              },
+            })
+          );
 
           setTimeout(() => {
             queryClient.invalidateQueries({
@@ -914,6 +936,15 @@ export function WebSocketProvider({
           setIsSendingAssistantMessage(false);
           setIsStoppingAssistant(false);
           toast.error(data.message);
+
+          // Dispatch custom event for assistant context
+          window.dispatchEvent(
+            new CustomEvent("assistant_error", {
+              detail: {
+                message: data.message,
+              },
+            })
+          );
         }
       );
 

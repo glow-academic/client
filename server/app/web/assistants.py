@@ -95,6 +95,15 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
 
             logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")
 
+            # Process the initial message
+            logger.info(f"Processing initial message for chat {chat_id}: {initial_message[:50]}...")
+            await process_assistant_message_websocket(
+                chat_id=uuid.UUID(chat_id),
+                message=initial_message,
+                session=db_session
+            )
+            logger.info(f"Completed processing initial message for chat {chat_id}")
+
         finally:
             db_session.close()
 
@@ -187,7 +196,7 @@ async def process_assistant_message_websocket(
         
         # 2. Emit user message to connected clients
         sio_instance = get_sio_instance()
-        await sio_instance.emit('new_message', {
+        await sio_instance.emit('assistant_new_message', {
             'message_id': str(user_message.id),
             'chat_id': str(chat_id),
             'role': 'user',

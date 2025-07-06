@@ -632,7 +632,7 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
             logger.error(f"Missing chat_id or message in request from {sid}")
             return
 
-        logger.info(f"Processing send_assistant_message from {sid}: {chat_id}")
+        logger.info(f"Processing send_assistant_message from {sid}: {chat_id}, message: {message[:50]}...")
 
         # Process the message via WebSocket
         from app.web.assistants import process_assistant_message_websocket
@@ -644,6 +644,8 @@ async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
             audio_data=None,
             session=None
         )
+        
+        logger.info(f"Completed processing send_assistant_message for {chat_id}")
 
     except Exception as e:
         logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")

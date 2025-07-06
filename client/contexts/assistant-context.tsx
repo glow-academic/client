@@ -133,12 +133,44 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
   useEffect(() => {
     if (!isConnected) return;
 
-    // The WebSocket context already handles the core events, we just need to handle UI state
-    // These events are already being listened to in the WebSocket context
-    // UI state updates happen via the emitter callbacks and WebSocket context events
+    // Listen for assistant message completion to reset loading state
+    const handleAssistantMessageComplete = () => {
+      logInfo("Assistant message completed, resetting sending state");
+      setIsSendingMessage(false);
+    };
+
+    const handleAssistantMessageCancelled = () => {
+      logInfo("Assistant message cancelled, resetting sending state");
+      setIsSendingMessage(false);
+    };
+
+    const handleAssistantError = () => {
+      logInfo("Assistant error occurred, resetting sending state");
+      setIsSendingMessage(false);
+    };
+
+    // Add event listeners
+    window.addEventListener(
+      "assistant_message_complete",
+      handleAssistantMessageComplete
+    );
+    window.addEventListener(
+      "assistant_message_cancelled",
+      handleAssistantMessageCancelled
+    );
+    window.addEventListener("assistant_error", handleAssistantError);
 
     return () => {
-      // Cleanup is handled by the WebSocket context
+      // Remove event listeners
+      window.removeEventListener(
+        "assistant_message_complete",
+        handleAssistantMessageComplete
+      );
+      window.removeEventListener(
+        "assistant_message_cancelled",
+        handleAssistantMessageCancelled
+      );
+      window.removeEventListener("assistant_error", handleAssistantError);
     };
   }, [isConnected, currentChatId, queryClient]);
 
@@ -264,15 +296,27 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
           isNewlyCreatedChat || existingChat?.title === "New Chat";
 
         if (isFirstMessage) {
-          // 1️⃣ Tell the server to create/initialise this assistant chat
+          // 1️⃣ Tell the server to create/initialise this assistant chat and process the initial message
+          logInfo("Sending first message via emitStartAssistant", {
+            chatId,
+            messageLength: message.length,
+          });
           emitStartAssistant({ chat_id: chatId, initial_message: message });
-        }
-
-        // 2️⃣ Deliver the *actual* text via the best transport:
-        if (isWebRTCConnected) {
-          sendWebRTCMessage(chatId, message); // tokenised path
         } else {
-          emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
+          // 2️⃣ For subsequent messages, deliver the text via the best transport:
+          if (isWebRTCConnected) {
+            logInfo("Sending subsequent message via WebRTC", {
+              chatId,
+              messageLength: message.length,
+            });
+            sendWebRTCMessage(chatId, message); // tokenised path
+          } else {
+            logInfo("Sending subsequent message via WebSocket", {
+              chatId,
+              messageLength: message.length,
+            });
+            emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
+          }
         }
 
         logInfo("Message sent via WebSocket", {
@@ -285,6 +329,9 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
         toast.error("Failed to send message");
         setIsSendingMessage(false);
       }
+
+      // Note: setIsSendingMessage(false) is called in the WebSocket event handlers
+      // when the message is complete or cancelled
     },
     [
       currentChatId,
