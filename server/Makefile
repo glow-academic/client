@@ -57,20 +57,25 @@ test-file: sync
 	@uv run pytest $(FILE) -v
 
 # 9. Start FastAPI via Uvicorn
-# ---------- local run helpers ----------
 run-model: sync
 	@echo "⇢ starting model service on :8080"
-	@uv run uvicorn model.app.main:app --reload --host 0.0.0.0 --port 8080
+	@nohup uv run uvicorn model.app.main:app --reload \
+	         --host 0.0.0.0 --port 8080 \
+	         > .model.log 2>&1 &
+	@echo "Model service started. PID: $$!"
 
 run-server: sync generate-models generate-tests
 	@echo "⇢ starting API  server on :8000"
 	@uv run uvicorn app.main:app   --reload --host 0.0.0.0 --port 8000
 
-# one-shot: start both and keep the foreground alive
-run:                                        \
-	(run-model &) &&                         \
-	(run-server &) &&                       \
-	wait
+# one-shot: start both, keep the foreground alive, tear down cleanly
+run:
+	@echo "⇢ launching model + server in parallel"
+	@$(MAKE) -j2 run-model run-server
+
+# convenience
+stop:
+	@if [ -f .model.pid ]; then kill `cat .model.pid` || true; rm .model.pid; fi
 
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
 prod: sync

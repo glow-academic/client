@@ -8,6 +8,8 @@ load_dotenv()
 
 _MODEL_URL = os.getenv("INTERNAL_MODELS_BASE")
 
+print("Model URL: ", _MODEL_URL)
+
 async def _post(path: str, **kw: Any) -> httpx.Response:
     async with httpx.AsyncClient(timeout=60.0) as client:
         resp = await client.post(f"{_MODEL_URL}{path}", **kw)

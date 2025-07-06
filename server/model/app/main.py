@@ -1,9 +1,16 @@
 # app/main.py
+import contextlib
+import logging
 import os
+import platform
+import sys
 from pathlib import Path
 
 import numpy as np
+# only for IO
 import soundfile as sf  # type: ignore
+# actual resampling
+import librosa          # ← NEW
 import torch
 import whisper  # type: ignore
 from fastapi import FastAPI, HTTPException, UploadFile
@@ -16,20 +23,40 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 BASE_FOLDER = Path("/app") if IN_DOCKER else PROJECT_ROOT
 
 MODEL_CACHE_DIR = BASE_FOLDER / "cache"
-MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True) # for whisper model
+MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
-app = FastAPI()
-whisper_model: whisper.Whisper | None = None
-kokoro_pipeline: KPipeline | None = None
+logger = logging.getLogger(__name__)
 
-@app.on_event("startup")
-def _warm_models():
+# --------------------------------------------------------------------- lifespan
+
+whisper_model: whisper.Whisper | None = None  # populated in lifespan
+kokoro_pipeline: KPipeline | None = None      # populated in lifespan
+
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Load heavy models once, reuse for the whole process."""
     global whisper_model, kokoro_pipeline
+
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    whisper_model  = whisper.load_model(
+    logger.info(f"Loading Whisper tiny on {device} …")
+    whisper_model = whisper.load_model(
         "tiny", download_root=str(MODEL_CACHE_DIR)
     ).to(device).eval()
-    kokoro_pipeline = KPipeline(lang_code="a")        # downloads TTS weights once
+
+    logger.info("Loading Kokoro pipeline …")
+    kokoro_pipeline = KPipeline(lang_code="a")  # downloads weights once
+
+    yield                           # ---- application runs here ----
+
+    # Optional clean-up (helps when running with --reload)
+    whisper_model = None
+    kokoro_pipeline = None
+    try:
+        torch.cuda.empty_cache()
+    except Exception:
+        pass
+
+app = FastAPI(title="GLOW-Model API", lifespan=lifespan)
 
 
 @app.post("/stt")
@@ -49,7 +76,27 @@ async def tts(payload: dict):
             raise HTTPException(status_code=500, detail="Kokoro pipeline not initialized")
         for _, _, chunk in kokoro_pipeline(text, voice=voice):
             pcm24 = chunk.cpu().numpy().astype(np.float32)
-            pcm48 = sf.resample(pcm24, 24000, 48000, 'sinc_best')
+            # high-quality sinc resample 24 k → 48 k
+            pcm48 = librosa.resample(pcm24, orig_sr=24_000, target_sr=48_000)
             yield (np.clip(pcm48, -1, 1) * 32767).astype(np.int16).tobytes()
     headers = {"Content-Type": "audio/L16; rate=48000; channels=1"}
     return StreamingResponse(_stream(), headers=headers)
+
+
+
+# --------------------------------------------------------------------- misc routes
+
+@app.get("/")
+async def root_info():
+    """Tiny landing page identical to the main server's `/`."""
+    info = {
+        "python_version": sys.version.split()[0],
+        "platform": platform.system(),
+        "platform_release": platform.release()
+    }
+    return JSONResponse({"server_info": info})
+
+
+@app.get("/health")
+async def health_check():
+    return JSONResponse({"status": "ok"})
