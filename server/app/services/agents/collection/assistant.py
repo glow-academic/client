@@ -50,7 +50,7 @@ async def run_assistant_agent(
         # Use internal server URL for MCP server connection
         # In Docker, the server is accessible at http://localhost:8000
         # This avoids Traefik routing issues and uses internal networking
-        mcp_server_url = "http://localhost:8000/domain/mcp"
+        mcp_server_url = "http://localhost:8000/domain/mcp/"
         
         async with (
             MCPServerStreamableHttp(
