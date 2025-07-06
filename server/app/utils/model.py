@@ -1,7 +1,10 @@
+import io
 import os
 from typing import Any
 
 import httpx
+import numpy as np
+import soundfile as sf  # type: ignore
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,9 +18,17 @@ async def _post(path: str, **kw: Any) -> httpx.Response:
         resp = await client.post(f"{_MODEL_URL}{path}", **kw)
         resp.raise_for_status()
         return resp
+    
+
+def pcm_to_wav_bytes(pcm: bytes, sr: int = 48_000) -> io.BytesIO:
+    buf = io.BytesIO()
+    sf.write(buf, np.frombuffer(pcm, np.int16), sr, format="WAV",
+             subtype="PCM_16")
+    buf.seek(0)
+    return buf
 
 async def remote_stt(buf: bytes) -> str:
-    resp = await _post("/stt", files={"file": ("audio.wav", buf, "audio/wav")})
+    resp = await _post("/stt", files={"file": ("audio.wav", pcm_to_wav_bytes(buf), "audio/wav")})
     return str(resp.json()["text"])
 
 async def remote_tts(text: str, voice: str = "af_bella") -> bytes:
