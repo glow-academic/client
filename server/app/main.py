@@ -621,6 +621,37 @@ async def send_simulation_message(sid: str, data: Dict[str, Any]) -> None:
         )
 
 register_assistant_events(sio)
+@sio.event  # type: ignore
+async def send_assistant_message(sid: str, data: Dict[str, Any]) -> None:
+    """Handle assistant message sending requests"""
+    try:
+        chat_id = data.get("chat_id")
+        message = data.get("message")
+
+        if not chat_id or not message:
+            logger.error(f"Missing chat_id or message in request from {sid}")
+            return
+
+        logger.info(f"Processing send_assistant_message from {sid}: {chat_id}")
+
+        # Process the message via WebSocket
+        from app.web.assistants import process_assistant_message_websocket
+
+        await process_assistant_message_websocket(
+            chat_id=uuid.UUID(chat_id), 
+            message=message, 
+            audio_mode=Modalities.TEXT_TEXT,
+            audio_data=None,
+            session=None
+        )
+
+    except Exception as e:
+        logger.error(f"Error in send_assistant_message for {sid}: {str(e)}")
+        await sio.emit(
+            "assistant_error",
+            {"success": False, "message": str(e)},
+            room=sid,
+        )
 
 @sio.event  # type: ignore
 async def connect(sid: str, environ: Any, auth: Any) -> bool:
