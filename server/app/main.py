@@ -454,34 +454,51 @@ async def handle_webrtc_data_message(profile_id: str, channel_label: str, messag
             logger.error(f"No chat_id in WebRTC message: {data}")
             return
         
-        # Determine chat type from channel label or chat_id prefix
+        # Determine chat type by checking database tables
         if channel_label.startswith('text-'):
-            if 'assistant' in chat_id or 'asst' in chat_id:
-                chat_type = 'assistant'
-            else:
-                chat_type = 'simulation'
+            from app.db import get_session
+            from app.models import AssistantChats, SimulationChats
             
-            if chat_type == 'assistant':
-                from app.web.assistants import \
-                    process_assistant_message_websocket
-                await process_assistant_message_websocket(
-                    chat_id=uuid.UUID(chat_id),
-                    message=content,
-                    session=None
-                )
-            elif chat_type == 'simulation':
-                from app.web.simulations import \
-                    process_simulation_message_websocket
-                await process_simulation_message_websocket(
-                    chat_id=chat_id,
-                    message=content,
-                    profile_id=profile_id,
-                    assistant_audio_enabled=assistant_audio_enabled,
-                    session=None
-                )
-            else:
-                logger.warning(f"Unknown chat type for WebRTC message: {chat_type}")
-                return
+            db_session = next(get_session())
+            try:
+                # Check if it's an assistant chat
+                assistant_chat = db_session.exec(
+                    select(AssistantChats).where(AssistantChats.id == uuid.UUID(chat_id))
+                ).one_or_none()
+                
+                if assistant_chat:
+                    # It's an assistant chat
+                    logger.info(f"Routing WebRTC message to assistant chat: {chat_id}")
+                    from app.web.assistants import \
+                        process_assistant_message_websocket
+                    await process_assistant_message_websocket(
+                        chat_id=uuid.UUID(chat_id),
+                        message=content,
+                        session=None
+                    )
+                else:
+                    # Check if it's a simulation chat
+                    simulation_chat = db_session.exec(
+                        select(SimulationChats).where(SimulationChats.id == uuid.UUID(chat_id))
+                    ).one_or_none()
+                    
+                    if simulation_chat:
+                        # It's a simulation chat
+                        logger.info(f"Routing WebRTC message to simulation chat: {chat_id}")
+                        from app.web.simulations import \
+                            process_simulation_message_websocket
+                        await process_simulation_message_websocket(
+                            chat_id=chat_id,
+                            message=content,
+                            profile_id=profile_id,
+                            assistant_audio_enabled=assistant_audio_enabled,
+                            session=None
+                        )
+                    else:
+                        logger.error(f"Chat {chat_id} not found in either assistant_chats or simulation_chats tables")
+                        return
+            finally:
+                db_session.close()
         
     except Exception as e:
         logger.error(f"Error handling WebRTC data message: {e}")
@@ -519,26 +536,51 @@ async def handle_text_dc_message(profile_id: str, message: Any) -> None:
                 logger.error(f"Error decoding sketch data from WebRTC: {e}")
                 sketch_bytes = None
         
-        # Determine chat type and route appropriately
-        if 'assistant' in chat_id or 'asst' in chat_id:
-            from app.web.assistants import process_assistant_message_websocket
-            await process_assistant_message_websocket(
-                chat_id=uuid.UUID(chat_id),
-                message=content,
-                session=None
-            )
-        else:
-            # Assume simulation chat
-            from app.web.simulations import \
-                process_simulation_message_websocket
-            await process_simulation_message_websocket(
-                chat_id=chat_id,
-                message=content,
-                sketch_data=sketch_bytes,
-                profile_id=profile_id,
-                assistant_audio_enabled=assistant_audio_enabled,
-                session=None
-            )
+        # Determine chat type by checking database tables
+        from app.db import get_session
+        from app.models import AssistantChats, SimulationChats
+        
+        db_session = next(get_session())
+        try:
+            # Check if it's an assistant chat
+            assistant_chat = db_session.exec(
+                select(AssistantChats).where(AssistantChats.id == uuid.UUID(chat_id))
+            ).one_or_none()
+            
+            if assistant_chat:
+                # It's an assistant chat
+                logger.info(f"Routing message to assistant chat: {chat_id}")
+                from app.web.assistants import \
+                    process_assistant_message_websocket
+                await process_assistant_message_websocket(
+                    chat_id=uuid.UUID(chat_id),
+                    message=content,
+                    session=None
+                )
+            else:
+                # Check if it's a simulation chat
+                simulation_chat = db_session.exec(
+                    select(SimulationChats).where(SimulationChats.id == uuid.UUID(chat_id))
+                ).one_or_none()
+                
+                if simulation_chat:
+                    # It's a simulation chat
+                    logger.info(f"Routing message to simulation chat: {chat_id}")
+                    from app.web.simulations import \
+                        process_simulation_message_websocket
+                    await process_simulation_message_websocket(
+                        chat_id=chat_id,
+                        message=content,
+                        sketch_data=sketch_bytes,
+                        profile_id=profile_id,
+                        assistant_audio_enabled=assistant_audio_enabled,
+                        session=None
+                    )
+                else:
+                    logger.error(f"Chat {chat_id} not found in either assistant_chats or simulation_chats tables")
+                    return
+        finally:
+            db_session.close()
         
     except Exception as e:
         logger.error(f"Error handling text data-channel message: {e}")
