@@ -6,11 +6,9 @@ import random
 import uuid
 import wave
 from typing import Any, AsyncGenerator, AsyncIterator, Callable, Dict
-
-import librosa
+import httpx
 import litellm
 import numpy as np
-import torch
 from agents import trace
 from agents.voice.input import AudioInput, StreamedAudioInput
 from agents.voice.model import (StreamedTranscriptionSession, STTModel,
@@ -19,13 +17,14 @@ from agents.voice.pipeline import VoicePipeline
 from agents.voice.pipeline_config import VoicePipelineConfig
 from agents.voice.utils import get_sentence_based_splitter
 from agents.voice.workflow import VoiceWorkflowBase
-from app.config import model_manager
 from app.db import get_session
 from app.extensions import AUDIO_FOLDER
 from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
+from app.utils.model import remote_stt  # <- same helpers used elsewhere
+from app.utils.model import remote_tts
 
 # Removed custom logger import - using standard logging
 
@@ -83,19 +82,8 @@ class SimulationSTTModel(STTModel):
                 
         try:
             if self.model_id is None:
-                # Convert AudioInput buffer to numpy array for Whisper
-                audio_np = input.buffer
-                if audio_np.dtype == np.float32:
-                    # Whisper expects float32 in range [-1, 1]
-                    audio_np = np.clip(audio_np, -1.0, 1.0)
-                elif audio_np.dtype == np.int16:
-                    # Convert int16 to float32
-                    audio_np = audio_np.astype(np.float32) / 32767.0
-                
-                # Use Whisper model for transcription
-                whisper_model = model_manager.get_whisper_model()
-                result = whisper_model.transcribe(audio_np, language="en")
-                transcribed_text = str(result["text"]).strip()
+                # Forward raw PCM-16 data to the model service
+                transcribed_text = (await remote_stt(input.buffer.tobytes())).strip()
                 
                 logger.info(f"STT transcribed: {transcribed_text}")
                 return transcribed_text
@@ -285,36 +273,18 @@ class SimulationTTSModel(TTSModel):
 
         try:
             if self.model_id is None:
-                # ---- Kokoro path ----
-                kokoro_pipeline = model_manager.get_kokoro_pipeline()
-                if kokoro_pipeline is None:
-                    logger.error("Kokoro TTS not available.")
-                    return
+                # --- call remote TTS once, receive full 48 kHz PCM stream ---
+                raw_pcm = await remote_tts(text, voice="af_bella")  # bytes
 
-                voice = random.choice(model_manager.kokoro_voices)
-                logger.info(f"Kokoro voice={voice}  text='{text[:40]}…'")
+                audio_np = np.frombuffer(raw_pcm, dtype=np.int16)
+                total_samples = len(audio_np)
+                total_audio_duration = total_samples / 48_000.0
 
-                # NEW: Collect all audio first to calculate proper timing distribution
-                all_audio_chunks = []
-                total_samples = 0
+                frame_size = 960  # 20 ms @48 kHz
+                all_audio_chunks = [
+                    audio_np[i : i + frame_size] for i in range(0, len(audio_np), frame_size)
+                ]
                 
-                # Generate all audio chunks first
-                for _, _, chunk24 in kokoro_pipeline(text, voice=voice):
-                    if chunk24.size == 0:
-                        continue
-                        
-                    # 1. tensor → float32 numpy in [-1,1]
-                    pcm24 = chunk24.cpu().numpy().astype(np.float32)
-                    # 2. resample 24 kHz → 48 kHz (high-quality sinc)
-                    pcm48 = librosa.resample(pcm24, orig_sr=24_000, target_sr=48_000)
-                    # 3. clip & int16
-                    int16 = np.rint(np.clip(pcm48, -1, 1) * 32767).astype(np.int16)
-                    
-                    all_audio_chunks.append(int16)
-                    total_samples += len(int16)
-                
-                # Calculate total audio duration
-                total_audio_duration = total_samples / 48000.0
                 logger.info(f"Total audio duration: {total_audio_duration:.2f} seconds")
                 
                 # NEW: Detect silence at the beginning

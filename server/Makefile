@@ -14,7 +14,7 @@ dev-tools: venv
 
 # 3. Sync runtime dependencies
 sync: dev-tools
-	@uv pip install -r requirements.txt
+	@uv pip install -r requirements.txt -r model/requirements.txt
 
 # 4. Format code with Ruff and auto-fix issues
 format: venv
@@ -57,9 +57,20 @@ test-file: sync
 	@uv run pytest $(FILE) -v
 
 # 9. Start FastAPI via Uvicorn
-run: sync generate-models generate-tests
-	@echo "Starting FastAPI server..."
-	@uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# ---------- local run helpers ----------
+run-model: sync
+	@echo "⇢ starting model service on :8080"
+	@uv run uvicorn model.app.main:app --reload --host 0.0.0.0 --port 8080
+
+run-server: sync generate-models generate-tests
+	@echo "⇢ starting API  server on :8000"
+	@uv run uvicorn app.main:app   --reload --host 0.0.0.0 --port 8000
+
+# one-shot: start both and keep the foreground alive
+run:                                        \
+	(run-model &) &&                         \
+	(run-server &) &&                       \
+	wait
 
 # 10. Start FastAPI via Gunicorn+Uvicorn for production
 prod: sync

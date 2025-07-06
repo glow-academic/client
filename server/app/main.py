@@ -292,10 +292,7 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         else:
             ice_servers_list.append(RTCIceServer(urls=server_config["urls"]))
     
-    config = RTCConfiguration(
-        iceServers=ice_servers_list,
-        iceTransportPolicy="relay"   # skip unroutable 172.* candidates
-    )
+    config = RTCConfiguration(iceServers=ice_servers_list)
     pc = RTCPeerConnection(configuration=config)
     
     # SPEC CHANGE: Create and store a persistent audio track upfront
@@ -692,7 +689,7 @@ async def disconnect(sid: str) -> None:
 # Heartbeat mechanism
 # reserved event names – rename to avoid disconnect storms
 @sio.event  # type: ignore
-async def app_ping(sid, data=None):
+async def app_ping(sid: str, data: Any = None) -> None:
     await sio.emit("app_pong", {"timestamp": time.time()}, room=sid)
 
 # WebRTC-specific Socket.IO events with connection ID tracking
@@ -1058,25 +1055,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[Any]:
         logger.info(f"  TURN_PASSWORD: {'***' if os.getenv('TURN_PASSWORD') else 'not set'}")
         logger.info(f"  TURN_URI: {os.getenv('TURN_URI', 'not set')}")
         logger.info(f"  STUN_URI: {os.getenv('STUN_URI', 'not set')}")
-        
-        # Initialize Whisper model during startup
-        try:
-            from app.config import model_manager
-            logger.info("Initializing Whisper model...")
-            model_manager.initialize_whisper_model()
-            logger.info("Whisper model initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Whisper model: {e}")
-            # Continue without Whisper - audio features will be disabled
-        
-        # Initialize Kokoro TTS model during startup
-        try:
-            logger.info("Initializing Kokoro TTS model...")
-            model_manager.initialize_kokoro_pipeline()
-            logger.info("Kokoro TTS model initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize Kokoro TTS model: {e}")
-            # Continue without Kokoro - TTS features will use fallback
         
         yield
 

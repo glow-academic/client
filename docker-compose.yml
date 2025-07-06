@@ -41,6 +41,24 @@ services:
       - internal
 
   # --------------------
+  # Model Service (for Whisper + Kokoro)
+  # --------------------
+  model:
+    build: ./server/model
+    container_name: glow-model
+    restart: unless-stopped
+    env_file: .env
+    command: gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
+             -w 1 --threads 8 -b 0.0.0.0:8080 --log-level info
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # --------------------
   # API Server
   # --------------------
   server:
@@ -159,7 +177,7 @@ services:
     image: nginx:1.25
     container_name: glow-nginx
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       client:
         condition: service_started

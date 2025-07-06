@@ -12,20 +12,14 @@ import base64
 import json
 import logging
 import os
-import tempfile
 import uuid
 from collections import deque
 from datetime import datetime, timezone
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, Dict, Optional
 
-import av
-import numpy as np
 import socketio  # type: ignore
-import torch
-import webrtcvad  # type: ignore
 from agents import gen_trace_id, trace
 from aiortc import MediaStreamTrack, RTCPeerConnection
-from app.config import model_manager
 from app.db import get_session
 from app.extensions import SKETCH_FOLDER
 from app.main import ServerAudioStreamTrack
