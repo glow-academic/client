@@ -302,22 +302,23 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
             messageLength: message.length,
           });
           emitStartAssistant({ chat_id: chatId, initial_message: message });
+        } 
+        
+        // 2️⃣ For subsequent messages, deliver the text via the best transport:
+        if (isWebRTCConnected) {
+          logInfo("Sending subsequent message via WebRTC", {
+            chatId,
+            messageLength: message.length,
+          });
+          sendWebRTCMessage(chatId, message); // tokenised path
         } else {
-          // 2️⃣ For subsequent messages, deliver the text via the best transport:
-          if (isWebRTCConnected) {
-            logInfo("Sending subsequent message via WebRTC", {
-              chatId,
-              messageLength: message.length,
-            });
-            sendWebRTCMessage(chatId, message); // tokenised path
-          } else {
-            logInfo("Sending subsequent message via WebSocket", {
-              chatId,
-              messageLength: message.length,
-            });
-            emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
-          }
+          logInfo("Sending subsequent message via WebSocket", {
+            chatId,
+            messageLength: message.length,
+          });
+          emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
         }
+        
 
         logInfo("Message sent via WebSocket", {
           chatId,
