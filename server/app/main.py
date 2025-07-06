@@ -292,7 +292,10 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         else:
             ice_servers_list.append(RTCIceServer(urls=server_config["urls"]))
     
-    config = RTCConfiguration(iceServers=ice_servers_list)
+    config = RTCConfiguration(
+        iceServers=ice_servers_list,
+        iceTransportPolicy="relay"   # skip unroutable 172.* candidates
+    )
     pc = RTCPeerConnection(configuration=config)
     
     # SPEC CHANGE: Create and store a persistent audio track upfront
@@ -687,10 +690,10 @@ async def disconnect(sid: str) -> None:
             break
 
 # Heartbeat mechanism
+# reserved event names – rename to avoid disconnect storms
 @sio.event  # type: ignore
-async def ping(sid: str, data: Any = None) -> None:
-    """Handle heartbeat ping from client"""
-    await sio.emit('pong', {'timestamp': time.time()}, room=sid)
+async def app_ping(sid, data=None):
+    await sio.emit("app_pong", {"timestamp": time.time()}, room=sid)
 
 # WebRTC-specific Socket.IO events with connection ID tracking
 @sio.event  # type: ignore
