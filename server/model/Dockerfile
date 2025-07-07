@@ -1,4 +1,5 @@
 FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+ENV DEBIAN_FRONTEND=noninteractive
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf8 \
@@ -7,7 +8,9 @@ ENV PYTHONUNBUFFERED=1 \
 
 # 1. Add compiler only long enough to build wheels
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential git libsndfile1 ca-certificates && \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-venv \
+        build-essential git libsndfile1 ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -15,9 +18,10 @@ COPY requirements.txt .
 
 # 2. Install directly, delete wheel cache and build tools in the same layer
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip && \
-    pip install --no-cache-dir torch==2.3.0+cu121 -f https://download.pytorch.org/whl/cu121 && \
-    pip install --no-cache-dir -r requirements.txt && \
+    python3 -m pip install --upgrade pip && \
+    python3 -m pip install --no-cache-dir \
+        torch==2.3.0+cu121 -f https://download.pytorch.org/whl/cu121 && \
+    python3 -m pip install --no-cache-dir -r requirements.txt && \
     apt-get purge -y build-essential git && \
     apt-get autoremove -y && \
     rm -rf /root/.cache/pip
