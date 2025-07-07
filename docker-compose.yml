@@ -66,6 +66,7 @@ services:
       retries: 5
     networks:
       - internal
+      - public_net
 
   # --------------------
   # API Server

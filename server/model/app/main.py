@@ -52,11 +52,12 @@ async def lifespan(app: FastAPI):
     """Load heavy models once, reuse for the whole process."""
     global whisper_model, kokoro_model
 
-    # Load Whisper model
+    # Load Whisper model (should be pre-downloaded)
     whisper_model = WhisperModel(
         "tiny",
         device=device,
-        compute_type=compute_type
+        compute_type=compute_type,
+        download_root=str(MODEL_CACHE_DIR)
     )
 
     logger.info("Loading Kokoro ONNX model...")
