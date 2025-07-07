@@ -50,13 +50,22 @@ export default function AttemptInput({
 
   // Connection state for send button
   const isConnectionReady = isConnected && isWebRTCConnected;
+  const hasTextMessage = newMessage.trim().length > 0;
+  const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
+
   const getConnectionTooltip = () => {
     if (!isConnected && !isWebRTCConnected) {
       return "Initializing (0/2)";
     } else if (isConnected && !isWebRTCConnected) {
       return "Initializing (1/2)";
     }
-    return null; // Both connected, no tooltip needed
+    if (simulationContext?.isSendingMessage) {
+      return "Stop sending";
+    }
+    if (!hasTextMessage && !hasSketchContent) {
+      return "Enter a message";
+    }
+    return "Send message";
   };
 
   // --- Handlers ---
@@ -152,9 +161,6 @@ export default function AttemptInput({
   }, [simulationContext?.currentChat?.id]);
 
   if (simulationContext?.currentChat?.completed) return null;
-
-  const hasTextMessage = newMessage.trim().length > 0;
-  const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
 
   return (
     <TooltipProvider>
@@ -284,7 +290,12 @@ export default function AttemptInput({
                     </Tooltip>
                   </motion.div>
                 )}
-              {(hasTextMessage || hasSketchContent) &&
+              {/* Send Button - Always show in dev mode, conditionally in non-dev mode */}
+              {(
+                simulationContext?.isSendingMessage ||
+                !isDevMode ||
+                (isDevMode && (hasTextMessage || hasSketchContent))
+              ) &&
                 !simulationContext?.isRecording && (
                   <motion.div
                     layout
@@ -294,7 +305,7 @@ export default function AttemptInput({
                     exit={{ opacity: 0, scale: 0.5 }}
                   >
                     <Tooltip>
-                      <TooltipTrigger asChild>
+                      <TooltipTrigger>
                         <Button
                           type="submit"
                           className="min-h-[40px] h-[40px] px-3"
@@ -303,7 +314,12 @@ export default function AttemptInput({
                               ? "destructive"
                               : "default"
                           }
-                          disabled={!isConnectionReady}
+                          disabled={
+                            simulationContext?.isSendingMessage
+                              ? false
+                              : (!isConnectionReady ||
+                                (!hasTextMessage && !hasSketchContent))
+                          }
                           onClick={
                             simulationContext?.isSendingMessage
                               ? handleStopMessage

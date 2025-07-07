@@ -51,10 +51,10 @@ import { useSimulation } from "@/contexts/simulation-context";
 import { SimulationChat } from "@/types";
 import { formatTime } from "@/utils/time";
 
+import { Progress } from "@/components/ui/progress";
 import TableRubric from "../../rubric/TableRubric";
 import AttemptInput from "./AttemptInput";
 import AttemptMessages from "./AttemptMessages";
-import { Progress } from "@/components/ui/progress";
 
 export default function AttemptChat() {
   const simulationContext = useSimulation();
@@ -597,9 +597,9 @@ export default function AttemptChat() {
                   </div>
                 </ResizablePanel>
 
-                <ResizableHandle />
+                <ResizableHandle disabled />
                 {/* Input Area */}
-                <ResizablePanel defaultSize={12} minSize={10} maxSize={40}>
+                <ResizablePanel defaultSize={12} minSize={12} maxSize={12}>
                   <AttemptInput onToggleSketch={handleToggleInputSize} />
                 </ResizablePanel>
               </ResizablePanelGroup>
