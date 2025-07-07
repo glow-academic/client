@@ -269,7 +269,7 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
                     {
                         "chat_id": chat_id,
                         "success": False,
-                        "message": "No active simulation run found",
+                        "message": "No active message found for this chat",
                     },
                     room=f"simulation_{chat_id}",
                 )

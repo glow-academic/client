@@ -881,6 +881,33 @@ export function SimulationProvider({
 
     const handleSimulationMessageComplete = (event: CustomEvent) => {
       if (event.detail.chatId === currentChatIdRef.current) {
+        // Update React Query cache with final content if messageId is provided (from data channel or Socket.IO)
+        if (event.detail.messageId && event.detail.finalContent !== undefined) {
+          queryClient.setQueryData(
+            ["simulationMessages", event.detail.chatId],
+            (old: SimulationMessage[] = []) => {
+              return old.map((msg) =>
+                msg.id === event.detail.messageId
+                  ? {
+                      ...msg,
+                      content: event.detail.finalContent,
+                      completed: true,
+                      audio: event.detail.audio,
+                    }
+                  : msg
+              );
+            }
+          );
+
+          // Invalidate queries for fresh data
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ["simulationMessages", event.detail.chatId],
+            });
+          }, 0);
+        }
+
+        // Reset loading states
         setIsSendingMessage(false);
       }
     };
@@ -899,38 +926,6 @@ export function SimulationProvider({
             );
           }
         );
-      }
-    };
-
-    // Handle data channel completion events
-    const handleSimulationMessageCompleteFromDC = (event: CustomEvent) => {
-      if (event.detail.chatId === currentChatIdRef.current) {
-        // Update React Query cache with final content
-        queryClient.setQueryData(
-          ["simulationMessages", event.detail.chatId],
-          (old: SimulationMessage[] = []) => {
-            return old.map((msg) =>
-              msg.id === event.detail.messageId
-                ? {
-                    ...msg,
-                    content: event.detail.finalContent,
-                    completed: true,
-                    audio: event.detail.audio,
-                  }
-                : msg
-            );
-          }
-        );
-
-        // Reset loading states
-        setIsSendingMessage(false);
-
-        // Invalidate queries for fresh data
-        setTimeout(() => {
-          queryClient.invalidateQueries({
-            queryKey: ["simulationMessages", event.detail.chatId],
-          });
-        }, 0);
       }
     };
 
@@ -1028,10 +1023,6 @@ export function SimulationProvider({
       "simulationMessageToken",
       handleSimulationMessageToken as EventListener
     );
-    window.addEventListener(
-      "simulationMessageComplete",
-      handleSimulationMessageCompleteFromDC as EventListener
-    );
 
     return () => {
       window.removeEventListener(
@@ -1066,10 +1057,6 @@ export function SimulationProvider({
       window.removeEventListener(
         "simulationMessageToken",
         handleSimulationMessageToken as EventListener
-      );
-      window.removeEventListener(
-        "simulationMessageComplete",
-        handleSimulationMessageCompleteFromDC as EventListener
       );
     };
   }, [queryClient, attemptId]); // Add queryClient and attemptId to the dependency array

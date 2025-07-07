@@ -463,6 +463,18 @@ export function WebSocketProvider({
               );
             }
           );
+
+          // NEW ➜ Dispatch DOM event to keep SimulationProvider in sync even when WebRTC is off
+          window.dispatchEvent(
+            new CustomEvent("simulationMessageToken", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                token: data.token,
+                accumulatedContent: data.accumulated_content,
+              },
+            })
+          );
         }
       );
 
@@ -568,6 +580,7 @@ export function WebSocketProvider({
           chat_id: string;
           final_content: string;
           completed?: boolean;
+          audio?: boolean;
         }) => {
           logInfo("Received simulation_message_complete event", {
             messageId: data.message_id,
@@ -587,6 +600,18 @@ export function WebSocketProvider({
 
           // Reset loading states
           setIsSendingSimulationMessage(false);
+
+          // NEW ➜ Dispatch DOM event to keep SimulationProvider in sync even when WebRTC is off
+          window.dispatchEvent(
+            new CustomEvent("simulationMessageComplete", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                finalContent: data.final_content,
+                audio: data.audio,
+              },
+            })
+          );
 
           setTimeout(() => {
             queryClient.invalidateQueries({
@@ -627,6 +652,17 @@ export function WebSocketProvider({
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
 
+          // NEW ➜ Dispatch DOM event to keep SimulationProvider in sync even when WebRTC is off
+          window.dispatchEvent(
+            new CustomEvent("simulationMessageCancelled", {
+              detail: {
+                messageId: data.message_id,
+                chatId: data.chat_id,
+                finalContent: data.final_content,
+              },
+            })
+          );
+
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ["simulationMessages", data.chat_id],
@@ -650,6 +686,16 @@ export function WebSocketProvider({
           // Reset loading states
           setIsSendingSimulationMessage(false);
           setIsStoppingSimulation(false);
+
+          // NEW ➜ Dispatch DOM event to keep SimulationProvider in sync even when WebRTC is off
+          window.dispatchEvent(
+            new CustomEvent("simulationMessageError", {
+              detail: {
+                chatId: data.chat_id,
+                error: data.error,
+              },
+            })
+          );
 
           toast.error(`Simulation error: ${data.error}`);
         }
@@ -909,7 +955,7 @@ export function WebSocketProvider({
           logInfo("Assistant started", data);
           setIsStartingAssistant(false);
           if (data.success) {
-            toast.success(data.message);
+            // toast.success(data.message);
           } else {
             toast.error(data.message);
           }
