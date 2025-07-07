@@ -1,10 +1,12 @@
 import json
 import logging
+import os
 import uuid
 from typing import AsyncGenerator
 
 from agents import Runner, trace
-from agents.items import ToolCallItem, ToolCallOutputItem, TResponseInputItem
+from agents.items import (ReasoningItem, ToolCallItem, ToolCallOutputItem,
+                          TResponseInputItem)
 from agents.mcp.server import MCPServer, MCPServerStreamableHttp
 from app.db import get_session
 from app.models import (Agents, AssistantChats, AssistantMessages,
@@ -50,7 +52,8 @@ async def run_assistant_agent(
         # Use internal server URL for MCP server connection
         # In Docker, the server is accessible at http://localhost:8000
         # This avoids Traefik routing issues and uses internal networking
-        mcp_server_url = "http://localhost:8000/domain/mcp/"
+        base_url = os.getenv("INTERNAL_API_BASE")
+        mcp_server_url = f"{base_url}/domain/mcp/"
         
         async with (
             MCPServerStreamableHttp(
@@ -212,6 +215,9 @@ async def _handle_assistant_chat(
                         del active_tool_calls[tool_call_id]
                     else:
                         logger.warning("Received tool output but no active tool calls to match")
+                elif event.name == "reasoning_item_created" and isinstance(event.item, ReasoningItem):
+                    logger.info(f"Reasoning item created: {event.item}")
+                    pass
                 else:
                     pass
             else:
