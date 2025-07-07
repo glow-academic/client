@@ -94,16 +94,6 @@ async def handle_start_assistant(sid: str, data: Dict[str, Any]) -> None:
             }, room=sid)
 
             logger.info(f"Assistant started successfully for {sid}: chat={chat_id}")
-
-            # Process the initial message automatically
-            logger.info(f"Processing initial message for chat {chat_id}: {initial_message[:50]}...")
-            await process_assistant_message_websocket(
-                chat_id=uuid.UUID(chat_id),
-                message=initial_message,
-                session=db_session
-            )
-            logger.info(f"Completed processing initial message for chat {chat_id}")
-
         finally:
             db_session.close()
 
