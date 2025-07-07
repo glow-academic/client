@@ -17,6 +17,24 @@ services:
       - internal
 
   # --------------------
+  # WebRTC Service
+  # --------------------
+  webrtc:
+    container_name: glow-webrtc
+    build: ./web
+    env_file: .env
+    environment:
+      - TURN_REALM=${TURN_REALM}
+      - TURN_USERNAME=${TURN_USERNAME}
+      - TURN_PASSWORD=${TURN_PASSWORD} 
+      - TURN_PUBLIC_IP=${TURN_PUBLIC_IP}
+    ports:
+      - "443:443"
+    networks:
+      - internal
+      - public_net
+
+  # --------------------
   # Database Service
   # --------------------
   database:
