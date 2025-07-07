@@ -6,6 +6,7 @@
  */
 "use client";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -76,6 +77,7 @@ type SortOption =
 type FilterOption = "all" | "struggling" | "performing-well";
 
 export default function Reports() {
+  const router = useRouter();
   const [sortBy, setSortBy] = useState<SortOption>("score-desc");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -468,6 +470,10 @@ export default function Reports() {
     }
   };
 
+  const handleViewReport = (profileId: string) => {
+    router.push(`/analytics/reports/p/${profileId}`);
+  };
+
   // Loading state
   if (
     isLoadingProfiles ||
@@ -608,7 +614,10 @@ export default function Reports() {
                   {/* Name */}
                   <TableCell className="border-r">
                     <div className="flex items-center gap-1">
-                      <div className="font-medium text-sm">
+                      <div
+                        className="font-medium text-sm cursor-pointer hover:text-primary hover:underline"
+                        onClick={() => handleViewReport(ta.id)}
+                      >
                         {ta.firstName} {ta.lastName}
                       </div>
                       {ta.isStruggling && (

@@ -66,6 +66,8 @@ export default function AttemptChat() {
     null
   );
 
+  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
+
   // Create a ref for the panel group
   const inputPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
 
@@ -597,9 +599,9 @@ export default function AttemptChat() {
                   </div>
                 </ResizablePanel>
 
-                <ResizableHandle disabled />
+                <ResizableHandle disabled={!isDevMode} />
                 {/* Input Area */}
-                <ResizablePanel defaultSize={12} minSize={12} maxSize={12}>
+                <ResizablePanel defaultSize={12} minSize={12} maxSize={40}>
                   <AttemptInput onToggleSketch={handleToggleInputSize} />
                 </ResizablePanel>
               </ResizablePanelGroup>
