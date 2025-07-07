@@ -732,9 +732,11 @@ export function SimulationProvider({
         }
       } catch (err) {
         toast.error(`Failed to send message: ${err}`);
-      } finally {
-        setIsSendingMessage(false); // Reset sending state
+        setIsSendingMessage(false); // Reset sending state on error
       }
+      // Note: setIsSendingMessage(false) is handled by WebSocket event handlers
+      // (handleSimulationMessageComplete, handleSimulationMessageCancelled, etc.)
+      // to ensure proper state management with server responses
     },
     [
       currentChat,
