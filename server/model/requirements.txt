@@ -10,5 +10,6 @@ onnxruntime>=1.17,<2
 # web framework
 fastapi
 uvicorn
+gunicorn
 python-multipart
 python-dotenv
