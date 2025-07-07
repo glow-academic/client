@@ -1,14 +1,18 @@
-# server_server.py  — "Domain-API" MCP server
+# server_server.py  — "Domain-API" MCP server (Read-Only Analytics)
+import csv
+import io
+import tempfile
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from app.db import engine, get_session
-from app.models import (Agents, Classes, Cohorts, Components, Dashboards,
-                        Profiles, Rubrics, Scenarios, SimulationAttempts,
+from app.models import (Agents, AppLogs, AssistantChats, AssistantMessages,
+                        AssistantToolCalls, Classes, Cohorts, Models, Profiles,
+                        Rubrics, Scenarios, SimulationAttempts,
                         SimulationChatFeedbacks, SimulationChatGrades,
                         SimulationChats, SimulationMessages, Simulations,
-                        Standards)
+                        StandardGroups, Standards)
 from mcp.server.fastmcp import FastMCP
 from sqlalchemy import desc, func, text
 from sqlalchemy.exc import SQLAlchemyError
@@ -18,14 +22,21 @@ from sqlmodel import and_, or_, select
 # Configure for stateless HTTP transport
 server = FastMCP("Domain-API", stateless_http=True)
 
-
 # ─────────────────────────────────────────────────────────────────────────────
-# ✱ Database general changes
+# ✱ Schema / Meta Tools
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.resource("schema://public")
 def list_schema() -> str:
-    """Return every table + column in the public schema."""
+    """
+    🔎 Database schema overview
+    ---------------------------
+    Lists all tables and columns in the public schema.
+    
+    Quick-start
+      ask:  "What tables are in the DB?"
+      call: list_schema()
+    """
     sql = """
         SELECT table_name, column_name, data_type
         FROM information_schema.columns
@@ -39,8 +50,21 @@ def list_schema() -> str:
 @server.tool()
 def query_data(sql: str) -> str:
     """
-    Run *read-only* queries.  Reject anything that isn't SELECT/EXPLAIN.
-    Usage limits (e.g. row cap) keep the response small enough for the LLM.
+    🔎 Custom SQL queries (read-only)
+    ---------------------------------
+    Run SELECT/EXPLAIN queries with 200-row limit.
+    
+    Input
+      • sql – SELECT or EXPLAIN statement only
+    
+    Returns
+      Raw query results as text
+    
+    Quick-start
+      ask:  "Run this SQL: SELECT * FROM profiles LIMIT 5"
+      call: query_data("SELECT first_name, last_name FROM profiles LIMIT 5")
+    
+    Security: Only SELECT and EXPLAIN allowed.
     """
     lowered = sql.lstrip().lower()
     if not lowered.startswith(("select", "explain")):
@@ -49,11 +73,208 @@ def query_data(sql: str) -> str:
     try:
         with engine.connect() as conn:
             result = conn.execute(text(sql))
-            rows   = result.fetchmany(200)          # cap output
+            rows = result.fetchmany(200)
             return "\n".join(str(r) for r in rows) or "↩️ (0 rows)"
     except SQLAlchemyError as e:
         return f"Error: {e}"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# ✱ Quick Look-ups (3-8)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@server.tool()
+def profile_overview(key: str) -> Dict[str, Any]:
+    """
+    🔎 Profile overview
+    -------------------
+    Profile + last login, classes, dashboard flags, latest grades. 
+    Accepts UUID or name.
+    
+    Input
+      • key – UUID or name/alias to search for
+    
+    Returns
+      { "profile": { … }, "classes": [ … ], "latest_grades": [ … ] }
+    
+    Quick-start
+      ask:  "Show me Nina Park's profile"
+      call: profile_overview("Nina Park")
+    
+    See also 👉 student_sim_report() for per-chat detail.
+    """
+    session = next(get_session())
+    try:
+        # Try UUID first
+        profile = None
+        try:
+            profile_uuid = uuid.UUID(key)
+            profile = session.get(Profiles, profile_uuid)
+        except ValueError:
+            # Search by name
+            search_pattern = f"%{key.lower()}%"
+            stmt = select(Profiles).where(
+                or_(
+                    func.lower(Profiles.first_name).like(search_pattern),
+                    func.lower(Profiles.last_name).like(search_pattern),
+                    func.lower(Profiles.alias).like(search_pattern)
+                )
+            ).limit(1)
+            profile = session.exec(stmt).first()
+        
+        if not profile:
+            return {"error": f"Profile not found: {key}"}
+        
+        # Get profile data
+        profile_data = {
+            "id": str(profile.id),
+            "first_name": profile.first_name,
+            "last_name": profile.last_name,
+            "alias": profile.alias,
+            "role": profile.role,
+            "last_login": profile.last_login.isoformat() if profile.last_login else None,
+            "viewed_intro": profile.viewed_intro,
+            "active": profile.active,
+            "created_at": profile.created_at.isoformat() if profile.created_at else None
+        }
+        
+        # Get classes
+        classes_data = []
+        if profile.class_ids:
+            classes_stmt = select(Classes).where(Classes.id.in_(profile.class_ids))
+            classes = session.exec(classes_stmt).all()
+            classes_data = [
+                {
+                    "id": str(cls.id),
+                    "name": cls.name,
+                    "class_code": cls.class_code,
+                    "year": cls.year,
+                    "term": cls.term
+                }
+                for cls in classes
+            ]
+        
+        # Get latest simulation grades (last 5)
+        attempts_stmt = select(SimulationAttempts).where(
+            SimulationAttempts.profile_id == profile.id
+        ).order_by(desc(SimulationAttempts.created_at)).limit(5)
+        attempts = session.exec(attempts_stmt).all()
+        
+        latest_grades = []
+        for attempt in attempts:
+            simulation = session.get(Simulations, attempt.simulation_id)
+            if not simulation:
+                continue
+                
+            # Get latest chat for this attempt
+            chat_stmt = select(SimulationChats).where(
+                SimulationChats.attempt_id == attempt.id
+            ).order_by(desc(SimulationChats.created_at)).limit(1)
+            chat = session.exec(chat_stmt).first()
+            
+            if chat:
+                grade_stmt = select(SimulationChatGrades).where(
+                    SimulationChatGrades.simulation_chat_id == chat.id
+                )
+                grade = session.exec(grade_stmt).first()
+                
+                if grade:
+                    latest_grades.append({
+                        "simulation_title": simulation.title,
+                        "score": grade.score,
+                        "passed": grade.passed,
+                        "time_taken": grade.time_taken,
+                        "created_at": grade.created_at.isoformat()
+                    })
+        
+        return {
+            "profile": profile_data,
+            "classes": classes_data,
+            "latest_grades": latest_grades
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
+
+@server.tool()
+def class_overview(class_id: str) -> Dict[str, Any]:
+    """
+    🔎 Class overview
+    -----------------
+    Class record, roster, topics, scenarios.
+    
+    Input
+      • class_id – UUID of the class
+    
+    Returns
+      { "class": { … }, "roster": [ … ], "scenarios": [ … ] }
+    
+    Quick-start
+      ask:  "Summarise CS-7643 Spring 30"
+      call: class_overview("uuid-here")
+    
+    See also 👉 find_classes() to search by name/code.
+    """
+    try:
+        class_uuid = uuid.UUID(class_id)
+    except ValueError:
+        return {"error": f"Invalid class_id format: {class_id}"}
+    
+    session = next(get_session())
+    try:
+        # Get class
+        class_obj = session.get(Classes, class_uuid)
+        if not class_obj:
+            return {"error": f"Class not found: {class_id}"}
+        
+        class_data = {
+            "id": str(class_obj.id),
+            "name": class_obj.name,
+            "class_code": class_obj.class_code,
+            "year": class_obj.year,
+            "term": class_obj.term,
+            "description": class_obj.description,
+            "created_at": class_obj.created_at.isoformat()
+        }
+        
+        # Get roster
+        roster_stmt = select(Profiles).where(
+            class_uuid.in_(Profiles.class_ids)
+        )
+        profiles = session.exec(roster_stmt).all()
+        
+        roster = [
+            {
+                "id": str(profile.id),
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "alias": profile.alias,
+                "role": profile.role
+            }
+            for profile in profiles
+        ]
+        
+        # Get scenarios
+        scenarios_stmt = select(Scenarios).where(Scenarios.class_id == class_uuid)
+        scenarios = session.exec(scenarios_stmt).all()
+        
+        scenarios_data = [
+            {
+                "id": str(scenario.id),
+                "name": scenario.name,
+                "description": scenario.description,
+                "default_scenario": scenario.default_scenario
+            }
+            for scenario in scenarios
+        ]
+        
+        return {
+            "class": class_data,
+            "roster": roster,
+            "scenarios": scenarios_data
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
 
 # ─────────────────────────────────────────────────────────────────────────────
 # NEW ✱ Dashboard-editing helpers
@@ -1051,3 +1272,554 @@ def search_by_agent(agent_id: str, limit: int = 100) -> Dict[str, Any]:
 # ─────────────────────────────────────────────────────────────────────────────
 # Utilities (optional): row-limit decorator, JSON serialiser helpers, etc.
 # ─────────────────────────────────────────────────────────────────────────────
+
+@server.tool()
+def cohort_overview(cohort_id: str) -> Dict[str, Any]:
+    """
+    🔎 Cohort overview
+    ------------------
+    Cohort meta, roster, active sims, pass-rate.
+    
+    Input
+      • cohort_id – UUID of the cohort
+    
+    Returns
+      { "cohort": { … }, "roster": [ … ], "simulations": [ … ], "stats": { … } }
+    
+    Quick-start
+      ask:  "How's Fall 2025 Cohort A doing?"
+      call: cohort_overview("uuid-here")
+    
+    See also 👉 cohort_pass_matrix() for detailed pass/fail data.
+    """
+    try:
+        cohort_uuid = uuid.UUID(cohort_id)
+    except ValueError:
+        return {"error": f"Invalid cohort_id format: {cohort_id}"}
+    
+    session = next(get_session())
+    try:
+        # Get cohort
+        cohort = session.get(Cohorts, cohort_uuid)
+        if not cohort:
+            return {"error": f"Cohort not found: {cohort_id}"}
+        
+        cohort_data = {
+            "id": str(cohort.id),
+            "title": cohort.title,
+            "description": cohort.description,
+            "active": cohort.active,
+            "created_at": cohort.created_at.isoformat()
+        }
+        
+        # Get roster
+        roster = []
+        if cohort.profile_ids:
+            profiles_stmt = select(Profiles).where(Profiles.id.in_(cohort.profile_ids))
+            profiles = session.exec(profiles_stmt).all()
+            
+            roster = [
+                {
+                    "id": str(profile.id),
+                    "first_name": profile.first_name,
+                    "last_name": profile.last_name,
+                    "alias": profile.alias,
+                    "role": profile.role
+                }
+                for profile in profiles
+            ]
+        
+        # Get simulations
+        simulations_stmt = select(Simulations).where(
+            and_(
+                cohort_uuid.in_(Simulations.cohort_ids),
+                Simulations.active == True
+            )
+        )
+        simulations = session.exec(simulations_stmt).all()
+        
+        simulations_data = [
+            {
+                "id": str(sim.id),
+                "title": sim.title,
+                "active": sim.active,
+                "time_limit": sim.time_limit
+            }
+            for sim in simulations
+        ]
+        
+        # Calculate basic stats
+        total_students = len(roster)
+        active_simulations = len(simulations_data)
+        
+        return {
+            "cohort": cohort_data,
+            "roster": roster,
+            "simulations": simulations_data,
+            "stats": {
+                "total_students": total_students,
+                "active_simulations": active_simulations
+            }
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
+
+@server.tool()
+def simulation_overview(sim_id: str) -> Dict[str, Any]:
+    """
+    🔎 Simulation overview
+    ----------------------
+    Sim meta, rubric, cohorts, scenarios, pass stats.
+    
+    Input
+      • sim_id – UUID of the simulation
+    
+    Returns
+      { "simulation": { … }, "rubric": { … }, "cohorts": [ … ], "stats": { … } }
+    
+    Quick-start
+      ask:  "Give me the Cardiac Arrest sim stats"
+      call: simulation_overview("uuid-here")
+    
+    See also 👉 simulation_attempts() for detailed attempt list.
+    """
+    try:
+        simulation_uuid = uuid.UUID(sim_id)
+    except ValueError:
+        return {"error": f"Invalid sim_id format: {sim_id}"}
+    
+    session = next(get_session())
+    try:
+        # Get simulation
+        simulation = session.get(Simulations, simulation_uuid)
+        if not simulation:
+            return {"error": f"Simulation not found: {sim_id}"}
+        
+        simulation_data = {
+            "id": str(simulation.id),
+            "title": simulation.title,
+            "active": simulation.active,
+            "time_limit": simulation.time_limit,
+            "created_at": simulation.created_at.isoformat()
+        }
+        
+        # Get rubric
+        rubric = session.get(Rubrics, simulation.rubric_id)
+        rubric_data = {}
+        if rubric:
+            rubric_data = {
+                "id": str(rubric.id),
+                "name": rubric.name,
+                "description": rubric.description,
+                "points": rubric.points,
+                "pass_points": rubric.pass_points
+            }
+        
+        # Get cohorts
+        cohorts_data = []
+        if simulation.cohort_ids:
+            cohorts_stmt = select(Cohorts).where(Cohorts.id.in_(simulation.cohort_ids))
+            cohorts = session.exec(cohorts_stmt).all()
+            cohorts_data = [
+                {
+                    "id": str(cohort.id),
+                    "title": cohort.title,
+                    "active": cohort.active
+                }
+                for cohort in cohorts
+            ]
+        
+        # Get scenarios
+        scenarios_data = []
+        if simulation.scenario_ids:
+            scenarios_stmt = select(Scenarios).where(Scenarios.id.in_(simulation.scenario_ids))
+            scenarios = session.exec(scenarios_stmt).all()
+            scenarios_data = [
+                {
+                    "id": str(scenario.id),
+                    "name": scenario.name,
+                    "description": scenario.description
+                }
+                for scenario in scenarios
+            ]
+        
+        # Calculate pass stats
+        attempts_stmt = select(SimulationAttempts).where(
+            SimulationAttempts.simulation_id == simulation_uuid
+        )
+        attempts = session.exec(attempts_stmt).all()
+        
+        total_attempts = len(attempts)
+        total_graded = 0
+        total_passed = 0
+        
+        for attempt in attempts:
+            chats_stmt = select(SimulationChats).where(
+                SimulationChats.attempt_id == attempt.id
+            )
+            chats = session.exec(chats_stmt).all()
+            
+            for chat in chats:
+                grade_stmt = select(SimulationChatGrades).where(
+                    SimulationChatGrades.simulation_chat_id == chat.id
+                )
+                grade = session.exec(grade_stmt).first()
+                
+                if grade:
+                    total_graded += 1
+                    if grade.passed:
+                        total_passed += 1
+        
+        pass_rate = (total_passed / total_graded * 100) if total_graded > 0 else 0
+        
+        return {
+            "simulation": simulation_data,
+            "rubric": rubric_data,
+            "cohorts": cohorts_data,
+            "scenarios": scenarios_data,
+            "stats": {
+                "total_attempts": total_attempts,
+                "total_graded": total_graded,
+                "pass_rate": round(pass_rate, 2)
+            }
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
+
+@server.tool()
+def scenario_overview(scenario_id: str) -> Dict[str, Any]:
+    """
+    🔎 Scenario overview
+    --------------------
+    Scenario details, linked class & agent, usage count.
+    
+    Input
+      • scenario_id – UUID of the scenario
+    
+    Returns
+      { "scenario": { … }, "class": { … }, "agent": { … }, "usage": { … } }
+    
+    Quick-start
+      ask:  "Details for the Sepsis scenario"
+      call: scenario_overview("uuid-here")
+    
+    See also 👉 agent_overview() for agent details.
+    """
+    try:
+        scenario_uuid = uuid.UUID(scenario_id)
+    except ValueError:
+        return {"error": f"Invalid scenario_id format: {scenario_id}"}
+    
+    session = next(get_session())
+    try:
+        # Get scenario
+        scenario = session.get(Scenarios, scenario_uuid)
+        if not scenario:
+            return {"error": f"Scenario not found: {scenario_id}"}
+        
+        scenario_data = {
+            "id": str(scenario.id),
+            "name": scenario.name,
+            "description": scenario.description,
+            "default_scenario": scenario.default_scenario,
+            "crowdedness": scenario.crowdedness,
+            "intensity": scenario.intensity,
+            "seniority": scenario.seniority,
+            "created_at": scenario.created_at.isoformat()
+        }
+        
+        # Get linked class
+        class_data = {}
+        if scenario.class_id:
+            class_obj = session.get(Classes, scenario.class_id)
+            if class_obj:
+                class_data = {
+                    "id": str(class_obj.id),
+                    "name": class_obj.name,
+                    "class_code": class_obj.class_code
+                }
+        
+        # Get linked agent
+        agent_data = {}
+        if scenario.agent_id:
+            agent = session.get(Agents, scenario.agent_id)
+            if agent:
+                agent_data = {
+                    "id": str(agent.id),
+                    "name": agent.name,
+                    "description": agent.description
+                }
+        
+        # Count usage
+        sim_chats_stmt = select(func.count(SimulationChats.id)).where(
+            SimulationChats.scenario_id == scenario_uuid
+        )
+        sim_chats_count = session.exec(sim_chats_stmt).one()
+        
+        return {
+            "scenario": scenario_data,
+            "class": class_data,
+            "agent": agent_data,
+            "usage": {
+                "simulation_chats": sim_chats_count
+            }
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
+
+@server.tool()
+def agent_overview(agent_id: str) -> Dict[str, Any]:
+    """
+    🔎 Agent overview
+    -----------------
+    Agent settings + which scenarios use it.
+    
+    Input
+      • agent_id – UUID of the agent
+    
+    Returns
+      { "agent": { … }, "model": { … }, "scenarios": [ … ] }
+    
+    Quick-start
+      ask:  "What's the prompt for Agent 'Socrates'?"
+      call: agent_overview("uuid-here")
+    
+    See also 👉 agent_response_times() for performance metrics.
+    """
+    try:
+        agent_uuid = uuid.UUID(agent_id)
+    except ValueError:
+        return {"error": f"Invalid agent_id format: {agent_id}"}
+    
+    session = next(get_session())
+    try:
+        # Get agent
+        agent = session.get(Agents, agent_uuid)
+        if not agent:
+            return {"error": f"Agent not found: {agent_id}"}
+        
+        agent_data = {
+            "id": str(agent.id),
+            "name": agent.name,
+            "description": agent.description,
+            "system_prompt": agent.system_prompt,
+            "temperature": agent.temperature,
+            "default_agent": agent.default_agent,
+            "editable": agent.editable,
+            "created_at": agent.created_at.isoformat() if agent.created_at else None
+        }
+        
+        # Get model info
+        model_data = {}
+        if agent.model_id:
+            model = session.get(Models, agent.model_id)
+            if model:
+                model_data = {
+                    "id": str(model.id),
+                    "name": model.name,
+                    "description": model.description
+                }
+        
+        # Get scenarios
+        scenarios_stmt = select(Scenarios).where(Scenarios.agent_id == agent_uuid)
+        scenarios = session.exec(scenarios_stmt).all()
+        
+        scenarios_data = [
+            {
+                "id": str(scenario.id),
+                "name": scenario.name,
+                "description": scenario.description
+            }
+            for scenario in scenarios
+        ]
+        
+        return {
+            "agent": agent_data,
+            "model": model_data,
+            "scenarios": scenarios_data
+        }
+        
+    except SQLAlchemyError as e:
+        return {"error": f"Database error: {str(e)}"}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ✱ Search / Helper Tools (9-11)
+# ─────────────────────────────────────────────────────────────────────────────
+
+@server.tool()
+def find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    🔎 Find profiles by name
+    ------------------------
+    Fuzzy first/last/alias search.
+    
+    Input
+      • query – Name or alias to search for
+      • limit – Max results (default: 10)
+    
+    Returns
+      [ { "id": "…", "full_name": "…", … }, … ]
+    
+    Quick-start
+      ask:  "Find everyone named Jordan"
+      call: find_profiles("Jordan")
+    
+    See also 👉 profile_overview() for detailed profile data.
+    """
+    session = next(get_session())
+    try:
+        # Split the query to handle full names
+        query_parts = query.strip().split()
+        
+        if len(query_parts) >= 2:
+            # Handle full name
+            first_pattern = f"%{query_parts[0].lower()}%"
+            last_pattern = f"%{query_parts[-1].lower()}%"
+            
+            primary_conditions = and_(
+                func.lower(Profiles.first_name).like(first_pattern),
+                func.lower(Profiles.last_name).like(last_pattern)
+            )
+            
+            full_pattern = f"%{query.lower()}%"
+            fallback_conditions = or_(
+                func.lower(Profiles.first_name).like(first_pattern),
+                func.lower(Profiles.last_name).like(last_pattern),
+                func.lower(Profiles.alias).like(full_pattern)
+            )
+            
+            stmt = select(Profiles).where(
+                or_(primary_conditions, fallback_conditions)
+            ).limit(limit)
+        else:
+            # Single name search
+            search_pattern = f"%{query.lower()}%"
+            stmt = select(Profiles).where(
+                or_(
+                    func.lower(Profiles.first_name).like(search_pattern),
+                    func.lower(Profiles.last_name).like(search_pattern),
+                    func.lower(Profiles.alias).like(search_pattern)
+                )
+            ).limit(limit)
+        
+        profiles = session.exec(stmt).all()
+        
+        results = []
+        for profile in profiles:
+            full_name_parts = []
+            if profile.first_name:
+                full_name_parts.append(profile.first_name)
+            if profile.last_name:
+                full_name_parts.append(profile.last_name)
+            full_name = " ".join(full_name_parts) if full_name_parts else profile.alias or "Unknown"
+            
+            results.append({
+                "id": str(profile.id),
+                "first_name": profile.first_name,
+                "last_name": profile.last_name,
+                "alias": profile.alias,
+                "role": profile.role,
+                "full_name": full_name
+            })
+        
+        return results
+        
+    except SQLAlchemyError as e:
+        return [{"error": f"Database error: {str(e)}"}]
+
+@server.tool()
+def find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    🔎 Find classes by name/code
+    ----------------------------
+    Fuzzy class code/name search.
+    
+    Input
+      • query – Class code or name to search for
+      • limit – Max results (default: 10)
+    
+    Returns
+      [ { "id": "…", "class_code": "…", "name": "…", … }, … ]
+    
+    Quick-start
+      ask:  "Search for 'BIOL-1102'"
+      call: find_classes("BIOL-1102")
+    
+    See also 👉 class_overview() for detailed class data.
+    """
+    session = next(get_session())
+    try:
+        search_pattern = f"%{query.lower()}%"
+        stmt = select(Classes).where(
+            or_(
+                func.lower(Classes.class_code).like(search_pattern),
+                func.lower(Classes.name).like(search_pattern)
+            )
+        ).limit(limit)
+        
+        classes = session.exec(stmt).all()
+        
+        results = [
+            {
+                "id": str(cls.id),
+                "class_code": cls.class_code,
+                "name": cls.name,
+                "year": cls.year,
+                "term": cls.term,
+                "description": cls.description
+            }
+            for cls in classes
+        ]
+        
+        return results
+        
+    except SQLAlchemyError as e:
+        return [{"error": f"Database error: {str(e)}"}]
+
+@server.tool()
+def find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
+    """
+    🔎 Find simulations by title
+    ----------------------------
+    Fuzzy sim title search.
+    
+    Input
+      • query – Simulation title to search for
+      • limit – Max results (default: 10)
+    
+    Returns
+      [ { "id": "…", "title": "…", "active": true, … }, … ]
+    
+    Quick-start
+      ask:  "Which sims mention 'cardiac'?"
+      call: find_simulations("cardiac")
+    
+    See also 👉 simulation_overview() for detailed sim data.
+    """
+    session = next(get_session())
+    try:
+        search_pattern = f"%{query.lower()}%"
+        stmt = select(Simulations).where(
+            func.lower(Simulations.title).like(search_pattern)
+        ).limit(limit)
+        
+        simulations = session.exec(stmt).all()
+        
+        results = [
+            {
+                "id": str(sim.id),
+                "title": sim.title,
+                "active": sim.active,
+                "time_limit": sim.time_limit,
+                "created_at": sim.created_at.isoformat()
+            }
+            for sim in simulations
+        ]
+        
+        return results
+        
+    except SQLAlchemyError as e:
+        return [{"error": f"Database error: {str(e)}"}]
