@@ -73,10 +73,10 @@ export default function ChatWidget() {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-80 h-[450px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
-      <CardHeader className="p-2 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+    <Card className="fixed bottom-4 right-4 w-96 h-[520px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <CardHeader className="p-3 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-md flex items-center justify-center shrink-0">
+          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
             <span className="text-white font-bold text-xs">G</span>
           </div>
           <Select
@@ -86,7 +86,7 @@ export default function ChatWidget() {
           >
             <SelectTrigger className="w-full border-none shadow-none p-0 h-auto focus:ring-0">
               <SelectValue>
-                <span className="text-xs font-medium truncate">
+                <span className="text-sm font-medium truncate">
                   {getCurrentChatTitle()}
                 </span>
               </SelectValue>
@@ -118,25 +118,25 @@ export default function ChatWidget() {
             variant="ghost"
             size="sm"
             onClick={startBlankChat}
-            className="h-6 w-6 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
-            <Edit className="h-2.5 w-2.5" />
+            <Edit className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={expand}
-            className="h-6 w-6 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
-            <Maximize2 className="h-2.5 w-2.5" />
+            <Maximize2 className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
             size="sm"
             onClick={close}
-            className="h-6 w-6 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
-            <X className="h-2.5 w-2.5" />
+            <X className="h-3 w-3" />
           </Button>
         </div>
       </CardHeader>

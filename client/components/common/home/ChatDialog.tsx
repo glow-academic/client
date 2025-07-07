@@ -37,8 +37,8 @@ import ChatMessages from "./ChatMessages";
 export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
   const {
     uiState,
-    expand,
     close,
+    openWidget,
     currentChatId,
     chats,
     isLoadingChats,
@@ -84,7 +84,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
 
   return (
     <Dialog open={true} onOpenChange={() => close()}>
-      <DialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col p-0 [&>button]:hidden">
+      <DialogContent className="max-w-7xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden">
         <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Select
@@ -143,14 +143,14 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={expand}
+                    onClick={openWidget}
                     className="h-8"
                   >
                     <Minimize2 className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Minimize</p>
+                  <p>Minimize to Widget</p>
                 </TooltipContent>
               </Tooltip>
               <Tooltip>
@@ -172,7 +172,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
           </div>
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0 p-6">
             <ChatMessages onPromptClick={handlePromptClick} />
           </div>
           <div className="border-t">

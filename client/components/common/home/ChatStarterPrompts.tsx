@@ -7,179 +7,132 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { Shuffle } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface ChatStarterPromptsProps {
   onPromptClick: (prompt: string) => void;
   variant?: "expanded" | "minimized";
 }
 
-const starterPrompts = [
-  "Fall 2024 cohort performance",
-  "CS 180 gradebook CSV",
-  "Students with <3 attempts",
-  "Recent error logs (24h)",
-  "Agent response times",
-  "Export simulation data",
+const allPrompts = [
+  "Show me how students in the Fall 2024 cohort are performing",
+  "Generate a gradebook for CS 180 and let me download it as CSV",
+  "Find all students who have completed fewer than 3 simulation attempts",
+  "Show me the recent error logs from the past 24 hours",
+  "Analyze agent response times for the past week",
+  "Export all simulation data for the active cohorts",
+  "Create a performance report for struggling students",
+  "Show me the most active students this month",
+  "Generate attendance reports for all classes",
 ];
 
 export default function ChatStarterPrompts({
   onPromptClick,
   variant = "expanded",
 }: ChatStarterPromptsProps) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedPrompts, setSelectedPrompts] = useState<string[]>([]);
+
+  const getRandomPrompts = (count: number) => {
+    const shuffled = [...allPrompts].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  };
+
+  const refreshPrompts = () => {
+    setSelectedPrompts(getRandomPrompts(3));
+  };
+
+  useEffect(() => {
+    setSelectedPrompts(getRandomPrompts(3));
+  }, []);
 
   const isExpanded = variant === "expanded";
-  const promptsPerView = isExpanded ? 3 : 1;
-  const totalSlides = Math.ceil(starterPrompts.length / promptsPerView);
-
-  const nextSlide = () => {
-    setCurrentIndex((prev) => (prev + 1) % totalSlides);
-  };
-
-  const prevSlide = () => {
-    setCurrentIndex((prev) => (prev - 1 + totalSlides) % totalSlides);
-  };
-
-  const getVisiblePrompts = () => {
-    const start = currentIndex * promptsPerView;
-    return starterPrompts.slice(start, start + promptsPerView);
-  };
 
   if (isExpanded) {
     return (
-      <div className="flex items-center justify-center h-full p-4">
-        <div className="text-center space-y-6 max-w-3xl w-full">
-          <div className="space-y-3">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">G</span>
+      <div className="flex items-center justify-center h-full p-6">
+        <div className="text-center space-y-8 max-w-5xl w-full">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center">
+                <span className="text-white font-bold text-lg">G</span>
               </div>
-              <h3 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 GLOW Assistant
               </h3>
             </div>
-            <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-              Get insights, generate reports, and analyze training data
+            <p className="text-base text-muted-foreground max-w-2xl mx-auto">
+              Get insights about student performance, generate reports, and
+              analyze training data with our intelligent assistant
             </p>
           </div>
 
-          <div className="relative">
-            <div className="flex items-center justify-center gap-3">
+          <div className="space-y-4">
+            <div className="flex justify-center">
               <Button
                 variant="outline"
-                size="icon"
-                onClick={prevSlide}
-                className="shrink-0 h-8 w-8 rounded-full shadow-sm hover:shadow-md transition-all"
-                disabled={totalSlides <= 1}
+                onClick={refreshPrompts}
+                className="gap-2 hover:bg-blue-50 dark:hover:bg-blue-900/20"
               >
-                <ChevronLeft className="h-3 w-3" />
-              </Button>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1 max-w-2xl">
-                {getVisiblePrompts().map((prompt, index) => (
-                  <Card
-                    key={currentIndex * promptsPerView + index}
-                    className="group hover:shadow-md transition-all duration-200 border hover:border-blue-200 dark:hover:border-blue-800"
-                  >
-                    <Button
-                      variant="ghost"
-                      className="w-full h-auto p-3 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-xs whitespace-normal leading-relaxed group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors"
-                      onClick={() => onPromptClick(prompt)}
-                    >
-                      {prompt}
-                    </Button>
-                  </Card>
-                ))}
-              </div>
-
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={nextSlide}
-                className="shrink-0 h-8 w-8 rounded-full shadow-sm hover:shadow-md transition-all"
-                disabled={totalSlides <= 1}
-              >
-                <ChevronRight className="h-3 w-3" />
+                <Shuffle className="h-4 w-4" />
+                Show Different Options
               </Button>
             </div>
 
-            {totalSlides > 1 && (
-              <div className="flex justify-center gap-1 mt-4">
-                {Array.from({ length: totalSlides }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentIndex(index)}
-                    className={`w-1.5 h-1.5 rounded-full transition-all duration-300 ${
-                      index === currentIndex
-                        ? "bg-blue-500 w-4"
-                        : "bg-gray-300 hover:bg-gray-400"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {selectedPrompts.map((prompt, index) => (
+                <Card
+                  key={`${prompt}-${index}`}
+                  className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-200 dark:hover:border-blue-800"
+                >
+                  <Button
+                    variant="ghost"
+                    className="w-full h-auto p-6 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-sm whitespace-normal leading-relaxed group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors"
+                    onClick={() => onPromptClick(prompt)}
+                  >
+                    {prompt}
+                  </Button>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
-  // Minimized view - single prompt carousel
+  // Minimized view - 3 prompts vertically
   return (
-    <div className="p-2">
-      <div className="relative">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={prevSlide}
-            className="shrink-0 h-6 w-6 p-0 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/20"
-            disabled={totalSlides <= 1}
-          >
-            <ChevronLeft className="h-2.5 w-2.5" />
-          </Button>
+    <div className="p-3 space-y-2">
+      <div className="flex justify-between items-center mb-2">
+        <span className="text-xs font-medium text-muted-foreground">
+          Quick Actions
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refreshPrompts}
+          className="h-5 w-5 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/20"
+        >
+          <Shuffle className="h-3 w-3" />
+        </Button>
+      </div>
 
-          <Card className="flex-1 group hover:shadow-sm transition-all duration-200 border-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10">
+      <div className="space-y-1">
+        {selectedPrompts.map((prompt, index) => (
+          <Card
+            key={`${prompt}-${index}`}
+            className="group hover:shadow-sm transition-all duration-200 border-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10"
+          >
             <Button
               variant="ghost"
               className="w-full h-auto p-2 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-xs whitespace-normal leading-tight group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors font-medium"
-              onClick={() => {
-                const prompt = getVisiblePrompts()[0];
-                if (prompt) onPromptClick(prompt);
-              }}
+              onClick={() => onPromptClick(prompt)}
             >
-              {getVisiblePrompts()[0]}
+              {prompt}
             </Button>
           </Card>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={nextSlide}
-            className="shrink-0 h-6 w-6 p-0 rounded-full hover:bg-blue-100 dark:hover:bg-blue-900/20"
-            disabled={totalSlides <= 1}
-          >
-            <ChevronRight className="h-2.5 w-2.5" />
-          </Button>
-        </div>
-
-        {totalSlides > 1 && (
-          <div className="flex justify-center gap-0.5 mt-1">
-            {Array.from({ length: totalSlides }).map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className={`w-1 h-1 rounded-full transition-all duration-300 ${
-                  index === currentIndex
-                    ? "bg-blue-500 w-2"
-                    : "bg-gray-300 hover:bg-gray-400"
-                }`}
-              />
-            ))}
-          </div>
-        )}
+        ))}
       </div>
     </div>
   );
