@@ -28,6 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -141,7 +142,7 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
@@ -151,7 +152,7 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
             Completion rates across different cohorts
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading cohort data...
@@ -164,7 +165,7 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
   // Show empty state if no data
   if (!cohorts?.length || !radialData.length) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -196,7 +197,7 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
             <p>No cohort data available</p>
             <p className="text-sm">Create cohorts to track training progress</p>
@@ -207,7 +208,7 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -239,11 +240,8 @@ export default function CohortCompletion({ className }: CohortCompletionProps) {
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-0">
-        <ChartContainer
-          config={radialChartConfig}
-          className="mx-auto aspect-square max-h-[400px]"
-        >
+      <CardContent className="pb-0 flex-1">
+        <ChartContainer config={radialChartConfig} className="w-full h-full">
           <RadialBarChart
             data={radialData}
             startAngle={-90}

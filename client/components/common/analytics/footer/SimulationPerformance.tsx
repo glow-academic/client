@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -176,7 +177,7 @@ export default function SimulationPerformance({
   // Show loading state
   if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -186,7 +187,7 @@ export default function SimulationPerformance({
             Performance metrics across different simulations
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading simulation data...
@@ -199,7 +200,7 @@ export default function SimulationPerformance({
   // Show empty state if no data
   if (!performanceData.length) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -231,7 +232,7 @@ export default function SimulationPerformance({
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
             <p>No simulation data available</p>
             <p className="text-sm">
@@ -244,7 +245,7 @@ export default function SimulationPerformance({
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -276,8 +277,8 @@ export default function SimulationPerformance({
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-0">
-        <ChartContainer config={chartConfig} className="max-h-[400px] w-full">
+      <CardContent className="pb-0 flex-1">
+        <ChartContainer config={chartConfig} className="w-full h-full">
           <BarChart
             data={performanceData}
             layout="horizontal"

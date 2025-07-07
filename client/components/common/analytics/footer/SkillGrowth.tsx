@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationChatFeedbacksBySimulationChatGrades } from "@/utils/queries/simulation_chat_feedbacks/get-simulation-chat-feedbacks-by-simulationchatgrades";
 import { getSimulationChatGradesByRubrics } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-rubrics";
@@ -227,7 +228,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
@@ -237,7 +238,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
             Performance across key teaching competencies
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading skill data...
@@ -250,7 +251,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   // Show empty state if no data
   if (!availableRubrics.length || !radarData.length) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -281,7 +282,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
             )}
           </div>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
             <p>No skill data available</p>
             <p className="text-sm">
@@ -294,7 +295,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -327,10 +328,7 @@ export default function SkillGrowth({ className }: SkillGrowthProps) {
       </CardHeader>
       <div className="flex flex-col flex-1">
         <CardContent className="pb-0 flex-1">
-          <ChartContainer
-            config={radarChartConfig}
-            className="mx-auto aspect-square max-h-[400px]"
-          >
+          <ChartContainer config={radarChartConfig} className="w-full h-full">
             <RadarChart data={radarData}>
               <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
               <PolarAngleAxis dataKey="metric" />

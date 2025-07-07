@@ -34,7 +34,6 @@ interface DashboardConfig {
 }
 
 export default function Dashboard() {
-
   // Session and user data
   const { data: session } = useSession();
   const userId = session?.user?.id;
@@ -299,8 +298,6 @@ export default function Dashboard() {
     footerComponentIds,
     showIndicators,
     headerComponents,
-    mainSplit,
-    footerSplit,
   } = dashboardConfig;
 
   // Get current page components for header
@@ -358,17 +355,9 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Main Content Section with Dynamic Split */}
+      {/* Main Content Section with Responsive Layout */}
       {(primaryComponentIds.length > 0 || secondaryComponentIds.length > 0) && (
-        <div
-          className="grid gap-6"
-          style={{
-            gridTemplateColumns:
-              window.innerWidth >= 1024
-                ? `${mainSplit * 100}% ${(1 - mainSplit) * 100}%`
-                : "1fr",
-          }}
-        >
+        <div className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr]">
           {/* Primary Section */}
           {primaryComponentIds.length > 0 && (
             <div className="space-y-4">
@@ -439,80 +428,88 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Footer Section with Dynamic Split */}
-      {footerComponentIds.length > 0 && (
-        <div
-          className="grid gap-6"
-          style={{
-            gridTemplateColumns:
-              window.innerWidth >= 1024
-                ? `${footerSplit * 100}% ${(1 - footerSplit) * 100}%`
-                : "1fr",
-          }}
-        >
-          {/* Left Footer Section */}
-          {leftFooterComponents.length > 0 && (
-            <div className="space-y-4">
-              {leftFooterComponents.length > 0 &&
-                renderComponent(
-                  leftFooterComponents[
-                    leftFooterCarouselIndex % leftFooterComponents.length
-                  ]!,
-                  `left-footer-${leftFooterCarouselIndex}`
-                )}
+      {/* Footer Section with Dynamic Column Count */}
+      {footerComponentIds.length > 0 &&
+        (() => {
+          const footerCols =
+            [leftFooterComponents, rightFooterComponents].filter(
+              (c) => c.length > 0
+            ).length || 1;
 
-              {/* Left footer carousel indicators */}
-              {showIndicators && leftFooterComponents.length > 1 && (
-                <div className="flex justify-center gap-2">
-                  {leftFooterComponents.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setLeftFooterCarouselIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index ===
+          return (
+            <div
+              className="grid gap-6 items-stretch"
+              style={{
+                gridTemplateColumns: `repeat(${footerCols}, 1fr)`,
+                gridAutoRows: "1fr",
+              }}
+            >
+              {/* Left Footer Section */}
+              {leftFooterComponents.length > 0 && (
+                <div className="space-y-4">
+                  {leftFooterComponents.length > 0 &&
+                    renderComponent(
+                      leftFooterComponents[
                         leftFooterCarouselIndex % leftFooterComponents.length
-                          ? "bg-primary"
-                          : "bg-muted"
-                      }`}
-                    />
-                  ))}
+                      ]!,
+                      `left-footer-${leftFooterCarouselIndex}`
+                    )}
+
+                  {/* Left footer carousel indicators */}
+                  {showIndicators && leftFooterComponents.length > 1 && (
+                    <div className="flex justify-center gap-2">
+                      {leftFooterComponents.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setLeftFooterCarouselIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            index ===
+                            leftFooterCarouselIndex %
+                              leftFooterComponents.length
+                              ? "bg-primary"
+                              : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          )}
 
-          {/* Right Footer Section */}
-          {rightFooterComponents.length > 0 && (
-            <div className="space-y-4">
-              {rightFooterComponents.length > 0 &&
-                renderComponent(
-                  rightFooterComponents[
-                    rightFooterCarouselIndex % rightFooterComponents.length
-                  ]!,
-                  `right-footer-${rightFooterCarouselIndex}`
-                )}
-
-              {/* Right footer carousel indicators */}
-              {showIndicators && rightFooterComponents.length > 1 && (
-                <div className="flex justify-center gap-2">
-                  {rightFooterComponents.map((_, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setRightFooterCarouselIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        index ===
+              {/* Right Footer Section */}
+              {rightFooterComponents.length > 0 && (
+                <div className="space-y-4">
+                  {rightFooterComponents.length > 0 &&
+                    renderComponent(
+                      rightFooterComponents[
                         rightFooterCarouselIndex % rightFooterComponents.length
-                          ? "bg-primary"
-                          : "bg-muted"
-                      }`}
-                    />
-                  ))}
+                      ]!,
+                      `right-footer-${rightFooterCarouselIndex}`
+                    )}
+
+                  {/* Right footer carousel indicators */}
+                  {showIndicators && rightFooterComponents.length > 1 && (
+                    <div className="flex justify-center gap-2">
+                      {rightFooterComponents.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setRightFooterCarouselIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-colors ${
+                            index ===
+                            rightFooterCarouselIndex %
+                              rightFooterComponents.length
+                              ? "bg-primary"
+                              : "bg-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
-          )}
-        </div>
-      )}
+          );
+        })()}
     </div>
   );
 }

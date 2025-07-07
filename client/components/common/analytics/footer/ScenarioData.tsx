@@ -20,6 +20,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { cn } from "@/lib/utils";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllDocuments } from "@/utils/queries/documents/get-all-documents";
@@ -182,7 +183,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   // Show loading state
   if (isLoading) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -192,7 +193,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
             Performance trends across scenario characteristics
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
             Loading scenario data...
@@ -205,7 +206,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   // Show empty state if no data
   if (!scenarioAnalysis.chartData.length) {
     return (
-      <Card className={className}>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
@@ -215,7 +216,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
             Performance trends across scenario characteristics
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center h-[400px]">
+        <CardContent className="flex items-center justify-center flex-1">
           <div className="text-center text-muted-foreground">
             <p>No scenario data available</p>
             <p className="text-sm">
@@ -228,7 +229,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
   }
 
   return (
-    <Card className={className}>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5" />
@@ -238,7 +239,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
           Performance trends across scenario characteristics
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 flex-1 flex flex-col">
         {/* Performance Summary */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -272,7 +273,7 @@ export default function ScenarioData({ className }: ScenarioDataProps) {
         </div>
 
         {/* Chart */}
-        <div className="h-[250px]">
+        <div className="flex-1">
           <ChartContainer config={chartConfig} className="h-full w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
