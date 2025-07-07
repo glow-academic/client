@@ -282,54 +282,89 @@ class SimulationTTSModel(TTSModel):
                 accumulated_audio = []  # Store all audio for duration calculation
                 
                 # Stream audio chunks from kokoro-onnx
+                audio_buffer = b""  # Buffer to handle incomplete chunks
                 async for audio_chunk in remote_tts(text, voice="af_bella", speed=1.0, lang="en-us"):
-                    # Convert chunk to numpy array for processing
-                    audio_np = np.frombuffer(audio_chunk, dtype=np.int16)
-                    accumulated_audio.append(audio_np)
+                    # Add chunk to buffer
+                    audio_buffer += audio_chunk
                     
-                    # Process the chunk in 20ms frames
-                    for i in range(0, len(audio_np), frame_size):
-                        frame = audio_np[i:i + frame_size]
-                        if len(frame) < frame_size:  # pad final partial frame
-                            frame = np.pad(frame, (0, frame_size - len(frame)))
-                        frame_bytes = frame.tobytes()
+                    # Process complete int16 samples (2 bytes each)
+                    bytes_per_sample = 2
+                    complete_samples = len(audio_buffer) // bytes_per_sample
+                    
+                    if complete_samples > 0:
+                        # Extract complete samples
+                        complete_bytes = complete_samples * bytes_per_sample
+                        complete_buffer = audio_buffer[:complete_bytes]
+                        audio_buffer = audio_buffer[complete_bytes:]  # Keep remainder
                         
-                        # AUDIO FIRST: yield the frame immediately
-                        yield frame_bytes
-                        wav_frames.append(frame_bytes)
-                        frames_sent += 1
+                        # Convert to numpy array for processing
+                        audio_np = np.frombuffer(complete_buffer, dtype=np.int16)
+                        accumulated_audio.append(audio_np)
                         
-                        # Update current time
-                        current_time = frames_sent * FRAME_SEC
-                        
-                        # Detect audio start for better word timing
-                        if not audio_started and len(frame) > 0:
-                            # Calculate RMS amplitude for silence detection
-                            rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2)) / 32767.0
+                        # Process the chunk in 20ms frames
+                        for i in range(0, len(audio_np), frame_size):
+                            frame = audio_np[i:i + frame_size]
+                            if len(frame) < frame_size:  # pad final partial frame
+                                frame = np.pad(frame, (0, frame_size - len(frame)))
+                            frame_bytes = frame.tobytes()
                             
-                            if rms > silence_threshold:
-                                audio_started = True
-                                audio_start_time = current_time
-                                logger.info(f"Audio starts at {audio_start_time:.3f}s")
-                        
-                        # Calculate audio progress (excluding silence)
-                        audio_progress = max(0, current_time - audio_start_time) if audio_started else 0
-                        
-                        # Progressive word timing distribution
-                        if audio_started and total_words > 0:
-                            # Estimate total duration based on current progress and text length
-                            # This is a rough estimate that will be refined as we get more audio
-                            estimated_duration = max(1.0, len(text) * 0.05)  # ~50ms per character
-                            progress_ratio = min(audio_progress / estimated_duration, 1.0)
-                            target_words = min(int(progress_ratio * total_words), total_words)
+                            # AUDIO FIRST: yield the frame immediately
+                            yield frame_bytes
+                            wav_frames.append(frame_bytes)
+                            frames_sent += 1
                             
-                            if target_words > next_word_index and next_word_index < total_words:
-                                words_to_send = words[next_word_index:target_words]
-                                await push_tokens(words_to_send, audio_progress)
-                                logger.info(f"TOKEN sent words {next_word_index}-{target_words-1} at {current_time:.3f}s")
+                            # Update current time
+                            current_time = frames_sent * FRAME_SEC
+                            
+                            # Detect audio start for better word timing
+                            if not audio_started and len(frame) > 0:
+                                # Calculate RMS amplitude for silence detection
+                                rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2)) / 32767.0
+                                
+                                if rms > silence_threshold:
+                                    audio_started = True
+                                    audio_start_time = current_time
+                                    logger.info(f"Audio starts at {audio_start_time:.3f}s")
+                            
+                            # Calculate audio progress (excluding silence)
+                            audio_progress = max(0, current_time - audio_start_time) if audio_started else 0
+                            
+                            # Progressive word timing distribution
+                            if audio_started and total_words > 0:
+                                # Estimate total duration based on current progress and text length
+                                # This is a rough estimate that will be refined as we get more audio
+                                estimated_duration = max(1.0, len(text) * 0.05)  # ~50ms per character
+                                progress_ratio = min(audio_progress / estimated_duration, 1.0)
+                                target_words = min(int(progress_ratio * total_words), total_words)
+                                
+                                if target_words > next_word_index and next_word_index < total_words:
+                                    words_to_send = words[next_word_index:target_words]
+                                    await push_tokens(words_to_send, audio_progress)
+                                    logger.info(f"TOKEN sent words {next_word_index}-{target_words-1} at {current_time:.3f}s")
+                            
+                            # Add small delay to maintain real-time pacing
+                            await asyncio.sleep(0.001)
+                
+                # Process any remaining bytes in the buffer
+                if audio_buffer:
+                    # Pad to complete sample if needed
+                    if len(audio_buffer) % 2 == 1:
+                        audio_buffer += b'\x00'  # Pad with zero byte
+                    
+                    if len(audio_buffer) >= 2:
+                        audio_np = np.frombuffer(audio_buffer, dtype=np.int16)
+                        accumulated_audio.append(audio_np)
                         
-                        # Add small delay to maintain real-time pacing
-                        await asyncio.sleep(0.001)
+                        # Process final frames
+                        for i in range(0, len(audio_np), frame_size):
+                            frame = audio_np[i:i + frame_size]
+                            if len(frame) < frame_size:
+                                frame = np.pad(frame, (0, frame_size - len(frame)))
+                            frame_bytes = frame.tobytes()
+                            
+                            yield frame_bytes
+                            wav_frames.append(frame_bytes)
+                            frames_sent += 1
                 
                 # Calculate final audio duration
                 if accumulated_audio:
