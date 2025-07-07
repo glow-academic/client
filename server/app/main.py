@@ -38,6 +38,30 @@ else:
                             RTCSessionDescription)
         from aiortc.sdp import candidate_from_sdp  # type: ignore
         from av import AudioFrame  # type: ignore
+    else:
+        class MediaStreamTrack:
+            pass
+        
+        class RTCConfiguration:
+            pass
+        
+        class RTCIceCandidate:
+            pass
+        
+        class RTCIceServer:
+            pass
+        
+        class RTCPeerConnection:
+            pass
+        
+        class RTCSessionDescription:
+            pass
+        
+        class AudioFrame:
+            pass
+        
+        def candidate_from_sdp(*args: Any, **kwargs: Any) -> Any:
+            pass
 
 from app.db import get_session, init_db
 from app.models import SimulationChats
