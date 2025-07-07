@@ -1,6 +1,6 @@
 import io
 import os
-from typing import Any
+from typing import Any, AsyncGenerator
 
 import httpx
 import numpy as np
@@ -31,6 +31,15 @@ async def remote_stt(buf: bytes) -> str:
     resp = await _post("/stt", files={"file": ("audio.wav", pcm_to_wav_bytes(buf), "audio/wav")})
     return str(resp.json()["text"])
 
-async def remote_tts(text: str, voice: str = "af_bella") -> bytes:
-    resp = await _post("/tts", json={"text": text, "voice": voice})
-    return resp.content
+async def remote_tts(text: str, voice: str = "af_bella", speed: float = 1.0, lang: str = "en-us") -> AsyncGenerator[bytes, None]:
+    """Stream TTS audio using kokoro-onnx"""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        async with client.stream(
+            "POST", 
+            f"{_MODEL_URL}/tts", 
+            json={"text": text, "voice": voice, "speed": speed, "lang": lang}
+        ) as resp:
+            resp.raise_for_status()
+            async for chunk in resp.aiter_bytes():
+                if chunk:
+                    yield chunk

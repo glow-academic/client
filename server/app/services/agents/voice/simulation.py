@@ -6,6 +6,7 @@ import random
 import uuid
 import wave
 from typing import Any, AsyncGenerator, AsyncIterator, Callable, Dict
+
 import httpx
 import litellm
 import numpy as np
@@ -273,53 +274,22 @@ class SimulationTTSModel(TTSModel):
 
         try:
             if self.model_id is None:
-                # --- call remote TTS once, receive full 48 kHz PCM stream ---
-                raw_pcm = await remote_tts(text, voice="af_bella")  # bytes
-
-                audio_np = np.frombuffer(raw_pcm, dtype=np.int16)
-                total_samples = len(audio_np)
-                total_audio_duration = total_samples / 48_000.0
-
+                # --- Use streaming TTS with kokoro-onnx for real-time audio generation ---
+                logger.info(f"Starting streaming TTS for text: {text[:50]}...")
+                
                 frame_size = 960  # 20 ms @48 kHz
-                all_audio_chunks = [
-                    audio_np[i : i + frame_size] for i in range(0, len(audio_np), frame_size)
-                ]
-                
-                logger.info(f"Total audio duration: {total_audio_duration:.2f} seconds")
-                
-                # NEW: Detect silence at the beginning
-                combined_audio = np.concatenate(all_audio_chunks) if all_audio_chunks else np.array([])
-                
-                # Find the first non-silent frame
-                frame_size = 960
-                for frame_idx in range(0, len(combined_audio), frame_size):
-                    frame_data = combined_audio[frame_idx:frame_idx + frame_size]
-                    if len(frame_data) == 0:
-                        continue
-                        
-                    # Calculate RMS amplitude for silence detection
-                    rms = np.sqrt(np.mean(frame_data.astype(np.float32) ** 2)) / 32767.0
-                    
-                    if not audio_started and rms > silence_threshold:
-                        audio_started = True
-                        audio_start_time = frame_idx / 48000.0  # Convert to seconds
-                        pre_audio_frames = frame_idx // frame_size
-                        logger.info(f"Audio starts at {audio_start_time:.3f}s (frame {pre_audio_frames})")
-                        break
-                
-                # If no audio detected, assume it starts immediately
-                if not audio_started:
-                    audio_start_time = 0.0
-                    pre_audio_frames = 0
-                
-                # Now stream the audio with proper timing
                 frames_sent = 0
-                current_chunk_idx = 0
+                accumulated_audio = []  # Store all audio for duration calculation
                 
-                for audio_chunk in all_audio_chunks:
-                    # 4. slice into 20 ms (960-sample) frames
-                    for i in range(0, len(audio_chunk), frame_size):
-                        frame = audio_chunk[i:i + frame_size]
+                # Stream audio chunks from kokoro-onnx
+                async for audio_chunk in remote_tts(text, voice="af_bella", speed=1.0, lang="en-us"):
+                    # Convert chunk to numpy array for processing
+                    audio_np = np.frombuffer(audio_chunk, dtype=np.int16)
+                    accumulated_audio.append(audio_np)
+                    
+                    # Process the chunk in 20ms frames
+                    for i in range(0, len(audio_np), frame_size):
+                        frame = audio_np[i:i + frame_size]
                         if len(frame) < frame_size:  # pad final partial frame
                             frame = np.pad(frame, (0, frame_size - len(frame)))
                         frame_bytes = frame.tobytes()
@@ -332,26 +302,43 @@ class SimulationTTSModel(TTSModel):
                         # Update current time
                         current_time = frames_sent * FRAME_SEC
                         
-                        # Calculate audio progress (excluding silence)
-                        audio_progress = max(0, current_time - audio_start_time)
+                        # Detect audio start for better word timing
+                        if not audio_started and len(frame) > 0:
+                            # Calculate RMS amplitude for silence detection
+                            rms = np.sqrt(np.mean(frame.astype(np.float32) ** 2)) / 32767.0
+                            
+                            if rms > silence_threshold:
+                                audio_started = True
+                                audio_start_time = current_time
+                                logger.info(f"Audio starts at {audio_start_time:.3f}s")
                         
-                        # NEW: More accurate word timing distribution
-                        if audio_started and total_audio_duration > 0:
-                            # Calculate how many words should have been spoken by now
-                            progress_ratio = audio_progress / (total_audio_duration - audio_start_time)
+                        # Calculate audio progress (excluding silence)
+                        audio_progress = max(0, current_time - audio_start_time) if audio_started else 0
+                        
+                        # Progressive word timing distribution
+                        if audio_started and total_words > 0:
+                            # Estimate total duration based on current progress and text length
+                            # This is a rough estimate that will be refined as we get more audio
+                            estimated_duration = max(1.0, len(text) * 0.05)  # ~50ms per character
+                            progress_ratio = min(audio_progress / estimated_duration, 1.0)
                             target_words = min(int(progress_ratio * total_words), total_words)
                             
                             if target_words > next_word_index and next_word_index < total_words:
-                                # Calculate timing offset for this batch
-                                batch_start_time = (next_word_index / total_words) * (total_audio_duration - audio_start_time)
                                 words_to_send = words[next_word_index:target_words]
-                                await push_tokens(words_to_send, batch_start_time)
+                                await push_tokens(words_to_send, audio_progress)
                                 logger.info(f"TOKEN sent words {next_word_index}-{target_words-1} at {current_time:.3f}s")
                         
                         # Add small delay to maintain real-time pacing
                         await asyncio.sleep(0.001)
+                
+                # Calculate final audio duration
+                if accumulated_audio:
+                    total_audio_np = np.concatenate(accumulated_audio)
+                    total_audio_duration = len(total_audio_np) / 48_000.0
+                else:
+                    total_audio_duration = current_time
 
-                logger.info(f"TTS completed for text length: {len(text)}")
+                logger.info(f"Streaming TTS completed for text length: {len(text)}, duration: {total_audio_duration:.2f}s")
             else:
                 # LiteLLM path - similar improvements
                 logger.info(f"TTS generating audio for text: {text[:50]}...")
@@ -420,11 +407,11 @@ class SimulationTTSModel(TTSModel):
             # 6. Flush any remaining words
             if next_word_index < total_words:
                 remaining_words = words[next_word_index:]
-                final_timing_offset = total_audio_duration - audio_start_time
+                final_timing_offset = max(0, total_audio_duration - audio_start_time) if audio_started else total_audio_duration
                 await push_tokens(remaining_words, final_timing_offset)
 
             # ── Calculate final word end times based on actual audio duration ──
-            actual_audio_duration = max(0, total_audio_duration - audio_start_time)
+            actual_audio_duration = max(0, total_audio_duration - audio_start_time) if audio_started else total_audio_duration
             
             if word_timings and actual_audio_duration > 0:
                 # Redistribute word timings more evenly across the actual audio duration

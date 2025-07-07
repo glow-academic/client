@@ -45,17 +45,12 @@ services:
   # --------------------
   model:
     container_name: glow-model
+    build: ./server/model
     env_file: .env
-    build:
-      context: ./server/model
-      dockerfile: Dockerfile
-      args:
-        DEVICE: ${BUILD_DEVICE:-cuda12.1-cudnn8-runtime}
     environment:
-      ASR_DEVICE: ${RUN_DEVICE:-auto}
+      - DOCKER_ENV=1
     restart: unless-stopped
-    command: gunicorn app.main:app -k uvicorn.workers.UvicornWorker \
-             -w 1 --threads 8 -b 0.0.0.0:8080 --log-level info
+    command: gunicorn app.main:app -k uvicorn.workers.UvicornWorker -w 1 --threads 8 -b 0.0.0.0:8080 --log-level info
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
