@@ -8,6 +8,15 @@ networks:
 
 services:
   # --------------------
+  # Redis – pub/sub bus for Socket.IO
+  # --------------------
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks:
+      - internal
+
+  # --------------------
   # Database Service
   # --------------------
   database:
@@ -71,6 +80,7 @@ services:
     environment:
       - DB_HOST=database
       - DOCKER_ENV=1
+      - REDIS_URL=redis://redis:6379/0   # ← used by app.main (see diff below)
     volumes:
       - uploads-data:/app/uploads   # makes /app/uploads writable
       - audio-data:/app/audio
@@ -84,8 +94,10 @@ services:
     depends_on:
       database:
         condition: service_healthy
+      redis:
+        condition: service_started
     deploy:
-      replicas: 1
+      replicas: 3            # ← scale horizontally
     command: >
       gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 --log-level info
     networks:

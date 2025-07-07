@@ -30,6 +30,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from socketio import AsyncRedisManager
 from sqlmodel import Session, select
 
 load_dotenv()
@@ -585,8 +586,14 @@ async def handle_text_dc_message(profile_id: str, message: Any) -> None:
     except Exception as e:
         logger.error(f"Error handling text data-channel message: {e}")
 
+# ----------  Socket.IO with Redis message queue  ----------
+redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
+logger.info(f"Initializing Socket.IO with Redis manager: {redis_url}")
+redis_manager = AsyncRedisManager(redis_url)
+
 # Create Socket.IO server instance globally
 sio = socketio.AsyncServer(
+    client_manager=redis_manager,    # ← NEW
     cors_allowed_origins=allowed_origins,
     cors_credentials=True,
     logger=True,  # Enable logging for debugging
