@@ -167,8 +167,6 @@ export function WebSocketProvider({
   const webRTCRetryCount = useRef(0);
   const maxWebRTCRetries = 3;
   const webRTCStartDebounceTimer = useRef<NodeJS.Timeout | null>(null);
-  const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
-  const lastPongReceived = useRef<number>(Date.now());
 
   // Check if WebRTC is supported
   useEffect(() => {
@@ -1399,46 +1397,8 @@ export function WebSocketProvider({
         toast.error("Connection lost. Please refresh the page to reconnect.");
       });
 
-      // Handle heartbeat pong responses
-      socket.on("pong", (data: { timestamp: number }) => {
-        lastPongReceived.current = Date.now();
-        logInfo("Received heartbeat pong", { serverTimestamp: data.timestamp });
-      });
-
       // Set up common event handlers that update React Query cache
       setupCommonEventHandlers(socket);
-
-      // Start heartbeat mechanism
-      const startHeartbeat = () => {
-        if (heartbeatInterval.current) {
-          clearInterval(heartbeatInterval.current);
-        }
-
-        heartbeatInterval.current = setInterval(() => {
-          if (socket.connected) {
-            const now = Date.now();
-            // Check if we haven't received a pong in 30 seconds (2x heartbeat interval)
-            if (now - lastPongReceived.current > 30000) {
-              logError("Heartbeat timeout - reconnecting WebSocket");
-              socket.disconnect();
-              socket.connect();
-            } else {
-              socket.emit("ping", { timestamp: now });
-            }
-          }
-        }, 15000); // Send ping every 15 seconds
-      };
-
-      socket.on("connect", () => {
-        startHeartbeat();
-      });
-
-      socket.on("disconnect", () => {
-        if (heartbeatInterval.current) {
-          clearInterval(heartbeatInterval.current);
-          heartbeatInterval.current = null;
-        }
-      });
     };
 
     connectWebSocket();
@@ -1461,10 +1421,6 @@ export function WebSocketProvider({
       }
 
       // Clean up timers
-      if (heartbeatInterval.current) {
-        clearInterval(heartbeatInterval.current);
-        heartbeatInterval.current = null;
-      }
       if (webRTCStartDebounceTimer.current) {
         clearTimeout(webRTCStartDebounceTimer.current);
         webRTCStartDebounceTimer.current = null;
@@ -1977,9 +1933,9 @@ export function WebSocketProvider({
       // This is the most important part: getting user-gesture consent
       silentSound.start(0);
       // If the line above doesn't throw an error, we have consent!
-      toast.success("Audio enabled! 🎉", {
-        description: "Your browser has granted audio playback permission.",
-      });
+      // toast.success("Audio enabled! 🎉", {
+      //   description: "Your browser has granted audio playback permission.",
+      // });
 
       // 2. Now, immediately try to play the persistent audio stream if available
       const persistentAudio = remoteAudioStreams.current.get("persistent");

@@ -807,38 +807,7 @@ async def disconnect(sid: str) -> None:
             del active_connections[chat_id]
             break
 
-# Heartbeat mechanism
-# reserved event names – rename to avoid disconnect storms
-@sio.event  # type: ignore
-async def app_ping(sid: str, data: Any = None) -> None:
-    await sio.emit("app_pong", {"timestamp": time.time()}, room=sid)
-    
-    # Update last_active timestamp in database for heartbeat
-    profile_id = None
-    for pid, socket_id in socket_owner.items():
-        if socket_id == sid:
-            profile_id = pid
-            break
-    
-    if profile_id:
-        try:
-            from app.db import get_session
-            from app.models import Profiles
-            
-            db_session = next(get_session())
-            try:
-                profile = db_session.exec(
-                    select(Profiles).where(Profiles.id == profile_id)
-                ).one_or_none()
-                
-                if profile:
-                    profile.last_active = datetime.now(timezone.utc)
-                    db_session.add(profile)
-                    db_session.commit()
-            finally:
-                db_session.close()
-        except Exception as e:
-            logger.error(f"Error updating heartbeat for profile {profile_id}: {e}")
+
 
 # WebRTC-specific Socket.IO events with connection ID tracking
 @sio.event  # type: ignore
