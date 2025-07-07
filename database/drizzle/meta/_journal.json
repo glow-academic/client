@@ -204,6 +204,13 @@
       "when": 1751547266371,
       "tag": "0028_unknown_sally_floyd",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1751906756220,
+      "tag": "0029_acoustic_punisher",
+      "breakpoints": true
     }
   ]
 }

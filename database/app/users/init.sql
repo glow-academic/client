@@ -67,7 +67,9 @@ CREATE TABLE profiles (
   viewed_intro BOOLEAN   NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   role       profile_role NOT NULL DEFAULT 'ta',
-  class_ids  UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[]
+  class_ids  UUID[]      NOT NULL DEFAULT ARRAY[]::UUID[],
+  active     BOOLEAN     NOT NULL DEFAULT FALSE,
+  last_active TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- ============================================================================

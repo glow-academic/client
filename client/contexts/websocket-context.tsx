@@ -1262,7 +1262,7 @@ export function WebSocketProvider({
           if (currentConnectionId.current === data.connection_id) {
             const pc = webRTCPeerConnection.current;
             if (pc) {
-              toast.success("WebRTC connection established!");
+              // toast.success("WebRTC connection established!");
 
               // Now that WebRTC is ready, create data channels for any rooms we're already in.
               // The persistent audio track is already established and ready to receive TTS audio.

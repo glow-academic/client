@@ -95,6 +95,16 @@ class Components(_Base, table=True):
     default_component: bool = Field(sa_column=Column('default_component', Boolean, server_default=text('false')))
 
 
+class Migrations(_Base, table=True):
+    __table_args__ = (
+        PrimaryKeyConstraint('id', name='migrations_pkey'),
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    hash: str = Field(sa_column=Column('hash', Text))
+    created_at: Optional[int] = Field(default=None, sa_column=Column('created_at', BigInteger))
+
+
 class Models(_Base, table=True):
     __table_args__ = (
         PrimaryKeyConstraint('id', name='models_pkey'),
@@ -241,6 +251,8 @@ class Profiles(_Base, table=True):
     created_at: datetime = Field(sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
     role: str = Field(sa_column=Column('role', Enum('admin', 'instructional', 'instructor', 'ta', name='profile_role'), server_default=text("'ta'::profile_role")))
     class_ids: List[uuid.UUID] = Field(sa_column=Column('class_ids', ARRAY(Uuid(as_uuid=True)), server_default=text('ARRAY[]::uuid[]')))
+    active: bool = Field(sa_column=Column('active', Boolean, server_default=text('false')))
+    last_active: datetime = Field(sa_column=Column('last_active', DateTime(True), server_default=text('now()')))
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
