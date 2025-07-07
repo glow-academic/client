@@ -12,6 +12,7 @@ import numpy as np
 # only for IO
 import soundfile as sf  # type: ignore
 import torch
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
 from faster_whisper import WhisperModel  # type: ignore
@@ -27,7 +28,20 @@ MODEL_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger(__name__)
 
+load_dotenv()
+
 # --------------------------------------------------------------------- lifespan
+
+DEVICE_ENV = os.getenv("ASR_DEVICE", "auto").lower()   # "auto" | "cpu" | "cuda"
+
+if DEVICE_ENV == "cpu":
+    _device = "cpu"
+elif DEVICE_ENV == "cuda":
+    _device = "cuda" if torch.cuda.is_available() else "cpu"
+else:                           # "auto"
+    _device = "cuda" if torch.cuda.is_available() else "cpu"
+
+compute_type = "int8" if _device == "cpu" else "float16"
 
 whisper_model: WhisperModel | None = None
 kokoro_pipeline: KPipeline | None = None      # populated in lifespan
@@ -40,8 +54,8 @@ async def lifespan(app: FastAPI):
     # loads the same "tiny" checkpoint; GPU kernel auto-selects fp16
     whisper_model = WhisperModel(
         "tiny",
-        device="cuda" if torch.cuda.is_available() else "cpu",
-        compute_type="float16")         # or "int8_float16" for even faster
+        device=_device,
+        compute_type=compute_type)
 
     logger.info("Loading Kokoro pipeline …")
     kokoro_pipeline = KPipeline(lang_code="a")  # downloads weights once

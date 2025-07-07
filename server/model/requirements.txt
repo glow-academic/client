@@ -6,3 +6,5 @@ soundfile
 # voice pipeline
 kokoro
 misaki[en]
+
+python-dotenv
