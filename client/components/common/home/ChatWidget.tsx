@@ -22,6 +22,7 @@ import { Edit, Maximize2, X } from "lucide-react";
 import { useState } from "react";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
+import ChatStarterPrompts from "./ChatStarterPrompts";
 
 export default function ChatWidget() {
   const {
@@ -72,9 +73,12 @@ export default function ChatWidget() {
   };
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 h-[500px] shadow-xl border-2 z-40 flex flex-col">
-      <CardHeader className="p-3 border-b flex flex-row items-center justify-between space-y-0">
+    <Card className="fixed bottom-4 right-4 w-96 h-[500px] shadow-xl border-2 z-40 flex flex-col bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800">
+      <CardHeader className="p-3 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
         <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+            <span className="text-white font-bold text-xs">G</span>
+          </div>
           <Select
             value={currentChatId || "new"}
             onValueChange={handleChatSelect}
@@ -114,7 +118,7 @@ export default function ChatWidget() {
             variant="ghost"
             size="sm"
             onClick={startBlankChat}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
             <Edit className="h-3 w-3" />
           </Button>
@@ -122,7 +126,7 @@ export default function ChatWidget() {
             variant="ghost"
             size="sm"
             onClick={expand}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
             <Maximize2 className="h-3 w-3" />
           </Button>
@@ -130,7 +134,7 @@ export default function ChatWidget() {
             variant="ghost"
             size="sm"
             onClick={close}
-            className="h-6 w-6 p-0"
+            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
             <X className="h-3 w-3" />
           </Button>
@@ -140,6 +144,14 @@ export default function ChatWidget() {
         <div className="flex-1 min-h-0">
           <ChatMessages onPromptClick={handlePromptClick} />
         </div>
+        {!currentChatId && (
+          <div className="border-t bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10">
+            <ChatStarterPrompts
+              onPromptClick={handlePromptClick}
+              variant="minimized"
+            />
+          </div>
+        )}
         <div className="border-t">
           <ChatInput promptToSet={promptToSet} onPromptSet={handlePromptSet} />
         </div>

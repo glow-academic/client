@@ -84,8 +84,8 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
 
   return (
     <Dialog open={true} onOpenChange={() => close()}>
-      <DialogContent className="max-w-4xl h-[80vh] flex flex-col p-0 [&>button]:hidden">
-        <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0">
+      <DialogContent className="max-w-6xl w-[90vw] h-[85vh] flex flex-col p-0 [&>button]:hidden">
+        <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <Select
               value={currentChatId || "new"}

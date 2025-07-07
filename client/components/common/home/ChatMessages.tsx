@@ -48,8 +48,8 @@ const ToolCallCard = ({ toolCall }: { toolCall: AssistantToolCall }) => {
 
   const getStatusColor = () => {
     return toolCall.completed
-      ? "bg-green-100 text-green-800"
-      : "bg-blue-100 text-blue-800";
+      ? "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300"
+      : "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
   };
 
   const formatToolName = (name: string) => {
@@ -100,11 +100,13 @@ const ToolCallCard = ({ toolCall }: { toolCall: AssistantToolCall }) => {
   };
 
   return (
-    <Card className="mb-2 border-l-4 border-l-blue-500">
+    <Card className="mb-2 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 hover:shadow-md transition-all duration-200">
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Wrench className="h-4 w-4 text-blue-600" />
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
+              <Wrench className="h-4 w-4 text-white" />
+            </div>
             <div className="flex flex-col">
               <span className="text-sm font-medium">
                 {formatToolName(toolCall.toolName)}
@@ -220,13 +222,12 @@ export default function ChatMessages({
   // Auto-scroll to bottom when new items arrive
   useEffect(() => {
     const timeline = createTimeline();
-    if (timeline && timeline.length > 0) {
+    if (timeline.length > 0) {
       const timer = setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 100);
       return () => clearTimeout(timer);
     }
-    return () => {};
   }, [createTimeline]);
 
   if (!shouldShow) {
@@ -250,7 +251,12 @@ export default function ChatMessages({
   }
 
   if (!currentChatId) {
-    return <ChatStarterPrompts onPromptClick={onPromptClick || (() => {})} />;
+    return (
+      <ChatStarterPrompts
+        onPromptClick={onPromptClick || (() => {})}
+        variant="expanded"
+      />
+    );
   }
 
   const timeline = createTimeline();
@@ -269,17 +275,17 @@ export default function ChatMessages({
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] rounded-lg p-3 shadow-sm ${
                     message.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+                      : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border"
                   }`}
                 >
                   {message.role === "assistant" &&
                   !message.completed &&
                   message.content === "" ? (
                     <div className="flex items-center">
-                      <span className="text-gray-500 mr-2 text-sm">
+                      <span className="text-muted-foreground mr-2 text-sm">
                         Thinking
                       </span>
                       <LoadingDots />

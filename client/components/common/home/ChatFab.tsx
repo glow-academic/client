@@ -35,10 +35,10 @@ export default function ChatFab() {
   return (
     <Button
       onClick={handleClick}
-      className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
+      className="fixed bottom-4 right-4 h-14 w-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 z-50 bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 group"
       size="lg"
     >
-      <MessageCircle className="h-6 w-6" />
+      <MessageCircle className="h-6 w-6 group-hover:scale-110 transition-transform duration-200" />
     </Button>
   );
 }

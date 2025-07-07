@@ -76,7 +76,7 @@ export default function ChatInput({
   return (
     <form
       onSubmit={isSendingMessage ? handleStop : handleSubmit}
-      className="p-3"
+      className="p-3 bg-gradient-to-r from-gray-50/50 to-gray-100/50 dark:from-gray-800/50 dark:to-gray-700/50"
     >
       <div className="flex gap-2">
         <Textarea
@@ -85,7 +85,7 @@ export default function ChatInput({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={isSendingMessage}
-          className="flex-1 resize-none min-h-[30px] max-h-[100px]"
+          className="flex-1 resize-none min-h-[30px] max-h-[100px] border-2 focus:border-blue-300 dark:focus:border-blue-600 transition-colors"
           rows={1}
         />
         {isSendingMessage ? (
@@ -93,7 +93,7 @@ export default function ChatInput({
             type="submit"
             disabled={isStoppingMessage}
             size="default"
-            className="shrink-0"
+            className="shrink-0 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 border-0"
             variant="destructive"
           >
             <Square className="h-4 w-4" />
@@ -103,7 +103,7 @@ export default function ChatInput({
             type="submit"
             disabled={!message.trim()}
             size="default"
-            className="shrink-0"
+            className="shrink-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 disabled:opacity-50"
           >
             <Send className="h-4 w-4" />
           </Button>
