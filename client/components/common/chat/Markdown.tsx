@@ -5,18 +5,20 @@
  * 05/15/2025
  */
 
-import ReactMarkdown from "react-markdown";
-import RemarkMathPlugin from "remark-math";
-import RehypeKatex from "rehype-katex";
 import "katex/dist/katex.min.css"; // Keep KaTeX CSS
-import remarkGfm from "remark-gfm";
+import ReactMarkdown from "react-markdown";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import RehypeKatex from "rehype-katex";
 import rehypeRaw from "rehype-raw";
 import rehypeSlug from "rehype-slug";
-import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import remarkGfm from "remark-gfm";
+import RemarkMathPlugin from "remark-math";
 // remarkDirective might not be needed if no custom directives are used in the barebones version
 // import remarkDirective from 'remark-directive';
-import rehypeHighlight from "rehype-highlight";
+import { logError } from "@/utils/logger";
 import "highlight.js/styles/github.css"; // Keep highlight.js CSS for code blocks
+import Link from "next/link";
+import rehypeHighlight from "rehype-highlight";
 import MarkdownImage from "./MarkdownImage";
 // Removed Avatar, Badge, Flex, Text from '@mantine/core' as they are not used
 // Removed imports related to data fetching and specific types like Document, CONTENT_COLORS
@@ -26,6 +28,78 @@ import MarkdownImage from "./MarkdownImage";
 interface MarkdownProps {
   children: string;
 }
+
+// Enhanced link component to handle internal navigation
+const MarkdownLink = ({
+  href,
+  children,
+  ...props
+}: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+  // Check if it's a CSV download link
+  if (href && href.startsWith("csv://")) {
+    const token = href.substring(6); // Remove 'csv://' prefix
+
+    const handleCsvDownload = async (e: React.MouseEvent) => {
+      e.preventDefault();
+
+      // Dynamically import the CSV download utility
+      const { downloadCsv } = await import("@/utils/api/csv/download-csv");
+
+      try {
+        const result = await downloadCsv(token);
+        if (!result.success) {
+          logError("Failed to download CSV:", result.message);
+          // You could show a toast notification here
+        }
+      } catch (error) {
+        logError("Error downloading CSV:", error);
+      }
+    };
+
+    return (
+      <button
+        onClick={handleCsvDownload}
+        className="prose-a inline-flex items-center gap-1 hover:underline cursor-pointer border-none bg-transparent p-0 font-inherit text-inherit"
+        type="button"
+      >
+        {children}
+        <span className="text-xs">📥</span>
+      </button>
+    );
+  }
+
+  // Check if it's an internal GLOW link (starts with #/ or /)
+  const isInternalLink =
+    href && (href.startsWith("#/") || href.startsWith("/"));
+
+  if (isInternalLink) {
+    // Remove the # prefix if present for Next.js routing
+    const cleanHref = href.startsWith("#/") ? href.substring(1) : href;
+
+    return (
+      <Link
+        href={cleanHref}
+        className="prose-a inline-flex items-center gap-1 hover:underline"
+      >
+        {children}
+      </Link>
+    );
+  }
+
+  // External link - open in new tab
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="prose-a inline-flex items-center gap-1"
+      {...props}
+    >
+      {children}
+      <span className="text-xs">↗</span>
+    </a>
+  );
+};
 
 export default function Markdown({ children }: MarkdownProps) {
   // Removed supabase and useQuery hooks for user, profile, files, fileDocuments
@@ -59,7 +133,7 @@ export default function Markdown({ children }: MarkdownProps) {
           // ... other prose elements from your original component
           h3: ({ children }) => <h3 className="prose-h3">{children}</h3>, // Added for completeness
           h4: ({ children }) => <h4 className="prose-h4">{children}</h4>, // Added for completeness
-          a: ({ ...props }) => <a className="prose-a" {...props} />, // Basic styling for links
+          a: MarkdownLink,
           blockquote: ({ children }) => (
             <blockquote className="prose-blockquote">{children}</blockquote>
           ),

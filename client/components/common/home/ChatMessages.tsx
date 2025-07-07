@@ -56,15 +56,66 @@ const ToolCallCard = ({ toolCall }: { toolCall: AssistantToolCall }) => {
     return name.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
   };
 
+  const getToolDescription = (
+    toolName: string,
+    args: Record<string, unknown>
+  ) => {
+    const descriptions: Record<
+      string,
+      (args: Record<string, unknown>) => string
+    > = {
+      _profile_overview: (args) =>
+        `Fetch profile details for ${args["key"] || "user"}`,
+      _class_overview: (_args) => `Fetch class information`,
+      _cohort_overview: (_args) => `Fetch cohort details`,
+      _simulation_overview: (_args) => `Fetch simulation information`,
+      _scenario_overview: (_args) => `Fetch scenario details`,
+      _agent_overview: (_args) => `Fetch agent information`,
+      _find_profiles: (args) =>
+        `Search for profiles matching "${args["query"] || ""}"`,
+      _find_classes: (args) =>
+        `Search for classes matching "${args["query"] || ""}"`,
+      _find_simulations: (args) =>
+        `Search for simulations matching "${args["query"] || ""}"`,
+      _student_sim_report: (_args) => `Generate student simulation report`,
+      _class_gradebook: (_args) => `Generate class gradebook`,
+      _cohort_pass_matrix: (_args) => `Generate cohort performance matrix`,
+      _simulation_attempts: (args) =>
+        `Fetch simulation attempts (${args["limit"] || 200} records)`,
+      _agent_response_times: (args) =>
+        `Analyze agent response times (${args["window_days"] || 30} days)`,
+      _recent_app_logs: (args) =>
+        `Fetch recent ${args["level"] || "error"} logs (${args["limit"] || 100} records)`,
+      _export_csv: (_args) => `Export data to CSV`,
+      _assistant_usage: (args) =>
+        `Analyze assistant usage (${args["days"] || 7} days)`,
+      _query_data: (_args) => `Execute custom database query`,
+      _list_schema: () => `List database schema information`,
+    };
+
+    const description = descriptions[toolName];
+    return description
+      ? description(args)
+      : `Execute ${formatToolName(toolName)}`;
+  };
+
   return (
     <Card className="mb-2 border-l-4 border-l-blue-500">
       <CardContent className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Wrench className="h-4 w-4 text-blue-600" />
-            <span className="text-sm font-medium">
-              {formatToolName(toolCall.toolName)}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">
+                {formatToolName(toolCall.toolName)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                {getToolDescription(
+                  toolCall.toolName,
+                  toolCall.toolArguments as Record<string, unknown>
+                )}
+              </span>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             {getStatusIcon()}

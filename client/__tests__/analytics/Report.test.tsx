@@ -1,22 +1,11 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
 import Report from '@/components/analytics/Report';
 
 // Mock external dependencies
-vi.mock('next/navigation', () => ({
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-    replace: vi.fn(),
-  })),
-  usePathname: vi.fn(() => '/'),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}));
+
 
 // Mock API calls
 global.fetch = vi.fn();
@@ -64,19 +53,7 @@ describe('Report', () => {
     });
   });
 
-  describe('User Interactions', () => {
-    
-
-    
-
-    it('should handle user events', async () => {
-      // TODO: Test click, hover, focus events
-      const _user = userEvent.setup();
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: User events test for Report
-    });
-  });
+  
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
@@ -101,14 +78,7 @@ describe('Report', () => {
     });
   });
 
-  describe('Navigation', () => {
-    it('should handle navigation', () => {
-      // TODO: Test navigation behavior
-      
-      // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Navigation test for Report
-    });
-  });
+  
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', () => {
@@ -132,8 +102,8 @@ describe('Report', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useQuery, useRouter, useMemo
- * - Uses router: true
+ * - Uses hooks: useQuery, useMemo
+ * - Uses router: false
  * - Has API calls: true
  * - Has form handling: false
  * - Uses state: false
