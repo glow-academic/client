@@ -24,7 +24,7 @@ from app.models import (Agents, Models, Providers, Scenarios, SimulationChats,
                         SimulationMessages)
 from app.services.agents.collection.simulation import run_simulation_agent
 from app.utils.audio import Modalities
-from app.utils.model import remote_stt  # <- same helpers used elsewhere
+from app.utils.model import remote_stt
 from app.utils.model import remote_tts
 
 # Removed custom logger import - using standard logging
