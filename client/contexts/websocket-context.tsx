@@ -29,6 +29,8 @@ interface WebSocketContextType {
   isWebRTCConnected: boolean;
   webRTCConnectionState: string;
   isWebRTCSupported: boolean;
+  serverAllowsWebRTC: boolean;
+  canUseWebRTC: boolean;
 
   // Loading states for debugging
   isStartingSimulation: boolean;
@@ -141,6 +143,9 @@ export function WebSocketProvider({
     useState(false);
   const [isStoppingAssistant, setIsStoppingAssistant] = useState(false);
 
+  // Server capabilities state
+  const [serverAllowsWebRTC, setServerAllowsWebRTC] = useState(true);
+
   // WebRTC state with connection tracking
   const [isWebRTCConnected, setIsWebRTCConnected] = useState(false);
   const [webRTCConnectionState, setWebRTCConnectionState] = useState("new");
@@ -175,6 +180,9 @@ export function WebSocketProvider({
         typeof RTCDataChannel !== "undefined"
     );
   }, []);
+
+  // Computed value for WebRTC availability
+  const canUseWebRTC = serverAllowsWebRTC && isWebRTCSupported;
 
   // Create data channels for text messaging and process queued messages when they open
   const createDataChannelIfNeeded = useCallback(
@@ -1269,6 +1277,14 @@ export function WebSocketProvider({
         setIsWebRTCConnected(false);
       });
 
+      socket.on("webrtc_unavailable", (data: { reason: string }) => {
+        logInfo("WebRTC unavailable", { reason: data.reason });
+        if (data.reason === "disabled_by_server") {
+          logInfo("WebRTC disabled by server configuration");
+          setServerAllowsWebRTC(false);
+        }
+      });
+
       // SPEC CHANGE: Renegotiation handler is no longer needed
       // The server now uses a persistent audio track, eliminating the need for renegotiation
     },
@@ -1331,10 +1347,22 @@ export function WebSocketProvider({
         });
 
         // Start WebRTC immediately on socket connect to avoid React state propagation delay
-        if (isWebRTCSupported && profileId) {
+        if (canUseWebRTC && profileId) {
           startWebRTCRef.current();
         }
       });
+
+      // Handle server capabilities announcement
+      socket.on(
+        "server_capabilities",
+        (data: { webrtc: boolean; audio: boolean }) => {
+          logInfo("Received server capabilities", {
+            webrtc: data.webrtc,
+            audio: data.audio,
+          });
+          setServerAllowsWebRTC(!!data.webrtc);
+        }
+      );
 
       // Handle connection confirmation from server
       socket.on(
@@ -1429,7 +1457,7 @@ export function WebSocketProvider({
         webRTCStartDebounceTimer.current = null;
       }
     };
-  }, [profileId, setupCommonEventHandlers, isWebRTCSupported]);
+  }, [profileId, setupCommonEventHandlers, canUseWebRTC]);
 
   // Room management
   const joinRoom = useCallback(
@@ -1619,7 +1647,7 @@ export function WebSocketProvider({
 
   // WebRTC functions with conditional debouncing (only in development)
   const startWebRTC = useCallback(async () => {
-    if (!isWebRTCSupported || !profileId || !socketRef.current) {
+    if (!canUseWebRTC || !profileId || !socketRef.current) {
       logError("Cannot start WebRTC - not supported or missing requirements");
       return;
     }
@@ -1641,7 +1669,7 @@ export function WebSocketProvider({
       // In production, start immediately
       startWebRTCImmediate();
     }
-  }, [isWebRTCSupported, profileId, startWebRTCImmediate]);
+  }, [canUseWebRTC, profileId, startWebRTCImmediate]);
 
   // Store startWebRTC in a ref to avoid circular dependencies
   const startWebRTCRef = useRef(startWebRTC);
@@ -1688,12 +1716,12 @@ export function WebSocketProvider({
     if (
       isConnected && // WebSocket is green
       !isWebRTCConnected && // we haven't finished ICE yet
-      isWebRTCSupported && // browser supports it
+      canUseWebRTC && // browser supports it
       profileId // we know who we are
     ) {
       startWebRTCRef.current(); // fire the "webrtc_start" emit
     }
-  }, [isConnected, isWebRTCConnected, isWebRTCSupported, profileId]);
+  }, [isConnected, isWebRTCConnected, canUseWebRTC, profileId]);
 
   useEffect(() => {
     if (!isConnected && isWebRTCConnected) {
@@ -1709,6 +1737,22 @@ export function WebSocketProvider({
       assistantAudioEnabled: boolean = false,
       sketchData?: string | null
     ) => {
+      // If WebRTC is not available, fall back to WebSocket immediately
+      if (!canUseWebRTC) {
+        logInfo("WebRTC unavailable, falling back to WebSocket");
+        if (chatId.includes("simulation")) {
+          emitSendSimulationMessage({
+            chat_id: chatId,
+            message,
+            assistant_audio_enabled: assistantAudioEnabled,
+            ...(sketchData !== undefined && { sketch_data: sketchData }),
+          });
+        } else if (chatId.includes("assistant")) {
+          emitSendAssistantMessage({ chat_id: chatId, message });
+        }
+        return;
+      }
+
       try {
         // Try to use the persistent text data channel first
         const textChannel = webRTCDataChannels.current.get("text");
@@ -1798,6 +1842,7 @@ export function WebSocketProvider({
       }
     },
     [
+      canUseWebRTC,
       createDataChannelIfNeeded,
       emitSendSimulationMessage,
       emitSendAssistantMessage,
@@ -1807,7 +1852,7 @@ export function WebSocketProvider({
   const startAudioStream = useCallback(
     async (chatId: string, assistantAudioEnabled: boolean = false) => {
       if (
-        !isWebRTCSupported ||
+        !canUseWebRTC ||
         !profileId ||
         !socketRef.current ||
         !webRTCPeerConnection.current
@@ -1856,7 +1901,7 @@ export function WebSocketProvider({
         setUserAudioStream(null);
       }
     },
-    [isWebRTCSupported, profileId]
+    [canUseWebRTC, profileId]
   );
 
   const stopAudioStream = useCallback(
@@ -1963,6 +2008,8 @@ export function WebSocketProvider({
     isWebRTCConnected,
     webRTCConnectionState,
     isWebRTCSupported,
+    serverAllowsWebRTC,
+    canUseWebRTC,
     isStartingSimulation,
     isSendingSimulationMessage,
     isStoppingSimulation,

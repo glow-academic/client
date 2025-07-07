@@ -11,6 +11,7 @@ import asyncio
 import base64
 import json
 import logging
+# Conditional imports for WebRTC
 import os
 import uuid
 from collections import deque
@@ -19,10 +20,21 @@ from typing import Any, Dict, Optional
 
 import socketio  # type: ignore
 from agents import gen_trace_id, trace
-from aiortc import MediaStreamTrack, RTCPeerConnection
 from app.db import get_session
 from app.extensions import SKETCH_FOLDER
-from app.main import ServerAudioStreamTrack
+
+from typing import TYPE_CHECKING
+
+WEBRTC_ENABLED = os.getenv("WEBRTC_ENABLED", "true").lower() == "true"
+
+if WEBRTC_ENABLED:
+    from aiortc import MediaStreamTrack, RTCPeerConnection
+else:
+    if TYPE_CHECKING:
+        from aiortc import MediaStreamTrack, RTCPeerConnection  # type: ignore
+    # Stubs for when WebRTC is disabled
+    class _Stub: pass
+    MediaStreamTrack = RTCPeerConnection = _Stub  # type: ignore
 from app.models import (Scenarios, SimulationAttempts, SimulationChats,
                         SimulationMessages, Simulations, SimulationSketches)
 from app.services.agents.collection.grade import run_grade_agent
@@ -48,9 +60,12 @@ def get_sio_instance() -> socketio.AsyncServer:
     return get_socketio_instance()
 
 
-def get_profiles_and_track_class() -> tuple[dict[str, Any], type[ServerAudioStreamTrack]]:
+def get_profiles_and_track_class() -> tuple[dict[str, Any], type]:
     """Get the profiles_live dict and ServerAudioStreamTrack class from main.py"""
-    from app.main import profiles_live
+    if not WEBRTC_ENABLED:
+        return {}, _Stub  # type: ignore
+    
+    from app.main import ServerAudioStreamTrack, profiles_live
     return profiles_live, ServerAudioStreamTrack
 
 
@@ -604,7 +619,7 @@ async def process_simulation_message_websocket(
 
                     # Try data-channel first, fallback to WebSocket
                     token_sent = False
-                    if profile_id:
+                    if profile_id and WEBRTC_ENABLED:
                         from app.main import send_text_dc
                         token_sent = await send_text_dc(profile_id, {
                             "type": "token",
@@ -666,7 +681,7 @@ async def process_simulation_message_websocket(
             if not cancelled:
                 # Try data-channel first, fallback to WebSocket
                 completion_sent = False
-                if profile_id:
+                if profile_id and WEBRTC_ENABLED:
                     from app.main import send_text_dc
                     completion_sent = await send_text_dc(profile_id, {
                         "type": "complete",
@@ -714,6 +729,10 @@ async def emit_error(sid: str, message: str) -> None:
 
 async def process_audio_stream(track: Any, chat_id: str, profile_id: str, assistant_audio_enabled: bool) -> None:
     """Process an incoming audio stream from a client with VAD."""
+    if not WEBRTC_ENABLED:
+        logger.warning("Audio processing called but WebRTC is disabled")
+        return
+        
     # MODIFIED: Update log to show the preference being used
     logger.info(
         f"Audio processing task started for chat {chat_id} from profile {profile_id} (assistant audio: {assistant_audio_enabled})"

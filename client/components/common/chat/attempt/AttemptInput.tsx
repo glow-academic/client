@@ -36,7 +36,7 @@ export default function AttemptInput({
   onToggleSketch: (isExpanding: boolean) => void;
 }) {
   const simulationContext = useSimulation();
-  const { isConnected, isWebRTCConnected } = useWebSocket();
+  const { isConnected, isWebRTCConnected, canUseWebRTC } = useWebSocket();
 
   // Check if dev mode is enabled
   const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
@@ -49,15 +49,21 @@ export default function AttemptInput({
   const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
 
   // Connection state for send button
-  const isConnectionReady = isConnected && isWebRTCConnected;
+  const isConnectionReady = isConnected && (isWebRTCConnected || !canUseWebRTC);
   const hasTextMessage = newMessage.trim().length > 0;
   const hasSketchContent = isTall; // We'll assume if sketch mode is open, there might be content
 
   const getConnectionTooltip = () => {
-    if (!isConnected && !isWebRTCConnected) {
-      return "Initializing (0/2)";
-    } else if (isConnected && !isWebRTCConnected) {
-      return "Initializing (1/2)";
+    if (canUseWebRTC) {
+      if (!isConnected && !isWebRTCConnected) {
+        return "Initializing (0/2)";
+      } else if (isConnected && !isWebRTCConnected) {
+        return "Initializing (1/2)";
+      }
+    } else {
+      if (!isConnected) {
+        return "Initializing (0/1)";
+      }
     }
     if (simulationContext?.isSendingMessage) {
       return "Stop sending";
