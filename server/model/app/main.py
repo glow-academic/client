@@ -6,15 +6,15 @@ import platform
 import sys
 from pathlib import Path
 
+# actual resampling
+import librosa  # ← NEW
 import numpy as np
 # only for IO
 import soundfile as sf  # type: ignore
-# actual resampling
-import librosa          # ← NEW
 import torch
-import whisper  # type: ignore
 from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.responses import JSONResponse, StreamingResponse
+from faster_whisper import WhisperModel  # type: ignore
 from kokoro import KPipeline  # type: ignore
 
 IN_DOCKER = os.getenv("DOCKER_ENV") == "1"
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------- lifespan
 
-whisper_model: whisper.Whisper | None = None  # populated in lifespan
+whisper_model: WhisperModel | None = None
 kokoro_pipeline: KPipeline | None = None      # populated in lifespan
 
 @contextlib.asynccontextmanager
@@ -37,11 +37,11 @@ async def lifespan(app: FastAPI):
     """Load heavy models once, reuse for the whole process."""
     global whisper_model, kokoro_pipeline
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    logger.info(f"Loading Whisper tiny on {device} …")
-    whisper_model = whisper.load_model(
-        "tiny", download_root=str(MODEL_CACHE_DIR)
-    ).to(device).eval()
+    # loads the same "tiny" checkpoint; GPU kernel auto-selects fp16
+    whisper_model = WhisperModel(
+        "tiny",
+        device="cuda" if torch.cuda.is_available() else "cpu",
+        compute_type="float16")         # or "int8_float16" for even faster
 
     logger.info("Loading Kokoro pipeline …")
     kokoro_pipeline = KPipeline(lang_code="a")  # downloads weights once
