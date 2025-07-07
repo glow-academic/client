@@ -10,6 +10,7 @@ import platform
 import sys
 import time
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, Generator, List, Optional
 
@@ -65,6 +66,9 @@ active_runs: dict[str, Any] = {}
 # Profile-based connection management (simplified)
 profiles_live: Dict[str, RTCPeerConnection] = {}  # profile_id -> RTCPeerConnection
 socket_owner: Dict[str, str] = {}  # profile_id -> socket_id
+
+# ICE candidate buffering for profiles without remote description
+pending_ice: Dict[str, List[RTCIceCandidate]] = defaultdict(list)
 
 class ServerAudioStreamTrack(MediaStreamTrack):
     """
@@ -245,6 +249,9 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     
     # Remove from socket ownership
     socket_owner.pop(profile_id, None)
+    
+    # Clear any buffered ICE candidates
+    pending_ice.pop(profile_id, None)
     
     # Close and remove peer connection
     pc = profiles_live.pop(profile_id, None)
@@ -925,8 +932,14 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
         logger.info(f"Successfully set MODIFIED remote description for profile {profile_id}")
 
         # --- Process any buffered ICE candidates ---
-        # Note: ICE candidate buffering removed as part of connection_id removal
-        # Candidates are now processed immediately or dropped if connection is stale
+        # Flush buffered candidates now that remote description is set
+        buffered_candidates = pending_ice.pop(profile_id, [])
+        for candidate in buffered_candidates:
+            try:
+                await pc.addIceCandidate(candidate)
+                logger.info(f"Successfully added buffered ICE candidate for {profile_id}")
+            except Exception as e:
+                logger.error(f"Failed to add buffered ICE candidate for {profile_id}: {e}")
         
         await sio.emit("webrtc_ready", {
             "profile_id": profile_id
@@ -979,9 +992,15 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
         ice_candidate.sdpMid = candidate_data.get("sdpMid")
         ice_candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
 
-        # Process candidate immediately (no buffering in simplified approach)
-        await pc.addIceCandidate(ice_candidate)
-        logger.info(f"Successfully added ICE candidate for {profile_id}")
+        # Check if remote description is set before adding candidate
+        if pc.remoteDescription is None:
+            # Buffer the candidate until remote description is available
+            pending_ice[profile_id].append(ice_candidate) # type: ignore
+            logger.info(f"Buffered ICE candidate for {profile_id} (remote description not set yet)")
+        else:
+            # Process candidate immediately if remote description is available
+            await pc.addIceCandidate(ice_candidate)
+            logger.info(f"Successfully added ICE candidate for {profile_id}")
 
     except Exception as e:
         logger.error(
