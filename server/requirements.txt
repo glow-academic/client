@@ -2,11 +2,8 @@
 
 # FastAPI core framework, plus all the "standard" extras
 # (email-validator, httpx TestClient, template support, form parsing, and Uvicorn)
-fastapi[standard]
-
-# Uvicorn ASGI server with its "standard" performance extras
-# (uvloop, httptools, etc.)
-uvicorn[standard]
+fastapi==0.116.0
+uvicorn[standard]==0.35.0           # latest as of 2025-07-07
 
 python-dotenv
 
@@ -15,8 +12,8 @@ sqlmodel
 openai
 openai-agents[litellm]==0.0.19
 
-python-docx
-numpy
+python-docx==1.1.0
+numpy==1.28.2
 
 # Add psycopg2-binary for SQLAlchemy compatibility
 psycopg2-binary
@@ -29,18 +26,20 @@ PyPDF2>=3.0.0
 python-docx>=1.1.0
 
 # WebSocket support
-python-socketio>=5.10.0
-
-# Redis for Socket.IO clustering (optional)
-redis>=5.0.0
+python-socketio==5.10.0
+redis==5.0.4
 
 # mcp
 fastmcp
 
-# RTC
-aiortc
-webrtcvad
-soundfile
+# WebRTC
+aiortc==1.7.4
+webrtcvad==2.0.10
+soundfile==0.12.1
 
 # Encryption / crypto
-cryptography>=41.0.0
+cryptography==42.0.5
+
+# Transitive “problem” deps
+click==8.1.7
+cffi==1.17.1
