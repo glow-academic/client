@@ -1,46 +1,28 @@
-# ---------- 1️⃣  Builder ----------
-# 👇 Smallest NVIDIA image that still brings libcuda
-FROM python:3.10-slim-bookworm AS builder
-ARG TORCH_V=2.3.0+cu121
-ARG TORCH_URL=https://download.pytorch.org/whl/cu121
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
 
-WORKDIR /wheels
-
-# Compile-time tools only here
-RUN apt-get update \
- && apt-get install -y --no-install-recommends \
-      build-essential git ca-certificates \
- && rm -rf /var/lib/apt/lists/*
-
-# Freeze deps ➜ /wheels
-COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel \
- && pip wheel --no-cache-dir -r requirements.txt \
- && pip wheel --no-cache-dir torch=="${TORCH_V}" --extra-index-url "${TORCH_URL}"
-
-# ---------- 2️⃣  Runtime ----------
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04 AS runtime
 ENV PYTHONUNBUFFERED=1 \
     PYTHONIOENCODING=utf8 \
     TORCH_CUDA_ALLOC_CONF=max_split_size_mb:64,garbage_collection_threshold:0.6 \
     OMP_NUM_THREADS=1
 
-# Slim system deps for runtime only
-RUN apt-get update \
- && apt-get install -y --no-install-recommends libsndfile1 \
- && rm -rf /var/lib/apt/lists/*
+# 1. Add compiler only long enough to build wheels
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential git libsndfile1 ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
+COPY requirements.txt .
 
-# Install wheels quickly, no compiler needed
-COPY --from=builder /wheels /wheels
-RUN python -m venv /venv \
- && . /venv/bin/activate \
- && pip install --no-index --find-links=/wheels /wheels/*.whl \
- && rm -rf /wheels
+# 2. Install directly, delete wheel cache and build tools in the same layer
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
+    pip install --no-cache-dir torch==2.3.0+cu121 -f https://download.pytorch.org/whl/cu121 && \
+    pip install --no-cache-dir -r requirements.txt && \
+    apt-get purge -y build-essential git && \
+    apt-get autoremove -y && \
+    rm -rf /root/.cache/pip
 
-ENV PATH="/venv/bin:${PATH}"
+ENV PATH="/usr/local/bin:${PATH}"
 
 # Copy source *after* deps so rebuilds stay fast
 COPY . .
