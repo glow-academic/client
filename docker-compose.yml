@@ -103,6 +103,7 @@ services:
       - uploads-data:/app/uploads   # makes /app/uploads writable
       - audio-data:/app/audio
       - sketch-data:/app/sketch
+      - csv-data:/app/csv
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
@@ -228,4 +229,5 @@ volumes:
   audio-data:
   sketch-data:
   history-data:
+  csv-data:
 

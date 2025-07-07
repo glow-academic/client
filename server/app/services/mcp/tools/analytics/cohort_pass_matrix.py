@@ -101,7 +101,7 @@ def cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
                         grade = session.exec(grade_stmt).first()
                         
                         if grade:
-                            if best_result is None or (best_result and grade.score > best_result["score"]):
+                            if best_result is None or (best_result and grade.score > int(str(best_result["score"]))):
                                 best_result = {
                                     "score": grade.score,
                                     "passed": grade.passed,

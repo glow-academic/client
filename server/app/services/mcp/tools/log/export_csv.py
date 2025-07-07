@@ -12,6 +12,8 @@ from app.db import engine
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.extensions import CSV_FOLDER
+
 
 def export_csv(sql: str) -> str:
     """
@@ -39,39 +41,34 @@ def export_csv(sql: str) -> str:
         with engine.connect() as conn:
             result = conn.execute(text(sql))
             rows = result.fetchmany(1000)  # Limit to 1000 rows for CSV export
-            
+
             if not rows:
                 return "No data to export."
-            
+
             # Create CSV content
             output = io.StringIO()
             writer = csv.writer(output)
-            
+
             # Write header
             if rows:
                 writer.writerow(rows[0].keys())
-                
+
             # Write data rows
             for row in rows:
                 writer.writerow(row)
-            
+
             csv_content = output.getvalue()
             output.close()
-            
-            # Create temporary file
-            temp_file = tempfile.NamedTemporaryFile(
-                mode='w', 
-                suffix='.csv', 
-                delete=False,
-                encoding='utf-8'
-            )
-            temp_file.write(csv_content)
-            temp_file.close()
-            
-            # Generate download token (simplified - in production use proper file serving)
+
+            # Generate download token
             download_token = str(uuid.uuid4())
-            
-            return f"CSV exported successfully. Download link: /download/{download_token} ({len(rows)} rows)"
-            
+            csv_path = CSV_FOLDER / f"{download_token}.csv"
+
+            # Write CSV file to CSV_FOLDER/token.csv
+            with open(csv_path, "w", encoding="utf-8") as f:
+                f.write(csv_content)
+
+            return f"CSV exported successfully. Download token: {download_token} ({len(rows)} rows)"
+
     except SQLAlchemyError as e:
         return f"Error: {e}"

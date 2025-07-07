@@ -1,5 +1,7 @@
 # server.py — Clean MCP server wrapper that imports all individual tools
 # Import analytics tools
+from typing import Any, Dict, List
+
 from app.services.mcp.tools.analytics.agent_response_times import \
     agent_response_times
 from app.services.mcp.tools.analytics.class_gradebook import class_gradebook
@@ -51,27 +53,27 @@ def _query_data(sql: str) -> str:
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.tool()
-def _profile_overview(key: str):
+def _profile_overview(key: str) -> Dict[str, Any]:
     return profile_overview(key)
 
 @server.tool()
-def _class_overview(class_id: str):
+def _class_overview(class_id: str) -> Dict[str, Any]:
     return class_overview(class_id)
 
 @server.tool()
-def _cohort_overview(cohort_id: str):
+def _cohort_overview(cohort_id: str) -> Dict[str, Any]:
     return cohort_overview(cohort_id)
 
 @server.tool()
-def _simulation_overview(sim_id: str):
+def _simulation_overview(sim_id: str) -> Dict[str, Any]:
     return simulation_overview(sim_id)
 
 @server.tool()
-def _scenario_overview(scenario_id: str):
+def _scenario_overview(scenario_id: str) -> Dict[str, Any]:
     return scenario_overview(scenario_id)
 
 @server.tool()
-def _agent_overview(agent_id: str):
+def _agent_overview(agent_id: str) -> Dict[str, Any]:
     return agent_overview(agent_id)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -79,15 +81,15 @@ def _agent_overview(agent_id: str):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.tool()
-def _find_profiles(query: str, limit: int = 10):
+def _find_profiles(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_profiles(query, limit)
 
 @server.tool()
-def _find_classes(query: str, limit: int = 10):
+def _find_classes(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_classes(query, limit)
 
 @server.tool()
-def _find_simulations(query: str, limit: int = 10):
+def _find_simulations(query: str, limit: int = 10) -> List[Dict[str, Any]]:
     return find_simulations(query, limit)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,23 +97,23 @@ def _find_simulations(query: str, limit: int = 10):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.tool()
-def _student_sim_report(profile_id: str, recent: int = 50):
+def _student_sim_report(profile_id: str, recent: int = 50) -> Dict[str, Any]:
     return student_sim_report(profile_id, recent)
 
 @server.tool()
-def _class_gradebook(class_id: str):
+def _class_gradebook(class_id: str) -> Dict[str, Any]:
     return class_gradebook(class_id)
 
 @server.tool()
-def _cohort_pass_matrix(cohort_id: str):
+def _cohort_pass_matrix(cohort_id: str) -> Dict[str, Any]:
     return cohort_pass_matrix(cohort_id)
 
 @server.tool()
-def _simulation_attempts(sim_id: str, limit: int = 200):
+def _simulation_attempts(sim_id: str, limit: int = 200) -> List[Dict[str, Any]]:
     return simulation_attempts(sim_id, limit)
 
 @server.tool()
-def _agent_response_times(agent_id: str, window_days: int = 30):
+def _agent_response_times(agent_id: str, window_days: int = 30) -> Dict[str, Any]:
     return agent_response_times(agent_id, window_days)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -119,15 +121,15 @@ def _agent_response_times(agent_id: str, window_days: int = 30):
 # ─────────────────────────────────────────────────────────────────────────────
 
 @server.tool()
-def _recent_app_logs(level: str = 'error', limit: int = 100):
+def _recent_app_logs(level: str = 'error', limit: int = 100) -> List[Dict[str, Any]]:
     return recent_app_logs(level, limit)
 
 @server.tool()
-def _export_csv(sql: str):
+def _export_csv(sql: str) -> str:
     return export_csv(sql)
 
 @server.tool()
-def _assistant_usage(days: int = 7):
+def _assistant_usage(days: int = 7) -> Dict[str, Any]:
     return assistant_usage(days)
 
 # ─────────────────────────────────────────────────────────────────────────────

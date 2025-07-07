@@ -20,3 +20,6 @@ AUDIO_FOLDER.mkdir(parents=True, exist_ok=True) # saving each audio file as audi
 
 SKETCH_FOLDER = BASE_FOLDER / "sketches"
 SKETCH_FOLDER.mkdir(parents=True, exist_ok=True) # saving each sketch as sketches/message_id.ext
+
+CSV_FOLDER = BASE_FOLDER / "csv"
+CSV_FOLDER.mkdir(parents=True, exist_ok=True) # saving each csv as csv/token.ext

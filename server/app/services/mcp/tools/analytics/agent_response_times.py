@@ -65,8 +65,8 @@ def agent_response_times(agent_id: str, window_days: int = 30) -> Dict[str, Any]
         # Get recent simulation chats involving this agent's scenarios
         cutoff_date = datetime.now() - timedelta(days=window_days)
         
-        response_times = []
-        recent_responses = []
+        response_times: List[float] = []
+        recent_responses: List[Dict[str, Any]] = []
         
         for scenario in scenarios:
             # Get simulation chats for this scenario
@@ -80,8 +80,11 @@ def agent_response_times(agent_id: str, window_days: int = 30) -> Dict[str, Any]
                 # Get messages for this chat
                 messages_stmt = select(SimulationMessages).where(
                     SimulationMessages.chat_id == chat.id
-                ).order_by(SimulationMessages.created_at)
-                messages = session.exec(messages_stmt).all()
+                )
+                messages = list(session.exec(messages_stmt).all())
+
+                # sort messages by created_at
+                messages.sort(key=lambda x: x.created_at)
                 
                 # Calculate response times between query and response pairs
                 for i in range(len(messages) - 1):
