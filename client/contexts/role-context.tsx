@@ -12,7 +12,6 @@ import {
   getSectionRoute,
   isSectionAvailableForRole 
 } from "@/utils/navigation-utils";
-import { logInfo } from "@/utils/logger";
 
 type ProfileRole = "admin" | "instructional" | "instructor" | "ta" | "guest";
 
@@ -234,21 +233,3 @@ export function RoleProvider({ children, ProfileRole }: RoleProviderProps) {
 
   return <RoleContext.Provider value={value}>{children}</RoleContext.Provider>;
 }
-
-// Debug hook for development
-export const useRoleDebug = () => {
-  const { debug, effectiveRole, simulatedRole, isGuestMode } = useRole();
-
-  React.useEffect(() => {
-    if (process.env.NODE_ENV === "development") {
-      logInfo("Role Debug:", {
-        effectiveRole,
-        simulatedRole,
-        isGuestMode,
-        ...debug,
-      });
-    }
-  }, [effectiveRole, simulatedRole, isGuestMode, debug]);
-
-  return { effectiveRole, simulatedRole, isGuestMode, debug };
-};
