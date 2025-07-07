@@ -97,7 +97,7 @@ services:
       redis:
         condition: service_started
     deploy:
-      replicas: 3            # ← scale horizontally
+      replicas: ${SERVER_REPLICAS:-2}   # (now overridable) 
     command: >
       gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 --log-level info
     networks:
@@ -193,7 +193,7 @@ services:
       - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       client:
-        condition: service_started
+        condition: service_healthy
       server:
         condition: service_healthy
     ports:
