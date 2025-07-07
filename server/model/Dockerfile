@@ -1,41 +1,41 @@
-########################  🔨  Builder  ########################
-FROM python:3.10-slim-bookworm AS builder
-WORKDIR /wheels
+# -------- SMALL, SINGLE STAGE --------
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Build tools only in this throw-away stage
+# 0️⃣  Minimal system + Python
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential git ca-certificates libsndfile1 && \
+    apt-get install -y --no-install-recommends \
+        python3 python3-pip python3-venv libsndfile1 && \
     rm -rf /var/lib/apt/lists/*
 
-# Freeze Python deps into wheels
-COPY requirements.txt .
-RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --upgrade pip wheel && \
-    pip wheel torch==2.3.0 --index-url https://download.pytorch.org/whl/cu121 && \
-    pip wheel -r requirements.txt
-
-########################  🚀  Runtime  ########################
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
-
-# Copy the minimal Python runtime (≈55 MB) produced by the builder
-COPY --from=builder /usr/local /usr/local
-ENV PATH="/usr/local/bin:${PATH}" \
-    PYTHONUNBUFFERED=1 \
-    PYTHONIOENCODING=utf8 \
+# 1️⃣  Create isolated env so we can nuke pip cache safely
+RUN python3 -m venv /venv && /venv/bin/pip install --upgrade pip
+ENV PATH="/venv/bin:${PATH}" \
+    PYTHONUNBUFFERED=1 PYTHONIOENCODING=utf8 \
     TORCH_CUDA_ALLOC_CONF=max_split_size_mb:64,garbage_collection_threshold:0.6 \
     OMP_NUM_THREADS=1
 
-# Only runtime libs; no compilers, no git
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends libsndfile1 && \
-    rm -rf /var/lib/apt/lists/*
+# 2️⃣  Install GPU Torch once, then purge cache
+ARG TORCH_V=2.3.0          # change here if you need newer
+RUN pip install --no-cache-dir torch==$TORCH_V \
+        --index-url https://download.pytorch.org/whl/cu121 && \
+    pip cache purge
 
+# 3️⃣  Copy reqs and install **without pulling another Torch**
+COPY requirements.txt /tmp/requirements.txt
+RUN echo "torch==$TORCH_V" >> /tmp/constraints.txt && \
+    pip install --no-cache-dir -r /tmp/requirements.txt \
+        -c /tmp/constraints.txt && \
+    pip cache purge
+
+# 4️⃣  Copy app after deps so code-only edits stay fast
 WORKDIR /app
 COPY . .
 
-# Drop privileges
+# 5️⃣  Drop privileges
 RUN groupadd -r app && useradd -r -g app app
 USER app
 
 EXPOSE 8080
-CMD ["gunicorn", "app.main:app", "-k", "uvicorn.workers.UvicornWorker", "-w", "1", "--threads", "8", "-b", "0.0.0.0:8080", "--log-level", "info"]
+CMD ["gunicorn","app.main:app","-k","uvicorn.workers.UvicornWorker", "-w","1","--threads","8","-b","0.0.0.0:8080","--log-level","info"]
+    
