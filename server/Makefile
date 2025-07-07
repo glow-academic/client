@@ -14,7 +14,7 @@ dev-tools: venv
 
 # 3. Sync runtime dependencies
 sync: dev-tools
-	@uv pip install -r requirements.txt -r model/requirements.txt
+	@uv pip install -r requirements.txt -r requirements-dev.txt -r model/requirements.txt
 
 # 4. Format code with Ruff and auto-fix issues
 format: venv

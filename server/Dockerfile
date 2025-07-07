@@ -8,10 +8,11 @@ FROM python:3.11-slim AS deps
 WORKDIR /install
 
 # Only what pip needs to compile native modules (if any)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
-        gcc \
-    && rm -rf /var/lib/apt/lists/*
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
+    apt-get install -y --no-install-recommends build-essential gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy requirements for dependency installation
 COPY requirements.txt .
@@ -19,7 +20,7 @@ COPY requirements.txt .
 # Leverage BuildKit cache so unchanged deps are instant
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
-    pip install --no-cache-dir --prefix=/install \
+    pip install --prefer-binary --prefix=/install \
       -r requirements.txt \
       --extra-index-url https://download.pytorch.org/whl/cpu
 
@@ -30,9 +31,10 @@ FROM python:3.11-slim AS runtime
 WORKDIR /app
 
 # Runtime-only
-# If you’ll use curl in health-checks / scripts, keep it.
-# Also bring in CA certs to avoid HTTPS failures.
-RUN apt-get update && \
+# Cache APT index & downloaded .debs for faster rebuilds
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    apt-get update && \
     apt-get install -y --no-install-recommends curl ca-certificates espeak-ng && \
     rm -rf /var/lib/apt/lists/*
 
