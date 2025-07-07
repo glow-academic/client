@@ -49,9 +49,9 @@ def get_sio_instance() -> socketio.AsyncServer:
 
 
 def get_profiles_and_track_class() -> tuple[dict[str, Any], type[ServerAudioStreamTrack]]:
-    """Get the profiles dict and ServerAudioStreamTrack class from main.py"""
-    from app.main import profiles
-    return profiles, ServerAudioStreamTrack
+    """Get the profiles_live dict and ServerAudioStreamTrack class from main.py"""
+    from app.main import profiles_live
+    return profiles_live, ServerAudioStreamTrack
 
 
 async def handle_start_simulation(sid: str, data: Dict[str, Any]) -> None:
@@ -489,21 +489,26 @@ async def process_simulation_message_websocket(
             
             if audio_mode in [Modalities.AUDIO_AUDIO, Modalities.TEXT_AUDIO]:
                 # Get the existing peer connection
-                profiles, _ = get_profiles_and_track_class()
+                profiles_live, _ = get_profiles_and_track_class()
                 
-                if profile_id and profile_id in profiles:
-                    # RETRIEVE the track, don't create a new one
-                    server_audio_track = profiles[profile_id].get("server_audio_track")
+                if profile_id and profile_id in profiles_live:
+                    # Get the peer connection and extract the audio track
+                    pc = profiles_live[profile_id]
+                    
+                    # Find the audio track from the peer connection's transceivers
+                    server_audio_track = None
+                    for sender in pc.getSenders():
+                        if sender.track and sender.track.kind == "audio":
+                            server_audio_track = sender.track
+                            break
+                    
                     if not server_audio_track:
-                        logger.error(f"No persistent audio track found for profile {profile_id}")
+                        logger.error(f"No audio track found in peer connection for profile {profile_id}")
                         return
                     logger.info(f"Retrieved persistent audio track for profile {profile_id}")
                 else:
-                    logger.error(f"Could not find profile or audio track for {profile_id}")
+                    logger.error(f"Could not find profile or peer connection for {profile_id}")
                     return
-
-                # SPEC CHANGE: The entire renegotiation block is DELETED
-                # No more pc.addTrack(), pc.createOffer(), or emitting 'webrtc_renegotiation_offer'
 
             # Use the new audio pipeline
             pipeline = SimulationPipeline(

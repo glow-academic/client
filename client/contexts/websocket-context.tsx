@@ -975,7 +975,7 @@ export function WebSocketProvider({
               });
               webRTCPeerConnection.current = pc;
 
-              // Handle ICE candidates
+              // Handle ICE candidates - set up BEFORE setRemoteDescription for faster trickle
               pc.onicecandidate = (event) => {
                 if (socket.connected) {
                   socket.emit("webrtc_ice_candidate", {
@@ -1307,9 +1307,10 @@ export function WebSocketProvider({
         reconnection: true,
         reconnectionAttempts: 3, // Reduce attempts to avoid spam
         reconnectionDelay: 2000,
-        reconnectionDelayMax: 10000,
-        upgrade: true,
-        rememberUpgrade: false, // Don't remember upgrade to allow fallback
+        reconnectionDelayMax: 8000, // Reduced from 10000
+        transports: ["websocket"], // Skip long-polling altogether
+        upgrade: false, // No long-polling probe
+        rememberUpgrade: true, // Cache for future reloads
         query: {
           profileId,
           timestamp: Date.now(),
@@ -1327,6 +1328,11 @@ export function WebSocketProvider({
           profileId,
           transport: socket.io.engine.transport.name,
         });
+
+        // Start WebRTC immediately on socket connect to avoid React state propagation delay
+        if (isWebRTCSupported && profileId) {
+          startWebRTCRef.current();
+        }
       });
 
       // Handle connection confirmation from server
@@ -1464,7 +1470,7 @@ export function WebSocketProvider({
         webRTCStartDebounceTimer.current = null;
       }
     };
-  }, [profileId, setupCommonEventHandlers]);
+  }, [profileId, setupCommonEventHandlers, isWebRTCSupported]);
 
   // Room management
   const joinRoom = useCallback(
@@ -1640,31 +1646,45 @@ export function WebSocketProvider({
     [isConnected]
   );
 
-  // WebRTC functions with debouncing
+  // WebRTC helper function
+  const startWebRTCImmediate = useCallback(() => {
+    if (!socketRef.current || !profileId) return;
+
+    try {
+      logInfo("Starting WebRTC connection", { profileId });
+
+      // Request WebRTC start from server
+      socketRef.current.emit("webrtc_start", { profile_id: profileId });
+    } catch (error) {
+      logError("Error starting WebRTC", error);
+    }
+  }, [profileId]);
+
+  // WebRTC functions with conditional debouncing (only in development)
   const startWebRTC = useCallback(async () => {
     if (!isWebRTCSupported || !profileId || !socketRef.current) {
       logError("Cannot start WebRTC - not supported or missing requirements");
       return;
     }
 
-    // Debounce WebRTC start to prevent Fast-Refresh spam
-    if (webRTCStartDebounceTimer.current) {
-      clearTimeout(webRTCStartDebounceTimer.current);
-    }
+    // Only debounce in development to prevent Fast-Refresh spam
+    const isDevelopment = process.env.NODE_ENV !== "production";
 
-    webRTCStartDebounceTimer.current = setTimeout(() => {
-      if (!socketRef.current || !profileId) return;
-
-      try {
-        logInfo("Starting WebRTC connection", { profileId });
-
-        // Request WebRTC start from server
-        socketRef.current.emit("webrtc_start", { profile_id: profileId });
-      } catch (error) {
-        logError("Error starting WebRTC", error);
+    if (isDevelopment) {
+      // Debounce WebRTC start to prevent Fast-Refresh spam in development
+      if (webRTCStartDebounceTimer.current) {
+        clearTimeout(webRTCStartDebounceTimer.current);
       }
-    }, 500); // 500ms debounce
-  }, [isWebRTCSupported, profileId]);
+
+      webRTCStartDebounceTimer.current = setTimeout(() => {
+        if (!socketRef.current || !profileId) return;
+        startWebRTCImmediate();
+      }, 100); // Reduced from 500ms to 100ms
+    } else {
+      // In production, start immediately
+      startWebRTCImmediate();
+    }
+  }, [isWebRTCSupported, profileId, startWebRTCImmediate]);
 
   // Store startWebRTC in a ref to avoid circular dependencies
   const startWebRTCRef = useRef(startWebRTC);

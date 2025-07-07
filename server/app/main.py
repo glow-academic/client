@@ -215,23 +215,25 @@ def _build_ice_servers() -> List[Dict[str, Any]]:
     stun_uris = [u.strip() for u in stun_uri.split(",")]
     turn_uris = [u.strip() for u in turn_uri.split(",")]
 
-    ice_servers: List[Dict[str, Any]] = [
-        {
-            "urls": stun_uris
-        }
-    ]
-
+    # Pre-warm TURN: Include both STUN and TURN in the same config
+    # This allows the browser to start connecting to TURN in parallel with STUN
+    ice_servers: List[Dict[str, Any]] = []
+    
     if user and pwd:
-        ice_servers.append(
-            {
-                "urls": turn_uris,
-                "username": user,
-                "credential": pwd,
-            }
-        )
+        # Combined server config for parallel connection attempts
+        ice_servers.append({
+            "urls": stun_uris + turn_uris,
+            "username": user,
+            "credential": pwd,
+        })
+    else:
+        # Fallback to STUN only
+        ice_servers.append({
+            "urls": stun_uris
+        })
 
     logger.info(
-        "Using ICE servers for WebRTC: %s",
+        "Using ICE servers for WebRTC (pre-warmed): %s",
         ", ".join(stun_uris + (turn_uris if user and pwd else [])),
     )
 
@@ -610,21 +612,21 @@ sio = socketio.AsyncServer(
     logger=True,  # Enable logging for debugging
     engineio_logger=True,  # Enable engine.io logging
     async_mode='asgi',
-    # Explicitly set compatible protocol versions
-    transports=['polling', 'websocket'],
+    # Support both transports but prioritize websocket
+    transports=['websocket', 'polling'],
     # Allow upgrades from polling to websocket
     allow_upgrades=True,
-    # Increase timeouts for better stability
+    # Optimized timeouts for faster connection
     ping_timeout=60,
     ping_interval=25,
-    # Try to support Engine.IO protocol v4
-    # engineio_options={
-    #     'max_http_buffer_size': 1000000,
-    #     'ping_timeout': 60,
-    #     'ping_interval': 25,
-    #     'compression': False,  # Disable compression for better performance
-    #     'cookie': False,  # Disable cookies for stateless operation
-    # }
+    # Optimized Engine.IO options
+    engineio_options={
+        'max_http_buffer_size': 1000000,
+        'ping_timeout': 60,
+        'ping_interval': 25,
+        'compression': False,  # Disable compression for better performance
+        'cookie': False,  # Disable cookies for stateless operation
+    }
 )
 
 from app.web.assistants import register_assistant_events
