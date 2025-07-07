@@ -97,7 +97,7 @@ services:
       redis:
         condition: service_started
     deploy:
-      replicas: ${SERVER_REPLICAS:-2}   # (now overridable) 
+      replicas: ${SERVER_REPLICAS:-1}   # (now overridable) 
     command: >
       gunicorn app.main:app -w 1 -k uvicorn.workers.UvicornWorker -b 0.0.0.0:8000 --log-level info
     networks:

@@ -621,13 +621,13 @@ sio = socketio.AsyncServer(
     ping_timeout=60,
     ping_interval=25,
     # Try to support Engine.IO protocol v4
-    engineio_options={
-        'max_http_buffer_size': 1000000,
-        'ping_timeout': 60,
-        'ping_interval': 25,
-        'compression': False,  # Disable compression for better performance
-        'cookie': False,  # Disable cookies for stateless operation
-    }
+    # engineio_options={
+    #     'max_http_buffer_size': 1000000,
+    #     'ping_timeout': 60,
+    #     'ping_interval': 25,
+    #     'compression': False,  # Disable compression for better performance
+    #     'cookie': False,  # Disable cookies for stateless operation
+    # }
 )
 
 from app.web.assistants import register_assistant_events
