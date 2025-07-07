@@ -43,7 +43,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     chats,
     isLoadingChats,
     selectChat,
-    startBlankChat,
+    setCurrentChatId,
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
@@ -123,21 +123,23 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={startBlankChat}
-                    className="h-8"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>New Chat</p>
-                </TooltipContent>
-              </Tooltip>
+              {currentChatId && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentChatId(null)}
+                      className="h-8"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>New Chat</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -172,7 +174,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
           </div>
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 p-6">
+          <div className="flex-1 min-h-0 p-2">
             <ChatMessages onPromptClick={handlePromptClick} />
           </div>
           <div className="border-t">

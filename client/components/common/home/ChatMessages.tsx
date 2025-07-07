@@ -228,6 +228,7 @@ export default function ChatMessages({
       }, 100);
       return () => clearTimeout(timer);
     }
+    return () => {};
   }, [createTimeline]);
 
   if (!shouldShow) {

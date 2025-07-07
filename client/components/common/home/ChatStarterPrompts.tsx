@@ -103,7 +103,7 @@ export default function ChatStarterPrompts({
 
   // Minimized view - 3 prompts vertically
   return (
-    <div className="p-3 space-y-2">
+    <div className="p-3 space-y-2 h-full flex flex-col">
       <div className="flex justify-between items-center mb-2">
         <span className="text-xs font-medium text-muted-foreground">
           Quick Actions
@@ -118,15 +118,15 @@ export default function ChatStarterPrompts({
         </Button>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 flex-1">
         {selectedPrompts.map((prompt, index) => (
           <Card
             key={`${prompt}-${index}`}
-            className="group hover:shadow-sm transition-all duration-200 border-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10"
+            className="group hover:shadow-sm transition-all duration-200 border-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10 flex-1"
           >
             <Button
               variant="ghost"
-              className="w-full h-auto p-2 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-xs whitespace-normal leading-tight group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors font-medium"
+              className="w-full h-full p-3 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-xs whitespace-normal leading-tight group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors font-medium"
               onClick={() => onPromptClick(prompt)}
             >
               {prompt}

@@ -33,7 +33,7 @@ export default function ChatWidget() {
     chats,
     isLoadingChats,
     selectChat,
-    startBlankChat,
+    setCurrentChatId,
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
@@ -114,14 +114,16 @@ export default function ChatWidget() {
           </Select>
         </div>
         <div className="flex items-center gap-1 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={startBlankChat}
-            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
-          >
-            <Edit className="h-3 w-3" />
-          </Button>
+          {currentChatId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCurrentChatId(null)}
+              className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
