@@ -16,14 +16,10 @@ openai
 openai-agents[litellm]==0.0.19
 
 python-docx
-matplotlib
 numpy
 
 # Add psycopg2-binary for SQLAlchemy compatibility
 psycopg2-binary
-
-# Keep psycopg for newer code if needed
-psycopg[binary]
 
 # Production server
 gunicorn
@@ -34,7 +30,6 @@ python-docx>=1.1.0
 
 # WebSocket support
 python-socketio>=5.10.0
-websockets>=12.0
 
 # Redis for Socket.IO clustering (optional)
 redis>=5.0.0
