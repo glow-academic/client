@@ -126,11 +126,11 @@ services:
     environment:
       - DB_HOST=database
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 45s   # (see step 3)
     depends_on:
       database:
         condition: service_healthy
