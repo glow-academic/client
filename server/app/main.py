@@ -10,6 +10,7 @@ import platform
 import sys
 import time
 import uuid
+from datetime import datetime
 from typing import Any, AsyncIterator, Dict, Generator, List, Optional
 
 import socketio  # type: ignore
@@ -61,8 +62,9 @@ active_connections: dict[str, str] = {}
 # Global store for all active runs (unified tracking)
 active_runs: dict[str, Any] = {}
 
-# Profile-based connection management (one socket + one WebRTC per profile)
-profiles: Dict[str, Dict[str, Any]] = {}  # profile_id -> {current_socket, current_connection_id, peer_connection, ice_candidates_buffer, text_channel}
+# Profile-based connection management (simplified)
+profiles_live: Dict[str, RTCPeerConnection] = {}  # profile_id -> RTCPeerConnection
+socket_owner: Dict[str, str] = {}  # profile_id -> socket_id
 
 class ServerAudioStreamTrack(MediaStreamTrack):
     """
@@ -239,24 +241,11 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
     """Clean up all connections for a profile."""
     logger.info(f"Cleaning up profile {profile_id} connections - {reason}")
     
-    if profile_id not in profiles:
-        return
-        
-    profile_data = profiles.pop(profile_id, None)  # Atomically get and remove
-    if not profile_data:
-        return
-
-    # End server audio track if one exists (only when connection is being cleaned up)
-    server_audio_track = profile_data.get("server_audio_track")
-    if server_audio_track:
-        try:
-            server_audio_track.end_stream()
-            logger.info(f"Ended persistent server audio track for profile {profile_id}")
-        except Exception as e:
-            logger.error(f"Error ending server audio track for profile {profile_id}: {e}")
-
-    # Close peer connection
-    pc = profile_data.get("peer_connection")
+    # Remove from socket ownership
+    socket_owner.pop(profile_id, None)
+    
+    # Close and remove peer connection
+    pc = profiles_live.pop(profile_id, None)
     if pc and pc.connectionState != "closed":
         try:
             # Give a moment for tasks to wrap up before closing
@@ -265,27 +254,35 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
             logger.info(f"Closed peer connection for profile {profile_id}")
         except Exception as e:
             logger.error(f"Error closing peer connection for profile {profile_id}: {e}")
-
-async def send_text_dc(profile_id: str, payload: Dict[str, Any]) -> bool:
-    """Try to push JSON over the text data-channel, return True if it worked."""
-    if profile_id not in profiles:
-        return False
-        
-    dc = profiles[profile_id].get("text_channel")
-    if dc and dc.readyState == "open":
-        try:
-            dc.send(json.dumps(payload))
-            logger.debug(f"Sent data-channel message to {profile_id}: {payload.get('type', 'unknown')}")
-            return True
-        except Exception as e:
-            logger.error(f"Error sending data-channel message to {profile_id}: {e}")
-            return False
-    return False          # caller can fall back to socket.emit
-
-async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> RTCPeerConnection:
-    """Create a new WebRTC peer connection for a profile with connection ID."""
-    logger.info(f"Creating WebRTC peer connection for profile {profile_id}, connection {connection_id}")
     
+    # Update database to mark profile as inactive
+    try:
+        from app.db import get_session
+        from app.models import Profiles
+        
+        db_session = next(get_session())
+        try:
+            profile = db_session.exec(
+                select(Profiles).where(Profiles.id == profile_id)
+            ).one_or_none()
+            
+            if profile:
+                profile.active = False
+                profile.last_active = datetime.utcnow()
+                db_session.add(profile)
+                db_session.commit()
+                logger.info(f"Updated profile {profile_id} to inactive in database")
+        finally:
+            db_session.close()
+    except Exception as e:
+        logger.error(f"Error updating profile {profile_id} in database: {e}")
+
+async def get_pc(profile_id: str) -> RTCPeerConnection:
+    """Return existing pc or create a fresh one after closing the old."""
+    pc_old = profiles_live.pop(profile_id, None)
+    if pc_old:
+        await pc_old.close()
+
     # Convert our dict format to aiortc's RTCIceServer objects
     ice_servers_list = []
     for server_config in _build_ice_servers():
@@ -304,18 +301,6 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     # SPEC CHANGE: Create and store a persistent audio track upfront
     server_audio_track = ServerAudioStreamTrack()
     
-    # Store the peer connection object immediately
-    if profile_id not in profiles:
-        profiles[profile_id] = {}
-    
-    profiles[profile_id].update({
-        "peer_connection": pc,
-        "current_connection_id": connection_id,
-        "data_channels": {},
-        "ice_candidates_buffer": [],
-        "server_audio_track": server_audio_track  # Store the persistent track
-    })
-    
     # Add the persistent track to the peer connection immediately
     pc.addTrack(server_audio_track)
     logger.info(f"Added persistent audio track to peer connection for profile {profile_id}")
@@ -331,11 +316,10 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
 
     @signalling_dc.on("open")  # type: ignore
     def _() -> None:
-        logger.info(f"Signalling data channel open for profile {profile_id}, connection {connection_id}")
+        logger.info(f"Signalling data channel open for profile {profile_id}")
     
     # NEW: Create persistent text data channel for high-frequency token streaming
     text_dc = pc.createDataChannel("text", ordered=True)  # ordered, reliable
-    profiles[profile_id]["text_channel"] = text_dc  # store for easy lookup
     
     @text_dc.on("open")  # type: ignore
     def _() -> None:
@@ -344,9 +328,6 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     @text_dc.on("close")  # type: ignore
     def _() -> None:
         logger.info(f"Text data-channel closed for profile {profile_id}")
-        # Clean up the reference
-        if profile_id in profiles and "text_channel" in profiles[profile_id]:
-            profiles[profile_id]["text_channel"] = None
     
     @text_dc.on("error")  # type: ignore
     def on_error(error: Any) -> None:
@@ -357,18 +338,18 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
         # Handle incoming text data channel messages (user messages)
         asyncio.create_task(handle_text_dc_message(profile_id, message))
     
-    # ------------------------------------------------------------------------------------------
+    # Store the text channel reference for sending messages
+    setattr(pc, "_text_channel", text_dc)
     
     # Set up peer connection event handlers
     @pc.on("connectionstatechange")  # type: ignore
     async def on_connectionstatechange() -> None:
-        logger.info(f"WebRTC connection state changed to {pc.connectionState} for profile {profile_id}, connection {connection_id}")
+        logger.info(f"WebRTC connection state changed to {pc.connectionState} for profile {profile_id}")
         
         # Only emit if this is still the current connection
-        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+        if profile_id in socket_owner:
             await sio.emit('webrtc_connection_state', {
                 'profile_id': profile_id,
-                'connection_id': connection_id,
                 'state': pc.connectionState
             }, room=profile_id)
             
@@ -378,25 +359,23 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
     
     @pc.on("iceconnectionstatechange")  # type: ignore
     async def on_iceconnectionstatechange() -> None:
-        logger.info(f"WebRTC ICE connection state changed to {pc.iceConnectionState} for profile {profile_id}, connection {connection_id}")
+        logger.info(f"WebRTC ICE connection state changed to {pc.iceConnectionState} for profile {profile_id}")
         
         # Only emit if this is still the current connection
-        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+        if profile_id in socket_owner:
             await sio.emit('webrtc_ice_state', {
                 'profile_id': profile_id,
-                'connection_id': connection_id,
                 'state': pc.iceConnectionState
             }, room=profile_id)
     
     @pc.on("icecandidate")  # type: ignore
     async def on_icecandidate(candidate: RTCIceCandidate | None) -> None:
         # Only emit if this is still the current connection
-        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
+        if profile_id in socket_owner:
             await sio.emit(
                 "webrtc_ice_candidate",
                 {
                     "profile_id": profile_id,
-                    "connection_id": connection_id,
                     "candidate": {
                         "candidate": str(candidate),
                         "sdpMid": candidate.sdpMid,
@@ -408,7 +387,7 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
             
     @pc.on("track")
     async def on_track(track: Any) -> None:
-        logger.info(f"Received track: {track.kind} for profile {profile_id}, connection {connection_id}")
+        logger.info(f"Received track: {track.kind} for profile {profile_id}")
         if track.kind == "audio":
             chat_id = getattr(pc, "_last_chat_id", None)
             # MODIFIED: Get the stored audio preference
@@ -428,16 +407,34 @@ async def create_webrtc_peer_connection(profile_id: str, connection_id: str) -> 
 
     @pc.on("datachannel")  # type: ignore
     def on_datachannel(channel: Any) -> None:
-        logger.info(f"Received data channel: {channel.label} for profile {profile_id}, connection {connection_id}")
-        if profile_id in profiles and profiles[profile_id].get("current_connection_id") == connection_id:
-            profiles[profile_id]["data_channels"][channel.label] = channel
-            
-            @channel.on("message")  # type: ignore
-            def on_message(message: Any) -> None:
-                # Handle incoming WebRTC data channel messages
-                asyncio.create_task(handle_webrtc_data_message(profile_id, channel.label, message))
+        logger.info(f"Received data channel: {channel.label} for profile {profile_id}")
+        
+        @channel.on("message")  # type: ignore
+        def on_message(message: Any) -> None:
+            # Handle incoming WebRTC data channel messages
+            asyncio.create_task(handle_webrtc_data_message(profile_id, channel.label, message))
     
+    profiles_live[profile_id] = pc
     return pc
+
+async def send_text_dc(profile_id: str, payload: Dict[str, Any]) -> bool:
+    """Try to push JSON over the text data-channel, return True if it worked."""
+    pc = profiles_live.get(profile_id)
+    if not pc:
+        return False
+        
+    dc = getattr(pc, "_text_channel", None)
+    if dc and dc.readyState == "open":
+        try:
+            dc.send(json.dumps(payload))
+            logger.debug(f"Sent data-channel message to {profile_id}: {payload.get('type', 'unknown')}")
+            return True
+        except Exception as e:
+            logger.error(f"Error sending data-channel message to {profile_id}: {e}")
+            return False
+    return False          # caller can fall back to socket.emit
+
+
 
 async def handle_webrtc_data_message(profile_id: str, channel_label: str, message: Any) -> None:
     """Handle incoming WebRTC data channel messages."""
@@ -733,8 +730,8 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
 
     if profile_id:
         # Check if another socket is already active for this profile
-        if profile_id in profiles and "current_socket" in profiles[profile_id]:
-            old_sid = profiles[profile_id]["current_socket"]
+        if profile_id in socket_owner:
+            old_sid = socket_owner[profile_id]
             if old_sid != sid:
                 logger.warning(
                     f"Profile {profile_id} already has active socket {old_sid}. "
@@ -745,12 +742,31 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 # Forcefully disconnect the old socket from the server-side
                 await sio.disconnect(old_sid, ignore_queue=True)
 
-        # Initialize or update profile data for the new socket
-        if profile_id not in profiles:
-            profiles[profile_id] = {}
-        profiles[profile_id]["current_socket"] = sid
-
+        # Store socket ownership
+        socket_owner[profile_id] = sid
         await sio.enter_room(sid, profile_id)
+        
+        # Update database to mark profile as active
+        try:
+            from app.db import get_session
+            from app.models import Profiles
+            
+            db_session = next(get_session())
+            try:
+                profile = db_session.exec(
+                    select(Profiles).where(Profiles.id == profile_id)
+                ).one_or_none()
+                
+                if profile:
+                    profile.active = True
+                    profile.last_active = datetime.utcnow()
+                    db_session.add(profile)
+                    db_session.commit()
+                    logger.info(f"Updated profile {profile_id} to active in database")
+            finally:
+                db_session.close()
+        except Exception as e:
+            logger.error(f"Error updating profile {profile_id} in database: {e}")
 
     await sio.emit('connection_confirmed', {
         'sid': sid,
@@ -768,8 +784,8 @@ async def disconnect(sid: str) -> None:
     
     # Find and clean up profile for this socket
     profile_to_cleanup = None
-    for profile_id, profile_data in profiles.items():
-        if profile_data.get("current_socket") == sid:
+    for profile_id, socket_id in socket_owner.items():
+        if socket_id == sid:
             profile_to_cleanup = profile_id
             break
     
@@ -787,11 +803,38 @@ async def disconnect(sid: str) -> None:
 @sio.event  # type: ignore
 async def app_ping(sid: str, data: Any = None) -> None:
     await sio.emit("app_pong", {"timestamp": time.time()}, room=sid)
+    
+    # Update last_active timestamp in database for heartbeat
+    profile_id = None
+    for pid, socket_id in socket_owner.items():
+        if socket_id == sid:
+            profile_id = pid
+            break
+    
+    if profile_id:
+        try:
+            from app.db import get_session
+            from app.models import Profiles
+            
+            db_session = next(get_session())
+            try:
+                profile = db_session.exec(
+                    select(Profiles).where(Profiles.id == profile_id)
+                ).one_or_none()
+                
+                if profile:
+                    profile.last_active = datetime.utcnow()
+                    db_session.add(profile)
+                    db_session.commit()
+            finally:
+                db_session.close()
+        except Exception as e:
+            logger.error(f"Error updating heartbeat for profile {profile_id}: {e}")
 
 # WebRTC-specific Socket.IO events with connection ID tracking
 @sio.event  # type: ignore
 async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
-    """Start WebRTC connection for a profile with connection ID tracking"""
+    """Start WebRTC connection for a profile"""
     try:
         profile_id = data.get('profile_id')
         if not profile_id:
@@ -801,26 +844,16 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
             return
         
         # Verify this socket owns this profile
-        if profile_id not in profiles or profiles[profile_id].get("current_socket") != sid:
+        if profile_id not in socket_owner or socket_owner[profile_id] != sid:
             await sio.emit('webrtc_error', {
                 'error': 'Socket not authorized for this profile'
             }, room=sid)
             return
         
-        # Generate new connection ID
-        connection_id = str(uuid.uuid4())
-        logger.info(f"Starting WebRTC for profile {profile_id}, connection {connection_id}")
+        logger.info(f"Starting WebRTC for profile {profile_id}")
         
-        # Clean up any existing peer connection first
-        if "peer_connection" in profiles[profile_id] and profiles[profile_id]["peer_connection"]:
-            try:
-                await profiles[profile_id]["peer_connection"].close()
-                logger.info(f"Closed existing peer connection for profile {profile_id}")
-            except Exception as e:
-                logger.error(f"Error closing existing peer connection: {e}")
-        
-        # Create new peer connection
-        pc = await create_webrtc_peer_connection(profile_id, connection_id)
+        # Create new peer connection (this will close any existing one)
+        pc = await get_pc(profile_id)
         
         # Create offer
         offer = await pc.createOffer()
@@ -833,7 +866,6 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
         # Send offer and ICE config to client
         await sio.emit('webrtc_offer', {
             'profile_id': profile_id,
-            'connection_id': connection_id,
             'offer': {
                 'sdp': offer.sdp,
                 'type': offer.type
@@ -841,7 +873,7 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
             'ice_config': _build_ice_servers()
         }, room=sid)
         
-        logger.info(f"Sent WebRTC offer to profile {profile_id}, connection {connection_id}")
+        logger.info(f"Sent WebRTC offer to profile {profile_id}")
         
     except Exception as e:
         logger.error(f"Error starting WebRTC: {e}")

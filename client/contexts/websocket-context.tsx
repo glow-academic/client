@@ -164,7 +164,6 @@ export function WebSocketProvider({
     useState<HTMLAudioElement | null>(null);
 
   // Connection state persistence to prevent React re-render triggers
-  const currentConnectionId = useRef<string | null>(null);
   const webRTCRetryCount = useRef(0);
   const maxWebRTCRetries = 3;
   const webRTCStartDebounceTimer = useRef<NodeJS.Timeout | null>(null);
@@ -953,13 +952,11 @@ export function WebSocketProvider({
         "webrtc_offer",
         async (data: {
           profile_id: string;
-          connection_id: string;
           offer: { sdp: string; type: string };
           ice_config: RTCIceServer[];
         }) => {
           logInfo("Received WebRTC offer", {
             profileId: data.profile_id,
-            connectionId: data.connection_id,
           });
 
           try {
@@ -971,9 +968,6 @@ export function WebSocketProvider({
               return;
             }
 
-            // Store the connection ID for tracking
-            currentConnectionId.current = data.connection_id;
-
             if (!pc) {
               logInfo("Creating new PeerConnection for initial setup.");
               pc = new RTCPeerConnection({
@@ -981,15 +975,11 @@ export function WebSocketProvider({
               });
               webRTCPeerConnection.current = pc;
 
-              // Handle ICE candidates with connection ID
+              // Handle ICE candidates
               pc.onicecandidate = (event) => {
-                if (
-                  socket.connected &&
-                  currentConnectionId.current === data.connection_id
-                ) {
+                if (socket.connected) {
                   socket.emit("webrtc_ice_candidate", {
                     profile_id: profileId,
-                    connection_id: data.connection_id,
                     // When event.candidate is null we send null → end-of-candidates
                     candidate: event.candidate
                       ? {
@@ -1004,10 +994,7 @@ export function WebSocketProvider({
 
               // Handle connection state changes with retry logic
               pc.onconnectionstatechange = () => {
-                if (
-                  webRTCPeerConnection.current &&
-                  currentConnectionId.current === data.connection_id
-                ) {
+                if (webRTCPeerConnection.current) {
                   const currentState =
                     webRTCPeerConnection.current.connectionState;
                   setWebRTCConnectionState(currentState);
@@ -1202,10 +1189,9 @@ export function WebSocketProvider({
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
 
-            // Send answer with connection ID
+            // Send answer
             socket.emit("webrtc_answer", {
               profile_id: data.profile_id,
-              connection_id: data.connection_id,
               answer: {
                 sdp: answer.sdp,
                 type: answer.type,
@@ -1250,29 +1236,22 @@ export function WebSocketProvider({
         // This event now serves as a signal, the ontrack event will handle the stream itself.
       });
 
-      socket.on(
-        "webrtc_ready",
-        (data: { profile_id: string; connection_id: string }) => {
-          logInfo("WebRTC connection ready", {
-            profileId: data.profile_id,
-            connectionId: data.connection_id,
+      socket.on("webrtc_ready", (data: { profile_id: string }) => {
+        logInfo("WebRTC connection ready", {
+          profileId: data.profile_id,
+        });
+
+        const pc = webRTCPeerConnection.current;
+        if (pc) {
+          // toast.success("WebRTC connection established!");
+
+          // Now that WebRTC is ready, create data channels for any rooms we're already in.
+          // The persistent audio track is already established and ready to receive TTS audio.
+          currentRoomsRef.current.forEach((roomId) => {
+            createDataChannelIfNeeded(`text-${roomId}`);
           });
-
-          // Only handle if this is the current connection
-          if (currentConnectionId.current === data.connection_id) {
-            const pc = webRTCPeerConnection.current;
-            if (pc) {
-              // toast.success("WebRTC connection established!");
-
-              // Now that WebRTC is ready, create data channels for any rooms we're already in.
-              // The persistent audio track is already established and ready to receive TTS audio.
-              currentRoomsRef.current.forEach((roomId) => {
-                createDataChannelIfNeeded(`text-${roomId}`);
-              });
-            }
-          }
         }
-      );
+      });
 
       socket.on(
         "webrtc_connection_state",
@@ -1891,7 +1870,6 @@ export function WebSocketProvider({
           socketRef.current.emit("webrtc_start_audio", {
             chat_id: chatId,
             profile_id: profileId,
-            connection_id: currentConnectionId.current,
             assistant_audio_enabled: assistantAudioEnabled,
           });
           logInfo(`Started and sent audio stream for chat: ${chatId}`);
@@ -1926,7 +1904,6 @@ export function WebSocketProvider({
         socketRef.current.emit("webrtc_stop_audio", {
           chat_id: chatId,
           profile_id: profileId,
-          connection_id: currentConnectionId.current,
         });
       }
     },

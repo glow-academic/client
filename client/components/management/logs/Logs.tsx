@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getAllAppLogs } from "@/utils/queries/app_logs/get-all-app-logs";
+import { getAppLogs } from "@/utils/logs/get-logs";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, FileText } from "lucide-react";
 import { useState } from "react";
@@ -34,8 +34,8 @@ export default function Logs() {
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null);
 
   const { data: appLogs, isLoading: loadingAppLogs } = useQuery({
-    queryKey: ["appLogs"],
-    queryFn: () => getAllAppLogs(),
+    queryKey: ["logs"],
+    queryFn: () => getAppLogs(),
   });
 
   const getLogLevelVariant = (level: string) => {
