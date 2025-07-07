@@ -125,8 +125,10 @@ services:
     env_file: .env
     environment:
       - DB_HOST=database
+      - HOSTNAME=0.0.0.0
+      - PORT=3000
     healthcheck:
-      test: ["CMD", "curl", "-fsS", "http://localhost:3000/api/health"]
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:3000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5

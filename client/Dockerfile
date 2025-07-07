@@ -72,7 +72,6 @@ WORKDIR /app
 # Set production environment
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
-# ENV HOSTNAME=0.0.0.0
 
 # Create non-root user AND install curl in the same layer
 RUN addgroup --system --gid 1001 nodejs && \
@@ -92,4 +91,4 @@ USER nextjs
 EXPOSE 3000
 
 # Start the application using the standalone server
-CMD ["node", "server.js", "-H", "0.0.0.0"]
+CMD ["node", "server.js"]
