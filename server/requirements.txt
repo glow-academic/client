@@ -53,6 +53,8 @@ httpx>=0.24.0
 # WebSocket support
 python-socketio>=5.10.0
 websockets>=12.0
+
+# Redis for Socket.IO clustering (optional)
 redis>=5.0.0
 
 # mcp

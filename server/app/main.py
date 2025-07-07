@@ -30,7 +30,12 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from socketio import AsyncRedisManager
+
+# Redis is nice in production, but optional in dev
+try:
+    from socketio import AsyncRedisManager
+except ImportError:               # pip install redis-py not present
+    AsyncRedisManager = None      # type: ignore
 from sqlmodel import Session, select
 
 load_dotenv()
@@ -587,13 +592,22 @@ async def handle_text_dc_message(profile_id: str, message: Any) -> None:
         logger.error(f"Error handling text data-channel message: {e}")
 
 # ----------  Socket.IO with Redis message queue  ----------
-redis_url = os.getenv("REDIS_URL", "redis://redis:6379/0")
-logger.info(f"Initializing Socket.IO with Redis manager: {redis_url}")
-redis_manager = AsyncRedisManager(redis_url)
+redis_url = os.getenv("REDIS_URL")          # don't default when unset
+
+if redis_url and AsyncRedisManager:
+    logger.info(f"Socket.IO: clustering via Redis → {redis_url}")
+    redis_manager = AsyncRedisManager(redis_url)
+else:
+    logger.info("Socket.IO: no REDIS_URL - using in-memory manager")
+    redis_manager = None            # ⇢ default AsyncManager
+
+kwargs = {}
+if redis_manager is not None:        # only pass when we actually have it
+    kwargs["client_manager"] = redis_manager
 
 # Create Socket.IO server instance globally
 sio = socketio.AsyncServer(
-    client_manager=redis_manager,    # ← NEW
+    **kwargs,
     cors_allowed_origins=allowed_origins,
     cors_credentials=True,
     logger=True,  # Enable logging for debugging
