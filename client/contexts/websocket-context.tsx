@@ -1511,7 +1511,6 @@ export function WebSocketProvider({
     }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot send simulation message - WebSocket not connected");
-        toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
@@ -1576,7 +1575,6 @@ export function WebSocketProvider({
     (data: { chat_id: string; message: string }) => {
       if (!socketRef.current || !isConnected) {
         logError("Cannot send assistant message - WebSocket not connected");
-        toast.error("WebSocket not connected. Please refresh the page.");
         return;
       }
 
@@ -1814,7 +1812,6 @@ export function WebSocketProvider({
         logError(
           "Cannot start audio stream - not supported or missing requirements"
         );
-        toast.error("WebRTC not ready. Cannot start audio.");
         return;
       }
 

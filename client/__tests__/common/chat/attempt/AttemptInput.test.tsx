@@ -81,7 +81,7 @@ describe('AttemptInput', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useEffect, useRef, useState, useSimulation, useEvent, userAudioStream
+ * - Uses hooks: useEffect, useRef, useState, useSimulation, useWebSocket, useEvent, userAudioStream
  * - Uses router: false
  * - Has API calls: false
  * - Has form handling: false

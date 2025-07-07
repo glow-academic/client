@@ -412,6 +412,9 @@ function SketchDisplay({ sketchId }: { sketchId: string }) {
 export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   const simulationContext = useSimulation();
 
+  // Check if dev mode is enabled
+  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
+
   // --- MODIFICATION START: State for editing functionality ---
   const queryClient = useQueryClient();
   const [editingMessage, setEditingMessage] =
@@ -755,27 +758,29 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
   return (
     <div className="flex-1 flex flex-col p-0 min-h-0 relative">
       <TooltipProvider>
-        <div className="absolute top-4 left-4 z-10">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={
-                  simulationContext?.assistantAudioEnabled
-                    ? "default"
-                    : "outline"
-                }
-                size="sm"
-                onClick={handleAudioModeToggle}
-                className="p-2"
-              >
-                <AudioWaveform className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Toggle Audio Mode</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        {isDevMode && (
+          <div className="absolute top-4 left-4 z-10">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={
+                    simulationContext?.assistantAudioEnabled
+                      ? "default"
+                      : "outline"
+                  }
+                  size="sm"
+                  onClick={handleAudioModeToggle}
+                  className="p-2"
+                >
+                  <AudioWaveform className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Toggle Audio Mode</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
 
         {simulationContext?.assistantAudioEnabled && (
           <div className="absolute top-4 right-4 z-10">

@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useSimulation } from "@/contexts/simulation-context";
+import { useWebSocket } from "@/contexts/websocket-context";
 import { logError } from "@/utils/logger";
 import AudioWaveform from "./AudioWaveform";
 
@@ -35,6 +36,10 @@ export default function AttemptInput({
   onToggleSketch: (isExpanding: boolean) => void;
 }) {
   const simulationContext = useSimulation();
+  const { isConnected, isWebRTCConnected } = useWebSocket();
+
+  // Check if dev mode is enabled
+  const isDevMode = process.env["NEXT_PUBLIC_DEV_MODE"] === "true";
 
   const [newMessage, setNewMessage] = useState("");
   const [isTall, setIsTall] = useState(false);
@@ -42,6 +47,17 @@ export default function AttemptInput({
   const inputPanelRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const sketchCanvasRef = useRef<ReactSketchCanvasRef>(null);
+
+  // Connection state for send button
+  const isConnectionReady = isConnected && isWebRTCConnected;
+  const getConnectionTooltip = () => {
+    if (!isConnected && !isWebRTCConnected) {
+      return "Initializing (0/2)";
+    } else if (isConnected && !isWebRTCConnected) {
+      return "Initializing (1/2)";
+    }
+    return null; // Both connected, no tooltip needed
+  };
 
   // --- Handlers ---
   const handleSendMessage = async (
@@ -69,7 +85,8 @@ export default function AttemptInput({
     if (
       (!messageToSend && !sketchData) ||
       !simulationContext?.currentChat ||
-      simulationContext?.isSendingMessage
+      simulationContext?.isSendingMessage ||
+      !isConnectionReady
     )
       return;
 
@@ -198,21 +215,23 @@ export default function AttemptInput({
 
         {/* --- Persistent Bottom Bar --- */}
         <div className="w-full flex items-center gap-2 shrink-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant={isTall ? "default" : "outline"}
-                onClick={() => onToggleSketch(!isTall)}
-                className="min-h-[40px] h-[40px] px-3"
-              >
-                <Pencil className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isTall ? "Close Sketch" : "Open Sketch"}</p>
-            </TooltipContent>
-          </Tooltip>
+          {isDevMode && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  type="button"
+                  variant={isTall ? "default" : "outline"}
+                  onClick={() => onToggleSketch(!isTall)}
+                  className="min-h-[40px] h-[40px] px-3"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{isTall ? "Close Sketch" : "Open Sketch"}</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
 
           <div className="flex-1">
             {simulationContext?.isRecording ? (
@@ -238,31 +257,33 @@ export default function AttemptInput({
 
           <div className="flex gap-2">
             <AnimatePresence mode="popLayout">
-              {!hasTextMessage && !simulationContext?.isRecording && (
-                <motion.div
-                  layout
-                  key="mic-btn-short"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.5 }}
-                >
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={handleStartRecording}
-                        className="min-h-[40px] h-[40px] px-3"
-                      >
-                        <Mic className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Start audio</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </motion.div>
-              )}
+              {isDevMode &&
+                !hasTextMessage &&
+                !simulationContext?.isRecording && (
+                  <motion.div
+                    layout
+                    key="mic-btn-short"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.5 }}
+                  >
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleStartRecording}
+                          className="min-h-[40px] h-[40px] px-3"
+                        >
+                          <Mic className="h-4 w-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Start audio</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </motion.div>
+                )}
               {(hasTextMessage || hasSketchContent) &&
                 !simulationContext?.isRecording && (
                   <motion.div
@@ -272,29 +293,39 @@ export default function AttemptInput({
                     animate={{ opacity: 1, scale: 1 }}
                     exit={{ opacity: 0, scale: 0.5 }}
                   >
-                    <Button
-                      type="submit"
-                      className="min-h-[40px] h-[40px] px-3"
-                      variant={
-                        simulationContext?.isSendingMessage
-                          ? "destructive"
-                          : "default"
-                      }
-                      onClick={
-                        simulationContext?.isSendingMessage
-                          ? handleStopMessage
-                          : (e) => handleSendMessage(e)
-                      }
-                    >
-                      {simulationContext?.isSendingMessage ? (
-                        <Square className="h-4 w-4" />
-                      ) : (
-                        <Send className="h-4 w-4" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="submit"
+                          className="min-h-[40px] h-[40px] px-3"
+                          variant={
+                            simulationContext?.isSendingMessage
+                              ? "destructive"
+                              : "default"
+                          }
+                          disabled={!isConnectionReady}
+                          onClick={
+                            simulationContext?.isSendingMessage
+                              ? handleStopMessage
+                              : (e) => handleSendMessage(e)
+                          }
+                        >
+                          {simulationContext?.isSendingMessage ? (
+                            <Square className="h-4 w-4" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </TooltipTrigger>
+                      {getConnectionTooltip() && (
+                        <TooltipContent>
+                          <p>{getConnectionTooltip()}</p>
+                        </TooltipContent>
                       )}
-                    </Button>
+                    </Tooltip>
                   </motion.div>
                 )}
-              {simulationContext?.isRecording && (
+              {isDevMode && simulationContext?.isRecording && (
                 <motion.div
                   layout
                   key="stop-btn-short"
