@@ -1086,9 +1086,9 @@ export function WebSocketProvider({
                     "Autoplay was blocked for persistent audio track. User interaction is required.",
                     error
                   );
-                  toast.info(
-                    "Audio is ready. Click the audio button or page to play."
-                  );
+                  // toast.info(
+                  //   "Audio is ready. Click the audio button or page to play."
+                  // );
                 });
               };
 

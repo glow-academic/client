@@ -10,7 +10,7 @@ import platform
 import sys
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, AsyncIterator, Dict, Generator, List, Optional
 
 import socketio  # type: ignore
@@ -268,7 +268,7 @@ async def cleanup_profile_connection(profile_id: str, reason: str = "cleanup") -
             
             if profile:
                 profile.active = False
-                profile.last_active = datetime.utcnow()
+                profile.last_active = datetime.now(timezone.utc)
                 db_session.add(profile)
                 db_session.commit()
                 logger.info(f"Updated profile {profile_id} to inactive in database")
@@ -759,7 +759,7 @@ async def connect(sid: str, environ: Any, auth: Any) -> bool:
                 
                 if profile:
                     profile.active = True
-                    profile.last_active = datetime.utcnow()
+                    profile.last_active = datetime.now(timezone.utc)
                     db_session.add(profile)
                     db_session.commit()
                     logger.info(f"Updated profile {profile_id} to active in database")
@@ -823,7 +823,7 @@ async def app_ping(sid: str, data: Any = None) -> None:
                 ).one_or_none()
                 
                 if profile:
-                    profile.last_active = datetime.utcnow()
+                    profile.last_active = datetime.now(timezone.utc)
                     db_session.add(profile)
                     db_session.commit()
             finally:
@@ -883,35 +883,29 @@ async def webrtc_start(sid: str, data: Dict[str, Any]) -> None:
 
 @sio.event  # type: ignore
 async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
-    """Handle WebRTC answer from client with connection ID validation."""
+    """Handle WebRTC answer from client."""
     profile_id = data.get("profile_id")
-    connection_id = data.get("connection_id")
     
-    if not profile_id or not connection_id:
-        logger.warning("Received webrtc_answer without profile_id or connection_id")
+    if not profile_id:
+        logger.warning("Received webrtc_answer without profile_id")
         return
 
-    # Verify profile and connection ID
-    if profile_id not in profiles:
-        logger.warning(f"Received webrtc_answer for unknown profile: {profile_id}")
+    # Verify profile exists and socket ownership
+    if profile_id not in socket_owner or socket_owner[profile_id] != sid:
+        logger.warning(f"Received webrtc_answer for unauthorized profile: {profile_id}")
         return
         
-    profile_data = profiles[profile_id]
-    if profile_data.get("current_connection_id") != connection_id:
-        logger.warning(f"Received webrtc_answer for stale connection {connection_id}, current is {profile_data.get('current_connection_id')}")
-        return
-        
-    pc = profile_data.get("peer_connection")
+    pc = profiles_live.get(profile_id)
     if not pc:
         logger.warning(f"Received webrtc_answer for non-existent peer connection for profile_id: {profile_id}")
         return
     
     # State guard: check if peer connection is still valid
     if pc.signalingState == "closed":
-        logger.info(f"Stale signalling for closed PC {connection_id}, dropping")
+        logger.info(f"Stale signalling for closed PC {profile_id}, dropping")
         return
         
-    logger.info(f"Received WebRTC answer from profile {profile_id}, connection {connection_id}")
+    logger.info(f"Received WebRTC answer from profile {profile_id}")
     try:
         answer_data = data.get('answer')
         if not answer_data:
@@ -929,26 +923,13 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
         logger.info(f"Successfully set MODIFIED remote description for profile {profile_id}")
 
         # --- Process any buffered ICE candidates ---
-        buffered_candidates = profile_data.get("ice_candidates_buffer", [])
-        if buffered_candidates:
-            logger.info(f"Processing {len(buffered_candidates)} buffered ICE candidates for profile {profile_id}, connection {connection_id}")
-            for candidate in buffered_candidates:
-                try:
-                    await pc.addIceCandidate(candidate)
-                    logger.info(f"Successfully added buffered ICE candidate for {profile_id}")
-                except Exception as e:
-                    logger.error(
-                        f"Error adding buffered ICE candidate for profile {profile_id}: {e}",
-                        exc_info=True
-                    )
-            # Clear the buffer
-            profile_data["ice_candidates_buffer"] = []
+        # Note: ICE candidate buffering removed as part of connection_id removal
+        # Candidates are now processed immediately or dropped if connection is stale
         
         await sio.emit("webrtc_ready", {
-            "profile_id": profile_id, 
-            "connection_id": connection_id
+            "profile_id": profile_id
         }, room=profile_id)
-        logger.info(f"WebRTC handshake complete, ready for profile {profile_id}, connection {connection_id}")
+        logger.info(f"WebRTC handshake complete, ready for profile {profile_id}")
 
     except Exception as e:
         logger.error(f"Error handling WebRTC answer: {e}", exc_info=True)
@@ -958,37 +939,31 @@ async def webrtc_answer(sid: str, data: Dict[str, Any]) -> None:
 
 @sio.event  # type: ignore
 async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
-    """Handle incoming ICE candidates from the client with connection ID validation."""
+    """Handle incoming ICE candidates from the client."""
     profile_id = data.get("profile_id")
-    connection_id = data.get("connection_id")
     
-    if not profile_id or not connection_id:
-        logger.warning("Received webrtc_ice_candidate without profile_id or connection_id")
+    if not profile_id:
+        logger.warning("Received webrtc_ice_candidate without profile_id")
         return
 
-    # Verify profile and connection ID
-    if profile_id not in profiles:
-        logger.warning(f"Received ICE candidate for unknown profile: {profile_id}")
-        return
-        
-    profile_data = profiles[profile_id]
-    if profile_data.get("current_connection_id") != connection_id:
-        logger.warning(f"Received ICE candidate for stale connection {connection_id}, current is {profile_data.get('current_connection_id')}")
+    # Verify profile exists and socket ownership
+    if profile_id not in socket_owner or socket_owner[profile_id] != sid:
+        logger.warning(f"Received ICE candidate for unauthorized profile: {profile_id}")
         return
 
-    pc = profile_data.get("peer_connection")
+    pc = profiles_live.get(profile_id)
     if not pc:
         logger.warning(f"Received ICE candidate for non-existent peer connection: {profile_id}")
         return
 
     # State guard: check if peer connection is still valid
     if pc.signalingState == "closed":
-        logger.info(f"Stale signalling for closed PC {connection_id}, dropping")
+        logger.info(f"Stale signalling for closed PC {profile_id}, dropping")
         return
 
     candidate_data = data.get("candidate")
     if not candidate_data:
-        logger.info(f"End of ICE candidates signal received for profile {profile_id}, connection {connection_id}")
+        logger.info(f"End of ICE candidates signal received for profile {profile_id}")
         try:
             # An empty candidate signals the end of trickle ICE
             await pc.addIceCandidate(None)
@@ -1002,19 +977,13 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
         ice_candidate.sdpMid = candidate_data.get("sdpMid")
         ice_candidate.sdpMLineIndex = candidate_data.get("sdpMLineIndex")
 
-        # Buffer candidate if remote description is not yet set
-        if not pc.remoteDescription:
-            logger.info(f"Buffering ICE candidate for {profile_id}, connection {connection_id} (remote description not set)")
-            if "ice_candidates_buffer" not in profile_data:
-                profile_data["ice_candidates_buffer"] = []
-            profile_data["ice_candidates_buffer"].append(ice_candidate)
-        else:
-            await pc.addIceCandidate(ice_candidate)
-            logger.info(f"Successfully added ICE candidate for {profile_id}, connection {connection_id}")
+        # Process candidate immediately (no buffering in simplified approach)
+        await pc.addIceCandidate(ice_candidate)
+        logger.info(f"Successfully added ICE candidate for {profile_id}")
 
     except Exception as e:
         logger.error(
-            f"Failed to process ICE candidate for profile {profile_id}, connection {connection_id}: {e}",
+            f"Failed to process ICE candidate for profile {profile_id}: {e}",
             exc_info=True
         )
 
@@ -1022,31 +991,24 @@ async def webrtc_ice_candidate(sid: str, data: dict[str, Any]) -> None:
 async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
     """Signal from client that they are starting to send an audio track, and trigger renegotiation."""
     profile_id = data.get("profile_id")
-    connection_id = data.get("connection_id")
     chat_id = data.get("chat_id")
     # MODIFIED: Get the audio preference from the client, default to True for safety
     assistant_audio_enabled = data.get("assistant_audio_enabled", True)
     
-    if not profile_id or not connection_id or not chat_id:
-        logger.error("Missing profile_id, connection_id, or chat_id for webrtc_start_audio")
+    if not profile_id or not chat_id:
+        logger.error("Missing profile_id or chat_id for webrtc_start_audio")
         return
 
     # Add this log line for easier debugging
-    logger.info(f"Client {sid} is starting audio for chat {chat_id} (assistant audio: {assistant_audio_enabled}), connection {connection_id}, beginning renegotiation.")
+    logger.info(f"Client {sid} is starting audio for chat {chat_id} (assistant audio: {assistant_audio_enabled}), beginning renegotiation.")
     
-    # Verify profile and connection ID
-    if profile_id not in profiles:
-        logger.error(f"No profile found for {profile_id} to start audio.")
-        await sio.emit('webrtc_error', {'error': 'Profile not found.'}, room=sid)
-        return
-        
-    profile_data = profiles[profile_id]
-    if profile_data.get("current_connection_id") != connection_id:
-        logger.error(f"Connection ID mismatch for audio start: {connection_id} vs {profile_data.get('current_connection_id')}")
-        await sio.emit('webrtc_error', {'error': 'Connection ID mismatch.'}, room=sid)
+    # Verify profile exists and socket ownership
+    if profile_id not in socket_owner or socket_owner[profile_id] != sid:
+        logger.error(f"Unauthorized audio start request for profile {profile_id}.")
+        await sio.emit('webrtc_error', {'error': 'Profile not authorized.'}, room=sid)
         return
     
-    pc = profile_data.get("peer_connection")
+    pc = profiles_live.get(profile_id)
     if not pc:
         logger.error(f"No peer connection found for profile {profile_id} to start audio.")
         await sio.emit('webrtc_error', {'error': 'Peer connection not found.'}, room=sid)
@@ -1054,7 +1016,7 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
 
     # State guard: check if peer connection is still valid
     if pc.signalingState == "closed":
-        logger.info(f"Cannot start audio for closed PC {connection_id}")
+        logger.info(f"Cannot start audio for closed PC {profile_id}")
         await sio.emit('webrtc_error', {'error': 'Peer connection is closed.'}, room=sid)
         return
 
@@ -1070,7 +1032,6 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
         # Send the new offer to the client
         await sio.emit('webrtc_offer', {
             'profile_id': profile_id,
-            'connection_id': connection_id,
             'offer': {
                 'sdp': offer.sdp,
                 'type': offer.type
@@ -1078,19 +1039,18 @@ async def webrtc_start_audio(sid: str, data: Dict[str, Any]) -> None:
             'ice_config': _build_ice_servers() # Resending config might be needed by client
         }, room=sid)
         
-        logger.info(f"Sent renegotiation offer to profile {profile_id}, connection {connection_id} for chat {chat_id}")
+        logger.info(f"Sent renegotiation offer to profile {profile_id} for chat {chat_id}")
 
     except Exception as e:
-        logger.error(f"Error during audio start renegotiation for profile {profile_id}, connection {connection_id}: {e}", exc_info=True)
+        logger.error(f"Error during audio start renegotiation for profile {profile_id}: {e}", exc_info=True)
         await sio.emit('webrtc_error', {'error': f'Failed to renegotiate for audio: {e}'}, room=sid)
 
 @sio.event  # type: ignore
 async def webrtc_stop_audio(sid: str, data: Dict[str, Any]) -> None:
     """Signal from client that they are stopping an audio track."""
     profile_id = data.get("profile_id")
-    connection_id = data.get("connection_id")
     chat_id = data.get("chat_id")
-    logger.info(f"Client {sid} is stopping audio for chat {chat_id}, connection {connection_id}")
+    logger.info(f"Client {sid} is stopping audio for chat {chat_id}")
     # Here you would add logic to signal the audio processing task to stop.
     # For now, we'll just log it. A robust implementation would use an asyncio.Event or similar.
 
