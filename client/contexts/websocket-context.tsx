@@ -840,7 +840,10 @@ export function WebSocketProvider({
           logInfo("Simulation stopped", data);
           setIsStoppingSimulation(false);
           if (data.success) {
-            toast.success(data.message);
+            // No toast for successful stops
+            if (data.message) {
+              toast.success(data.message);
+            }
           } else {
             toast.error(data.message);
           }

@@ -962,6 +962,14 @@ export default function AttemptMessages({ chatId }: AttemptMessagesProps) {
                                     <LoadingDots />
                                   </div>
                                 </div>
+                              ) : (item as SimulationMessage).completed &&
+                                (item as SimulationMessage).content === "" ? (
+                                // Show "No response" for completed messages with empty content
+                                <div className="bg-muted rounded-lg p-3">
+                                  <span className="text-gray-500 italic">
+                                    No response
+                                  </span>
+                                </div>
                               ) : (item as SimulationMessage).audio &&
                                 !simulationContext?.assistantAudioEnabled ? (
                                 // Show individual message audio controls only when audio mode is OFF

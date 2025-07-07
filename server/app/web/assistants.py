@@ -408,6 +408,14 @@ async def process_assistant_message_websocket(
                     'chat_id': str(chat_id),
                     'final_content': accumulated_content
                 }, room=f"assistant_{chat_id}")
+            else:
+                # For cancelled messages, still emit completion but with cancellation flag
+                await sio_instance.emit('assistant_message_complete', {
+                    'message_id': str(current_message.id),
+                    'chat_id': str(chat_id),
+                    'final_content': accumulated_content,
+                    'cancelled': True
+                }, room=f"assistant_{chat_id}")
         
     except Exception as e:
         logger.error(f"Error in process_assistant_message_websocket: {str(e)}")

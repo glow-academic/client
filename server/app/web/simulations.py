@@ -236,13 +236,13 @@ async def handle_stop_simulation(sid: str, data: Dict[str, Any]) -> None:
             if success:
                 logger.info(f"Successfully cancelled simulation run for chat {chat_id}")
 
-                # Emit stop signal via WebSocket
+                # Emit stop signal via WebSocket (no success message)
                 await sio_instance.emit(
                     "simulation_stopped",
                     {
                         "chat_id": chat_id,
                         "success": True,
-                        "message": "Simulation stopped successfully",
+                        "message": "",  # Empty message, no toast
                     },
                     room=f"simulation_{chat_id}",
                 )
@@ -635,13 +635,10 @@ async def process_simulation_message_websocket(
                     cancelled = True
                     logger.info(f"Simulation run for chat {chat_id} was cancelled")
 
-                    # Update message content with cancellation notice
-                    if not accumulated_content.strip():
-                        accumulated_content = "[Simulation cancelled by user]"
-                    else:
-                        accumulated_content += "\n\n[Simulation cancelled by user]"
-
+                    # Keep content as-is, don't add cancellation notice
+                    # Mark message as completed when cancelled
                     assistant_message.content = accumulated_content
+                    assistant_message.completed = True
                     db_session.add(assistant_message)
                     db_session.commit()
 
