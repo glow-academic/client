@@ -103,64 +103,27 @@ export const isSectionAvailableForRole = (
 
 /**
  * Check if the current path represents a main screen that should show chat components
- * Main screens are those defined in the sidebar navigation for the user's role
+ * Main screens are those with 1 or 2 slashes (main sections and their direct children)
  */
-export const isMainScreen = (pathname: string, role: ProfileRole): boolean => {
-  // Get the active section from the path
-  const segments = pathname.split("/").filter(Boolean);
+export const isMainScreen = (pathname: string, _role: ProfileRole): boolean => {
+  // Remove leading slash and count remaining slashes
+  const pathWithoutLeadingSlash = pathname.startsWith("/")
+    ? pathname.slice(1)
+    : pathname;
+  const slashCount = (pathWithoutLeadingSlash.match(/\//g) || []).length;
 
-  // Handle root path
-  if (segments.length === 0) return false;
-
-  const [first, second] = segments;
-
-  // Determine the base section
-  let baseSection = "";
-
-  switch (first) {
-    case "home":
-      baseSection = "home";
-      break;
-    case "analytics":
-      baseSection = second || "dashboard"; // dashboard, reports, history
-      break;
-    case "create":
-      if (second === "classes") {
-        baseSection = "classes";
-      } else if (second === "cohorts") {
-        baseSection = "cohorts";
-      } else if (second === "scenarios") {
-        baseSection = "scenarios";
-      } else if (second === "simulations") {
-        baseSection = "simulations";
-      } else {
-        baseSection = "create";
-      }
-      break;
-    case "management":
-      if (second === "staff") {
-        baseSection = "staff";
-      } else if (second === "agents") {
-        baseSection = "agents";
-      } else if (second === "models") {
-        baseSection = "models";
-      } else if (second === "logs") {
-        baseSection = "logs";
-      } else if (second === "rubrics") {
-        baseSection = "rubrics";
-      } else {
-        baseSection = "management";
-      }
-      break;
-    case "profile":
-      baseSection = "profile";
-      break;
-    default:
-      return false;
-  }
-
-  // Check if this base section is available for the user's role
-  return isSectionAvailableForRole(baseSection, role);
+  // Show chat on pages with 0 or 1 slashes (after removing leading slash)
+  // This means:
+  // - /analytics (0 slashes after removing leading /)
+  // - /analytics/dashboard (1 slash after removing leading /)
+  // - /create (0 slashes)
+  // - /create/classes (1 slash)
+  // - /management (0 slashes)
+  // - /management/staff (1 slash)
+  // But NOT:
+  // - /create/classes/c/123 (3 slashes)
+  // - /analytics/reports/p/456 (3 slashes)
+  return slashCount <= 1;
 };
 
 /**
