@@ -478,15 +478,6 @@ export default function Scenario({
                 )
               }
             />
-            {selectedDocuments.length > 0 && (
-              <div className="mt-3 flex flex-wrap gap-2">
-                {selectedDocuments.map((doc) => (
-                  <Badge key={doc.id} variant="outline">
-                    {doc.name}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </CardContent>
         </Card>
 
