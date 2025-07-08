@@ -75,9 +75,12 @@ services:
     container_name: glow-model
     build: ./server/model
     env_file: .env
+    profiles: ["webrtc"] 
     environment:
       - DOCKER_ENV=1
     restart: unless-stopped
+    volumes:
+      - model_cache:/app/cache   # Docker volume for model cache
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s
@@ -86,6 +89,7 @@ services:
     networks:
       - internal
       - public_net
+
 
   # --------------------
   # API Server
@@ -101,7 +105,7 @@ services:
       - DOCKER_ENV=1
       - REDIS_URL=redis://redis:6379/0   # ← used by app.main (see diff below)
     volumes:
-      - uploads-data:/app/uploads   # makes /app/uploads writable
+      - uploads:/app/uploads   # Docker volume for uploads
       - audio-data:/app/audio
       - sketch-data:/app/sketch
       - csv-data:/app/csv
@@ -226,9 +230,10 @@ services:
 
 volumes:
   pgdata:
-  uploads-data:
   audio-data:
   sketch-data:
   history-data:
   csv-data:
+  uploads:
+  model_cache:
 

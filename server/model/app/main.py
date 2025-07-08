@@ -66,26 +66,60 @@ async def lifespan(app: FastAPI):
     kokoro_model_path = MODEL_CACHE_DIR / "kokoro-v1.0.onnx"
     voices_path = MODEL_CACHE_DIR / "voices-v1.0.bin"
     
-    # Download models if they don't exist
-    if not kokoro_model_path.exists() or not voices_path.exists():
-        logger.info("Downloading Kokoro model files...")
-        import urllib.request
-        
-        if not kokoro_model_path.exists():
-            urllib.request.urlretrieve(
-                "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
-                kokoro_model_path
-            )
-        
-        if not voices_path.exists():
-            urllib.request.urlretrieve(
-                "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
-                voices_path
-            )
+    # Download models if they don't exist or are corrupted
+    def download_with_verification(url: str, path: Path, min_size: int = 1000):
+        """Download a file with basic verification"""
+        try:
+            if path.exists():
+                # Check if file is large enough to be valid
+                if path.stat().st_size < min_size:
+                    logger.warning(f"File {path} is too small ({path.stat().st_size} bytes), re-downloading...")
+                    path.unlink()
+                else:
+                    logger.info(f"File {path} already exists and appears valid")
+                    return
+            
+            logger.info(f"Downloading {url} to {path}")
+            import urllib.request
+            urllib.request.urlretrieve(url, path)
+            
+            # Verify download
+            if not path.exists() or path.stat().st_size < min_size:
+                raise Exception(f"Download failed or file is too small: {path}")
+            
+            logger.info(f"Successfully downloaded {path} ({path.stat().st_size} bytes)")
+            
+        except Exception as e:
+            logger.error(f"Failed to download {url}: {e}")
+            if path.exists():
+                path.unlink()
+            raise
+
+    # Download models with verification
+    download_with_verification(
+        "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/kokoro-v1.0.onnx",
+        kokoro_model_path,
+        min_size=50000000  # 50MB minimum for ONNX model
+    )
     
-    # Initialize Kokoro model
-    kokoro_model = Kokoro(str(kokoro_model_path), str(voices_path))
-    logger.info("Kokoro ONNX model loaded successfully")
+    download_with_verification(
+        "https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0/voices-v1.0.bin",
+        voices_path,
+        min_size=1000  # 1KB minimum for voices file
+    )
+    
+    # Initialize Kokoro model with error handling
+    try:
+        kokoro_model = Kokoro(str(kokoro_model_path), str(voices_path))
+        logger.info("Kokoro ONNX model loaded successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize Kokoro model: {e}")
+        # Clean up potentially corrupted files
+        if kokoro_model_path.exists():
+            kokoro_model_path.unlink()
+        if voices_path.exists():
+            voices_path.unlink()
+        raise Exception(f"Kokoro model initialization failed: {e}. Files have been cleaned up for next restart.")
 
     yield                           # ---- application runs here ----
 
