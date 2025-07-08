@@ -608,10 +608,9 @@ export default function Scenario({
 
             {/* Crowdedness */}
             <div className="space-y-2">
-              <Label>Crowdedness Level</Label>
               {formData.crowdedness !== null ? (
                 <ScenarioSlider
-                  label=""
+                  label="Crowdedness Level"
                   defaultValue={[5]}
                   description="How busy or crowded the environment should be (1-10)"
                   min={1}
@@ -621,24 +620,29 @@ export default function Scenario({
                   onValueChange={(value) =>
                     handleInputChange("crowdedness", value[0] || 5)
                   }
+                  inlineTitle={true}
+                  showReset={true}
+                  onReset={() => handleInputChange("crowdedness", null)}
                 />
               ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => handleInputChange("crowdedness", 5)}
-                  className="w-full justify-start"
-                >
-                  Set crowdedness level
-                </Button>
+                <>
+                  <Label>Crowdedness Level</Label>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleInputChange("crowdedness", 5)}
+                    className="w-full justify-start"
+                  >
+                    Set crowdedness level
+                  </Button>
+                </>
               )}
             </div>
 
             {/* Intensity */}
             <div className="space-y-2">
-              <Label>Intensity Level</Label>
               {formData.intensity !== null ? (
                 <ScenarioSlider
-                  label=""
+                  label="Intensity Level"
                   description="How intense or challenging the scenario should be (1-10)"
                   min={1}
                   max={10}
@@ -648,15 +652,21 @@ export default function Scenario({
                   onValueChange={(value) =>
                     handleInputChange("intensity", value[0] || 5)
                   }
+                  inlineTitle={true}
+                  showReset={true}
+                  onReset={() => handleInputChange("intensity", null)}
                 />
               ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => handleInputChange("intensity", 5)}
-                  className="w-full justify-start"
-                >
-                  Set intensity level
-                </Button>
+                <>
+                  <Label>Intensity Level</Label>
+                  <Button
+                    variant="outline"
+                    onClick={() => handleInputChange("intensity", 5)}
+                    className="w-full justify-start"
+                  >
+                    Set intensity level
+                  </Button>
+                </>
               )}
             </div>
           </CardContent>
@@ -831,13 +841,7 @@ export default function Scenario({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex items-center justify-between pt-6 border-t">
-        <Button
-          variant="outline"
-          onClick={() => router.push("/create/scenarios")}
-        >
-          Cancel
-        </Button>
+      <div className="flex items-center justify-end">
         <Button
           onClick={formData.description ? handleSubmit : handleGenerateScenario}
           disabled={isSubmitting || isGeneratingScenario}

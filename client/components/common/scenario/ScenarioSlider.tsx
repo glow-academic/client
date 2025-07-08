@@ -6,9 +6,11 @@
  */
 
 "use client";
-import * as React from "react";
 import { SliderProps } from "@radix-ui/react-slider";
+import { X } from "lucide-react";
+import * as React from "react";
 
+import { Button } from "@/components/ui/button";
 import {
   HoverCard,
   HoverCardContent,
@@ -29,6 +31,9 @@ interface ScenarioSliderProps {
   onValueChange?: (value: number[]) => void;
   value?: number[];
   disabled?: boolean;
+  showReset?: boolean;
+  onReset?: () => void;
+  inlineTitle?: boolean;
 }
 
 export function ScenarioSlider({
@@ -43,6 +48,9 @@ export function ScenarioSlider({
   onValueChange: externalOnValueChange,
   value: externalValue,
   disabled = false,
+  showReset = false,
+  onReset,
+  inlineTitle = false,
 }: ScenarioSliderProps) {
   const [internalValue, setInternalValue] = React.useState(defaultValue);
 
@@ -62,23 +70,51 @@ export function ScenarioSlider({
       <HoverCard openDelay={200}>
         <HoverCardTrigger asChild>
           <div className="grid gap-4">
-            <div className="flex items-center justify-between">
-              {leftContent}
-              <div className="flex items-center w-full justify-end">
+            {inlineTitle ? (
+              <div className="flex items-center justify-between">
                 <Label
                   htmlFor="slider"
                   className={disabled ? "text-muted-foreground" : ""}
                 >
                   {label}
                 </Label>
-                <span
-                  className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}
-                >
-                  {disabled ? "N/A" : value}
-                </span>
-                {rightContent}
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}
+                  >
+                    {disabled ? "N/A" : value}
+                  </span>
+                  {showReset && onReset && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onReset}
+                      className="h-6 w-6 p-0 hover:bg-muted"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  )}
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                {leftContent}
+                <div className="flex items-center w-full justify-end">
+                  <Label
+                    htmlFor="slider"
+                    className={disabled ? "text-muted-foreground" : ""}
+                  >
+                    {label}
+                  </Label>
+                  <span
+                    className={`w-12 rounded-md border border-transparent px-2 py-0.5 text-right text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground hover:border-border"}`}
+                  >
+                    {disabled ? "N/A" : value}
+                  </span>
+                  {rightContent}
+                </div>
+              </div>
+            )}
             <Slider
               id="slider"
               min={min}
