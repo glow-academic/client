@@ -8,6 +8,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,8 +35,8 @@ import {
 } from "@/components/ui/table";
 import { getAllAppFeedback } from "@/utils/queries/app_feedback/get-all-app-feedback";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
-import { useQuery } from "@tanstack/react-query";
-import { Eye, X } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Eye, MessageSquare, RefreshCw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface AppFeedback {
@@ -53,10 +60,13 @@ export default function Feedback() {
   );
   const [filterType, setFilterType] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data: feedbackData, isLoading: loadingFeedback } = useQuery({
     queryKey: ["app_feedback"],
     queryFn: () => getAllAppFeedback(),
+    refetchInterval: 60000, // Refetch every minute
   });
 
   // Get unique profile IDs from feedback data
@@ -121,6 +131,15 @@ export default function Feedback() {
       return true;
     });
   }, [feedbackData, filterType, searchTerm, profileMap]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["app_feedback"] });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const getFeedbackTypeVariant = (type: string) => {
     switch (type) {
@@ -195,204 +214,288 @@ export default function Feedback() {
 
   if (loadingFeedback) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading feedback...</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                User Feedback
+              </CardTitle>
+              <CardDescription>
+                Feedback and suggestions from users
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg">Loading feedback...</div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!feedbackData || feedbackData.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-muted-foreground">No feedback found</div>
-      </div>
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                User Feedback
+              </CardTitle>
+              <CardDescription>
+                Feedback and suggestions from users
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <div className="text-lg text-muted-foreground">
+                No feedback found
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="flex flex-col sm:flex-row gap-2 flex-1">
-          <div className="flex items-center gap-2">
-            <Label htmlFor="search" className="text-sm font-medium">
-              Search:
-            </Label>
-            <Input
-              id="search"
-              placeholder="Search feedback or author..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full sm:w-64"
-            />
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              User Feedback
+            </CardTitle>
+            <CardDescription>
+              Feedback and suggestions from users ({feedbackData.length} total)
+            </CardDescription>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Label htmlFor="type-filter" className="text-sm font-medium">
-              Type:
-            </Label>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger id="type-filter" className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="bug">🐛 Bug</SelectItem>
-                <SelectItem value="feature">✨ Feature</SelectItem>
-                <SelectItem value="question">❓ Question</SelectItem>
-                <SelectItem value="other">📝 Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {(filterType !== "all" || searchTerm) && (
           <Button
             variant="outline"
             size="sm"
-            onClick={clearFilters}
-            className="flex items-center gap-2"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
           >
-            <X className="h-3 w-3" />
-            Clear Filters
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
           </Button>
-        )}
-      </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <div className="flex flex-col sm:flex-row gap-2 flex-1">
+            <div className="flex items-center gap-2">
+              <Label htmlFor="search" className="text-sm font-medium">
+                Search:
+              </Label>
+              <Input
+                id="search"
+                placeholder="Search feedback or author..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-64"
+              />
+            </div>
 
-      {/* Results count */}
-      <div className="text-sm text-muted-foreground">
-        Showing {filteredFeedback.length} of {feedbackData.length} feedback
-        items
-      </div>
-
-      {/* Feedback Table */}
-      <div className="border rounded-lg">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[80px]">ID</TableHead>
-              <TableHead className="w-[120px]">Type</TableHead>
-              <TableHead>Message</TableHead>
-              <TableHead className="w-[150px]">Author</TableHead>
-              <TableHead className="w-[180px]">Created At</TableHead>
-              <TableHead className="w-[80px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredFeedback.map((feedback) => (
-              <TableRow key={feedback.id}>
-                <TableCell className="font-medium">{feedback.id}</TableCell>
-                <TableCell>
-                  <Badge variant={getFeedbackTypeVariant(feedback.type)}>
-                    {getFeedbackTypeIcon(feedback.type)}{" "}
-                    {feedback.type.toUpperCase()}
-                  </Badge>
-                </TableCell>
-                <TableCell className="max-w-md">
-                  <div className="flex items-center gap-2">
-                    <span className="truncate">
-                      {truncateText(feedback.message)}
-                    </span>
-                    {feedback.message && feedback.message.length > 100 && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openDialog(feedback)}
-                        className="h-6 w-6 p-0"
-                      >
-                        <Eye className="h-3 w-3" />
-                      </Button>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm">
-                      {getAuthorName(feedback.profileId)}
-                    </span>
-                    {getAuthorAlias(feedback.profileId) && (
-                      <span className="text-xs text-muted-foreground">
-                        {getAuthorAlias(feedback.profileId)}
-                      </span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-sm">
-                  {formatTimestamp(feedback.createdAt)}
-                </TableCell>
-                <TableCell>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openDialog(feedback)}
-                    className="h-8 px-2"
-                  >
-                    <Eye className="h-3 w-3" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Detail Dialog */}
-      <Dialog
-        open={selectedFeedback !== null}
-        onOpenChange={(open) => !open && setSelectedFeedback(null)}
-      >
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-          <div className="space-y-4">
-            {selectedFeedback && (
-              <>
-                <div className="flex items-center gap-2 pb-2 border-b">
-                  <Badge
-                    variant={getFeedbackTypeVariant(selectedFeedback.type)}
-                  >
-                    {getFeedbackTypeIcon(selectedFeedback.type)}{" "}
-                    {selectedFeedback.type.toUpperCase()}
-                  </Badge>
-                  <span className="text-sm text-muted-foreground">
-                    ID: {selectedFeedback.id}
-                  </span>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Author</h4>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="font-medium">
-                      {getAuthorName(selectedFeedback.profileId)}
-                    </div>
-                    {getAuthorAlias(selectedFeedback.profileId) && (
-                      <div className="text-sm text-muted-foreground">
-                        {getAuthorAlias(selectedFeedback.profileId)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Message</h4>
-                  <div className="bg-muted p-4 rounded-lg">
-                    <p className="whitespace-pre-wrap text-sm">
-                      {selectedFeedback.message || "No message provided"}
-                    </p>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="font-semibold mb-2">Submitted</h4>
-                  <div className="bg-muted p-3 rounded-lg">
-                    <div className="text-sm">
-                      {formatTimestamp(selectedFeedback.createdAt)}
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
+            <div className="flex items-center gap-2">
+              <Label htmlFor="type-filter" className="text-sm font-medium">
+                Type:
+              </Label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger id="type-filter" className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="bug">🐛 Bug</SelectItem>
+                  <SelectItem value="feature">✨ Feature</SelectItem>
+                  <SelectItem value="question">❓ Question</SelectItem>
+                  <SelectItem value="other">📝 Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-        </DialogContent>
-      </Dialog>
-    </div>
+
+          {(filterType !== "all" || searchTerm) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="flex items-center gap-2"
+            >
+              <X className="h-3 w-3" />
+              Clear Filters
+            </Button>
+          )}
+        </div>
+
+        {/* Results count */}
+        <div className="text-sm text-muted-foreground">
+          Showing {filteredFeedback.length} of {feedbackData.length} feedback
+          items
+        </div>
+
+        {/* Feedback Table - Scrollable */}
+        <div className="border rounded-lg max-h-96 overflow-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
+              <TableRow>
+                <TableHead className="w-[80px]">ID</TableHead>
+                <TableHead className="w-[120px]">Type</TableHead>
+                <TableHead>Message</TableHead>
+                <TableHead className="w-[150px]">Author</TableHead>
+                <TableHead className="w-[180px]">Created At</TableHead>
+                <TableHead className="w-[80px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredFeedback.map((feedback) => (
+                <TableRow key={feedback.id}>
+                  <TableCell className="font-medium">{feedback.id}</TableCell>
+                  <TableCell>
+                    <Badge variant={getFeedbackTypeVariant(feedback.type)}>
+                      {getFeedbackTypeIcon(feedback.type)}{" "}
+                      {feedback.type.toUpperCase()}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="max-w-md">
+                    <div className="flex items-center gap-2">
+                      <span className="truncate">
+                        {truncateText(feedback.message)}
+                      </span>
+                      {feedback.message && feedback.message.length > 100 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => openDialog(feedback)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-sm">
+                        {getAuthorName(feedback.profileId)}
+                      </span>
+                      {getAuthorAlias(feedback.profileId) && (
+                        <span className="text-xs text-muted-foreground">
+                          {getAuthorAlias(feedback.profileId)}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm">
+                    {formatTimestamp(feedback.createdAt)}
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openDialog(feedback)}
+                      className="h-8 px-2"
+                    >
+                      <Eye className="h-3 w-3" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Detail Dialog */}
+        <Dialog
+          open={selectedFeedback !== null}
+          onOpenChange={(open) => !open && setSelectedFeedback(null)}
+        >
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div className="space-y-4">
+              {selectedFeedback && (
+                <>
+                  <div className="flex items-center gap-2 pb-2 border-b">
+                    <Badge
+                      variant={getFeedbackTypeVariant(selectedFeedback.type)}
+                    >
+                      {getFeedbackTypeIcon(selectedFeedback.type)}{" "}
+                      {selectedFeedback.type.toUpperCase()}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      ID: {selectedFeedback.id}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Author</h4>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="font-medium">
+                        {getAuthorName(selectedFeedback.profileId)}
+                      </div>
+                      {getAuthorAlias(selectedFeedback.profileId) && (
+                        <div className="text-sm text-muted-foreground">
+                          {getAuthorAlias(selectedFeedback.profileId)}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Message</h4>
+                    <div className="bg-muted p-4 rounded-lg">
+                      <p className="whitespace-pre-wrap text-sm">
+                        {selectedFeedback.message || "No message provided"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold mb-2">Submitted</h4>
+                    <div className="bg-muted p-3 rounded-lg">
+                      <div className="text-sm">
+                        {formatTimestamp(selectedFeedback.createdAt)}
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 }

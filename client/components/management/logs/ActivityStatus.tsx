@@ -199,9 +199,9 @@ export default function ActivityStatus() {
             </div>
           </div>
         ) : (
-          <div className="border rounded-lg">
+          <div className="border rounded-lg max-h-96 overflow-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className="sticky top-0 bg-background">
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Alias</TableHead>
