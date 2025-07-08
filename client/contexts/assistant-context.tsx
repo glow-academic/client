@@ -22,7 +22,6 @@ import { toast } from "sonner";
 import { useWebSocket } from "./websocket-context";
 
 type ChatUIState = "closed" | "open" | "minimized" | "widget" | "expanded";
-type ChatMode = "live" | "preview";
 
 interface AssistantContextType {
   // UI State
@@ -31,7 +30,6 @@ interface AssistantContextType {
   openWidget: () => void;
   expand: () => void;
   close: () => void;
-  mode: ChatMode;
 
   // Chat Management
   currentChatId: string | null;
@@ -304,21 +302,21 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
             messageLength: message.length,
           });
           emitStartAssistant({ chat_id: chatId, initial_message: message });
-        }
-
-        // 2️⃣ For subsequent messages, deliver the text via the best transport:
-        if (isWebRTCConnected) {
-          logInfo("Sending subsequent message via WebRTC", {
-            chatId,
-            messageLength: message.length,
-          });
-          sendWebRTCMessage(chatId, message); // tokenised path
         } else {
-          logInfo("Sending subsequent message via WebSocket", {
-            chatId,
-            messageLength: message.length,
-          });
-          emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
+          // 2️⃣ For subsequent messages, deliver the text via the best transport:
+          if (isWebRTCConnected) {
+            logInfo("Sending subsequent message via WebRTC", {
+              chatId,
+              messageLength: message.length,
+            });
+            sendWebRTCMessage(chatId, message); // tokenised path
+          } else {
+            logInfo("Sending subsequent message via WebSocket", {
+              chatId,
+              messageLength: message.length,
+            });
+            emitSendAssistantMessage({ chat_id: chatId, message }); // fallback
+          }
         }
 
         logInfo("Message sent via WebSocket", {
@@ -381,7 +379,6 @@ export function AssistantProvider({ children }: AssistantProviderProps) {
     openWidget,
     expand,
     close,
-    mode: "preview", // Set to preview mode as specified in the requirements
     currentChatId,
     setCurrentChatId,
     chats,

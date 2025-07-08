@@ -31,7 +31,6 @@ import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Minimize2, X } from "lucide-react";
 import { useState } from "react";
-import ChatHeaderBadge from "./ChatHeaderBadge";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
@@ -45,7 +44,6 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     isLoadingChats,
     selectChat,
     setCurrentChatId,
-    mode,
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
@@ -80,11 +78,15 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     setPromptToSet("");
   };
 
+  const handlePromptClick = (prompt: string) => {
+    setPromptToSet(prompt);
+  };
+
   return (
     <Dialog open={true} onOpenChange={() => close()}>
       <DialogContent className="max-w-7xl w-[95vw] h-[90vh] flex flex-col p-0 [&>button]:hidden">
         <DialogHeader className="p-4 border-b flex flex-row items-center justify-between space-y-0 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
+          <div className="flex items-center gap-3 flex-1 min-w-0 relative z-10">
             <Select
               value={currentChatId || "new"}
               onValueChange={handleChatSelect}
@@ -96,7 +98,6 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                     <DialogTitle className="text-lg font-semibold truncate">
                       {getCurrentChatTitle()}
                     </DialogTitle>
-                    <ChatHeaderBadge mode={mode} />
                   </div>
                 </SelectValue>
               </SelectTrigger>
@@ -131,7 +132,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                       variant="outline"
                       size="icon"
                       onClick={() => setCurrentChatId(null)}
-                      className="h-8 w-8"
+                      className="h-8 w-8 relative z-10"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -147,7 +148,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                     variant="outline"
                     size="icon"
                     onClick={openWidget}
-                    className="h-8 w-8"
+                    className="h-8 w-8 relative z-10"
                   >
                     <Minimize2 className="h-4 w-4" />
                   </Button>
@@ -162,7 +163,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                     variant="outline"
                     size="icon"
                     onClick={close}
-                    className="h-8 w-8"
+                    className="h-8 w-8 relative z-10"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -176,7 +177,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 min-h-0 p-2 shadow-inner">
-            <ChatMessages />
+            <ChatMessages onPromptClick={handlePromptClick} />
           </div>
           <div className="border-t">
             <ChatInput

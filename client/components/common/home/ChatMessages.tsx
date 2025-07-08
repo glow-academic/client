@@ -19,6 +19,7 @@ import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_call
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
+import ChatStarterPrompts from "./ChatStarterPrompts";
 
 const LoadingDots = () => (
   <div className="flex space-x-1">
@@ -99,15 +100,15 @@ const ToolCallCard = ({ toolCall }: { toolCall: AssistantToolCall }) => {
   };
 
   return (
-    <Card className="mb-2 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 hover:shadow-md transition-all duration-200">
-      <CardContent className="p-3">
+    <Card className="mb-3 border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/5 dark:to-indigo-900/5 hover:shadow-sm transition-all duration-200">
+      <CardContent className="p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shrink-0">
               <Wrench className="h-4 w-4 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium">
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
                 {formatToolName(toolCall.toolName)}
               </span>
               <span className="text-xs text-muted-foreground">
@@ -138,7 +139,13 @@ type TimelineItem = {
   data: AssistantMessage | AssistantToolCall;
 };
 
-export default function ChatMessages() {
+interface ChatMessagesProps {
+  onPromptClick?: (prompt: string) => void;
+}
+
+export default function ChatMessages({
+  onPromptClick,
+}: ChatMessagesProps = {}) {
   const { currentChatId, isConnected } = useAssistant();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -244,13 +251,20 @@ export default function ChatMessages() {
     );
   }
 
-  if (!currentChatId) return null; // widget will handle empty state
+  if (!currentChatId) {
+    return (
+      <ChatStarterPrompts
+        onPromptClick={onPromptClick || (() => {})}
+        variant="expanded"
+      />
+    );
+  }
 
   const timeline = createTimeline();
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-4 space-y-4">
+      <div className="p-6 space-y-6">
         {timeline.map((item) => {
           if (item.type === "message") {
             const message = item.data as AssistantMessage;
@@ -262,10 +276,10 @@ export default function ChatMessages() {
                 }`}
               >
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 shadow-sm ${
+                  className={`max-w-[80%] rounded-xl p-4 ${
                     message.role === "user"
-                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
-                      : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 border"
+                      ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-md"
+                      : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm"
                   }`}
                 >
                   {message.role === "assistant" &&
@@ -278,7 +292,7 @@ export default function ChatMessages() {
                       <LoadingDots />
                     </div>
                   ) : (
-                    <div className="text-sm">
+                    <div className="text-sm leading-relaxed">
                       <Markdown>{message.content}</Markdown>
                     </div>
                   )}

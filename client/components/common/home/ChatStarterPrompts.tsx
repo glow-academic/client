@@ -39,12 +39,14 @@ export default function ChatStarterPrompts({
   };
 
   const refreshPrompts = () => {
-    setSelectedPrompts(getRandomPrompts(3));
+    const count = variant === "minimized" ? 1 : 3;
+    setSelectedPrompts(getRandomPrompts(count));
   };
 
   useEffect(() => {
-    setSelectedPrompts(getRandomPrompts(3));
-  }, []);
+    const count = variant === "minimized" ? 1 : 3;
+    setSelectedPrompts(getRandomPrompts(count));
+  }, [variant]);
 
   const isExpanded = variant === "expanded";
 
@@ -101,32 +103,32 @@ export default function ChatStarterPrompts({
     );
   }
 
-  // Minimized view - 3 prompts vertically
+  // Minimized view - 1 prompt with better layout
   return (
-    <div className="p-3 space-y-2 h-full flex flex-col">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-xs font-medium text-muted-foreground">
-          Quick Actions
+    <div className="p-4 h-full flex flex-col">
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-sm font-medium text-muted-foreground">
+          Try asking...
         </span>
         <Button
           variant="ghost"
           size="sm"
           onClick={refreshPrompts}
-          className="h-5 w-5 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/20"
+          className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/20"
         >
           <Shuffle className="h-3 w-3" />
         </Button>
       </div>
 
-      <div className="space-y-1 flex-1">
+      <div className="flex-1">
         {selectedPrompts.map((prompt, index) => (
           <Card
             key={`${prompt}-${index}`}
-            className="group hover:shadow-sm transition-all duration-200 border-0 bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10 flex-1"
+            className="group hover:shadow-md transition-all duration-200 border border-blue-100 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 dark:from-blue-900/10 dark:to-indigo-900/10 h-full"
           >
             <Button
               variant="ghost"
-              className="w-full h-full p-3 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-xs whitespace-normal leading-tight group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors font-medium"
+              className="w-full h-full p-4 text-left justify-start hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 text-sm whitespace-normal leading-relaxed group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors font-medium"
               onClick={() => onPromptClick(prompt)}
             >
               {prompt}
