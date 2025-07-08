@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllSimulationAttempts } from "@/utils/queries/simulation_attempts/get-all-simulation-attempts";
@@ -34,6 +35,7 @@ type ColorTheme =
 type Layout = "vertical" | "horizontal";
 
 interface ClassPerformanceProps {
+  className?: string;
   color?: ColorTheme;
   maxItems?: number;
   title?: string;
@@ -76,6 +78,7 @@ const COLOR_CONFIGS = {
 };
 
 export default function ClassPerformance({
+  className,
   color = "blue",
   maxItems = 5,
   title = "Class Performance",
@@ -168,7 +171,7 @@ export default function ClassPerformance({
 
   if (!classMetrics || classMetrics.length === 0) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
@@ -176,12 +179,10 @@ export default function ClassPerformance({
           </CardTitle>
           <CardDescription>Average performance by class</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              No class performance data available
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No class performance data available
+          </p>
         </CardContent>
       </Card>
     );
@@ -190,7 +191,7 @@ export default function ClassPerformance({
   const maxScore = Math.max(...classMetrics.map((cls) => cls.avgScore));
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5" />
@@ -198,8 +199,8 @@ export default function ClassPerformance({
         </CardTitle>
         <CardDescription>Average performance by class</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4 h-[300px] overflow-y-auto">
+      <CardContent className="flex-1 overflow-y-auto">
+        <div className="space-y-4">
           {classMetrics.map((classData) => (
             <div key={classData.classCode} className="space-y-2">
               <div className="flex items-center justify-between">

@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -34,6 +35,7 @@ type ColorTheme =
 type Layout = "vertical" | "horizontal";
 
 interface TrainingInsightsProps {
+  className?: string;
   color?: ColorTheme;
   maxItems?: number;
   title?: string;
@@ -284,6 +286,7 @@ const COLOR_CONFIGS = {
 };
 
 export default function TrainingInsights({
+  className,
   color = "blue",
   maxItems = 4,
   title = "Training Insights",
@@ -386,7 +389,7 @@ export default function TrainingInsights({
 
   if (!insights) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -394,12 +397,8 @@ export default function TrainingInsights({
           </CardTitle>
           <CardDescription>AI-powered recommendations</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              Loading training insights...
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">Loading training insights...</p>
         </CardContent>
       </Card>
     );
@@ -443,7 +442,7 @@ export default function TrainingInsights({
   ].slice(0, maxItems);
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
@@ -451,8 +450,8 @@ export default function TrainingInsights({
         </CardTitle>
         <CardDescription>AI-powered recommendations</CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px] overflow-y-auto space-y-3">
+      <CardContent className="flex-1 overflow-y-auto">
+        <div className="space-y-3">
           {insightItems.map((item) => (
             <div
               key={item.key}

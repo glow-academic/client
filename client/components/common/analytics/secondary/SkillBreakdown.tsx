@@ -14,6 +14,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
@@ -38,6 +39,7 @@ type ColorTheme =
 type Layout = "vertical" | "horizontal";
 
 interface SkillBreakdownProps {
+  className?: string;
   color?: ColorTheme;
   maxItems?: number;
   title?: string;
@@ -72,6 +74,7 @@ const COLOR_CONFIGS = {
 };
 
 export default function SkillBreakdown({
+  className,
   color = "blue",
   maxItems = 4,
   title = "Skill Breakdown",
@@ -179,7 +182,7 @@ export default function SkillBreakdown({
 
   if (!skillCategories.length) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
@@ -187,12 +190,10 @@ export default function SkillBreakdown({
           </CardTitle>
           <CardDescription>Top performing competencies</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              No skill breakdown data available
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No skill breakdown data available
+          </p>
         </CardContent>
       </Card>
     );
@@ -200,13 +201,13 @@ export default function SkillBreakdown({
 
   const containerClasses =
     layout === "horizontal"
-      ? "grid grid-cols-1 md:grid-cols-2 gap-4 h-[300px] overflow-y-auto"
-      : "space-y-6 h-[300px] overflow-y-auto";
+      ? "grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 overflow-y-auto"
+      : "space-y-6 flex-1 overflow-y-auto";
 
   const itemClasses = layout === "horizontal" ? "space-y-2" : "space-y-2";
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <GraduationCap className="h-5 w-5" />
@@ -214,7 +215,7 @@ export default function SkillBreakdown({
         </CardTitle>
         <CardDescription>Top performing competencies</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 overflow-hidden">
         <div className={containerClasses}>
           {skillCategories.map((skill) => (
             <div key={skill.shortName} className={itemClasses}>
