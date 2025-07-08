@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatsByAttempts } from "@/utils/queries/simulation_chats/get-simulation-chats-by-attempts";
@@ -43,6 +44,7 @@ type TimeRange = "1h" | "12h" | "24h" | "1d" | "3d" | "7d" | "14d" | "30d";
 type ChartType = "bar";
 
 interface SessionActivityProps {
+  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -121,6 +123,7 @@ const CustomBarTooltip = ({
 };
 
 export default function SessionActivity({
+  className,
   color = "blue",
   defaultTimeRange = "24h",
   chartType: _chartType = "bar",
@@ -301,7 +304,7 @@ export default function SessionActivity({
 
   if (!sessionActivityData.length) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -332,19 +335,17 @@ export default function SessionActivity({
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              No session activity data available
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No session activity data available
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -375,8 +376,8 @@ export default function SessionActivity({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="h-full">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sessionActivityData}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />

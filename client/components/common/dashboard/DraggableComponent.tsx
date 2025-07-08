@@ -358,9 +358,11 @@ export default function DraggableComponent({
                   variant="ghost"
                   className={cn(
                     "absolute h-6 w-6 p-0 transition-opacity bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white rounded-full z-10",
-                    isInSidebar || isManagementView
-                      ? `top-2.5 right-${!isManagementView ? "2.5" : "10.5"} opacity-100`
-                      : "top-1 right-8 opacity-0 group-hover:opacity-100"
+                    isManagementView
+                      ? "top-2.5 right-10.5 opacity-100" // extra spacing for remove button in management view
+                      : isInSidebar
+                        ? "top-2.5 right-2.5 opacity-100"
+                        : "top-1 right-8 opacity-0 group-hover:opacity-100"
                   )}
                   onClick={(e) => {
                     e.preventDefault();

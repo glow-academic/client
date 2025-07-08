@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getSimulationAttemptsByProfiles } from "@/utils/queries/simulation_attempts/get-simulation-attempts-by-profiles";
 import { getSimulationChatGradesBySimulationChats } from "@/utils/queries/simulation_chat_grades/get-simulation-chat-grades-by-simulationchats";
@@ -46,6 +47,7 @@ type TimeRange = "7d" | "30d" | "90d";
 type ChartType = "area" | "line";
 
 interface PerformanceTrendsProps {
+  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -81,6 +83,7 @@ const COLOR_CONFIGS = {
 };
 
 export default function PerformanceTrends({
+  className,
   color = "blue",
   defaultTimeRange = "30d",
   chartType = "area",
@@ -162,7 +165,7 @@ export default function PerformanceTrends({
 
   if (!performanceTrendData.length) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -193,19 +196,17 @@ export default function PerformanceTrends({
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              No performance trend data available
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">
+            No performance trend data available
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -236,8 +237,8 @@ export default function PerformanceTrends({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="h-full">
           <ResponsiveContainer width="100%" height="100%">
             {chartType === "area" ? (
               <AreaChart data={performanceTrendData}>

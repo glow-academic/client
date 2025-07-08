@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import { getAgentConfig } from "@/utils/agents";
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
@@ -48,6 +49,7 @@ type TimeRange = "7d" | "14d" | "30d" | "60d" | "90d";
 type ChartType = "bar";
 
 interface PerformanceByPersonalityProps {
+  className?: string;
   color?: ColorTheme;
   defaultTimeRange?: TimeRange;
   chartType?: ChartType;
@@ -83,6 +85,7 @@ const COLOR_CONFIGS = {
 };
 
 export default function PerformanceByPersonality({
+  className,
   color = "purple",
   defaultTimeRange = "30d",
   chartType: _chartType = "bar",
@@ -203,7 +206,7 @@ export default function PerformanceByPersonality({
 
   if (!performanceData.length) {
     return (
-      <Card>
+      <Card className={cn("w-full h-full flex flex-col", className)}>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -234,19 +237,15 @@ export default function PerformanceByPersonality({
             )}
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center h-[300px]">
-            <p className="text-muted-foreground">
-              No performance data available
-            </p>
-          </div>
+        <CardContent className="flex items-center justify-center flex-1">
+          <p className="text-muted-foreground">No performance data available</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card>
+    <Card className={cn("w-full h-full flex flex-col", className)}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -277,8 +276,8 @@ export default function PerformanceByPersonality({
           )}
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid gap-6 md:grid-cols-2 h-[300px]">
+      <CardContent className="flex-1 overflow-hidden">
+        <div className="grid gap-6 md:grid-cols-2 h-full">
           <div className="h-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={performanceData} layout="vertical">
