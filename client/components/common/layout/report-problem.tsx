@@ -23,7 +23,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useRole } from "@/contexts/role-context";
 import { logError, logInfo } from "@/utils/logger";
 import { createAppFeedback } from "@/utils/mutations/app_feedback/create-app-feedback";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
@@ -50,9 +49,15 @@ interface ReportProblemProps {
 export default function ReportProblem({ children }: ReportProblemProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { effectiveRole } = useRole();
-  const userId = useSession().data?.user?.id;
   const queryClient = useQueryClient();
+
+  const userId = useSession().data?.user?.id;
+  const { data: profile } = useQuery({
+    queryKey: ["profile", userId],
+    queryFn: () => getProfilesByUser(parseInt(userId!)),
+    select: (data) => data[0],
+    enabled: !!userId,
+  });
 
   const [formData, setFormData] = useState<FormData>({
     type: "",
@@ -60,13 +65,6 @@ export default function ReportProblem({ children }: ReportProblemProps) {
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
-
-  const { data: profile } = useQuery({
-    queryKey: ["profile", userId],
-    queryFn: () => getProfilesByUser(parseInt(userId!)),
-    select: (data) => data[0],
-    enabled: !!userId && effectiveRole !== "guest",
-  });
 
   const createFeedbackMutation = useMutation({
     mutationFn: createAppFeedback,

@@ -36,7 +36,7 @@ import {
 import { getAllAppFeedback } from "@/utils/queries/app_feedback/get-all-app-feedback";
 import { getProfilesByUser } from "@/utils/queries/profiles/get-profiles-by-user";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Eye, MessageSquare, RefreshCw, X } from "lucide-react";
+import { MessageSquare, RefreshCw, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 interface AppFeedback {
@@ -377,7 +377,6 @@ export default function Feedback() {
                 <TableHead>Message</TableHead>
                 <TableHead className="w-[150px]">Author</TableHead>
                 <TableHead className="w-[180px]">Created At</TableHead>
-                <TableHead className="w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -391,21 +390,9 @@ export default function Feedback() {
                     </Badge>
                   </TableCell>
                   <TableCell className="max-w-md">
-                    <div className="flex items-center gap-2">
-                      <span className="truncate">
-                        {truncateText(feedback.message)}
-                      </span>
-                      {feedback.message && feedback.message.length > 100 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openDialog(feedback)}
-                          className="h-6 w-6 p-0"
-                        >
-                          <Eye className="h-3 w-3" />
-                        </Button>
-                      )}
-                    </div>
+                    <span className="truncate">
+                      {truncateText(feedback.message)}
+                    </span>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
@@ -421,16 +408,6 @@ export default function Feedback() {
                   </TableCell>
                   <TableCell className="text-sm">
                     {formatTimestamp(feedback.createdAt)}
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openDialog(feedback)}
-                      className="h-8 px-2"
-                    >
-                      <Eye className="h-3 w-3" />
-                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
