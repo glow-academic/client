@@ -48,6 +48,7 @@ import {
   FileText,
   Home,
   LogOut,
+  MessageSquare,
   Search,
   Settings,
   Sparkles,
@@ -496,9 +497,21 @@ export function UnifiedSidebar({
       {/* User Profile in Footer */}
       <SidebarFooter>
         <SidebarMenu>
-          {/* Report Problem Button */}
+          {/* Report Problem Button - Enhanced with bubble styling */}
           <SidebarMenuItem>
-            <ReportProblem />
+            <div className="px-2 pb-2">
+              <ReportProblem>
+                <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg blur opacity-15 group-hover:opacity-25 transition duration-300"></div>
+                  <div className="relative bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg px-4 py-2.5 transition-all duration-200 shadow-md hover:shadow-lg opacity-80 hover:opacity-90">
+                    <div className="flex items-center justify-center gap-2">
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="font-medium text-sm">Feedback</span>
+                    </div>
+                  </div>
+                </div>
+              </ReportProblem>
+            </div>
           </SidebarMenuItem>
 
           <SidebarMenuItem>
