@@ -20,6 +20,7 @@ import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Maximize2, X } from "lucide-react";
 import { useState } from "react";
+import ChatHeaderBadge from "./ChatHeaderBadge";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 import ChatStarterPrompts from "./ChatStarterPrompts";
@@ -34,6 +35,7 @@ export default function ChatWidget() {
     isLoadingChats,
     selectChat,
     setCurrentChatId,
+    mode,
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
@@ -86,9 +88,12 @@ export default function ChatWidget() {
           >
             <SelectTrigger className="w-full border-none shadow-none p-0 h-auto focus:ring-0">
               <SelectValue>
-                <span className="text-sm font-medium truncate">
-                  {getCurrentChatTitle()}
-                </span>
+                <div className="flex items-center">
+                  <span className="text-sm font-medium truncate">
+                    {getCurrentChatTitle()}
+                  </span>
+                  <ChatHeaderBadge mode={mode} />
+                </div>
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -117,46 +122,50 @@ export default function ChatWidget() {
           {currentChatId && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={() => setCurrentChatId(null)}
-              className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+              className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
             >
               <Edit className="h-3 w-3" />
             </Button>
           )}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={expand}
-            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
             <Maximize2 className="h-3 w-3" />
           </Button>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={close}
-            className="h-7 w-7 p-0 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
+            className="h-7 w-7 rounded-full hover:bg-white/50 dark:hover:bg-gray-800/50"
           >
             <X className="h-3 w-3" />
           </Button>
         </div>
       </CardHeader>
       <CardContent className="flex-1 p-0 flex flex-col min-h-0">
-        <div className="flex-1 min-h-0 overflow-hidden">
-          <ChatMessages onPromptClick={handlePromptClick} />
-        </div>
-        {!currentChatId && (
-          <div className="border-t bg-gradient-to-r from-blue-50/30 to-indigo-50/30 dark:from-blue-900/10 dark:to-indigo-900/10">
+        <div className="flex-1 min-h-0 overflow-hidden shadow-inner">
+          {currentChatId ? (
+            <ChatMessages />
+          ) : (
             <ChatStarterPrompts
               onPromptClick={handlePromptClick}
               variant="minimized"
             />
+          )}
+        </div>
+        {currentChatId && (
+          <div className="border-t">
+            <ChatInput
+              promptToSet={promptToSet}
+              onPromptSet={handlePromptSet}
+            />
           </div>
         )}
-        <div className="border-t">
-          <ChatInput promptToSet={promptToSet} onPromptSet={handlePromptSet} />
-        </div>
       </CardContent>
     </Card>
   );

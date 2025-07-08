@@ -28,6 +28,7 @@ export default function ChatInput({
     isSendingMessage,
     isStoppingMessage,
     currentChatId,
+    mode,
   } = useAssistant();
   const { effectiveRole } = useRole();
 
@@ -46,7 +47,7 @@ export default function ChatInput({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || mode === "preview") return;
 
     const messageToSend = message.trim();
     setMessage("");
@@ -72,6 +73,9 @@ export default function ChatInput({
   const placeholder = currentChatId
     ? "Type your message..."
     : "Start a conversation with the assistant...";
+
+  const isDisabled = mode === "preview" || !message.trim();
+  const buttonTitle = mode === "preview" ? "Disabled in preview mode" : "Send";
 
   return (
     <form
@@ -101,7 +105,8 @@ export default function ChatInput({
         ) : (
           <Button
             type="submit"
-            disabled={!message.trim()}
+            disabled={isDisabled}
+            title={buttonTitle}
             size="sm"
             className="shrink-0 h-8 w-8 p-0 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 border-0 disabled:opacity-50"
           >

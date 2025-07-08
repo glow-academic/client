@@ -213,3 +213,5 @@ INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
      '99b90118-7b9e-4e12-8e81-d7ccc2916604', '99b90118-7b9e-4e12-8e81-d7ccc2916606', '99b90118-7b9e-4e12-8e81-d7ccc2916609'
    ]::UUID[], true);
 
+
+

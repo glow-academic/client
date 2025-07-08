@@ -19,7 +19,6 @@ import { getAssistantToolCallsByChat } from "@/utils/queries/assistant_tool_call
 import { useQuery } from "@tanstack/react-query";
 import { CheckCircle, Loader2, Wrench } from "lucide-react";
 import { useCallback, useEffect, useRef } from "react";
-import ChatStarterPrompts from "./ChatStarterPrompts";
 
 const LoadingDots = () => (
   <div className="flex space-x-1">
@@ -139,13 +138,7 @@ type TimelineItem = {
   data: AssistantMessage | AssistantToolCall;
 };
 
-interface ChatMessagesProps {
-  onPromptClick?: (prompt: string) => void;
-}
-
-export default function ChatMessages({
-  onPromptClick,
-}: ChatMessagesProps = {}) {
+export default function ChatMessages() {
   const { currentChatId, isConnected } = useAssistant();
   const { effectiveRole } = useRole();
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -251,14 +244,7 @@ export default function ChatMessages({
     );
   }
 
-  if (!currentChatId) {
-    return (
-      <ChatStarterPrompts
-        onPromptClick={onPromptClick || (() => {})}
-        variant="expanded"
-      />
-    );
-  }
+  if (!currentChatId) return null; // widget will handle empty state
 
   const timeline = createTimeline();
 

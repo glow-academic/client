@@ -1,16 +1,27 @@
 import { render } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactNode } from 'react';
-import ChatMessages from '@/components/common/home/ChatMessages';
+import Agents from '@/components/management/agents/Agents';
 
 // Mock external dependencies
-
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(() => ({
+    push: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+    replace: vi.fn(),
+  })),
+  usePathname: vi.fn(() => '/'),
+  useSearchParams: vi.fn(() => new URLSearchParams()),
+}));
 
 // Mock API calls
 global.fetch = vi.fn();
 
-describe('ChatMessages', () => {
+describe('Agents', () => {
   let queryClient: QueryClient;
   
   beforeEach(() => {
@@ -36,11 +47,11 @@ describe('ChatMessages', () => {
 
   describe('Rendering', () => {
     it('should render without crashing', () => {
-      // TODO: Implement basic rendering test for ChatMessages
-      renderWithProviders(<ChatMessages />);
+      // TODO: Implement basic rendering test for Agents
+      renderWithProviders(<Agents />);
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: Basic rendering test for Agents
     });
 
     
@@ -49,43 +60,68 @@ describe('ChatMessages', () => {
       // TODO: Test accessibility features
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: Accessibility testing for Agents
     });
   });
 
-  
+  describe('User Interactions', () => {
+    
+
+    it('should handle state changes', async () => {
+      // TODO: Test state management
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: State management test for Agents
+    });
+
+    it('should handle user events', async () => {
+      // TODO: Test click, hover, focus events
+      const _user = userEvent.setup();
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: User events test for Agents
+    });
+  });
 
   describe('API Integration', () => {
     it('should handle API calls', async () => {
       // TODO: Test API integration
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: API integration test for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: API integration test for Agents
     });
 
     it('should handle loading states', () => {
       // TODO: Test loading states
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Loading states test for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: Loading states test for Agents
     });
 
     it('should handle error states', () => {
       // TODO: Test error handling
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Error handling test for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: Error handling test for Agents
     });
   });
 
-  
+  describe('Navigation', () => {
+    it('should handle navigation', () => {
+      // TODO: Test navigation behavior
+      
+      // This test should fail until implemented
+      expect(true).toBe(false); // IMPLEMENT: Navigation test for Agents
+    });
+  });
 
   describe('Edge Cases', () => {
     it('should handle edge cases gracefully', () => {
       // TODO: Test edge cases and error scenarios
       
       // This test should fail until implemented
-      expect(true).toBe(false); // IMPLEMENT: Edge cases test for ChatMessages
+      expect(true).toBe(false); // IMPLEMENT: Edge cases test for Agents
     });
 
     
@@ -93,8 +129,8 @@ describe('ChatMessages', () => {
 });
 
 /*
- * Component Analysis for ChatMessages:
- * Path: common/home/ChatMessages.tsx
+ * Component Analysis for Agents:
+ * Path: management/agents/Agents.tsx
  * 
  * Features detected:
  * - Default export: true
@@ -102,12 +138,12 @@ describe('ChatMessages', () => {
  * - Has props: false
  * - Props interface: None detected
  * - Client component: true
- * - Uses hooks: useAssistant, useRole, useQuery, useCallback, useEffect, useRef, user
- * - Uses router: false
+ * - Uses hooks: useQuery, useRouter, useState
+ * - Uses router: true
  * - Has API calls: true
  * - Has form handling: false
- * - Uses state: false
- * - Uses effects: true
+ * - Uses state: true
+ * - Uses effects: false
  * - Uses context: false
  * 
  * TODO: Implement the failing tests above with actual test logic
@@ -115,12 +151,12 @@ describe('ChatMessages', () => {
  * Example implementations:
  * 
  * Basic rendering:
- * render(<ChatMessages />);
+ * render(<Agents />);
  * expect(screen.getByRole('...')).toBeInTheDocument();
  * 
  * Props testing:
  * const props = { ... };
- * render(<ChatMessages {...props} />);
+ * render(<Agents {...props} />);
  * expect(screen.getByText(props.someText)).toBeInTheDocument();
  * 
  * User interaction:

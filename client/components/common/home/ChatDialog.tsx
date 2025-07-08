@@ -31,6 +31,7 @@ import { getAssistantChat } from "@/utils/queries/assistant_chats/get-assistant-
 import { useQuery } from "@tanstack/react-query";
 import { Edit, Minimize2, X } from "lucide-react";
 import { useState } from "react";
+import ChatHeaderBadge from "./ChatHeaderBadge";
 import ChatInput from "./ChatInput";
 import ChatMessages from "./ChatMessages";
 
@@ -44,6 +45,7 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     isLoadingChats,
     selectChat,
     setCurrentChatId,
+    mode,
   } = useAssistant();
   const { effectiveRole } = useRole();
   const [promptToSet, setPromptToSet] = useState<string>("");
@@ -74,10 +76,6 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
     return chat?.title || "GLOW Assistant";
   };
 
-  const handlePromptClick = (prompt: string) => {
-    setPromptToSet(prompt);
-  };
-
   const handlePromptSet = () => {
     setPromptToSet("");
   };
@@ -94,9 +92,12 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
             >
               <SelectTrigger className="w-[250px]">
                 <SelectValue>
-                  <DialogTitle className="text-lg font-semibold truncate">
-                    {getCurrentChatTitle()}
-                  </DialogTitle>
+                  <div className="flex items-center">
+                    <DialogTitle className="text-lg font-semibold truncate">
+                      {getCurrentChatTitle()}
+                    </DialogTitle>
+                    <ChatHeaderBadge mode={mode} />
+                  </div>
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -128,9 +129,9 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                   <TooltipTrigger asChild>
                     <Button
                       variant="outline"
-                      size="sm"
+                      size="icon"
                       onClick={() => setCurrentChatId(null)}
-                      className="h-8"
+                      className="h-8 w-8"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -144,9 +145,9 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={openWidget}
-                    className="h-8"
+                    className="h-8 w-8"
                   >
                     <Minimize2 className="h-4 w-4" />
                   </Button>
@@ -159,9 +160,9 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
-                    size="sm"
+                    size="icon"
                     onClick={close}
-                    className="h-8"
+                    className="h-8 w-8"
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -174,8 +175,8 @@ export default function ChatDialog({ chatId: _chatId }: { chatId?: string }) {
           </div>
         </DialogHeader>
         <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 min-h-0 p-2">
-            <ChatMessages onPromptClick={handlePromptClick} />
+          <div className="flex-1 min-h-0 p-2 shadow-inner">
+            <ChatMessages />
           </div>
           <div className="border-t">
             <ChatInput

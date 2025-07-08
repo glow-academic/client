@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """
 Bulk generator – 300 chats across six simulations
- * 50 chats per simulation (300 total)
- * Scores show gradual improvement over past 90 days
- * 4 standard groups with 5 standards each (20 total standards, 1 point each)
- * Diverse data with realistic progression
-Dates span past 90 days to today (UTC)
+• 50 chats per simulation (300 total)
+• Scores show gradual improvement over past 90 days
+• 4 standard groups with 5 standards each (20 total)
+• Generates SQL ready for the **new** table structure (see README)
 """
 
 import datetime
@@ -16,366 +15,215 @@ import uuid
 # ---------------------------------------------------------------------------#
 # 1.  CONFIGURATION                                                          #
 # ---------------------------------------------------------------------------#
-# ---- TA roster ------------------------------------------------------------#
 TA_USERS = [
-    "99b90118-7b9e-4e12-8e81-d7ccc2916601",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916602",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916603",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916604",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916605",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916606",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916607",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916608",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916609",
-    "99b90118-7b9e-4e12-8e81-d7ccc2916610",
+    f"99b90118-7b9e-4e12-8e81-d7ccc29166{str(i).zfill(2)}" for i in range(1, 11)
 ]
 
-# ---- Six simulations ------------------------------------------------------#
 SIMULATIONS = [
-    # 3 single-scenario practice
-    "aaaaaaaa-1111-2222-3333-444444444444",  # Aggressive Student Practice
-    "bbbbbbbb-1111-2222-3333-444444444444",  # Happy Student Practice
-    "cccccccc-1111-2222-3333-444444444444",  # Confused Student Practice
-    # 3 multi-scenario course
-    "c5a0b001-aaaa-bbbb-cccc-dddddddddddd",  # CS-180 Programming Challenge
-    "c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee",  # Multi-Course Algorithm
-    "c5a0b003-cccc-dddd-eeee-ffffffffffff",  # Advanced Theory Deep Dive
+    "aaaaaaaa-1111-2222-3333-444444444444",
+    "bbbbbbbb-1111-2222-3333-444444444444",
+    "cccccccc-1111-2222-3333-444444444444",
+    "c5a0b001-aaaa-bbbb-cccc-dddddddddddd",
+    "c5a0b002-bbbb-cccc-dddd-eeeeeeeeeeee",
+    "c5a0b003-cccc-dddd-eeee-ffffffffffff",
 ]
-SIM_QUOTA = [50, 50, 50, 50, 50, 50]  # 50 chats per simulation (300 total)
+SIM_QUOTA = [50] * 6
 
-# ---- Rubric & Standards ---------------------------------------------------#
 RUBRIC_ID = "33333333-3333-3333-3333-333333333333"
 
-# 4 standard groups with 5 standards each (20 total standards, 1 point each)
 STANDARD_GROUPS = {
-    "Problem Understanding": [
-        "11111111-1111-aaaa-bbbb-333333333333",  # Standard 1
-        "11111111-2222-aaaa-bbbb-333333333333",  # Standard 2
-        "11111111-3333-aaaa-bbbb-333333333333",  # Standard 3
-        "11111111-4444-aaaa-bbbb-333333333333",  # Standard 4
-        "11111111-5555-aaaa-bbbb-333333333333",  # Standard 5
-    ],
-    "Algorithm Design": [
-        "22222222-1111-aaaa-bbbb-333333333333",  # Standard 6
-        "22222222-2222-aaaa-bbbb-333333333333",  # Standard 7
-        "22222222-3333-aaaa-bbbb-333333333333",  # Standard 8
-        "22222222-4444-aaaa-bbbb-333333333333",  # Standard 9
-        "22222222-5555-aaaa-bbbb-333333333333",  # Standard 10
-    ],
-    "Code Implementation": [
-        "33333333-1111-aaaa-bbbb-333333333333",  # Standard 11
-        "33333333-2222-aaaa-bbbb-333333333333",  # Standard 12
-        "33333333-3333-aaaa-bbbb-333333333333",  # Standard 13
-        "33333333-4444-aaaa-bbbb-333333333333",  # Standard 14
-        "33333333-5555-aaaa-bbbb-333333333333",  # Standard 15
-    ],
-    "Testing & Debugging": [
-        "44444444-1111-aaaa-bbbb-333333333333",  # Standard 16
-        "44444444-2222-aaaa-bbbb-333333333333",  # Standard 17
-        "44444444-3333-aaaa-bbbb-333333333333",  # Standard 18
-        "44444444-4444-aaaa-bbbb-333333333333",  # Standard 19
-        "44444444-5555-aaaa-bbbb-333333333333",  # Standard 20
-    ],
+    "Problem Understanding": [f"11111111-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Algorithm Design":      [f"22222222-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Code Implementation":   [f"33333333-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
+    "Testing & Debugging":   [f"44444444-{i:04d}-aaaa-bbbb-333333333333" for i in range(1, 6)],
 }
+ALL_STANDARDS = [s for g in STANDARD_GROUPS.values() for s in g]
 
-# Flatten all standards for easy iteration
-ALL_STANDARDS = [std for group in STANDARD_GROUPS.values() for std in group]
-
-# Diverse question and answer banks for more realistic data
 QUESTION_BANK = [
-    "Can you explain this output?",
-    "Why is this line null?",
-    "What does this recursion actually do?",
-    "How do I optimize this loop?",
-    "Is my DFA minimal?",
-    "Why am I getting a segmentation fault?",
-    "How do I handle this edge case?",
-    "What's the time complexity here?",
-    "Can you help me debug this function?",
-    "Why isn't my algorithm working?",
-    "How do I implement this data structure?",
-    "What's wrong with my logic?",
-    "Can you explain this concept?",
-    "How do I approach this problem?",
+    "Can you explain this output?", "Why is this line null?",
+    "What does this recursion actually do?", "How do I optimize this loop?",
+    "Is my DFA minimal?", "Why am I getting a segmentation fault?",
+    "How do I handle this edge case?", "What's the time complexity here?",
+    "Can you help me debug this function?", "Why isn't my algorithm working?",
+    "How do I implement this data structure?", "What's wrong with my logic?",
+    "Can you explain this concept?", "How do I approach this problem?",
     "Why is my code so slow?",
 ]
-
 ANSWER_BANK = [
-    "Let's trace the variable values.",
-    "Initialize the array before use.",
+    "Let's trace the variable values.", "Initialize the array before use.",
     "Your base case is missing; it never terminates.",
     "Pre-allocate the vector to avoid re-allocation.",
-    "Remove state Q3 - it's unreachable.",
+    "Remove state Q3 – it's unreachable.",
     "Check your pointer arithmetic carefully.",
     "Consider what happens when the input is empty.",
-    "This is O(n²) - can we do better?",
-    "Let's add some print statements to see what's happening.",
+    "This is O(n²); can we do better?",
+    "Add some print statements to see what's happening.",
     "The issue is in your loop condition.",
-    "You need to handle the case where the list is empty.",
+    "Handle the case where the list is empty.",
     "Think about the invariant you're trying to maintain.",
     "Let me draw a diagram to explain this.",
     "Break this down into smaller steps.",
-    "Try using a different approach - maybe recursion?",
+    "Try using a different approach – maybe recursion?",
 ]
-
 CHAT_TITLES = [
-    "Debug Help",
-    "Algorithm Q",
-    "Concept Check",
-    "Code Review",
-    "Logic Error",
-    "Performance Issue",
-    "Implementation Help",
-    "Understanding Concepts",
-    "Problem Solving",
-    "Optimization Question",
+    "Debug Help", "Algorithm Q", "Concept Check", "Code Review",
+    "Logic Error", "Performance Issue", "Implementation Help",
+    "Understanding Concepts", "Problem Solving", "Optimization Question",
 ]
 
-# Past 90 days
-TODAY = datetime.datetime.now(datetime.timezone.utc)
-START = TODAY - datetime.timedelta(days=90)
-
+TODAY  = datetime.datetime.now(datetime.timezone.utc)
+START  = TODAY - datetime.timedelta(days=90)
 random.seed(42)
 
-
 # ---------------------------------------------------------------------------#
-# 2.  Helpers                                                                #
+# 2.  Helper functions                                                       #
 # ---------------------------------------------------------------------------#
-def rand_ts_with_trend(progress: float) -> str:
-    """
-    Random timestamp with trend - progress is 0.0 to 1.0
-    Earlier timestamps (progress near 0) are closer to START
-    Later timestamps (progress near 1) are closer to TODAY
-    """
-    # Add some randomness but bias toward the trend
-    jitter = random.uniform(-0.1, 0.1)
-    adjusted_progress = max(0, min(1, progress + jitter))
+q = lambda s: "'" + s.replace("'", "''") + "'"
 
-    delta = adjusted_progress * (TODAY - START)
-    return (START + delta).isoformat(timespec="seconds")
+def rand_ts(progress: float, jitter: float = 0.1) -> str:
+    adj = max(0, min(1, progress + random.uniform(-jitter, jitter)))
+    return (START + adj * (TODAY - START)).isoformat(timespec="seconds")
 
-
-def get_score_with_improvement(progress: float) -> int:
-    """
-    Generate scores that improve over time (out of 20)
-    Early: 4-12 range, Later: 10-19 range
-    """
-    base_min = 4 + int(progress * 6)  # 4 -> 10
-    base_max = 12 + int(progress * 7)  # 12 -> 19
-
-    # Still allow some outliers
+def get_score(progress: float) -> int:
+    base_min = 4 + int(progress * 6)   # 4 → 10
+    base_max = 12 + int(progress * 7)  # 12 → 19
     roll = random.random()
-    if roll < 0.03:  # 3% chance of very low score
-        return random.randint(0, 5)
-    elif roll < 0.06:  # 3% chance of perfect score
-        return 20
-    else:
-        return random.randint(base_min, base_max)
+    if roll < 0.03:  return random.randint(0, 5)
+    if roll < 0.06:  return 20
+    return random.randint(base_min, base_max)
 
-
-def get_standard_score(progress: float) -> int:
-    """
-    Generate individual standard scores (0 or 1) with improvement over time
-    Each standard is worth 1 point maximum
-    """
-    # Probability of getting 1 point improves over time
-    success_rate = 0.3 + (progress * 0.5)  # 30% -> 80% success rate
-    
-    # Add some randomness
-    jitter = random.uniform(-0.1, 0.1)
-    adjusted_rate = max(0.1, min(0.9, success_rate + jitter))
-    
-    return 1 if random.random() < adjusted_rate else 0
-
-
-def generate_consistent_scores(progress: float) -> tuple[int, list[int]]:
-    """
-    Generate a total score and individual standard scores that are consistent
-    Returns (total_score, individual_scores_list)
-    """
-    # First generate the target total score
-    total_score = get_score_with_improvement(progress)
-    
-    # Generate individual scores that add up close to the total
-    individual_scores = []
-    current_sum = 0
-    
-    # Generate scores for first 19 standards
+def generate_standard_scores(progress: float) -> tuple[int, list[int]]:
+    total = get_score(progress)
+    scores, s = [], 0
     for i in range(19):
-        # Calculate how many points we still need
-        remaining_standards = 20 - i
-        remaining_points = total_score - current_sum
-        
-        # Decide probability based on remaining needs
-        if remaining_points <= 0:
-            score = 0
-        elif remaining_points >= remaining_standards:
-            score = 1  # We need all remaining to be 1
+        left_pts   = total - s
+        left_stand = 20 - i
+        if left_pts <= 0: p = 0
+        elif left_pts >= left_stand: p = 1
         else:
-            # Calculate probability to hit target
-            target_rate = remaining_points / remaining_standards
-            # Add progress-based improvement
-            base_rate = 0.3 + (progress * 0.5)
-            final_rate = (target_rate + base_rate) / 2
-            score = 1 if random.random() < final_rate else 0
-        
-        individual_scores.append(score)
-        current_sum += score
-    
-    # For the last standard, adjust to match total exactly
-    last_score = max(0, min(1, total_score - current_sum))
-    individual_scores.append(last_score)
-    
-    # Verify and adjust if needed
-    actual_sum = sum(individual_scores)
-    if actual_sum != total_score:
-        # If we're off, randomly adjust some scores
-        diff = total_score - actual_sum
-        if diff > 0:  # Need to add points
-            zeros = [i for i, score in enumerate(individual_scores) if score == 0]
-            for _ in range(min(diff, len(zeros))):
-                if zeros:
-                    idx = random.choice(zeros)
-                    individual_scores[idx] = 1
-                    zeros.remove(idx)
-        elif diff < 0:  # Need to remove points
-            ones = [i for i, score in enumerate(individual_scores) if score == 1]
-            for _ in range(min(-diff, len(ones))):
-                if ones:
-                    idx = random.choice(ones)
-                    individual_scores[idx] = 0
-                    ones.remove(idx)
-    
-    return total_score, individual_scores
-
-
-def q(val: str) -> str:
-    return "'" + val.replace("'", "''") + "'"
-
+            tgt = left_pts / left_stand
+            p   = int((tgt + (0.3 + progress * .5)) / 2)
+        val = 1 if random.random() < p else 0
+        scores.append(val); s += val
+    scores.append(max(0, min(1, total - s)))
+    # small correction if off
+    diff = total - sum(scores)
+    pool = [i for i,v in enumerate(scores) if (v==0 and diff>0) or (v==1 and diff<0)]
+    while diff and pool:
+        idx = random.choice(pool)
+        scores[idx] += 1 if diff>0 else -1
+        diff += -1 if diff>0 else 1
+    return sum(scores), scores
 
 # ---------------------------------------------------------------------------#
-# 3.  Row buckets                                                            #
+# 3.  Buckets for VALUES clauses                                             #
 # ---------------------------------------------------------------------------#
 attempt_rows, chat_rows, message_rows, grade_rows, fb_rows = ([] for _ in range(5))
 
-# ---------------------------------------------------------------------------#
-# 4.  Generate per-simulation with time-based improvement                    #
-# ---------------------------------------------------------------------------#
 total_chats = sum(SIM_QUOTA)
 chat_counter = 0
 
 for sim_id, quota in zip(SIMULATIONS, SIM_QUOTA):
-    for i in range(quota):
-        # Calculate progress (0.0 to 1.0) for this chat
-        progress = chat_counter / (total_chats - 1)
+    for _ in range(quota):
+        prog = chat_counter / (total_chats - 1)
         chat_counter += 1
 
-        ta_id = random.choice(TA_USERS)
+        ta_id       = random.choice(TA_USERS)
+        attempt_id  = str(uuid.uuid4())
+        chat_id     = str(uuid.uuid4())
+        grade_id    = str(uuid.uuid4())
+        created_ts  = rand_ts(prog)
 
-        attempt_id = str(uuid.uuid4())
-        chat_id = str(uuid.uuid4())
-        grade_id = str(uuid.uuid4())
-
-        # ----- simulation_attempt -----------------------------------------#
+        # ---------- simulation_attempts ----------
         attempt_rows.append(
-            f"({q(attempt_id)}, {q(rand_ts_with_trend(progress))}, {q(ta_id)}, {q(sim_id)})"
+            f"({q(attempt_id)}, {q(created_ts)}, {q(ta_id)}, {q(sim_id)})"
         )
 
-        # ----- simulation_chat -------------------------------------------#
-        # Completion rate improves over time
-        completed = random.random() < (0.6 + progress * 0.3)  # 60% -> 90%
-        created_at = rand_ts_with_trend(progress)
-        completed_at = q(rand_ts_with_trend(progress + 0.01)) if completed else "NULL"
+        # ---------- simulation_chats -------------
+        completed   = random.random() < (0.6 + prog * 0.3)
+        completed_ts= q(rand_ts(prog+0.01)) if completed else "NULL"
         scenario_id = "11111111-aaaa-aaaa-aaaa-111111111111"
-        title = random.choice(CHAT_TITLES)
-
+        title       = random.choice(CHAT_TITLES)
         chat_rows.append(
-            f"({q(chat_id)}, {q(created_at)}, {completed_at}, {q(title)}, "
-            f"{q(scenario_id)}, {q(attempt_id)}, {str(completed).lower()})"
+            f"({q(chat_id)}, {q(created_ts)}, {q(created_ts)}, "
+            f"{completed_ts}, {q(title)}, {q(scenario_id)}, {q(attempt_id)}, "
+            f"{str(completed).lower()}, NULL)"
         )
 
-        # ----- simulation_messages (2-12, more variety) ------------------#
-        msg_count = random.randint(2, 12)
-        for j in range(msg_count):
+        # ---------- simulation_messages ----------
+        pairs = random.randint(2, 12)
+        for j in range(pairs):
+            base_ts = rand_ts(prog + j/pairs*0.01, jitter=0.02)
+            # query
             msg_id = str(uuid.uuid4())
-            msg_progress = (
-                progress + (j / msg_count) * 0.01
-            )  # Slight progression within chat
             message_rows.append(
-                f"({q(msg_id)}, {q(rand_ts_with_trend(msg_progress))}, {q(chat_id)}, "
-                f"{q(random.choice(QUESTION_BANK))}, "
-                f"{q(random.choice(ANSWER_BANK))}, false)"
+                f"({q(msg_id)}, {q(base_ts)}, {q(base_ts)}, {q(chat_id)}, "
+                f"{q(random.choice(QUESTION_BANK))}, false, NULL, 'query', false)"
+            )
+            # response
+            msg_id = str(uuid.uuid4())
+            resp_ts= rand_ts(prog + j/pairs*0.01 + 0.001, jitter=0.02)
+            message_rows.append(
+                f"({q(msg_id)}, {q(resp_ts)}, {q(resp_ts)}, {q(chat_id)}, "
+                f"{q(random.choice(ANSWER_BANK))}, false, NULL, 'response', false)"
             )
 
-        # ----- simulation_chat_grades ------------------------------------#
-        score, individual_scores = generate_consistent_scores(progress)
-        passed = score >= 14  # 70% of 20 = 14
-        # Time taken improves slightly over time (people get faster)
-        base_time = random.randint(600, 2400)
-        time_taken = max(
-            300, int(base_time * (1.2 - progress * 0.4))
-        )  # Slight improvement
-
+        # ---------- simulation_chat_grades -------
+        score, std_scores = generate_standard_scores(prog)
+        passed = score >= 14
+        time_taken = max(300, int(random.randint(600,2400)*(1.2 - prog*0.4)))
         grade_rows.append(
-            f"({q(grade_id)}, {q(rand_ts_with_trend(progress))}, {str(passed).lower()}, {score}, "
+            f"({q(grade_id)}, {q(created_ts)}, {str(passed).lower()}, {score}, "
             f"{time_taken}, {q(RUBRIC_ID)}, {q(chat_id)})"
         )
 
-        # ----- simulation_chat_feedbacks (4 per chat) ---------------------#
-        # Generate diverse scores for all 4 standards
-        for standard_id in ALL_STANDARDS:
-            standard_score = individual_scores[ALL_STANDARDS.index(standard_id)]
-            feedback_text = f"Feedback for standard {standard_id[-4:]}"
-
+        # ---------- simulation_chat_feedbacks ----
+        for std_id, pts in zip(ALL_STANDARDS, std_scores):
             fb_rows.append(
-                f"({q(str(uuid.uuid4()))}, {q(rand_ts_with_trend(progress))}, {q(standard_id)}, {q(grade_id)}, "
-                f"{standard_score}, {q(feedback_text)})"
+                f"({q(str(uuid.uuid4()))}, {q(created_ts)}, {q(std_id)}, "
+                f"{q(grade_id)}, {pts}, {q(f'Feedback for standard {std_id[-4:]}')})"
             )
 
-
 # ---------------------------------------------------------------------------#
-# 5.  Emit INSERT statements                                                 #
+# 4.  Emit INSERT statements                                                 #
 # ---------------------------------------------------------------------------#
-def build_insert(table: str, cols: str, rows: list[str]) -> str:
+def build(table, cols, rows):
     return f"INSERT INTO {table} ({cols}) VALUES\n  " + ",\n  ".join(rows) + ";\n\n"
 
+sql = "".join([
+    build("simulation_attempts",
+          "id, created_at, profile_id, simulation_id", attempt_rows),
+    build("simulation_chats",
+          "id, created_at, updated_at, completed_at, title, scenario_id, "
+          "attempt_id, completed, trace_id", chat_rows),
+    build("simulation_messages",
+          "id, created_at, updated_at, chat_id, content, audio, file_path, "
+          "type, completed", message_rows),
+    build("simulation_chat_grades",
+          "id, created_at, passed, score, time_taken, rubric_id, simulation_chat_id",
+          grade_rows),
+    build("simulation_chat_feedbacks",
+          "id, created_at, standard_id, simulation_chat_grade_id, total, feedback",
+          fb_rows),
+])
 
-sql = "".join(
-    [
-        build_insert(
-            "simulation_attempts",
-            "id, created_at, profile_id, simulation_id",
-            attempt_rows,
-        ),
-        build_insert(
-            "simulation_chats",
-            "id, created_at, completed_at, title, scenario_id, attempt_id, completed",
-            chat_rows,
-        ),
-        build_insert(
-            "simulation_messages",
-            "id, created_at, chat_id, query, response, completed",
-            message_rows,
-        ),
-        build_insert(
-            "simulation_chat_grades",
-            "id, created_at, passed, score, time_taken, rubric_id, simulation_chat_id",
-            grade_rows,
-        ),
-        build_insert(
-            "simulation_chat_feedbacks",
-            "id, created_at, standard_id, simulation_chat_grade_id, total, feedback",
-            fb_rows,
-        ),
-    ]
+out_path = pathlib.Path("database/init/generated_simulation_data.sql")
+out_path.parent.mkdir(parents=True, exist_ok=True)
+out_path.write_text(sql)
+
+# Quick “mock run” preview – first 3 rows of each table
+preview = (
+    ("simulation_attempts", attempt_rows[:3]),
+    ("simulation_chats",    chat_rows[:3]),
+    ("simulation_messages", message_rows[:3]),
+    ("simulation_chat_grades", grade_rows[:3]),
+    ("simulation_chat_feedbacks", fb_rows[:3]),
 )
-
-# Write to database/init directory
-output_path = pathlib.Path("database/init/generated_simulation_data.sql")
-output_path.parent.mkdir(parents=True, exist_ok=True)
-output_path.write_text(sql)
-
-print(f"✅  Generated {len(chat_rows)} chats ({len(message_rows)} messages)")
-print("📊  Data spans past 90 days with gradual improvement trend")
-print("🎯  20 standards (4 groups × 5 standards), 1 point each (total out of 20)")
-print(f"📁  Output: {output_path}")
+print("=== MOCK RUN PREVIEW (first 3 rows each) ===")
+for name, rows in preview:
+    print(f"\n{name}:")
+    for r in rows: print(" ", r)
+print(f"\n✅  Generated {len(chat_rows)} chats "
+      f"({len(message_rows)} messages, {len(grade_rows)} grades)")
+print("📊  Data spans the past 90 days with gradual improvement")
+print(f"📁  Output SQL written to {out_path.resolve()}")

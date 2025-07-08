@@ -1,12 +1,12 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-08T14:01:14.501Z
+Generated on: 2025-07-08T14:39:00.101Z
 
 ## Summary
-- **Total Components**: 97
-- **Tests Created**: 0
-- **Tests Updated**: 46
-- **Tests Skipped** (already implemented): 51
+- **Total Components**: 98
+- **Tests Created**: 1
+- **Tests Updated**: 50
+- **Tests Skipped** (already implemented): 47
 
 ## Component Coverage
 
@@ -66,6 +66,7 @@ Generated on: 2025-07-08T14:01:14.501Z
 | export-button | common/history/export-button.tsx | export-button.test.tsx | ✅ Implemented |
 | ChatDialog | common/home/ChatDialog.tsx | ChatDialog.test.tsx | ❌ Needs Implementation |
 | ChatFab | common/home/ChatFab.tsx | ChatFab.test.tsx | ❌ Needs Implementation |
+| ChatHeaderBadge | common/home/ChatHeaderBadge.tsx | ChatHeaderBadge.test.tsx | ❌ Needs Implementation |
 | ChatInput | common/home/ChatInput.tsx | ChatInput.test.tsx | ❌ Needs Implementation |
 | ChatMessages | common/home/ChatMessages.tsx | ChatMessages.test.tsx | ❌ Needs Implementation |
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
@@ -80,13 +81,13 @@ Generated on: 2025-07-08T14:01:14.501Z
 | ScenarioPicker | common/scenario/ScenarioPicker.tsx | ScenarioPicker.test.tsx | ✅ Implemented |
 | ScenarioSlider | common/scenario/ScenarioSlider.tsx | ScenarioSlider.test.tsx | ✅ Implemented |
 | Simulation | common/simulation/Simulation.tsx | Simulation.test.tsx | ✅ Implemented |
-| AgentEdit | create/agents/AgentEdit.tsx | AgentEdit.test.tsx | ✅ Implemented |
-| Agents | create/agents/Agents.tsx | Agents.test.tsx | ✅ Implemented |
-| NewAgent | create/agents/NewAgent.tsx | NewAgent.test.tsx | ✅ Implemented |
 | ClassEdit | create/classes/ClassEdit.tsx | ClassEdit.test.tsx | ✅ Implemented |
 | ClassStatus | create/classes/ClassStatus.tsx | ClassStatus.test.tsx | ✅ Implemented |
 | Classes | create/classes/Classes.tsx | Classes.test.tsx | ✅ Implemented |
 | NewClass | create/classes/NewClass.tsx | NewClass.test.tsx | ✅ Implemented |
+| CohortEdit | create/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ❌ Needs Implementation |
+| Cohorts | create/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
+| NewCohort | create/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
 | NewRubric | create/rubrics/NewRubric.tsx | NewRubric.test.tsx | ✅ Implemented |
 | RubricEdit | create/rubrics/RubricEdit.tsx | RubricEdit.test.tsx | ✅ Implemented |
 | Rubrics | create/rubrics/Rubrics.tsx | Rubrics.test.tsx | ✅ Implemented |
@@ -97,9 +98,9 @@ Generated on: 2025-07-08T14:01:14.501Z
 | SimulationEdit | create/simulations/SimulationEdit.tsx | SimulationEdit.test.tsx | ✅ Implemented |
 | Simulations | create/simulations/Simulations.tsx | Simulations.test.tsx | ✅ Implemented |
 | Home | home/Home.tsx | Home.test.tsx | ✅ Implemented |
-| CohortEdit | management/cohorts/CohortEdit.tsx | CohortEdit.test.tsx | ✅ Implemented |
-| Cohorts | management/cohorts/Cohorts.tsx | Cohorts.test.tsx | ❌ Needs Implementation |
-| NewCohort | management/cohorts/NewCohort.tsx | NewCohort.test.tsx | ❌ Needs Implementation |
+| AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ❌ Needs Implementation |
+| Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
+| NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ❌ Needs Implementation |
 | ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ❌ Needs Implementation |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
@@ -183,6 +184,7 @@ __tests__/
 │   ├── home/
 │   │   ├── ChatDialog.test.tsx
 │   │   ├── ChatFab.test.tsx
+│   │   ├── ChatHeaderBadge.test.tsx
 │   │   ├── ChatInput.test.tsx
 │   │   ├── ChatMessages.test.tsx
 │   │   ├── ChatStarterPrompts.test.tsx
@@ -204,15 +206,15 @@ __tests__/
 │   ├── simulation/
 │   │   ├── Simulation.test.tsx
 ├── create/
-│   ├── agents/
-│   │   ├── AgentEdit.test.tsx
-│   │   ├── Agents.test.tsx
-│   │   ├── NewAgent.test.tsx
 │   ├── classes/
 │   │   ├── ClassEdit.test.tsx
 │   │   ├── ClassStatus.test.tsx
 │   │   ├── Classes.test.tsx
 │   │   ├── NewClass.test.tsx
+│   ├── cohorts/
+│   │   ├── CohortEdit.test.tsx
+│   │   ├── Cohorts.test.tsx
+│   │   ├── NewCohort.test.tsx
 │   ├── rubrics/
 │   │   ├── NewRubric.test.tsx
 │   │   ├── RubricEdit.test.tsx
@@ -228,10 +230,10 @@ __tests__/
 ├── home/
 │   ├── Home.test.tsx
 ├── management/
-│   ├── cohorts/
-│   │   ├── CohortEdit.test.tsx
-│   │   ├── Cohorts.test.tsx
-│   │   ├── NewCohort.test.tsx
+│   ├── agents/
+│   │   ├── AgentEdit.test.tsx
+│   │   ├── Agents.test.tsx
+│   │   ├── NewAgent.test.tsx
 │   ├── logs/
 │   │   ├── ConnectionStatusIndicator.test.tsx
 │   │   ├── Logs.test.tsx
