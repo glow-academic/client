@@ -76,11 +76,11 @@ export default function Rubrics() {
   };
 
   const handleEdit = (id: string) => {
-    router.push(`/create/rubrics/r/${id}`);
+    router.push(`/management/rubrics/r/${id}`);
   };
 
   const handleCreateNew = () => {
-    router.push("/create/rubrics/new");
+    router.push("/management/rubrics/new");
   };
 
   const getPassPercentage = (rubric: Rubric) => {

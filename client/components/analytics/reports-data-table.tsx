@@ -57,6 +57,10 @@ export function ReportsDataTable({
       agentsTested: false,
       scenarioIds: false,
       simulationIds: false,
+      // Hide these columns by default
+      totalAttempts: false,
+      lastActivity: false,
+      completionRate: false,
     });
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -108,7 +112,9 @@ export function ReportsDataTable({
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
-                      className="border-r px-1 py-1 text-xs"
+                      className={`border-r px-1 py-1 text-xs text-center ${
+                        header.id === "select" ? "w-12" : ""
+                      }`}
                     >
                       {header.isPlaceholder
                         ? null
@@ -135,7 +141,12 @@ export function ReportsDataTable({
                   } transition-colors`}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="border-r px-1 py-1">
+                    <TableCell
+                      key={cell.id}
+                      className={`border-r px-1 py-1 text-center ${
+                        cell.column.id === "select" ? "w-12" : ""
+                      }`}
+                    >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()

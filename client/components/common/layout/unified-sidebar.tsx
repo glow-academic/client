@@ -220,12 +220,7 @@ export function UnifiedSidebar({
             title: "Simulations",
             url: "#",
             section: "simulations",
-          },
-          {
-            title: "Rubrics",
-            url: "#",
-            section: "rubrics",
-          },
+          }
         ],
       });
     }
@@ -246,6 +241,12 @@ export function UnifiedSidebar({
         title: "Agents",
         url: "#",
         section: "agents",
+      });
+
+      managementItems.push({
+        title: "Rubrics",
+        url: "#",
+        section: "rubrics",
       });
 
       // Models - available for admin

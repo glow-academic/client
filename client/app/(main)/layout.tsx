@@ -144,9 +144,9 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    if (pathname === "/create/rubrics") {
+    if (pathname === "/management/rubrics") {
       return (
-        <Button onClick={() => router.push("/create/rubrics/new")} size="sm">
+        <Button onClick={() => router.push("/management/rubrics/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>

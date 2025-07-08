@@ -138,7 +138,7 @@ export function useReportsColumns({
     if (!classes) return [];
     return classes.map((classItem) => ({
       value: classItem.id,
-      label: classItem.name,
+      label: classItem.classCode,
     }));
   }, [classes]);
 
@@ -152,10 +152,12 @@ export function useReportsColumns({
 
   const agentOptions = useMemo(() => {
     if (!agents) return [];
-    return agents.map((agent) => ({
-      value: agent.id,
-      label: agent.name,
-    }));
+    return agents
+      .filter((agent) => agent.editable === true)
+      .map((agent) => ({
+        value: agent.id,
+        label: agent.name,
+      }));
   }, [agents]);
 
   const scenarioOptions = useMemo(() => {
@@ -220,7 +222,7 @@ export function useReportsColumns({
         cell: ({ row }) => {
           const ta = row.original;
           return (
-            <div className="flex items-center gap-1">
+            <div className="flex items-center justify-center gap-1">
               <div
                 className="font-medium text-xs cursor-pointer hover:text-primary hover:underline truncate"
                 onClick={() => onViewReport(ta.id)}
@@ -255,7 +257,7 @@ export function useReportsColumns({
           const ta = row.original;
           return (
             <div
-              className="text-xs text-muted-foreground truncate"
+              className="text-xs text-muted-foreground truncate text-center"
               title={ta.username}
             >
               {ta.username}

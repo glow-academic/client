@@ -1,11 +1,11 @@
 /**
- * app/create/rubrics/page.tsx
+ * app/management/rubrics/page.tsx
  * Rubric list page - redirects to home with rubrics section
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
 import React from "react";
-import Rubrics from "@/components/create/rubrics/Rubrics";
+import Rubrics from "@/components/management/rubrics/Rubrics";
 
 import type { Metadata } from "next";
 

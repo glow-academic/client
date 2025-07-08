@@ -107,7 +107,7 @@ export const getSectionRoute = (section: string): string => {
     case "simulations":
       return "/create/simulations";
     case "rubrics":
-      return "/create/rubrics";
+      return "/management/rubrics";
     case "classes":
       return "/create/classes";
     case "cohorts":
@@ -150,7 +150,7 @@ export const getSectionRoute = (section: string): string => {
       }
       if (section.startsWith("rubric-")) {
         const rubricId = section.replace("rubric-", "");
-        return `/create/rubrics/r/${rubricId}`;
+        return `/management/rubrics/r/${rubricId}`;
       }
       if (section.startsWith("chat-")) {
         const chatId = section.replace("chat-", "");

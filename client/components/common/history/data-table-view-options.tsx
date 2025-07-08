@@ -15,12 +15,10 @@ import {
 
 const columnMap = {
   createdAt: "Date",
-  classIds: "Classes",
   profileId: "Name",
   userId: "Name",
   simulationTitle: "Simulation",
   classCode: "Classes",
-  agentsTested: "Agents",
   averageScore: "Score",
   // Reports page columns
   firstName: "Name",

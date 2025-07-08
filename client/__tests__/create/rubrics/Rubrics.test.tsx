@@ -1,4 +1,4 @@
-import Rubrics from "@/components/create/rubrics/Rubrics";
+import Rubrics from "@/components/management/rubrics/Rubrics";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

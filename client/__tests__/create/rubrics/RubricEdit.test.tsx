@@ -1,4 +1,4 @@
-import RubricEdit from "@/components/create/rubrics/RubricEdit";
+import RubricEdit from "@/components/management/rubrics/RubricEdit";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";

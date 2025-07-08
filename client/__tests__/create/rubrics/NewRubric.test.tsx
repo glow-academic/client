@@ -1,4 +1,4 @@
-import NewRubric from "@/components/create/rubrics/NewRubric";
+import NewRubric from "@/components/management/rubrics/NewRubric";
 import { renderWithProviders } from "@/mocks/utils";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";

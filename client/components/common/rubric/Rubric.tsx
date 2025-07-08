@@ -219,7 +219,7 @@ export default function Rubric({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["rubrics"] });
       toast.success("Rubric created successfully!");
-      router.push("/create/rubrics");
+      router.push("/management/rubrics");
     },
     onError: (error) => {
       logError("Error creating rubric:", error);
@@ -238,7 +238,7 @@ export default function Rubric({
         setEditing((prev) => ({ ...prev, rubric: false }));
       } else {
         toast.success("Rubric updated successfully!");
-        router.push("/create/rubrics");
+        router.push("/management/rubrics");
       }
     },
     onError: (error) => {
@@ -345,7 +345,7 @@ export default function Rubric({
   };
 
   const handleCancel = () => {
-    router.push("/create/rubrics");
+    router.push("/management/rubrics");
   };
 
   const handleInputChange = (

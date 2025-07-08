@@ -1,12 +1,12 @@
 /**
- * app/create/rubrics/r/[rubricId]/page.tsx
+ * app/management/rubrics/r/[rubricId]/page.tsx
  * Rubric editing page
  * @AshokSaravanan222 & @siladiea
  * 06/09/2025
  */
 
 import { use } from "react";
-import RubricEdit from "@/components/create/rubrics/RubricEdit";
+import RubricEdit from "@/components/management/rubrics/RubricEdit";
 
 import type { Metadata, ResolvingMetadata } from "next";
 import { getRubric } from "@/utils/queries/rubrics/get-rubric";
