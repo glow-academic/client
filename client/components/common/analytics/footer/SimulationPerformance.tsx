@@ -35,7 +35,7 @@ import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulatio
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from "recharts";
 
 type ColorTheme =
   | "blue"
@@ -345,35 +345,37 @@ export default function SimulationPerformance({
         </div>
       </CardHeader>
       <CardContent className="pb-0 flex-1">
-        <ChartContainer config={chartConfig} className="w-full h-full">
-          <BarChart
-            data={performanceData}
-            layout="horizontal"
-            margin={{ left: 60, right: 30, top: 20, bottom: 20 }}
-          >
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent indicator="line" />}
-            />
-            <XAxis type="number" domain={[0, 100]} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              tickLine={false}
-              axisLine={false}
-              width={120}
-            />
-            <Bar
-              dataKey="completionRate"
-              fill="var(--color-completionRate)"
-              radius={4}
-            />
-            <Bar
-              dataKey="averageScore"
-              fill="var(--color-averageScore)"
-              radius={4}
-            />
-          </BarChart>
+        <ChartContainer config={chartConfig} className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={performanceData}
+              layout="vertical"
+              margin={{ left: 60, right: 30, top: 20, bottom: 20 }}
+            >
+              <ChartTooltip
+                cursor={false}
+                content={<ChartTooltipContent indicator="line" />}
+              />
+              <XAxis type="number" domain={[0, 100]} />
+              <YAxis
+                type="category"
+                dataKey="name"
+                tickLine={false}
+                axisLine={false}
+                width={120}
+              />
+              <Bar
+                dataKey="completionRate"
+                fill="var(--color-completionRate)"
+                radius={4}
+              />
+              <Bar
+                dataKey="averageScore"
+                fill="var(--color-averageScore)"
+                radius={4}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
       <CardContent className="flex-col gap-2 text-sm">
