@@ -92,6 +92,25 @@ services:
 
 
   # --------------------
+  # Volume Init Service
+  # --------------------
+  volume-init:
+    image: busybox
+    volumes:
+      - uploads:/app/uploads
+      - audio-data:/app/audio
+      - sketch-data:/app/sketch
+      - csv-data:/app/csv
+    command: >
+      sh -c "
+        mkdir -p /app/uploads/tus_uploads &&
+        chmod -R 755 /app/uploads /app/audio /app/sketch /app/csv &&
+        echo 'Volume permissions initialized'
+      "
+    networks:
+      - internal
+
+  # --------------------
   # API Server
   # --------------------
   server:
@@ -120,6 +139,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
+      volume-init:
+        condition: service_completed_successfully
     deploy:
       replicas: ${SERVER_REPLICAS:-1}   # (now overridable) 
     command: >
