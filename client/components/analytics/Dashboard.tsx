@@ -358,7 +358,7 @@ export default function Dashboard() {
       {/* Main Content Section with Responsive Layout */}
       {(primaryComponentIds.length > 0 || secondaryComponentIds.length > 0) && (
         <div
-          className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-8 items-stretch"
+          className="grid gap-6 grid-cols-1 lg:grid-cols-[3fr_2fr] pb-2 items-stretch"
           style={{ gridAutoRows: "1fr" }}
         >
           {/* Primary Section */}
