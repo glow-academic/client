@@ -60,14 +60,14 @@ export default function Agent({
     name: "",
     description: "",
     systemPrompt: "",
-    temperature: 0,
+    temperature: 0.0,
     modelId: null,
     voiceAgent: false,
     sttModelId: "default",
     ttsModelId: "default",
   });
 
-  const { data: agent, isLoading } = useQuery({
+  const { data: agent, isLoading: isLoadingAgent } = useQuery({
     queryKey: ["agent", agentId],
     queryFn: () => getAgent(agentId!),
     enabled: isEditMode,
@@ -78,13 +78,16 @@ export default function Agent({
     queryFn: () => getAllModels(),
   });
 
+  // Combined loading state
+  const isLoading = (isEditMode && isLoadingAgent) || isModelsLoading;
+
   useEffect(() => {
     if (agent && isEditMode) {
       setFormData({
         name: agent.name || "",
         description: agent.description || "",
         systemPrompt: agent.systemPrompt || "",
-        temperature: agent.temperature || 0,
+        temperature: agent.temperature || 0.0,
         modelId: agent.modelId || null,
         voiceAgent: agent.voiceAgent || false,
         sttModelId: agent.sttModelId || "default",
@@ -136,24 +139,16 @@ export default function Agent({
     setIsSubmitting(true);
 
     try {
-      const submitData = {
-        ...formData,
-        sttModelId:
-          formData.sttModelId === "default" ? null : formData.sttModelId,
-        ttsModelId:
-          formData.ttsModelId === "default" ? null : formData.ttsModelId,
-      };
-
       if (isEditMode) {
         await updateAgent(agentId!, {
-          ...submitData,
+          ...formData,
           updatedAt: new Date().toISOString(),
         });
         queryClient.invalidateQueries({ queryKey: ["agents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", agentId] });
         toast.success("Agent updated successfully!");
       } else {
-        const newAgent = await createAgent(submitData as Agent);
+        const newAgent = await createAgent(formData as Agent);
         queryClient.invalidateQueries({ queryKey: ["agents"] });
         queryClient.invalidateQueries({ queryKey: ["agent", newAgent?.id] });
         toast.success("Agent created successfully!");
@@ -169,7 +164,7 @@ export default function Agent({
     }
   };
 
-  if (isEditMode && isLoading) {
+  if (isLoading) {
     return (
       <div className="space-y-6">
         <div>
@@ -385,7 +380,7 @@ export default function Agent({
 
           <div className="space-y-2">
             <Label htmlFor="temperature">
-              Temperature: {formData.temperature}
+              Temperature: {(formData.temperature || 0).toFixed(2)}
             </Label>
             <Slider
               id="temperature"
@@ -393,11 +388,11 @@ export default function Agent({
               min={0}
               max={100}
               step={1}
-              value={[formData.temperature || 0]}
+              value={[(formData.temperature || 0) * 100]}
               onValueChange={(value) =>
                 setFormData((prev) => ({
                   ...prev,
-                  temperature: value[0] || 0,
+                  temperature: (value[0] || 0) / 100,
                 }))
               }
               className="w-full"

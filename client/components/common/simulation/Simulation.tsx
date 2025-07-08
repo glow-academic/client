@@ -74,30 +74,36 @@ export default function Simulation({ simulationId }: SimulationProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
   // Fetch simulations for the list mode
-  const { data: simulations = [] } = useQuery({
+  const { data: simulations = [], isLoading: isLoadingSimulations } = useQuery({
     queryKey: ["simulations"],
     queryFn: () => getAllSimulations(),
   });
 
-  const { data: cohorts = [] } = useQuery({
+  const { data: cohorts = [], isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: rubrics = [] } = useQuery({
+  const { data: rubrics = [], isLoading: isLoadingRubrics } = useQuery({
     queryKey: ["rubrics"],
     queryFn: () => getAllRubrics(),
   });
 
-  const { data: scenarios = [] } = useQuery({
+  const { data: scenarios = [], isLoading: isLoadingScenarios } = useQuery({
     queryKey: ["scenarios"],
     queryFn: () => getAllScenarios(),
   });
 
+  const isLoading =
+    isLoadingSimulations ||
+    isLoadingCohorts ||
+    isLoadingRubrics ||
+    isLoadingScenarios;
+
   // Load simulation data if editing
   useEffect(() => {
     const targetSimulationId = simulationId || editingSimulationId;
-    if (targetSimulationId) {
+    if (targetSimulationId && simulations.length > 0) {
       const simulationToEdit = simulations.find(
         (s: SimulationType) => s.id === targetSimulationId
       );
@@ -285,333 +291,341 @@ export default function Simulation({ simulationId }: SimulationProps) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Simulation Information */}
-
-        <div className="space-y-2">
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={formData.title}
-            onChange={(e) => handleInputChange("title", e.target.value)}
-            placeholder="Enter simulation title"
-            className={errors.title ? "border-destructive" : ""}
-          />
-          {errors.title && (
-            <p className="text-sm text-destructive">{errors.title}</p>
-          )}
+      {isLoading ? (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
         </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Simulation Information */}
 
-        <div className="space-y-2">
-          <Label htmlFor="timeLimit">Minutes Allowed</Label>
-          <Input
-            id="timeLimit"
-            type="number"
-            min="1"
-            max="120"
-            value={formData.timeLimit || ""}
-            onChange={(e) =>
-              handleInputChange("timeLimit", parseInt(e.target.value) || null)
-            }
-            className={errors.timeLimit ? "border-destructive" : ""}
-            placeholder="Leave empty for no time limit"
-          />
-          {errors.timeLimit && (
-            <p className="text-sm text-destructive">{errors.timeLimit}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="rubricId">Rubric</Label>
-          <Select
-            value={formData.rubricId || ""}
-            onValueChange={(value) => handleInputChange("rubricId", value)}
-          >
-            <SelectTrigger
-              className={errors.rubricId ? "border-destructive" : ""}
-            >
-              <SelectValue placeholder="Select a rubric..." />
-            </SelectTrigger>
-            <SelectContent>
-              {rubrics.map((rubric: Rubric) => (
-                <SelectItem key={rubric.id} value={rubric.id}>
-                  {rubric.name} ({rubric.points} points)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.rubricId && (
-            <p className="text-sm text-destructive">{errors.rubricId}</p>
-          )}
-        </div>
-
-        {/* Cohorts */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <Label htmlFor="cohortIds">Cohorts</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                Select cohorts to include in this simulation.
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Select
-                value=""
-                onValueChange={(value: string) => {
-                  if (value) addCohort(value);
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Add cohort" />
-                </SelectTrigger>
-                <SelectContent>
-                  {cohorts
-                    .filter(
-                      (cohort: Cohort) =>
-                        !formData.cohortIds?.includes(cohort.id)
-                    )
-                    .map((cohort: Cohort) => (
-                      <SelectItem key={cohort.id} value={cohort.id}>
-                        {cohort.title}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {formData.cohortIds?.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No cohorts selected</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.cohortIds?.map((cohortId) => {
-                const cohort = cohorts.find(
-                  (c: Cohort) => c.id === cohortId
-                );
-                if (!cohort) return null;
-
-                return (
-                  <Card
-                    key={cohortId}
-                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedCohort === cohortId ? "opacity-50" : ""
-                    }`}
-                    draggable
-                    onDragStart={(e) => handleDragStartCohort(e, cohortId)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, cohortId)}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">
-                          {cohort.title || "Unnamed Cohort"}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editCohort(cohortId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeCohort(cohortId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground line-clamp-3">
-                          {cohort.description || "No description provided"}
-                        </p>
-
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className="text-xs">
-                            {cohort.profileIds?.length || 0} members
-                          </Badge>
-                        </div>
-
-                        <Badge
-                          className={`text-xs ${
-                            cohort.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {cohort.active ? "Active" : "Inactive"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Scenarios */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-center">
-            <div>
-              <Label htmlFor="scenarios">Scenarios</Label>
-              <p className="text-sm text-muted-foreground mt-1">
-                If no scenarios are selected, a random scenario will be chosen
-                automatically
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Select
-                value=""
-                onValueChange={(value: string) => {
-                  if (value) addScenario(value);
-                }}
-              >
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Add scenario" />
-                </SelectTrigger>
-                <SelectContent>
-                  {scenarios
-                    .filter(
-                      (scenario: Scenario) =>
-                        !formData.scenarioIds?.includes(scenario.id)
-                    )
-                    .map((scenario: Scenario) => (
-                      <SelectItem key={scenario.id} value={scenario.id}>
-                        {scenario.name}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          {formData.scenarioIds?.length === 0 ? (
-            <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
-              <div>
-                <p className="font-medium mb-1">No scenarios selected</p>
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {formData.scenarioIds?.map((scenarioId) => {
-                const scenario = scenarios.find(
-                  (s: Scenario) => s.id === scenarioId
-                );
-                if (!scenario) return null;
-
-                return (
-                  <Card
-                    key={scenarioId}
-                    className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
-                      draggedScenario === scenarioId ? "opacity-50" : ""
-                    }`}
-                    draggable
-                    onDragStart={(e) => handleDragStartScenario(e, scenarioId)}
-                    onDragOver={handleDragOver}
-                    onDrop={(e) => handleDrop(e, scenarioId)}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-sm">
-                          {scenario.name || "Unnamed Scenario"}
-                        </h4>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => editScenario(scenarioId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeScenario(scenarioId)}
-                            className="h-6 w-6 p-0"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                          <GripVertical className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <p className="text-xs text-muted-foreground line-clamp-3">
-                          {scenario.description || "No description provided"}
-                        </p>
-
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <Badge variant="outline" className="text-xs">
-                            Crowdedness: {scenario.crowdedness ?? "N/A"}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            Intensity: {scenario.intensity ?? "N/A"}
-                          </Badge>
-                        </div>
-
-                        <Badge
-                          className={`text-xs ${
-                            scenario.seniority === "freshman"
-                              ? "bg-blue-100 text-blue-800"
-                              : scenario.seniority === "sophomore"
-                                ? "bg-green-100 text-green-800"
-                                : scenario.seniority === "junior"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : scenario.seniority === "senior"
-                                    ? "bg-red-100 text-red-800"
-                                    : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {scenario.seniority
-                            ? scenario.seniority.charAt(0).toUpperCase() +
-                              scenario.seniority.slice(1)
-                            : "No Level"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                {simulationId || editingSimulationId
-                  ? "Updating..."
-                  : "Creating..."}
-              </>
-            ) : simulationId || editingSimulationId ? (
-              "Update Simulation"
-            ) : (
-              "Create Simulation"
+          <div className="space-y-2">
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={formData.title}
+              onChange={(e) => handleInputChange("title", e.target.value)}
+              placeholder="Enter simulation title"
+              className={errors.title ? "border-destructive" : ""}
+            />
+            {errors.title && (
+              <p className="text-sm text-destructive">{errors.title}</p>
             )}
-          </Button>
-        </div>
-      </form>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="timeLimit">Minutes Allowed</Label>
+            <Input
+              id="timeLimit"
+              type="number"
+              min="1"
+              max="120"
+              value={formData.timeLimit || ""}
+              onChange={(e) =>
+                handleInputChange("timeLimit", parseInt(e.target.value) || null)
+              }
+              className={errors.timeLimit ? "border-destructive" : ""}
+              placeholder="Leave empty for no time limit"
+            />
+            {errors.timeLimit && (
+              <p className="text-sm text-destructive">{errors.timeLimit}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rubricId">Rubric</Label>
+            <Select
+              value={formData.rubricId || ""}
+              onValueChange={(value) => handleInputChange("rubricId", value)}
+            >
+              <SelectTrigger
+                className={errors.rubricId ? "border-destructive" : ""}
+              >
+                <SelectValue placeholder="Select a rubric..." />
+              </SelectTrigger>
+              <SelectContent>
+                {rubrics.map((rubric: Rubric) => (
+                  <SelectItem key={rubric.id} value={rubric.id}>
+                    {rubric.name} ({rubric.points} points)
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.rubricId && (
+              <p className="text-sm text-destructive">{errors.rubricId}</p>
+            )}
+          </div>
+
+          {/* Cohorts */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div>
+                <Label htmlFor="cohortIds">Cohorts</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select cohorts to include in this simulation.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Select
+                  value=""
+                  onValueChange={(value: string) => {
+                    if (value) addCohort(value);
+                  }}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Add cohort" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {cohorts
+                      .filter(
+                        (cohort: Cohort) =>
+                          !formData.cohortIds?.includes(cohort.id)
+                      )
+                      .map((cohort: Cohort) => (
+                        <SelectItem key={cohort.id} value={cohort.id}>
+                          {cohort.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {formData.cohortIds?.length === 0 ? (
+              <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
+                <div>
+                  <p className="font-medium mb-1">No cohorts selected</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {formData.cohortIds?.map((cohortId) => {
+                  const cohort = cohorts.find((c: Cohort) => c.id === cohortId);
+                  if (!cohort) return null;
+
+                  return (
+                    <Card
+                      key={cohortId}
+                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                        draggedCohort === cohortId ? "opacity-50" : ""
+                      }`}
+                      draggable
+                      onDragStart={(e) => handleDragStartCohort(e, cohortId)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, cohortId)}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">
+                            {cohort.title || "Unnamed Cohort"}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editCohort(cohortId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeCohort(cohortId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground line-clamp-3">
+                            {cohort.description || "No description provided"}
+                          </p>
+
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">
+                              {cohort.profileIds?.length || 0} members
+                            </Badge>
+                          </div>
+
+                          <Badge
+                            className={`text-xs ${
+                              cohort.active
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                            }`}
+                          >
+                            {cohort.active ? "Active" : "Inactive"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Scenarios */}
+          <div className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div>
+                <Label htmlFor="scenarios">Scenarios</Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  If no scenarios are selected, a random scenario will be chosen
+                  automatically
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Select
+                  value=""
+                  onValueChange={(value: string) => {
+                    if (value) addScenario(value);
+                  }}
+                >
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="Add scenario" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {scenarios
+                      .filter(
+                        (scenario: Scenario) =>
+                          !formData.scenarioIds?.includes(scenario.id)
+                      )
+                      .map((scenario: Scenario) => (
+                        <SelectItem key={scenario.id} value={scenario.id}>
+                          {scenario.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {formData.scenarioIds?.length === 0 ? (
+              <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
+                <div>
+                  <p className="font-medium mb-1">No scenarios selected</p>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {formData.scenarioIds?.map((scenarioId) => {
+                  const scenario = scenarios.find(
+                    (s: Scenario) => s.id === scenarioId
+                  );
+                  if (!scenario) return null;
+
+                  return (
+                    <Card
+                      key={scenarioId}
+                      className={`p-3 cursor-move hover:shadow-md transition-all border-l-4 border-l-blue-500 ${
+                        draggedScenario === scenarioId ? "opacity-50" : ""
+                      }`}
+                      draggable
+                      onDragStart={(e) =>
+                        handleDragStartScenario(e, scenarioId)
+                      }
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, scenarioId)}
+                    >
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm">
+                            {scenario.name || "Unnamed Scenario"}
+                          </h4>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => editScenario(scenarioId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeScenario(scenarioId)}
+                              className="h-6 w-6 p-0"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                            <GripVertical className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <p className="text-xs text-muted-foreground line-clamp-3">
+                            {scenario.description || "No description provided"}
+                          </p>
+
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                            <Badge variant="outline" className="text-xs">
+                              Crowdedness: {scenario.crowdedness ?? "N/A"}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              Intensity: {scenario.intensity ?? "N/A"}
+                            </Badge>
+                          </div>
+
+                          <Badge
+                            className={`text-xs ${
+                              scenario.seniority === "freshman"
+                                ? "bg-blue-100 text-blue-800"
+                                : scenario.seniority === "sophomore"
+                                  ? "bg-green-100 text-green-800"
+                                  : scenario.seniority === "junior"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : scenario.seniority === "senior"
+                                      ? "bg-red-100 text-red-800"
+                                      : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {scenario.seniority
+                              ? scenario.seniority.charAt(0).toUpperCase() +
+                                scenario.seniority.slice(1)
+                              : "No Level"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-4">
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  {simulationId || editingSimulationId
+                    ? "Updating..."
+                    : "Creating..."}
+                </>
+              ) : simulationId || editingSimulationId ? (
+                "Update Simulation"
+              ) : (
+                "Create Simulation"
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }
