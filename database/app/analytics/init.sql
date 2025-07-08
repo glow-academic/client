@@ -80,9 +80,9 @@ INSERT INTO dashboards (
   ARRAY['bab2e342-c823-2e94-a85a-816d9cb78bd2', 'a7e8e793-011f-b291-eec4-a74232db4491', 'c2940e17-d668-43e3-ad76-9abf53d5b21f']::UUID[],
   ARRAY['2a27f6d4-e6a9-f2fd-d691-7de103d7c443', 'ce392c42-3858-091d-cd39-3fc69bca92c2', 'e5fd9fa5-5da1-7262-f40a-c2300888e1ad']::UUID[],
   ARRAY['49990ffa-5698-bd91-b379-6703a8cf4835', 'd8e58a90-32e7-0b43-447c-fda790891cee', '6b8684a8-cd06-6f6a-9a53-d57ad527041b', '2e3380af-e6a2-6080-ceee-1c91b65121c4']::UUID[],
+  false,
   true,
-  true,
-  4,
+  3,
   0.65, 
   0.5
 );

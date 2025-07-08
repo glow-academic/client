@@ -355,9 +355,9 @@ INSERT INTO dashboards (
   ARRAY[${folderGroups.primary.map((id) => `'${id}'`).join(", ")}]::UUID[],
   ARRAY[${folderGroups.secondary.map((id) => `'${id}'`).join(", ")}]::UUID[],
   ARRAY[${folderGroups.footer.map((id) => `'${id}'`).join(", ")}]::UUID[],
+  false,
   true,
-  true,
-  4,
+  3,
   0.65, 
   0.5
 );
