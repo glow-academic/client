@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm/relations";
-import { classes, topics, schedules, events, documents, users, profiles, rubrics, standardGroups, standards, assistantChats, assistantMessages, assistantToolCalls, agents, scenarios, dashboards, models, simulations, simulationAttempts, simulationChats, simulationMessages, simulationSketches, simulationChatGrades, simulationChatFeedbacks } from "./schema";
+import { classes, topics, schedules, events, documents, users, profiles, rubrics, standardGroups, standards, appFeedback, assistantChats, agents, scenarios, assistantMessages, assistantToolCalls, models, dashboards, simulations, simulationAttempts, simulationChats, simulationMessages, simulationSketches, simulationChatGrades, simulationChatFeedbacks } from "./schema";
 
 export const topicsRelations = relations(topics, ({one}) => ({
 	class: one(classes, {
@@ -42,6 +42,7 @@ export const profilesRelations = relations(profiles, ({one, many}) => ({
 		fields: [profiles.userId],
 		references: [users.id]
 	}),
+	appFeedbacks: many(appFeedback),
 	assistantChats: many(assistantChats),
 	dashboards: many(dashboards),
 	simulationAttempts: many(simulationAttempts),
@@ -73,6 +74,13 @@ export const standardsRelations = relations(standards, ({one, many}) => ({
 	simulationChatFeedbacks: many(simulationChatFeedbacks),
 }));
 
+export const appFeedbackRelations = relations(appFeedback, ({one}) => ({
+	profile: one(profiles, {
+		fields: [appFeedback.profileId],
+		references: [profiles.id]
+	}),
+}));
+
 export const assistantChatsRelations = relations(assistantChats, ({one, many}) => ({
 	profile: one(profiles, {
 		fields: [assistantChats.profileId],
@@ -80,20 +88,6 @@ export const assistantChatsRelations = relations(assistantChats, ({one, many}) =
 	}),
 	assistantMessages: many(assistantMessages),
 	assistantToolCalls: many(assistantToolCalls),
-}));
-
-export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
-	assistantChat: one(assistantChats, {
-		fields: [assistantMessages.chatId],
-		references: [assistantChats.id]
-	}),
-}));
-
-export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({
-	assistantChat: one(assistantChats, {
-		fields: [assistantToolCalls.chatId],
-		references: [assistantChats.id]
-	}),
 }));
 
 export const scenariosRelations = relations(scenarios, ({one, many}) => ({
@@ -116,15 +110,29 @@ export const agentsRelations = relations(agents, ({one, many}) => ({
 	}),
 }));
 
-export const dashboardsRelations = relations(dashboards, ({one}) => ({
-	profile: one(profiles, {
-		fields: [dashboards.profileId],
-		references: [profiles.id]
+export const assistantMessagesRelations = relations(assistantMessages, ({one}) => ({
+	assistantChat: one(assistantChats, {
+		fields: [assistantMessages.chatId],
+		references: [assistantChats.id]
+	}),
+}));
+
+export const assistantToolCallsRelations = relations(assistantToolCalls, ({one}) => ({
+	assistantChat: one(assistantChats, {
+		fields: [assistantToolCalls.chatId],
+		references: [assistantChats.id]
 	}),
 }));
 
 export const modelsRelations = relations(models, ({many}) => ({
 	agents: many(agents),
+}));
+
+export const dashboardsRelations = relations(dashboards, ({one}) => ({
+	profile: one(profiles, {
+		fields: [dashboards.profileId],
+		references: [profiles.id]
+	}),
 }));
 
 export const simulationsRelations = relations(simulations, ({one, many}) => ({

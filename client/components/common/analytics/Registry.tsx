@@ -426,7 +426,7 @@ export const registry: Record<string, ComponentConfig> = {
     } },
   "bab2e342-c823-2e94-a85a-816d9cb78bd2": { component: PerformanceByPersonality, props: {
       "className": "",
-      "color": "purple",
+      "color": "blue",
       "defaultTimeRange": "30d",
       "chartType": "bar",
       "title": "Performance by Personality",

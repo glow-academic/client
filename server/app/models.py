@@ -246,6 +246,7 @@ class Profiles(_Base, table=True):
     user_id: Optional[int] = Field(default=None, sa_column=Column('user_id', Integer))
 
     user: Optional['Users'] = Relationship(back_populates='profiles')
+    app_feedback: List['AppFeedback'] = Relationship(back_populates='profile')
     assistant_chats: List['AssistantChats'] = Relationship(back_populates='profile')
     dashboards: List['Dashboards'] = Relationship(back_populates='profile')
     simulation_attempts: List['SimulationAttempts'] = Relationship(back_populates='profile')
@@ -324,6 +325,22 @@ class Topics(_Base, table=True):
     class_id: Mapped[uuid.UUID] = Field(sa_column=Column('class_id', Uuid(as_uuid=True)))
 
     class_: Optional['Classes'] = Relationship(back_populates='topics')
+
+
+class AppFeedback(_Base, table=True):
+    __tablename__ = 'app_feedback'
+    __table_args__ = (
+        ForeignKeyConstraint(['profile_id'], ['profiles.id'], ondelete='CASCADE', name='app_feedback_profile_id_fkey'),
+        PrimaryKeyConstraint('id', name='app_feedback_pkey')
+    )
+
+    id: Optional[int] = Field(default=None, sa_column=Column('id', Integer, primary_key=True))
+    type: str = Field(sa_column=Column('type', Enum('feature', 'bug', 'question', 'other', name='feedback_type')))
+    created_at: Optional[datetime] = Field(default=None, sa_column=Column('created_at', DateTime(True), server_default=text('now()')))
+    profile_id: Optional[uuid.UUID] = Field(default=None, sa_column=Column('profile_id', Uuid(as_uuid=True)))
+    message: Optional[str] = Field(default=None, sa_column=Column('message', Text))
+
+    profile: Optional['Profiles'] = Relationship(back_populates='app_feedback')
 
 
 class AssistantChats(_Base, table=True):

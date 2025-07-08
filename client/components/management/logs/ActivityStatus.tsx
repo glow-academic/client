@@ -23,11 +23,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getActiveProfiles } from "@/utils/queries/profiles/get-active-profiles";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Activity, Clock, RefreshCw, Users } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 interface Profile {
   id: string;
@@ -43,25 +42,32 @@ export default function ActivityStatus() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
-  const { data: activeProfiles, isLoading: loadingActiveProfiles } = useQuery({
-    queryKey: ["activeProfiles"],
-    queryFn: () => getActiveProfiles(),
-    refetchInterval: 30000, // Refetch every 30 seconds
-  });
-
-  const { data: allProfiles, isLoading: loadingAllProfiles } = useQuery({
+  const { data: allProfiles, isLoading: loadingProfiles } = useQuery({
     queryKey: ["allProfiles"],
     queryFn: () => getAllProfiles(),
     refetchInterval: 30000, // Refetch every 30 seconds
   });
 
+  // Filter profiles to only show those with lastActive timestamp
+  const profilesWithActivity = useMemo(() => {
+    if (!allProfiles) return [];
+    return allProfiles
+      .filter((profile: Profile) => profile.lastActive)
+      .sort((a: Profile, b: Profile) => {
+        // Sort by active status first, then by lastActive timestamp
+        if (a.active !== b.active) {
+          return a.active ? -1 : 1; // Active users first
+        }
+        return (
+          new Date(b.lastActive).getTime() - new Date(a.lastActive).getTime()
+        );
+      });
+  }, [allProfiles]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["activeProfiles"] }),
-        queryClient.invalidateQueries({ queryKey: ["allProfiles"] }),
-      ]);
+      await queryClient.invalidateQueries({ queryKey: ["allProfiles"] });
     } finally {
       setIsRefreshing(false);
     }
@@ -96,10 +102,13 @@ export default function ActivityStatus() {
     if (diffInHours < 24) return `${diffInHours}h ago`;
 
     const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+    if (diffInDays < 30) return `${diffInDays}d ago`;
+
+    const diffInMonths = Math.floor(diffInDays / 30);
+    return `${diffInMonths}mo ago`;
   };
 
-  if (loadingActiveProfiles || loadingAllProfiles) {
+  if (loadingProfiles) {
     return (
       <Card>
         <CardHeader>
@@ -134,9 +143,13 @@ export default function ActivityStatus() {
     );
   }
 
-  const activeCount = activeProfiles?.length || 0;
-  const totalCount = allProfiles?.length || 0;
-  const inactiveCount = totalCount - activeCount;
+  const activeCount = profilesWithActivity.filter(
+    (profile: Profile) => profile.active
+  ).length;
+  const inactiveCount = profilesWithActivity.filter(
+    (profile: Profile) => !profile.active
+  ).length;
+  const totalCount = profilesWithActivity.length;
 
   return (
     <Card>
@@ -148,7 +161,7 @@ export default function ActivityStatus() {
               Activity Status
             </CardTitle>
             <CardDescription>
-              Current user activity and session status
+              Users with recent activity ({totalCount} total)
             </CardDescription>
           </div>
           <div className="flex items-center gap-4">
@@ -176,12 +189,12 @@ export default function ActivityStatus() {
         </div>
       </CardHeader>
       <CardContent>
-        {!activeProfiles || activeProfiles.length === 0 ? (
+        {!profilesWithActivity || profilesWithActivity.length === 0 ? (
           <div className="flex items-center justify-center h-32">
             <div className="text-center">
               <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
               <div className="text-lg text-muted-foreground">
-                No active users
+                No user activity found
               </div>
             </div>
           </div>
@@ -198,7 +211,7 @@ export default function ActivityStatus() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {activeProfiles.map((profile: Profile) => (
+                {profilesWithActivity.map((profile: Profile) => (
                   <TableRow key={profile.id}>
                     <TableCell className="font-medium">
                       {profile.firstName} {profile.lastName}
@@ -211,9 +224,17 @@ export default function ActivityStatus() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm font-medium text-green-700">
-                          Active
+                        <div
+                          className={`w-2 h-2 rounded-full ${
+                            profile.active ? "bg-green-500" : "bg-gray-400"
+                          }`}
+                        ></div>
+                        <span
+                          className={`text-sm font-medium ${
+                            profile.active ? "text-green-700" : "text-gray-600"
+                          }`}
+                        >
+                          {profile.active ? "Active" : "Inactive"}
                         </span>
                       </div>
                     </TableCell>

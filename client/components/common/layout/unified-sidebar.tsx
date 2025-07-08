@@ -4,6 +4,7 @@
  * @AshokSaravanan222 & @siladiea
  * 05/20/2025
  */
+import ReportProblem from "@/components/common/layout/report-problem";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Collapsible,
@@ -495,6 +496,11 @@ export function UnifiedSidebar({
       {/* User Profile in Footer */}
       <SidebarFooter>
         <SidebarMenu>
+          {/* Report Problem Button */}
+          <SidebarMenuItem>
+            <ReportProblem />
+          </SidebarMenuItem>
+
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

@@ -14,13 +14,14 @@ import {
   standardGroups as StandardGroups,
   standards as Standards,
   appLogs as AppLogs,
+  appFeedback as AppFeedback,
   assistantChats as AssistantChats,
+  scenarios as Scenarios,
   assistantMessages as AssistantMessages,
   assistantToolCalls as AssistantToolCalls,
   components as Components,
-  scenarios as Scenarios,
-  dashboards as Dashboards,
   agents as Agents,
+  dashboards as Dashboards,
   cohorts as Cohorts,
   simulations as Simulations,
   simulationAttempts as SimulationAttempts,
@@ -30,7 +31,7 @@ import {
   simulationChatGrades as SimulationChatGrades,
   simulationChatFeedbacks as SimulationChatFeedbacks,
   verificationToken as VerificationToken,
-  assistantMessageType, assistantToolType, classTerm, documentType, locations, modelType, profileRole, reasoningEffort, seniorityLevels, simulationMessageType, timeOfDay, urgencyType
+  assistantMessageType, assistantToolType, classTerm, documentType, feedbackType, locations, modelType, profileRole, reasoningEffort, seniorityLevels, simulationMessageType, timeOfDay, urgencyType
 } from "@/utils/drizzle/schema";
 
 // Use Drizzle schema types
@@ -49,13 +50,14 @@ type Rubric = typeof Rubrics.$inferSelect;
 type StandardGroup = typeof StandardGroups.$inferSelect;
 type Standard = typeof Standards.$inferSelect;
 type AppLog = typeof AppLogs.$inferSelect;
+type AppFeedback = typeof AppFeedback.$inferSelect;
 type AssistantChat = typeof AssistantChats.$inferSelect;
+type Scenario = typeof Scenarios.$inferSelect;
 type AssistantMessage = typeof AssistantMessages.$inferSelect;
 type AssistantToolCall = typeof AssistantToolCalls.$inferSelect;
 type Component = typeof Components.$inferSelect;
-type Scenario = typeof Scenarios.$inferSelect;
-type Dashboard = typeof Dashboards.$inferSelect;
 type Agent = typeof Agents.$inferSelect;
+type Dashboard = typeof Dashboards.$inferSelect;
 type Cohort = typeof Cohorts.$inferSelect;
 type Simulation = typeof Simulations.$inferSelect;
 type SimulationAttempt = typeof SimulationAttempts.$inferSelect;
@@ -70,6 +72,7 @@ type AssistantMessageType = (typeof assistantMessageType.enumValues)[number];
 type AssistantToolType = (typeof assistantToolType.enumValues)[number];
 type ClassTerm = (typeof classTerm.enumValues)[number];
 type DocumentType = (typeof documentType.enumValues)[number];
+type FeedbackType = (typeof feedbackType.enumValues)[number];
 type Locations = (typeof locations.enumValues)[number];
 type ModelType = (typeof modelType.enumValues)[number];
 type ProfileRole = (typeof profileRole.enumValues)[number];
@@ -95,13 +98,14 @@ export type {
   StandardGroup,
   Standard,
   AppLog,
+  AppFeedback,
   AssistantChat,
+  Scenario,
   AssistantMessage,
   AssistantToolCall,
   Component,
-  Scenario,
-  Dashboard,
   Agent,
+  Dashboard,
   Cohort,
   Simulation,
   SimulationAttempt,
@@ -115,6 +119,7 @@ export type {
   AssistantToolType,
   ClassTerm,
   DocumentType,
+  FeedbackType,
   Locations,
   ModelType,
   ProfileRole,

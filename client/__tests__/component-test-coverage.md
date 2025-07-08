@@ -1,11 +1,11 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-08T19:05:14.025Z
+Generated on: 2025-07-08T19:34:45.047Z
 
 ## Summary
-- **Total Components**: 101
-- **Tests Created**: 1
-- **Tests Updated**: 56
+- **Total Components**: 103
+- **Tests Created**: 0
+- **Tests Updated**: 59
 - **Tests Skipped** (already implemented): 44
 
 ## Component Coverage
@@ -74,6 +74,7 @@ Generated on: 2025-07-08T19:05:14.025Z
 | ChatStarterPrompts | common/home/ChatStarterPrompts.tsx | ChatStarterPrompts.test.tsx | ✅ Implemented |
 | ChatWidget | common/home/ChatWidget.tsx | ChatWidget.test.tsx | ❌ Needs Implementation |
 | navigation-breadcrumbs | common/layout/navigation-breadcrumbs.tsx | navigation-breadcrumbs.test.tsx | ✅ Implemented |
+| report-problem | common/layout/report-problem.tsx | report-problem.test.tsx | ❌ Needs Implementation |
 | unified-sidebar | common/layout/unified-sidebar.tsx | unified-sidebar.test.tsx | ✅ Implemented |
 | Login | common/login/Login.tsx | Login.test.tsx | ❌ Needs Implementation |
 | Model | common/model/Model.tsx | Model.test.tsx | ✅ Implemented |
@@ -102,6 +103,7 @@ Generated on: 2025-07-08T19:05:14.025Z
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ❌ Needs Implementation |
 | ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ❌ Needs Implementation |
 | ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ❌ Needs Implementation |
+| Feedback | management/logs/Feedback.tsx | Feedback.test.tsx | ❌ Needs Implementation |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
 | Models | management/models/Models.tsx | Models.test.tsx | ❌ Needs Implementation |
@@ -196,6 +198,7 @@ __tests__/
 │   │   ├── ChatWidget.test.tsx
 │   ├── layout/
 │   │   ├── navigation-breadcrumbs.test.tsx
+│   │   ├── report-problem.test.tsx
 │   │   ├── unified-sidebar.test.tsx
 │   ├── login/
 │   │   ├── Login.test.tsx
@@ -238,6 +241,7 @@ __tests__/
 │   ├── logs/
 │   │   ├── ActivityStatus.test.tsx
 │   │   ├── ConnectionStatusIndicator.test.tsx
+│   │   ├── Feedback.test.tsx
 │   │   ├── Logs.test.tsx
 │   ├── models/
 │   │   ├── ModelEdit.test.tsx

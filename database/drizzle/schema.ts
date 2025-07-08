@@ -5,6 +5,7 @@ export const assistantMessageType = pgEnum("assistant_message_type", ['user', 'a
 export const assistantToolType = pgEnum("assistant_tool_type", ['create', 'read', 'update', 'delete'])
 export const classTerm = pgEnum("class_term", ['fall', 'spring', 'summer'])
 export const documentType = pgEnum("document_type", ['homework', 'project', 'quiz', 'midterm', 'lab', 'lecture', 'syllabus'])
+export const feedbackType = pgEnum("feedback_type", ['feature', 'bug', 'question', 'other'])
 export const locations = pgEnum("locations", ['lawson', 'haas', 'dsai'])
 export const modelType = pgEnum("model_type", ['ttt', 'tts', 'stt'])
 export const profileRole = pgEnum("profile_role", ['admin', 'instructional', 'instructor', 'ta'])
@@ -218,6 +219,20 @@ export const appLogs = pgTable("app_logs", {
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
 });
 
+export const appFeedback = pgTable("app_feedback", {
+	id: serial().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow(),
+	profileId: uuid("profile_id"),
+	type: feedbackType().notNull(),
+	message: text(),
+}, (table) => [
+	foreignKey({
+			columns: [table.profileId],
+			foreignColumns: [profiles.id],
+			name: "app_feedback_profile_id_fkey"
+		}).onDelete("cascade"),
+]);
+
 export const assistantChats = pgTable("assistant_chats", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
@@ -231,6 +246,35 @@ export const assistantChats = pgTable("assistant_chats", {
 			foreignColumns: [profiles.id],
 			name: "assistant_chats_profile_id_fkey"
 		}),
+]);
+
+export const scenarios = pgTable("scenarios", {
+	id: uuid().defaultRandom().primaryKey().notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
+	name: text().notNull(),
+	description: text().notNull(),
+	agentId: uuid("agent_id"),
+	classId: uuid("class_id"),
+	crowdedness: integer(),
+	intensity: integer(),
+	seniority: seniorityLevels(),
+	location: locations(),
+	tod: timeOfDay(),
+	urgency: urgencyType(),
+	documents: uuid().array(),
+	defaultScenario: boolean("default_scenario").default(false).notNull(),
+}, (table) => [
+	foreignKey({
+			columns: [table.agentId],
+			foreignColumns: [agents.id],
+			name: "scenarios_agent_id_fkey"
+		}).onDelete("set null"),
+	foreignKey({
+			columns: [table.classId],
+			foreignColumns: [classes.id],
+			name: "scenarios_class_id_fkey"
+		}).onDelete("set null"),
 ]);
 
 export const assistantMessages = pgTable("assistant_messages", {
@@ -281,33 +325,27 @@ export const components = pgTable("components", {
 	defaultComponent: boolean("default_component").default(false).notNull(),
 });
 
-export const scenarios = pgTable("scenarios", {
+export const agents = pgTable("agents", {
 	id: uuid().defaultRandom().primaryKey().notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
 	name: text().notNull(),
 	description: text().notNull(),
-	agentId: uuid("agent_id"),
-	classId: uuid("class_id"),
-	crowdedness: integer(),
-	intensity: integer(),
-	seniority: seniorityLevels(),
-	location: locations(),
-	tod: timeOfDay(),
-	urgency: urgencyType(),
-	documents: uuid().array(),
-	defaultScenario: boolean("default_scenario").default(false).notNull(),
+	systemPrompt: text("system_prompt").notNull(),
+	temperature: integer().notNull(),
+	defaultAgent: boolean("default_agent").default(false).notNull(),
+	voiceAgent: boolean("voice_agent").default(false).notNull(),
+	editable: boolean().default(false).notNull(),
+	modelId: uuid("model_id"),
+	sttModelId: uuid("stt_model_id"),
+	ttsModelId: uuid("tts_model_id"),
+	reasoning: reasoningEffort(),
 }, (table) => [
 	foreignKey({
-			columns: [table.agentId],
-			foreignColumns: [agents.id],
-			name: "scenarios_agent_id_fkey"
-		}).onDelete("set null"),
-	foreignKey({
-			columns: [table.classId],
-			foreignColumns: [classes.id],
-			name: "scenarios_class_id_fkey"
-		}).onDelete("set null"),
+			columns: [table.modelId],
+			foreignColumns: [models.id],
+			name: "agents_model_id_fkey"
+		}),
 ]);
 
 export const dashboards = pgTable("dashboards", {
@@ -330,29 +368,6 @@ export const dashboards = pgTable("dashboards", {
 			foreignColumns: [profiles.id],
 			name: "dashboards_profile_id_fkey"
 		}).onDelete("cascade"),
-]);
-
-export const agents = pgTable("agents", {
-	id: uuid().defaultRandom().primaryKey().notNull(),
-	createdAt: timestamp("created_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true, mode: 'string' }).defaultNow().notNull(),
-	name: text().notNull(),
-	description: text().notNull(),
-	systemPrompt: text("system_prompt").notNull(),
-	temperature: integer().notNull(),
-	defaultAgent: boolean("default_agent").default(false).notNull(),
-	voiceAgent: boolean("voice_agent").default(false).notNull(),
-	editable: boolean().default(false).notNull(),
-	modelId: uuid("model_id"),
-	sttModelId: uuid("stt_model_id"),
-	ttsModelId: uuid("tts_model_id"),
-	reasoning: reasoningEffort(),
-}, (table) => [
-	foreignKey({
-			columns: [table.modelId],
-			foreignColumns: [models.id],
-			name: "agents_model_id_fkey"
-		}),
 ]);
 
 export const cohorts = pgTable("cohorts", {
