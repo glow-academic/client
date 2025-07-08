@@ -647,12 +647,6 @@ export default function Reports() {
               <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
                 Trend
               </TableHead>
-              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
-                Weakest
-              </TableHead>
-              <TableHead className="w-[65px] text-center border-r px-1 py-1 text-xs">
-                Strongest
-              </TableHead>
               <TableHead className="w-[70px] text-center border-r px-1 py-1 text-xs">
                 Last Activity
               </TableHead>
@@ -791,40 +785,6 @@ export default function Reports() {
                     )}
                   </TableCell>
 
-                  {/* Weakest Skill */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    {!ta.hasNoSessions && (
-                      <div className="text-[10px]">
-                        <div
-                          className="font-medium text-red-600 truncate"
-                          title={ta.weakestSkill.skill}
-                        >
-                          {ta.weakestSkill.skill}
-                        </div>
-                        <div className="text-red-500">
-                          {ta.weakestSkill.score}%
-                        </div>
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Strongest Skill */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    {!ta.hasNoSessions && (
-                      <div className="text-[10px]">
-                        <div
-                          className="font-medium text-green-600 truncate"
-                          title={ta.strongestSkill.skill}
-                        >
-                          {ta.strongestSkill.skill}
-                        </div>
-                        <div className="text-green-500">
-                          {ta.strongestSkill.score}%
-                        </div>
-                      </div>
-                    )}
-                  </TableCell>
-
                   {/* Last Activity */}
                   <TableCell className="text-center border-r px-1 py-1">
                     <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
@@ -952,7 +912,7 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={22} className="text-center py-8">
+                <TableCell colSpan={20} className="text-center py-8">
                   <div className="flex flex-col items-center gap-3">
                     <Award className="h-12 w-12 text-muted-foreground" />
                     <div>
