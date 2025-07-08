@@ -29,6 +29,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 // Removed downloadReport import - now calling API directly
+import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
+import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
 import { getAllProfiles } from "@/utils/queries/profiles/get-all-profiles";
 import { getAllRubrics } from "@/utils/queries/rubrics/get-all-rubrics";
@@ -80,6 +82,9 @@ export default function Reports() {
   const [sortBy, setSortBy] = useState<SortOption>("score-desc");
   const [filterBy, setFilterBy] = useState<FilterOption>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedClass, setSelectedClass] = useState<string>("all");
+  const [selectedCohort, setSelectedCohort] = useState<string>("all");
+  const [selectedAgent, setSelectedAgent] = useState<string>("all");
 
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -100,6 +105,16 @@ export default function Reports() {
   const { data: cohorts, isLoading: isLoadingCohorts } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
+  });
+
+  const { data: classes, isLoading: isLoadingClasses } = useQuery({
+    queryKey: ["classes"],
+    queryFn: () => getAllClasses(),
+  });
+
+  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+    queryKey: ["agents"],
+    queryFn: () => getAllAgents(),
   });
 
   const { data: rubrics, isLoading: isLoadingRubrics } = useQuery({
@@ -473,6 +488,48 @@ export default function Reports() {
       );
     }
 
+    // Apply class filter
+    if (selectedClass !== "all" && classes) {
+      const selectedClassObj = classes.find((c) => c.id === selectedClass);
+      if (selectedClassObj) {
+        filtered = filtered.filter((ta) => {
+          const profile = profiles?.find((p) => p.id === ta.id);
+          return profile?.classIds.includes(selectedClass);
+        });
+      }
+    }
+
+    // Apply cohort filter
+    if (selectedCohort !== "all" && cohorts) {
+      const selectedCohortObj = cohorts.find((c) => c.id === selectedCohort);
+      if (selectedCohortObj) {
+        filtered = filtered.filter((ta) =>
+          selectedCohortObj.profileIds.includes(ta.id)
+        );
+      }
+    }
+
+    // Apply agent filter (through scenarios)
+    if (selectedAgent !== "all" && scenarios) {
+      const agentScenarios = scenarios.filter(
+        (s) => s.agentId === selectedAgent
+      );
+      const agentScenarioIds = agentScenarios.map((s) => s.id);
+
+      filtered = filtered.filter((ta) => {
+        const taAttempts =
+          attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
+        const taChats =
+          chats?.filter((chat) =>
+            taAttempts.some((attempt) => attempt.id === chat.attemptId)
+          ) || [];
+
+        return taChats.some((chat) =>
+          agentScenarioIds.includes(chat.scenarioId)
+        );
+      });
+    }
+
     // Apply performance filter
     switch (filterBy) {
       case "struggling":
@@ -518,7 +575,21 @@ export default function Reports() {
     }
 
     return filtered;
-  }, [analytics, sortBy, filterBy, searchQuery]);
+  }, [
+    analytics,
+    sortBy,
+    filterBy,
+    searchQuery,
+    selectedClass,
+    selectedCohort,
+    selectedAgent,
+    classes,
+    cohorts,
+    scenarios,
+    attempts,
+    chats,
+    profiles,
+  ]);
 
   const handleViewReport = (profileId: string) => {
     router.push(`/analytics/reports/p/${profileId}`);
@@ -537,7 +608,9 @@ export default function Reports() {
     isLoadingSimulations ||
     isLoadingScenarios ||
     isLoadingMessages ||
-    isLoadingCohorts
+    isLoadingCohorts ||
+    isLoadingClasses ||
+    isLoadingAgents
   ) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -554,7 +627,8 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       {/* Header with search and filters */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4">
+        {/* Search bar */}
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -564,25 +638,99 @@ export default function Reports() {
             className="pl-10"
           />
         </div>
-        <div className="flex items-center gap-4">
+
+        {/* Filters row */}
+        <div className="flex items-center gap-4 flex-wrap">
+          {/* Performance Filter */}
           <div className="flex items-center gap-2">
             <Label htmlFor="filter" className="text-sm font-medium">
-              Filter:
+              Performance:
             </Label>
             <Select
               value={filterBy}
               onValueChange={(value: FilterOption) => setFilterBy(value)}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All TAs</SelectItem>
-                <SelectItem value="struggling">Struggling TAs</SelectItem>
+                <SelectItem value="struggling">Struggling</SelectItem>
                 <SelectItem value="performing-well">Performing Well</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {/* Class Filter */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="class-filter" className="text-sm font-medium">
+              Class:
+            </Label>
+            <Select
+              value={selectedClass}
+              onValueChange={(value: string) => setSelectedClass(value)}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes?.map((classItem) => (
+                  <SelectItem key={classItem.id} value={classItem.id}>
+                    {classItem.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Cohort Filter */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="cohort-filter" className="text-sm font-medium">
+              Cohort:
+            </Label>
+            <Select
+              value={selectedCohort}
+              onValueChange={(value: string) => setSelectedCohort(value)}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cohorts</SelectItem>
+                {cohorts?.map((cohort) => (
+                  <SelectItem key={cohort.id} value={cohort.id}>
+                    {cohort.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Agent Filter */}
+          <div className="flex items-center gap-2">
+            <Label htmlFor="agent-filter" className="text-sm font-medium">
+              Agent:
+            </Label>
+            <Select
+              value={selectedAgent}
+              onValueChange={(value: string) => setSelectedAgent(value)}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Agents</SelectItem>
+                {agents?.map((agent) => (
+                  <SelectItem key={agent.id} value={agent.id}>
+                    {agent.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Sort Filter */}
           <div className="flex items-center gap-2">
             <Label htmlFor="sort" className="text-sm font-medium">
               Sort:
@@ -591,7 +739,7 @@ export default function Reports() {
               value={sortBy}
               onValueChange={(value: SortOption) => setSortBy(value)}
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-[160px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -896,21 +1044,46 @@ export default function Reports() {
                     <Award className="h-12 w-12 text-muted-foreground" />
                     <div>
                       <h3 className="text-base font-medium mb-1">
-                        {searchQuery.trim()
-                          ? `No TAs found matching "${searchQuery}"`
+                        {searchQuery.trim() ||
+                        selectedClass !== "all" ||
+                        selectedCohort !== "all" ||
+                        selectedAgent !== "all"
+                          ? "No TAs found matching the current filters"
                           : "No TAs match the current filter"}
                       </h3>
                       <p className="text-sm text-muted-foreground mb-3">
                         Try adjusting your search or filter criteria
                       </p>
-                      {searchQuery.trim() && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSearchQuery("")}
-                        >
-                          Clear search
-                        </Button>
+                      {(searchQuery.trim() ||
+                        selectedClass !== "all" ||
+                        selectedCohort !== "all" ||
+                        selectedAgent !== "all") && (
+                        <div className="flex gap-2">
+                          {searchQuery.trim() && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSearchQuery("")}
+                            >
+                              Clear search
+                            </Button>
+                          )}
+                          {(selectedClass !== "all" ||
+                            selectedCohort !== "all" ||
+                            selectedAgent !== "all") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setSelectedClass("all");
+                                setSelectedCohort("all");
+                                setSelectedAgent("all");
+                              }}
+                            >
+                              Clear filters
+                            </Button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
