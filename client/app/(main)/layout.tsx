@@ -22,26 +22,37 @@ import ChatWidget from "@/components/common/home/ChatWidget";
 import { NavigationBreadcrumbs } from "@/components/common/layout/navigation-breadcrumbs";
 import { UnifiedSidebar } from "@/components/common/layout/unified-sidebar";
 import { AssistantProvider } from "@/contexts/assistant-context";
-import {
-  generateEnhancedBreadcrumbs,
-  getActiveSectionFromPath,
-} from "@/utils/breadcrumb-utils";
-import { createSectionChangeHandler } from "@/utils/navigation-utils";
+import { useRole } from "@/contexts/role-context";
 import {
   SimulationProvider,
   useSimulation,
 } from "@/contexts/simulation-context";
+import {
+  generateEnhancedBreadcrumbs,
+  getActiveSectionFromPath,
+} from "@/utils/breadcrumb-utils";
+import {
+  createSectionChangeHandler,
+  isMainScreen,
+} from "@/utils/navigation-utils";
 
 // Inner component that uses the role context
 function MainLayoutContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() || "/";
   const router = useRouter();
+  const { effectiveRole } = useRole();
+
   // Role context is available for child components
   const activeSection = getActiveSectionFromPath(pathname);
   const [breadcrumbs, setBreadcrumbs] = React.useState<
     Array<{ title: string; section?: string }>
   >([]);
   const simulationContext = useSimulation();
+
+  // Check if we're on a main screen that should show chat components
+  const shouldShowChatComponents = useMemo(() => {
+    return isMainScreen(pathname, effectiveRole);
+  }, [pathname, effectiveRole]);
 
   // Load enhanced breadcrumbs with async ID resolution
   React.useEffect(() => {
@@ -107,13 +118,15 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
       );
     }
 
-    // Check for individual class page pattern: /classes/c/[classId]
-    const classPageMatch = pathname.match(/^\/classes\/c\/([^\/]+)(?:\/.*)?$/);
+    // Check for individual class page pattern: /create/classes/c/[classId]
+    const classPageMatch = pathname.match(
+      /^\/create\/classes\/c\/([^\/]+)(?:\/.*)?$/
+    );
     if (classPageMatch && !pathname.includes("/edit")) {
       const classId = classPageMatch[1];
       return (
         <Button
-          onClick={() => router.push(`/classes/c/${classId}/edit`)}
+          onClick={() => router.push(`/create/classes/c/${classId}/edit`)}
           size="sm"
           variant="default"
         >
@@ -146,7 +159,10 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/management/rubrics") {
       return (
-        <Button onClick={() => router.push("/management/rubrics/new")} size="sm">
+        <Button
+          onClick={() => router.push("/management/rubrics/new")}
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Rubric
         </Button>
@@ -203,10 +219,7 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
 
     if (pathname === "/create/cohorts") {
       return (
-        <Button
-          onClick={() => router.push("/create/cohorts/new")}
-          size="sm"
-        >
+        <Button onClick={() => router.push("/create/cohorts/new")} size="sm">
           <Plus className="h-4 w-4 mr-2" />
           Create Cohort
         </Button>
@@ -272,10 +285,14 @@ function MainLayoutContent({ children }: { children: React.ReactNode }) {
         </SidebarInset>
       </SidebarProvider>
 
-      {/* Chat Components - Global across the app */}
-      <ChatFab />
-      <ChatWidget />
-      <ChatDialog />
+      {/* Chat Components - Only show on main screens defined in the sidebar */}
+      {shouldShowChatComponents && (
+        <>
+          <ChatFab />
+          <ChatWidget />
+          <ChatDialog />
+        </>
+      )}
     </AssistantProvider>
   );
 }

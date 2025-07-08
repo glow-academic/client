@@ -38,24 +38,41 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
       break;
     case "instructor":
       sections.push(
-        "dashboard", "reports", "history", // Analytics
-        "scenarios", "simulations", "rubrics", // Create
+        "dashboard",
+        "reports",
+        "history", // Analytics
+        "scenarios",
+        "simulations",
+        "rubrics", // Create
         "classes" // Classes (filtered by assignment)
       );
       break;
     case "instructional":
       sections.push(
-        "dashboard", "reports", "history", // Analytics
-        "scenarios", "simulations", "rubrics", // Create
-        "classes", "cohorts" // Classes (all)
+        "dashboard",
+        "reports",
+        "history", // Analytics
+        "scenarios",
+        "simulations",
+        "rubrics", // Create
+        "classes",
+        "cohorts" // Classes (all)
       );
       break;
     case "admin":
       sections.push(
-        "dashboard", "reports", "history", // Analytics
-        "scenarios", "simulations", "rubrics", // Create
-        "classes", "cohorts", // Classes (all)
-        "staff", "agents", "logs", "models" // Management
+        "dashboard",
+        "reports",
+        "history", // Analytics
+        "scenarios",
+        "simulations",
+        "rubrics", // Create
+        "classes",
+        "cohorts", // Classes (all)
+        "staff",
+        "agents",
+        "logs",
+        "models" // Management
       );
       break;
   }
@@ -69,16 +86,81 @@ export const getAvailableSectionsForRole = (role: ProfileRole): string[] => {
 /**
  * Check if a section is available for a given role
  */
-export const isSectionAvailableForRole = (section: string, role: ProfileRole): boolean => {
+export const isSectionAvailableForRole = (
+  section: string,
+  role: ProfileRole
+): boolean => {
   const availableSections = getAvailableSectionsForRole(role);
-  
+
   // Handle dynamic sections (class-*, agent-*, etc.)
   if (section && section.includes("-")) {
     const baseSection = section.split("-")[0];
-    return availableSections.some(s => s.startsWith(baseSection || ""));
+    return availableSections.some((s) => s.startsWith(baseSection || ""));
   }
-  
+
   return availableSections.includes(section);
+};
+
+/**
+ * Check if the current path represents a main screen that should show chat components
+ * Main screens are those defined in the sidebar navigation for the user's role
+ */
+export const isMainScreen = (pathname: string, role: ProfileRole): boolean => {
+  // Get the active section from the path
+  const segments = pathname.split("/").filter(Boolean);
+
+  // Handle root path
+  if (segments.length === 0) return false;
+
+  const [first, second] = segments;
+
+  // Determine the base section
+  let baseSection = "";
+
+  switch (first) {
+    case "home":
+      baseSection = "home";
+      break;
+    case "analytics":
+      baseSection = second || "dashboard"; // dashboard, reports, history
+      break;
+    case "create":
+      if (second === "classes") {
+        baseSection = "classes";
+      } else if (second === "cohorts") {
+        baseSection = "cohorts";
+      } else if (second === "scenarios") {
+        baseSection = "scenarios";
+      } else if (second === "simulations") {
+        baseSection = "simulations";
+      } else {
+        baseSection = "create";
+      }
+      break;
+    case "management":
+      if (second === "staff") {
+        baseSection = "staff";
+      } else if (second === "agents") {
+        baseSection = "agents";
+      } else if (second === "models") {
+        baseSection = "models";
+      } else if (second === "logs") {
+        baseSection = "logs";
+      } else if (second === "rubrics") {
+        baseSection = "rubrics";
+      } else {
+        baseSection = "management";
+      }
+      break;
+    case "profile":
+      baseSection = "profile";
+      break;
+    default:
+      return false;
+  }
+
+  // Check if this base section is available for the user's role
+  return isSectionAvailableForRole(baseSection, role);
 };
 
 /**
@@ -125,7 +207,6 @@ export const getSectionRoute = (section: string): string => {
     case "logs":
       return "/management/logs";
 
-
     // Profile route
     case "profile":
       return "/profile";
@@ -134,7 +215,7 @@ export const getSectionRoute = (section: string): string => {
       // Handle dynamic routes with IDs
       if (section.startsWith("class-")) {
         const classId = section.replace("class-", "");
-        return `/classes/c/${classId}`;
+        return `/create/classes/c/${classId}`;
       }
       if (section.startsWith("simulation-")) {
         const simulationId = section.replace("simulation-", "");
@@ -164,6 +245,10 @@ export const getSectionRoute = (section: string): string => {
         const userId = section.replace("user-", "");
         return `/management/staff/u/${userId}`;
       }
+      if (section.startsWith("profile-")) {
+        const profileId = section.replace("profile-", "");
+        return `/management/staff/p/${profileId}`;
+      }
       if (section.startsWith("eval-")) {
         const evalId = section.replace("eval-", "");
         return `/management/evals/e/${evalId}`;
@@ -192,8 +277,8 @@ export const getSectionRoute = (section: string): string => {
 export const getBreadcrumbSectionRoute = (section: string): string => {
   switch (section) {
     case "classes":
-      // For breadcrumbs, "Classes" should go to the first class, not management
-      return "/classes";
+      // For breadcrumbs, "Classes" should go to the create classes page
+      return "/create/classes";
     default:
       // Use the regular section route for everything else
       return getSectionRoute(section);
@@ -203,9 +288,7 @@ export const getBreadcrumbSectionRoute = (section: string): string => {
 /**
  * Creates a section change handler that navigates to the appropriate route
  */
-export const createSectionChangeHandler = (
-  router: AppRouterInstance,
-) => {
+export const createSectionChangeHandler = (router: AppRouterInstance) => {
   return (section: string) => {
     const route = getSectionRoute(section);
     router.push(route);
@@ -217,7 +300,7 @@ export const createSectionChangeHandler = (
  * This handles the special case where "Classes" breadcrumb should go to first class, not management
  */
 export const createBreadcrumbSectionChangeHandler = (
-  router: AppRouterInstance,
+  router: AppRouterInstance
 ) => {
   return (section: string) => {
     const route = getBreadcrumbSectionRoute(section);
@@ -231,7 +314,7 @@ export const createBreadcrumbSectionChangeHandler = (
 export const createRoleAwareSectionChangeHandler = (
   router: AppRouterInstance,
   currentRole: ProfileRole,
-  onSectionChange?: (section: string) => void,
+  onSectionChange?: (section: string) => void
 ) => {
   return (section: string) => {
     // Check if the section is available for the current role
@@ -259,7 +342,7 @@ export const createRoleAwareSectionChangeHandler = (
  */
 export const createFlexibleSectionChangeHandler = (
   router: AppRouterInstance,
-  onSectionChange?: (section: string) => void,
+  onSectionChange?: (section: string) => void
 ) => {
   return (section: string) => {
     // If onSectionChange prop is provided, use it (for layout components)

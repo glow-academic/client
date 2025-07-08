@@ -300,14 +300,6 @@ export default function Cohort({ cohortId }: CohortProps) {
             </div>
           </div>
 
-          <div className="bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              <strong>Note:</strong> Admin and instructional staff automatically
-              have access to all cohorts and simulations, so they don't need to
-              be added as members.
-            </p>
-          </div>
-
           {formData.profileIds?.length === 0 ? (
             <div className="flex items-center justify-center h-40 text-center text-muted-foreground border border-dashed rounded-md p-4">
               <div>

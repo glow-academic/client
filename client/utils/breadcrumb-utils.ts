@@ -4,17 +4,17 @@
  * @AshokSaravanan222 & @siladiea
  * 06/18/2025
  */
+import { logError } from "@/utils/logger";
 import { getAgent } from "@/utils/queries/agents/get-agent";
 import { getClass } from "@/utils/queries/classes/get-class";
 import { getScenario } from "@/utils/queries/scenarios/get-scenario";
 import { getSimulation } from "@/utils/queries/simulations/get-simulation";
+import { getCohort } from "./queries/cohorts/get-cohort";
+import { getModel } from "./queries/models/get-model";
 import { getProfile } from "./queries/profiles/get-profile";
 import { getRubric } from "./queries/rubrics/get-rubric";
 import { getSimulationAttempt } from "./queries/simulation_attempts/get-simulation-attempt";
 import { getSimulationChat } from "./queries/simulation_chats/get-simulation-chat";
-import { logError } from "@/utils/logger";
-import { getCohort } from "./queries/cohorts/get-cohort";
-import { getModel } from "./queries/models/get-model";
 
 interface BreadcrumbItem {
   title: string;
@@ -83,7 +83,10 @@ const fetchNameForId = async (id: string, context: string): Promise<string> => {
 
       case "report":
         const reportProfileData = await getProfile(id);
-        return reportProfileData?.firstName + " " + reportProfileData?.lastName || `Profile ${id.substring(0, 8)}...`;
+        return (
+          reportProfileData?.firstName + " " + reportProfileData?.lastName ||
+          `Profile ${id.substring(0, 8)}...`
+        );
 
       default:
         return id.length > 10 ? `${id.substring(0, 8)}...` : id;
@@ -250,7 +253,7 @@ export const generateEnhancedBreadcrumbs = async (
 const getSectionFromSegments = (segments: string[]): string => {
   if (segments.length === 0) return "dashboard";
 
-  const [first, second, third, fourth, fifth] = segments;
+  const [first, second, third, fourth] = segments;
 
   // Handle main routes
   switch (first) {
@@ -265,7 +268,7 @@ const getSectionFromSegments = (segments: string[]): string => {
 
     case "analytics":
       if (second) {
-        return second; // overview, performance, reports, logs
+        return second; // dashboard, reports, history
       }
       return "analytics";
 
@@ -288,19 +291,19 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "simulations";
       }
-      if (second === "rubrics") {
-        if (third === "r" && fourth) {
-          return `rubric-${fourth}`;
+      if (second === "classes") {
+        if (third === "c" && fourth) {
+          return `class-${fourth}`;
         }
-        return "rubrics";
+        return "classes";
+      }
+      if (second === "cohorts") {
+        if (third === "c" && fourth) {
+          return `cohort-${fourth}`;
+        }
+        return "cohorts";
       }
       return "create";
-
-    case "classes":
-      if (second === "c" && third) {
-        return `class-${third}`;
-      }
-      return "classes";
 
     case "management":
       if (second === "staff") {
@@ -308,12 +311,6 @@ const getSectionFromSegments = (segments: string[]): string => {
           return `profile-${fourth}`;
         }
         return "staff";
-      }
-      if (second === "classes") {
-        if (third === "new" && fourth === "c" && fifth) {
-          return `class-${fifth}`;
-        }
-        return "classes";
       }
       if (second === "agents") {
         if (third === "a" && fourth) {
@@ -333,8 +330,14 @@ const getSectionFromSegments = (segments: string[]): string => {
         }
         return "models";
       }
+      if (second === "rubrics") {
+        if (third === "r" && fourth) {
+          return `rubric-${fourth}`;
+        }
+        return "rubrics";
+      }
       if (second) {
-        return second; // staff, classes, agents, evals
+        return second; // staff, agents, logs, models, rubrics
       }
       return "management";
 
