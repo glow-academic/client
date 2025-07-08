@@ -344,8 +344,11 @@ export default function SimulationPerformance({
           )}
         </div>
       </CardHeader>
-      <CardContent className="pb-0 flex-1">
-        <ChartContainer config={chartConfig} className="h-72 w-full">
+      <CardContent className="flex-1 flex flex-col justify-end items-start pb-0">
+        <ChartContainer
+          config={chartConfig}
+          className="h-72 w-full max-w-[90%] self-start"
+        >
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={performanceData}
