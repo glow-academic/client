@@ -21,8 +21,7 @@ COPY requirements.txt .
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --upgrade pip && \
     pip install --prefer-binary --prefix=/install \
-      -r requirements.txt \
-      --extra-index-url https://download.pytorch.org/whl/cpu
+      -r requirements.txt
 
 #####################################
 # 2️⃣  Runtime image

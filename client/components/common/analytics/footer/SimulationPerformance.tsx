@@ -37,24 +37,90 @@ import { BarChart3, Loader2, TrendingUp } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
-const chartConfig = {
-  completionRate: {
-    label: "Completion Rate",
-    color: "var(--chart-1)",
-  },
-  averageScore: {
-    label: "Average Score",
-    color: "var(--chart-2)",
-  },
-} satisfies ChartConfig;
+type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "teal"
+  | "red"
+  | "emerald"
+  | "indigo";
+type ChartType = "bar";
 
 interface SimulationPerformanceProps {
   className?: string;
+  color?: ColorTheme;
+  defaultSelection?: string;
+  chartType?: ChartType;
+  title?: string;
+  showSelector?: boolean;
 }
+
+const COLOR_CONFIGS = {
+  blue: {
+    completionRate: "#3b82f6",
+    averageScore: "#60a5fa",
+    trend: "text-blue-600",
+  },
+  green: {
+    completionRate: "#10b981",
+    averageScore: "#34d399",
+    trend: "text-green-600",
+  },
+  purple: {
+    completionRate: "#8b5cf6",
+    averageScore: "#a78bfa",
+    trend: "text-purple-600",
+  },
+  orange: {
+    completionRate: "#f97316",
+    averageScore: "#fb923c",
+    trend: "text-orange-600",
+  },
+  teal: {
+    completionRate: "#14b8a6",
+    averageScore: "#2dd4bf",
+    trend: "text-teal-600",
+  },
+  red: {
+    completionRate: "#ef4444",
+    averageScore: "#f87171",
+    trend: "text-red-600",
+  },
+  emerald: {
+    completionRate: "#10b981",
+    averageScore: "#34d399",
+    trend: "text-emerald-600",
+  },
+  indigo: {
+    completionRate: "#6366f1",
+    averageScore: "#818cf8",
+    trend: "text-indigo-600",
+  },
+};
 
 export default function SimulationPerformance({
   className,
+  color = "blue",
+  defaultSelection = "all",
+  chartType: _chartType = "bar",
+  title = "Simulation Performance",
+  showSelector = true,
 }: SimulationPerformanceProps) {
+  const colorConfig = COLOR_CONFIGS[color];
+
+  const chartConfig = {
+    completionRate: {
+      label: "Completion Rate",
+      color: colorConfig.completionRate,
+    },
+    averageScore: {
+      label: "Average Score",
+      color: colorConfig.averageScore,
+    },
+  } satisfies ChartConfig;
+
   const { data: cohorts, isLoading: cohortsLoading } = useQuery({
     queryKey: ["cohorts"],
     queryFn: () => getAllCohorts(),
@@ -81,7 +147,8 @@ export default function SimulationPerformance({
   });
 
   // State for selected cohort
-  const [selectedCohortId, setSelectedCohortId] = useState<string>("all");
+  const [selectedCohortId, setSelectedCohortId] =
+    useState<string>(defaultSelection);
 
   // Calculate simulation performance data
   const performanceData = useMemo(() => {
@@ -181,7 +248,7 @@ export default function SimulationPerformance({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5" />
-            Simulation Performance
+            {title}
           </CardTitle>
           <CardDescription>
             Performance metrics across different simulations
@@ -206,13 +273,13 @@ export default function SimulationPerformance({
             <div>
               <CardTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5" />
-                Simulation Performance
+                {title}
               </CardTitle>
               <CardDescription>
                 Performance metrics across different simulations
               </CardDescription>
             </div>
-            {cohorts && cohorts.length > 0 && (
+            {showSelector && cohorts && cohorts.length > 0 && (
               <Select
                 value={selectedCohortId}
                 onValueChange={setSelectedCohortId}
@@ -251,13 +318,13 @@ export default function SimulationPerformance({
           <div>
             <CardTitle className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5" />
-              Simulation Performance
+              {title}
             </CardTitle>
             <CardDescription>
               Performance metrics across different simulations
             </CardDescription>
           </div>
-          {cohorts && cohorts.length > 0 && (
+          {showSelector && cohorts && cohorts.length > 0 && (
             <Select
               value={selectedCohortId}
               onValueChange={setSelectedCohortId}
@@ -313,7 +380,7 @@ export default function SimulationPerformance({
         <div className="flex items-center gap-2 leading-none font-medium">
           Overall Performance: {performanceTrend.value}%
           <TrendingUp
-            className={`h-4 w-4 ${performanceTrend.isPositive ? "text-green-600" : "text-red-600 rotate-180"}`}
+            className={`h-4 w-4 ${performanceTrend.isPositive ? colorConfig.trend : colorConfig.trend.replace("600", "600 rotate-180")}`}
           />
         </div>
         <div className="text-muted-foreground leading-none">

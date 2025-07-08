@@ -25,19 +25,71 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-const COLORS = {
-  primary: "#3b82f6",
+type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "teal"
+  | "red"
+  | "emerald"
+  | "indigo";
+type TimeRange = "7d" | "30d" | "90d";
+type ChartType = "area" | "line";
+
+interface PerformanceTrendsProps {
+  color?: ColorTheme;
+  defaultTimeRange?: TimeRange;
+  chartType?: ChartType;
+  title?: string;
+  showTimeSelector?: boolean;
+}
+
+const COLOR_CONFIGS = {
+  blue: {
+    primary: "#3b82f6",
+  },
+  green: {
+    primary: "#10b981",
+  },
+  purple: {
+    primary: "#8b5cf6",
+  },
+  orange: {
+    primary: "#f97316",
+  },
+  teal: {
+    primary: "#14b8a6",
+  },
+  red: {
+    primary: "#ef4444",
+  },
+  emerald: {
+    primary: "#10b981",
+  },
+  indigo: {
+    primary: "#6366f1",
+  },
 };
-export default function PerformanceTrends() {
-  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] = useState<
-    "7d" | "30d" | "90d"
-  >("30d");
+
+export default function PerformanceTrends({
+  color = "blue",
+  defaultTimeRange = "30d",
+  chartType = "area",
+  title = "Performance Trends",
+  showTimeSelector = true,
+}: PerformanceTrendsProps) {
+  const [performanceTrendTimeRange, setPerformanceTrendTimeRange] =
+    useState<TimeRange>(defaultTimeRange);
+  const colorConfig = COLOR_CONFIGS[color];
 
   // Fetch data
   const { data: profiles } = useQuery({
@@ -70,7 +122,12 @@ export default function PerformanceTrends() {
   const performanceTrendData = useMemo(() => {
     if (!grades) return [];
 
-    const days = performanceTrendTimeRange === "7d" ? 7 : performanceTrendTimeRange === "30d" ? 30 : 90;
+    const days =
+      performanceTrendTimeRange === "7d"
+        ? 7
+        : performanceTrendTimeRange === "30d"
+          ? 30
+          : 90;
 
     return Array.from({ length: days }, (_, i) => {
       const date = subDays(new Date(), days - 1 - i);
@@ -111,27 +168,29 @@ export default function PerformanceTrends() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5" />
-                Performance Trends
+                {title}
               </CardTitle>
               <CardDescription>
                 Training scores and session completion over time
               </CardDescription>
             </div>
-            <div className="flex gap-1">
-              {timeOptions.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setPerformanceTrendTimeRange(option.value)}
-                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                    performanceTrendTimeRange === option.value
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
+            {showTimeSelector && (
+              <div className="flex gap-1">
+                {timeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setPerformanceTrendTimeRange(option.value)}
+                    className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                      performanceTrendTimeRange === option.value
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </CardHeader>
         <CardContent>
@@ -152,66 +211,97 @@ export default function PerformanceTrends() {
           <div>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5" />
-              Performance Trends
+              {title}
             </CardTitle>
             <CardDescription>
               Training scores and session completion over time
             </CardDescription>
           </div>
-          <div className="flex gap-1">
-            {timeOptions.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setPerformanceTrendTimeRange(option.value)}
-                className={`px-3 py-1 text-xs rounded-md transition-colors ${
-                  performanceTrendTimeRange === option.value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
+          {showTimeSelector && (
+            <div className="flex gap-1">
+              {timeOptions.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setPerformanceTrendTimeRange(option.value)}
+                  className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                    performanceTrendTimeRange === option.value
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-muted-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={performanceTrendData}>
-              <defs>
-                <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor={COLORS.primary}
-                    stopOpacity={0.3}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor={COLORS.primary}
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis dataKey="date" className="text-xs" />
-              <YAxis className="text-xs" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--background))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "6px",
-                }}
-              />
-              <Area
-                type="monotone"
-                dataKey="score"
-                stroke={COLORS.primary}
-                strokeWidth={2}
-                fill="url(#scoreGradient)"
-                name="Average Score"
-              />
-            </AreaChart>
+            {chartType === "area" ? (
+              <AreaChart data={performanceTrendData}>
+                <defs>
+                  <linearGradient
+                    id="scoreGradient"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
+                  >
+                    <stop
+                      offset="5%"
+                      stopColor={colorConfig.primary}
+                      stopOpacity={0.3}
+                    />
+                    <stop
+                      offset="95%"
+                      stopColor={colorConfig.primary}
+                      stopOpacity={0}
+                    />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="score"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  fill="url(#scoreGradient)"
+                  name="Average Score"
+                />
+              </AreaChart>
+            ) : (
+              <LineChart data={performanceTrendData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--background))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="score"
+                  stroke={colorConfig.primary}
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                  name="Average Score"
+                />
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </div>
       </CardContent>

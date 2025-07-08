@@ -22,7 +22,275 @@ import { subDays } from "date-fns";
 import { Award, Clock, MessageSquare, Target, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
 
-export default function TrainingInsights() {
+type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "teal"
+  | "red"
+  | "emerald"
+  | "indigo";
+type Layout = "vertical" | "horizontal";
+
+interface TrainingInsightsProps {
+  color?: ColorTheme;
+  maxItems?: number;
+  title?: string;
+  layout?: Layout;
+}
+
+const COLOR_CONFIGS = {
+  blue: {
+    weeklyTrend: {
+      bg: "bg-blue-50 dark:bg-blue-950",
+      border: "border-blue-200 dark:border-blue-800",
+      icon: "text-blue-600",
+      title: "text-blue-800 dark:text-blue-200",
+      text: "text-blue-700 dark:text-blue-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-blue-100 dark:bg-blue-900",
+      border: "border-blue-300 dark:border-blue-700",
+      icon: "text-blue-700",
+      title: "text-blue-900 dark:text-blue-100",
+      text: "text-blue-800 dark:text-blue-200",
+    },
+    successRate: {
+      bg: "bg-blue-200 dark:bg-blue-800",
+      border: "border-blue-400 dark:border-blue-600",
+      icon: "text-blue-800",
+      title: "text-blue-900 dark:text-blue-100",
+      text: "text-blue-800 dark:text-blue-200",
+    },
+    overallPerformance: {
+      bg: "bg-blue-300 dark:bg-blue-700",
+      border: "border-blue-500 dark:border-blue-500",
+      icon: "text-blue-900",
+      title: "text-blue-900 dark:text-blue-100",
+      text: "text-blue-800 dark:text-blue-200",
+    },
+  },
+  green: {
+    weeklyTrend: {
+      bg: "bg-green-50 dark:bg-green-950",
+      border: "border-green-200 dark:border-green-800",
+      icon: "text-green-600",
+      title: "text-green-800 dark:text-green-200",
+      text: "text-green-700 dark:text-green-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-green-100 dark:bg-green-900",
+      border: "border-green-300 dark:border-green-700",
+      icon: "text-green-700",
+      title: "text-green-900 dark:text-green-100",
+      text: "text-green-800 dark:text-green-200",
+    },
+    successRate: {
+      bg: "bg-green-200 dark:bg-green-800",
+      border: "border-green-400 dark:border-green-600",
+      icon: "text-green-800",
+      title: "text-green-900 dark:text-green-100",
+      text: "text-green-800 dark:text-green-200",
+    },
+    overallPerformance: {
+      bg: "bg-green-300 dark:bg-green-700",
+      border: "border-green-500 dark:border-green-500",
+      icon: "text-green-900",
+      title: "text-green-900 dark:text-green-100",
+      text: "text-green-800 dark:text-green-200",
+    },
+  },
+  purple: {
+    weeklyTrend: {
+      bg: "bg-purple-50 dark:bg-purple-950",
+      border: "border-purple-200 dark:border-purple-800",
+      icon: "text-purple-600",
+      title: "text-purple-800 dark:text-purple-200",
+      text: "text-purple-700 dark:text-purple-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-purple-100 dark:bg-purple-900",
+      border: "border-purple-300 dark:border-purple-700",
+      icon: "text-purple-700",
+      title: "text-purple-900 dark:text-purple-100",
+      text: "text-purple-800 dark:text-purple-200",
+    },
+    successRate: {
+      bg: "bg-purple-200 dark:bg-purple-800",
+      border: "border-purple-400 dark:border-purple-600",
+      icon: "text-purple-800",
+      title: "text-purple-900 dark:text-purple-100",
+      text: "text-purple-800 dark:text-purple-200",
+    },
+    overallPerformance: {
+      bg: "bg-purple-300 dark:bg-purple-700",
+      border: "border-purple-500 dark:border-purple-500",
+      icon: "text-purple-900",
+      title: "text-purple-900 dark:text-purple-100",
+      text: "text-purple-800 dark:text-purple-200",
+    },
+  },
+  orange: {
+    weeklyTrend: {
+      bg: "bg-orange-50 dark:bg-orange-950",
+      border: "border-orange-200 dark:border-orange-800",
+      icon: "text-orange-600",
+      title: "text-orange-800 dark:text-orange-200",
+      text: "text-orange-700 dark:text-orange-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-orange-100 dark:bg-orange-900",
+      border: "border-orange-300 dark:border-orange-700",
+      icon: "text-orange-700",
+      title: "text-orange-900 dark:text-orange-100",
+      text: "text-orange-800 dark:text-orange-200",
+    },
+    successRate: {
+      bg: "bg-orange-200 dark:bg-orange-800",
+      border: "border-orange-400 dark:border-orange-600",
+      icon: "text-orange-800",
+      title: "text-orange-900 dark:text-orange-100",
+      text: "text-orange-800 dark:text-orange-200",
+    },
+    overallPerformance: {
+      bg: "bg-orange-300 dark:bg-orange-700",
+      border: "border-orange-500 dark:border-orange-500",
+      icon: "text-orange-900",
+      title: "text-orange-900 dark:text-orange-100",
+      text: "text-orange-800 dark:text-orange-200",
+    },
+  },
+  teal: {
+    weeklyTrend: {
+      bg: "bg-teal-50 dark:bg-teal-950",
+      border: "border-teal-200 dark:border-teal-800",
+      icon: "text-teal-600",
+      title: "text-teal-800 dark:text-teal-200",
+      text: "text-teal-700 dark:text-teal-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-teal-100 dark:bg-teal-900",
+      border: "border-teal-300 dark:border-teal-700",
+      icon: "text-teal-700",
+      title: "text-teal-900 dark:text-teal-100",
+      text: "text-teal-800 dark:text-teal-200",
+    },
+    successRate: {
+      bg: "bg-teal-200 dark:bg-teal-800",
+      border: "border-teal-400 dark:border-teal-600",
+      icon: "text-teal-800",
+      title: "text-teal-900 dark:text-teal-100",
+      text: "text-teal-800 dark:text-teal-200",
+    },
+    overallPerformance: {
+      bg: "bg-teal-300 dark:bg-teal-700",
+      border: "border-teal-500 dark:border-teal-500",
+      icon: "text-teal-900",
+      title: "text-teal-900 dark:text-teal-100",
+      text: "text-teal-800 dark:text-teal-200",
+    },
+  },
+  red: {
+    weeklyTrend: {
+      bg: "bg-red-50 dark:bg-red-950",
+      border: "border-red-200 dark:border-red-800",
+      icon: "text-red-600",
+      title: "text-red-800 dark:text-red-200",
+      text: "text-red-700 dark:text-red-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-red-100 dark:bg-red-900",
+      border: "border-red-300 dark:border-red-700",
+      icon: "text-red-700",
+      title: "text-red-900 dark:text-red-100",
+      text: "text-red-800 dark:text-red-200",
+    },
+    successRate: {
+      bg: "bg-red-200 dark:bg-red-800",
+      border: "border-red-400 dark:border-red-600",
+      icon: "text-red-800",
+      title: "text-red-900 dark:text-red-100",
+      text: "text-red-800 dark:text-red-200",
+    },
+    overallPerformance: {
+      bg: "bg-red-300 dark:bg-red-700",
+      border: "border-red-500 dark:border-red-500",
+      icon: "text-red-900",
+      title: "text-red-900 dark:text-red-100",
+      text: "text-red-800 dark:text-red-200",
+    },
+  },
+  emerald: {
+    weeklyTrend: {
+      bg: "bg-emerald-50 dark:bg-emerald-950",
+      border: "border-emerald-200 dark:border-emerald-800",
+      icon: "text-emerald-600",
+      title: "text-emerald-800 dark:text-emerald-200",
+      text: "text-emerald-700 dark:text-emerald-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-emerald-100 dark:bg-emerald-900",
+      border: "border-emerald-300 dark:border-emerald-700",
+      icon: "text-emerald-700",
+      title: "text-emerald-900 dark:text-emerald-100",
+      text: "text-emerald-800 dark:text-emerald-200",
+    },
+    successRate: {
+      bg: "bg-emerald-200 dark:bg-emerald-800",
+      border: "border-emerald-400 dark:border-emerald-600",
+      icon: "text-emerald-800",
+      title: "text-emerald-900 dark:text-emerald-100",
+      text: "text-emerald-800 dark:text-emerald-200",
+    },
+    overallPerformance: {
+      bg: "bg-emerald-300 dark:bg-emerald-700",
+      border: "border-emerald-500 dark:border-emerald-500",
+      icon: "text-emerald-900",
+      title: "text-emerald-900 dark:text-emerald-100",
+      text: "text-emerald-800 dark:text-emerald-200",
+    },
+  },
+  indigo: {
+    weeklyTrend: {
+      bg: "bg-indigo-50 dark:bg-indigo-950",
+      border: "border-indigo-200 dark:border-indigo-800",
+      icon: "text-indigo-600",
+      title: "text-indigo-800 dark:text-indigo-200",
+      text: "text-indigo-700 dark:text-indigo-300",
+    },
+    sessionEfficiency: {
+      bg: "bg-indigo-100 dark:bg-indigo-900",
+      border: "border-indigo-300 dark:border-indigo-700",
+      icon: "text-indigo-700",
+      title: "text-indigo-900 dark:text-indigo-100",
+      text: "text-indigo-800 dark:text-indigo-200",
+    },
+    successRate: {
+      bg: "bg-indigo-200 dark:bg-indigo-800",
+      border: "border-indigo-400 dark:border-indigo-600",
+      icon: "text-indigo-800",
+      title: "text-indigo-900 dark:text-indigo-100",
+      text: "text-indigo-800 dark:text-indigo-200",
+    },
+    overallPerformance: {
+      bg: "bg-indigo-300 dark:bg-indigo-700",
+      border: "border-indigo-500 dark:border-indigo-500",
+      icon: "text-indigo-900",
+      title: "text-indigo-900 dark:text-indigo-100",
+      text: "text-indigo-800 dark:text-indigo-200",
+    },
+  },
+};
+
+export default function TrainingInsights({
+  color = "blue",
+  maxItems = 4,
+  title = "Training Insights",
+  layout: _layout = "vertical",
+}: TrainingInsightsProps) {
+  const colorConfig = COLOR_CONFIGS[color];
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -122,7 +390,7 @@ export default function TrainingInsights() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Target className="h-5 w-5" />
-            Training Insights
+            {title}
           </CardTitle>
           <CardDescription>AI-powered recommendations</CardDescription>
         </CardHeader>
@@ -137,80 +405,72 @@ export default function TrainingInsights() {
     );
   }
 
+  // Create insights array and limit by maxItems
+  const insightItems = [
+    {
+      key: "weeklyTrend",
+      icon: TrendingUp,
+      title: "Weekly Trend",
+      text:
+        insights.weeklyTrend > 0
+          ? `Scores improved by ${insights.weeklyTrend}% this week`
+          : insights.weeklyTrend < 0
+            ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
+            : "Scores remained stable this week",
+      config: colorConfig.weeklyTrend,
+    },
+    {
+      key: "sessionEfficiency",
+      icon: Clock,
+      title: "Session Efficiency",
+      text: `Average session time: ${insights.avgTrainingTime} minutes`,
+      config: colorConfig.sessionEfficiency,
+    },
+    {
+      key: "successRate",
+      icon: Award,
+      title: "Success Rate",
+      text: `${insights.passRate}% of sessions meet passing criteria`,
+      config: colorConfig.successRate,
+    },
+    {
+      key: "overallPerformance",
+      icon: MessageSquare,
+      title: "Overall Performance",
+      text: `Average score across all sessions: ${insights.avgOverallScore}%`,
+      config: colorConfig.overallPerformance,
+    },
+  ].slice(0, maxItems);
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Target className="h-5 w-5" />
-          Training Insights
+          {title}
         </CardTitle>
         <CardDescription>AI-powered recommendations</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-[300px] overflow-y-auto space-y-3">
-          {/* Weekly Trend */}
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950 dark:border-blue-800">
-            <div className="flex items-start gap-2">
-              <TrendingUp className="h-4 w-4 text-blue-600 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                  Weekly Trend
-                </div>
-                <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
-                  {insights.weeklyTrend > 0
-                    ? `Scores improved by ${insights.weeklyTrend}% this week`
-                    : insights.weeklyTrend < 0
-                      ? `Scores decreased by ${Math.abs(insights.weeklyTrend)}% this week`
-                      : "Scores remained stable this week"}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Session Efficiency */}
-          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950 dark:border-yellow-800">
-            <div className="flex items-start gap-2">
-              <Clock className="h-4 w-4 text-yellow-600 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                  Session Efficiency
-                </div>
-                <div className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                  Average session time: {insights.avgTrainingTime} minutes
+          {insightItems.map((item) => (
+            <div
+              key={item.key}
+              className={`p-3 ${item.config.bg} border ${item.config.border} rounded-lg`}
+            >
+              <div className="flex items-start gap-2">
+                <item.icon className={`h-4 w-4 ${item.config.icon} mt-0.5`} />
+                <div>
+                  <div className={`text-sm font-medium ${item.config.title}`}>
+                    {item.title}
+                  </div>
+                  <div className={`text-xs ${item.config.text} mt-1`}>
+                    {item.text}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Success Rate */}
-          <div className="p-3 bg-purple-50 border border-purple-200 rounded-lg dark:bg-purple-950 dark:border-purple-800">
-            <div className="flex items-start gap-2">
-              <Award className="h-4 w-4 text-purple-600 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-purple-800 dark:text-purple-200">
-                  Success Rate
-                </div>
-                <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
-                  {insights.passRate}% of sessions meet passing criteria
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Overall Performance */}
-          <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg dark:bg-orange-950 dark:border-orange-800">
-            <div className="flex items-start gap-2">
-              <MessageSquare className="h-4 w-4 text-orange-600 mt-0.5" />
-              <div>
-                <div className="text-sm font-medium text-orange-800 dark:text-orange-200">
-                  Overall Performance
-                </div>
-                <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                  Average score across all sessions: {insights.avgOverallScore}%
-                </div>
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </CardContent>
     </Card>

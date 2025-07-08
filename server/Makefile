@@ -4,8 +4,15 @@
 VENV_EXISTS := $(shell test -d .venv && echo 1 || echo 0)
 
 # 1. Ensure the virtual environment exists
+PY311 := $(shell which python3.11 || true)
+
 venv:
-	@if [ $(VENV_EXISTS) -eq 0 ]; then uv venv; fi
+	@if [ $(VENV_EXISTS) -eq 0 ]; then \
+		if [ -z "$(PY311)" ]; then \
+			echo "❌  python3.11 not found ‒ install it or adjust PY311"; exit 1; \
+		fi; \
+		uv venv -p $(PY311); \
+	fi
 
 # 2. Install development tools into the venv
 dev-tools: venv

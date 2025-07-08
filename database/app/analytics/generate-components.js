@@ -261,9 +261,9 @@ CREATE TABLE dashboards (
     primary_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     secondary_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
     footer_component_ids UUID[]       NOT NULL DEFAULT ARRAY[]::UUID[], -- order matters
-    auto_scroll BOOLEAN NOT NULL DEFAULT TRUE,
+    auto_scroll BOOLEAN NOT NULL DEFAULT FALSE,
     show_indicators BOOLEAN NOT NULL DEFAULT TRUE,
-    header_components INTEGER NOT NULL DEFAULT 4, -- number of components in the header
+    header_components INTEGER NOT NULL DEFAULT 3, -- number of components in the header
     main_split FLOAT NOT NULL DEFAULT 0.65, -- number 0-1 for split between primary and secondary
     footer_split FLOAT NOT NULL DEFAULT 0.5 -- number 0-1 for split between footer section
 );

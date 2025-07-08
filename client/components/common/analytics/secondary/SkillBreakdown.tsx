@@ -26,7 +26,59 @@ import { useQuery } from "@tanstack/react-query";
 import { Brain, Eye, GraduationCap, Target, Zap } from "lucide-react";
 import { useMemo } from "react";
 
-export default function SkillBreakdown() {
+type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "teal"
+  | "red"
+  | "emerald"
+  | "indigo";
+type Layout = "vertical" | "horizontal";
+
+interface SkillBreakdownProps {
+  color?: ColorTheme;
+  maxItems?: number;
+  title?: string;
+  layout?: Layout;
+}
+
+const COLOR_CONFIGS = {
+  blue: {
+    accent: "text-blue-600",
+  },
+  green: {
+    accent: "text-green-600",
+  },
+  purple: {
+    accent: "text-purple-600",
+  },
+  orange: {
+    accent: "text-orange-600",
+  },
+  teal: {
+    accent: "text-teal-600",
+  },
+  red: {
+    accent: "text-red-600",
+  },
+  emerald: {
+    accent: "text-emerald-600",
+  },
+  indigo: {
+    accent: "text-indigo-600",
+  },
+};
+
+export default function SkillBreakdown({
+  color = "blue",
+  maxItems = 4,
+  title = "Skill Breakdown",
+  layout = "vertical",
+}: SkillBreakdownProps) {
+  const colorConfig = COLOR_CONFIGS[color];
+
   // Fetch data
   const { data: profiles } = useQuery({
     queryKey: ["profiles"],
@@ -117,13 +169,13 @@ export default function SkillBreakdown() {
     // Get top skill categories for display
     return Object.entries(skillScores)
       .sort(([, a], [, b]) => b - a)
-      .slice(0, 4)
+      .slice(0, maxItems)
       .map(([shortName, score], index) => ({
         shortName,
         score,
         icon: [Target, Brain, Eye, Zap][index] || Target,
       }));
-  }, [standardGroups, standards, feedbacks, rubrics]);
+  }, [standardGroups, standards, feedbacks, rubrics, maxItems]);
 
   if (!skillCategories.length) {
     return (
@@ -131,7 +183,7 @@ export default function SkillBreakdown() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <GraduationCap className="h-5 w-5" />
-            Skill Breakdown
+            {title}
           </CardTitle>
           <CardDescription>Top performing competencies</CardDescription>
         </CardHeader>
@@ -146,22 +198,29 @@ export default function SkillBreakdown() {
     );
   }
 
+  const containerClasses =
+    layout === "horizontal"
+      ? "grid grid-cols-1 md:grid-cols-2 gap-4 h-[300px] overflow-y-auto"
+      : "space-y-6 h-[300px] overflow-y-auto";
+
+  const itemClasses = layout === "horizontal" ? "space-y-2" : "space-y-2";
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <GraduationCap className="h-5 w-5" />
-          Skill Breakdown
+          {title}
         </CardTitle>
         <CardDescription>Top performing competencies</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="space-y-6 h-[300px] overflow-y-auto">
+        <div className={containerClasses}>
           {skillCategories.map((skill) => (
-            <div key={skill.shortName} className="space-y-2">
+            <div key={skill.shortName} className={itemClasses}>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
-                  <skill.icon className="h-4 w-4 text-muted-foreground" />
+                  <skill.icon className={`h-4 w-4 ${colorConfig.accent}`} />
                   <span className="font-medium">{skill.shortName}</span>
                 </div>
                 <span className="font-bold text-lg">{skill.score}%</span>

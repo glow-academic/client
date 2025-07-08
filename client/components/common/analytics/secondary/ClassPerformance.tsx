@@ -22,7 +22,67 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen } from "lucide-react";
 import { useMemo } from "react";
 
-export default function ClassPerformance() {
+type ColorTheme =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "teal"
+  | "red"
+  | "emerald"
+  | "indigo";
+type Layout = "vertical" | "horizontal";
+
+interface ClassPerformanceProps {
+  color?: ColorTheme;
+  maxItems?: number;
+  title?: string;
+  layout?: Layout;
+}
+
+const COLOR_CONFIGS = {
+  blue: {
+    primary: "#3b82f6",
+    accent: "text-blue-600",
+  },
+  green: {
+    primary: "#10b981",
+    accent: "text-green-600",
+  },
+  purple: {
+    primary: "#8b5cf6",
+    accent: "text-purple-600",
+  },
+  orange: {
+    primary: "#f97316",
+    accent: "text-orange-600",
+  },
+  teal: {
+    primary: "#14b8a6",
+    accent: "text-teal-600",
+  },
+  red: {
+    primary: "#ef4444",
+    accent: "text-red-600",
+  },
+  emerald: {
+    primary: "#10b981",
+    accent: "text-emerald-600",
+  },
+  indigo: {
+    primary: "#6366f1",
+    accent: "text-indigo-600",
+  },
+};
+
+export default function ClassPerformance({
+  color = "blue",
+  maxItems = 5,
+  title = "Class Performance",
+  layout: _layout = "vertical",
+}: ClassPerformanceProps) {
+  const colorConfig = COLOR_CONFIGS[color];
+
   const { data: classes } = useQuery({
     queryKey: ["classes"],
     queryFn: getAllClasses,
@@ -102,8 +162,9 @@ export default function ClassPerformance() {
         avgScore: cls.avgScore,
         totalGrades: cls.totalGrades,
       }))
-      .sort((a, b) => b.avgScore - a.avgScore);
-  }, [classes, profiles, attempts, chats, grades]);
+      .sort((a, b) => b.avgScore - a.avgScore)
+      .slice(0, maxItems);
+  }, [classes, profiles, attempts, chats, grades, maxItems]);
 
   if (!classMetrics || classMetrics.length === 0) {
     return (
@@ -111,7 +172,7 @@ export default function ClassPerformance() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BookOpen className="h-5 w-5" />
-            Class Performance
+            {title}
           </CardTitle>
           <CardDescription>Average performance by class</CardDescription>
         </CardHeader>
@@ -133,7 +194,7 @@ export default function ClassPerformance() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BookOpen className="h-5 w-5" />
-          Class Performance
+          {title}
         </CardTitle>
         <CardDescription>Average performance by class</CardDescription>
       </CardHeader>
@@ -150,16 +211,17 @@ export default function ClassPerformance() {
                     ({classData.totalGrades} sessions)
                   </span>
                 </div>
-                <span className="text-sm font-semibold">
+                <span className={`text-sm font-semibold ${colorConfig.accent}`}>
                   {classData.avgScore}%
                 </span>
               </div>
               <div className="relative">
                 <div className="h-6 bg-muted rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-primary transition-all duration-500 ease-out"
+                    className="h-full transition-all duration-500 ease-out"
                     style={{
                       width: `${maxScore > 0 ? (classData.avgScore / maxScore) * 100 : 0}%`,
+                      backgroundColor: colorConfig.primary,
                     }}
                   />
                 </div>
