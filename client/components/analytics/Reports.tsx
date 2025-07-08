@@ -45,7 +45,6 @@ import {
   AlertTriangle,
   ArrowUp,
   Award,
-  Calendar,
   Clock,
   MessageCircle,
   Search,
@@ -341,6 +340,9 @@ export default function Reports() {
       const messagesPerSession =
         taChats.length > 0 ? Math.round(taMessages.length / taChats.length) : 0;
 
+      // Total Simulation Attempts
+      const totalAttempts = taAttempts.length;
+
       // Cohorts this TA belongs to
       const taCohorts = cohorts.filter((cohort) =>
         cohort.profileIds.includes(ta.id)
@@ -392,26 +394,6 @@ export default function Reports() {
           ? Math.max(...cohortComparison.map((c) => c.difference))
           : 0;
 
-      // Days active (from first to last session)
-      const daysActive =
-        taChats.length > 1
-          ? Math.ceil(
-              (new Date(
-                Math.max(
-                  ...taChats.map((chat) => new Date(chat.createdAt).getTime())
-                )
-              ).getTime() -
-                new Date(
-                  Math.min(
-                    ...taChats.map((chat) => new Date(chat.createdAt).getTime())
-                  )
-                ).getTime()) /
-                (1000 * 60 * 60 * 24)
-            )
-          : taChats.length === 1
-            ? 1
-            : 0;
-
       return {
         id: ta.id,
         firstName: ta.firstName,
@@ -444,6 +426,7 @@ export default function Reports() {
         lastActivity,
         scenariosCompleted,
         messagesPerSession,
+        totalAttempts,
         taCohorts: taCohorts.map((c) => c.title),
         activeCohorts: activeCohorts.length,
         cohortComparison,
@@ -452,7 +435,6 @@ export default function Reports() {
             ? Math.min(...cohortComparison.map((c) => c.rank))
             : 0,
         avgVsCohort: bestCohortPerformance,
-        daysActive,
       };
     });
 
@@ -677,6 +659,9 @@ export default function Reports() {
                 Msgs/Sess
               </TableHead>
               <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
+                Total Attempts
+              </TableHead>
+              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
                 Cohorts
               </TableHead>
               <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
@@ -684,12 +669,6 @@ export default function Reports() {
               </TableHead>
               <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
                 vs Cohort
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Active
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Days Active
               </TableHead>
               <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
                 Status
@@ -836,6 +815,13 @@ export default function Reports() {
                     </div>
                   </TableCell>
 
+                  {/* Total Attempts */}
+                  <TableCell className="text-center border-r px-1 py-1">
+                    <div className="text-[10px] font-medium">
+                      {ta.totalAttempts}
+                    </div>
+                  </TableCell>
+
                   {/* Cohorts */}
                   <TableCell className="text-center border-r px-1 py-1">
                     <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
@@ -861,21 +847,6 @@ export default function Reports() {
                     >
                       {ta.avgVsCohort > 0 ? "+" : ""}
                       {ta.avgVsCohort}%
-                    </div>
-                  </TableCell>
-
-                  {/* Active Cohorts */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.activeCohorts}
-                    </div>
-                  </TableCell>
-
-                  {/* Days Active */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Calendar className="h-2.5 w-2.5" />
-                      {ta.daysActive}
                     </div>
                   </TableCell>
 
@@ -920,7 +891,7 @@ export default function Reports() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={19} className="text-center py-8">
+                <TableCell colSpan={18} className="text-center py-8">
                   <div className="flex flex-col items-center gap-3">
                     <Award className="h-12 w-12 text-muted-foreground" />
                     <div>
