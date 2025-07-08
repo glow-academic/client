@@ -7,28 +7,8 @@
 "use client";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-// Removed downloadReport import - now calling API directly
 import { getAllAgents } from "@/utils/queries/agents/get-all-agents";
 import { getAllClasses } from "@/utils/queries/classes/get-all-classes";
 import { getAllCohorts } from "@/utils/queries/cohorts/get-all-cohorts";
@@ -43,19 +23,8 @@ import { getSimulationMessagesByChats } from "@/utils/queries/simulation_message
 import { getAllSimulations } from "@/utils/queries/simulations/get-all-simulations";
 import { getStandardGroupsByRubrics } from "@/utils/queries/standard_groups/get-standard-groups-by-rubrics";
 import { getStandardsByStandardGroups } from "@/utils/queries/standards/get-standards-by-standardgroups";
-import {
-  AlertTriangle,
-  ArrowUp,
-  Award,
-  Clock,
-  MessageCircle,
-  Search,
-  Target,
-  TrendingDown,
-  TrendingUp,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { TAPerformanceData, useReportsColumns } from "./reports-columns";
+import { ReportsDataTable } from "./reports-data-table";
 
 export interface ReportOptions {
   includeStudentTypeChart: boolean;
@@ -66,25 +35,23 @@ export interface ReportOptions {
   includeFeedback: boolean;
 }
 
-type SortOption =
-  | "score-desc"
-  | "score-asc"
-  | "name-asc"
-  | "name-desc"
-  | "sessions-desc"
-  | "last-activity-desc"
-  | "consistency-desc"
-  | "scenarios-desc";
-type FilterOption = "all" | "struggling" | "performing-well";
-
 export default function Reports() {
   const router = useRouter();
-  const [sortBy, setSortBy] = useState<SortOption>("score-desc");
-  const [filterBy, setFilterBy] = useState<FilterOption>("all");
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedClass, setSelectedClass] = useState<string>("all");
-  const [selectedCohort, setSelectedCohort] = useState<string>("all");
-  const [selectedAgent, setSelectedAgent] = useState<string>("all");
+
+  const handleViewReport = (profileId: string) => {
+    router.push(`/analytics/reports/p/${profileId}`);
+  };
+
+  const {
+    columns,
+    performanceOptions,
+    classOptions,
+    cohortOptions,
+    agentOptions,
+  } = useReportsColumns({
+    showExport: true,
+    onViewReport: handleViewReport,
+  });
 
   // Fetch data
   const { data: profiles, isLoading: isLoadingProfiles } = useQuery({
@@ -107,12 +74,12 @@ export default function Reports() {
     queryFn: () => getAllCohorts(),
   });
 
-  const { data: classes, isLoading: isLoadingClasses } = useQuery({
+  const { data: _classes, isLoading: isLoadingClasses } = useQuery({
     queryKey: ["classes"],
     queryFn: () => getAllClasses(),
   });
 
-  const { data: agents, isLoading: isLoadingAgents } = useQuery({
+  const { data: _agents, isLoading: isLoadingAgents } = useQuery({
     queryKey: ["agents"],
     queryFn: () => getAllAgents(),
   });
@@ -174,8 +141,8 @@ export default function Reports() {
     enabled: !!grades && grades.length > 0,
   });
 
-  // Calculate analytics
-  const analytics = useMemo(() => {
+  // Calculate analytics - same logic as before but formatted for TAPerformanceData
+  const taPerformanceData = useMemo((): TAPerformanceData[] => {
     if (
       !profiles ||
       !chats ||
@@ -189,7 +156,7 @@ export default function Reports() {
       !messages ||
       !cohorts
     )
-      return null;
+      return [];
 
     const tas = profiles.filter((profile) => profile.role === "ta");
 
@@ -218,7 +185,7 @@ export default function Reports() {
     );
 
     // TA leaderboard based on actual grades
-    const taPerformance = tas.map((ta) => {
+    const taPerformance = tas.map((ta): TAPerformanceData => {
       const taAttempts =
         attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
       const taChats = chats.filter((chat) =>
@@ -320,7 +287,7 @@ export default function Reports() {
         (a, b) =>
           new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
       );
-      let trend = "stable";
+      let trend: "improving" | "declining" | "stable" = "stable";
       if (sortedGrades.length >= 3) {
         const firstThree = sortedGrades.slice(0, 3);
         const lastThree = sortedGrades.slice(-3);
@@ -332,8 +299,6 @@ export default function Reports() {
         if (lastAvg > firstAvg + 5) trend = "improving";
         else if (lastAvg < firstAvg - 5) trend = "declining";
       }
-
-      // COHORT-BASED ANALYTICS
 
       // Last Activity
       const lastActivity =
@@ -437,7 +402,6 @@ export default function Reports() {
         trend,
         isStruggling,
         hasNoSessions: totalSessions === 0,
-        // Cohort-based fields
         lastActivity,
         scenariosCompleted,
         messagesPerSession,
@@ -453,9 +417,7 @@ export default function Reports() {
       };
     });
 
-    return {
-      taPerformance,
-    };
+    return taPerformance;
   }, [
     profiles,
     chats,
@@ -470,130 +432,6 @@ export default function Reports() {
     messages,
     cohorts,
   ]);
-
-  // Sort, filter, and search TAs
-  const sortedFilteredAndSearchedTAs = useMemo(() => {
-    if (!analytics) return [];
-
-    let filtered = [...analytics.taPerformance];
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(
-        (ta) =>
-          ta.firstName.toLowerCase().includes(query) ||
-          ta.lastName.toLowerCase().includes(query) ||
-          ta.username.toLowerCase().includes(query)
-      );
-    }
-
-    // Apply class filter
-    if (selectedClass !== "all" && classes) {
-      const selectedClassObj = classes.find((c) => c.id === selectedClass);
-      if (selectedClassObj) {
-        filtered = filtered.filter((ta) => {
-          const profile = profiles?.find((p) => p.id === ta.id);
-          return profile?.classIds.includes(selectedClass);
-        });
-      }
-    }
-
-    // Apply cohort filter
-    if (selectedCohort !== "all" && cohorts) {
-      const selectedCohortObj = cohorts.find((c) => c.id === selectedCohort);
-      if (selectedCohortObj) {
-        filtered = filtered.filter((ta) =>
-          selectedCohortObj.profileIds.includes(ta.id)
-        );
-      }
-    }
-
-    // Apply agent filter (through scenarios)
-    if (selectedAgent !== "all" && scenarios) {
-      const agentScenarios = scenarios.filter(
-        (s) => s.agentId === selectedAgent
-      );
-      const agentScenarioIds = agentScenarios.map((s) => s.id);
-
-      filtered = filtered.filter((ta) => {
-        const taAttempts =
-          attempts?.filter((attempt) => attempt.profileId === ta.id) || [];
-        const taChats =
-          chats?.filter((chat) =>
-            taAttempts.some((attempt) => attempt.id === chat.attemptId)
-          ) || [];
-
-        return taChats.some((chat) =>
-          agentScenarioIds.includes(chat.scenarioId)
-        );
-      });
-    }
-
-    // Apply performance filter
-    switch (filterBy) {
-      case "struggling":
-        filtered = filtered.filter((ta) => ta.isStruggling);
-        break;
-      case "performing-well":
-        filtered = filtered.filter((ta) => !ta.isStruggling);
-        break;
-      // "all" shows everyone
-    }
-
-    // Apply sort
-    switch (sortBy) {
-      case "score-desc":
-        filtered.sort((a, b) => b.avgScore - a.avgScore);
-        break;
-      case "score-asc":
-        filtered.sort((a, b) => a.avgScore - b.avgScore);
-        break;
-      case "name-asc":
-        filtered.sort((a, b) => a.firstName.localeCompare(b.firstName));
-        break;
-      case "name-desc":
-        filtered.sort((a, b) => b.firstName.localeCompare(a.firstName));
-        break;
-      case "sessions-desc":
-        filtered.sort((a, b) => b.totalSessions - a.totalSessions);
-        break;
-      case "last-activity-desc":
-        filtered.sort((a, b) => {
-          if (!a.lastActivity && !b.lastActivity) return 0;
-          if (!a.lastActivity) return 1;
-          if (!b.lastActivity) return -1;
-          return b.lastActivity.getTime() - a.lastActivity.getTime();
-        });
-        break;
-      case "consistency-desc":
-        filtered.sort((a, b) => b.avgVsCohort - a.avgVsCohort);
-        break;
-      case "scenarios-desc":
-        filtered.sort((a, b) => b.scenariosCompleted - a.scenariosCompleted);
-        break;
-    }
-
-    return filtered;
-  }, [
-    analytics,
-    sortBy,
-    filterBy,
-    searchQuery,
-    selectedClass,
-    selectedCohort,
-    selectedAgent,
-    classes,
-    cohorts,
-    scenarios,
-    attempts,
-    chats,
-    profiles,
-  ]);
-
-  const handleViewReport = (profileId: string) => {
-    router.push(`/analytics/reports/p/${profileId}`);
-  };
 
   // Loading state
   if (
@@ -622,477 +460,17 @@ export default function Reports() {
     );
   }
 
-  if (!analytics) return null;
-
   return (
     <div className="space-y-6">
-      {/* Header with search and filters */}
-      <div className="flex flex-col gap-4">
-        {/* Search bar */}
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search TAs by name or alias..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-
-        {/* Filters row */}
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Performance Filter */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="filter" className="text-sm font-medium">
-              Performance:
-            </Label>
-            <Select
-              value={filterBy}
-              onValueChange={(value: FilterOption) => setFilterBy(value)}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All TAs</SelectItem>
-                <SelectItem value="struggling">Struggling</SelectItem>
-                <SelectItem value="performing-well">Performing Well</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Class Filter */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="class-filter" className="text-sm font-medium">
-              Class:
-            </Label>
-            <Select
-              value={selectedClass}
-              onValueChange={(value: string) => setSelectedClass(value)}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Classes</SelectItem>
-                {classes?.map((classItem) => (
-                  <SelectItem key={classItem.id} value={classItem.id}>
-                    {classItem.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Cohort Filter */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="cohort-filter" className="text-sm font-medium">
-              Cohort:
-            </Label>
-            <Select
-              value={selectedCohort}
-              onValueChange={(value: string) => setSelectedCohort(value)}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Cohorts</SelectItem>
-                {cohorts?.map((cohort) => (
-                  <SelectItem key={cohort.id} value={cohort.id}>
-                    {cohort.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Agent Filter */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="agent-filter" className="text-sm font-medium">
-              Agent:
-            </Label>
-            <Select
-              value={selectedAgent}
-              onValueChange={(value: string) => setSelectedAgent(value)}
-            >
-              <SelectTrigger className="w-[140px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Agents</SelectItem>
-                {agents?.map((agent) => (
-                  <SelectItem key={agent.id} value={agent.id}>
-                    {agent.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Sort Filter */}
-          <div className="flex items-center gap-2">
-            <Label htmlFor="sort" className="text-sm font-medium">
-              Sort:
-            </Label>
-            <Select
-              value={sortBy}
-              onValueChange={(value: SortOption) => setSortBy(value)}
-            >
-              <SelectTrigger className="w-[160px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="score-desc">Score (High to Low)</SelectItem>
-                <SelectItem value="score-asc">Score (Low to High)</SelectItem>
-                <SelectItem value="name-asc">Name (A to Z)</SelectItem>
-                <SelectItem value="name-desc">Name (Z to A)</SelectItem>
-                <SelectItem value="sessions-desc">
-                  Sessions (Most to Least)
-                </SelectItem>
-                <SelectItem value="last-activity-desc">
-                  Last Activity (Recent)
-                </SelectItem>
-                <SelectItem value="consistency-desc">
-                  Consistency (High to Low)
-                </SelectItem>
-                <SelectItem value="scenarios-desc">
-                  Scenarios (Most to Least)
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
-
-      {/* Dense Table */}
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="h-8">
-              <TableHead className="w-[30px] border-r px-1 py-1 text-xs">
-                #
-              </TableHead>
-              <TableHead className="min-w-[100px] border-r px-2 py-1 text-xs">
-                Name
-              </TableHead>
-              <TableHead className="w-[60px] border-r px-1 py-1 text-xs">
-                Alias
-              </TableHead>
-              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
-                Score
-              </TableHead>
-              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
-                Sessions
-              </TableHead>
-              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
-                Pass
-              </TableHead>
-              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
-                Time
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Complete
-              </TableHead>
-              <TableHead className="w-[45px] text-center border-r px-1 py-1 text-xs">
-                Trend
-              </TableHead>
-              <TableHead className="w-[70px] text-center border-r px-1 py-1 text-xs">
-                Last Activity
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Scenarios
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Msgs/Sess
-              </TableHead>
-              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
-                Total Attempts
-              </TableHead>
-              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
-                Cohorts
-              </TableHead>
-              <TableHead className="w-[55px] text-center border-r px-1 py-1 text-xs">
-                Cohort Rank
-              </TableHead>
-              <TableHead className="w-[60px] text-center border-r px-1 py-1 text-xs">
-                vs Cohort
-              </TableHead>
-              <TableHead className="w-[50px] text-center border-r px-1 py-1 text-xs">
-                Status
-              </TableHead>
-              <TableHead className="w-[45px] px-1 py-1 text-xs">
-                Action
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {sortedFilteredAndSearchedTAs.length > 0 ? (
-              sortedFilteredAndSearchedTAs.map((ta, index) => (
-                <TableRow
-                  key={ta.id}
-                  className={`h-8 ${
-                    ta.isStruggling
-                      ? "bg-orange-50/50 border-orange-200"
-                      : "hover:bg-muted/30"
-                  } transition-colors`}
-                >
-                  {/* Rank */}
-                  <TableCell className="font-medium text-center border-r px-1 py-1">
-                    <div className="flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary font-bold text-[10px]">
-                      {index + 1}
-                    </div>
-                  </TableCell>
-
-                  {/* Name */}
-                  <TableCell className="border-r px-2 py-1">
-                    <div className="flex items-center gap-1">
-                      <div
-                        className="font-medium text-xs cursor-pointer hover:text-primary hover:underline truncate"
-                        onClick={() => handleViewReport(ta.id)}
-                        title={`${ta.firstName} ${ta.lastName}`}
-                      >
-                        {ta.firstName} {ta.lastName}
-                      </div>
-                      {ta.isStruggling && (
-                        <AlertTriangle className="h-2.5 w-2.5 text-orange-600 flex-shrink-0" />
-                      )}
-                    </div>
-                  </TableCell>
-
-                  {/* Alias */}
-                  <TableCell
-                    className="text-xs text-muted-foreground border-r px-1 py-1 truncate"
-                    title={ta.username}
-                  >
-                    {ta.username}
-                  </TableCell>
-
-                  {/* Score */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <Badge
-                      variant={
-                        ta.avgScore >= 80
-                          ? "default"
-                          : ta.avgScore >= 70
-                            ? "secondary"
-                            : "destructive"
-                      }
-                      className="text-[10px] font-medium px-1 py-0 h-4"
-                    >
-                      {ta.hasNoSessions ? "N/A" : `${ta.avgScore}%`}
-                    </Badge>
-                  </TableCell>
-
-                  {/* Sessions */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.completedSessions}/{ta.totalSessions}
-                    </div>
-                  </TableCell>
-
-                  {/* Pass Rate */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.passRate}%`}
-                    </div>
-                  </TableCell>
-
-                  {/* Avg Time */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.hasNoSessions ? "N/A" : `${ta.avgTimeMinutes}m`}
-                    </div>
-                  </TableCell>
-
-                  {/* Completion Rate */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.completionRate}%
-                    </div>
-                  </TableCell>
-
-                  {/* Trend */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    {ta.trend === "improving" ? (
-                      <div className="flex items-center justify-center text-green-600">
-                        <TrendingUp className="h-2.5 w-2.5" />
-                      </div>
-                    ) : ta.trend === "declining" ? (
-                      <div className="flex items-center justify-center text-red-600">
-                        <TrendingDown className="h-2.5 w-2.5" />
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center text-gray-600">
-                        <ArrowUp className="h-2.5 w-2.5 rotate-90" />
-                      </div>
-                    )}
-                  </TableCell>
-
-                  {/* Last Activity */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Clock className="h-2.5 w-2.5" />
-                      <span className="truncate">
-                        {ta.lastActivity
-                          ? new Date(ta.lastActivity).toLocaleDateString(
-                              "en-US",
-                              {
-                                month: "short",
-                                day: "numeric",
-                              }
-                            )
-                          : "Never"}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Scenarios Completed */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Target className="h-2.5 w-2.5" />
-                      {ta.scenariosCompleted}
-                    </div>
-                  </TableCell>
-
-                  {/* Messages Per Session */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <MessageCircle className="h-2.5 w-2.5" />
-                      {ta.hasNoSessions ? "N/A" : ta.messagesPerSession}
-                    </div>
-                  </TableCell>
-
-                  {/* Total Attempts */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium">
-                      {ta.totalAttempts}
-                    </div>
-                  </TableCell>
-
-                  {/* Cohorts */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Users className="h-2.5 w-2.5" />
-                      <span title={ta.taCohorts.join(", ")}>
-                        {ta.taCohorts.length}
-                      </span>
-                    </div>
-                  </TableCell>
-
-                  {/* Cohort Rank */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div className="text-[10px] font-medium flex items-center justify-center gap-0.5">
-                      <Trophy className="h-2.5 w-2.5" />
-                      {ta.bestCohortRank > 0 ? `#${ta.bestCohortRank}` : "N/A"}
-                    </div>
-                  </TableCell>
-
-                  {/* Avg vs Cohort */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    <div
-                      className={`text-[10px] font-medium ${ta.avgVsCohort > 0 ? "text-green-600" : ta.avgVsCohort < 0 ? "text-red-600" : "text-gray-600"}`}
-                    >
-                      {ta.avgVsCohort > 0 ? "+" : ""}
-                      {ta.avgVsCohort}%
-                    </div>
-                  </TableCell>
-
-                  {/* Status */}
-                  <TableCell className="text-center border-r px-1 py-1">
-                    {ta.hasNoSessions ? (
-                      <Badge
-                        variant="destructive"
-                        className="text-[10px] px-1 py-0 h-4"
-                      >
-                        None
-                      </Badge>
-                    ) : ta.isStruggling ? (
-                      <Badge
-                        variant="secondary"
-                        className="text-[10px] bg-orange-100 text-orange-800 px-1 py-0 h-4"
-                      >
-                        Risk
-                      </Badge>
-                    ) : (
-                      <Badge
-                        variant="default"
-                        className="text-[10px] bg-green-100 text-green-800 px-1 py-0 h-4"
-                      >
-                        Good
-                      </Badge>
-                    )}
-                  </TableCell>
-
-                  {/* Actions */}
-                  <TableCell className="px-1 py-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 px-2 text-[10px]"
-                      onClick={() => handleViewReport(ta.id)}
-                    >
-                      View
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={18} className="text-center py-8">
-                  <div className="flex flex-col items-center gap-3">
-                    <Award className="h-12 w-12 text-muted-foreground" />
-                    <div>
-                      <h3 className="text-base font-medium mb-1">
-                        {searchQuery.trim() ||
-                        selectedClass !== "all" ||
-                        selectedCohort !== "all" ||
-                        selectedAgent !== "all"
-                          ? "No TAs found matching the current filters"
-                          : "No TAs match the current filter"}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        Try adjusting your search or filter criteria
-                      </p>
-                      {(searchQuery.trim() ||
-                        selectedClass !== "all" ||
-                        selectedCohort !== "all" ||
-                        selectedAgent !== "all") && (
-                        <div className="flex gap-2">
-                          {searchQuery.trim() && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSearchQuery("")}
-                            >
-                              Clear search
-                            </Button>
-                          )}
-                          {(selectedClass !== "all" ||
-                            selectedCohort !== "all" ||
-                            selectedAgent !== "all") && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedClass("all");
-                                setSelectedCohort("all");
-                                setSelectedAgent("all");
-                              }}
-                            >
-                              Clear filters
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <ReportsDataTable
+        columns={columns}
+        data={taPerformanceData}
+        performanceOptions={performanceOptions}
+        classOptions={classOptions}
+        cohortOptions={cohortOptions}
+        agentOptions={agentOptions}
+        showExport={true}
+      />
     </div>
   );
 }

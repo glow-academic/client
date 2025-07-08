@@ -22,6 +22,24 @@ const columnMap = {
   classCode: "Classes",
   agentsTested: "Agents",
   averageScore: "Score",
+  // Reports page columns
+  rank: "#",
+  firstName: "Name",
+  username: "Alias",
+  avgScore: "Score",
+  totalSessions: "Sessions",
+  passRate: "Pass",
+  avgTimeMinutes: "Time",
+  completionRate: "Complete",
+  trend: "Trend",
+  lastActivity: "Last Activity",
+  scenariosCompleted: "Scenarios",
+  messagesPerSession: "Msgs/Sess",
+  totalAttempts: "Total Attempts",
+  taCohorts: "Cohorts",
+  bestCohortRank: "Cohort Rank",
+  avgVsCohort: "vs Cohort",
+  isStruggling: "Status",
 };
 
 interface DataTableViewOptionsProps<TData> {
@@ -51,7 +69,7 @@ export function DataTableViewOptions<TData>({
           .getAllColumns()
           .filter(
             (column) =>
-              typeof column.accessorFn !== "undefined" && column.getCanHide(),
+              typeof column.accessorFn !== "undefined" && column.getCanHide()
           )
           .map((column) => {
             return (
