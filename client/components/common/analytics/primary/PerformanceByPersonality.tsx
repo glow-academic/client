@@ -86,7 +86,7 @@ const COLOR_CONFIGS = {
 
 export default function PerformanceByPersonality({
   className,
-  color = "purple",
+  color = "blue",
   defaultTimeRange = "30d",
   chartType: _chartType = "bar",
   title = "Performance by Personality",

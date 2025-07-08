@@ -6,7 +6,7 @@
  */
 "use client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 // UI Components
@@ -57,13 +57,16 @@ export default function Model({ modelId }: ModelProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEditMode = !!modelId;
 
-  const initialFormData: Partial<ModelType> = {
-    name: "",
-    description: "",
-    providerId: "",
-    active: true,
-    modelType: "ttt",
-  };
+  const initialFormData: Partial<ModelType> = useMemo(
+    () => ({
+      name: "",
+      description: "",
+      providerId: "",
+      active: true,
+      modelType: "ttt",
+    }),
+    []
+  );
 
   const [formData, setFormData] = useState<Partial<ModelType>>(initialFormData);
   const [errors, setErrors] = useState<FormErrors>({});
@@ -83,9 +86,10 @@ export default function Model({ modelId }: ModelProps) {
   // Combined loading state
   const isLoading = (isEditMode && isModelLoading) || areProvidersLoading;
 
-  // Load model data if editing
+  // Single consolidated useEffect to handle all form state scenarios
   useEffect(() => {
     if (isEditMode && modelToEdit) {
+      // We are in EDIT mode and have the model's data, so populate the form
       setFormData({
         name: modelToEdit.name || "",
         description: modelToEdit.description || "",
@@ -93,8 +97,11 @@ export default function Model({ modelId }: ModelProps) {
         active: modelToEdit.active ?? true,
         modelType: modelToEdit.modelType || "ttt",
       });
+    } else if (!isEditMode) {
+      // We are in CREATE mode, so reset the form to its initial state
+      setFormData(initialFormData);
     }
-  }, [isEditMode, modelToEdit]);
+  }, [isEditMode, modelToEdit, initialFormData]);
 
   // Role-based access control - check after all hooks
   if (effectiveRole !== "admin") {
@@ -108,34 +115,6 @@ export default function Model({ modelId }: ModelProps) {
             </CardDescription>
           </CardHeader>
         </Card>
-      </div>
-    );
-  }
-
-  // Show loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded animate-pulse w-16" />
-          <div className="h-10 bg-muted rounded animate-pulse" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded animate-pulse w-20" />
-          <div className="h-20 bg-muted rounded animate-pulse" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded animate-pulse w-16" />
-          <div className="h-10 bg-muted rounded animate-pulse" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded animate-pulse w-20" />
-          <div className="h-10 bg-muted rounded animate-pulse" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-4 bg-muted rounded animate-pulse w-12" />
-          <div className="h-10 bg-muted rounded animate-pulse" />
-        </div>
       </div>
     );
   }
@@ -261,121 +240,146 @@ export default function Model({ modelId }: ModelProps) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Basic Model Information */}
-        <div className="space-y-2">
-          <Label htmlFor="name">Name</Label>
-          <Input
-            id="name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
-            placeholder="Enter model name"
-            className={errors.name ? "border-destructive" : ""}
-          />
-          {errors.name && (
-            <p className="text-sm text-destructive">{errors.name}</p>
-          )}
+      {isLoading ? (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded animate-pulse w-16" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded animate-pulse w-20" />
+            <div className="h-20 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded animate-pulse w-16" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded animate-pulse w-20" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="space-y-2">
+            <div className="h-4 bg-muted rounded animate-pulse w-12" />
+            <div className="h-10 bg-muted rounded animate-pulse" />
+          </div>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Textarea
-            id="description"
-            value={formData.description || ""}
-            onChange={(e) => handleInputChange("description", e.target.value)}
-            placeholder="Enter model description"
-            rows={3}
-            className={errors.description ? "border-destructive" : ""}
-          />
-          {errors.description && (
-            <p className="text-sm text-destructive">{errors.description}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="providerId">Provider</Label>
-          <Select
-            value={formData.providerId || ""}
-            onValueChange={(value) => handleInputChange("providerId", value)}
-          >
-            <SelectTrigger
-              className={errors.providerId ? "border-destructive" : ""}
-            >
-              <SelectValue placeholder="Select a provider..." />
-            </SelectTrigger>
-            <SelectContent>
-              {providers.map((provider: Provider) => (
-                <SelectItem key={provider.id} value={provider.id}>
-                  {provider.name} - {provider.description}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.providerId && (
-            <p className="text-sm text-destructive">{errors.providerId}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="modelType">Model Type</Label>
-          <Select
-            value={formData.modelType || "ttt"}
-            onValueChange={(value) => handleInputChange("modelType", value)}
-          >
-            <SelectTrigger
-              className={errors.modelType ? "border-destructive" : ""}
-            >
-              <SelectValue placeholder="Select model type..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ttt">Text-to-Text (TTT)</SelectItem>
-              <SelectItem value="stt">Speech-to-Text (STT)</SelectItem>
-              <SelectItem value="tts">Text-to-Speech (TTS)</SelectItem>
-            </SelectContent>
-          </Select>
-          {errors.modelType && (
-            <p className="text-sm text-destructive">{errors.modelType}</p>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="active">Status</Label>
-          <Select
-            value={formData.active ? "true" : "false"}
-            onValueChange={(value) =>
-              handleInputChange("active", value === "true")
-            }
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">Active</SelectItem>
-              <SelectItem value="false">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="submit"
-            disabled={isSubmitting || isLoading}
-            className="min-w-[120px]"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                {isEditMode && modelId ? "Updating..." : "Creating..."}
-              </>
-            ) : isEditMode && modelId ? (
-              "Update Model"
-            ) : (
-              "Create Model"
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Model Information */}
+          <div className="space-y-2">
+            <Label htmlFor="name">Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => handleInputChange("name", e.target.value)}
+              placeholder="Enter model name"
+              className={errors.name ? "border-destructive" : ""}
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive">{errors.name}</p>
             )}
-          </Button>
-        </div>
-      </form>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={formData.description || ""}
+              onChange={(e) => handleInputChange("description", e.target.value)}
+              placeholder="Enter model description"
+              rows={3}
+              className={errors.description ? "border-destructive" : ""}
+            />
+            {errors.description && (
+              <p className="text-sm text-destructive">{errors.description}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="providerId">Provider</Label>
+            <Select
+              value={formData.providerId || ""}
+              onValueChange={(value) => handleInputChange("providerId", value)}
+            >
+              <SelectTrigger
+                className={errors.providerId ? "border-destructive" : ""}
+              >
+                <SelectValue placeholder="Select a provider..." />
+              </SelectTrigger>
+              <SelectContent>
+                {providers.map((provider: Provider) => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.name} - {provider.description}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.providerId && (
+              <p className="text-sm text-destructive">{errors.providerId}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="modelType">Model Type</Label>
+            <Select
+              value={formData.modelType || "ttt"}
+              onValueChange={(value) => handleInputChange("modelType", value)}
+            >
+              <SelectTrigger
+                className={errors.modelType ? "border-destructive" : ""}
+              >
+                <SelectValue placeholder="Select model type..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ttt">Text-to-Text (TTT)</SelectItem>
+                <SelectItem value="stt">Speech-to-Text (STT)</SelectItem>
+                <SelectItem value="tts">Text-to-Speech (TTS)</SelectItem>
+              </SelectContent>
+            </Select>
+            {errors.modelType && (
+              <p className="text-sm text-destructive">{errors.modelType}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="active">Status</Label>
+            <Select
+              value={formData.active ? "true" : "false"}
+              onValueChange={(value) =>
+                handleInputChange("active", value === "true")
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Submit Button */}
+          <div className="flex justify-end gap-4">
+            <Button
+              type="submit"
+              disabled={isSubmitting || isLoading}
+              className="min-w-[120px]"
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                  {isEditMode && modelId ? "Updating..." : "Creating..."}
+                </>
+              ) : isEditMode && modelId ? (
+                "Update Model"
+              ) : (
+                "Create Model"
+              )}
+            </Button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

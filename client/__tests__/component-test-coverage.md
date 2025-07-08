@@ -1,10 +1,10 @@
 # Component Test Coverage Report
 
-Generated on: 2025-07-08T18:32:25.437Z
+Generated on: 2025-07-08T19:05:14.025Z
 
 ## Summary
-- **Total Components**: 100
-- **Tests Created**: 0
+- **Total Components**: 101
+- **Tests Created**: 1
 - **Tests Updated**: 56
 - **Tests Skipped** (already implemented): 44
 
@@ -100,6 +100,7 @@ Generated on: 2025-07-08T18:32:25.437Z
 | AgentEdit | management/agents/AgentEdit.tsx | AgentEdit.test.tsx | ❌ Needs Implementation |
 | Agents | management/agents/Agents.tsx | Agents.test.tsx | ❌ Needs Implementation |
 | NewAgent | management/agents/NewAgent.tsx | NewAgent.test.tsx | ❌ Needs Implementation |
+| ActivityStatus | management/logs/ActivityStatus.tsx | ActivityStatus.test.tsx | ❌ Needs Implementation |
 | ConnectionStatusIndicator | management/logs/ConnectionStatusIndicator.tsx | ConnectionStatusIndicator.test.tsx | ❌ Needs Implementation |
 | Logs | management/logs/Logs.tsx | Logs.test.tsx | ❌ Needs Implementation |
 | ModelEdit | management/models/ModelEdit.tsx | ModelEdit.test.tsx | ❌ Needs Implementation |
@@ -235,6 +236,7 @@ __tests__/
 │   │   ├── Agents.test.tsx
 │   │   ├── NewAgent.test.tsx
 │   ├── logs/
+│   │   ├── ActivityStatus.test.tsx
 │   │   ├── ConnectionStatusIndicator.test.tsx
 │   │   ├── Logs.test.tsx
 │   ├── models/
