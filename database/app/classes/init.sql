@@ -155,3 +155,28 @@ CREATE TYPE document_type AS ENUM ('homework', 'project', 'quiz', 'midterm', 'la
     ('dddddddd-dddd-dddd-dddd-444444444445', 'Midterm Exam', 'Exam covering algorithm design paradigms', 'midterm', '2024-11-01 19:00:00', 'dddddddd-1111-1111-1111-111111111111'),
     ('dddddddd-dddd-dddd-dddd-444444444446', 'Homework 3: NP-Completeness', 'Prove NP-completeness through reductions', 'homework', '2024-11-15 23:59:00', 'dddddddd-1111-1111-1111-111111111111'),
     ('dddddddd-dddd-dddd-dddd-444444444447', 'Project 2: Approximation Algorithms', 'Implement approximation algorithms for NP-hard problems', 'project', '2024-12-05 23:59:00', 'dddddddd-1111-1111-1111-111111111111');
+
+-- ============================================================================
+-- DOCUMENT ENTRIES FOR TRAINING SCENARIOS
+-- ============================================================================
+
+-- Insert Documents for Training Scenarios
+INSERT INTO documents (id, name, file_path, mime_type, class_id, type, classified, file_id) VALUES
+  ('d0c1-1111-2222-3333-444444444444', 'CS180 Project - Methods and Classes', 'doc-1.txt', 'text/plain', '44444444-1111-1111-1111-111111111111', 'project', false, 'doc-1'), -- Document: CS180 Project assignment (Methods and Classes)
+  ('d0c2-2222-3333-4444-555555555555', 'CS180 Homework - Interfaces and Inheritance', 'doc-2.txt', 'text/plain', '44444444-1111-1111-1111-111111111111', 'homework', false, 'doc-2'), -- Document: CS180 Homework (Interfaces and Inheritance)
+  ('d0c3-3333-4444-5555-666666666666', 'CS180 Lab - Polymorphism and Dynamic Data Structures', 'doc-3.txt', 'text/plain', '44444444-1111-1111-1111-111111111111', 'lab', false, 'doc-3'), -- Document: CS180 Lab (Polymorphism, Dynamic Data Structures)
+  ('d0c4-4444-5555-6666-777777777777', 'CS182 Homework - Proof Techniques including Mathematical Induction', 'doc-4.txt', 'text/plain', '55555555-2222-2222-2222-222222222222', 'homework', false, 'doc-4'), -- Document: CS182 Homework (Proof Techniques including Mathematical Induction)
+  ('d0c5-5555-6666-7777-888888888888', 'CS182 Lecture - Basic Logic', 'doc-5.txt', 'text/plain', '55555555-2222-2222-2222-222222222222', 'lecture', false, 'doc-5'), -- Document: CS182 Lecture (Basic Logic)
+  ('d0c6-6666-7777-8888-999999999999', 'CS182 Lecture - The Language of Mathematics', 'doc-6.txt', 'text/plain', '55555555-2222-2222-2222-222222222222', 'lecture', false, 'doc-6'), -- Document: CS182 Lecture (The Language of Mathematics)
+  ('d0c7-7777-8888-9999-aaaaaaaaaaaa', 'CS251 Midterm Topics - Runtime Expressions and Asymptotic Runtime Analysis', 'doc-7.txt', 'text/plain', '66666666-3333-3333-3333-333333333333', 'midterm', false, 'doc-7'), -- Document: CS251 Midterm topics (Runtime Expressions, Asymptotic Runtime Analysis)
+  ('d0c8-8888-9999-aaaa-bbbbbbbbbbbb', 'CS251 Midterm Topics - Arrays and Linked Lists', 'doc-8.txt', 'text/plain', '66666666-3333-3333-3333-333333333333', 'midterm', false, 'doc-8'), -- Document: CS251 Midterm topics (Arrays and Linked Lists)
+  ('d0c9-9999-aaaa-bbbb-cccccccccccc', 'CS251 Midterm Topics - Binary Trees', 'doc-9.txt', 'text/plain', '66666666-3333-3333-3333-333333333333', 'midterm', false, 'doc-9'), -- Document: CS251 Midterm topics (Binary Trees)
+  ('d0c10-aaaa-bbbb-cccc-dddddddddddd', 'CS381 Assignment - Techniques for analyzing time and space requirements', 'doc-10.txt', 'text/plain', '77777777-4444-4444-4444-444444444444', 'homework', false, 'doc-10'), -- Document: CS381 Assignment (Techniques for analyzing time and space requirements)
+  ('d0c11-bbbb-cccc-dddd-eeeeeeeeeeee', 'CS381 Topic - Brief introduction to intractable NP-hard problems', 'doc-11.txt', 'text/plain', '77777777-4444-4444-4444-444444444444', 'lecture', false, 'doc-11'), -- Document: CS381 Topic (Brief introduction to intractable NP-hard problems)
+  ('d0c12-cccc-dddd-eeee-ffffffffffff', 'CS381 Topic - Application of techniques to graph problems', 'doc-12.txt', 'text/plain', '77777777-4444-4444-4444-444444444444', 'lecture', false, 'doc-12'), -- Document: CS381 Topic (Application of techniques to graph problems)
+  ('d0c13-dddd-eeee-ffff-000000000000', 'Networking Course Project Specification', 'doc-13.txt', 'text/plain', NULL, 'project', false, 'doc-13'), -- Document: Networking course project specification
+  ('d0c14-eeee-ffff-0000-111111111111', 'Socket Programming Lab Assignment', 'doc-14.txt', 'text/plain', NULL, 'lab', false, 'doc-14'), -- Document: Socket programming lab assignment
+  ('d0c15-ffff-0000-1111-222222222222', 'Network Security Homework Assignment', 'doc-15.txt', 'text/plain', NULL, 'homework', false, 'doc-15'), -- Document: Network security homework assignment
+  ('d0c16-0000-1111-2222-333333333333', 'ML Project Specification - Neural Networks', 'doc-16.txt', 'text/plain', NULL, 'project', false, 'doc-16'), -- Document: ML project specification (neural networks)
+  ('d0c17-1111-2222-3333-444444444444', 'ML Homework - Feature Engineering and Preprocessing', 'doc-17.txt', 'text/plain', NULL, 'homework', false, 'doc-17'), -- Document: ML homework (feature engineering and preprocessing)
+  ('d0c18-2222-3333-4444-555555555555', 'ML Assignment - Model Evaluation and Metrics', 'doc-18.txt', 'text/plain', NULL, 'homework', false, 'doc-18'); -- Document: ML assignment (model evaluation and metrics)

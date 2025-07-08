@@ -4,7 +4,7 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-import docx
+import docx  # type: ignore
 import PyPDF2
 from agents import Runner, trace
 from app.db import get_session

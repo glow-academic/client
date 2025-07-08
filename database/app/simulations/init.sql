@@ -94,7 +94,7 @@ CREATE TABLE simulation_chat_grades (
 -- ============================================================================
 
 -- Insert Default Practice Simulations (single focused for aggressive, happy, and confused)
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', 'Aggressive Practice', 'Practice simulation for handling aggressive student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['aaaaaaaa-1111-2222-3333-444444444444']::UUID[], true),
   ('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb', 'Happy Practice', 'Practice simulation for handling happy student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['bbbbbbbb-1111-2222-3333-444444444444']::UUID[], true),
   ('cccccccc-cccc-cccc-cccc-cccccccccccc', 'Confused Practice', 'Practice simulation for handling confused student interactions', '1a19da05-aaaa-bbbb-cccc-555555555555', NULL, ARRAY['cccccccc-1111-2222-3333-444444444444']::UUID[], true);
@@ -103,7 +103,7 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 W1 TRAINING (BEGINNER) SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('f25w1b-s01-aaaa-bbbb-cccc-dddddddd', 'Basic Student Interaction - Arrays', 'Practice fundamental student interaction skills while helping with array-related programming concepts. Focus on building confidence with basic tutoring scenarios.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b01-aaaa-bbbb-cccc-111111111111', 'f25w1b02-aaaa-bbbb-cccc-222222222222', 'f25w1b03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
   ('f25w1b-s02-aaaa-bbbb-cccc-dddddddd', 'Handling Confused Students - Loops', 'Develop skills for working with confused students while covering loop concepts. Learn to break down complex problems into manageable steps.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b04-aaaa-bbbb-cccc-444444444444', 'f25w1b05-aaaa-bbbb-cccc-555555555555', 'f25w1b06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
   ('f25w1b-s03-aaaa-bbbb-cccc-dddddddd', 'Time Management Practice - File I/O', 'Practice managing time effectively while helping students with file input/output concepts. Balance thoroughness with efficiency.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1b07-aaaa-bbbb-cccc-777777777777', 'f25w1b08-aaaa-bbbb-cccc-888888888888', 'f25w1b09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
@@ -112,7 +112,7 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 W1 TRAINING (ADVANCED) SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('f25w1a-s01-aaaa-bbbb-cccc-dddddddd', 'Graph Theory Tutoring - DFS/BFS', 'Handle challenging graph theory concepts with potentially frustrated students. Practice de-escalation while maintaining technical accuracy.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a01-aaaa-bbbb-cccc-111111111111', 'f25w1a02-aaaa-bbbb-cccc-222222222222', 'f25w1a03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
   ('f25w1a-s02-aaaa-bbbb-cccc-dddddddd', 'Mathematical Induction Practice', 'Guide students through complex mathematical induction problems. Develop skills for handling abstract mathematical concepts with struggling students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a04-aaaa-bbbb-cccc-444444444444', 'f25w1a05-aaaa-bbbb-cccc-555555555555', 'f25w1a06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
   ('f25w1a-s03-aaaa-bbbb-cccc-dddddddd', 'Advanced Data Structures - Trees', 'Work with advanced tree data structures while managing impatient or frustrated students. Practice maintaining composure under pressure.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w1a07-aaaa-bbbb-cccc-777777777777', 'f25w1a08-aaaa-bbbb-cccc-888888888888', 'f25w1a09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
@@ -121,7 +121,7 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 W2 TRAINING (CS 1XX/2XX) SIMULATIONS - DOCUMENT BASED
 -- ============================================================================
 
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('f25w2l-s01-aaaa-bbbb-cccc-dddddddd', 'Coding Project OOP', 'Help students with object-oriented programming projects using course documents. Practice referencing materials while maintaining student engagement.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l01-aaaa-bbbb-cccc-111111111111', 'f25w2l02-aaaa-bbbb-cccc-222222222222', 'f25w2l03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
   ('f25w2l-s02-aaaa-bbbb-cccc-dddddddd', 'Basic Induction & Proofs', 'Guide students through fundamental proof techniques using course materials. Develop skills for explaining abstract mathematical concepts clearly.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l04-aaaa-bbbb-cccc-444444444444', 'f25w2l05-aaaa-bbbb-cccc-555555555555', 'f25w2l06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
   ('f25w2l-s03-aaaa-bbbb-cccc-dddddddd', 'Data Structures and Algorithms', 'Work with students on fundamental data structures and algorithms using course documents. Practice balancing theory with practical implementation.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2l07-aaaa-bbbb-cccc-777777777777', 'f25w2l08-aaaa-bbbb-cccc-888888888888', 'f25w2l09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
@@ -130,7 +130,7 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 W2 TRAINING (CS 3XX/4XX) SIMULATIONS - DOCUMENT BASED
 -- ============================================================================
 
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('f25w2h-s01-aaaa-bbbb-cccc-dddddddd', 'Analysis of Algorithms', 'Handle advanced algorithm analysis with upper-level students using course documents. Practice managing high-stakes academic pressure and complex theoretical concepts.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h01-aaaa-bbbb-cccc-111111111111', 'f25w2h02-aaaa-bbbb-cccc-222222222222', 'f25w2h03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
   ('f25w2h-s02-aaaa-bbbb-cccc-dddddddd', 'Networking', 'Support students with networking concepts and implementation using course materials. Develop skills for explaining complex systems concepts clearly.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h04-aaaa-bbbb-cccc-444444444444', 'f25w2h05-aaaa-bbbb-cccc-555555555555', 'f25w2h06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
   ('f25w2h-s03-aaaa-bbbb-cccc-dddddddd', 'Machine Learning', 'Guide students through machine learning concepts using course documents. Practice handling advanced mathematical concepts with potentially frustrated students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w2h07-aaaa-bbbb-cccc-777777777777', 'f25w2h08-aaaa-bbbb-cccc-888888888888', 'f25w2h09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
@@ -139,7 +139,7 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 W3 COMMUNICATION TRAINING SIMULATIONS
 -- ============================================================================
 
-INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
+INSERT INTO simulations (id, title, description, rubric_id, time_limit, scenario_ids, default_simulation) VALUES
   ('f25w3c-s01-aaaa-bbbb-cccc-dddddddd', 'Campus Belonging & Identity', 'Address sensitive topics related to campus identity and belonging. Practice empathetic communication while maintaining professional boundaries.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c01-aaaa-bbbb-cccc-111111111111', 'f25w3c02-aaaa-bbbb-cccc-222222222222', 'f25w3c03-aaaa-bbbb-cccc-333333333333']::UUID[], false),
   ('f25w3c-s02-aaaa-bbbb-cccc-dddddddd', 'Academic Preparedness & Equity', 'Handle conversations about academic preparedness and equity issues. Develop skills for supportive communication with struggling students.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c04-aaaa-bbbb-cccc-444444444444', 'f25w3c05-aaaa-bbbb-cccc-555555555555', 'f25w3c06-aaaa-bbbb-cccc-666666666666']::UUID[], false),
   ('f25w3c-s03-aaaa-bbbb-cccc-dddddddd', 'Resource Awareness & Cultural Sensitivity', 'Navigate conversations about resource access and cultural sensitivity. Practice inclusive communication and appropriate referral techniques.', '1a19da05-aaaa-bbbb-cccc-555555555555', 900, ARRAY['f25w3c07-aaaa-bbbb-cccc-777777777777', 'f25w3c08-aaaa-bbbb-cccc-888888888888', 'f25w3c09-aaaa-bbbb-cccc-999999999999']::UUID[], false);
@@ -148,9 +148,8 @@ INSERT INTO simulations (id, name, description, rubric_id, time_limit, scenario_
 -- FALL 2025 TRAINING COHORTS
 -- ============================================================================
 
-INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active) VALUES
-  ('f25w1b-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.', 
-   ARRAY['f25w1b-s01-aaaa-bbbb-cccc-dddddddd', 'f25w1b-s02-aaaa-bbbb-cccc-dddddddd', 'f25w1b-s03-aaaa-bbbb-cccc-dddddddd']::UUID[],
+INSERT INTO cohorts (id, title, description, profile_ids, active) VALUES
+  ('f25w1b-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Beginner)', 'Foundational TA training focusing on basic student interaction skills, handling confused students, and time management. Designed for new TAs with limited tutoring experience.',
    ARRAY[
      -- Instructors supervising CS 180 and CS 182 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -162,8 +161,7 @@ INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active)
      'c5180001-1111-2222-3333-444444444444', 'c5180002-1111-2222-3333-444444444444', '99b90118-7b9e-4e12-8e81-d7ccc2916601'
    ]::UUID[], true),
 
-  ('f25w1a-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.', 
-   ARRAY['f25w1a-s01-aaaa-bbbb-cccc-dddddddd', 'f25w1a-s02-aaaa-bbbb-cccc-dddddddd', 'f25w1a-s03-aaaa-bbbb-cccc-dddddddd']::UUID[],
+  ('f25w1a-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W1 Training (Advanced)', 'Advanced TA training focusing on complex technical concepts, handling frustrated students, and maintaining composure under pressure. For experienced TAs ready for challenging scenarios.',
    ARRAY[
      -- Instructors supervising CS 251 and CS 381 courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '44444444-aaaa-bbbb-cccc-444444444444', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -174,8 +172,7 @@ INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active)
      'c5abc003-aaaa-bbbb-cccc-dddddddddddd', 'c5abc004-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true),
 
-  ('f25w2l-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.', 
-   ARRAY['f25w2l-s01-aaaa-bbbb-cccc-dddddddd', 'f25w2l-s02-aaaa-bbbb-cccc-dddddddd', 'f25w2l-s03-aaaa-bbbb-cccc-dddddddd']::UUID[],
+  ('f25w2l-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 1XX/2XX)', 'Document-based training for lower-level CS courses. Focus on using course materials effectively while maintaining student engagement and explaining foundational concepts clearly.',
    ARRAY[
      -- Instructors for CS 180, CS 182, and CS 251
      '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222', '33333333-aaaa-bbbb-cccc-333333333333',
@@ -188,8 +185,7 @@ INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active)
      'c5abc002-aaaa-bbbb-cccc-dddddddddddd', '99b90118-7b9e-4e12-8e81-d7ccc2916603', '99b90118-7b9e-4e12-8e81-d7ccc2916605'
    ]::UUID[], true),
 
-  ('f25w2h-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.', 
-   ARRAY['f25w2h-s01-aaaa-bbbb-cccc-dddddddd', 'f25w2h-s02-aaaa-bbbb-cccc-dddddddd', 'f25w2h-s03-aaaa-bbbb-cccc-dddddddd']::UUID[],
+  ('f25w2h-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W2 Training (CS 3XX/4XX)', 'Document-based training for upper-level CS courses. Advanced technical communication skills, handling high-stakes academic pressure, and complex theoretical concepts.',
    ARRAY[
      -- Instructors for advanced courses
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-aaaa-bbbb-cccc-222222222222', '55555555-aaaa-bbbb-cccc-555555555555',
@@ -202,8 +198,7 @@ INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active)
      '99b90118-7b9e-4e12-8e81-d7ccc2916610'
    ]::UUID[], true),
 
-  ('f25w3c-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.', 
-   ARRAY['f25w3c-s01-aaaa-bbbb-cccc-dddddddd', 'f25w3c-s02-aaaa-bbbb-cccc-dddddddd', 'f25w3c-s03-aaaa-bbbb-cccc-dddddddd']::UUID[],
+  ('f25w3c-cohort-aaaa-bbbb-cccc-dddd', 'Fall 2025 W3 Communication Training', 'Specialized training for sensitive communication topics including campus belonging, academic equity, and cultural sensitivity. Essential skills for all TAs working with diverse student populations.',
    ARRAY[
      -- All instructors for comprehensive communication training
      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-aaaa-bbbb-cccc-111111111111', '22222222-aaaa-bbbb-cccc-222222222222',
@@ -218,97 +213,3 @@ INSERT INTO cohorts (id, name, description, simulation_ids, profile_ids, active)
      '99b90118-7b9e-4e12-8e81-d7ccc2916604', '99b90118-7b9e-4e12-8e81-d7ccc2916606', '99b90118-7b9e-4e12-8e81-d7ccc2916609'
    ]::UUID[], true);
 
--- ============================================================================
--- SIMULATION ATTEMPTS TABLE
--- ============================================================================
-
-CREATE TABLE simulation_attempts (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_id UUID NOT NULL REFERENCES simulations(id) ON DELETE CASCADE,
-  profile_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  score INTEGER NULL,
-  time_taken INTEGER NULL,
-  completed BOOLEAN NOT NULL DEFAULT FALSE,
-  feedback TEXT NULL
-);
-
--- ============================================================================
--- SIMULATION CHATS TABLE
--- ============================================================================
-
-CREATE TABLE simulation_chats (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_attempt_id UUID NOT NULL REFERENCES simulation_attempts(id) ON DELETE CASCADE,
-  scenario_id UUID NOT NULL REFERENCES scenarios(id) ON DELETE CASCADE,
-  completed BOOLEAN NOT NULL DEFAULT FALSE,
-  score INTEGER NULL,
-  feedback TEXT NULL
-);
-
--- ============================================================================
--- SIMULATION MESSAGES TABLE
--- ============================================================================
-
-CREATE TABLE simulation_messages (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
-  content TEXT NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
-  message_index INTEGER NOT NULL,
-  token_count INTEGER NULL,
-  processing_time INTEGER NULL
-);
-
--- ============================================================================
--- SIMULATION CHAT GRADES TABLE
--- ============================================================================
-
-CREATE TABLE simulation_chat_grades (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
-  rubric_id UUID NOT NULL REFERENCES rubrics(id) ON DELETE CASCADE,
-  overall_score INTEGER NULL,
-  criteria_scores JSONB NULL,
-  feedback TEXT NULL,
-  graded_by UUID NULL REFERENCES profiles(id) ON DELETE SET NULL,
-  auto_graded BOOLEAN NOT NULL DEFAULT FALSE
-);
-
--- ============================================================================
--- SIMULATION CHAT FEEDBACKS TABLE
--- ============================================================================
-
-CREATE TABLE simulation_chat_feedbacks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
-  feedback_text TEXT NOT NULL,
-  feedback_type TEXT NOT NULL CHECK (feedback_type IN ('positive', 'constructive', 'neutral')),
-  given_by UUID NULL REFERENCES profiles(id) ON DELETE SET NULL,
-  helpful_rating INTEGER NULL CHECK (helpful_rating >= 1 AND helpful_rating <= 5)
-);
-
--- ============================================================================
--- SIMULATION SKETCHES TABLE
--- ============================================================================
-
-CREATE TABLE simulation_sketches (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  simulation_chat_id UUID NOT NULL REFERENCES simulation_chats(id) ON DELETE CASCADE,
-  sketch_data JSONB NOT NULL,
-  sketch_type TEXT NOT NULL DEFAULT 'drawing',
-  description TEXT NULL
-);
-
-ON CONFLICT (id) DO NOTHING;
